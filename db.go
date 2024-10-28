@@ -8,6 +8,15 @@ import (
 	"time"
 )
 
+func getDb() (*sql.DB, error) {
+
+	db, err := sql.Open("sqlite3", "./modula.db")
+	if err != nil {
+		return nil, err
+	}
+	return db, err
+}
+
 func initializeDatabase(reset bool) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", "./modula.db")
 	if err != nil {
@@ -93,7 +102,7 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 	if reset {
 
 		seedDB(db)
-        registerAdminRoutes(db)
+		registerAdminRoutes(db)
 		newUser := User{UserName: "admin", Name: "Admin", Email: "admin@admin.com", Hash: "", Role: "0"}
 		userID, err := createUser(db, newUser)
 		if err != nil {
