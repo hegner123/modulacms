@@ -2,23 +2,25 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 type Post struct {
 	ID           int
-    Slug         string
+	Slug         string
 	Title        string
 	Status       int
 	DateCreated  int64
 	DateModified int64
-    Content      string
-    Template     string
+	Content      string
+	Template     string
 }
 
 func createPost(db *sql.DB, post Post) (int64, error) {
-	result, err := db.Exec("INSERT INTO posts (slug,title, status, dateCreated, dateModified,template) VALUES (?,?,?,?,?,?)",
-		post.Slug,post.Title, post.Status, post.DateCreated, post.DateModified, post.Template)
+	result, err := db.Exec("INSERT INTO posts (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
+		post.Slug, post.Title, post.Status, post.DateCreated, post.DateModified,post.Content, post.Template)
 	if err != nil {
+        fmt.Print(err)
 		return 0, err
 	}
 	return result.LastInsertId()
@@ -45,29 +47,29 @@ func getPostById(db *sql.DB, id int) (Post, error) {
 }
 
 func getAllPosts(db *sql.DB) ([]Post, error) {
-    var posts []Post
-    // Query only the fields we need (slug, title, and template)
-    rows, err := db.Query("SELECT slug, title, template FROM posts")
-    if err != nil {
-        return posts, err
-    }
-    defer rows.Close()
+	var posts []Post
+	// Query only the fields we need (slug, title, and template)
+	rows, err := db.Query("SELECT slug, title, template FROM posts")
+	if err != nil {
+		return posts, err
+	}
+	defer rows.Close()
 
-    for rows.Next() {
-        post := Post{}
-        // Only scan into the selected fields
-        if err := rows.Scan(&post.Slug, &post.Title, &post.Template); err != nil {
-            return posts, err
-        }
-        posts = append(posts, post)
-    }
+	for rows.Next() {
+		post := Post{}
+		// Only scan into the selected fields
+		if err := rows.Scan(&post.Slug, &post.Title, &post.Template); err != nil {
+			return posts, err
+		}
+		posts = append(posts, post)
+	}
 
-    // Check for errors from iterating over rows
-    if err := rows.Err(); err != nil {
-        return posts, err
-    }
+	// Check for errors from iterating over rows
+	if err := rows.Err(); err != nil {
+		return posts, err
+	}
 
-    return posts, nil
+	return posts, nil
 }
 
 func updatePostById(db *sql.DB, post Post) error {

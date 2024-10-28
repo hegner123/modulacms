@@ -52,8 +52,8 @@ func main() {
 	verbose := flag.Bool("v", false, "Enable verbose mode")
 	reset := flag.Bool("r", false, "Delete Database and reinitialize")
 	flag.Parse()
-	fmt.Println("Verbose mode:", *verbose)
 	if *reset {
+        fmt.Println("Verbose mode:")
 		err := os.Remove("./modula.db")
 		if err != nil {
 			log.Fatal("Error deleting file:", err)
@@ -100,9 +100,9 @@ func main() {
 	defer db.Close()
 
 
-
 	// Handle any route starting with "/api/"
 
+    http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("templates/js"))))
     mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request,){
         http.HandlerFunc(handlePageRoutes).ServeHTTP(w,r)
     })

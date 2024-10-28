@@ -6,79 +6,106 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
+//http.HandleFunc("/blog", func(w http.ResponseWriter, r *http.Request) {
+//})
+//mux := http.NewServeMux()
+
+// mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
+// http.StripPrefix("/api/", http.HandlerFunc(handleWildcard)).ServeHTTP(w, r)
+// })
+
+// pageTempl, err := template.ParseFiles("templates/page.html")
+//
+//	if err != nil {
+//		log.Fatalf("Failed to parse template: %v", err)
+//	}
+
+func checkAPIPath(rawURL string) (bool, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return false, err // Return error if URL parsing fails
+	}
+
+	// Check if the path starts with "api/"
+	return strings.HasPrefix(parsedURL.Path, "/api/"), nil
+}
+func searchString(text, searchTerm string) bool {
+	return strings.Contains(text, searchTerm)
+}
+
+func stripAPIPath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err // Return error if URL parsing fails
+	}
+
+	// Remove "/api/" prefix if it exists
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/api/")
+	return parsedURL.String(), nil
+}
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
-	mux := http.NewServeMux()
 
-
-	mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/api/", http.HandlerFunc(handleWildcard)).ServeHTTP(w, r)
-	})
-
-	tmpl, err := template.ParseFiles("templates/blog.html")
+	db, err := getDb()
 	if err != nil {
-		log.Fatalf("Failed to parse template: %v", err)
+		return
+	}
+	allRoutes, err := getAllPosts(db)
+	if err != nil {
+		log.Fatal("HEEEEEEELLLLPPPPPP")
+		return
+	}
+	isApiRoute, err := checkAPIPath(r.URL.Path)
+	if err != nil {
+		fmt.Print("URL couldn't be parsed.")
+		return
 	}
 
-	tmpl404, err := template.ParseFiles("templates/404.html")
-	if err != nil {
-		log.Fatalf("Failed to parse template: %v", err)
-	}
-	//pageTempl, err := template.ParseFiles("templates/page.html")
-	//if err != nil {
-	//	log.Fatalf("Failed to parse template: %v", err)
-	//}
-	fmt.Printf("page route")
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		db, err := getDb()
+	switch {
+	case isApiRoute:
+		apiRoute, err := stripAPIPath(r.URL.Path)
 		if err != nil {
+			fmt.Print("UM, this ain't a url bud.")
 			return
 		}
-		/*	exists := postExists(db, r.PathValue("*"))
-			w.Header().Set("Content-Type", "text/html")
-			if !exists {
-				data := Page404{Title: "404 Not Found", Message: "Test the chakifbakj abrfiouhbau awkenvjbaovi"}
-				if err := tmpl404.Execute(w, data); err != nil {
-					http.Error(w, "Failed to render template", http.StatusInternalServerError)
-					log.Printf("Template execution error: %v", err)
-				}
-			} else {*/
-		w.Header().Set("Content-Type", "text/html")
-		allRoutes, err := getAllPosts(db)
-		fmt.Print(allRoutes)
-		if err != nil {
-			log.Fatal("HEEEEEEELLLLPPPPPP")
-			return
+		switch {
+		case searchString(apiRoute, "add/page"):
+
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+			res := apiCreatePost(w, r)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			err = json.NewEncoder(w).Encode(map[string]string{"result": res})
+			if err != nil {
+				return
+			}
+		case searchString(apiRoute, "get/posts"):
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusCreated)
+			err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
+			if err != nil {
+				return
+			}
 		}
-		ro := Routes{Title: "404", Pages: allRoutes}
-		if err := tmpl404.Execute(w, ro); err != nil {
+
+	case searchString(r.URL.Path, "/"):
+		tmplpage, err := template.ParseFiles("templates/page.html")
+		if err != nil {
+			log.Fatalf("Failed to parse template: %v", err)
+		}
+		ro := Routes{Title: "Home", Pages: allRoutes}
+		if err := tmplpage.Execute(w, ro); err != nil {
 			http.Error(w, "Failed to render template", http.StatusInternalServerError)
 			log.Printf("Template execution error: %v", err)
 		}
-		//}
-	})
-	http.HandleFunc("/blog", func(w http.ResponseWriter, r *http.Request) {
-		data := BlogPageData{
-			Title:       "My Blog",
-			Heading:     "Welcome to My Blog",
-			Description: "This is a simple blog page served by a Go server.",
-			Posts: []Post{
-				{Title: "First Post"},
-				{Title: "Second Post"},
-			},
-		}
-
-		// Render the template with data
-		fmt.Print(r.PathValue("*"))
-		w.Header().Set("Content-Type", "text/html")
-		if err := tmpl.Execute(w, data); err != nil {
-			http.Error(w, "Failed to render template", http.StatusInternalServerError)
-			log.Printf("Template execution error: %v", err)
-		}
-
-	})
+	}
 }
 
 func handleWildcard(w http.ResponseWriter, r *http.Request) {
@@ -112,4 +139,25 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	})
+}
+
+func blogpage(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/blog.html")
+	if err != nil {
+		log.Fatalf("Failed to parse template: %v", err)
+	}
+	data := BlogPageData{
+		Title:       r.URL.RawPath,
+		Heading:     "Welcome to My Blog",
+		Description: "This is a simple blog page served by a Go server.",
+		Posts: []Post{
+			{Title: r.Pattern},
+			{Title: r.URL.Path},
+		},
+	}
+	w.Header().Set("Content-Type", "text/html")
+	if err := tmpl.Execute(w, data); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		log.Printf("Template execution error: %v", err)
+	}
 }

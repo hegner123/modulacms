@@ -28,20 +28,20 @@
         <p> path was not found. Please check your spelling or use google.</p>
 
         <div class="form-row">
-            <form method="post" action="/add/page">
+            <form method="post" class="add-post-form" action="/api/add/page">
                 <label for="title">Title</label>
                 <br>
-                <input id="title" type="text">
+                <input id="title" name="title" type="text">
                 <br>
                 <br>
                 <label for="slug">Slug</label>
                 <br>
-                <input id="slug" type="text">
+                <input id="slug"  name="slug" type="text">
                 <br>
                 <br>
                 <label for="content">Content</label>
                 <br>
-                <input id="content" type="text">
+                <input id="content" name="content" type="text">
                 <br>
                 <button type="submit">Submit</button>
             </form>
@@ -50,10 +50,10 @@
             <ul>
                 {{range .Pages }}
                 <li>
-                        <p>{{  .Title }}</p>
-                        <p>{{ .Content }}</p>
+                    <p>{{ .Title }}</p>
+                    <p>{{ .Content }}</p>
 
-                    </li>
+                </li>
                 {{end}}
             </ul>
 
@@ -61,6 +61,17 @@
         </div>
 
     </main>
+    <script type="js">
+        function formDefault(){
+           let formSelector;
+            if (document.querySelector(".add-post-form")){
+                formSelector.addEventListener("submit",function(e){
+                    e.preventDefault()
+                })
+            }
+        }     
+        window.addEventListener("load",formDefault)
+    </script>
 </body>
 
 </html>

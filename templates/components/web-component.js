@@ -29,4 +29,7 @@ class MyComponent extends HTMLElement {
 
 // Define the new element
 customElements.define('my-component', MyComponent);
-
+window.addEventListener("load",app)
+function app(e){
+    e.preventDefault()
+}
