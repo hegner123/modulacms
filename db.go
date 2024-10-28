@@ -19,6 +19,7 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
             DROP TABLE IF EXISTS posts;
             DROP TABLE IF EXISTS fields;
             DROP TABLE IF EXISTS media;
+
             `)
 		if err != nil {
 			log.Fatal("I CAN'T FIND THE DATABASE CAPTIN!!!!\n Oh GOD IT'S GOT MY LEG!!!!")
