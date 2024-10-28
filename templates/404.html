@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        html {
+            font-family: sans-serif, system-ui;
+            color: white;
+        }
+
+        body {
+            background: #333;
+
+        }
+
+        .form-row {
+            display: flex;
+        }
+    </style>
+    <title>404</title>
+</head>
+
+<body>
+    <main>
+        <h1>404</h1>
+        <p> path was not found. Please check your spelling or use google.</p>
+
+        <div class="form-row">
+            <form method="post" action="/add/page">
+                <label for="title">Title</label>
+                <br>
+                <input id="title" type="text">
+                <br>
+                <br>
+                <label for="slug">Slug</label>
+                <br>
+                <input id="slug" type="text">
+                <br>
+                <br>
+                <label for="content">Content</label>
+                <br>
+                <input id="content" type="text">
+                <br>
+                <button type="submit">Submit</button>
+            </form>
+
+
+            <ul>
+                {{range .Pages }}
+                <li>
+                        <p>{{  .Title }}</p>
+                        <p>{{ .Content }}</p>
+
+                    </li>
+                {{end}}
+            </ul>
+
+
+        </div>
+
+    </main>
+</body>
+
+</html>

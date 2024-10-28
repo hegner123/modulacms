@@ -1,0 +1,7 @@
+{
+    "db_url": "default",
+    "db_name": "default",
+    "db_password": "none",
+    "bucket_url": "local",
+    "bucket_password": "none"
+}
