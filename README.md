@@ -12,10 +12,20 @@
 
 ## Proof of concept requires
 - Go Server
-- Go DB connection 
+- Go DB connection
+- Handle routes for admin
+- handle routes for frontend
+- admin auth - oAuth?
+- dashboard
+- post editor
+- media uploader
+Visible on admin frontend
+- s3 bucket connection
+- db connection, Sqlite, mysql, mariadb, postgres, etc.
+
 
 ## Thoughts
-- Query builder for admin. Dynamicaly build queries to show posts and post types.
+- Query builder for admin. Dynamically build queries to show posts and post types.
 - User management
 - DataAPI for user front end
 - Templates for admin front end 
@@ -23,10 +33,9 @@
 
 ## End Goal 
 - **CMS deliverable as an executable with templates.**
-- require load functions to register plugins and implement configs.
-- support plugins written in javascript.
+- Require load functions to register plugins and implement configs.
+- Support plugins written in Javascript.
     - Plugin API:
         - Use special keys to approve.
-- plugin support... 
 - integration support...
 

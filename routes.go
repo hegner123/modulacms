@@ -11,27 +11,13 @@ import (
 	"time"
 )
 
-//http.HandleFunc("/blog", func(w http.ResponseWriter, r *http.Request) {
-//})
-//mux := http.NewServeMux()
-
-// mux.HandleFunc("/api/", func(w http.ResponseWriter, r *http.Request) {
-// http.StripPrefix("/api/", http.HandlerFunc(handleWildcard)).ServeHTTP(w, r)
-// })
-
-// pageTempl, err := template.ParseFiles("templates/page.html")
-//
-//	if err != nil {
-//		log.Fatalf("Failed to parse template: %v", err)
-//	}
 
 func checkAPIPath(rawURL string) (bool, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return false, err // Return error if URL parsing fails
+		return false, err 
 	}
 
-	// Check if the path starts with "api/"
 	return strings.HasPrefix(parsedURL.Path, "/api/"), nil
 }
 func searchString(text, searchTerm string) bool {
@@ -41,13 +27,47 @@ func searchString(text, searchTerm string) bool {
 func stripAPIPath(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return "", err // Return error if URL parsing fails
+		return "", err 
 	}
 
-	// Remove "/api/" prefix if it exists
 	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/api/")
 	return parsedURL.String(), nil
 }
+
+
+
+func apiRoutes(w http.ResponseWriter, r *http.Request) {
+    fmt.Print("api Route\n")
+
+	apiRoute, err := stripAPIPath(r.URL.Path)
+	if err != nil {
+		fmt.Print("UM, this ain't a url bud.")
+		return
+	}
+	switch {
+	case searchString(apiRoute, "add/page"):
+
+		if r.Method != http.MethodPost {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		res := apiCreatePost(w, r)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(map[string]string{"result": res})
+		if err != nil {
+			return
+		}
+	case searchString(apiRoute, "get/posts"):
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
+		if err != nil {
+			return
+		}
+	}
+}
+
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 
 	db, err := getDb()
@@ -59,52 +79,14 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		log.Fatal("HEEEEEEELLLLPPPPPP")
 		return
 	}
-	isApiRoute, err := checkAPIPath(r.URL.Path)
+	tmplpage, err := template.ParseFiles("templates/page.html")
 	if err != nil {
-		fmt.Print("URL couldn't be parsed.")
-		return
+		log.Fatalf("Failed to parse template: %v", err)
 	}
-
-	switch {
-	case isApiRoute:
-		apiRoute, err := stripAPIPath(r.URL.Path)
-		if err != nil {
-			fmt.Print("UM, this ain't a url bud.")
-			return
-		}
-		switch {
-		case searchString(apiRoute, "add/page"):
-
-			if r.Method != http.MethodPost {
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-				return
-			}
-			res := apiCreatePost(w, r)
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			err = json.NewEncoder(w).Encode(map[string]string{"result": res})
-			if err != nil {
-				return
-			}
-		case searchString(apiRoute, "get/posts"):
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
-			if err != nil {
-				return
-			}
-		}
-
-	case searchString(r.URL.Path, "/"):
-		tmplpage, err := template.ParseFiles("templates/page.html")
-		if err != nil {
-			log.Fatalf("Failed to parse template: %v", err)
-		}
-		ro := Routes{Title: "Home", Pages: allRoutes}
-		if err := tmplpage.Execute(w, ro); err != nil {
-			http.Error(w, "Failed to render template", http.StatusInternalServerError)
-			log.Printf("Template execution error: %v", err)
-		}
+	ro := Routes{Title: "Home", Pages: allRoutes}
+	if err := tmplpage.Execute(w, ro); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		log.Printf("Template execution error: %v", err)
 	}
 }
 
