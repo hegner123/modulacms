@@ -7,5 +7,4 @@ import "database/sql"
 
 func registerAdminRoutes(db *sql.DB){
 
-
 }

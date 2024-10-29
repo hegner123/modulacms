@@ -13,38 +13,6 @@ import (
 // PageData holds the dynamic data to be rendered in the HTML template
 
 // Define the struct to match the JSON structure
-type Config struct {
-	DB_URL          string `json:"db_url"`
-	DB_NAME         string `json:"db_name"`
-	DB_PASSWORD     string `json:"db_password"`
-	Bucket_URL      string `json:"bucket_url"`
-	Bucket_PASSWORD string `json:"bucket_password"`
-}
-type User struct {
-	ID       int
-	UserName string
-	Name     string
-	Email    string
-	Hash     string
-	Role     string
-}
-
-type BlogPageData struct {
-	Title       string
-	Heading     string
-	Description string
-	Posts       []Post
-}
-
-type Page404 struct {
-	Title   string
-	Message string
-}
-
-type Routes struct {
-	Title string
-	Pages []Post
-}
 
 
 func main() {
