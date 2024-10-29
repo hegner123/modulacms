@@ -3,13 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
-    "path/filepath"
 	"log"
 	"net/http"
 	"os"
+	"path/filepath"
 )
-
-
 
 func main() {
 	verbose := flag.Bool("v", false, "Enable verbose mode")
@@ -23,21 +21,20 @@ func main() {
 			fmt.Printf("error deleting file\n")
 		}
 	}
-    loadConfig(verbose)
+	loadConfig(verbose)
 	db, err := initializeDatabase(*reset)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
 	}
 	defer db.Close()
 
-
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/" {
-            fmt.Print("page route\n")
+			fmt.Print("page route\n")
 			handlePageRoutes(w, r)
 		} else {
-            fmt.Print("static route\n")
+			fmt.Print("static route\n")
 			staticFileHandler(w, r)
 		}
 	})
@@ -47,7 +44,6 @@ func main() {
 	fs := http.FileServer(http.Dir("static/"))
 	mux.Handle("/static/", http.StripPrefix("/static", fs))
 
-
 	log.Println("\n\nServer is running at http://localhost:8080/blog")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
@@ -55,9 +51,8 @@ func main() {
 
 }
 
-
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join("public", r.URL.Path)
-    fmt.Print(filePath)
+	fmt.Print(filePath)
 	http.ServeFile(w, r, filePath)
 }
