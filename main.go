@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 )
 
 func main() {
@@ -55,12 +54,3 @@ func main() {
 
 }
 
-func staticFileHandler(w http.ResponseWriter, r *http.Request) {
-	filePath := filepath.Join("public", r.URL.Path)
-	fmt.Print(filePath)
-    if filepath.Ext(filePath) == ".js"{
-        
-		w.Header().Set("Content-Type", "text/javascript")
-    }
-	http.ServeFile(w, r, filePath)
-}

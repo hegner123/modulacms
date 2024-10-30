@@ -7,50 +7,56 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"time"
 )
 
+func staticFileHandler(w http.ResponseWriter, r *http.Request) {
+	filePath := filepath.Join("public", r.URL.Path)
+	fmt.Print(filePath)
+	if filepath.Ext(filePath) == ".js" {
+
+		w.Header().Set("Content-Type", "text/javascript")
+	}
+	http.ServeFile(w, r, filePath)
+}
 
 func checkAPIPath(rawURL string) (bool, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return false, err 
+		return false, err
 	}
-
 	return strings.HasPrefix(parsedURL.Path, "/api/"), nil
 }
-func searchString(text, searchTerm string) bool {
+
+func matchesPath(text, searchTerm string) bool {
 	return strings.Contains(text, searchTerm)
 }
 
 func stripAPIPath(rawURL string) (string, error) {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return "", err 
+		return "", err
 	}
-
 	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/api/")
 	return parsedURL.String(), nil
 }
 
-
-
 func apiRoutes(w http.ResponseWriter, r *http.Request) {
-    fmt.Print("api Route\n")
+	fmt.Print("api Route\n")
 
+	if r.Method != http.MethodPost {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
 	apiRoute, err := stripAPIPath(r.URL.Path)
 	if err != nil {
 		fmt.Print("UM, this ain't a url bud.")
 		return
 	}
 	switch {
-	case searchString(apiRoute, "add/page"):
-
-		if r.Method != http.MethodPost {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
+	case matchesPath(apiRoute, "add/page"):
 		res := apiCreatePost(w, r)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
@@ -58,7 +64,7 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			return
 		}
-	case searchString(apiRoute, "get/posts"):
+	case matchesPath(apiRoute, "get/posts"):
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
