@@ -12,7 +12,9 @@ import (
 func main() {
 	verbose := flag.Bool("v", false, "Enable verbose mode")
 	reset := flag.Bool("r", false, "Delete Database and reinitialize")
+
 	flag.Parse()
+    
 	if *reset {
 		fmt.Println("Verbose mode:")
 		err := os.Remove("./modula.db")
@@ -21,7 +23,9 @@ func main() {
 			fmt.Printf("error deleting file\n")
 		}
 	}
+
 	loadConfig(verbose)
+
 	db, err := initializeDatabase(*reset)
 	if err != nil {
 		log.Fatal("Failed to initialize database:", err)
@@ -41,8 +45,8 @@ func main() {
 
 	mux.HandleFunc("/api", apiRoutes)
 
-	fs := http.FileServer(http.Dir("static/"))
-	mux.Handle("/static/", http.StripPrefix("/static", fs))
+	//fs := http.FileServer(http.Dir("static/"))
+	//mux.Handle("/static/", http.StripPrefix("/static", fs))
 
 	log.Println("\n\nServer is running at http://localhost:8080/blog")
 	if err := http.ListenAndServe(":8080", mux); err != nil {
@@ -54,5 +58,9 @@ func main() {
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join("public", r.URL.Path)
 	fmt.Print(filePath)
+    if filepath.Ext(filePath) == ".js"{
+        
+		w.Header().Set("Content-Type", "text/javascript")
+    }
 	http.ServeFile(w, r, filePath)
 }

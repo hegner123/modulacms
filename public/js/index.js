@@ -1,4 +1,5 @@
 
+console.log("I loaded")
   document.querySelector("form").addEventListener("submit", async function(event) {
     event.preventDefault(); // Prevent the default form submission
 

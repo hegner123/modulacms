@@ -29,6 +29,7 @@ Visible on admin frontend
 - User management
 - DataAPI for user front end
 - Templates for admin front end 
+- WebComponents hook from go html templates for field id, etc.
 
 
 ## End Goal 
@@ -36,6 +37,6 @@ Visible on admin frontend
 - Require load functions to register plugins and implement configs.
 - Support plugins written in Javascript.
     - Plugin API:
-        - Use special keys to approve.
+        - Use special keys to register.
 - integration support...
 
