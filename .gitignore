@@ -21,5 +21,13 @@
 go.work
 go.work.sum
 
+# diagrams
+*.drawio
 # env file
 .env
+
+# Database
+*.db
+
+#binary
+modulacms
