@@ -44,8 +44,6 @@ func main() {
 
 	mux.HandleFunc("/api", apiRoutes)
 
-	//fs := http.FileServer(http.Dir("static/"))
-	//mux.Handle("/static/", http.StripPrefix("/static", fs))
 
 	log.Println("\n\nServer is running at http://localhost:8080/blog")
 	if err := http.ListenAndServe(":8080", mux); err != nil {

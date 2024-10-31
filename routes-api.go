@@ -53,6 +53,7 @@ func apiDeleteMetadata(){}
 
 func apiCreateUser(){}
 func apiGetUser(){}
+func apiAuthUser(){}
 func apiGetAllUsers(){}
 func apiUpdateUser(){}
 func apiDeleteUser(){}
