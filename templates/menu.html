@@ -1,0 +1,9 @@
+<nav class="nav">
+    <ul class="links">
+        {{range .Links}}
+        <li class="list-item">
+            <a href="{{.Slug}}">{{.Title}}</a>
+        </li>
+        {{end}}
+    </ul>
+</nav>

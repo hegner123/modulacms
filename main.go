@@ -71,6 +71,7 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if hasFileExtension(r.URL.Path) {
 			fmt.Print("static route\n")
@@ -82,6 +83,8 @@ func main() {
 	})
 
 	mux.HandleFunc("/api", apiRoutes)
+	mux.HandleFunc("/404", notFoundHandler)
+	
 	if useSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s", config.SSLPort)

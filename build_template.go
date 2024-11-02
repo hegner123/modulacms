@@ -1,6 +1,9 @@
 package main
 
 import (
+	"bytes"
+	"database/sql"
+	"fmt"
 	"html/template"
 	"log"
 )
@@ -8,6 +11,7 @@ import (
 type AdminPage struct {
 	HtmlFirst string
 	Head      string
+	Menu      string
 	Body      string
 	HtmlLast  string
 	Template  string
@@ -19,6 +23,7 @@ const htmlFirst string = `
 <html lang="en">
     `
 const htmlLast string = `
+    </body>
     </html>
     `
 
@@ -57,12 +62,17 @@ const htmlHead string = `
             </style>
             <title>{{.Title}}</title>
         </head>
+    <body>
     `
 
 func buildAdminTemplate(page AdminPage) template.Template {
+	db, err := getDb()
+	if err != nil {
+		fmt.Printf("\n%s", err)
+	}
 	mainTemplate := template.New("main")
 
-	mainTemplate, err := mainTemplate.Parse(page.HtmlFirst)
+	mainTemplate, err = mainTemplate.Parse(page.HtmlFirst)
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}
@@ -70,14 +80,53 @@ func buildAdminTemplate(page AdminPage) template.Template {
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}
+	menu := buildAdminMenu(db)
+	fmt.Printf("\n%s", menu)
+	mainTemplate, err = mainTemplate.Parse(menu)
+	if err != nil {
+		log.Fatalf("Failed to parse template: %v", err)
+	}
+    /*
 	mainTemplate, err = mainTemplate.ParseFiles("templates/" + page.Body)
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}
-
+*/
 	mainTemplate, err = mainTemplate.Parse(page.HtmlLast)
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}
 	return *mainTemplate
+}
+
+type Link struct {
+	Slug  string
+	Title string
+}
+
+type MenuLinks struct {
+	Links []Link
+}
+
+func buildAdminMenu(db *sql.DB) string {
+	var menuBuffer = bytes.Buffer{}
+	var menu MenuLinks
+	const link string = `<a href="%s">%s</a>`
+	posts, err := getAllAdminPosts(db)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	for i := 0; i < len(posts); i++ {
+        link := Link{Slug: posts[i].Slug,Title:  posts[i].Title}
+		menu.Links = append(menu.Links, link)
+	}
+	menuTemplate, err := template.ParseFiles("templates/menu.html")
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	err = menuTemplate.Execute(&menuBuffer, menu)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	return menuBuffer.String()
 }
