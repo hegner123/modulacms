@@ -30,6 +30,16 @@ type Post struct {
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
+type AdminPost struct {
+	ID           int    `json:"id"`
+	Slug         string `json:"slug"`
+	Title        string `json:"title"`
+	Status       int    `json:"status"`
+	DateCreated  int64  `json:"dateCreated"`
+	DateModified int64  `json:"dateModified"`
+	Content      string `json:"content"`
+	Template     string `json:"template"`
+}
 
 type Field struct {
 	ID           int    `json:"id"`
@@ -45,6 +55,9 @@ type Field struct {
 }
 
 type Config struct {
+	Port            string `json:"port"`
+	SSLPort         string `json:"ssl_port"`
+    ClientSite      string `json:"client_site"`
 	DB_URL          string `json:"db_url"`
 	DB_NAME         string `json:"db_name"`
 	DB_PASSWORD     string `json:"db_password"`

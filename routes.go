@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -52,6 +53,7 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 	apiRoute, err := stripAPIPath(r.URL.Path)
 	if err != nil {
 		fmt.Print("UM, this ain't a url bud.")
+		fmt.Printf("\nerror: %s", err)
 		return
 	}
 	switch {
@@ -61,6 +63,7 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(map[string]string{"result": res})
 		if err != nil {
+			fmt.Printf("\nerror: %s", err)
 			return
 		}
 	case matchesPath(apiRoute, "get/posts"):
@@ -68,31 +71,52 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
 		if err != nil {
+			fmt.Printf("\nerror: %s", err)
 			return
 		}
 	}
 }
 
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
+
 	db, err := getDb()
 	if err != nil {
+		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	slugRoute, err := matchSlugToRoute(db, r.URL.Path)
+	matchedPost, err := matchAdminSlugToRoute(db, r.URL.Path)
 	if err != nil {
+
+		fmt.Printf("\nerror: %s", r.URL.Path)
+		fmt.Printf("\nerror: %s", err)
 		return
 	}
+	adminPage := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: matchedPost.Template, HtmlLast: htmlLast}
+	adminTemplate := buildAdminTemplate(adminPage)
+    fmt.Printf("\nadmin template result %v", adminTemplate)
 
-	page := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: slugRoute.Slug, HtmlLast: htmlLast}
-	template := buildAdminTemplate(page)
-	fields, err := getPostFields(slugRoute, db)
-    if err!=nil {
-        return
-    }
-	if err := template.Execute(w, fields); err != nil {
+    /*
+		fields, err := getPostFields(slugRoute, db)
+		if err != nil {
+			fmt.Printf("error: %s", err)
+			return
+		}
+	*/
+	tmp, err := template.ParseFiles("templates/" + matchedPost.Template)
+	if err != nil {
+		fmt.Printf("\nerror: %s", err)
+		return
+	}
+	if err := tmp.Execute(w, nil); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		log.Printf("Template execution error: %v", err)
 	}
+	/*
+		if err := adminTemplate.Execute(w, fields); err != nil {
+			http.Error(w, "Failed to render template", http.StatusInternalServerError)
+			log.Printf("Template execution error: %v", err)
+		}
+	*/
 }
 
 func handleWildcard(w http.ResponseWriter, r *http.Request) {
@@ -105,6 +129,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		}
 		db, err := getDb()
 		if err != nil {
+			fmt.Printf("error: %s", err)
 			return
 		}
 

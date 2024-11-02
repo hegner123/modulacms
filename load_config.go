@@ -1,14 +1,14 @@
 package main
 
 import (
-    "os"
-    "log"
-    "io"
-    "fmt"
-    "encoding/json"
+	"encoding/json"
+	"fmt"
+	"io"
+	"log"
+	"os"
 )
 
-func loadConfig(verbose *bool){
+func loadConfig(verbose *bool) Config {
 
 	file, err := os.Open("config.json")
 	if err != nil {
@@ -37,6 +37,6 @@ func loadConfig(verbose *bool){
 			config.DB_PASSWORD, config.Bucket_URL, config.Bucket_PASSWORD)
 
 	}
-
+	return config
 
 }

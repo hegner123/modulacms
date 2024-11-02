@@ -70,7 +70,7 @@ func buildAdminTemplate(page AdminPage) template.Template {
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}
-	mainTemplate, err = mainTemplate.ParseFiles("/template/" + page.Body)
+	mainTemplate, err = mainTemplate.ParseFiles("templates/" + page.Body)
 	if err != nil {
 		log.Fatalf("Failed to parse template: %v", err)
 	}

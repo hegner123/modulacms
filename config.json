@@ -1,4 +1,7 @@
 {
+    "port": "8080",
+    "ssl_port": "443",
+    "client_site":"example.com",
     "db_url": "default",
     "db_name": "default",
     "db_password": "none",

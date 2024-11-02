@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"time"
+	"strings"
 )
 
 const mediaTable string = `
@@ -37,6 +37,20 @@ const userTable string = `
         hash TEXT,
         role TEXT);`
 
+const adminPostsTable string = `
+	CREATE TABLE IF NOT EXISTS adminposts (
+		id INTEGER PRIMARY KEY ,
+        slug TEXT NOT NULL,
+        author TEXT,
+        authorId INTEGER,
+		title TEXT,
+		status INTEGER NOT NULL,
+        dateCreated TEXT NOT NULL,
+        dateModified TEXT NOT NULL,
+        content TEXT NOT NULL,
+        type TEXT NOT NULL,
+        template TEXT  );`
+
 const postsTable string = `
 	CREATE TABLE IF NOT EXISTS posts (
 		id INTEGER PRIMARY KEY ,
@@ -67,12 +81,51 @@ const fieldsTable string = `
 const tables string = `
     CREATE TABLE IF NOT EXISTS tables (
     id INTEGER PRIMARY KEY,
-    label TEXT);
+    label TEXT UNIQUE);
     `
+
+var times = timestamp()
+var insertHomeRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title,status,dateCreated, dateModified, content, type,  template) VALUES 
+    ('/','home',0,%s,%s,"content","page",'default.html');
+    `, times, times)
+
+var insertPagesRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/pages', 'pages', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
+var insertTypesRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/types', 'types', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
+var insertFieldsRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/fields', 'fields', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
+var insertMenusRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/menus', 'menus', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
+var insertUsersRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/users', 'users', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
+var insertMediaRoute string = fmt.Sprintf(`
+    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
+    ('/media', 'media', 0, %s, %s, "content", "page", 'default.html');
+    `, times, times)
+
 const insertDefaultTables string = `
+    INSERT INTO tables (label) VALUES ('tables');
     INSERT INTO tables (label) VALUES ('fields');
     INSERT INTO tables (label) VALUES ('media');
     INSERT INTO tables (label) VALUES ('posts');
+    INSERT INTO tables (label) VALUES ('adminposts');
     INSERT INTO tables (label) VALUES ('users');
     `
 
@@ -81,11 +134,30 @@ func getDb() (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-    _, err = db.Exec("PRAGMA foreign_keys = ON;")
-    if err!=nil {
-        return nil, err
-    }
-    return db, nil
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+func RemoveTLD(domain string) string {
+	parts := strings.Split(domain, ".")
+	if len(parts) > 1 {
+		return strings.Join(parts[:len(parts)-1], ".")
+	}
+	return domain // return as-is if no TLD is found
+}
+
+func forEachStatement(db *sql.DB, statements []string) error {
+	for i := 0; i < len(statements); i++ {
+		_, err := db.Exec(statements[i])
+		fmt.Printf("\n%d", i)
+		if err != nil {
+			fmt.Print(err)
+			return err
+		}
+	}
+	return nil
 }
 
 func initializeDatabase(reset bool) (*sql.DB, error) {
@@ -97,6 +169,7 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 		res, err := db.Exec(`
             DROP TABLE IF EXISTS users;
             DROP TABLE IF EXISTS posts;
+            DROP TABLE IF EXISTS adminposts;
             DROP TABLE IF EXISTS fields;
             DROP TABLE IF EXISTS media;
             DROP TABLE IF EXISTS tables;
@@ -110,37 +183,34 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 		}
 	}
 
-	statements := [...]string{tables, insertDefaultTables, userTable, postsTable, fieldsTable, mediaTable}
-
-	for i := 0; i < len(statements); i++ {
-		_, err := db.Exec(statements[i])
-		if err != nil {
-			return db, err
-		}
+	statements := []string{tables, insertDefaultTables, userTable, adminPostsTable, postsTable, fieldsTable, mediaTable}
+	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute}
+	err = forEachStatement(db, statements)
+	if err != nil {
+		fmt.Printf("db exec err: %s", err)
+	}
+	err = forEachStatement(db, routes)
+	if err != nil {
+		fmt.Printf("db exec err: %s", err)
 	}
 
 	if reset {
 
 		seedDB(db)
-		newUser := User{UserName: "admin", Name: "Admin", Email: "admin@admin.com", Hash: "", Role: "0"}
-		userID, err := createUser(db, newUser)
-		if err != nil {
-			log.Fatal("Error creating user:", err)
-		}
-
-		fmt.Printf("New user ID: %d\n", userID)
-
-		user, err := getUserById(db, int(userID))
-		if err != nil {
-			log.Fatal("Error fetching user:", err)
-		}
-		fmt.Printf("Fetched User: %+v\n", user)
-
-		_, err = createPost(db, Post{Slug: "blog", Title: "Blog", Status: 0, DateCreated: time.Now().Unix(), DateModified: time.Now().Unix(), Content: "hello", Template: "page"})
-		if err != nil {
-			log.Fatal("I CAN'T MAKE THE POST CAPTIN!!!")
-		}
 
 	}
 	return db, err
+}
+
+func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error) {
+	dbName := RemoveTLD(clientDB)
+	db, err := sql.Open("sqlite3", "./"+dbName+".db")
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
