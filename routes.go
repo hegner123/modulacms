@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
@@ -75,22 +74,22 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
-
 	db, err := getDb()
 	if err != nil {
 		return
 	}
-	allRoutes, err := getAllPosts(db)
+	slugRoute, err := matchSlugToRoute(db, r.URL.Path)
 	if err != nil {
-		log.Fatal("HEEEEEEELLLLPPPPPP")
 		return
 	}
-	tmplpage, err := template.ParseFiles("templates/page.html")
-	if err != nil {
-		log.Fatalf("Failed to parse template: %v", err)
-	}
-	ro := Routes{Title: "Home", Pages: allRoutes}
-	if err := tmplpage.Execute(w, ro); err != nil {
+
+	page := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: slugRoute.Slug, HtmlLast: htmlLast}
+	template := buildAdminTemplate(page)
+	fields, err := getPostFields(slugRoute, db)
+    if err!=nil {
+        return
+    }
+	if err := template.Execute(w, fields); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		log.Printf("Template execution error: %v", err)
 	}
@@ -129,6 +128,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+/*
 func blogpage(w http.ResponseWriter, r *http.Request) {
 	tmpl, err := template.ParseFiles("templates/blog.html")
 	if err != nil {
@@ -149,3 +149,4 @@ func blogpage(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Template execution error: %v", err)
 	}
 }
+*/

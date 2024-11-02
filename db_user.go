@@ -1,11 +1,8 @@
-// user.go
 package main
 
 import (
 	"database/sql"
 )
-
-
 
 
 func createUser(db *sql.DB, user User) (int64, error) {

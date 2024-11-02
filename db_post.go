@@ -5,22 +5,12 @@ import (
 	"fmt"
 )
 
-type Post struct {
-	ID           int
-	Slug         string
-	Title        string
-	Status       int
-	DateCreated  int64
-	DateModified int64
-	Content      string
-	Template     string
-}
 
 func createPost(db *sql.DB, post Post) (int64, error) {
 	result, err := db.Exec("INSERT INTO posts (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
-		post.Slug, post.Title, post.Status, post.DateCreated, post.DateModified,post.Content, post.Template)
+		post.Slug, post.Title, post.Status, post.DateCreated, post.DateModified, post.Content, post.Template)
 	if err != nil {
-        fmt.Print(err)
+		fmt.Print(err)
 		return 0, err
 	}
 	return result.LastInsertId()
@@ -37,6 +27,16 @@ func postExists(db *sql.DB, name string) bool {
 	}
 	defer rows.Close()
 	return true
+
+}
+
+func matchSlugToRoute(db *sql.DB, slug string) (Post, error) {
+	var route Post
+	err := db.QueryRow(`SELECT template FROM posts WHERE slug LIKE ?;`, slug).Scan(&route.Template)
+	if err != nil {
+		return route, err
+	}
+	return route, nil
 
 }
 
