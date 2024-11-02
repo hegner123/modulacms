@@ -34,3 +34,5 @@ modulacms
 
 #references
 references/
+
+*.pem

@@ -9,6 +9,10 @@ import (
 )
 
 func main() {
+    //add function to check for existance of keys
+    //if not found log error w/ bash to create cert and link to docs
+    //if found continue
+
 	verbose := flag.Bool("v", false, "Enable verbose mode")
 	reset := flag.Bool("r", false, "Delete Database and reinitialize")
 
@@ -46,7 +50,7 @@ func main() {
 
 
 	log.Println("\n\nServer is running at http://localhost:8080/blog")
-	if err := http.ListenAndServe(":8080", mux); err != nil {
+	if err := http.ListenAndServeTLS(":443","cert.pem","key.pem", mux); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
