@@ -1,5 +1,9 @@
 package main
 
+type Database struct {
+    DB string
+}
+
 type Media struct {
 	Id                 int32  `json:"id"`
 	Name               string `json:"name"`
@@ -46,12 +50,13 @@ type Field struct {
 	PostID       int    `json:"postId"`
 	Author       string `json:"author"`
 	AuthorID     string `json:"authorId"`
+    Key          string `json:"key"`
 	Data         string `json:"data"`
 	DateCreated  string `json:"dateCreated"`
 	DateModified string `json:"dateModified"`
 	Component    string `json:"component"`
 	Tags         string `json:"tags"`
-	Parent       int    `json:"parent"`
+	Parent       string    `json:"parent"`
 }
 
 type Config struct {

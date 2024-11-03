@@ -12,7 +12,7 @@ func apiCreatePost(w http.ResponseWriter, r *http.Request) string {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return "Couldn't parse form"
 	}
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		return "Couldn't get db"
 	}
@@ -30,7 +30,7 @@ func apiCreatePost(w http.ResponseWriter, r *http.Request) string {
 }
 func apiGetAllPosts() ([]Post, error) {
 	fetchedPosts := []Post{}
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		return fetchedPosts, err
 	}
@@ -46,7 +46,7 @@ func apiGetPost(w http.ResponseWriter, r *http.Request) (Post, error) {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 		return fetchedPost, err
 	}
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		return fetchedPost, err
 	}
@@ -64,13 +64,10 @@ func apiGetPost(w http.ResponseWriter, r *http.Request) (Post, error) {
 func apiUpdatePost() {}
 func apiDeletePost() {}
 
-func apiCreateField()         {}
 func apiGetField()            {}
 func apiGetAllFieldsForPost() {}
 func apiUpdateField()         {}
-func apiDeleteField()         {}
 
-func apiCreateUser()  {}
 func apiGetUser()     {}
 func apiAuthUser()    {}
 func apiGetAllUsers() {}
@@ -80,5 +77,3 @@ func apiDeleteUser()  {}
 func apiCreateMedia()  {}
 func apiGetMedia()     {}
 func apiGetAllMedias() {}
-func apiUpdateMedia()  {}
-func apiDeleteMedia()  {}

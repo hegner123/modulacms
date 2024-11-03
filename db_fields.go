@@ -7,8 +7,7 @@ import (
 func getPostFields(postId Post, db *sql.DB) ([]Field, error) {
 	var fields []Field
 
-	// Query only the fields we need (slug, title, and template)
-	rows, err := db.Query("SELECT slug, title, template FROM posts")
+	rows, err := db.Query("SELECT * FROM fields WHERE postid = ?;", 4)
 	if err != nil {
 		return nil, err
 	}
@@ -17,7 +16,9 @@ func getPostFields(postId Post, db *sql.DB) ([]Field, error) {
 	for rows.Next() {
 		field := Field{}
 		// Only scan into the selected fields
-		if err := rows.Scan(&field.Data, &field.Parent); err != nil {
+		if err := rows.Scan(&field.ID, &field.PostID, &field.Author,
+			&field.AuthorID, &field.Key, &field.Data, &field.DateCreated,
+			&field.DateModified, &field.Component, &field.Tags, &field.Parent); err != nil {
 			return nil, err
 		}
 		fields = append(fields, field)

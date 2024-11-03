@@ -48,7 +48,6 @@ func getPostById(db *sql.DB, id int) (Post, error) {
 
 func getAllPosts(db *sql.DB) ([]Post, error) {
 	var posts []Post
-	// Query only the fields we need (slug, title, and template)
 	rows, err := db.Query("SELECT slug, title, template FROM posts")
 	if err != nil {
 		return posts, err
@@ -57,14 +56,12 @@ func getAllPosts(db *sql.DB) ([]Post, error) {
 
 	for rows.Next() {
 		post := Post{}
-		// Only scan into the selected fields
 		if err := rows.Scan(&post.Slug, &post.Title, &post.Template); err != nil {
 			return posts, err
 		}
 		posts = append(posts, post)
 	}
 
-	// Check for errors from iterating over rows
 	if err := rows.Err(); err != nil {
 		return posts, err
 	}

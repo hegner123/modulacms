@@ -5,7 +5,6 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"log"
-	"strings"
 )
 
 const mediaTable string = `
@@ -71,12 +70,13 @@ const fieldsTable string = `
         postId INTEGER NOT NULL,
         author TEXT,
         authorId TEXT,
+        key TEXT,
         data TEXT,
         dateCreated TEXT,
         dateModified TEXT,
         component TEXT,
         tags TEXT,
-        parent INTEGER);`
+        parent string);`
 
 const tables string = `
     CREATE TABLE IF NOT EXISTS tables (
@@ -120,6 +120,27 @@ var insertMediaRoute string = fmt.Sprintf(`
     ('/media', 'media', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
+var insertTestField string = fmt.Sprintf(`
+    INSERT INTO fields (postId, author, authorId, key, data, dateCreated, dateModified, component, tags,parent) VALUES
+    (4,'system','0','link_url','https://example.com',%s, %s,'link.html','','');
+    `, "1730634309", "1730634309")
+
+/*
+const fieldsTable string = `
+
+	CREATE TABLE IF NOT EXISTS fields(
+	    id INTEGER PRIMARY KEY ,
+	    postId INTEGER NOT NULL,
+	    author TEXT,
+	    authorId TEXT,
+	    key TEXT,
+	    data TEXT,
+	    dateCreated TEXT,
+	    dateModified TEXT,
+	    component TEXT,
+	    tags TEXT,
+	    parent INTEGER);`
+*/
 const insertDefaultTables string = `
     INSERT INTO tables (label) VALUES ('tables');
     INSERT INTO tables (label) VALUES ('fields');
@@ -129,8 +150,11 @@ const insertDefaultTables string = `
     INSERT INTO tables (label) VALUES ('users');
     `
 
-func getDb() (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", "./modula.db")
+func getDb(dbName Database) (*sql.DB, error) {
+    if dbName.DB == "" {
+        dbName.DB = "./modula.db"
+    }
+	db, err := sql.Open("sqlite3", dbName.DB)
 	if err != nil {
 		return nil, err
 	}
@@ -140,28 +164,10 @@ func getDb() (*sql.DB, error) {
 	}
 	return db, nil
 }
-func RemoveTLD(domain string) string {
-	parts := strings.Split(domain, ".")
-	if len(parts) > 1 {
-		return strings.Join(parts[:len(parts)-1], ".")
-	}
-	return domain // return as-is if no TLD is found
-}
 
-func forEachStatement(db *sql.DB, statements []string) error {
-	for i := 0; i < len(statements); i++ {
-		_, err := db.Exec(statements[i])
-		fmt.Printf("\n%d", i)
-		if err != nil {
-			fmt.Print(err)
-			return err
-		}
-	}
-	return nil
-}
 
 func initializeDatabase(reset bool) (*sql.DB, error) {
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		return nil, err
 	}
@@ -184,21 +190,16 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 	}
 
 	statements := []string{tables, insertDefaultTables, userTable, adminPostsTable, postsTable, fieldsTable, mediaTable}
-	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute}
+	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute, insertTestField}
 	err = forEachStatement(db, statements)
 	if err != nil {
 		fmt.Printf("db exec err: %s", err)
 	}
-	err = forEachStatement(db, routes)
-	if err != nil {
-		fmt.Printf("db exec err: %s", err)
-	}
+    err = forEachStatement(db, routes)
+    if err != nil {
+        fmt.Printf("db exec err: %s", err)
+    }
 
-	if reset {
-
-		seedDB(db)
-
-	}
 	return db, err
 }
 

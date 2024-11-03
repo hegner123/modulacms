@@ -79,7 +79,7 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
@@ -94,23 +94,23 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 	adminPage := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: matchedPost.Template, HtmlLast: htmlLast}
 	adminTemplate := buildAdminTemplate(adminPage)
 
-	/*
-		fields, err := getPostFields(slugRoute, db)
+    /*
+			fields, err := getPostFields(slugRoute, db)
+			if err != nil {
+				fmt.Printf("error: %s", err)
+				return
+			}
+		tmp, err := template.ParseFiles("templates/" + matchedPost.Template)
 		if err != nil {
-			fmt.Printf("error: %s", err)
+			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	tmp, err := template.ParseFiles("templates/" + matchedPost.Template)
-	if err != nil {
-		fmt.Printf("\nerror: %s", err)
-		return
-	}
-*/
+	*/
 	/*if err := tmp.Execute(w, nil); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		log.Printf("Template execution error: %v", err)
 	}
-*/
+	*/
 	if err := adminTemplate.Execute(w, nil); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		log.Printf("Template execution error: %v", err)
@@ -141,7 +141,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		db, err := getDb()
+		db, err := getDb(Database{})
 		if err != nil {
 			fmt.Printf("error: %s", err)
 			return

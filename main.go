@@ -19,26 +19,7 @@ func main() {
 	//add function to check for existance of keys
 	//if not found log error w/ bash to create cert and link to docs
 	//if found continue
-	var useSSL = true
-	var dbFileExists = true
-	_, err := os.Open("modula.db")
-	if err != nil {
-		dbFileExists = false
-	}
-	var cert, key bool
-	_, err = os.Open("cert.pem")
-	cert = true
-	if err != nil {
-		cert = false
-	}
-	_, err = os.Open("key.pem")
-	key = true
-	if err != nil {
-		key = false
-	}
-	if !cert || !key {
-		useSSL = false
-	}
+	
 
 	verbose := flag.Bool("v", false, "Enable verbose mode")
 	reset := flag.Bool("r", false, "Delete Database and reinitialize")
@@ -53,6 +34,7 @@ func main() {
 			log.Fatal("Error deleting file:", err)
 		}
 	}
+    useSSL, dbFileExists := initFileCheck()
 
 	if config.ClientSite != "" {
 		clientDB, err := initializeClientDatabase(config.ClientSite, *reset)
@@ -88,15 +70,39 @@ func main() {
 	if useSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s", config.SSLPort)
-		err = http.ListenAndServeTLS(":"+config.SSLPort, "cert.pem", "./key.pem", mux)
+        err := http.ListenAndServeTLS(":"+config.SSLPort, "cert.pem", "./key.pem", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
 	log.Printf("\n\nServer is running at localhost:%s", config.Port)
-	err = http.ListenAndServe(":"+config.Port, mux)
+    err := http.ListenAndServe(":"+config.Port, mux)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 
+}
+
+func initFileCheck()(bool, bool){
+var useSSL = true
+	var dbFileExists = true
+	_, err := os.Open("modula.db")
+	if err != nil {
+		dbFileExists = false
+	}
+	var cert, key bool
+	_, err = os.Open("cert.pem")
+	cert = true
+	if err != nil {
+		cert = false
+	}
+	_, err = os.Open("key.pem")
+	key = true
+	if err != nil {
+		key = false
+	}
+	if !cert || !key {
+		useSSL = false
+	}
+return useSSL,dbFileExists
 }

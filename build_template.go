@@ -66,7 +66,7 @@ const htmlHead string = `
     `
 
 func buildAdminTemplate(page AdminPage) template.Template {
-	db, err := getDb()
+	db, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\n%s", err)
 	}
