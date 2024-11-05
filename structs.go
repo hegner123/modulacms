@@ -1,7 +1,7 @@
 package main
 
 type Database struct {
-    DB string
+	DB string
 }
 
 type Media struct {
@@ -12,9 +12,10 @@ type Media struct {
 	Caption            string `json:"caption"`
 	Description        string `json:"description"`
 	Class              string `json:"class"`
-	CreatedBy          int32  `json:"createdBy"`
-	DateCreated        string `json:"dateCreated"`
-	DateModified       string `json:"dateModified"`
+	Author             string `json:"author"`
+	AuthorID           int    `json:"authorid"`
+	DateCreated        string `json:"datecreated"`
+	DateModified       string `json:"datemodified"`
 	Url                string `json:"url"`
 	MimeType           string `json:"mimeType"`
 	Dimensions         string `json:"dimensions"`
@@ -26,21 +27,25 @@ type Media struct {
 
 type Post struct {
 	ID           int    `json:"id"`
+	Author       string `json:"author"`
+	AuthorID     string `json:"authorId"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  int64  `json:"dateCreated"`
-	DateModified int64  `json:"dateModified"`
+	DateCreated  int64  `json:"datecreated"`
+	DateModified int64  `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
 type AdminPost struct {
 	ID           int    `json:"id"`
+	Author       string `json:"author"`
+	AuthorID     string `json:"authorId"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  int64  `json:"dateCreated"`
-	DateModified int64  `json:"dateModified"`
+	DateCreated  int64  `json:"datecreated"`
+	DateModified int64  `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
@@ -50,19 +55,19 @@ type Field struct {
 	PostID       int    `json:"postId"`
 	Author       string `json:"author"`
 	AuthorID     string `json:"authorId"`
-    Key          string `json:"key"`
+	Key          string `json:"key"`
 	Data         string `json:"data"`
-	DateCreated  string `json:"dateCreated"`
-	DateModified string `json:"dateModified"`
+	DateCreated  string `json:"datecreated"`
+	DateModified string `json:"datemodified"`
 	Component    string `json:"component"`
 	Tags         string `json:"tags"`
-	Parent       string    `json:"parent"`
+	Parent       string `json:"parent"`
 }
 
 type Config struct {
 	Port            string `json:"port"`
 	SSLPort         string `json:"ssl_port"`
-    ClientSite      string `json:"client_site"`
+	ClientSite      string `json:"client_site"`
 	DB_URL          string `json:"db_url"`
 	DB_NAME         string `json:"db_name"`
 	DB_PASSWORD     string `json:"db_password"`
@@ -72,8 +77,8 @@ type Config struct {
 
 type User struct {
 	ID           int    `json:"id"`
-	DateCreated  string `json:"dateCreated"`
-	DateModified string `json:"dateModified"`
+	DateCreated  string `json:"datecreated"`
+	DateModified string `json:"datemodified"`
 	UserName     string `json:"username"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`

@@ -91,30 +91,31 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	adminPage := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: matchedPost.Template, HtmlLast: htmlLast}
-	adminTemplate := buildAdminTemplate(adminPage)
+	/*
+		adminPage := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: matchedPost.Template, HtmlLast: htmlLast}
+		adminTemplate := buildAdminTemplate(adminPage)
 
-    /*
-			fields, err := getPostFields(slugRoute, db)
-			if err != nil {
-				fmt.Printf("error: %s", err)
-				return
-			}
-		tmp, err := template.ParseFiles("templates/" + matchedPost.Template)
-		if err != nil {
-			fmt.Printf("\nerror: %s", err)
-			return
+				fields, err := getPostFields(slugRoute, db)
+				if err != nil {
+					fmt.Printf("error: %s", err)
+					return
+				}
+	*/
+	tmp, err := template.ParseFiles("templates/" + matchedPost.Template)
+	if err != nil {
+		fmt.Printf("\nerror: %s", err)
+		return
+	}
+	if err := tmp.Execute(w, nil); err != nil {
+		http.Error(w, "Failed to render template", http.StatusInternalServerError)
+		log.Printf("Template execution error: %v", err)
+	}
+	/*
+		if err := adminTemplate.Execute(w, nil); err != nil {
+			http.Error(w, "Failed to render template", http.StatusInternalServerError)
+			log.Printf("Template execution error: %v", err)
 		}
 	*/
-	/*if err := tmp.Execute(w, nil); err != nil {
-		http.Error(w, "Failed to render template", http.StatusInternalServerError)
-		log.Printf("Template execution error: %v", err)
-	}
-	*/
-	if err := adminTemplate.Execute(w, nil); err != nil {
-		http.Error(w, "Failed to render template", http.StatusInternalServerError)
-		log.Printf("Template execution error: %v", err)
-	}
 }
 func redirectTo404(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/404", http.StatusNotFound)

@@ -54,7 +54,8 @@ func createMedia(db *sql.DB, media Media) (int64, error) {
 }
 
 func deleteMediaByName(db *sql.DB, column string, value string) (int64, error) {
-	query := fmt.Sprintf("DELETE FROM media WHERE %s='%s';", column, value)
+	query := fmt.Sprintf(`DELETE FROM media WHERE %s='%s';`, column, value)
+    fmt.Print(query)
 	result, err := db.Exec(query)
 	if err != nil {
 		fmt.Printf("%s\n", err)

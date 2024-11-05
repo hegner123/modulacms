@@ -112,7 +112,7 @@ func buildAdminMenu(db *sql.DB) string {
 	var menuBuffer = bytes.Buffer{}
 	var menu MenuLinks
 	const link string = `<a href="%s">%s</a>`
-	posts, err := getAllAdminPosts(db)
+	posts, err := getAllAdminRoutes(db)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}

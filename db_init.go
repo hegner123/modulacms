@@ -9,43 +9,46 @@ import (
 
 const mediaTable string = `
     CREATE TABLE IF NOT EXISTS media (
-    id INTEGER PRIMARY KEY,
-    name TEXT NOT NULL,
-    displayName TEXT,
-    alt TEXT,
-    caption TEXT,
-    description TEXT,
-    class TEXT,
-    createdBy INTEGER,
-    dateCreated TEXT,
-    dateModified TEXT,
-    url TEXT,
-    mimeType TEXT,
-    dimensions TEXT,
-    optimizedMobile TEXT,
-    optimizedTablet TEXT,
-    optimizedDesktop TEXT,
-    optimizedUltrawide TEXT);`
+        id INTEGER PRIMARY KEY,
+        name TEXT NOT NULL,
+        displayName TEXT,
+        alt TEXT,
+        caption TEXT,
+        description TEXT,
+        class TEXT,
+        author TEXT,
+        authorId INTEGER,
+        datecreated TEXT,
+        datemodified TEXT,
+        url TEXT,
+        mimeType TEXT,
+        dimensions TEXT,
+        optimizedMobile TEXT,
+        optimizedTablet TEXT,
+        optimizedDesktop TEXT,
+        optimizedUltrawide TEXT);`
 
 const userTable string = `
 	CREATE TABLE IF NOT EXISTS users (
 		id INTEGER PRIMARY KEY ,
+        datecreated TEXT ,
+        datemodified TEXT,
         username TEXT,
 		name TEXT,
-		email TEXT UNIQUE,
+		email TEXT UNIQUE ,
         hash TEXT,
         role TEXT);`
 
-const adminPostsTable string = `
-	CREATE TABLE IF NOT EXISTS adminposts (
+const adminRoutesTable string = `
+	CREATE TABLE IF NOT EXISTS adminroutes (
 		id INTEGER PRIMARY KEY ,
         slug TEXT NOT NULL,
         author TEXT,
         authorId INTEGER,
 		title TEXT,
 		status INTEGER NOT NULL,
-        dateCreated TEXT NOT NULL,
-        dateModified TEXT NOT NULL,
+        datecreated TEXT NOT NULL,
+        datemodified TEXT NOT NULL,
         content TEXT NOT NULL,
         type TEXT NOT NULL,
         template TEXT  );`
@@ -58,8 +61,8 @@ const postsTable string = `
         authorId INTEGER,
 		title TEXT,
 		status INTEGER NOT NULL,
-        dateCreated TEXT NOT NULL,
-        dateModified TEXT NOT NULL,
+        datecreated TEXT NOT NULL,
+        datemodified TEXT NOT NULL,
         content TEXT NOT NULL,
         type TEXT NOT NULL,
         template TEXT  );`
@@ -72,8 +75,8 @@ const fieldsTable string = `
         authorId TEXT,
         key TEXT,
         data TEXT,
-        dateCreated TEXT,
-        dateModified TEXT,
+        datecreated TEXT,
+        datemodified TEXT,
         component TEXT,
         tags TEXT,
         parent string);`
@@ -86,44 +89,60 @@ const tables string = `
 
 var times = timestamp()
 var insertHomeRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title,status,dateCreated, dateModified, content, type,  template) VALUES 
-    ('/','home',0,%s,%s,"content","page",'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/','system',0 ,'home',0,%s,%s,"content","page",'default.html');
     `, times, times)
 
 var insertPagesRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/pages', 'pages', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/pages','system',0 ,'pages', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertTypesRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/types', 'types', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/types','system',0 ,'types', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertFieldsRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/fields', 'fields', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/fields','system',0, 'fields', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertMenusRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/menus', 'menus', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/menus','system',0 ,'menus', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertUsersRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/users', 'users', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/users','system',0, 'users', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertMediaRoute string = fmt.Sprintf(`
-    INSERT INTO adminposts (slug, title, status, dateCreated, dateModified, content, type, template) VALUES 
-    ('/media', 'media', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status,datecreated, datemodified, content, type,  template) VALUES 
+    ('/media','system',0, 'media', 0, %s, %s, "content", "page", 'default.html');
     `, times, times)
 
 var insertTestField string = fmt.Sprintf(`
-    INSERT INTO fields (postId, author, authorId, key, data, dateCreated, dateModified, component, tags,parent) VALUES
+    INSERT INTO fields (postId, author, authorId, key, data, datecreated, datemodified, component, tags,parent) VALUES
     (4,'system','0','link_url','https://example.com',%s, %s,'link.html','','');
     `, "1730634309", "1730634309")
+
+
+/*
+	CREATE TABLE IF NOT EXISTS users (
+		id INTEGER PRIMARY KEY ,
+        datecreated TEXT ,
+        datemodified TEXT,
+        username TEXT,
+		name TEXT,
+		email TEXT UNIQUE ,
+        hash TEXT,
+        role TEXT);`*/
+var insertSystemUser string = fmt.Sprintf(`
+    INSERT INTO users (datecreated, datemodified, username, name, email, hash, role) VALUES 
+    ('%s','%s','system', 'system', 'system@system.com', 'hash', 'root');
+    `, times, times)
 
 /*
 const fieldsTable string = `
@@ -135,8 +154,8 @@ const fieldsTable string = `
 	    authorId TEXT,
 	    key TEXT,
 	    data TEXT,
-	    dateCreated TEXT,
-	    dateModified TEXT,
+	    datecreated TEXT,
+	    datemodified TEXT,
 	    component TEXT,
 	    tags TEXT,
 	    parent INTEGER);`
@@ -146,42 +165,45 @@ const insertDefaultTables string = `
     INSERT INTO tables (label) VALUES ('fields');
     INSERT INTO tables (label) VALUES ('media');
     INSERT INTO tables (label) VALUES ('posts');
-    INSERT INTO tables (label) VALUES ('adminposts');
+    INSERT INTO tables (label) VALUES ('adminroutes');
     INSERT INTO tables (label) VALUES ('users');
     `
 
 func getDb(dbName Database) (*sql.DB, error) {
-    if dbName.DB == "" {
-        dbName.DB = "./modula.db"
-    }
+	if dbName.DB == "" {
+		dbName.DB = "./modula.db"
+	}
 	db, err := sql.Open("sqlite3", dbName.DB)
 	if err != nil {
+		fmt.Printf("db exec err db_init 007 : %s", err)
 		return nil, err
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
+		fmt.Printf("db exec err db_init 008 : %s", err)
 		return nil, err
 	}
 	return db, nil
 }
 
-
 func initializeDatabase(reset bool) (*sql.DB, error) {
 	db, err := getDb(Database{})
 	if err != nil {
+		fmt.Printf("db exec err db_init 009 : %s", err)
 		return nil, err
 	}
 	if reset {
 		res, err := db.Exec(`
             DROP TABLE IF EXISTS users;
             DROP TABLE IF EXISTS posts;
-            DROP TABLE IF EXISTS adminposts;
+            DROP TABLE IF EXISTS adminroutes;
             DROP TABLE IF EXISTS fields;
             DROP TABLE IF EXISTS media;
             DROP TABLE IF EXISTS tables;
 
             `)
 		if err != nil {
+		    fmt.Printf("db exec err db_init 006 : %s", err)
 			log.Fatal("I CAN'T FIND THE DATABASE CAPTIN!!!!\n Oh GOD IT'S GOT MY LEG!!!!")
 		}
 		if res != nil {
@@ -189,16 +211,21 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 		}
 	}
 
-	statements := []string{tables, insertDefaultTables, userTable, adminPostsTable, postsTable, fieldsTable, mediaTable}
+	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, postsTable, fieldsTable, mediaTable}
 	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute, insertTestField}
+	systemUser := []string{insertSystemUser}
 	err = forEachStatement(db, statements)
 	if err != nil {
-		fmt.Printf("db exec err: %s", err)
+		fmt.Printf("db exec err db_init 001 : %s", err)
 	}
-    err = forEachStatement(db, routes)
-    if err != nil {
-        fmt.Printf("db exec err: %s", err)
-    }
+	err = forEachStatement(db, routes)
+	if err != nil {
+		fmt.Printf("db exec err db_init 002  : %s", err)
+	}
+	err = forEachStatement(db, systemUser)
+	if err != nil {
+		fmt.Printf("db exec err db_init 003 : %s", err)
+	}
 
 	return db, err
 }
@@ -207,11 +234,14 @@ func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error
 	dbName := RemoveTLD(clientDB)
 	db, err := sql.Open("sqlite3", "./"+dbName+".db")
 	if err != nil {
+		fmt.Printf("db exec err db_init 004 : %s", err)
 		return nil, err
 	}
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+    res, err := db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
+		fmt.Printf("db exec err db_init 005 : %s", err)
 		return nil, err
 	}
+    fmt.Print(res)
 	return db, nil
 }

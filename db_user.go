@@ -4,12 +4,11 @@ import (
 	"database/sql"
 )
 
-
 func createUser(db *sql.DB, user User) (int64, error) {
-	result, err := db.Exec(queryCreateBuilder(user,"users"), user.UserName, user.Name, user.Email, user.Hash, user.Role)
+	result, err := db.Exec(queryCreateBuilder(user, "users"), user.DateCreated, user.DateModified, user.UserName, user.Name, user.Email, user.Hash, user.Role)
 	if err != nil {
 		return 0, err
-	} 
+	}
 	return result.LastInsertId()
 }
 

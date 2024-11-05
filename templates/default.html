@@ -21,7 +21,12 @@
             padding: 20px;
         }
 
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             color: #f1f1f1;
         }
 
@@ -37,24 +42,180 @@
         a:hover {
             text-decoration: underline;
         }
+
+        .form-container {
+            display: flex;
+            flex-direction: column;
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+
+        .form-header {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .form-group {
+            width: 48%;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+
+        .error {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        .submit-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .spinner,
+        .modal {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .modal {
+            padding: 15px;
+            background-color: #dff0d8;
+            border: 1px solid #d6e9c6;
+            color: #3c763d;
+            border-radius: 5px;
+        }
     </style>
 </head>
+
 <body>
-    <header>
-        <h1>Welcome to the Dark Theme Page</h1>
-        <p>This is a simple HTML page with a dark background and light text.</p>
-    </header>
-    <main>
-        <section>
-            <h2>About This Page</h2>
-            <p>This page is styled with a dark theme, which is easier on the eyes in low-light environments.</p>
-            <p>All text is styled to be light-colored, and links are highlighted in a subtle blue shade.</p>
-        </section>
-        <section>
-            <h2>Links and Resources</h2>
-            <p>For more information, visit <a href="https://github.com/hegner123/modulacms" target="_blank">Github Repo</a>.</p>
-        </section>
-    </main>
+
+    <div class="form-container">
+        <div class="form-header">Create Field</div>
+        <form id="createFieldForm">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="postId">Post ID</label>
+                    <input type="number" id="postId" name="postId" required>
+                    <span class="error" id="postIdError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="author">Author</label>
+                    <input type="text" id="author" name="author">
+                    <span class="error" id="authorError"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="authorId">Author ID</label>
+                    <input type="text" id="authorId" name="authorId">
+                    <span class="error" id="authorIdError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="key">Key</label>
+                    <input type="text" id="key" name="key">
+                    <span class="error" id="keyError"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="data">Data</label>
+                    <input type="text" id="data" name="data">
+                    <span class="error" id="dataError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="dateCreated">Date Created</label>
+                    <input type="date" id="dateCreated" name="dateCreated">
+                    <span class="error" id="dateCreatedError"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dateModified">Date Modified</label>
+                    <input type="date" id="dateModified" name="dateModified">
+                    <span class="error" id="dateModifiedError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="component">Component</label>
+                    <input type="text" id="component" name="component">
+                    <span class="error" id="componentError"></span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="tags">Tags</label>
+                    <input type="text" id="tags" name="tags">
+                    <span class="error" id="tagsError"></span>
+                </div>
+                <div class="form-group">
+                    <label for="parent">Parent</label>
+                    <input type="text" id="parent" name="parent">
+                    <span class="error" id="parentError"></span>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-button">Submit</button>
+        </form>
+
+        <div class="spinner" id="loadingSpinner">Loading...</div>
+        <div class="modal" id="successModal">Field created successfully!</div>
+    </div>
+
+    <script>
+        const form = document.getElementById('createFieldForm');
+        const spinner = document.getElementById('loadingSpinner');
+        const modal = document.getElementById('successModal');
+
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            // Show loading spinner
+            spinner.style.display = 'block';
+
+            // Simulate form submission delay
+            setTimeout(() => {
+                spinner.style.display = 'none';
+                modal.style.display = 'block';
+
+                setTimeout(() => {
+                    modal.style.display = 'none';
+                    form.reset();
+                }, 2000);
+            }, 1500);
+        });
+    </script>
 </body>
 </html>
-
