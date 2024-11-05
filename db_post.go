@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-
 func createPost(db *sql.DB, post Post) (int64, error) {
 	result, err := db.Exec("INSERT INTO posts (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
 		post.Slug, post.Title, post.Status, post.DateCreated, post.DateModified, post.Content, post.Template)

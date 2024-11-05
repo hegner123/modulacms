@@ -5,14 +5,14 @@ import (
 	"fmt"
 )
 
-func forEachStatement(db *sql.DB, statements []string) error {
+func forEachStatement(db *sql.DB, statements []string, label string) error {
 	for i := 0; i < len(statements); i++ {
 		_, err := db.Exec(statements[i])
-		fmt.Printf("\n%d", i)
 		if err != nil {
 			fmt.Print(err)
 			return err
 		}
 	}
+    fmt.Printf("%s inserted successfully\n",label)
 	return nil
 }

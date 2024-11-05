@@ -42,7 +42,7 @@ func dbGetMediaByName(db *sql.DB, name string) (Media, error) {
 	return media, nil
 }
 
-func createMedia(db *sql.DB, media Media) (int64, error) {
+func dbCreateMedia(db *sql.DB, media Media) (int64, error) {
 	result, err := db.Exec(queryCreateBuilder(media, "media"), media.Id, media.Name, media.DisplayName,
 		media.Alt, media.Caption, media.Description, media.Class, media.DateCreated,
 		media.DateModified, media.Url, media.MimeType, media.Dimensions,
@@ -53,9 +53,8 @@ func createMedia(db *sql.DB, media Media) (int64, error) {
 	return result.RowsAffected()
 }
 
-func deleteMediaByName(db *sql.DB, column string, value string) (int64, error) {
-	query := fmt.Sprintf(`DELETE FROM media WHERE %s='%s';`, column, value)
-    fmt.Print(query)
+func dbDeleteMediaByName(db *sql.DB, column string, value string) (int64, error) {
+	query := fmt.Sprintf(`DELETE FROM media WHERE %s="%s";`, column, value)
 	result, err := db.Exec(query)
 	if err != nil {
 		fmt.Printf("%s\n", err)

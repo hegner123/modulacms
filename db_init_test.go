@@ -1,8 +1,15 @@
 package main
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 
-func dbInitTests(t *testing.T) {
-
+func TestDbInit(t *testing.T) {
+    _,err := getDb(Database{DB: "modula_test.db"})
+    if err!=nil {
+        fmt.Printf("%s\n",err)
+    }
+    
 }

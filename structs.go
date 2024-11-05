@@ -13,7 +13,7 @@ type Media struct {
 	Description        string `json:"description"`
 	Class              string `json:"class"`
 	Author             string `json:"author"`
-	AuthorID           int    `json:"authorid"`
+	AuthorID           int32  `json:"authorid"`
 	DateCreated        string `json:"datecreated"`
 	DateModified       string `json:"datemodified"`
 	Url                string `json:"url"`

@@ -10,6 +10,7 @@ import (
 )
 
 var useSSL, dbFileExists bool = initFileCheck()
+
 func hasFileExtension(path string) bool {
 	ext := filepath.Ext(path)
 	return ext != ""
@@ -40,7 +41,11 @@ func main() {
 		defer clientDB.Close()
 	}
 	if !dbFileExists || *reset {
-		db, err := initializeDatabase(*reset)
+		db, err := getDb(Database{DB: "modula.db"})
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
+		err = initializeDatabase(db, *reset)
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 		}

@@ -11,22 +11,22 @@ const mediaTable string = `
     CREATE TABLE IF NOT EXISTS media (
         id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
-        displayName TEXT,
+        displayname TEXT,
         alt TEXT,
         caption TEXT,
         description TEXT,
         class TEXT,
         author TEXT,
-        authorId INTEGER,
+        authorid INTEGER,
         datecreated TEXT,
         datemodified TEXT,
         url TEXT,
         mimeType TEXT,
         dimensions TEXT,
-        optimizedMobile TEXT,
-        optimizedTablet TEXT,
-        optimizedDesktop TEXT,
-        optimizedUltrawide TEXT);`
+        optimizedmobile TEXT,
+        optimizedtablet TEXT,
+        optimizeddesktop TEXT,
+        optimizedultrawide TEXT);`
 
 const userTable string = `
 	CREATE TABLE IF NOT EXISTS users (
@@ -128,17 +128,17 @@ var insertTestField string = fmt.Sprintf(`
     (4,'system','0','link_url','https://example.com',%s, %s,'link.html','','');
     `, "1730634309", "1730634309")
 
-
 /*
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY ,
-        datecreated TEXT ,
-        datemodified TEXT,
-        username TEXT,
-		name TEXT,
-		email TEXT UNIQUE ,
-        hash TEXT,
-        role TEXT);`*/
+		CREATE TABLE IF NOT EXISTS users (
+			id INTEGER PRIMARY KEY ,
+	        datecreated TEXT ,
+	        datemodified TEXT,
+	        username TEXT,
+			name TEXT,
+			email TEXT UNIQUE ,
+	        hash TEXT,
+	        role TEXT);`
+*/
 var insertSystemUser string = fmt.Sprintf(`
     INSERT INTO users (datecreated, datemodified, username, name, email, hash, role) VALUES 
     ('%s','%s','system', 'system', 'system@system.com', 'hash', 'root');
@@ -186,12 +186,7 @@ func getDb(dbName Database) (*sql.DB, error) {
 	return db, nil
 }
 
-func initializeDatabase(reset bool) (*sql.DB, error) {
-	db, err := getDb(Database{})
-	if err != nil {
-		fmt.Printf("db exec err db_init 009 : %s", err)
-		return nil, err
-	}
+func initializeDatabase(db *sql.DB, reset bool) error {
 	if reset {
 		res, err := db.Exec(`
             DROP TABLE IF EXISTS users;
@@ -203,7 +198,7 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 
             `)
 		if err != nil {
-		    fmt.Printf("db exec err db_init 006 : %s", err)
+			fmt.Printf("db exec err db_init 006 : %s", err)
 			log.Fatal("I CAN'T FIND THE DATABASE CAPTIN!!!!\n Oh GOD IT'S GOT MY LEG!!!!")
 		}
 		if res != nil {
@@ -214,20 +209,20 @@ func initializeDatabase(reset bool) (*sql.DB, error) {
 	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, postsTable, fieldsTable, mediaTable}
 	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute, insertTestField}
 	systemUser := []string{insertSystemUser}
-	err = forEachStatement(db, statements)
+
+	err := forEachStatement(db, statements,"tables")
 	if err != nil {
 		fmt.Printf("db exec err db_init 001 : %s", err)
 	}
-	err = forEachStatement(db, routes)
+	err = forEachStatement(db, routes,"routes")
 	if err != nil {
 		fmt.Printf("db exec err db_init 002  : %s", err)
 	}
-	err = forEachStatement(db, systemUser)
+	err = forEachStatement(db, systemUser,"systemUser")
 	if err != nil {
 		fmt.Printf("db exec err db_init 003 : %s", err)
 	}
-
-	return db, err
+	return  err
 }
 
 func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error) {
@@ -237,11 +232,11 @@ func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error
 		fmt.Printf("db exec err db_init 004 : %s", err)
 		return nil, err
 	}
-    res, err := db.Exec("PRAGMA foreign_keys = ON;")
+	res, err := db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 005 : %s", err)
 		return nil, err
 	}
-    fmt.Print(res)
+	fmt.Print(res)
 	return db, nil
 }
