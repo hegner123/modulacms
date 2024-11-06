@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 clear
-watchexec go test -v
+make test
 sleep 10

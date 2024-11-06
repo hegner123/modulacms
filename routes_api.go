@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func apiCreatePost(w http.ResponseWriter, r *http.Request) string {
+func apiCreateRoute(w http.ResponseWriter, r *http.Request) string {
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -20,52 +20,52 @@ func apiCreatePost(w http.ResponseWriter, r *http.Request) string {
 	slug := r.FormValue("slug")
 	content := r.FormValue("content")
 	now := time.Now().Unix()
-	post := Post{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "page.html"}
-	_, err = createPost(db, post)
+	route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "page.html"}
+	_, err = createRoute(db, route)
 	message := "created successfully"
 	if err != nil {
-		message = "error creating post"
+		message = "error creating route"
 	}
 	return message
 }
-func apiGetAllPosts() ([]Post, error) {
-	fetchedPosts := []Post{}
+func apiGetAllRoutes() ([]Routes, error) {
+	fetchedRoutes := []Routes{}
 	db, err := getDb(Database{})
 	if err != nil {
-		return fetchedPosts, err
+		return fetchedRoutes, err
 	}
 
-	fetchedPosts, err = getAllPosts(db)
+	fetchedRoutes, err = getAllRoutes(db)
 
-	return fetchedPosts, nil
+	return fetchedRoutes, nil
 }
-func apiGetPost(w http.ResponseWriter, r *http.Request) (Post, error) {
-	fetchedPost := Post{}
+func apiGetRoute(w http.ResponseWriter, r *http.Request) (Routes, error) {
+	fetchedRoute := Routes{}
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
-		return fetchedPost, err
+		return fetchedRoute, err
 	}
 	db, err := getDb(Database{})
 	if err != nil {
-		return fetchedPost, err
+		return fetchedRoute, err
 	}
-	postIdForm := r.FormValue("postid")
-	postId, err := strconv.ParseInt(postIdForm, 10, 32)
+	routeIdForm := r.FormValue("routeid")
+	routeId, err := strconv.ParseInt(routeIdForm, 10, 32)
 	if err != nil {
-		return fetchedPost, err
+		return fetchedRoute, err
 	}
-	fetchedPost, err = getPostById(db, int(postId))
+	fetchedRoute, err = getRouteById(db, int(routeId))
 	if err != nil {
-		return fetchedPost, err
+		return fetchedRoute, err
 	}
-	return fetchedPost, nil
+	return fetchedRoute, nil
 }
-func apiUpdatePost() {}
-func apiDeletePost() {}
+func apiUpdateRoute() {}
+func apiDeleteRoute() {}
 
 func apiGetField()            {}
-func apiGetAllFieldsForPost() {}
+func apiGetAllFieldsForRoute() {}
 func apiUpdateField()         {}
 
 func apiGetUser()     {}

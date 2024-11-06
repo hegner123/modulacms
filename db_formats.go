@@ -12,63 +12,50 @@ func formatCreateTable(input interface{}, table string) string {
 	create := "CREATE TABLE IF NOT EXISTS "
 	end := ");"
 	var columns []string
-	fields, fieldTypes := GetStructFields(input)
+	fields, fieldTypes := formatGetStructFields(input) // Ensure this function's output suits your needs
+	fmt.Print(fieldTypes)
+
 	for i := 0; i < len(fields); i++ {
-		if fields[i] == "id" {
-			columns = append(columns, fields[i]+" INTEGER PRIMARY KEY,")
-            continue
-		}
-		switch fieldTypes[i].(type) {
-		case int:
-			columns = append(columns, fields[i]+intType)
-		case string:
-			columns = append(columns, fields[i]+stringType)
+		switch fieldTypes[i].Kind() { // Using reflect.Kind for type checks
+		case reflect.Int, reflect.Int32, reflect.Int64:
+			fmt.Printf("is int\n")
+			if fields[i] == "id" {
+				columns = append(columns, fields[i]+" INTEGER PRIMARY KEY")
+				continue
+			}
+			columns = append(columns, fields[i]+" "+intType)
+		case reflect.String:
+			fmt.Printf("is string\n")
+			columns = append(columns, fields[i]+" "+stringType)
 		}
 	}
 
-	return create + table + "(" + strings.Join(columns, " ,") + end
+	return create + table + "(" + strings.Join(columns, ", ") + end
 }
 
-func GetStructFields(input interface{}) ([]string, []interface{}) {
+func formatGetStructFields(input interface{}) ([]string, []reflect.Type) {
 
-	val := reflect.ValueOf(input)
-	typ := val.Type()
-	var fields []string
-	var fieldTypes []interface{}
+	interfaceValue := reflect.ValueOf(input)
+	interfaceType := reflect.TypeOf(input)
+	var fieldNames []string
+	var fieldTypes []reflect.Type
 
-	if val.Kind() != reflect.Struct {
+	if interfaceValue.Kind() != reflect.Struct {
 		fmt.Printf("%v isn't a struct", input)
 	}
 
-	for i := 0; i < val.NumField(); i++ {
-		fieldName := typ.Field(i).Name
-		fieldTypes = append(fieldTypes, typ.Field(i).Type)
-		fields = append(fields, strings.ToLower(fieldName))
+	for i := 0; i < interfaceValue.NumField(); i++ {
+		field := interfaceType.Field(i)
+		fieldNames = append(fieldNames, strings.ToLower(field.Name))
+		fieldTypes = append(fieldTypes, field.Type)
 	}
-	return fields, fieldTypes
+	return fieldNames, fieldTypes
 }
 
-func formatInsertColumns(input interface{}) (string, int64) {
-	fields, _ := GetStructFields(input)
+func formatSQLColumns(input interface{}) (string, int64) {
+	fields, _ := formatGetStructFields(input)
 
 	return "(" + strings.Join(fields, ", ") + ")", int64(len(fields))
-}
-
-func formatGetFields(input interface{}) string {
-	val := reflect.ValueOf(input)
-	typ := val.Type()
-
-	if val.Kind() != reflect.Struct {
-		return ""
-	}
-
-	var fields []string
-	for i := 0; i < val.NumField(); i++ {
-		fieldName := typ.Field(i).Name
-		fields = append(fields, strings.ToLower(fieldName))
-	}
-
-	return "(" + strings.Join(fields, ",") + ")"
 }
 
 func formatUpdateFields(input interface{}) string {
@@ -88,15 +75,7 @@ func formatUpdateFields(input interface{}) string {
 	return strings.Join(fields, ", ")
 }
 
-func generatePlaceholders(n int) string {
-	if n <= 0 {
-		return "()"
-	}
-	holders := strings.Repeat("?", n)
-	sliced := strings.Split(holders, "")
-	return fmt.Sprintf("(%s)", strings.Join(sliced, ","))
-}
-func FormatStructValues(s interface{}) string {
+func formatGetStructValues(s interface{}) string {
 	val := reflect.ValueOf(s)
 	if val.Kind() != reflect.Struct {
 		return ""
@@ -117,15 +96,18 @@ func FormatStructValues(s interface{}) string {
 }
 
 func queryCreateBuilder(structure interface{}, table string) string {
-	columns, _ := formatInsertColumns(structure)
-	valuesHold := FormatStructValues(structure)
+	columns, _ := formatSQLColumns(structure)
+	valuesHold := formatGetStructValues(structure)
 	query := fmt.Sprintf(`INSERT INTO %s %s VALUES %s`, table, columns, valuesHold)
 	return query
 }
 
 func queryGetFilteredBuilder(structure interface{}, returnColumns []string) string {
+	table := reflect.ValueOf(structure).Type()
+	fmt.Print(table)
+	//columns,_ := formatSQLColumns(structure)
 	// Columns to return
-	return fmt.Sprintf(``)
+	return fmt.Sprintf(`SELECT %s FROM `, table)
 
 }
 

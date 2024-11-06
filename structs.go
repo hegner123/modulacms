@@ -25,7 +25,7 @@ type Media struct {
 	OptimizedUltrawide string `json:"optimizedUltrawide"`
 }
 
-type Post struct {
+type Routes struct {
 	ID           int    `json:"id"`
 	Author       string `json:"author"`
 	AuthorID     string `json:"authorId"`
@@ -37,7 +37,7 @@ type Post struct {
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
-type AdminPost struct {
+type AdminRoute struct {
 	ID           int    `json:"id"`
 	Author       string `json:"author"`
 	AuthorID     string `json:"authorId"`
@@ -52,7 +52,7 @@ type AdminPost struct {
 
 type Field struct {
 	ID           int    `json:"id"`
-	PostID       int    `json:"postId"`
+	RouteID      int    `json:"routeId"`
 	Author       string `json:"author"`
 	AuthorID     string `json:"authorId"`
 	Key          string `json:"key"`
@@ -86,7 +86,7 @@ type User struct {
 	Role         string `json:"role"`
 }
 
-type Routes struct {
+type PageRoutes struct {
 	Title string
-	Pages []Post
+	Pages []Routes
 }

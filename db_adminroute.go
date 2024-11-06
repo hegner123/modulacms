@@ -6,7 +6,7 @@ import (
 )
 
 
-func createAdminRoute(db *sql.DB, route Post) (int64, error) {
+func createAdminRoute(db *sql.DB, route AdminRoute) (int64, error) {
 	result, err := db.Exec("INSERT INTO adminroutes (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
 		route.Slug, route.Title, route.Status, route.DateCreated, route.DateModified, route.Content, route.Template)
 	if err != nil {
@@ -16,7 +16,7 @@ func createAdminRoute(db *sql.DB, route Post) (int64, error) {
 	return result.LastInsertId()
 }
 
-func adminPostExists(db *sql.DB, name string) bool {
+func adminRouteExists(db *sql.DB, name string) bool {
 
 	query := `SELECT id FROM adminroutes WHERE title LIKE '%' || ? || '%'`
 
@@ -30,8 +30,8 @@ func adminPostExists(db *sql.DB, name string) bool {
 
 }
 
-func matchAdminSlugToRoute(db *sql.DB, slug string) (Post, error) {
-	var route Post
+func matchAdminSlugToRoute(db *sql.DB, slug string) (Route, error) {
+	var route Route
 	err := db.QueryRow(`SELECT template FROM adminroutes WHERE slug LIKE ?;`, slug).Scan(&route.Template)
 	if err != nil {
 		return route, err
@@ -40,14 +40,14 @@ func matchAdminSlugToRoute(db *sql.DB, slug string) (Post, error) {
 
 }
 
-func getAdminRouteById(db *sql.DB, id int) (Post, error) {
-	var route Post
+func getAdminRouteById(db *sql.DB, id int) (Route, error) {
+	var route Route
 	err := db.QueryRow("SELECT id, name FROM adminroutes WHERE id = ?", id).Scan(&route.ID, &route.Title)
 	return route, err
 }
 
-func getAllAdminRoutes(db *sql.DB) ([]Post, error) {
-	var routes []Post
+func getAllAdminRoutes(db *sql.DB) ([]Route, error) {
+	var routes []Route
 	// Query only the fields we need (slug, title, and template)
 	rows, err := db.Query("SELECT slug, title, template FROM adminroutes")
 	if err != nil {
@@ -56,7 +56,7 @@ func getAllAdminRoutes(db *sql.DB) ([]Post, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		route := Post{}
+		route := Route{}
 		// Only scan into the selected fields
 		if err := rows.Scan(&route.Slug, &route.Title, &route.Template); err != nil {
 			return routes, err
@@ -72,7 +72,7 @@ func getAllAdminRoutes(db *sql.DB) ([]Post, error) {
 	return routes, nil
 }
 
-func updateAdminRouteById(db *sql.DB, route Post) error {
+func updateAdminRouteById(db *sql.DB, route Route) error {
 	_, err := db.Exec("UPDATE adminroutes SET title = ?, status = ?,  WHERE id = ?",
 		route.Title, route.Status)
 	return err

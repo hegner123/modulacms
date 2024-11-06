@@ -4,10 +4,10 @@ import (
 	"database/sql"
 )
 
-func getPostFields(postId Post, db *sql.DB) ([]Field, error) {
+func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
 	var fields []Field
 
-	rows, err := db.Query("SELECT * FROM fields WHERE postid = ?;", 4)
+	rows, err := db.Query("SELECT * FROM fields WHERE routeid = ?;", 4)
 	if err != nil {
 		return nil, err
 	}
@@ -16,7 +16,7 @@ func getPostFields(postId Post, db *sql.DB) ([]Field, error) {
 	for rows.Next() {
 		field := Field{}
 		// Only scan into the selected fields
-		if err := rows.Scan(&field.ID, &field.PostID, &field.Author,
+		if err := rows.Scan(&field.ID, &field.RouteID, &field.Author,
 			&field.AuthorID, &field.Key, &field.Data, &field.DateCreated,
 			&field.DateModified, &field.Component, &field.Tags, &field.Parent); err != nil {
 			return nil, err

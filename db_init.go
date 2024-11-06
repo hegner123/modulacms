@@ -7,86 +7,6 @@ import (
 	"log"
 )
 
-const mediaTable string = `
-    CREATE TABLE IF NOT EXISTS media (
-        id INTEGER PRIMARY KEY,
-        name TEXT NOT NULL,
-        displayname TEXT,
-        alt TEXT,
-        caption TEXT,
-        description TEXT,
-        class TEXT,
-        author TEXT,
-        authorid INTEGER,
-        datecreated TEXT,
-        datemodified TEXT,
-        url TEXT,
-        mimeType TEXT,
-        dimensions TEXT,
-        optimizedmobile TEXT,
-        optimizedtablet TEXT,
-        optimizeddesktop TEXT,
-        optimizedultrawide TEXT);`
-
-const userTable string = `
-	CREATE TABLE IF NOT EXISTS users (
-		id INTEGER PRIMARY KEY ,
-        datecreated TEXT ,
-        datemodified TEXT,
-        username TEXT,
-		name TEXT,
-		email TEXT UNIQUE ,
-        hash TEXT,
-        role TEXT);`
-
-const adminRoutesTable string = `
-	CREATE TABLE IF NOT EXISTS adminroutes (
-		id INTEGER PRIMARY KEY ,
-        slug TEXT NOT NULL,
-        author TEXT,
-        authorId INTEGER,
-		title TEXT,
-		status INTEGER NOT NULL,
-        datecreated TEXT NOT NULL,
-        datemodified TEXT NOT NULL,
-        content TEXT NOT NULL,
-        type TEXT NOT NULL,
-        template TEXT  );`
-
-const postsTable string = `
-	CREATE TABLE IF NOT EXISTS posts (
-		id INTEGER PRIMARY KEY ,
-        slug TEXT NOT NULL,
-        author TEXT,
-        authorId INTEGER,
-		title TEXT,
-		status INTEGER NOT NULL,
-        datecreated TEXT NOT NULL,
-        datemodified TEXT NOT NULL,
-        content TEXT NOT NULL,
-        type TEXT NOT NULL,
-        template TEXT  );`
-
-const fieldsTable string = `
-    CREATE TABLE IF NOT EXISTS fields(
-        id INTEGER PRIMARY KEY ,
-        postId INTEGER NOT NULL,
-        author TEXT,
-        authorId TEXT,
-        key TEXT,
-        data TEXT,
-        datecreated TEXT,
-        datemodified TEXT,
-        component TEXT,
-        tags TEXT,
-        parent string);`
-
-const tables string = `
-    CREATE TABLE IF NOT EXISTS tables (
-    id INTEGER PRIMARY KEY,
-    label TEXT UNIQUE);
-    `
-
 var times = timestamp()
 var insertHomeRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
@@ -124,47 +44,20 @@ var insertMediaRoute string = fmt.Sprintf(`
     `, times, times)
 
 var insertTestField string = fmt.Sprintf(`
-    INSERT INTO fields (postId, author, authorId, key, data, datecreated, datemodified, component, tags,parent) VALUES
+    INSERT INTO fields (routeId, author, authorId, key, data, datecreated, datemodified, component, tags,parent) VALUES
     (4,'system','0','link_url','https://example.com',%s, %s,'link.html','','');
     `, "1730634309", "1730634309")
 
-/*
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY ,
-	        datecreated TEXT ,
-	        datemodified TEXT,
-	        username TEXT,
-			name TEXT,
-			email TEXT UNIQUE ,
-	        hash TEXT,
-	        role TEXT);`
-*/
 var insertSystemUser string = fmt.Sprintf(`
     INSERT INTO users (datecreated, datemodified, username, name, email, hash, role) VALUES 
     ('%s','%s','system', 'system', 'system@system.com', 'hash', 'root');
     `, times, times)
 
-/*
-const fieldsTable string = `
-
-	CREATE TABLE IF NOT EXISTS fields(
-	    id INTEGER PRIMARY KEY ,
-	    postId INTEGER NOT NULL,
-	    author TEXT,
-	    authorId TEXT,
-	    key TEXT,
-	    data TEXT,
-	    datecreated TEXT,
-	    datemodified TEXT,
-	    component TEXT,
-	    tags TEXT,
-	    parent INTEGER);`
-*/
 const insertDefaultTables string = `
     INSERT INTO tables (label) VALUES ('tables');
     INSERT INTO tables (label) VALUES ('fields');
     INSERT INTO tables (label) VALUES ('media');
-    INSERT INTO tables (label) VALUES ('posts');
+    INSERT INTO tables (label) VALUES ('routes');
     INSERT INTO tables (label) VALUES ('adminroutes');
     INSERT INTO tables (label) VALUES ('users');
     `
@@ -190,7 +83,7 @@ func initializeDatabase(db *sql.DB, reset bool) error {
 	if reset {
 		res, err := db.Exec(`
             DROP TABLE IF EXISTS users;
-            DROP TABLE IF EXISTS posts;
+            DROP TABLE IF EXISTS routes;
             DROP TABLE IF EXISTS adminroutes;
             DROP TABLE IF EXISTS fields;
             DROP TABLE IF EXISTS media;
@@ -206,23 +99,23 @@ func initializeDatabase(db *sql.DB, reset bool) error {
 		}
 	}
 
-	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, postsTable, fieldsTable, mediaTable}
+	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, routesTable, fieldsTable, mediaTable}
 	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute, insertTestField}
 	systemUser := []string{insertSystemUser}
 
-	err := forEachStatement(db, statements,"tables")
+	err := forEachStatement(db, statements, "tables")
 	if err != nil {
 		fmt.Printf("db exec err db_init 001 : %s", err)
 	}
-	err = forEachStatement(db, routes,"routes")
+	err = forEachStatement(db, routes, "routes")
 	if err != nil {
 		fmt.Printf("db exec err db_init 002  : %s", err)
 	}
-	err = forEachStatement(db, systemUser,"systemUser")
+	err = forEachStatement(db, systemUser, "systemUser")
 	if err != nil {
 		fmt.Printf("db exec err db_init 003 : %s", err)
 	}
-	return  err
+	return err
 }
 
 func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error) {

@@ -7,7 +7,7 @@ console.log("I loaded")
     const formData = new FormData(form);
 
     try {
-        const response = await fetch("/api/add/post", {
+        const response = await fetch("/api/add/route", {
             method: "POST",
             body: formData
         });

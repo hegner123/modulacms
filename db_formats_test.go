@@ -7,7 +7,7 @@ import (
 
 func TestReflection(t *testing.T) {
 	user := User{UserName: "example", Name: "example", Email: "example@mail.com", Hash: "laksdbgoiabjkb", Role: "admin", DateCreated: "1730634309", DateModified: "1730634309"}
-	result, fieldsLength := formatInsertColumns(user)
+	result, fieldsLength := formatSQLColumns(user)
 	expected := "(username, name, email, hash, role, dateCreated, dateModified)"
 	expectedLength := 7
 	if result != expected && fieldsLength != int64(expectedLength) {

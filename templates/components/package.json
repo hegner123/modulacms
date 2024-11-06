@@ -1,0 +1,17 @@
+{
+    "name": "components",
+    "version": "1.0.0",
+    "description": "compile step for modula cms",
+    "main": "create-field-component.js",
+    "scripts": {
+        "test": "jest",
+        "build": "webpack"
+    },
+    "keywords": [],
+    "author": "mycatscode",
+    "license": "ISC",
+    "devDependencies": {
+        "terser-webpack-plugin": "^5.3.10",
+        "webpack": "^5.96.1"
+    }
+}

@@ -112,12 +112,12 @@ func buildAdminMenu(db *sql.DB) string {
 	var menuBuffer = bytes.Buffer{}
 	var menu MenuLinks
 	const link string = `<a href="%s">%s</a>`
-	posts, err := getAllAdminRoutes(db)
+	routes, err := getAllAdminRoutes(db)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	for i := 0; i < len(posts); i++ {
-        link := Link{Slug: posts[i].Slug,Title:  posts[i].Title}
+	for i := 0; i < len(routes); i++ {
+        link := Link{Slug: routes[i].Slug,Title:  routes[i].Title}
 		menu.Links = append(menu.Links, link)
 	}
 	menuTemplate, err := template.ParseFiles("templates/menu.html")
