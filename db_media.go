@@ -43,7 +43,7 @@ func dbGetMediaByName(db *sql.DB, name string) (Media, error) {
 }
 
 func dbCreateMedia(db *sql.DB, media Media) (int64, error) {
-	result, err := db.Exec(queryCreateBuilder(media, "media"), media.Id, media.Name, media.DisplayName,
+	result, err := db.Exec(FormatSqlInsertStatement(media, "media"), media.Id, media.Name, media.DisplayName,
 		media.Alt, media.Caption, media.Description, media.Class, media.DateCreated,
 		media.DateModified, media.Url, media.MimeType, media.Dimensions,
 		media.OptimizedMobile, media.OptimizedTablet, media.OptimizedDesktop, media.OptimizedUltrawide)

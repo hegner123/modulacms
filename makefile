@@ -19,12 +19,13 @@ all: help
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
+	cd templates/components && npm run build && cd -
 	rm -fr ./out
 	mkdir -p out/bin
 	mkdir -p out/bin/public out/bin/templates
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .	
 	cp -R public/* out/bin/public
-	cp -R templates/* out/bin/templates
+	cp -R templates/*.html out/bin/templates
 	cp -R certs/* out/bin
 	cp config.json out/bin/config.json
 

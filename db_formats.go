@@ -95,7 +95,7 @@ func formatGetStructValues(s interface{}) string {
 	return fmt.Sprintf("(%s)", strings.Join(values, ", "))
 }
 
-func queryCreateBuilder(structure interface{}, table string) string {
+func FormatSqlInsertStatement(structure interface{}, table string) string {
 	columns, _ := formatSQLColumns(structure)
 	valuesHold := formatGetStructValues(structure)
 	query := fmt.Sprintf(`INSERT INTO %s %s VALUES %s`, table, columns, valuesHold)

@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func createRoute(db *sql.DB, route Route) (int64, error) {
+func createRoute(db *sql.DB, route Routes) (int64, error) {
 	result, err := db.Exec("INSERT INTO routes (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
 		route.Slug, route.Title, route.Status, route.DateCreated, route.DateModified, route.Content, route.Template)
 	if err != nil {
@@ -29,8 +29,8 @@ func routeExists(db *sql.DB, name string) bool {
 
 }
 
-func matchSlugToRoute(db *sql.DB, slug string) (Route, error) {
-	var route Route
+func matchSlugToRoute(db *sql.DB, slug string) (Routes, error) {
+	var route Routes
 	err := db.QueryRow(`SELECT template FROM routes WHERE slug LIKE ?;`, slug).Scan(&route.Template)
 	if err != nil {
 		return route, err
@@ -39,14 +39,14 @@ func matchSlugToRoute(db *sql.DB, slug string) (Route, error) {
 
 }
 
-func getRouteById(db *sql.DB, id int) (Route, error) {
-	var route Route
+func getRouteById(db *sql.DB, id int) (Routes, error) {
+	var route Routes
 	err := db.QueryRow("SELECT id, name FROM routes WHERE id = ?", id).Scan(&route.ID, &route.Title)
 	return route, err
 }
 
-func getAllRoutes(db *sql.DB) ([]Route, error) {
-	var routes []Route
+func getAllRoutes(db *sql.DB) ([]Routes, error) {
+	var routes []Routes
 	rows, err := db.Query("SELECT slug, title, template FROM routes")
 	if err != nil {
 		return routes, err
@@ -54,7 +54,7 @@ func getAllRoutes(db *sql.DB) ([]Route, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		route := Route{}
+		route := Routes{}
 		if err := rows.Scan(&route.Slug, &route.Title, &route.Template); err != nil {
 			return routes, err
 		}
@@ -68,7 +68,7 @@ func getAllRoutes(db *sql.DB) ([]Route, error) {
 	return routes, nil
 }
 
-func updateRouteById(db *sql.DB, route Route) error {
+func updateRouteById(db *sql.DB, route Routes) error {
 	_, err := db.Exec("UPDATE routes SET title = ?, status = ?,  WHERE id = ?",
 		route.Title, route.Status)
 	return err

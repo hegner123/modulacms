@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
@@ -30,5 +31,35 @@ func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
 	}
 
 	return fields, nil
+
+}
+
+func dbCreateField(field Field) string {
+    fmt.Print("create field")
+	db, err := getDb(Database{})
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	insertSatement := FormatSqlInsertStatement(field, "fields")
+    fmt.Printf("Insert Statement %s",insertSatement)
+	res, err := db.Exec(insertSatement)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+
+	rows, err := res.RowsAffected()
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	id, err := res.LastInsertId()
+    if err!=nil {
+        fmt.Printf("%s\n",err)
+    }
+
+	if rows < 1 {
+		return "Insert Failed"
+	} else {
+		return fmt.Sprintf("Successfully created field as %v", id)
+	}
 
 }

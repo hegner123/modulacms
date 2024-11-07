@@ -78,6 +78,10 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 }
 
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		adminRouter(w, r)
+		return
+	}
 
 	db, err := getDb(Database{})
 	if err != nil {
@@ -167,4 +171,3 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 }
-

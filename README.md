@@ -17,8 +17,10 @@
 - handle routes for frontend
 - admin auth - oAuth?
 - dashboard
-- post editor
-- media uploader
+- Route editor
+- Create field
+- media upload
+
 Visible on admin frontend
 - s3 bucket connection
 - db connection, Sqlite, mysql, mariadb, postgres, etc.

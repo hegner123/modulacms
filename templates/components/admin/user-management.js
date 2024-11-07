@@ -1,4 +1,5 @@
-class MediaPicker extends HTMLElement {
+
+class UserManagement extends HTMLElement {
   constructor() {
     super();
     // Attach a shadow DOM for encapsulation
@@ -28,5 +29,8 @@ class MediaPicker extends HTMLElement {
 }
 
 // Define the new element
-customElements.define('media-picker', MediaPicker);
-
+customElements.define('user-management', UserManagement);
+window.addEventListener("load",app)
+function app(e){
+    e.preventDefault()
+}

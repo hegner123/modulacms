@@ -31,5 +31,5 @@ class TextFieldComponent extends HTMLElement {
 }
 
 // Define the new element
-customElements.define('my-component', MyComponent);
+customElements.define('text-field', TextFieldComponent);
 

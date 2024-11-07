@@ -30,8 +30,8 @@ func adminRouteExists(db *sql.DB, name string) bool {
 
 }
 
-func matchAdminSlugToRoute(db *sql.DB, slug string) (Route, error) {
-	var route Route
+func matchAdminSlugToRoute(db *sql.DB, slug string) (Routes, error) {
+	var route Routes
 	err := db.QueryRow(`SELECT template FROM adminroutes WHERE slug LIKE ?;`, slug).Scan(&route.Template)
 	if err != nil {
 		return route, err
@@ -40,14 +40,14 @@ func matchAdminSlugToRoute(db *sql.DB, slug string) (Route, error) {
 
 }
 
-func getAdminRouteById(db *sql.DB, id int) (Route, error) {
-	var route Route
+func getAdminRouteById(db *sql.DB, id int) (Routes, error) {
+	var route Routes
 	err := db.QueryRow("SELECT id, name FROM adminroutes WHERE id = ?", id).Scan(&route.ID, &route.Title)
 	return route, err
 }
 
-func getAllAdminRoutes(db *sql.DB) ([]Route, error) {
-	var routes []Route
+func getAllAdminRoutes(db *sql.DB) ([]Routes, error) {
+	var routes []Routes
 	// Query only the fields we need (slug, title, and template)
 	rows, err := db.Query("SELECT slug, title, template FROM adminroutes")
 	if err != nil {
@@ -56,7 +56,7 @@ func getAllAdminRoutes(db *sql.DB) ([]Route, error) {
 	defer rows.Close()
 
 	for rows.Next() {
-		route := Route{}
+		route := Routes{}
 		// Only scan into the selected fields
 		if err := rows.Scan(&route.Slug, &route.Title, &route.Template); err != nil {
 			return routes, err
@@ -72,7 +72,7 @@ func getAllAdminRoutes(db *sql.DB) ([]Route, error) {
 	return routes, nil
 }
 
-func updateAdminRouteById(db *sql.DB, route Route) error {
+func updateAdminRouteById(db *sql.DB, route Routes) error {
 	_, err := db.Exec("UPDATE adminroutes SET title = ?, status = ?,  WHERE id = ?",
 		route.Title, route.Status)
 	return err
