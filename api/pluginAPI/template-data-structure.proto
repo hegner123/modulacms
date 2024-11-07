@@ -1,9 +1,0 @@
-edition="2023";
-// Specify the Go package
-option go_package = "../;main";
-
-message SearchRequest {
-  string query = 1; 
-  int32 page_number = 2 ;
-  int32 results_per_page = 3;
-}
