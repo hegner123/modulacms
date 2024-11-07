@@ -13,24 +13,21 @@ func formatCreateTable(input interface{}, table string) string {
 	end := ");"
 	var columns []string
 	fields, fieldTypes := formatGetStructFields(input) // Ensure this function's output suits your needs
-	fmt.Print(fieldTypes)
 
 	for i := 0; i < len(fields); i++ {
 		switch fieldTypes[i].Kind() { // Using reflect.Kind for type checks
 		case reflect.Int, reflect.Int32, reflect.Int64:
-			fmt.Printf("is int\n")
 			if fields[i] == "id" {
 				columns = append(columns, fields[i]+" INTEGER PRIMARY KEY")
 				continue
 			}
 			columns = append(columns, fields[i]+" "+intType)
 		case reflect.String:
-			fmt.Printf("is string\n")
 			columns = append(columns, fields[i]+" "+stringType)
 		}
 	}
 
-	return create + table + "(" + strings.Join(columns, ", ") + end
+	return create + table + " (" + strings.Join(columns, ", ") + end
 }
 
 func formatGetStructFields(input interface{}) ([]string, []reflect.Type) {

@@ -5,6 +5,18 @@ import (
 	"testing"
 )
 
+func TestDbCreateTable(t *testing.T) {
+    sql := userTable
+    times := timestamp()
+    user := User{DateCreated: times, DateModified: times, UserName:"test", Name:"test", Email: "test@test.com", Hash:"test", Role: "test"}
+    
+    res := formatCreateTable(user, "users")
+    if  res != sql {
+        t.Errorf("sql statement does not match. \nexpected %s\nwant %s ", sql, res)
+    }
+    fmt.Printf("%v", res)
+
+}
 func TestReflection(t *testing.T) {
 	user := User{UserName: "example", Name: "example", Email: "example@mail.com", Hash: "laksdbgoiabjkb", Role: "admin", DateCreated: "1730634309", DateModified: "1730634309"}
 	result, fieldsLength := formatSQLColumns(user)
@@ -16,12 +28,6 @@ func TestReflection(t *testing.T) {
 }
 
 
-func TestTableCreation(t *testing.T) {
-    var media Media
-    table := formatCreateTable(media, "media")
-    fmt.Print(table)
-
-}
 
 /*
 type User struct {

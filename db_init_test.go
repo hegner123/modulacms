@@ -14,15 +14,3 @@ func TestDbInit(t *testing.T) {
     
 }
 
-func TestDbCreateTable(t *testing.T) {
-    sql := userTable
-    times := timestamp()
-    user := User{DateCreated: times, DateModified: times, UserName:"test", Name:"test", Email: "test@test.com", Hash:"test", Role: "test"}
-    
-    res := formatCreateTable(user, "user")
-    if  res != sql {
-        t.Errorf("sql statement does not match. \nexpected %s\nwant %s ", sql, res)
-    }
-    fmt.Printf("%v", res)
-
-}
