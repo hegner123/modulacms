@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -43,6 +44,9 @@ func formatGetStructFields(input interface{}) ([]string, []reflect.Type) {
 
 	for i := 0; i < interfaceValue.NumField(); i++ {
 		field := interfaceType.Field(i)
+		if strings.ToLower(field.Name) == "id" {
+			continue
+		}
 		fieldNames = append(fieldNames, strings.ToLower(field.Name))
 		fieldTypes = append(fieldTypes, field.Type)
 	}
@@ -80,16 +84,26 @@ func formatGetStructValues(s interface{}) string {
 	var values []string
 	for i := 1; i < val.NumField(); i++ {
 		fieldValue := val.Field(i)
+		if fieldValue.Kind() == reflect.Struct {
+			fmt.Printf("internal struct")
+
+			j, err := json.Marshal(fieldValue.Interface())
+			if err != nil {
+				fmt.Printf("%s\n", err)
+			}
+			values = append(values, fmt.Sprintf("'%s'", string(j)))
+			continue
+		}
 		newValue := fieldValue.Interface()
 		if _, ok := newValue.(int32); ok {
-			values = append(values, fmt.Sprintf("%v", fieldValue.Interface()))
+			values = append(values, fmt.Sprintf("'%v'", fieldValue.Interface()))
 		} else {
-			values = append(values, fmt.Sprintf("\"%v\"", fieldValue.Interface()))
+			values = append(values, fmt.Sprintf("'%v'", fieldValue.Interface()))
 		}
 
 	}
 
-	return fmt.Sprintf("(%s)", strings.Join(values, ", "))
+	return fmt.Sprintf("(%s);", strings.Join(values, ", "))
 }
 
 func FormatSqlInsertStatement(structure interface{}, table string) string {

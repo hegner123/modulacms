@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"html"
 	"html/template"
 	"log"
 	"net/http"
@@ -95,6 +96,11 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
+	// First we create a FuncMap with which to register the function.
+	funcMap := template.FuncMap{
+		// The name "title" is what the function will be called in the template text.
+		"html": html.EscapeString,
+	}
 	/*
 		adminPage := AdminPage{HtmlFirst: htmlFirst, Head: htmlHead, Body: matchedRoute.Template, HtmlLast: htmlLast}
 		adminTemplate := buildAdminTemplate(adminPage)
@@ -110,7 +116,12 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	if err := tmp.Execute(w, nil); err != nil {
+	fields, err := dbGetRouteFields(matchedRoute.ID, db)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+
+	if err := tmp.Funcs(funcMap).Execute(w, fields); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
 		log.Printf("Template execution error: %v", err)
 	}
@@ -158,7 +169,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		content := r.FormValue("content")
 		now := time.Now().Unix()
 		Route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "Page"}
-		_, err = createRoute(db, Route)
+		_, err = dbCreateRoute(db, Route)
 		message := "created successfully"
 		if err != nil {
 			message = "error creating route"

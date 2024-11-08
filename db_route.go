@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-func createRoute(db *sql.DB, route Routes) (int64, error) {
+func dbCreateRoute(db *sql.DB, route Routes) (int64, error) {
 	result, err := db.Exec("INSERT INTO routes (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
 		route.Slug, route.Title, route.Status, route.DateCreated, route.DateModified, route.Content, route.Template)
 	if err != nil {
@@ -15,7 +15,7 @@ func createRoute(db *sql.DB, route Routes) (int64, error) {
 	return result.LastInsertId()
 }
 
-func routeExists(db *sql.DB, name string) bool {
+func dbRouteExists(db *sql.DB, name string) bool {
 
 	query := `SELECT id FROM routes WHERE title LIKE '%' || ? || '%'`
 
@@ -29,7 +29,7 @@ func routeExists(db *sql.DB, name string) bool {
 
 }
 
-func matchSlugToRoute(db *sql.DB, slug string) (Routes, error) {
+func dbFindRoute(db *sql.DB, slug string) (Routes, error) {
 	var route Routes
 	err := db.QueryRow(`SELECT template FROM routes WHERE slug LIKE ?;`, slug).Scan(&route.Template)
 	if err != nil {
@@ -39,13 +39,13 @@ func matchSlugToRoute(db *sql.DB, slug string) (Routes, error) {
 
 }
 
-func getRouteById(db *sql.DB, id int) (Routes, error) {
+func dbGetRouteById(db *sql.DB, id int) (Routes, error) {
 	var route Routes
 	err := db.QueryRow("SELECT id, name FROM routes WHERE id = ?", id).Scan(&route.ID, &route.Title)
 	return route, err
 }
 
-func getAllRoutes(db *sql.DB) ([]Routes, error) {
+func dbGetAllRoutes(db *sql.DB) ([]Routes, error) {
 	var routes []Routes
 	rows, err := db.Query("SELECT slug, title, template FROM routes")
 	if err != nil {
@@ -68,13 +68,13 @@ func getAllRoutes(db *sql.DB) ([]Routes, error) {
 	return routes, nil
 }
 
-func updateRouteById(db *sql.DB, route Routes) error {
+func dbUpdateRouteById(db *sql.DB, route Routes) error {
 	_, err := db.Exec("UPDATE routes SET title = ?, status = ?,  WHERE id = ?",
 		route.Title, route.Status)
 	return err
 }
 
-func deleteRouteById(db *sql.DB, id int) error {
+func dbDeleteRouteById(db *sql.DB, id int) error {
 	_, err := db.Exec("DELETE FROM routes WHERE id = ?", id)
 	return err
 }

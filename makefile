@@ -27,7 +27,7 @@ build: ## Build your project and put the output binary in out/bin/
 	cp -R public/* out/bin/public
 	cp -R templates/*.html out/bin/templates
 	cp -R certs/* out/bin
-	cp config.json out/bin/config.json
+	cp *.json out/bin/
 
 clean: ## Remove build related file
 	rm -fr ./bin

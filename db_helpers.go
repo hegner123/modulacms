@@ -16,3 +16,8 @@ func forEachStatement(db *sql.DB, statements []string, label string) error {
     fmt.Printf("%s inserted successfully\n",label)
 	return nil
 }
+
+func parseFieldElement(input string)Element{
+    var element = Element{}
+    return element
+}

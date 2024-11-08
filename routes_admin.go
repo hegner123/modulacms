@@ -7,6 +7,7 @@ import (
 )
 
 func adminRouter(w http.ResponseWriter, r *http.Request) {
+	fmt.Print(r.URL.Path)
 	switch r.URL.Path {
 	case "/admin/field/add":
 		fmt.Print("/admin/field/add\n")
@@ -14,31 +15,22 @@ func adminRouter(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func AdminCreateField(w http.ResponseWriter, r *http.Request) {
-    fmt.Printf("admin create field\n")
-	times := timestamp()
+	fmt.Printf("admin create field\n")
+	//times := timestamp()
 	err := r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 	}
 	var field = Field{}
-    
-    field.ID = 0
+
+	field.ID = 0
 	field.RouteID = 0
-	field.Author = r.FormValue("author")
-	field.AuthorID = r.FormValue("authorId")
-	field.Key = r.FormValue("key")
-	field.Data = r.FormValue("data")
-	field.DateCreated = times
-	field.DateModified = times
-	field.Component = r.FormValue("component")
-	field.Tags = r.FormValue("tags")
-	field.Parent = r.FormValue("parent")
-	res := dbCreateField(field)
+	form := r.ParseForm()
+	fmt.Print(form)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(map[string]string{"message": res})
+	err = json.NewEncoder(w).Encode(map[string]string{"message": "wip"})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}

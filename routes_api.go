@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -21,7 +22,7 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request) string {
 	content := r.FormValue("content")
 	now := time.Now().Unix()
 	route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "page.html"}
-	_, err = createRoute(db, route)
+	_, err = dbCreateRoute(db, route)
 	message := "created successfully"
 	if err != nil {
 		message = "error creating route"
@@ -35,7 +36,10 @@ func apiGetAllRoutes() ([]Routes, error) {
 		return fetchedRoutes, err
 	}
 
-	fetchedRoutes, err = getAllRoutes(db)
+	fetchedRoutes, err = dbGetAllRoutes(db)
+    if err!=nil {
+        fmt.Printf("%s\n",err)
+    }
 
 	return fetchedRoutes, nil
 }
@@ -55,7 +59,7 @@ func apiGetRoute(w http.ResponseWriter, r *http.Request) (Routes, error) {
 	if err != nil {
 		return fetchedRoute, err
 	}
-	fetchedRoute, err = getRouteById(db, int(routeId))
+	fetchedRoute, err = dbGetRouteById(db, int(routeId))
 	if err != nil {
 		return fetchedRoute, err
 	}

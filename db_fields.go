@@ -5,10 +5,10 @@ import (
 	"fmt"
 )
 
-func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
+func dbGetRouteFields(routeID int, db *sql.DB) ([]Field, error) {
 	var fields []Field
-
-	rows, err := db.Query("SELECT * FROM fields WHERE routeid = ?;", 4)
+	var fieldElement string
+	rows, err := db.Query("SELECT * FROM fields WHERE routeid = ?;", routeID)
 	if err != nil {
 		return nil, err
 	}
@@ -18,14 +18,14 @@ func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
 		field := Field{}
 		// Only scan into the selected fields
 		if err := rows.Scan(&field.ID, &field.RouteID, &field.Author,
-			&field.AuthorID, &field.Key, &field.Data, &field.DateCreated,
-			&field.DateModified, &field.Component, &field.Tags, &field.Parent); err != nil {
+			&field.AuthorID, &field.Key, &field.Type, &field.Data, &field.DateCreated,
+			&field.DateModified, &fieldElement, &field.Tags, &field.Parent); err != nil {
 			return nil, err
 		}
+		field.Component = parseFieldElement(fieldElement)
 		fields = append(fields, field)
 	}
 
-	// Check for errors from iterating over rows
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -34,32 +34,18 @@ func getRouteFields(routeId Routes, db *sql.DB) ([]Field, error) {
 
 }
 
-func dbCreateField(field Field) string {
-    fmt.Print("create field")
+func dbCreateField(field Field) sql.Result {
+	fmt.Print("create field\n")
 	db, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	insertSatement := FormatSqlInsertStatement(field, "fields")
-    fmt.Printf("Insert Statement %s",insertSatement)
+	fmt.Printf("Insert Statement %s\n", insertSatement)
 	res, err := db.Exec(insertSatement)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-
-	rows, err := res.RowsAffected()
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
-	id, err := res.LastInsertId()
-    if err!=nil {
-        fmt.Printf("%s\n",err)
-    }
-
-	if rows < 1 {
-		return "Insert Failed"
-	} else {
-		return fmt.Sprintf("Successfully created field as %v", id)
-	}
+	return res
 
 }

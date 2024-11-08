@@ -7,51 +7,51 @@ import (
 	"log"
 )
 
-var times = timestamp()
+var Times = timestamp()
 var insertHomeRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/','system',0 ,'home',0,%s,%s,"content","page",'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertPagesRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/pages','system',0 ,'pages', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertTypesRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/types','system',0 ,'types', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertFieldsRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/fields','system',0, 'fields', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertMenusRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/menus','system',0 ,'menus', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertUsersRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
     ('/users','system',0, 'users', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertMediaRoute string = fmt.Sprintf(`
     INSERT INTO adminroutes (slug, author, authorId, title, status,datecreated, datemodified, content, type,  template) VALUES 
     ('/media','system',0, 'media', 0, %s, %s, "content", "page", 'default.html');
-    `, times, times)
+    `, Times, Times)
 
 var insertTestField string = fmt.Sprintf(`
-    INSERT INTO fields (routeId, author, authorId, key, data, datecreated, datemodified, component, tags,parent) VALUES
-    (4,'system','0','link_url','https://example.com',%s, %s,'link.html','','');
+    INSERT INTO fields (routeId, author, authorId, key, type, data, datecreated, datemodified, component, tags,parent) VALUES
+    (4,'system','0','link_url','text','https://example.com',%s, %s,'link.html','','');
     `, "1730634309", "1730634309")
 
 var insertSystemUser string = fmt.Sprintf(`
     INSERT INTO users (datecreated, datemodified, username, name, email, hash, role) VALUES 
     ('%s','%s','system', 'system', 'system@system.com', 'hash', 'root');
-    `, times, times)
+    `, Times, Times)
 
 const insertDefaultTables string = `
     INSERT INTO tables (label) VALUES ('tables');
@@ -115,6 +115,8 @@ func initializeDatabase(db *sql.DB, reset bool) error {
 	if err != nil {
 		fmt.Printf("db exec err db_init 003 : %s", err)
 	}
+	res := dbCreateField(createFieldField)
+	fmt.Printf("\n%v\n", res)
 	return err
 }
 

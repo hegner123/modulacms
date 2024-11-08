@@ -1,5 +1,7 @@
 package main
 
+import "html/template"
+
 type Database struct {
 	DB string
 }
@@ -28,7 +30,7 @@ type Media struct {
 type Routes struct {
 	ID           int    `json:"id"`
 	Author       string `json:"author"`
-	AuthorID     string `json:"authorId"`
+	AuthorID     string `json:"authorid"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
@@ -51,17 +53,36 @@ type AdminRoute struct {
 }
 
 type Field struct {
-	ID           int    `json:"id"`
-	RouteID      int    `json:"routeId"`
-	Author       string `json:"author"`
-	AuthorID     string `json:"authorId"`
-	Key          string `json:"key"`
-	Data         string `json:"data"`
-	DateCreated  string `json:"datecreated"`
-	DateModified string `json:"datemodified"`
-	Component    string `json:"component"`
-	Tags         string `json:"tags"`
-	Parent       string `json:"parent"`
+	ID           int     `json:"id"`
+	RouteID      int     `json:"routeid"`
+	Author       string  `json:"author"`
+	AuthorID     string  `json:"authorid"`
+	Key          string  `json:"key"`
+	Type         string  `json:"type"`
+	Data         string  `json:"data"`
+	DateCreated  string  `json:"datecreated"`
+	DateModified string  `json:"datemodified"`
+	Component    Element `json:"component"`
+	Tags         string  `json:"tags"`
+	Parent       string  `json:"parent"`
+}
+
+type Element struct {
+	Tag        string `json:"tag"`
+    Attributes map[string]string `json:"Attributes"`
+}
+
+func (e Element) RenderAttributes() template.HTMLAttr {
+	var result string
+	for key, value := range e.Attributes {
+		result += key + `="` + value + `" `
+	}
+	return template.HTMLAttr(result)
+}
+
+type TemplateFields struct {
+	RouteID int
+	Field   []Field
 }
 
 type Config struct {

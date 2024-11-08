@@ -17,11 +17,15 @@ func hasFileExtension(path string) bool {
 }
 
 func main() {
-
-	verbose := flag.Bool("v", false, "Enable verbose mode")
-	reset := flag.Bool("r", false, "Delete Database and reinitialize")
+	versionFlag := flag.Bool("v", false, "Print version and exit")
+	verbose := flag.Bool("V", false, "Enable verbose mode")
+	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
 
 	flag.Parse()
+	if *versionFlag {
+        message:= logGetVersion()
+		log.Fatal(message)
+	}
 	config := loadConfig(verbose)
 
 	if *reset {

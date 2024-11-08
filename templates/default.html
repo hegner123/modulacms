@@ -1,3 +1,4 @@
+{{define "tag"}}<{{.}}-component></{{.}}-component>{{end}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -120,8 +121,16 @@
 
 <body>
 
-        <create-field></create-field>
-        <script defer src="js/bundle.js"></script>
+    {{ range . }}
+        {{ if .Component }}
+        {{. .Tag}}{{. .Tag}}
+        {{ else }}
+            <div>
+                {{ .Data }}
+            </div>
+        {{ end }}
+    {{ end }}
+    <script defer src="js/bundle.js"></script>
 </body>
 
 </html>
