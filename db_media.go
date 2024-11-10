@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"log"
 )
 
 /*
@@ -55,6 +56,48 @@ func dbCreateMedia(db *sql.DB, media Media) (int64, error) {
 
 func dbDeleteMediaByName(db *sql.DB, column string, value string) (int64, error) {
 	query := fmt.Sprintf(`DELETE FROM media WHERE %s="%s";`, column, value)
+	result, err := db.Exec(query)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+		return int64(0), err
+	}
+	ra, err := result.RowsAffected()
+	return ra, err
+
+}
+
+func dbGetMediaDimensions(dbName string) []MediaDimension {
+    db,err := getDb(Database{})
+	i := 0
+	ds := []MediaDimension{}
+	query := fmt.Sprintf(`SELECT label, width, height FROM media_dimensions`)
+	rows, err := db.Query(query)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	for rows.Next() != false {
+		rows.Scan(&ds[i].Label, &ds[i].Width, &ds[i].Height)
+		i++
+	}
+	return ds
+}
+
+func dbCreateMediaDimensions(db *sql.DB, d MediaDimension) (int64, error) {
+	result, err := db.Exec(FormatSqlInsertStatement(d, "media_dimensions"), d.Label, d.Width, d.Height)
+
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+func dbUpdateMediaDimensions(db *sql.DB, field map[string]string) bool {
+	log.Panic("not yet implemented")
+	return false
+}
+
+func dbDeleteMediaDimensionByName(db *sql.DB, column string, value string) (int64, error) {
+	query := fmt.Sprintf(`DELETE FROM media_dimensions WHERE %s="%s";`, column, value)
 	result, err := db.Exec(query)
 	if err != nil {
 		fmt.Printf("%s\n", err)

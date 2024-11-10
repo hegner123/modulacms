@@ -68,8 +68,8 @@ type Field struct {
 }
 
 type Element struct {
-	Tag        string `json:"tag"`
-    Attributes map[string]string `json:"Attributes"`
+	Tag        string            `json:"tag"`
+	Attributes map[string]string `json:"Attributes"`
 }
 
 func (e Element) RenderAttributes() template.HTMLAttr {
@@ -110,4 +110,11 @@ type User struct {
 type PageRoutes struct {
 	Title string
 	Pages []Routes
+}
+
+type MediaDimension struct {
+	ID     int    `json:"id"`
+	Label  string `json:"label"`
+	Width  int    `json:"width"`
+	Height int    `json:"height"`
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func TestDbCreateTable(t *testing.T) {
-    sql := userTable
+    sql := userTableConst
     times := timestamp()
     user := User{DateCreated: times, DateModified: times, UserName:"test", Name:"test", Email: "test@test.com", Hash:"test", Role: "test"}
     
@@ -29,13 +29,3 @@ func TestReflection(t *testing.T) {
 
 
 
-/*
-type User struct {
-	ID       int
-	UserName string
-	Name     string
-	Email    string
-	Hash     string
-	Role     string
-}
-*/

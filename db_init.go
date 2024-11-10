@@ -87,6 +87,7 @@ func initializeDatabase(db *sql.DB, reset bool) error {
             DROP TABLE IF EXISTS adminroutes;
             DROP TABLE IF EXISTS fields;
             DROP TABLE IF EXISTS media;
+            DROP TABLE IF EXISTS media_dimensions;
             DROP TABLE IF EXISTS tables;
 
             `)
@@ -98,8 +99,22 @@ func initializeDatabase(db *sql.DB, reset bool) error {
 			log.Print(res)
 		}
 	}
+    u:= User{}
+    ar:=AdminRoute{}
+    r := Routes{}
+    f := Field{}
+    m := Media{}
+    md := MediaDimension{}
+    userTable:= formatCreateTable(u,"users")
+    adminRoutesTable:= formatCreateTable(ar,"adminroutes")
+    routesTable:= formatCreateTable(r,"routes")
+    fieldsTable := formatCreateTable(f,"fields")
+    mediaTable := formatCreateTable(m,"media")
+    mediaDimensionTable := formatCreateTable(md,"media_dimensions")
+    
 
-	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, routesTable, fieldsTable, mediaTable}
+    
+	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, routesTable, fieldsTable, mediaTable, mediaDimensionTable}
 	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute, insertTestField}
 	systemUser := []string{insertSystemUser}
 
