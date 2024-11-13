@@ -40,6 +40,9 @@ modula
 #references
 references/
 
+#development
+public/media/
+
 #certs
 certs/
 *.pem

@@ -67,16 +67,22 @@ func dbDeleteMediaByName(db *sql.DB, column string, value string) (int64, error)
 }
 
 func dbGetMediaDimensions(dbName string) []MediaDimension {
-    db,err := getDb(Database{})
+	db, err := getDb(Database{})
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 	i := 0
 	ds := []MediaDimension{}
-	query := fmt.Sprintf(`SELECT label, width, height FROM media_dimensions`)
+	query := `SELECT label, width, height FROM media_dimensions`
 	rows, err := db.Query(query)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	for rows.Next() != false {
-		rows.Scan(&ds[i].Label, &ds[i].Width, &ds[i].Height)
+	for rows.Next() {
+		err := rows.Scan(&ds[i].Label, &ds[i].Width, &ds[i].Height)
+        if err!=nil {
+            fmt.Printf("%s\n",err)
+        }
 		i++
 	}
 	return ds

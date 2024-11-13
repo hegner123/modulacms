@@ -9,38 +9,38 @@ import (
 
 var Times = timestamp()
 var insertHomeRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/','system',0 ,'home',0,%s,%s,"content","page",'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/','system',0 ,'home',0,%s,%s,"content",'default.html');
     `, Times, Times)
 
 var insertPagesRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/pages','system',0 ,'pages', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/pages','system',0 ,'pages', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertTypesRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/types','system',0 ,'types', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/types','system',0 ,'types', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertFieldsRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/fields','system',0, 'fields', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/fields','system',0, 'fields', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertMenusRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/menus','system',0 ,'menus', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/menus','system',0 ,'menus', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertUsersRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title,status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/users','system',0, 'users', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/users','system',0, 'users', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertMediaRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status,datecreated, datemodified, content, type,  template) VALUES 
-    ('/media','system',0, 'media', 0, %s, %s, "content", "page", 'default.html');
+    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
+    ('/media','system',0, 'media', 0, %s, %s, "content", 'default.html');
     `, Times, Times)
 
 var insertTestField string = fmt.Sprintf(`

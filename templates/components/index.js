@@ -3,6 +3,7 @@ const LoginForm = require("./login")
 const MediaPickerComponent = require("./mediapicker")
 const TextFieldComponent = require("./textfield")
 const UserManagementComponent = require("./admin/user-management")
+const MediaUploadComponent = require ("./mediaupload")
 
 
 if (CreateFieldComponent === undefined){
@@ -24,4 +25,8 @@ if (TextFieldComponent === undefined){
 if (UserManagementComponent === undefined){
     console.error("UserManagementComponent is undefined")
     throw new Error("UserManagementComponent is undefined")
+}
+if (MediaUploadComponent === undefined){
+    console.error("MediaUploadComponent is undefined")
+    throw new Error("MediaUploadComponent is undefined")
 }

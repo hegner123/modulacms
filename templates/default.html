@@ -121,15 +121,17 @@
 
 <body>
 
+    <media-upload></media-upload>
     {{ range . }}
-        {{ if .Component }}
-        {{. .Tag}}{{. .Tag}}
-        {{ else }}
-            <div>
-                {{ .Data }}
-            </div>
-        {{ end }}
+    {{ if .Component }}
+    {{. .Tag}}{{. .Tag}}
+    {{ else }}
+    <div>
+        {{ .Data }}
+    </div>
     {{ end }}
+    {{ end }}
+    <scrip src="js/htmx.min.js"></scrip>
     <script defer src="js/bundle.js"></script>
 </body>
 

@@ -25,6 +25,8 @@ func formatCreateTable(input interface{}, table string) string {
 			columns = append(columns, fields[i]+" "+intType)
 		case reflect.String:
 			columns = append(columns, fields[i]+" "+stringType)
+        case reflect.Struct:
+            columns = append(columns, fields[i]+" "+stringType)
 		}
 	}
 

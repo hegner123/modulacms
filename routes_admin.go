@@ -13,14 +13,14 @@ func adminRouter(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	case "/admin/field/add":
 		fmt.Print("/admin/field/add\n")
-		AdminCreateField(w, r)
+		adminCreateField(w, r)
 	case "/admin/media/create":
-		fmt.Print("/admin/media/add\n")
+		fmt.Print("/admin/media/create\n")
 		adminUploadMedia(w, r)
 	}
 }
 
-func AdminCreateField(w http.ResponseWriter, r *http.Request) {
+func adminCreateField(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("admin create field\n")
 	err := r.ParseForm()
 	if err != nil {
