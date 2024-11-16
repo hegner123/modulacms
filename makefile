@@ -43,7 +43,9 @@ watch: ## Run the code with cosmtrek/air to have automatic reload on changes
 
 ## Test:
 test: ## Run the tests of the project
-	$(GOTEST) -v 
+	touch ./modula_test.db
+	rm ./modula_test.db
+	$(GOTEST)  -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
 
 coverage: ## Run the tests of the project and export the coverage
 	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...

@@ -7,7 +7,7 @@ type Database struct {
 }
 
 type Media struct {
-	Id                 int32  `json:"id"`
+	ID                 int    `json:"id"`
 	Name               string `json:"name"`
 	DisplayName        string `json:"displayName"`
 	Alt                string `json:"alt"`
@@ -68,16 +68,16 @@ type Field struct {
 }
 
 type Element struct {
+	ID         int               `json:"id"`
 	Tag        string            `json:"tag"`
-	Attributes map[string]string `json:"Attributes"`
+	Attributes map[string]string `json:"attributes"`
 }
 
-func (e Element) RenderAttributes() template.HTMLAttr {
-	var result string
-	for key, value := range e.Attributes {
-		result += key + `="` + value + `" `
-	}
-	return template.HTMLAttr(result)
+type Attribute struct {
+	ID        int    `json:"id"`
+	ElementID int    `json:"elementid"`
+	Key       string `json:"key"`
+	Value     string `json:"value"`
 }
 
 type TemplateFields struct {
@@ -117,4 +117,25 @@ type MediaDimension struct {
 	Label  string `json:"label"`
 	Width  int    `json:"width"`
 	Height int    `json:"height"`
+}
+
+type FieldType struct {
+	Name        string      `json:"name"`
+	Type        string      `json:"type"`
+	Description string      `json:"description"`
+	Required    bool        `json:"required"`
+	Example     interface{} `json:"example"`
+}
+
+type Schema struct {
+	ObjectName string      `json:"objectName"`
+	Fields     []FieldType `json:"fields"`
+}
+
+func (e Element) RenderAttributes() template.HTMLAttr {
+	var result string
+	for key, value := range e.Attributes {
+		result += key + `="` + value + `" `
+	}
+	return template.HTMLAttr(result)
 }

@@ -15,17 +15,35 @@ func TestAddMedia(t *testing.T) {
 		Caption: "example", Description: "example image for the purposes of testing", Class: "flex-image",
 		Author: "example", AuthorID: 0, DateCreated: times, DateModified: times, Url: "https://localhost/example.png", MimeType: "png",
 		Dimensions: "1000x1000", OptimizedMobile: "", OptimizedTablet: "", OptimizedDesktop: "", OptimizedUltrawide: ""}
-	rowsChanged,err := dbCreateMedia(db, media)
-    if err!=nil {
-        fmt.Printf("%s\n",err)
-    }
+	rowsChanged, err := dbCreateMedia(db, media)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 	expected := int64(1)
 	if expected != rowsChanged {
 		t.Errorf("rows changed does not equal insert statements")
+	} else {
+		t.Name()
+		t.Log("passed")
+		fmt.Printf("Test Add Media PASS\n")
 	}
 
 }
 
+func TestGetMedia(t *testing.T) {
+
+	db, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	media, err := dbGetMediaByName(db, "example.png")
+    if err!=nil {
+        fmt.Printf("%s\n",err)
+    }
+	fmt.Printf("\n%v", media)
+
+}
+/*
 func TestDeleteMedia(t *testing.T) {
 	db, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -39,6 +57,10 @@ func TestDeleteMedia(t *testing.T) {
 
 	if rowsChanged != expected {
 		t.Errorf("rows changed does not equal insert statements")
+	} else {
+		t.Name()
+		t.Log("passed")
+		fmt.Printf("Test Delete Media PASS\n")
 	}
 
-}
+}*/

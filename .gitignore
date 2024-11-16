@@ -42,6 +42,7 @@ references/
 
 #development
 public/media/
+tests/
 
 #certs
 certs/

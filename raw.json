@@ -1,0 +1,48 @@
+{"Time":"2024-11-15T22:20:59.107074-05:00","Action":"start","Package":"github.com/hegner123/modulacms"}
+{"Time":"2024-11-15T22:20:59.119041-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"TestMain init\n"}
+{"Time":"2024-11-15T22:20:59.119089-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"TestMain setup\n"}
+{"Time":"2024-11-15T22:20:59.119928-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"UNIQUE constraint failed: tables.labeldb exec err db_init 001 : UNIQUE constraint failed: tables.label\n"}
+{"Time":"2024-11-15T22:20:59.125797-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"FOREIGN KEY constraint faileddb exec err db_init 002  : FOREIGN KEY constraint failed\n"}
+{"Time":"2024-11-15T22:20:59.126454-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"systemUser inserted successfully\n"}
+{"Time":"2024-11-15T22:20:59.128131-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"\n"}
+{"Time":"2024-11-15T22:20:59.128165-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"\u003cnil\u003e\n"}
+{"Time":"2024-11-15T22:20:59.128239-05:00","Action":"run","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat"}
+{"Time":"2024-11-15T22:20:59.128252-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat","Output":"=== RUN   TestInsertFormat\n"}
+{"Time":"2024-11-15T22:20:59.128666-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat","Output":"json:{\"id\":0,\"tag\":\"a\",\"attributes\":{\"Value\":\"Click here\",\"href\":\"/\"}}\n"}
+{"Time":"2024-11-15T22:20:59.13071-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat","Output":"result: \u003cnil\u003e"}
+{"Time":"2024-11-15T22:20:59.130736-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat","Output":"--- PASS: TestInsertFormat (0.00s)\n"}
+{"Time":"2024-11-15T22:20:59.13075-05:00","Action":"pass","Package":"github.com/hegner123/modulacms","Test":"TestInsertFormat","Elapsed":0}
+{"Time":"2024-11-15T22:20:59.130765-05:00","Action":"run","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery"}
+{"Time":"2024-11-15T22:20:59.130773-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"=== RUN   TestFieldQuery\n"}
+{"Time":"2024-11-15T22:20:59.131098-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"sql: no rows in result set\n"}
+{"Time":"2024-11-15T22:20:59.131139-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"    db_fields_test.go:43: Struct Results not deeply equal.\n"}
+{"Time":"2024-11-15T22:20:59.131157-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"         expected: {1 4 system 0 link_url  https://example.com 1730634309 1730634309 {0 a map[Value:Click here href:/]}  }+ \n"}
+{"Time":"2024-11-15T22:20:59.131174-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"         res: {0 0        {0  map[]}  }+\n"}
+{"Time":"2024-11-15T22:20:59.131185-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Output":"--- FAIL: TestFieldQuery (0.00s)\n"}
+{"Time":"2024-11-15T22:20:59.131196-05:00","Action":"fail","Package":"github.com/hegner123/modulacms","Test":"TestFieldQuery","Elapsed":0}
+{"Time":"2024-11-15T22:20:59.131205-05:00","Action":"run","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable"}
+{"Time":"2024-11-15T22:20:59.131213-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"=== RUN   TestDbCreateTable\n"}
+{"Time":"2024-11-15T22:20:59.131221-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"    db_formats_test.go:15: sql statement does not match. \n"}
+{"Time":"2024-11-15T22:20:59.131253-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"        expected CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, datecreated TEXT, datemodified TEXT, username TEXT, name TEXT, email TEXT, hash TEXT, role TEXT);\n"}
+{"Time":"2024-11-15T22:20:59.131264-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"        want CREATE TABLE IF NOT EXISTS users (datecreated TEXT, datemodified TEXT, username TEXT, name TEXT, email TEXT, hash TEXT, role TEXT); \n"}
+{"Time":"2024-11-15T22:20:59.13127-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"CREATE TABLE IF NOT EXISTS users (datecreated TEXT, datemodified TEXT, username TEXT, name TEXT, email TEXT, hash TEXT, role TEXT);"}
+{"Time":"2024-11-15T22:20:59.131277-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Output":"--- FAIL: TestDbCreateTable (0.00s)\n"}
+{"Time":"2024-11-15T22:20:59.131283-05:00","Action":"fail","Package":"github.com/hegner123/modulacms","Test":"TestDbCreateTable","Elapsed":0}
+{"Time":"2024-11-15T22:20:59.131289-05:00","Action":"run","Package":"github.com/hegner123/modulacms","Test":"TestReflection"}
+{"Time":"2024-11-15T22:20:59.131294-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"=== RUN   TestReflection\n"}
+{"Time":"2024-11-15T22:20:59.131301-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"    db_formats_test.go:26: Reflect the user struct into SQL column syntax. \n"}
+{"Time":"2024-11-15T22:20:59.131311-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"        Len: 7 Result:(datecreated, datemodified, username, name, email, hash, role) \n"}
+{"Time":"2024-11-15T22:20:59.131317-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"        Want\n"}
+{"Time":"2024-11-15T22:20:59.131324-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"        Len:8 SQL:(id, dateCreated, dateModified, username, name, email, hash, role)\n"}
+{"Time":"2024-11-15T22:20:59.131331-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Output":"--- FAIL: TestReflection (0.00s)\n"}
+{"Time":"2024-11-15T22:20:59.131336-05:00","Action":"fail","Package":"github.com/hegner123/modulacms","Test":"TestReflection","Elapsed":0}
+{"Time":"2024-11-15T22:20:59.131342-05:00","Action":"run","Package":"github.com/hegner123/modulacms","Test":"TestOptimize"}
+{"Time":"2024-11-15T22:20:59.131348-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestOptimize","Output":"=== RUN   TestOptimize\n"}
+{"Time":"2024-11-15T22:20:59.131353-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Test":"TestOptimize","Output":"--- PASS: TestOptimize (0.00s)\n"}
+{"Time":"2024-11-15T22:20:59.131379-05:00","Action":"pass","Package":"github.com/hegner123/modulacms","Test":"TestOptimize","Elapsed":0}
+{"Time":"2024-11-15T22:20:59.131385-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"FAIL\n"}
+{"Time":"2024-11-15T22:20:59.13139-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"TestMain teardown\n"}
+{"Time":"2024-11-15T22:20:59.131395-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"TestMain exit\n"}
+{"Time":"2024-11-15T22:20:59.131729-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"exit status 1\n"}
+{"Time":"2024-11-15T22:20:59.131748-05:00","Action":"output","Package":"github.com/hegner123/modulacms","Output":"FAIL\tgithub.com/hegner123/modulacms\t0.024s\n"}
+{"Time":"2024-11-15T22:20:59.131761-05:00","Action":"fail","Package":"github.com/hegner123/modulacms","Elapsed":0.025}

@@ -6,5 +6,3 @@ const adminRoutesTableConst string = `CREATE TABLE IF NOT EXISTS adminroutes (id
 const routesTableConst string = `CREATE TABLE IF NOT EXISTS routes (id INTEGER PRIMARY KEY, slug TEXT NOT NULL, author TEXT, authorId INTEGER, title TEXT, status INTEGER NOT NULL, datecreated TEXT NOT NULL, datemodified TEXT NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL, template TEXT);`
 const fieldsTableConst string = `CREATE TABLE IF NOT EXISTS fields(id INTEGER PRIMARY KEY, routeId INTEGER NOT NULL, author TEXT, authorId TEXT, key TEXT, type TEXT, data TEXT, datecreated TEXT, datemodified TEXT, component TEXT, tags TEXT, parent TEXT);`
 const tables string = "CREATE TABLE IF NOT EXISTS tables (id INTEGER PRIMARY KEY, label TEXT UNIQUE);"
-var menuElement = Element{Tag: "menu-component",Attributes: map[string]string{"id":"0"}}
-var createFieldField Field = Field{RouteID: 0, Author: "system", AuthorID: "0", Key: "Menu", Type: "Menu", Data: "", DateCreated: Times, DateModified: Times, Component:menuElement, Tags: "Menu, menu, Navigation, navigation, Nav, nav", Parent: "root" }

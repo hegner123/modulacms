@@ -30,9 +30,11 @@ const mediaTable string = `
 
 func dbGetMediaByName(db *sql.DB, name string) (Media, error) {
 	var media Media
-	query := fmt.Sprintf(`SELECT * FROM media WHERE name = %s`, name)
-	err := db.QueryRow(query).Scan(&media.Id, &media.Name, &media.DisplayName,
-		&media.Alt, &media.Caption, &media.Description, &media.Class, &media.DateCreated,
+	var columns = "id, name, displayname, alt, caption, description, class, author, authorid, datecreated, datemodified, url, mimeType, dimensions, optimizedmobile, optimizedtablet, optimizeddesktop, optimizedultrawide "
+	query := fmt.Sprintf(`SELECT %s FROM media WHERE name = ?`,columns)
+    fmt.Print(query)
+	err := db.QueryRow(query, name).Scan(&media.ID, &media.Name, &media.DisplayName,
+		&media.Alt, &media.Caption, &media.Description, &media.Class, &media.Author, &media.AuthorID, &media.DateCreated,
 		&media.DateModified, &media.Url, &media.MimeType, &media.Dimensions,
 		&media.OptimizedMobile, &media.OptimizedTablet, &media.OptimizedDesktop, &media.OptimizedUltrawide)
 
@@ -44,7 +46,7 @@ func dbGetMediaByName(db *sql.DB, name string) (Media, error) {
 }
 
 func dbCreateMedia(db *sql.DB, media Media) (int64, error) {
-	result, err := db.Exec(FormatSqlInsertStatement(media, "media"), media.Id, media.Name, media.DisplayName,
+	result, err := db.Exec(FormatSqlInsertStatement(media, "media"), media.ID, media.Name, media.DisplayName,
 		media.Alt, media.Caption, media.Description, media.Class, media.DateCreated,
 		media.DateModified, media.Url, media.MimeType, media.Dimensions,
 		media.OptimizedMobile, media.OptimizedTablet, media.OptimizedDesktop, media.OptimizedUltrawide)
@@ -80,9 +82,9 @@ func dbGetMediaDimensions(dbName string) []MediaDimension {
 	}
 	for rows.Next() {
 		err := rows.Scan(&ds[i].Label, &ds[i].Width, &ds[i].Height)
-        if err!=nil {
-            fmt.Printf("%s\n",err)
-        }
+		if err != nil {
+			fmt.Printf("%s\n", err)
+		}
 		i++
 	}
 	return ds

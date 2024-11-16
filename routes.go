@@ -116,7 +116,7 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	fields, err := dbGetRouteFields(matchedRoute.ID, db)
+	fields, err := dbGetField(db, matchedRoute.ID)
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
