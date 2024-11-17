@@ -18,3 +18,10 @@ func logGetVersion() string {
 	}
 	return string(bytes)
 }
+
+func logError(message string, err error){
+    er:= fmt.Errorf("%s %w\n",message,err)
+    if er!=nil {
+        fmt.Printf("%s\n",er)
+    }
+}

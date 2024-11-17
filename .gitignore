@@ -42,7 +42,9 @@ references/
 
 #development
 public/media/
+plugins/
 tests/
+backups/
 
 #certs
 certs/
