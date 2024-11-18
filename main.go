@@ -18,8 +18,17 @@ func hasFileExtension(path string) bool {
 
 func main() {
 	versionFlag := flag.Bool("v", false, "Print version and exit")
+	alphaFlag := flag.Bool("a", false, "including code for build purposes")
 	verbose := flag.Bool("V", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
+
+    if *alphaFlag{
+        ff,err := os.Open("test.txt")
+        if err != nil { 
+            logError("failed to create database dump in archive: ", err)
+        }
+        optimizeUpload(ff,"/")
+    }
 
 	flag.Parse()
 	if *versionFlag {

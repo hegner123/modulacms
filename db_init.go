@@ -2,114 +2,64 @@ package main
 
 import (
 	"database/sql"
+	"embed"
+	_ "embed"
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	"log"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
-const fieldsTable string = `CREATE TABLE fields (
-    id INTEGER PRIMARY KEY,
-    routeid INTEGER,
-    author TEXT,
-    authorid TEXT,
-    key TEXT,
-    type TEXT,
-    data TEXT,
-    datecreated TEXT,
-    datemodified TEXT,
-    componentid INTEGER,
-    tags TEXT,
-    parent TEXT,
-    FOREIGN KEY (componentid) REFERENCES elements(id)
-);`
+//go:embed sql/insert/*.sql
+var sqlFiles embed.FS
 
-const elementsTable string = `CREATE TABLE elements (
-    id INTEGER PRIMARY KEY,
-    tag TEXT
-);`
+//go:embed sql/init/init_fields.sql
+var fieldsTable string
 
-const attributesTable string = `CREATE TABLE attributes (
-    id INTEGER PRIMARY KEY,
-    elementid INTEGER,
-    key TEXT,
-    value TEXT,
-    FOREIGN KEY (elementid) REFERENCES elements(id)
-);`
+//go:embed sql/init/init_insert_fields.sql
+var insertFields string
 
-var Times = timestamp()
-var insertHomeRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/','system',0 ,'home',0,%s,%s,"content",'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_elements.sql
+var elementsTable string
 
-var insertPagesRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/pages','system',0 ,'pages', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_elements.sql
+var insertElements string
 
-var insertTypesRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/types','system',0 ,'types', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_attributes.sql
+var attributesTable string
 
-var insertFieldsRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/fields','system',0, 'fields', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_insert_attributes.sql
+var insertAttribute string
 
-var insertMenusRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/menus','system',0 ,'menus', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_adminroutes.sql
+var adminRoutesTable string
 
-var insertUsersRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/users','system',0, 'users', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_insert_adminroutes.sql
+var insertAdminRoutes string
 
-var insertMediaRoute string = fmt.Sprintf(`
-    INSERT INTO adminroutes (slug, author, authorId, title, status, datecreated, datemodified, content,  template) VALUES 
-    ('/media','system',0, 'media', 0, %s, %s, "content", 'default.html');
-    `, Times, Times)
+//go:embed sql/init/init_routes.sql
+var routesTable string
 
-var insertFields string = fmt.Sprintf(`INSERT INTO fields (routeid, author, authorid, key, type, data, datecreated, datemodified, componentid, tags, parent)
-VALUES (1, 'Alice', 'alice123', 'field_key_1', 'text', 'Sample data for field 1', '%s', '%s', 1, 'tag1,tag2', 'parent1');
+//go:embed sql/init/init_users.sql
+var usersTable string
 
-INSERT INTO fields (routeid, author, authorid, key, type, data, datecreated, datemodified, componentid, tags, parent)
-VALUES (2, 'Bob', 'bob456', 'field_key_2', 'number', '42', '%s', '%s', 2, 'tag3,tag4', 'parent2');
+//go:embed sql/init/init_insert_users.sql
+var insertSystemUser string
 
-INSERT INTO fields (routeid, author, authorid, key, type, data, datecreated, datemodified, componentid, tags, parent)
-VALUES (3, 'Charlie', 'charlie789', 'field_key_3', 'text', 'Another example of field data', '%s', '%s', 3, 'tag5', 'parent3');`, Times, Times, Times, Times, Times, Times)
+//go:embed sql/init/init_media.sql
+var mediaTable string
 
-var insertElement string = `INSERT INTO elements (id, tag) VALUES
-(1, 'div'),
-(2, 'span'),
-(3, 'section');`
+//go:embed sql/init/init_insert_media.sql
+var insertMedia string
 
-var insertAttribute string = `INSERT INTO attributes (elementid, key, value) VALUES
-(1, 'class', 'container'),
-(1, 'id', 'main-div'),
-(2, 'style', 'color: red; font-size: 14px;'),
-(2, 'data-role', 'user-info'),
-(3, 'class', 'content-section'),
-(3, 'data-id', 'section-123');
-`
+//go:embed sql/init/init_md.sql
+var mediaDimensionTable string
 
-var insertSystemUser string = fmt.Sprintf(`
-    INSERT INTO users (datecreated, datemodified, username, name, email, hash, role) VALUES 
-    ('%s','%s','system', 'system', 'system@system.com', 'hash', 'root');
-    `, Times, Times)
+//go:embed sql/init/init_insert_md.sql
+var insertMediaDimensions string
 
-const insertDefaultTables string = `
-    INSERT INTO tables (label) VALUES ('tables');
-    INSERT INTO tables (label) VALUES ('fields');
-    INSERT INTO tables (label) VALUES ('media');
-    INSERT INTO tables (label) VALUES ('routes');
-    INSERT INTO tables (label) VALUES ('adminroutes');
-    INSERT INTO tables (label) VALUES ('users');
-    INSERT INTO tables (label) VALUES ('elements');
-    INSERT INTO tables (label) VALUES ('attributes');
-    `
+//go:embed sql/init/init_insert_tables.sql
+var insertDefaultTables string
 
 func getDb(dbName Database) (*sql.DB, error) {
 	if dbName.DB == "" {
@@ -130,50 +80,19 @@ func getDb(dbName Database) (*sql.DB, error) {
 
 func initializeDatabase(db *sql.DB, reset bool) error {
 	if reset {
-		res, err := db.Exec(`
-            DROP TABLE IF EXISTS users;
-            DROP TABLE IF EXISTS routes;
-            DROP TABLE IF EXISTS adminroutes;
-            DROP TABLE IF EXISTS fields;
-            DROP TABLE IF EXISTS media;
-            DROP TABLE IF EXISTS media_dimensions;
-            DROP TABLE IF EXISTS tables;
-            DROP TABLE IF EXISTS elements;
-            DROP TABLE IF EXISTS attributes;`)
-		if err != nil {
-			fmt.Printf("db exec err db_init 006 : %s\n", err)
-			log.Fatal("I CAN'T FIND THE DATABASE CAPTIN!!!!\n Oh GOD IT'S GOT MY LEG!!!!")
-		}
-		if res != nil {
-			log.Print(res)
-		}
+        resetDatabase(db)
 	}
-	u := User{}
-	ar := AdminRoute{}
-	r := Routes{}
-	m := Media{}
-	md := MediaDimension{}
-	userTable := formatCreateTable(u, "users")
-	adminRoutesTable := formatCreateTable(ar, "adminroutes")
-	routesTable := formatCreateTable(r, "routes")
-	mediaTable := formatCreateTable(m, "media")
-	mediaDimensionTable := formatCreateTable(md, "media_dimensions")
 
-	statements := []string{tables, insertDefaultTables, userTable, adminRoutesTable, routesTable, fieldsTable, mediaTable, mediaDimensionTable, elementsTable, attributesTable}
-	routes := []string{insertHomeRoute, insertPagesRoute, insertTypesRoute, insertFieldsRoute, insertMenusRoute, insertUsersRoute, insertMediaRoute,insertElement, insertFields, insertAttribute}
-	systemUser := []string{insertSystemUser}
+	tables := []string{tables, insertDefaultTables, usersTable, adminRoutesTable, routesTable, fieldsTable, mediaTable, mediaDimensionTable, elementsTable, attributesTable}
+	rows := []string{insertAdminRoutes, insertElements, insertFields, insertAttribute, insertSystemUser, insertMedia, insertMediaDimensions}
 
-	err := forEachStatement(db, statements, "tables")
+	err := forEachStatement(db, tables, "tables")
 	if err != nil {
 		fmt.Printf("db exec err db_init 001 : %s\n", err)
 	}
-	err = forEachStatement(db, routes, "routes")
+	err = forEachStatement(db, rows, "rows")
 	if err != nil {
 		fmt.Printf("db exec err db_init 002  : %s\n", err)
-	}
-	err = forEachStatement(db, systemUser, "systemUser")
-	if err != nil {
-		fmt.Printf("db exec err db_init 003 : %s\n", err)
 	}
 	return err
 }
@@ -193,3 +112,26 @@ func initializeClientDatabase(clientDB string, clientReset bool) (*sql.DB, error
 	fmt.Print(res)
 	return db, nil
 }
+
+func resetDatabase(db *sql.DB) {
+
+	res, err := db.Exec(`
+            DROP TABLE IF EXISTS users;
+            DROP TABLE IF EXISTS routes;
+            DROP TABLE IF EXISTS adminroutes;
+            DROP TABLE IF EXISTS fields;
+            DROP TABLE IF EXISTS media;
+            DROP TABLE IF EXISTS media_dimensions;
+            DROP TABLE IF EXISTS tables;
+            DROP TABLE IF EXISTS elements;
+            DROP TABLE IF EXISTS attributes;`)
+	if err != nil {
+		fmt.Printf("db exec err db_init 006 : %s\n", err)
+		log.Fatal("I CAN'T FIND THE DATABASE CAPTIN!!!!\n Oh GOD IT'S GOT MY LEG!!!!")
+	}
+	if res != nil {
+		log.Print(res)
+	}
+}
+
+

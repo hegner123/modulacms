@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -167,8 +166,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		title := r.FormValue("title")
 		slug := r.FormValue("slug")
 		content := r.FormValue("content")
-		now := time.Now().Unix()
-		Route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "Page"}
+		Route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: times, DateModified: times, Content: content, Template: "Page"}
 		_, err = dbCreateRoute(db, Route)
 		message := "created successfully"
 		if err != nil {

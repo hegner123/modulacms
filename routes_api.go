@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func apiCreateRoute(w http.ResponseWriter, r *http.Request) string {
@@ -20,8 +19,7 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request) string {
 	title := r.FormValue("title")
 	slug := r.FormValue("slug")
 	content := r.FormValue("content")
-	now := time.Now().Unix()
-	route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: now, DateModified: now, Content: content, Template: "page.html"}
+	route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: times, DateModified: times, Content: content, Template: "page.html"}
 	_, err = dbCreateRoute(db, route)
 	message := "created successfully"
 	if err != nil {

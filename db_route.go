@@ -6,8 +6,8 @@ import (
 )
 
 func dbCreateRoute(db *sql.DB, route Routes) (int64, error) {
-	result, err := db.Exec("INSERT INTO routes (slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
-		route.Slug, route.Title, route.Status, route.DateCreated, route.DateModified, route.Content, route.Template)
+	result, err := db.Exec("INSERT INTO routes (author, authorid, slug, title, status, datecreated, datemodified, content, template) VALUES (?,?,?,?,?,?,?)",
+		route.Author, route.AuthorID, route.Slug, route.Title, route.Status, route.DateCreated, route.DateModified, route.Content, route.Template)
 	if err != nil {
 		fmt.Print(err)
 		return 0, err

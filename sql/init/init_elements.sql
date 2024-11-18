@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS elements(
+    id INTEGER PRIMARY KEY,
+    tag TEXT
+);

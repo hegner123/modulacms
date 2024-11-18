@@ -11,15 +11,22 @@
 - DevOps: Github actions to deploy
 
 ## Proof of concept requires
-- Go Server
-- Go DB connection
-- Handle routes for admin
-- handle routes for frontend
-- admin auth - oAuth?
-- dashboard
-- Route editor
-- Create field
-- media upload
+- [x] Go Server
+- [x] Go DB connection
+- [x] Handle routes for Admin
+- [x] Handle routes for front end - REST api
+- [ ] Load and confirm bucket connection
+- [ ] Render html pages and templates
+- [ ] Define front end api
+- [ ] Admin authentication - oAuth?
+- [ ] Dashboard
+- [ ] Route editor
+- [ ] Create field
+- [ ] Create elements
+- [ ] Media upload
+- [ ] Media Optimize
+- [ ] Backup
+- [ ] Restore
 
 Visible on admin frontend
 - s3 bucket connection

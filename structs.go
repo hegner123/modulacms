@@ -34,8 +34,8 @@ type Routes struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  int64  `json:"datecreated"`
-	DateModified int64  `json:"datemodified"`
+	DateCreated  string  `json:"datecreated"`
+	DateModified string  `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
@@ -46,8 +46,8 @@ type AdminRoute struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  int64  `json:"datecreated"`
-	DateModified int64  `json:"datemodified"`
+	DateCreated  string  `json:"datecreated"`
+	DateModified string  `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
