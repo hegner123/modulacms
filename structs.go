@@ -34,8 +34,8 @@ type Routes struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  string  `json:"datecreated"`
-	DateModified string  `json:"datemodified"`
+	DateCreated  string `json:"datecreated"`
+	DateModified string `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
@@ -46,8 +46,8 @@ type AdminRoute struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       int    `json:"status"`
-	DateCreated  string  `json:"datecreated"`
-	DateModified string  `json:"datemodified"`
+	DateCreated  string `json:"datecreated"`
+	DateModified string `json:"datemodified"`
 	Content      string `json:"content"`
 	Template     string `json:"template"`
 }
@@ -89,6 +89,7 @@ type Config struct {
 	Port            string   `json:"port"`
 	SSLPort         string   `json:"ssl_port"`
 	ClientSite      string   `json:"client_site"`
+	DB_DRIVER       string   `json:"db_driver"`
 	DB_URL          string   `json:"db_url"`
 	DB_NAME         string   `json:"db_name"`
 	DB_PASSWORD     string   `json:"db_password"`
@@ -139,6 +140,7 @@ type Backup struct {
 	DbFile  string
 	Archive string
 }
+
 
 func (e Element) RenderAttributes() template.HTMLAttr {
 	var result string

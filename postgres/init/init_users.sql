@@ -4,7 +4,9 @@ CREATE TABLE IF NOT EXISTS users(
     datemodified TEXT,
     username TEXT,
     name TEXT,
-    email TEXT,
+    email TEXT UNIQUE,
     hash TEXT,
     role TEXT
 );
+
+

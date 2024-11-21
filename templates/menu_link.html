@@ -1,0 +1,7 @@
+{{define "MenuLink"}}
+<li {{if .ListClasses}}class="{{.ListClasses}}" {{end}}>
+    <a href="{{.Href}}" {{if .AnchorClasses}}class="{{.AnchorClasses}}" {{end}} 
+        {{if eq .Target "true" }}target="_blank"
+        {{end}}>{{.Name}}</a>
+</li>
+{{end}}

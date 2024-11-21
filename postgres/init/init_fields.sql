@@ -1,4 +1,4 @@
-CREATE TABLE fields (
+CREATE TABLE IF NOT EXISTS fields (
     id INTEGER PRIMARY KEY,
     routeid INTEGER,
     author TEXT,

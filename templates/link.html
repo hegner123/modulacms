@@ -1,0 +1,4 @@
+{{define "LinkWrapper"}}
+<a href="{{.Href}}" {{if .AnchorClasses}}class="{{.AnchorClasses}}" {{end}} 
+    {{if eq .Target "true" }}target="_blank"{{end}}>{{.Content}}</a>
+{{end}}

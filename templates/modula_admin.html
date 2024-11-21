@@ -1,0 +1,30 @@
+<!--
+Name    string 
+Href       string 
+Target     bool 
+Icon       IconSrc 
+Classes    string
+ListClasses   string
+AnchorClasses string
+Type       string 
+Children   bool 
+ChildLinks []AdminLink 
+--->
+{{define "modula-admin"}}
+<nav class="modula-admin">
+
+    <ul class="modula-admin-primary">
+        {{range .DestinationLinks}}
+            {{template "MenuLink" .Link}}
+        {{end}}
+        {{range .ToolbarPrimary}}
+            {{template "MenuLink" .Link}}
+        {{end}}
+    </ul>
+    <ul class="modula-admin-secondary">
+        {{range .ToolbarSecondary}}
+            {{template "MenuLink" .Link}}
+        {{end}}
+    </ul>
+</nav>
+{{end}}

@@ -1,15 +1,13 @@
-INSERT INTO routes (
+CREATE TABLE IF NOT EXISTS routes (
     author TEXT, 
     authorid TEXT, 
-    slug TEXT, 
+    slug TEXT UNIQUE, 
     title TEXT, 
     status INTEGER, 
     datecreated INTEGER, 
     datemodified INTEGER, 
     content TEXT, 
-    template TEXT) 
-VALUES (
-    "system",
-    "0",
-    "/place",
-    )
+    template TEXT
+);
+
+

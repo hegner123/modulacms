@@ -1,3 +1,4 @@
+{{define "Base"}}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -15,50 +16,34 @@
         frame-ancestors 'self'; 
         base-uri 'self';
       ">
+    <link rel="stylesheet" href="style/norm.css">
 
     <style>
         html {
             font-family: sans-serif, system-ui;
-            color: white;
-        }
-
-        body {
-            background: #333;
-            padding-left: 2rem;
-            padding-right: 2rem;
-
-        }
-
-        .form-row {
-            display: flex;
         }
     </style>
+    <link rel="stylesheet" href="style/style.css">
     <title>{{.Title}}</title>
 </head>
 
-<body>
+<body class="primary-grid-parent">
+    {{Template "ModulaAdminBar" .AdminBar }}
+    {{Template "ModulaSidebar" .Sidebar }}
+    <main class="grid-child">
 
-    <div class="form-row">
-        <form method="post" class="add-post-form" action="/api/add/page">
+        <form method="post" class=" grid-child add-post-form" action="/api/add/page">
             <label for="title">Title</label>
-            <br>
             <input id="title" name="title" type="text">
-            <br>
-            <br>
             <label for="slug">Slug</label>
-            <br>
             <input id="slug" name="slug" type="text">
-            <br>
-            <br>
             <label for="content">Content</label>
-            <br>
             <textarea id="content" name="content">placeholder</textarea>
-            <br>
             <button type="submit">Submit</button>
         </form>
 
 
-        <ul>
+        <ul class="grid-child">
             {{range .Pages }}
             <li>
                 <p>{{ .Title }}</p>
@@ -69,7 +54,7 @@
         </ul>
 
 
-    </div>
+    </main>
 </body>
 
 
@@ -77,3 +62,5 @@
 <script defer src="js/bundle.js"></script>
 
 </html>
+
+{{end}}

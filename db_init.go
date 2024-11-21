@@ -80,10 +80,10 @@ func getDb(dbName Database) (*sql.DB, error) {
 
 func initializeDatabase(db *sql.DB, reset bool) error {
 	if reset {
-        resetDatabase(db)
+		resetDatabase(db)
 	}
 
-	tables := []string{tables, insertDefaultTables, usersTable, adminRoutesTable, routesTable, fieldsTable, mediaTable, mediaDimensionTable, elementsTable, attributesTable}
+	tables := []string{tables, insertDefaultTables, usersTable, elementsTable, adminRoutesTable, routesTable, fieldsTable, mediaTable, mediaDimensionTable, attributesTable}
 	rows := []string{insertAdminRoutes, insertElements, insertFields, insertAttribute, insertSystemUser, insertMedia, insertMediaDimensions}
 
 	err := forEachStatement(db, tables, "tables")
@@ -133,5 +133,3 @@ func resetDatabase(db *sql.DB) {
 		log.Print(res)
 	}
 }
-
-

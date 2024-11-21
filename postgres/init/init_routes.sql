@@ -1,8 +1,7 @@
-
 CREATE TABLE IF NOT EXISTS routes (
     author TEXT, 
     authorid TEXT, 
-    slug TEXT, 
+    slug TEXT UNIQUE, 
     title TEXT, 
     status INTEGER, 
     datecreated INTEGER, 
@@ -10,3 +9,5 @@ CREATE TABLE IF NOT EXISTS routes (
     content TEXT, 
     template TEXT
 );
+
+

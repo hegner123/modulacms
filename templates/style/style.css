@@ -1,0 +1,73 @@
+:root{
+    --modula-theme-primary:#000;
+    --modula-theme-text:#000;
+    color:;
+}
+
+
+
+
+
+
+
+
+
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    margin: 0;
+    padding: 0;
+    font-size: 16px;
+}
+
+.modula-admin {
+    height: 32px;
+}
+
+.modula-sidebar {
+    margin-top:32px;
+}
+
+.navigation {
+    grid-column: 1/-1;
+    display: grid;
+    grid-template-columns: inherit;
+    background: black;
+    height: 64px;
+}
+
+.navigation ul.active-area {
+    width: 100%;
+    height: 100%;
+    grid-column: 2/-2;
+}
+
+.navigation ul li {
+    list-style: none;
+}
+
+.navigation ul li a {
+    color: white;
+}
+
+.grid-parent {
+    display: grid;
+    grid-template-columns: 100px repeat(12, 1fr) 100px;
+}
+
+.grid-child {
+    grid-column: 1/-1;
+    display: grid;
+    grid-template-columns: inherit;
+}
+
+.add-post-form {    
+    padding:1rem;
+
+}

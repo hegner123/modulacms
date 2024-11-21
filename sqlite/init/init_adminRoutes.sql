@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS adminroutes (
     author TEXT, 
     authorid TEXT, 
-    slug TEXT, 
+    slug TEXT UNIQUE, 
     title TEXT, 
     status INTEGER, 
     datecreated INTEGER, 
@@ -9,3 +9,5 @@ CREATE TABLE IF NOT EXISTS adminroutes (
     content TEXT, 
     template TEXT
 );
+
+

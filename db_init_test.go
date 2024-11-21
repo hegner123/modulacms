@@ -7,7 +7,7 @@ import (
 
 )
 
-//go:embed sql/*.sql
+//go:embed sql/insert/*.sql
 var f embed.FS
 
 /*
@@ -49,19 +49,23 @@ func TestF(t *testing.T) {
 }
 
 func TestPreparedStatements(t *testing.T) {
-	buffer, err := sqlFiles.ReadFile("sql/insert/insert_md.sq")
+	buffer, err := sqlFiles.ReadFile("sql/insert/insert_md.sql")
 	if err != nil {
 		t.Fatal()
 		logError("failed to open embed fs file ", err)
 	}
 	db, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
-		logError("failed to create database dump in archive: ", err)
+		logError("failed to get database ", err)
 	}
     res,err := db.Exec(string(buffer),"test",100,100)
     if err != nil { 
-        logError("failed to create database dump in archive: ", err)
+        logError("failed to execute query ", err)
     }
-    fmt.Printf("%v\n",res)
+    id,err :=res.LastInsertId()
+    if err != nil { 
+        logError("failed to retrieve last insert id ", err)
+    }
+    fmt.Printf("%v\n",id)
 
 }
