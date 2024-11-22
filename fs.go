@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -18,4 +19,15 @@ func DirExists(path string) bool {
 		return false
 	}
 	return info.IsDir()
+}
+
+
+func ReadEmbedFS(directory string){
+dir, err := sqlFiles.ReadDir(directory)
+	if err != nil {
+		logError("error in ReadEmbedFS ", err)
+	}
+	for key, value := range dir {
+		fmt.Printf("%d:%s\n", key, value)
+	}
 }

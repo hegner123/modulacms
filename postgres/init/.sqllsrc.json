@@ -1,8 +1,0 @@
-{
-    "connections": [
-        {
-            "name": "modulacms",
-            "adapter": "postgres"
-        }
-    ]
-}

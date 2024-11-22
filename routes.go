@@ -157,7 +157,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		db, err := getDb(Database{})
+		db,ctx, err := getDb(Database{})
 		if err != nil {
 			fmt.Printf("error: %s", err)
 			return

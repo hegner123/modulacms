@@ -1,88 +1,7 @@
 package main
 
-import "html/template"
-
 type Database struct {
 	DB string
-}
-
-type Media struct {
-	ID                 int    `json:"id"`
-	Name               string `json:"name"`
-	DisplayName        string `json:"displayName"`
-	Alt                string `json:"alt"`
-	Caption            string `json:"caption"`
-	Description        string `json:"description"`
-	Class              string `json:"class"`
-	Author             string `json:"author"`
-	AuthorID           int32  `json:"authorid"`
-	DateCreated        string `json:"datecreated"`
-	DateModified       string `json:"datemodified"`
-	Url                string `json:"url"`
-	MimeType           string `json:"mimeType"`
-	Dimensions         string `json:"dimensions"`
-	OptimizedMobile    string `json:"optimizedMobile"`
-	OptimizedTablet    string `json:"optimizedTablet"`
-	OptimizedDesktop   string `json:"optimizedDesktop"`
-	OptimizedUltrawide string `json:"optimizedUltrawide"`
-}
-
-type Routes struct {
-	ID           int    `json:"id"`
-	Author       string `json:"author"`
-	AuthorID     string `json:"authorid"`
-	Slug         string `json:"slug"`
-	Title        string `json:"title"`
-	Status       int    `json:"status"`
-	DateCreated  string `json:"datecreated"`
-	DateModified string `json:"datemodified"`
-	Content      string `json:"content"`
-	Template     string `json:"template"`
-}
-type AdminRoute struct {
-	ID           int    `json:"id"`
-	Author       string `json:"author"`
-	AuthorID     string `json:"authorId"`
-	Slug         string `json:"slug"`
-	Title        string `json:"title"`
-	Status       int    `json:"status"`
-	DateCreated  string `json:"datecreated"`
-	DateModified string `json:"datemodified"`
-	Content      string `json:"content"`
-	Template     string `json:"template"`
-}
-
-type Field struct {
-	ID           int     `json:"id"`
-	RouteID      int     `json:"routeid"`
-	Author       string  `json:"author"`
-	AuthorID     string  `json:"authorid"`
-	Key          string  `json:"key"`
-	Type         string  `json:"type"`
-	Data         string  `json:"data"`
-	DateCreated  string  `json:"datecreated"`
-	DateModified string  `json:"datemodified"`
-	Component    Element `json:"component"`
-	Tags         string  `json:"tags"`
-	Parent       string  `json:"parent"`
-}
-
-type Element struct {
-	ID         int               `json:"id"`
-	Tag        string            `json:"tag"`
-	Attributes map[string]string `json:"attributes"`
-}
-
-type Attribute struct {
-	ID        int    `json:"id"`
-	ElementID int    `json:"elementid"`
-	Key       string `json:"key"`
-	Value     string `json:"value"`
-}
-
-type TemplateFields struct {
-	RouteID int
-	Field   []Field
 }
 
 type Config struct {
@@ -97,29 +16,6 @@ type Config struct {
 	Bucket_PASSWORD string   `json:"bucket_password"`
 	Backup_Option   string   `json:"backup_option"`
 	Backup_Paths    []string `json:"backup_Path"`
-}
-
-type User struct {
-	ID           int    `json:"id"`
-	DateCreated  string `json:"datecreated"`
-	DateModified string `json:"datemodified"`
-	UserName     string `json:"username"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	Hash         string `json:"hash"`
-	Role         string `json:"role"`
-}
-
-type PageRoutes struct {
-	Title string
-	Pages []Routes
-}
-
-type MediaDimension struct {
-	ID     int    `json:"id"`
-	Label  string `json:"label"`
-	Width  int    `json:"width"`
-	Height int    `json:"height"`
 }
 
 type FieldType struct {
@@ -139,13 +35,4 @@ type Backup struct {
 	Hash    string
 	DbFile  string
 	Archive string
-}
-
-
-func (e Element) RenderAttributes() template.HTMLAttr {
-	var result string
-	for key, value := range e.Attributes {
-		result += key + `="` + value + `" `
-	}
-	return template.HTMLAttr(result)
 }

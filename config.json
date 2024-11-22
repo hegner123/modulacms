@@ -1,10 +1,21 @@
 {
     "port": "8080",
     "ssl_port": "443",
-    "client_site":"example.com",
+    "client_site": "example.com",
+    "db_driver": "sqlite",
     "db_url": "default",
     "db_name": "default",
     "db_password": "none",
     "bucket_url": "local",
-    "bucket_password": "none"
+    "bucket_password": "none",
+    "oauthClientID": "YOUR_CLIENT_ID",
+    "oauthClientSecret": "YOUR_CLIENT_SECRET",
+    "oauthScopes": [
+        "SCOPE1",
+        "SCOPE2"
+    ],
+    "oauthEndpoint": {
+        "oauthAuthURL": "https://provider.com/o/oauth2/auth",
+        "oauthTokenURL": "https://provider.com/o/oauth2/token"
+    }
 }

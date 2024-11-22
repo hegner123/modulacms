@@ -36,6 +36,9 @@ func main() {
 		log.Fatal(message)
 	}
 	config := loadConfig(verbose)
+    if *verbose{
+        printEmbedFS()
+    }
 
 	if *reset {
 		fmt.Println("Verbose mode:")

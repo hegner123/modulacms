@@ -1,0 +1,24 @@
+-- name: GetTable :one
+SELECT * FROM tables
+WHERE id = ? LIMIT 1;
+
+-- name: ListTables :many
+SELECT * FROM tables 
+ORDER BY ;
+
+-- name: CreateTable :one
+INSERT INTO tables (
+) VALUES (
+  ?, ?
+)
+RETURNING *;
+
+-- name: UpdateTable :exec
+UPDATE tables
+set 
+
+WHERE id = ?;
+
+-- name: DeleteTable :exec
+DELETE FROM tables
+WHERE id = ?;
