@@ -7,19 +7,17 @@ import (
 	_ "embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"path/filepath"
 	"strings"
 
-	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed sql/*
 var sqlFiles embed.FS
 
-func getDb(dbName Database) (*sql.DB,context.Context ,error) {
-    ctx := context.Background()
+func getDb(dbName Database) (*sql.DB, context.Context, error) {
+	ctx := context.Background()
 
 	if dbName.DB == "" {
 		dbName.DB = "./modula.db"
@@ -27,44 +25,29 @@ func getDb(dbName Database) (*sql.DB,context.Context ,error) {
 	db, err := sql.Open("sqlite3", dbName.DB)
 	if err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
-		return nil,ctx, err
+		return nil, ctx, err
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 008 : %s\n", err)
-		return nil,ctx, err
+		return nil, ctx, err
 	}
-	return db,ctx, nil
+	return db, ctx, nil
 }
 
-
-func initDb(db *sql.DB, ctx context.Context)error{
-    times:= timestampS()
-    queries:= new(mdb.Queries)
-    tables,err := readSchemaFiles()
-    if err != nil { 
-        logError("couldn't read schema files.", err)
-    }
+func initDb(db *sql.DB, ctx context.Context) error {
+	tables, err := readSchemaFiles()
+	if err != nil {
+		logError("couldn't read schema files.", err)
+	}
 
 	if _, err := db.ExecContext(ctx, tables); err != nil {
 		return err
 	}
 
-    mdb.New(db)
- 
-	insertedUser, err := queries.CreateUser(ctx, mdb.CreateUserParams{
-        Datecreated:sql.NullString{String:  times},
-	})
-	if err != nil {
-		return err
-	}
-	log.Println(insertedUser)
 
-return nil
+	return nil
 }
-
-
-
 
 func readSchemaFiles() (string, error) {
 	var result []string
@@ -90,4 +73,3 @@ func readSchemaFiles() (string, error) {
 	// Join all the file contents
 	return strings.Join(result, "\n"), nil
 }
-

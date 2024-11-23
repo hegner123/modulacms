@@ -23,8 +23,8 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request) string {
 		Slug:         ns(slug),
 		Title:        ns(title),
 		Status:       ni(0),
-		Datecreated:  ni(int(timestampI())),
-		Datemodified: ni(int(timestampI())),
+		Datecreated:  ns(timestampS()),
+		Datemodified: ns(timestampS()),
 		Content:      ns(content),
 		Template:     ns("page.html")}
 	_ = dbCreateRoute(db, ctx, route)

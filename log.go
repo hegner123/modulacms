@@ -26,3 +26,5 @@ func logError(message string, err error){
         fmt.Printf("%s\n",er)
     }
 }
+
+

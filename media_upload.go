@@ -1,32 +1,26 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"os"
 	"time"
 )
 
-func handleMediaUpload(file *bytes.Buffer, fName string) {
+func handleCompletedMediaUpload(tmpFile string, fName string) {
 	now := time.Now()
-	year := now.Format("2006")
-	month := now.Format("01")
-	newPath := fmt.Sprintf("./media/%s/%s/%s", year, month, fName)
+	year := now.Year()
+	month := now.Month()
+	newPath := fmt.Sprintf("./media/%d/%d/%s", year, month, fName)
 
-	err := os.WriteFile(newPath, file.Bytes(), os.FileMode(0555))
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
-	f, err := os.Open(newPath)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
+	optimized := optimizeUpload(tmpFile, fName)
 
-	optimized := optimizeUpload(f, fName)
-	if optimized == 1 {
-		fmt.Printf("Couldn't Optimize file\n")
-	} else {
-		fmt.Printf("Optimized file\n")
+    //TODO: write paths to optimized files to db
+
+	for _, v := range optimized {
+		err := objectUpload(v, newPath)
+		if err != nil {
+			logError("failed to upload optimized files to blob storage ", err)
+		}
+
 	}
 
 }

@@ -11,7 +11,7 @@ import (
 
 
 func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.Adminroute {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
 	if err != nil {
 		logError("failed to create admin route ", err)
@@ -21,8 +21,7 @@ func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteP
 }
 
 func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) mdb.Field {
-
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedField, err := queries.CreateField(ctx, s)
 	if err != nil {
 		logError("failed to create field ", err)
@@ -32,8 +31,7 @@ func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) mdb
 }
 
 func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {
-
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedMedia, err := queries.CreateMedia(ctx, s)
 	if err != nil {
 		logError("failed to create media ", err)
@@ -44,7 +42,7 @@ func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb
 
 func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimension {
 
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedMediaDimension, err := queries.CreateMediaDimension(ctx, s)
 	if err != nil {
 		logError("failed to create MediaDimension ", err)
@@ -55,7 +53,7 @@ func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDi
 
 func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Route {
 
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedRoute, err := queries.CreateRoute(ctx, s)
 	if err != nil {
 		logError("failed to create route ", err)
@@ -66,9 +64,7 @@ func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb
 }
 
 func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.User {
-
-
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedUser, err := queries.CreateUser(ctx, s)
 	if err != nil {
 		logError("failed to create user ", err)
@@ -78,9 +74,7 @@ func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.U
 }
 
 func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
-
-
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	insertedTable, err := queries.CreateTable(ctx, s.Label)
 	if err != nil {
 		logError("failed to create table ", err)

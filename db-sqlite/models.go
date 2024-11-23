@@ -15,8 +15,8 @@ type Adminroute struct {
 	Slug         sql.NullString
 	Title        sql.NullString
 	Status       sql.NullInt64
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Content      sql.NullString
 	Template     sql.NullString
 }
@@ -70,8 +70,8 @@ type Route struct {
 	Slug         sql.NullString
 	Title        sql.NullString
 	Status       sql.NullInt64
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Content      sql.NullString
 	Template     sql.NullString
 }

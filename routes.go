@@ -167,7 +167,15 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		title := r.FormValue("title")
 		slug := r.FormValue("slug")
 		content := r.FormValue("content")
-		Route := mdb.CreateRouteParams{Slug: ns(slug), Title: ns(title), Status: ni(0), Datecreated: ni(int(timestampI())), Datemodified: ni(int(timestampI())), Content: ns(content), Template: ns("Page")}
+		Route := mdb.CreateRouteParams{
+            Slug: ns(slug), 
+            Title: ns(title), 
+            Status: ni(0), 
+            Datecreated: ns(timestampS()),
+            Datemodified: ns(timestampS()),
+            Content: ns(content),
+            Template: ns("Page"),
+        }
 		_ = dbCreateRoute(db,ctx, Route)
 		message := "created successfully"
 		if err != nil {

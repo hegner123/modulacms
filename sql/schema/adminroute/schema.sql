@@ -5,8 +5,8 @@ CREATE TABLE adminroute (
     slug TEXT UNIQUE, 
     title TEXT, 
     status INTEGER, 
-    datecreated INTEGER, 
-    datemodified INTEGER, 
+    datecreated TEXT, 
+    datemodified TEXT, 
     content TEXT, 
     template TEXT
 );

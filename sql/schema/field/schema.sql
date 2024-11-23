@@ -10,6 +10,6 @@ CREATE TABLE field (
     authorid TEXT,
     datecreated TEXT,
     datemodified TEXT,
-    FOREIGN KEY (routeid) REFERENCES adminroutes(id),
-    FOREIGN KEY (parentid) REFERENCES fields(id)
+    FOREIGN KEY (routeid) REFERENCES adminroute(id),
+    FOREIGN KEY (parentid) REFERENCES field(id)
 );

@@ -6,26 +6,26 @@ import (
 )
 
 func ns(s string)sql.NullString{
-return sql.NullString{String: s}
+return sql.NullString{String: s,Valid: true}
 }
 
 func ni(i int)sql.NullInt64{
-return sql.NullInt64{Int64: int64(i)}
+return sql.NullInt64{Int64: int64(i),Valid: true}
 }
 
 func nf(f float64)sql.NullFloat64{
-return sql.NullFloat64{Float64: f}
+return sql.NullFloat64{Float64: f, Valid: true}
 }
 
 func nb(b bool)sql.NullBool{ 
-return sql.NullBool{Bool: b}
+return sql.NullBool{Bool: b, Valid: true}
 }
 
 func nt(t time.Time)sql.NullTime{
-return sql.NullTime{Time: t}
+return sql.NullTime{Time: t, Valid: true}
 }
 
 func nby(by byte)sql.NullByte{
-return sql.NullByte{Byte: by}
+return sql.NullByte{Byte: by, Valid: true}
 }
 

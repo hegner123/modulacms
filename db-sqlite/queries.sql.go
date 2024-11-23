@@ -32,8 +32,8 @@ type CreateAdminRouteParams struct {
 	Slug         sql.NullString
 	Title        sql.NullString
 	Status       sql.NullInt64
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Content      sql.NullString
 	Template     sql.NullString
 }
@@ -266,8 +266,8 @@ type CreateRouteParams struct {
 	Slug         sql.NullString
 	Title        sql.NullString
 	Status       sql.NullInt64
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Content      sql.NullString
 	Template     sql.NullString
 }
@@ -1114,8 +1114,8 @@ type UpdateAdminRouteParams struct {
 	Template     sql.NullString
 	Author       sql.NullString
 	Authorid     sql.NullString
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Column10     interface{}
 	Column11     interface{}
 }
@@ -1305,8 +1305,8 @@ type UpdateRouteParams struct {
 	Template     sql.NullString
 	Author       sql.NullString
 	Authorid     sql.NullString
-	Datecreated  sql.NullInt64
-	Datemodified sql.NullInt64
+	Datecreated  sql.NullString
+	Datemodified sql.NullString
 	Column10     interface{}
 	Column11     interface{}
 }

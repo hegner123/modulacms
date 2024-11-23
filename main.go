@@ -23,11 +23,10 @@ func main() {
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
 
 	if *alphaFlag {
-		ff, err := os.Open("test.txt")
+		_, err := os.Open("test.txt")
 		if err != nil {
 			logError("failed to create database dump in archive: ", err)
 		}
-		optimizeUpload(ff, "/")
 	}
 
 	flag.Parse()

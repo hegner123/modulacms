@@ -21,7 +21,6 @@ func setup() {
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	defer db.Close()
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
 	err = initDb(db,ctx)

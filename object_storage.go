@@ -9,7 +9,7 @@ import (
     "github.com/aws/aws-sdk-go/service/s3"
 )
 
-func confirmConnection() {
+func objectConfirmConnection() {
     // Replace these with your actual credentials and endpoint
     accessKey := "YOUR_ACCESS_KEY"
     secretKey := "YOUR_SECRET_KEY"
@@ -41,4 +41,8 @@ func confirmConnection() {
             aws.StringValue(bucket.Name),
             aws.TimeValue(bucket.CreationDate))
     }
+}
+
+func objectUpload(src string, dst string)error{
+return nil
 }
