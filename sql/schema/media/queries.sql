@@ -1,9 +1,9 @@
 
 -- name: GetMedia :one
 SELECT * FROM media
-WHERE id = ? LIMIT 1;
+WHERE ? = ? LIMIT 1;
 
--- name: ListMedias :many
+-- name: ListMedia :many
 SELECT * FROM media
 ORDER BY name;
 
@@ -50,8 +50,8 @@ UPDATE media
         optimizedtablet = ?,
         optimizeddesktop = ?,
         optimizedultrawide = ?
-        WHERE id = ?;
+        WHERE ? = ?;
 
 -- name: DeleteMedia :exec
 DELETE FROM media
-WHERE id = ?;
+WHERE ? = ?;

@@ -22,23 +22,20 @@ func main() {
 	verbose := flag.Bool("V", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
 
-    if *alphaFlag{
-        ff,err := os.Open("test.txt")
-        if err != nil { 
-            logError("failed to create database dump in archive: ", err)
-        }
-        optimizeUpload(ff,"/")
-    }
+	if *alphaFlag {
+		ff, err := os.Open("test.txt")
+		if err != nil {
+			logError("failed to create database dump in archive: ", err)
+		}
+		optimizeUpload(ff, "/")
+	}
 
 	flag.Parse()
 	if *versionFlag {
-        message:= logGetVersion()
+		message := logGetVersion()
 		log.Fatal(message)
 	}
 	config := loadConfig(verbose)
-    if *verbose{
-        printEmbedFS()
-    }
 
 	if *reset {
 		fmt.Println("Verbose mode:")
@@ -48,20 +45,20 @@ func main() {
 		}
 	}
 
-	if config.ClientSite != "" {
-		clientDB, err := initializeClientDatabase(config.ClientSite, *reset)
+	/*if config.ClientSite != "" {
+		clientDB, err := initClientDatabase(config.ClientSite, *reset)
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 			return
 		}
 		defer clientDB.Close()
-	}
+	}*/
 	if !dbFileExists || *reset {
-		db, err := getDb(Database{DB: "modula.db"})
+		db, ctx, err := getDb(Database{DB: "modula.db"})
 		if err != nil {
 			fmt.Printf("%s\n", err)
 		}
-		err = initializeDatabase(db, *reset)
+		err = initDb(db, ctx)
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 		}

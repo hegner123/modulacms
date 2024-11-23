@@ -9,7 +9,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var times = timestamp()
 
 func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.Adminroute {
 	queries := new(mdb.Queries)
@@ -78,7 +77,7 @@ func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.U
 	return insertedUser
 }
 
-func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Table) mdb.Table {
+func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
 
 
 	queries := new(mdb.Queries)

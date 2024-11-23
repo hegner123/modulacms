@@ -17,14 +17,14 @@ var globalTestingState GlobalTestingState;
 
 func setup() {
     fmt.Printf("TestMain setup\n")
-	db, err := getDb(Database{DB: "./modula_test.db"})
+	db,ctx, err := getDb(Database{DB: "./modula_test.db"})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	defer db.Close()
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
-	err = initializeDatabase(db, false)
+	err = initDb(db,ctx)
     if err!=nil {
         fmt.Printf("%s\n",err)
     }

@@ -1,14 +1,18 @@
 
 -- name: GetRoute :one
-SELECT * FROM routes
-WHERE slug = ? LIMIT 1;
+SELECT * FROM route
+WHERE ? = ? LIMIT 1;
+
+-- name: GetRouteId :one
+SELECT id FROM route
+WHERE ? = ? LIMIT 1;
 
 -- name: ListRoute :many
-SELECT * FROM routes
+SELECT * FROM route
 ORDER BY slug;
 
 -- name: CreateRoute :one
-INSERT INTO routes (
+INSERT INTO route (
 author,
 authorid,
 slug,
@@ -24,7 +28,7 @@ template
 
 
 -- name: UpdateRoute :exec
-UPDATE routes
+UPDATE route
 set slug = ?,
     title = ?,
     status = ?,
@@ -34,9 +38,9 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING *;
 
 -- name: DeleteRoute :exec
-DELETE FROM routes
-WHERE id = ?;
+DELETE FROM route
+WHERE ? = ?;

@@ -1,14 +1,14 @@
 
 -- name: GetMediaDimension :one
-SELECT * FROM media_dimensions
-WHERE id = ? LIMIT 1;
+SELECT * FROM media_dimension
+WHERE ? = ? LIMIT 1;
 
--- name: ListMediaDimensions :many
-SELECT * FROM media_dimensions 
+-- name: ListMediaDimension :many
+SELECT * FROM media_dimension 
 ORDER BY label;
 
 -- name: CreateMediaDimension :one
-INSERT INTO media_dimensions(
+INSERT INTO media_dimension(
     label,
     width,
     height
@@ -18,12 +18,12 @@ INSERT INTO media_dimensions(
 RETURNING *;
 
 -- name: UpdateMediaDimension :exec
-UPDATE media_dimensions
+UPDATE media_dimension
 set label = ?,
     width = ?,
     height = ? 
-WHERE id = ?;
+WHERE ? = ?;
 
 -- name: DeleteMediaDimension :exec
-DELETE FROM media_dimensions
-WHERE id = ?;
+DELETE FROM media_dimension
+WHERE ? = ?;

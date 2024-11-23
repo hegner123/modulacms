@@ -1,14 +1,18 @@
 
 -- name: GetUser :one
-SELECT * FROM users
-WHERE id = ? LIMIT 1;
+SELECT * FROM user
+WHERE ? = ? LIMIT 1;
 
--- name: ListUsers :many
-SELECT * FROM users 
+-- name: GetUserId :one
+SELECT id FROM user
+WHERE ? = ? LIMIT 1;
+
+-- name: ListUser :many
+SELECT * FROM user 
 ORDER BY id ;
 
 -- name: CreateUser :one
-INSERT INTO users (
+INSERT INTO user (
     datecreated,
     datemodified,
     username,
@@ -22,7 +26,7 @@ INSERT INTO users (
 RETURNING *;
 
 -- name: UpdateUser :exec
-UPDATE users
+UPDATE user
 set datecreated = ?,
     datemodified = ?,
     username = ?,
@@ -30,8 +34,8 @@ set datecreated = ?,
     email = ?,
     hash = ?,
     role = ?
-WHERE id = ?;
+WHERE ? = ?;
 
 -- name: DeleteUser :exec
-DELETE FROM users
-WHERE id = ?;
+DELETE FROM user
+WHERE ? = ?;

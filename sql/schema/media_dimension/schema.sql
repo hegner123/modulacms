@@ -1,5 +1,5 @@
 
-CREATE TABLE media_dimensions (
+CREATE TABLE media_dimension (
     id INTEGER PRIMARY KEY,
     label TEXT UNIQUE, 
     width INTEGER, 

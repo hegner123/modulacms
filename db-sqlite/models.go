@@ -35,13 +35,6 @@ type Field struct {
 	Datemodified sql.NullString
 }
 
-type MediaDimension struct {
-	ID     int64
-	Label  sql.NullString
-	Width  sql.NullInt64
-	Height sql.NullInt64
-}
-
 type Media struct {
 	ID                 int64
 	Name               sql.NullString
@@ -63,6 +56,13 @@ type Media struct {
 	Optimizedultrawide sql.NullString
 }
 
+type MediaDimension struct {
+	ID     int64
+	Label  sql.NullString
+	Width  sql.NullInt64
+	Height sql.NullInt64
+}
+
 type Route struct {
 	ID           int64
 	Author       sql.NullString
@@ -76,7 +76,7 @@ type Route struct {
 	Template     sql.NullString
 }
 
-type Table struct {
+type Tables struct {
 	ID    int64
 	Label sql.NullString
 }

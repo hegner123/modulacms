@@ -1,4 +1,4 @@
-CREATE TABLE fields (
+CREATE TABLE field (
     id INTEGER PRIMARY KEY,
     routeid INTEGER NOT NULL,
     parentid INTEGER,

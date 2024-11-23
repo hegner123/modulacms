@@ -8,7 +8,13 @@ import (
 	"path/filepath"
 )
 
-func createBackup(dbFile, mediaDir, pluginDir, output string) error {
+type backupName func(string, string) string
+
+func timestampBackupName(output string, timestamp string)string{
+	return fmt.Sprintf("%s_%s.zip", output, timestamp)
+}
+
+func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) error {
 
 	dbF := FileExists(dbFile)
 	mediaD := DirExists(mediaDir)
@@ -19,9 +25,8 @@ func createBackup(dbFile, mediaDir, pluginDir, output string) error {
 		return fmt.Errorf("dbFile Exists: %v, mediaDir exists: %v, pluginDir exists: %v,outputDir exists: %v\n", dbF, mediaD, pluginD, outD)
 	}
 
-	// Create a zip file
-	backupName := fmt.Sprintf("%s_%s.zip", output, timestamp())
-	backupFile, err := os.Create(backupName)
+
+	backupFile, err := os.Create(bname(output,timestampS()))
 	if err != nil {
 		return fmt.Errorf("failed to create backup file: %w", err)
 	}
@@ -30,7 +35,7 @@ func createBackup(dbFile, mediaDir, pluginDir, output string) error {
 	zipWriter := zip.NewWriter(backupFile)
 	defer zipWriter.Close()
 
-	db, err := getDb(Database{DB: dbFile})
+	db, _, err := getDb(Database{DB: dbFile})
 	if err != nil {
 		logError("db failed to open", err)
 	}
@@ -57,13 +62,11 @@ func createBackup(dbFile, mediaDir, pluginDir, output string) error {
 		}
 	}
 
-	// Add media files
 	err = addFilesToZip(zipWriter, mediaDir, "media")
 	if err != nil {
 		return fmt.Errorf("failed to add media files: %w", err)
 	}
 
-	// Add plugin files
 	err = addFilesToZip(zipWriter, pluginDir, "plugins")
 	if err != nil {
 		return fmt.Errorf("failed to add plugin files: %w", err)

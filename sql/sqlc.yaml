@@ -7,3 +7,4 @@ sql:
       go:
         package: "mdb"
         out: "../db-sqlite"
+        emit_exact_table_names: true

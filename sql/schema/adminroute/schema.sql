@@ -1,4 +1,4 @@
-CREATE TABLE routes (
+CREATE TABLE adminroute (
     id INTEGER PRIMARY KEY,
     author TEXT, 
     authorid TEXT, 
@@ -10,3 +10,4 @@ CREATE TABLE routes (
     content TEXT, 
     template TEXT
 );
+

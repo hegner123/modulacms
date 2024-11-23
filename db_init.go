@@ -15,7 +15,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//go:embed sqlite/*
+//go:embed sql/*
 var sqlFiles embed.FS
 
 func getDb(dbName Database) (*sql.DB,context.Context ,error) {
@@ -39,7 +39,7 @@ func getDb(dbName Database) (*sql.DB,context.Context ,error) {
 
 
 func initDb(db *sql.DB, ctx context.Context)error{
-    times:= timestamp()
+    times:= timestampS()
     queries:= new(mdb.Queries)
     tables,err := readSchemaFiles()
     if err != nil { 

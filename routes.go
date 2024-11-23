@@ -10,7 +10,11 @@ import (
 	"net/url"
 	"path/filepath"
 	"strings"
+
+	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
+
+var timeI = timestampI()
 
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join("public", r.URL.Path)
@@ -83,12 +87,12 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := getDb(Database{})
+	db,ctx, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	matchedRoute, err := matchAdminSlugToRoute(db, r.URL.Path)
+	matchedRoute := dbGetRoute(db,ctx, r.URL.Path)
 	if err != nil {
 		redirectTo404(w, r)
 		fmt.Printf("\nerror: %s", r.URL.Path)
@@ -110,15 +114,12 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 	*/
-	tmp, err := template.ParseFiles("templates/" + matchedRoute.Template)
+	tmp, err := template.ParseFiles("templates/" + matchedRoute.Template.String)
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	fields, err := dbGetField(db, matchedRoute.ID)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
+	fields:= dbListFieldsByRoute(db,ctx, matchedRoute.ID)
 
 	if err := tmp.Funcs(funcMap).Execute(w, fields); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
@@ -157,7 +158,7 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
 		}
-		db,ctx, err := getDb(Database{})
+		db, ctx, err := getDb(Database{})
 		if err != nil {
 			fmt.Printf("error: %s", err)
 			return
@@ -166,8 +167,8 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		title := r.FormValue("title")
 		slug := r.FormValue("slug")
 		content := r.FormValue("content")
-		Route := Routes{Slug: slug, Title: title, Status: 0, DateCreated: times, DateModified: times, Content: content, Template: "Page"}
-		_, err = dbCreateRoute(db, Route)
+		Route := mdb.CreateRouteParams{Slug: ns(slug), Title: ns(title), Status: ni(0), Datecreated: ni(int(timestampI())), Datemodified: ni(int(timestampI())), Content: ns(content), Template: ns("Page")}
+		_ = dbCreateRoute(db,ctx, Route)
 		message := "created successfully"
 		if err != nil {
 			message = "error creating route"

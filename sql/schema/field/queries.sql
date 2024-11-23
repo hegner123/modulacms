@@ -1,13 +1,31 @@
--- name: Getfield :one
-SELECT * FROM fields
-WHERE id = ? LIMIT 1;
+-- name: GetField :one
+SELECT * FROM field
+WHERE ? = ? LIMIT 1;
 
--- name: ListFields :many
-SELECT * FROM fields
+-- name: GetFieldId :one
+SELECT id FROM field
+WHERE ? = ? LIMIT 1;
+
+-- name: ListField :many
+SELECT * FROM field
 ORDER BY id;
 
+-- name: ListFieldJoin :many
+SELECT 
+    f1.*,
+    f2.*
+FROM 
+    field f1
+LEFT JOIN 
+    field f2
+ON 
+    f1.fieldid = f2.parentid
+WHERE 
+    f1.routeid = ?;
+
+
 -- name: CreateField :one
-INSERT INTO fields (
+INSERT INTO field (
     routeid,
     parentid,
     label,
@@ -24,7 +42,7 @@ INSERT INTO fields (
 
 
 -- name: UpdateField :exec
-UPDATE fields
+UPDATE field
 set routeid = ?,
     parentid = ?,
     label = ?,
@@ -35,9 +53,9 @@ set routeid = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING *;
 
--- name: DeleteFields :exec
-DELETE FROM fields
-WHERE id = ?;
+-- name: DeleteField :exec
+DELETE FROM field
+WHERE ? = ?;

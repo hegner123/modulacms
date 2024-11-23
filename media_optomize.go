@@ -14,6 +14,10 @@ import (
 )
 
 func optimizeUpload(fSrc *os.File, fPath string) int {
+    db,ctx, err:= getDb(Database{})
+    if err != nil { 
+        logError("failed to create database: ", err)
+    }
 	defer fSrc.Close()
 	baseName := strings.TrimSuffix(fPath, filepath.Ext(fPath))
 
@@ -23,10 +27,10 @@ func optimizeUpload(fSrc *os.File, fPath string) int {
 	}
 
 	in := []draw.Interpolator{draw.CatmullRom}
-	dimensions := dbGetMediaDimensions("")
+	dimensions := dbListMediaDimension(db,ctx)
 	images := []draw.Image{}
 	for i, dx := range dimensions {
-		in[0].Scale(images[i], image.Rect(0, 0, dx.Width, dx.Height), src, src.Bounds(), draw.Over, nil)
+		in[0].Scale(images[i], image.Rect(0, 0, int(dx.Width.Int64), int(dx.Height.Int64)), src, src.Bounds(), draw.Over, nil)
 	}
 	for i, im := range images {
 		err := encodeMedia(im, fmt.Sprintf("%s-%v.%s",baseName, dimensions[i].Label,filepath.Ext(fPath)))

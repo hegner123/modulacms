@@ -1,13 +1,17 @@
 -- name: GetAdminRoute :one
-SELECT * FROM adminroutes
-WHERE slug = ? LIMIT 1;
+SELECT * FROM adminroute
+WHERE ? = ? LIMIT 1;
+
+-- name: GetAdminRouteId :one
+SELECT id FROM adminroute
+WHERE ? = ? LIMIT 1;
 
 -- name: ListAdminRoute :many
-SELECT * FROM adminroutes
+SELECT * FROM adminroute
 ORDER BY slug;
 
 -- name: CreateAdminRoute :one
-INSERT INTO adminroutes (
+INSERT INTO adminroute (
 author,
 authorid,
 slug,
@@ -23,7 +27,7 @@ template
 
 
 -- name: UpdateAdminRoute :exec
-UPDATE adminroutes
+UPDATE adminroute
 set slug = ?,
     title = ?,
     status = ?,
@@ -33,9 +37,9 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING *;
 
 -- name: DeleteAdminRoute :exec
-DELETE FROM adminroutes
-WHERE id = ?;
+DELETE FROM adminroute
+WHERE ? = ?;

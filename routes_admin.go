@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 func adminRouter(w http.ResponseWriter, r *http.Request) {
@@ -26,10 +28,10 @@ func adminCreateField(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 	}
-	var field = Field{}
+	var field =mdb.Field{}
 
 	field.ID = 0
-	field.RouteID = 0
+	field.Routeid = 0
 	form := r.ParseForm()
 	fmt.Print(form)
 	w.Header().Set("Content-Type", "application/json")

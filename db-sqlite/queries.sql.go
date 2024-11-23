@@ -11,7 +11,7 @@ import (
 )
 
 const createAdminRoute = `-- name: CreateAdminRoute :one
-INSERT INTO adminroutes (
+INSERT INTO adminroute (
 author,
 authorid,
 slug,
@@ -67,7 +67,7 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 }
 
 const createField = `-- name: CreateField :one
-INSERT INTO fields (
+INSERT INTO field (
     routeid,
     parentid,
     label,
@@ -171,7 +171,7 @@ type CreateMediaParams struct {
 	Optimizedultrawide sql.NullString
 }
 
-func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Medium, error) {
+func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media, error) {
 	row := q.db.QueryRowContext(ctx, createMedia,
 		arg.Name,
 		arg.Displayname,
@@ -191,7 +191,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Mediu
 		arg.Optimizeddesktop,
 		arg.Optimizedultrawide,
 	)
-	var i Medium
+	var i Media
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -216,7 +216,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Mediu
 }
 
 const createMediaDimension = `-- name: CreateMediaDimension :one
-INSERT INTO media_dimensions(
+INSERT INTO media_dimension(
     label,
     width,
     height
@@ -245,7 +245,7 @@ func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimen
 }
 
 const createRoute = `-- name: CreateRoute :one
-INSERT INTO routes (
+INSERT INTO route (
 author,
 authorid,
 slug,
@@ -309,9 +309,9 @@ INSERT INTO tables (
 RETURNING id, label
 `
 
-func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Table, error) {
+func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Tables, error) {
 	row := q.db.QueryRowContext(ctx, createTable, label)
-	var i Table
+	var i Tables
 	err := row.Scan(&i.ID, &i.Label)
 	return i, err
 }
@@ -319,7 +319,7 @@ func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Table,
 const createUser = `-- name: CreateUser :one
 ;
 
-INSERT INTO users (
+INSERT INTO user (
     datecreated,
     datemodified,
     username,
@@ -368,82 +368,122 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 }
 
 const deleteAdminRoute = `-- name: DeleteAdminRoute :exec
-DELETE FROM adminroutes
-WHERE id = ?
+DELETE FROM adminroute
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteAdminRoute(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminRoute, id)
+type DeleteAdminRouteParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteAdminRoute(ctx context.Context, arg DeleteAdminRouteParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminRoute, arg.Column1, arg.Column2)
 	return err
 }
 
-const deleteFields = `-- name: DeleteFields :exec
-DELETE FROM fields
-WHERE id = ?
+const deleteField = `-- name: DeleteField :exec
+DELETE FROM field
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteFields(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteFields, id)
+type DeleteFieldParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteField(ctx context.Context, arg DeleteFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteField, arg.Column1, arg.Column2)
 	return err
 }
 
 const deleteMedia = `-- name: DeleteMedia :exec
 DELETE FROM media
-WHERE id = ?
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteMedia(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMedia, id)
+type DeleteMediaParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteMedia(ctx context.Context, arg DeleteMediaParams) error {
+	_, err := q.db.ExecContext(ctx, deleteMedia, arg.Column1, arg.Column2)
 	return err
 }
 
 const deleteMediaDimension = `-- name: DeleteMediaDimension :exec
-DELETE FROM media_dimensions
-WHERE id = ?
+DELETE FROM media_dimension
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteMediaDimension(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMediaDimension, id)
+type DeleteMediaDimensionParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteMediaDimension(ctx context.Context, arg DeleteMediaDimensionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteMediaDimension, arg.Column1, arg.Column2)
 	return err
 }
 
 const deleteRoute = `-- name: DeleteRoute :exec
-DELETE FROM routes
-WHERE id = ?
+DELETE FROM route
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteRoute(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteRoute, id)
+type DeleteRouteParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteRoute(ctx context.Context, arg DeleteRouteParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRoute, arg.Column1, arg.Column2)
 	return err
 }
 
 const deleteTable = `-- name: DeleteTable :exec
 DELETE FROM tables
-WHERE id = ?
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteTable(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTable, id)
+type DeleteTableParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteTable(ctx context.Context, arg DeleteTableParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTable, arg.Column1, arg.Column2)
 	return err
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM users
-WHERE id = ?
+DELETE FROM user
+WHERE ? = ?
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, id)
+type DeleteUserParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, arg.Column1, arg.Column2)
 	return err
 }
 
 const getAdminRoute = `-- name: GetAdminRoute :one
-SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroutes
-WHERE slug = ? LIMIT 1
+SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroute
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRoute(ctx context.Context, slug sql.NullString) (Adminroute, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRoute, slug)
+type GetAdminRouteParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetAdminRoute(ctx context.Context, arg GetAdminRouteParams) (Adminroute, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRoute, arg.Column1, arg.Column2)
 	var i Adminroute
 	err := row.Scan(
 		&i.ID,
@@ -460,14 +500,82 @@ func (q *Queries) GetAdminRoute(ctx context.Context, slug sql.NullString) (Admin
 	return i, err
 }
 
-const getMedia = `-- name: GetMedia :one
-SELECT id, name, displayname, alt, caption, description, class, author, authorid, datecreated, datemodified, url, mimetype, dimensions, optimizedmobile, optimizedtablet, optimizeddesktop, optimizedultrawide FROM media
-WHERE id = ? LIMIT 1
+const getAdminRouteId = `-- name: GetAdminRouteId :one
+SELECT id FROM adminroute
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetMedia(ctx context.Context, id int64) (Medium, error) {
-	row := q.db.QueryRowContext(ctx, getMedia, id)
-	var i Medium
+type GetAdminRouteIdParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetAdminRouteId(ctx context.Context, arg GetAdminRouteIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteId, arg.Column1, arg.Column2)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getField = `-- name: GetField :one
+SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM field
+WHERE ? = ? LIMIT 1
+`
+
+type GetFieldParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetField(ctx context.Context, arg GetFieldParams) (Field, error) {
+	row := q.db.QueryRowContext(ctx, getField, arg.Column1, arg.Column2)
+	var i Field
+	err := row.Scan(
+		&i.ID,
+		&i.Routeid,
+		&i.Parentid,
+		&i.Label,
+		&i.Data,
+		&i.Type,
+		&i.Struct,
+		&i.Author,
+		&i.Authorid,
+		&i.Datecreated,
+		&i.Datemodified,
+	)
+	return i, err
+}
+
+const getFieldId = `-- name: GetFieldId :one
+SELECT id FROM field
+WHERE ? = ? LIMIT 1
+`
+
+type GetFieldIdParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetFieldId(ctx context.Context, arg GetFieldIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getFieldId, arg.Column1, arg.Column2)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getMedia = `-- name: GetMedia :one
+SELECT id, name, displayname, alt, caption, description, class, author, authorid, datecreated, datemodified, url, mimetype, dimensions, optimizedmobile, optimizedtablet, optimizeddesktop, optimizedultrawide FROM media
+WHERE ? = ? LIMIT 1
+`
+
+type GetMediaParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetMedia(ctx context.Context, arg GetMediaParams) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMedia, arg.Column1, arg.Column2)
+	var i Media
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -492,12 +600,17 @@ func (q *Queries) GetMedia(ctx context.Context, id int64) (Medium, error) {
 }
 
 const getMediaDimension = `-- name: GetMediaDimension :one
-SELECT id, label, width, height FROM media_dimensions
-WHERE id = ? LIMIT 1
+SELECT id, label, width, height FROM media_dimension
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetMediaDimension(ctx context.Context, id int64) (MediaDimension, error) {
-	row := q.db.QueryRowContext(ctx, getMediaDimension, id)
+type GetMediaDimensionParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetMediaDimension(ctx context.Context, arg GetMediaDimensionParams) (MediaDimension, error) {
+	row := q.db.QueryRowContext(ctx, getMediaDimension, arg.Column1, arg.Column2)
 	var i MediaDimension
 	err := row.Scan(
 		&i.ID,
@@ -509,12 +622,17 @@ func (q *Queries) GetMediaDimension(ctx context.Context, id int64) (MediaDimensi
 }
 
 const getRoute = `-- name: GetRoute :one
-SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM routes
-WHERE slug = ? LIMIT 1
+SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM route
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetRoute(ctx context.Context, slug sql.NullString) (Route, error) {
-	row := q.db.QueryRowContext(ctx, getRoute, slug)
+type GetRouteParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (Route, error) {
+	row := q.db.QueryRowContext(ctx, getRoute, arg.Column1, arg.Column2)
 	var i Route
 	err := row.Scan(
 		&i.ID,
@@ -531,25 +649,69 @@ func (q *Queries) GetRoute(ctx context.Context, slug sql.NullString) (Route, err
 	return i, err
 }
 
-const getTable = `-- name: GetTable :one
-SELECT id, label FROM tables
-WHERE id = ? LIMIT 1
+const getRouteId = `-- name: GetRouteId :one
+SELECT id FROM route
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetTable(ctx context.Context, id int64) (Table, error) {
-	row := q.db.QueryRowContext(ctx, getTable, id)
-	var i Table
+type GetRouteIdParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetRouteId(ctx context.Context, arg GetRouteIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getRouteId, arg.Column1, arg.Column2)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getTable = `-- name: GetTable :one
+SELECT id, label FROM tables
+WHERE ? = ? LIMIT 1
+`
+
+type GetTableParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetTable(ctx context.Context, arg GetTableParams) (Tables, error) {
+	row := q.db.QueryRowContext(ctx, getTable, arg.Column1, arg.Column2)
+	var i Tables
 	err := row.Scan(&i.ID, &i.Label)
 	return i, err
 }
 
-const getUser = `-- name: GetUser :one
-SELECT id, datecreated, datemodified, username, name, email, hash, role FROM users
-WHERE id = ? LIMIT 1
+const getTableId = `-- name: GetTableId :one
+SELECT id FROM tables
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUser, id)
+type GetTableIdParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetTableId(ctx context.Context, arg GetTableIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getTableId, arg.Column1, arg.Column2)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getUser = `-- name: GetUser :one
+SELECT id, datecreated, datemodified, username, name, email, hash, role FROM user
+WHERE ? = ? LIMIT 1
+`
+
+type GetUserParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUser, arg.Column1, arg.Column2)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -564,32 +726,25 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	return i, err
 }
 
-const getfield = `-- name: Getfield :one
-SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM fields
-WHERE id = ? LIMIT 1
+const getUserId = `-- name: GetUserId :one
+SELECT id FROM user
+WHERE ? = ? LIMIT 1
 `
 
-func (q *Queries) Getfield(ctx context.Context, id int64) (Field, error) {
-	row := q.db.QueryRowContext(ctx, getfield, id)
-	var i Field
-	err := row.Scan(
-		&i.ID,
-		&i.Routeid,
-		&i.Parentid,
-		&i.Label,
-		&i.Data,
-		&i.Type,
-		&i.Struct,
-		&i.Author,
-		&i.Authorid,
-		&i.Datecreated,
-		&i.Datemodified,
-	)
-	return i, err
+type GetUserIdParams struct {
+	Column1 interface{}
+	Column2 interface{}
+}
+
+func (q *Queries) GetUserId(ctx context.Context, arg GetUserIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUserId, arg.Column1, arg.Column2)
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const listAdminRoute = `-- name: ListAdminRoute :many
-SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroutes
+SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroute
 ORDER BY slug
 `
 
@@ -627,13 +782,13 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]Adminroute, error) {
 	return items, nil
 }
 
-const listFields = `-- name: ListFields :many
-SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM fields
+const listField = `-- name: ListField :many
+SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM field
 ORDER BY id
 `
 
-func (q *Queries) ListFields(ctx context.Context) ([]Field, error) {
-	rows, err := q.db.QueryContext(ctx, listFields)
+func (q *Queries) ListField(ctx context.Context) ([]Field, error) {
+	rows, err := q.db.QueryContext(ctx, listField)
 	if err != nil {
 		return nil, err
 	}
@@ -667,25 +822,77 @@ func (q *Queries) ListFields(ctx context.Context) ([]Field, error) {
 	return items, nil
 }
 
-const listMediaDimensions = `-- name: ListMediaDimensions :many
-SELECT id, label, width, height FROM media_dimensions 
-ORDER BY label
+const listFieldJoin = `-- name: ListFieldJoin :many
+SELECT 
+    f1.id, f1.routeid, f1.parentid, f1.label, f1.data, f1.type, f1.struct, f1.author, f1.authorid, f1.datecreated, f1.datemodified,
+    f2.id, f2.routeid, f2.parentid, f2.label, f2.data, f2.type, f2.struct, f2.author, f2.authorid, f2.datecreated, f2.datemodified
+FROM 
+    field f1
+LEFT JOIN 
+    field f2
+ON 
+    f1.fieldid = f2.parentid
+WHERE 
+    f1.routeid = ?
 `
 
-func (q *Queries) ListMediaDimensions(ctx context.Context) ([]MediaDimension, error) {
-	rows, err := q.db.QueryContext(ctx, listMediaDimensions)
+type ListFieldJoinRow struct {
+	ID             int64
+	Routeid        int64
+	Parentid       sql.NullInt64
+	Label          string
+	Data           string
+	Type           string
+	Struct         sql.NullString
+	Author         sql.NullString
+	Authorid       sql.NullString
+	Datecreated    sql.NullString
+	Datemodified   sql.NullString
+	ID_2           sql.NullInt64
+	Routeid_2      sql.NullInt64
+	Parentid_2     sql.NullInt64
+	Label_2        sql.NullString
+	Data_2         sql.NullString
+	Type_2         sql.NullString
+	Struct_2       sql.NullString
+	Author_2       sql.NullString
+	Authorid_2     sql.NullString
+	Datecreated_2  sql.NullString
+	Datemodified_2 sql.NullString
+}
+
+func (q *Queries) ListFieldJoin(ctx context.Context, routeid int64) ([]ListFieldJoinRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldJoin, routeid)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MediaDimension
+	var items []ListFieldJoinRow
 	for rows.Next() {
-		var i MediaDimension
+		var i ListFieldJoinRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.Routeid,
+			&i.Parentid,
 			&i.Label,
-			&i.Width,
-			&i.Height,
+			&i.Data,
+			&i.Type,
+			&i.Struct,
+			&i.Author,
+			&i.Authorid,
+			&i.Datecreated,
+			&i.Datemodified,
+			&i.ID_2,
+			&i.Routeid_2,
+			&i.Parentid_2,
+			&i.Label_2,
+			&i.Data_2,
+			&i.Type_2,
+			&i.Struct_2,
+			&i.Author_2,
+			&i.Authorid_2,
+			&i.Datecreated_2,
+			&i.Datemodified_2,
 		); err != nil {
 			return nil, err
 		}
@@ -700,20 +907,20 @@ func (q *Queries) ListMediaDimensions(ctx context.Context) ([]MediaDimension, er
 	return items, nil
 }
 
-const listMedias = `-- name: ListMedias :many
+const listMedia = `-- name: ListMedia :many
 SELECT id, name, displayname, alt, caption, description, class, author, authorid, datecreated, datemodified, url, mimetype, dimensions, optimizedmobile, optimizedtablet, optimizeddesktop, optimizedultrawide FROM media
 ORDER BY name
 `
 
-func (q *Queries) ListMedias(ctx context.Context) ([]Medium, error) {
-	rows, err := q.db.QueryContext(ctx, listMedias)
+func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
+	rows, err := q.db.QueryContext(ctx, listMedia)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Medium
+	var items []Media
 	for rows.Next() {
-		var i Medium
+		var i Media
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -747,8 +954,41 @@ func (q *Queries) ListMedias(ctx context.Context) ([]Medium, error) {
 	return items, nil
 }
 
+const listMediaDimension = `-- name: ListMediaDimension :many
+SELECT id, label, width, height FROM media_dimension 
+ORDER BY label
+`
+
+func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimension, error) {
+	rows, err := q.db.QueryContext(ctx, listMediaDimension)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []MediaDimension
+	for rows.Next() {
+		var i MediaDimension
+		if err := rows.Scan(
+			&i.ID,
+			&i.Label,
+			&i.Width,
+			&i.Height,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRoute = `-- name: ListRoute :many
-SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM routes
+SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM route
 ORDER BY slug
 `
 
@@ -786,20 +1026,20 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Route, error) {
 	return items, nil
 }
 
-const listTables = `-- name: ListTables :many
+const listTable = `-- name: ListTable :many
 SELECT id, label FROM tables 
 ORDER BY label
 `
 
-func (q *Queries) ListTables(ctx context.Context) ([]Table, error) {
-	rows, err := q.db.QueryContext(ctx, listTables)
+func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
+	rows, err := q.db.QueryContext(ctx, listTable)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Table
+	var items []Tables
 	for rows.Next() {
-		var i Table
+		var i Tables
 		if err := rows.Scan(&i.ID, &i.Label); err != nil {
 			return nil, err
 		}
@@ -814,13 +1054,13 @@ func (q *Queries) ListTables(ctx context.Context) ([]Table, error) {
 	return items, nil
 }
 
-const listUsers = `-- name: ListUsers :many
-SELECT id, datecreated, datemodified, username, name, email, hash, role FROM users 
+const listUser = `-- name: ListUser :many
+SELECT id, datecreated, datemodified, username, name, email, hash, role FROM user 
 ORDER BY id
 `
 
-func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
-	rows, err := q.db.QueryContext(ctx, listUsers)
+func (q *Queries) ListUser(ctx context.Context) ([]User, error) {
+	rows, err := q.db.QueryContext(ctx, listUser)
 	if err != nil {
 		return nil, err
 	}
@@ -852,7 +1092,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 }
 
 const updateAdminRoute = `-- name: UpdateAdminRoute :exec
-UPDATE adminroutes
+UPDATE adminroute
 set slug = ?,
     title = ?,
     status = ?,
@@ -862,7 +1102,7 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING id, author, authorid, slug, title, status, datecreated, datemodified, content, template
 `
 
@@ -876,7 +1116,8 @@ type UpdateAdminRouteParams struct {
 	Authorid     sql.NullString
 	Datecreated  sql.NullInt64
 	Datemodified sql.NullInt64
-	ID           int64
+	Column10     interface{}
+	Column11     interface{}
 }
 
 func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRouteParams) error {
@@ -890,13 +1131,14 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 		arg.Authorid,
 		arg.Datecreated,
 		arg.Datemodified,
-		arg.ID,
+		arg.Column10,
+		arg.Column11,
 	)
 	return err
 }
 
 const updateField = `-- name: UpdateField :exec
-UPDATE fields
+UPDATE field
 set routeid = ?,
     parentid = ?,
     label = ?,
@@ -907,7 +1149,7 @@ set routeid = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified
 `
 
@@ -922,7 +1164,8 @@ type UpdateFieldParams struct {
 	Authorid     sql.NullString
 	Datecreated  sql.NullString
 	Datemodified sql.NullString
-	ID           int64
+	Column11     interface{}
+	Column12     interface{}
 }
 
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
@@ -937,7 +1180,8 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.Authorid,
 		arg.Datecreated,
 		arg.Datemodified,
-		arg.ID,
+		arg.Column11,
+		arg.Column12,
 	)
 	return err
 }
@@ -961,7 +1205,7 @@ UPDATE media
         optimizedtablet = ?,
         optimizeddesktop = ?,
         optimizedultrawide = ?
-        WHERE id = ?
+        WHERE ? = ?
 `
 
 type UpdateMediaParams struct {
@@ -982,7 +1226,8 @@ type UpdateMediaParams struct {
 	Optimizedtablet    sql.NullString
 	Optimizeddesktop   sql.NullString
 	Optimizedultrawide sql.NullString
-	ID                 int64
+	Column18           interface{}
+	Column19           interface{}
 }
 
 func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error {
@@ -1004,24 +1249,26 @@ func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error 
 		arg.Optimizedtablet,
 		arg.Optimizeddesktop,
 		arg.Optimizedultrawide,
-		arg.ID,
+		arg.Column18,
+		arg.Column19,
 	)
 	return err
 }
 
 const updateMediaDimension = `-- name: UpdateMediaDimension :exec
-UPDATE media_dimensions
+UPDATE media_dimension
 set label = ?,
     width = ?,
     height = ? 
-WHERE id = ?
+WHERE ? = ?
 `
 
 type UpdateMediaDimensionParams struct {
-	Label  sql.NullString
-	Width  sql.NullInt64
-	Height sql.NullInt64
-	ID     int64
+	Label   sql.NullString
+	Width   sql.NullInt64
+	Height  sql.NullInt64
+	Column4 interface{}
+	Column5 interface{}
 }
 
 func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimensionParams) error {
@@ -1029,13 +1276,14 @@ func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimen
 		arg.Label,
 		arg.Width,
 		arg.Height,
-		arg.ID,
+		arg.Column4,
+		arg.Column5,
 	)
 	return err
 }
 
 const updateRoute = `-- name: UpdateRoute :exec
-UPDATE routes
+UPDATE route
 set slug = ?,
     title = ?,
     status = ?,
@@ -1045,7 +1293,7 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE id = ?
+    WHERE ? = ?
     RETURNING id, author, authorid, slug, title, status, datecreated, datemodified, content, template
 `
 
@@ -1059,7 +1307,8 @@ type UpdateRouteParams struct {
 	Authorid     sql.NullString
 	Datecreated  sql.NullInt64
 	Datemodified sql.NullInt64
-	ID           int64
+	Column10     interface{}
+	Column11     interface{}
 }
 
 func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error {
@@ -1073,7 +1322,8 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 		arg.Authorid,
 		arg.Datecreated,
 		arg.Datemodified,
-		arg.ID,
+		arg.Column10,
+		arg.Column11,
 	)
 	return err
 }
@@ -1081,21 +1331,22 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 const updateTable = `-- name: UpdateTable :exec
 UPDATE tables
 set label = ?
-WHERE id = ?
+WHERE ? = ?
 `
 
 type UpdateTableParams struct {
-	Label sql.NullString
-	ID    int64
+	Label   sql.NullString
+	Column2 interface{}
+	Column3 interface{}
 }
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
-	_, err := q.db.ExecContext(ctx, updateTable, arg.Label, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateTable, arg.Label, arg.Column2, arg.Column3)
 	return err
 }
 
 const updateUser = `-- name: UpdateUser :exec
-UPDATE users
+UPDATE user
 set datecreated = ?,
     datemodified = ?,
     username = ?,
@@ -1103,7 +1354,7 @@ set datecreated = ?,
     email = ?,
     hash = ?,
     role = ?
-WHERE id = ?
+WHERE ? = ?
 `
 
 type UpdateUserParams struct {
@@ -1114,7 +1365,8 @@ type UpdateUserParams struct {
 	Email        sql.NullString
 	Hash         sql.NullString
 	Role         sql.NullString
-	ID           int64
+	Column8      interface{}
+	Column9      interface{}
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
@@ -1126,7 +1378,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Email,
 		arg.Hash,
 		arg.Role,
-		arg.ID,
+		arg.Column8,
+		arg.Column9,
 	)
 	return err
 }

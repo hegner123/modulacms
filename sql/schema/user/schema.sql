@@ -1,5 +1,5 @@
 
-CREATE TABLE users(
+CREATE TABLE user(
     id INTEGER PRIMARY KEY,
     datecreated TEXT,
     datemodified TEXT,
