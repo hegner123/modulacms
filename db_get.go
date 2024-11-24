@@ -12,7 +12,7 @@ import (
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminroute {
 	queries := mdb.New(db)
 	params := ns(slug)
-	fetchedAdminRoute, err := queries.GetAdminRoute(ctx, params)
+	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, params)
 	if err != nil {
 		logError("failed to create database dump in archive: ", err)
 	}

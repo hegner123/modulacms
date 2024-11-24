@@ -14,8 +14,6 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-var timeI = timestampI()
-
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join("public", r.URL.Path)
 	fmt.Print(filePath)
@@ -26,12 +24,12 @@ func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, filePath)
 }
 
-func checkAPIPath(rawURL string) (bool, error) {
+func checkAPIPath(rawURL string) bool {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {
-		return false, err
+		return false
 	}
-	return strings.HasPrefix(parsedURL.Path, "/api/"), nil
+	return strings.HasPrefix(parsedURL.Path, "/api/")
 }
 
 func matchesPath(text, searchTerm string) bool {
@@ -48,8 +46,6 @@ func stripAPIPath(rawURL string) (string, error) {
 }
 
 func apiRoutes(w http.ResponseWriter, r *http.Request) {
-	fmt.Print("api Route\n")
-
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
@@ -71,13 +67,24 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case matchesPath(apiRoute, "get/routes"):
+        routeList,err := apiGetAllRoutes()
+        if err != nil { 
+            logError("failed to list Routes: ", err)
+        }
+        routes, err := json.Marshal(routeList)
+        if err != nil { 
+            logError("failed to Marshal json ", err)
+        }
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		err = json.NewEncoder(w).Encode(map[string]string{"message": "boom"})
+		_, err = w.Write(routes)
 		if err != nil {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
+    case matchesPath(apiRoute,"get/fields"):
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
 	}
 }
 
@@ -87,12 +94,12 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db,ctx, err := getDb(Database{})
+	db, ctx, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	matchedRoute := dbGetRoute(db,ctx, r.URL.Path)
+	matchedRoute := dbGetRoute(db, ctx, r.URL.Path)
 	if err != nil {
 		redirectTo404(w, r)
 		fmt.Printf("\nerror: %s", r.URL.Path)
@@ -119,7 +126,7 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	fields:= dbListFieldsByRoute(db,ctx, matchedRoute.ID)
+	fields := dbListFieldsByRoute(db, ctx, matchedRoute.ID)
 
 	if err := tmp.Funcs(funcMap).Execute(w, fields); err != nil {
 		http.Error(w, "Failed to render template", http.StatusInternalServerError)
@@ -168,15 +175,15 @@ func handleWildcard(w http.ResponseWriter, r *http.Request) {
 		slug := r.FormValue("slug")
 		content := r.FormValue("content")
 		Route := mdb.CreateRouteParams{
-            Slug: ns(slug), 
-            Title: ns(title), 
-            Status: ni(0), 
-            Datecreated: ns(timestampS()),
-            Datemodified: ns(timestampS()),
-            Content: ns(content),
-            Template: ns("Page"),
-        }
-		_ = dbCreateRoute(db,ctx, Route)
+			Slug:         ns(slug),
+			Title:        ns(title),
+			Status:       ni(0),
+			Datecreated:  ns(timestampS()),
+			Datemodified: ns(timestampS()),
+			Content:      ns(content),
+			Template:     ns("Page"),
+		}
+		_ = dbCreateRoute(db, ctx, Route)
 		message := "created successfully"
 		if err != nil {
 			message = "error creating route"

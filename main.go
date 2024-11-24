@@ -61,28 +61,32 @@ func main() {
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 		}
+        createSetupInserts(db,ctx,"")
 		defer db.Close()
 	}
 
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if hasFileExtension(r.URL.Path) {
+        switch{
+        case hasFileExtension(r.URL.Path): 
 			fmt.Print("static route\n")
 			staticFileHandler(w, r)
-		} else {
+	    case checkAPIPath(r.URL.Path): 
+			fmt.Print("api route\n")
+            apiRoutes(w,r)
+        default:
 			fmt.Print("page route\n")
 			handlePageRoutes(w, r)
 		}
-	})
+    })
 
-	mux.HandleFunc("/api", apiRoutes)
 	mux.HandleFunc("/404", notFoundHandler)
 
 	if useSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s", config.SSL_Port)
-		err := http.ListenAndServeTLS(":"+config.SSL_Port, "cert.pem", "./key.pem", mux)
+		err := http.ListenAndServeTLS(":"+config.SSL_Port, "localhost.crt", "localhost.key", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}

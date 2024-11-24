@@ -9,85 +9,85 @@ import (
 )
 
 type Adminroute struct {
-	ID           int64
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Content      sql.NullString
-	Template     sql.NullString
+	ID           int64          `json:"id"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
 }
 
 type Field struct {
-	ID           int64
-	Routeid      int64
-	Parentid     sql.NullInt64
-	Label        string
-	Data         string
-	Type         string
-	Struct       sql.NullString
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
+	ID           int64          `json:"id"`
+	Routeid      int64          `json:"routeid"`
+	Parentid     sql.NullInt64  `json:"parentid"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Struct       sql.NullString `json:"struct"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
 }
 
 type Media struct {
-	ID                 int64
-	Name               sql.NullString
-	Displayname        sql.NullString
-	Alt                sql.NullString
-	Caption            sql.NullString
-	Description        sql.NullString
-	Class              sql.NullString
-	Author             sql.NullString
-	Authorid           sql.NullInt64
-	Datecreated        sql.NullString
-	Datemodified       sql.NullString
-	Url                sql.NullString
-	Mimetype           sql.NullString
-	Dimensions         sql.NullString
-	Optimizedmobile    sql.NullString
-	Optimizedtablet    sql.NullString
-	Optimizeddesktop   sql.NullString
-	Optimizedultrawide sql.NullString
+	ID                 int64          `json:"id"`
+	Name               sql.NullString `json:"name"`
+	Displayname        sql.NullString `json:"displayname"`
+	Alt                sql.NullString `json:"alt"`
+	Caption            sql.NullString `json:"caption"`
+	Description        sql.NullString `json:"description"`
+	Class              sql.NullString `json:"class"`
+	Author             sql.NullString `json:"author"`
+	Authorid           sql.NullInt64  `json:"authorid"`
+	Datecreated        sql.NullString `json:"datecreated"`
+	Datemodified       sql.NullString `json:"datemodified"`
+	Url                sql.NullString `json:"url"`
+	Mimetype           sql.NullString `json:"mimetype"`
+	Dimensions         sql.NullString `json:"dimensions"`
+	Optimizedmobile    sql.NullString `json:"optimizedmobile"`
+	Optimizedtablet    sql.NullString `json:"optimizedtablet"`
+	Optimizeddesktop   sql.NullString `json:"optimizeddesktop"`
+	Optimizedultrawide sql.NullString `json:"optimizedultrawide"`
 }
 
 type MediaDimension struct {
-	ID     int64
-	Label  sql.NullString
-	Width  sql.NullInt64
-	Height sql.NullInt64
+	ID     int64          `json:"id"`
+	Label  sql.NullString `json:"label"`
+	Width  sql.NullInt64  `json:"width"`
+	Height sql.NullInt64  `json:"height"`
 }
 
 type Route struct {
-	ID           int64
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Content      sql.NullString
-	Template     sql.NullString
+	ID           int64          `json:"id"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
 }
 
 type Tables struct {
-	ID    int64
-	Label sql.NullString
+	ID    int64          `json:"id"`
+	Label sql.NullString `json:"label"`
 }
 
 type User struct {
-	ID           int64
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Username     sql.NullString
-	Name         sql.NullString
-	Email        sql.NullString
-	Hash         sql.NullString
-	Role         sql.NullString
+	ID           int64          `json:"id"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Username     sql.NullString `json:"username"`
+	Name         sql.NullString `json:"name"`
+	Email        sql.NullString `json:"email"`
+	Hash         sql.NullString `json:"hash"`
+	Role         sql.NullString `json:"role"`
 }

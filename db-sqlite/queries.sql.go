@@ -27,15 +27,15 @@ template
 `
 
 type CreateAdminRouteParams struct {
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Content      sql.NullString
-	Template     sql.NullString
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
 }
 
 func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) (Adminroute, error) {
@@ -84,16 +84,16 @@ INSERT INTO field (
 `
 
 type CreateFieldParams struct {
-	Routeid      int64
-	Parentid     sql.NullInt64
-	Label        string
-	Data         string
-	Type         string
-	Struct       sql.NullString
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
+	Routeid      int64          `json:"routeid"`
+	Parentid     sql.NullInt64  `json:"parentid"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Struct       sql.NullString `json:"struct"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
 }
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field, error) {
@@ -152,23 +152,23 @@ RETURNING id, name, displayname, alt, caption, description, class, author, autho
 `
 
 type CreateMediaParams struct {
-	Name               sql.NullString
-	Displayname        sql.NullString
-	Alt                sql.NullString
-	Caption            sql.NullString
-	Description        sql.NullString
-	Class              sql.NullString
-	Author             sql.NullString
-	Authorid           sql.NullInt64
-	Datecreated        sql.NullString
-	Datemodified       sql.NullString
-	Url                sql.NullString
-	Mimetype           sql.NullString
-	Dimensions         sql.NullString
-	Optimizedmobile    sql.NullString
-	Optimizedtablet    sql.NullString
-	Optimizeddesktop   sql.NullString
-	Optimizedultrawide sql.NullString
+	Name               sql.NullString `json:"name"`
+	Displayname        sql.NullString `json:"displayname"`
+	Alt                sql.NullString `json:"alt"`
+	Caption            sql.NullString `json:"caption"`
+	Description        sql.NullString `json:"description"`
+	Class              sql.NullString `json:"class"`
+	Author             sql.NullString `json:"author"`
+	Authorid           sql.NullInt64  `json:"authorid"`
+	Datecreated        sql.NullString `json:"datecreated"`
+	Datemodified       sql.NullString `json:"datemodified"`
+	Url                sql.NullString `json:"url"`
+	Mimetype           sql.NullString `json:"mimetype"`
+	Dimensions         sql.NullString `json:"dimensions"`
+	Optimizedmobile    sql.NullString `json:"optimizedmobile"`
+	Optimizedtablet    sql.NullString `json:"optimizedtablet"`
+	Optimizeddesktop   sql.NullString `json:"optimizeddesktop"`
+	Optimizedultrawide sql.NullString `json:"optimizedultrawide"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media, error) {
@@ -227,9 +227,9 @@ RETURNING id, label, width, height
 `
 
 type CreateMediaDimensionParams struct {
-	Label  sql.NullString
-	Width  sql.NullInt64
-	Height sql.NullInt64
+	Label  sql.NullString `json:"label"`
+	Width  sql.NullInt64  `json:"width"`
+	Height sql.NullInt64  `json:"height"`
 }
 
 func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimensionParams) (MediaDimension, error) {
@@ -261,15 +261,15 @@ template
 `
 
 type CreateRouteParams struct {
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Content      sql.NullString
-	Template     sql.NullString
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
 }
 
 func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Route, error) {
@@ -334,13 +334,13 @@ RETURNING id, datecreated, datemodified, username, name, email, hash, role
 `
 
 type CreateUserParams struct {
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Username     sql.NullString
-	Name         sql.NullString
-	Email        sql.NullString
-	Hash         sql.NullString
-	Role         sql.NullString
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Username     sql.NullString `json:"username"`
+	Name         sql.NullString `json:"name"`
+	Email        sql.NullString `json:"email"`
+	Hash         sql.NullString `json:"hash"`
+	Role         sql.NullString `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -437,13 +437,36 @@ func (q *Queries) DeleteUser(ctx context.Context, id int64) error {
 	return err
 }
 
-const getAdminRoute = `-- name: GetAdminRoute :one
+const getAdminRouteById = `-- name: GetAdminRouteById :one
+SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroute
+WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetAdminRouteById(ctx context.Context, id int64) (Adminroute, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteById, id)
+	var i Adminroute
+	err := row.Scan(
+		&i.ID,
+		&i.Author,
+		&i.Authorid,
+		&i.Slug,
+		&i.Title,
+		&i.Status,
+		&i.Datecreated,
+		&i.Datemodified,
+		&i.Content,
+		&i.Template,
+	)
+	return i, err
+}
+
+const getAdminRouteBySlug = `-- name: GetAdminRouteBySlug :one
 SELECT id, author, authorid, slug, title, status, datecreated, datemodified, content, template FROM adminroute
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRoute(ctx context.Context, slug sql.NullString) (Adminroute, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRoute, slug)
+func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug sql.NullString) (Adminroute, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteBySlug, slug)
 	var i Adminroute
 	err := row.Scan(
 		&i.ID,
@@ -739,28 +762,28 @@ WHERE
 `
 
 type ListFieldJoinRow struct {
-	ID             int64
-	Routeid        int64
-	Parentid       sql.NullInt64
-	Label          string
-	Data           string
-	Type           string
-	Struct         sql.NullString
-	Author         sql.NullString
-	Authorid       sql.NullString
-	Datecreated    sql.NullString
-	Datemodified   sql.NullString
-	ID_2           sql.NullInt64
-	Routeid_2      sql.NullInt64
-	Parentid_2     sql.NullInt64
-	Label_2        sql.NullString
-	Data_2         sql.NullString
-	Type_2         sql.NullString
-	Struct_2       sql.NullString
-	Author_2       sql.NullString
-	Authorid_2     sql.NullString
-	Datecreated_2  sql.NullString
-	Datemodified_2 sql.NullString
+	ID             int64          `json:"id"`
+	Routeid        int64          `json:"routeid"`
+	Parentid       sql.NullInt64  `json:"parentid"`
+	Label          string         `json:"label"`
+	Data           string         `json:"data"`
+	Type           string         `json:"type"`
+	Struct         sql.NullString `json:"struct"`
+	Author         sql.NullString `json:"author"`
+	Authorid       sql.NullString `json:"authorid"`
+	Datecreated    sql.NullString `json:"datecreated"`
+	Datemodified   sql.NullString `json:"datemodified"`
+	ID_2           sql.NullInt64  `json:"id_2"`
+	Routeid_2      sql.NullInt64  `json:"routeid_2"`
+	Parentid_2     sql.NullInt64  `json:"parentid_2"`
+	Label_2        sql.NullString `json:"label_2"`
+	Data_2         sql.NullString `json:"data_2"`
+	Type_2         sql.NullString `json:"type_2"`
+	Struct_2       sql.NullString `json:"struct_2"`
+	Author_2       sql.NullString `json:"author_2"`
+	Authorid_2     sql.NullString `json:"authorid_2"`
+	Datecreated_2  sql.NullString `json:"datecreated_2"`
+	Datemodified_2 sql.NullString `json:"datemodified_2"`
 }
 
 func (q *Queries) ListFieldJoin(ctx context.Context, routeid int64) ([]ListFieldJoinRow, error) {
@@ -1009,16 +1032,16 @@ set slug = ?,
 `
 
 type UpdateAdminRouteParams struct {
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Content      sql.NullString
-	Template     sql.NullString
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Slug_2       sql.NullString
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Slug_2       sql.NullString `json:"slug_2"`
 }
 
 func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRouteParams) error {
@@ -1054,17 +1077,17 @@ set routeid = ?,
 `
 
 type UpdateFieldParams struct {
-	Routeid      int64
-	Parentid     sql.NullInt64
-	Label        string
-	Data         string
-	Type         string
-	Struct       sql.NullString
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	ID           int64
+	Routeid      int64          `json:"routeid"`
+	Parentid     sql.NullInt64  `json:"parentid"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Struct       sql.NullString `json:"struct"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	ID           int64          `json:"id"`
 }
 
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
@@ -1107,24 +1130,24 @@ UPDATE media
 `
 
 type UpdateMediaParams struct {
-	Name               sql.NullString
-	Displayname        sql.NullString
-	Alt                sql.NullString
-	Caption            sql.NullString
-	Description        sql.NullString
-	Class              sql.NullString
-	Author             sql.NullString
-	Authorid           sql.NullInt64
-	Datecreated        sql.NullString
-	Datemodified       sql.NullString
-	Url                sql.NullString
-	Mimetype           sql.NullString
-	Dimensions         sql.NullString
-	Optimizedmobile    sql.NullString
-	Optimizedtablet    sql.NullString
-	Optimizeddesktop   sql.NullString
-	Optimizedultrawide sql.NullString
-	ID                 int64
+	Name               sql.NullString `json:"name"`
+	Displayname        sql.NullString `json:"displayname"`
+	Alt                sql.NullString `json:"alt"`
+	Caption            sql.NullString `json:"caption"`
+	Description        sql.NullString `json:"description"`
+	Class              sql.NullString `json:"class"`
+	Author             sql.NullString `json:"author"`
+	Authorid           sql.NullInt64  `json:"authorid"`
+	Datecreated        sql.NullString `json:"datecreated"`
+	Datemodified       sql.NullString `json:"datemodified"`
+	Url                sql.NullString `json:"url"`
+	Mimetype           sql.NullString `json:"mimetype"`
+	Dimensions         sql.NullString `json:"dimensions"`
+	Optimizedmobile    sql.NullString `json:"optimizedmobile"`
+	Optimizedtablet    sql.NullString `json:"optimizedtablet"`
+	Optimizeddesktop   sql.NullString `json:"optimizeddesktop"`
+	Optimizedultrawide sql.NullString `json:"optimizedultrawide"`
+	ID                 int64          `json:"id"`
 }
 
 func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error {
@@ -1160,10 +1183,10 @@ WHERE id = ?
 `
 
 type UpdateMediaDimensionParams struct {
-	Label  sql.NullString
-	Width  sql.NullInt64
-	Height sql.NullInt64
-	ID     int64
+	Label  sql.NullString `json:"label"`
+	Width  sql.NullInt64  `json:"width"`
+	Height sql.NullInt64  `json:"height"`
+	ID     int64          `json:"id"`
 }
 
 func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimensionParams) error {
@@ -1192,16 +1215,16 @@ set slug = ?,
 `
 
 type UpdateRouteParams struct {
-	Slug         sql.NullString
-	Title        sql.NullString
-	Status       sql.NullInt64
-	Content      sql.NullString
-	Template     sql.NullString
-	Author       sql.NullString
-	Authorid     sql.NullString
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Slug_2       sql.NullString
+	Slug         sql.NullString `json:"slug"`
+	Title        sql.NullString `json:"title"`
+	Status       sql.NullInt64  `json:"status"`
+	Content      sql.NullString `json:"content"`
+	Template     sql.NullString `json:"template"`
+	Author       sql.NullString `json:"author"`
+	Authorid     sql.NullString `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Slug_2       sql.NullString `json:"slug_2"`
 }
 
 func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error {
@@ -1227,8 +1250,8 @@ WHERE id = ?
 `
 
 type UpdateTableParams struct {
-	Label sql.NullString
-	ID    int64
+	Label sql.NullString `json:"label"`
+	ID    int64          `json:"id"`
 }
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
@@ -1249,14 +1272,14 @@ WHERE id = ?
 `
 
 type UpdateUserParams struct {
-	Datecreated  sql.NullString
-	Datemodified sql.NullString
-	Username     sql.NullString
-	Name         sql.NullString
-	Email        sql.NullString
-	Hash         sql.NullString
-	Role         sql.NullString
-	ID           int64
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	Username     sql.NullString `json:"username"`
+	Name         sql.NullString `json:"name"`
+	Email        sql.NullString `json:"email"`
+	Hash         sql.NullString `json:"hash"`
+	Role         sql.NullString `json:"role"`
+	ID           int64          `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
