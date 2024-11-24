@@ -13,3 +13,7 @@ func sizeInBytes(value int64, unit StorageUnit) int64 {
 	return value * int64(unit)
 }
 
+type Endpoint string
+
+const oauthAuthURL Endpoint = "oauth_auth_url"
+const oauthTokenURL Endpoint = "oauth_token_url"

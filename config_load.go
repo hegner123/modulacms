@@ -27,14 +27,6 @@ func loadConfig(verbose *bool) Config {
 	}
 	if *verbose {
 		fmt.Printf("%s\n", bytes)
-		fmt.Printf(`
-            DB URL:%s, 
-            DB NAME: %s, 
-            DB Password: %s,
-            Bucket URL: %s, 
-            Bucket Password: %s
-            `, config.DB_URL, config.DB_NAME,
-			config.DB_PASSWORD, config.Bucket_URL, config.Bucket_PASSWORD)
 
 	}
 	return config

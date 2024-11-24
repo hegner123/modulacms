@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -45,7 +46,6 @@ func initDb(db *sql.DB, ctx context.Context) error {
 		return err
 	}
 
-
 	return nil
 }
 
@@ -72,4 +72,76 @@ func readSchemaFiles() (string, error) {
 	}
 	// Join all the file contents
 	return strings.Join(result, "\n"), nil
+}
+
+func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
+
+	times := timestampS()
+	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
+		Author:       ns("system"),
+		Authorid:     ns("0"),
+		Slug:         ns("/test1"+modify),
+		Title:        ns("Test"),
+		Status:       ni(0),
+		Datecreated:  ns(times),
+		Datemodified: ns(times),
+		Content:      ns("Test content"),
+		Template:     ns("page.html"),
+	})
+	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
+		Author:       ns("system"),
+		Authorid:     ns("0"),
+		Slug:         ns("/test1"+modify),
+		Title:        ns("Test"),
+		Status:       ni(0),
+		Datecreated:  ns(times),
+		Datemodified: ns(times),
+		Content:      ns("Test content"),
+		Template:     ns("page.html"),
+	})
+	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
+		Name:               ns("test.png"),
+		Displayname:        ns("Test"),
+		Alt:                ns("test"),
+		Caption:            ns("test"),
+		Description:        ns("test"),
+		Author:             ns("system"),
+		Authorid:           ni(0),
+		Datecreated:        ns(times),
+		Datemodified:       ns(times),
+		Url:                ns("public/2024/11/test1.png"+modify),
+		Mimetype:           ns("image/png"),
+		Dimensions:         ns("1000x1000"),
+		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
+		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
+		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
+		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+	})
+
+	dbCreateField(db, ctx, mdb.CreateFieldParams{
+		Routeid:      int64(1),
+		Label:        "Parent",
+		Data:         "Test Field",
+		Type:         "text",
+		Author:       ns("system"),
+		Authorid:     ns("0"),
+		Datecreated:  ns(times),
+		Datemodified: ns(times),
+	})
+	dbCreateUser(db, ctx, mdb.CreateUserParams{
+		Datecreated:  ns(times),
+		Datemodified: ns(times),
+		Username:     ns("system"),
+		Name:         ns("system"),
+		Email:        ns("system@modulacms.com"+modify),
+		Hash:         ns("has"),
+		Role:         ns("admin"),
+	})
+	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
+		Label:  ns("Tablet"+modify),
+		Width:  ni(1920),
+		Height: ni(1080),
+	})
+
+	dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test1"+modify)})
 }

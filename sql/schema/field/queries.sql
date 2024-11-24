@@ -1,10 +1,10 @@
 -- name: GetField :one
 SELECT * FROM field
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: GetFieldId :one
 SELECT id FROM field
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: ListField :many
 SELECT * FROM field
@@ -53,9 +53,9 @@ set routeid = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE ? = ?
+    WHERE id = ?
     RETURNING *;
 
 -- name: DeleteField :exec
 DELETE FROM field
-WHERE ? = ?;
+WHERE id = ?;

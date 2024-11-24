@@ -1,10 +1,14 @@
--- name: GetAdminRoute :one
+-- name: GetAdminRouteBySlug :one
 SELECT * FROM adminroute
-WHERE ? = ? LIMIT 1;
+WHERE slug = ? LIMIT 1;
+
+-- name: GetAdminRouteById :one
+SELECT * FROM adminroute
+WHERE id = ? LIMIT 1;
 
 -- name: GetAdminRouteId :one
 SELECT id FROM adminroute
-WHERE ? = ? LIMIT 1;
+WHERE slug = ? LIMIT 1;
 
 -- name: ListAdminRoute :many
 SELECT * FROM adminroute
@@ -37,9 +41,9 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE ? = ?
+    WHERE slug = ?
     RETURNING *;
 
 -- name: DeleteAdminRoute :exec
 DELETE FROM adminroute
-WHERE ? = ?;
+WHERE slug = ?;

@@ -10,7 +10,7 @@ import (
 )
 
 func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.Adminroute {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedAdminRoutes, err := queries.ListAdminRoute(ctx)
 	if err != nil {
 		logError("failed to get Admin Routes: ", err)
@@ -19,7 +19,7 @@ func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.Adminroute {
 }
 
 func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Route {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedRoutes, err := queries.ListRoute(ctx)
 	if err != nil {
 		logError("failed to get Routes ", err)
@@ -28,7 +28,7 @@ func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Route {
 }
 
 func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedUsers, err := queries.ListUser(ctx)
 	if err != nil {
 		logError("failed to get Users ", err)
@@ -37,7 +37,7 @@ func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
 }
 
 func dbListMedia(db *sql.DB, ctx context.Context) []mdb.Media {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedMedias, err := queries.ListMedia(ctx)
 	if err != nil {
 		logError("failed to get Medias ", err)
@@ -46,7 +46,7 @@ func dbListMedia(db *sql.DB, ctx context.Context) []mdb.Media {
 }
 
 func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedMediaDimensions, err := queries.ListMediaDimension(ctx)
 	if err != nil {
 		logError("failed to get MediaDimensions ", err)
@@ -55,7 +55,7 @@ func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension 
 }
 
 func dbListTable(db *sql.DB, ctx context.Context) []mdb.Tables {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedTables, err := queries.ListTable(ctx)
 	if err != nil {
 		logError("failed to get Tables ", err)
@@ -64,7 +64,7 @@ func dbListTable(db *sql.DB, ctx context.Context) []mdb.Tables {
 }
 
 func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedFields, err := queries.ListField(ctx)
 	if err != nil {
 		logError("failed to get Fields ", err)
@@ -73,7 +73,7 @@ func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
 }
 
 func dbListFieldsByRoute(db *sql.DB,ctx context.Context, id int64)[]mdb.ListFieldJoinRow{
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	fetchedFields, err := queries.ListFieldJoin(ctx,id)
     if err != nil { 
         logError("failed to list and join fields: ", err)

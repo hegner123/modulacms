@@ -81,8 +81,8 @@ func main() {
 
 	if useSSL {
 
-		log.Printf("\n\nServer is running at https://localhost:%s", config.SSLPort)
-		err := http.ListenAndServeTLS(":"+config.SSLPort, "cert.pem", "./key.pem", mux)
+		log.Printf("\n\nServer is running at https://localhost:%s", config.SSL_Port)
+		err := http.ListenAndServeTLS(":"+config.SSL_Port, "cert.pem", "./key.pem", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}

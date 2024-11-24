@@ -1,11 +1,11 @@
 
 -- name: GetUser :one
 SELECT * FROM user
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: GetUserId :one
 SELECT id FROM user
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: ListUser :many
 SELECT * FROM user 
@@ -34,8 +34,8 @@ set datecreated = ?,
     email = ?,
     hash = ?,
     role = ?
-WHERE ? = ?;
+WHERE id = ?;
 
 -- name: DeleteUser :exec
 DELETE FROM user
-WHERE ? = ?;
+WHERE id = ?;

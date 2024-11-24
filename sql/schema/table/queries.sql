@@ -1,11 +1,11 @@
 
 -- name: GetTable :one
 SELECT * FROM tables
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: GetTableId :one
 SELECT id FROM tables
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: ListTable :many
 SELECT * FROM tables 
@@ -22,8 +22,8 @@ RETURNING *;
 -- name: UpdateTable :exec
 UPDATE tables
 set label = ?
-WHERE ? = ?;
+WHERE id = ?;
 
 -- name: DeleteTable :exec
 DELETE FROM tables
-WHERE ? = ?;
+WHERE id = ?;

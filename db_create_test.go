@@ -20,7 +20,7 @@ func TestCreateUser(t *testing.T) {
 		Datemodified: ns(times),
 		Username:     ns("system"),
 		Name:         ns("system"),
-		Email:        ns("system@modulacms.com"),
+		Email:        ns("test@modulacms.com"),
 		Hash:         ns("has"),
 		Role:         ns("admin"),
 	})
@@ -30,7 +30,7 @@ func TestCreateUser(t *testing.T) {
 		Datemodified: ns(times),
 		Username:     ns("system"),
 		Name:         ns("system"),
-		Email:        ns("system@modulacms.com"),
+		Email:        ns("test@modulacms.com"),
 		Hash:         ns("has"),
 		Role:         ns("admin"),
 	}

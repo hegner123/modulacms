@@ -11,7 +11,7 @@ import (
 )
 
 func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateAdminRoute(ctx, s)
 	if err != nil {
 		logError("failed to update admin route ", err)
@@ -20,7 +20,7 @@ func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteP
 }
 
 func dbUpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateField(ctx, s)
 	if err != nil {
 		logError("failed to update field ", err)
@@ -29,7 +29,7 @@ func dbUpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) str
 }
 
 func dbUpdateMedia(db *sql.DB, ctx context.Context, s mdb.UpdateMediaParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateMedia(ctx, s)
 	if err != nil {
 		logError("failed to update media ", err)
@@ -38,7 +38,7 @@ func dbUpdateMedia(db *sql.DB, ctx context.Context, s mdb.UpdateMediaParams) str
 }
 
 func dbUpdateMediaDimension(db *sql.DB, ctx context.Context, s mdb.UpdateMediaDimensionParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateMediaDimension(ctx, s)
 	if err != nil {
 		logError("failed to update MediaDimension ", err)
@@ -47,16 +47,16 @@ func dbUpdateMediaDimension(db *sql.DB, ctx context.Context, s mdb.UpdateMediaDi
 }
 
 func dbUpdateRoute(db *sql.DB, ctx context.Context, s mdb.UpdateRouteParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateRoute(ctx, s)
 	if err != nil {
 		logError("failed to update route ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Title)
+	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
 }
 
 func dbUpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateUser(ctx, s)
 	if err != nil {
 		logError("failed to update user ", err)
@@ -65,7 +65,7 @@ func dbUpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) strin
 }
 
 func dbUpdateTable(db *sql.DB, ctx context.Context, s mdb.UpdateTableParams) string {
-	queries := new(mdb.Queries)
+	queries := mdb.New(db)
 	err := queries.UpdateTable(ctx, s)
 	if err != nil {
 		logError("failed to update table ", err)

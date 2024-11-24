@@ -10,11 +10,8 @@ import (
 )
 
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminroute {
-	queries := new(mdb.Queries)
-	params := mdb.GetAdminRouteParams{
-		Column1: "slug",
-		Column2: slug,
-	}
+	queries := mdb.New(db)
+	params := ns(slug)
 	fetchedAdminRoute, err := queries.GetAdminRoute(ctx, params)
 	if err != nil {
 		logError("failed to create database dump in archive: ", err)
@@ -23,51 +20,44 @@ func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminrout
 }
 
 func dbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Route {
-	queries := new(mdb.Queries)
-	params := mdb.GetRouteParams{
-		Column1: "slug",
-		Column2: slug,
-	}
-	fetchedRoute, err := queries.GetRoute(ctx, params)
+	queries := mdb.New(db)
+	fetchedRoute, err := queries.GetRoute(ctx, ns(slug))
 	if err != nil {
 		logError("failed to get Route ", err)
 	}
 	return fetchedRoute
 }
 
-func dbGetUser(db *sql.DB, ctx context.Context, id int) mdb.User {
-	queries := new(mdb.Queries)
-	params := mdb.GetUserParams{
-		Column1: "id",
-		Column2: id,
-	}
-	fetchedUser, err := queries.GetUser(ctx, params)
+func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
+	queries := mdb.New(db)
+	fetchedUser, err := queries.GetUser(ctx, id)
 	if err != nil {
 		logError("failed to get User ", err)
+		return fetchedUser, err
+	}
+	return fetchedUser, nil
+}
+func dbGetUserId(db *sql.DB, ctx context.Context, id int64) int64 {
+	queries := mdb.New(db)
+	fetchedUser, err := queries.GetUserId(ctx, id)
+	if err != nil {
+		logError("failed to get UserId ", err)
 	}
 	return fetchedUser
 }
 
-func dbGetMedia(db *sql.DB, ctx context.Context, id int) mdb.Media {
-	queries := new(mdb.Queries)
-	params := mdb.GetMediaParams{
-		Column1: "id",
-		Column2: id,
-	}
-	fetchedMedia, err := queries.GetMedia(ctx, params)
+func dbGetMedia(db *sql.DB, ctx context.Context, id int64) mdb.Media {
+	queries := mdb.New(db)
+	fetchedMedia, err := queries.GetMedia(ctx, id)
 	if err != nil {
 		logError("failed to get Media ", err)
 	}
 	return fetchedMedia
 }
 
-func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int) mdb.MediaDimension {
-	queries := new(mdb.Queries)
-	params := mdb.GetMediaDimensionParams{
-		Column1: "id",
-		Column2: id,
-	}
-	fetchedMediaDimension, err := queries.GetMediaDimension(ctx, params)
+func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDimension {
+	queries := mdb.New(db)
+	fetchedMediaDimension, err := queries.GetMediaDimension(ctx, id)
 	if err != nil {
 		logError("failed to get MediaDimension ", err)
 	}
@@ -75,26 +65,18 @@ func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int) mdb.MediaDimen
 
 }
 
-func dbGetTable(db *sql.DB, ctx context.Context, id int) mdb.Tables {
-	queries := new(mdb.Queries)
-	params := mdb.GetTableParams{
-		Column1: "id",
-		Column2: id,
-	}
-	fetchedTable, err := queries.GetTable(ctx, params)
+func dbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
+	queries := mdb.New(db)
+	fetchedTable, err := queries.GetTable(ctx, id)
 	if err != nil {
 		logError("failed to get Table ", err)
 	}
 	return fetchedTable
 }
 
-func dbGetField(db *sql.DB, ctx context.Context, id int) mdb.Field {
-	queries := new(mdb.Queries)
-	params := mdb.GetFieldParams{
-		Column1: "id",
-		Column2: id,
-	}
-	fetchedField, err := queries.GetField(ctx, params)
+func dbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Field {
+	queries := mdb.New(db)
+	fetchedField, err := queries.GetField(ctx, id)
 	if err != nil {
 		logError("failed to get Field ", err)
 	}

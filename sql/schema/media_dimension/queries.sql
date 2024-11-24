@@ -1,7 +1,7 @@
 
 -- name: GetMediaDimension :one
 SELECT * FROM media_dimension
-WHERE ? = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
 -- name: ListMediaDimension :many
 SELECT * FROM media_dimension 
@@ -22,8 +22,8 @@ UPDATE media_dimension
 set label = ?,
     width = ?,
     height = ? 
-WHERE ? = ?;
+WHERE id = ?;
 
 -- name: DeleteMediaDimension :exec
 DELETE FROM media_dimension
-WHERE ? = ?;
+WHERE id = ?;

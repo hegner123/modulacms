@@ -1,11 +1,11 @@
 
 -- name: GetRoute :one
 SELECT * FROM route
-WHERE ? = ? LIMIT 1;
+WHERE slug = ? LIMIT 1;
 
 -- name: GetRouteId :one
 SELECT id FROM route
-WHERE ? = ? LIMIT 1;
+WHERE slug = ? LIMIT 1;
 
 -- name: ListRoute :many
 SELECT * FROM route
@@ -38,9 +38,9 @@ set slug = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE ? = ?
+    WHERE slug = ?
     RETURNING *;
 
 -- name: DeleteRoute :exec
 DELETE FROM route
-WHERE ? = ?;
+WHERE slug = ?;
