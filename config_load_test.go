@@ -40,7 +40,7 @@ func TestLoadConfig(t *testing.T) {
 
     expected := Config{
         Port:"8080",
-        SSL_Port: "443",
+        SSL_Port: "8443",
         Client_Site: "example.com",
         Db_Driver: "sqlite",
         Db_URL: "default",
