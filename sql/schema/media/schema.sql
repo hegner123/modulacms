@@ -6,16 +6,18 @@ CREATE TABLE media(
     caption TEXT,
     description TEXT,
     class TEXT,
-    author TEXT,
-    authorid INTEGER,
-    datecreated TEXT,
-    datemodified TEXT,
+    author TEXT NOT NULL,
+    authorid TEXT NOT NULL,
+    datecreated TEXT NOT NULL,
+    datemodified TEXT NOT NULL,
     url TEXT UNIQUE,
     mimetype TEXT,
     dimensions TEXT,
     optimizedmobile TEXT,
     optimizedtablet TEXT,
     optimizeddesktop TEXT,
-    optimizedultrawide TEXT
+    optimizedultrawide TEXT,
+    FOREIGN KEY (author) REFERENCES user(name),
+    FOREIGN KEY (authorid) REFERENCES user(id)
 );
 

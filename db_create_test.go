@@ -1,13 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 func TestCreateUser(t *testing.T) {
+
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -246,6 +251,54 @@ func TestCreateTables(t *testing.T) {
 	}
 
 	if reflect.DeepEqual(insertedTables, expected) {
+		t.FailNow()
+	}
+}
+
+func TestCreateToken(t *testing.T) {
+	var (
+		key []byte
+		tk  *jwt.Token
+		signedToken   string
+	)
+
+	key = generateKey()
+	tk = jwt.New(jwt.SigningMethodHS256)
+	signedToken, err := tk.SignedString(key)
+	if err != nil {
+		logError("failed to : ", err)
+	}
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	dur, err := time.ParseDuration("24h")
+	if err != nil {
+		logError("failed to ParseDuration: ", err)
+	}
+	weeks := time.Now().Add(dur)
+    times := timestampS()
+    
+	insertedToken := dbCreateToken(db, ctx, mdb.CreateTokenParams{
+		UserID:    1,
+		IssuedAt:  times,
+		ExpiresAt: fmt.Sprint(weeks.Unix()),
+		TokenType: "refresh",
+		Token:     signedToken,
+		Revoked:   nb(false),
+	})
+
+	expected := mdb.Token{
+		UserID:    1,
+		IssuedAt:  times,
+		ExpiresAt: fmt.Sprint(weeks.Unix()),
+		TokenType: "refresh",
+		Token:     signedToken,
+		Revoked:   nb(false),
+	}
+
+	if reflect.DeepEqual(insertedToken, expected) {
 		t.FailNow()
 	}
 }

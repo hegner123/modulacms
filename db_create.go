@@ -81,6 +81,14 @@ func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
 	}
 
 	return insertedTable
+}
 
+func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Token {
+	queries := mdb.New(db)
+	insertedToken, err := queries.CreateToken(ctx, s)
+	if err != nil {
+		logError("failed to create table ", err)
+	}
 
+	return insertedToken
 }

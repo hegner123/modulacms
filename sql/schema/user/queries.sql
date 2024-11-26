@@ -3,9 +3,13 @@
 SELECT * FROM user
 WHERE id = ? LIMIT 1;
 
+-- name: GetUserByEmail :one
+SELECT * FROM user
+WHERE email = ? LIMIT 1;
+
 -- name: GetUserId :one
 SELECT id FROM user
-WHERE id = ? LIMIT 1;
+WHERE email = ? LIMIT 1;
 
 -- name: ListUser :many
 SELECT * FROM user 

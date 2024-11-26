@@ -2,11 +2,65 @@ package main
 
 import (
 	"context"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 
 	"golang.org/x/oauth2"
 )
+
+func handleAuth(form url.Values){
+    db,ctx,err:=getDb(Database{})
+    if err != nil { 
+        logError("failed to : ", err)
+    }
+    user:=dbGetUserByEmail(db,ctx, form.Get("email"))
+    requestHash :=authMakeHash(form.Get("hash"),"modulacms")
+    if compareHashes(user.Hash.String,requestHash){
+    }
+
+}
+
+func authMakeHash(data, salt string) string {
+	input := data + salt
+	hash := sha256.Sum256([]byte(input))
+
+	return hex.EncodeToString(hash[:])
+}
+
+func compareHashes(hash1, hash2 string) bool {
+	hash1Bytes, err1 := hex.DecodeString(hash1)
+	hash2Bytes, err2 := hex.DecodeString(hash2)
+
+	if err1 != nil || err2 != nil || len(hash1Bytes) != len(hash2Bytes) {
+		return false
+	}
+	return subtle.ConstantTimeCompare(hash1Bytes, hash2Bytes) == 1
+}
+
+func authMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if the auth cookie exists
+		cookie, err := r.Cookie("auth_token")
+		if err != nil || cookie.Value == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		// Validate the token (in a real app, use a secure method like JWT validation)
+		if cookie.Value != "valid_token_example" {
+			http.Error(w, "Invalid token", http.StatusUnauthorized)
+			return
+		}
+
+		// Proceed to the next handler if authorized
+		next.ServeHTTP(w, r)
+	})
+}
 
 func oauthSettings() {
 	ctx := context.Background()

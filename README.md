@@ -1,24 +1,25 @@
 # Modula CMS
 
 ## ToDo
-- Server: GO
-- API:
-    - CMS API
-    - FrontEnd API
-- DB: SQLite / Postgres
-- Bucket: Deployment require cloud storage endpoint
-- CMS FrontEnd: HTML, Tailwind, HTMX, WebComponents
-- DevOps: Github actions to deploy
+- [ ] Server: GO
+- [ ] Endpoints:
+    - **admin/** SSR Admin
+    - **content/** JSON/Protobuf endpoints to serve Clients
+    - **api/vX/** versioned DataAPI to handle db and bucket interactions
+- [ ] DB: SQLite / Postgres / mysql|mariadb
+- [ ] Bucket: Deployment require cloud storage endpoint
+- [ ] Reverse Proxy Bucket endpoints
+- [ ] CMS FrontEnd: HTML, Tailwind, HTMX, WebComponents
 
 ## Proof of concept requires
 - [x] Go Server
 - [x] Go DB connection
-- [x] Handle routes for Admin
-- [x] Handle routes for front end - REST api
+- [ ] Handle routes for Admin
 - [ ] Load and confirm bucket connection
 - [ ] Render html pages and templates
-- [ ] Define front end api
 - [ ] Admin authentication - oAuth?
+- [ ] Local authentication
+- [ ] Middleware
 - [ ] Dashboard
 - [ ] Route editor
 - [ ] Create field
@@ -28,10 +29,31 @@
 - [ ] Backup
 - [ ] Restore
 
-Visible on admin frontend
+### Dashboard
 - s3 bucket connection
 - db connection, Sqlite, mysql, mariadb, postgres, etc.
+### Admin Types
+- Configuration
+- User Management
+- Route Composer
+- Type Composer
+- Media Gallery
 
+### Admin Templates
+- Dashboard
+- Users
+    - User
+- Route Composer: made of composed types
+    - Route
+        - Get all relational types
+- Type Composer: made of composed fields or composed types
+    - Type
+        - Get all relational fields and related types
+- Field Composer: direct api access
+    - Field
+        - Get data for field
+- Media Gallery
+    - Media
 
 ## Thoughts
 - Query builder for admin. Dynamically build queries to show posts and post types.

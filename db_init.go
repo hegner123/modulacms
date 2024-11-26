@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
 	"embed"
 	_ "embed"
 	"fmt"
 	"io/fs"
+	"log"
 	"path/filepath"
 	"strings"
 
@@ -73,6 +75,15 @@ func readSchemaFiles() (string, error) {
 	// Join all the file contents
 	return strings.Join(result, "\n"), nil
 }
+func generateKey() []byte {
+	key := make([]byte, 32)
+	_, err := rand.Read(key)
+	if err != nil {
+		log.Fatalf("Failed to generate key: %v", err)
+	}
+	return key
+}
+
 
 func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
 

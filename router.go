@@ -8,10 +8,28 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
-
 )
 
+func router(w http.ResponseWriter, r *http.Request) {
 
+	switch {
+	case hasFileExtension(r.URL.Path):
+		fmt.Print("static route\n")
+		staticFileHandler(w, r)
+	case checkPath(r.URL.Path,"api"):
+		fmt.Print("api route\n")
+		apiRoutes(w, r)
+    case checkPath(r.URL.Path,"admin"):
+		fmt.Print("admin route\n")
+        handleAdminRoutes(w,r)
+	case r.URL.Path == "/404":
+		fmt.Print("404 route\n")
+		notFoundHandler(w, r)
+	default:
+		fmt.Print("page route\n")
+		handlePageRoutes(w, r)
+	}
+}
 
 func apiRoutes(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -27,6 +45,16 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case matchesPath(apiRoute, "admin/auth"):
+        err:=r.ParseForm()
+        if err != nil { 
+            logError("failed to ParseForm ", err)
+        }
+        //status, err := handleAuth(r.Form)
+        if err != nil { 
+            logError("failed to handle auth: ", err)
+        }
+		w.Header().Set("Content-Type", "application/json")
 	case matchesPath(apiRoute, "create/route"):
 		res := apiCreateRoute(w, r)
 		w.Header().Set("Content-Type", "application/json")
@@ -46,10 +74,10 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	case matchesPath(apiRoute, "list/routes"):
-        routes,err := apiListRoutes()
-        if err != nil { 
-            logError("failed to list Routes: ", err)
-        }
+		routes, err := apiListRoutes()
+		if err != nil {
+			logError("failed to list Routes: ", err)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(routes)
@@ -57,15 +85,33 @@ func apiRoutes(w http.ResponseWriter, r *http.Request) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-    case matchesPath(apiRoute,"list/fieldsbyroute"):
-        fields ,err := apiListFieldsForRoute(w,r)
-        if err != nil { 
-            logError("failed to get fields : ", err)
-        }
+	case matchesPath(apiRoute, "list/fieldsbyroute"):
+		fields, err := apiListFieldsForRoute(w, r)
+		if err != nil {
+			logError("failed to get fields : ", err)
+		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(fields)
+		if err != nil {
+			logError("failed to write response %v: ", err)
+		}
 	}
+}
+func handleAdminRoutes(w http.ResponseWriter,r *http.Request){
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		fmt.Printf("\nerror: %s", err)
+		return
+	}
+    defer db.Close()
+    w.Header().Set("Content-Type", "text/html")
+    route:=dbGetAdminRoute(db,ctx,r.URL.Path)
+    res := servePageFromRoute(route)
+   _, err= w.Write(res)
+    if err != nil { 
+        logError("failed to write response : ", err)
+    }
 }
 
 func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
@@ -78,6 +124,7 @@ func handlePageRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
+    defer db.Close()
 	matchedRoute := dbGetRoute(db, ctx, r.URL.Path)
 	if err != nil {
 		redirectTo404(w, r)
@@ -139,9 +186,12 @@ func notFoundHandler(w http.ResponseWriter, r *http.Request) {
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
 	filePath := filepath.Join("public", r.URL.Path)
 	fmt.Print(filePath)
-	if filepath.Ext(filePath) == ".js" {
+    switch{
+    case filepath.Ext(filePath) == ".js": 
+        w.Header().Set("Content-Type", "text/javascript")
 
-		w.Header().Set("Content-Type", "text/javascript")
-	}
+    }
+
+	
 	http.ServeFile(w, r, filePath)
 }

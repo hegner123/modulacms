@@ -316,6 +316,50 @@ func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Tables
 	return i, err
 }
 
+const createToken = `-- name: CreateToken :one
+INSERT INTO token (
+    user_id,
+    token_type,
+    token,
+    issued_at,
+    expires_at,
+    revoked
+    ) VALUES( 
+    ?,?,?,?,?,?
+    ) RETURNING id, user_id, token_type, token, issued_at, expires_at, revoked
+`
+
+type CreateTokenParams struct {
+	UserID    int64        `json:"user_id"`
+	TokenType string       `json:"token_type"`
+	Token     string       `json:"token"`
+	IssuedAt  string       `json:"issued_at"`
+	ExpiresAt string       `json:"expires_at"`
+	Revoked   sql.NullBool `json:"revoked"`
+}
+
+func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token, error) {
+	row := q.db.QueryRowContext(ctx, createToken,
+		arg.UserID,
+		arg.TokenType,
+		arg.Token,
+		arg.IssuedAt,
+		arg.ExpiresAt,
+		arg.Revoked,
+	)
+	var i Token
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenType,
+		&i.Token,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.Revoked,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
 ;
 
@@ -424,6 +468,16 @@ WHERE id = ?
 
 func (q *Queries) DeleteTable(ctx context.Context, id int64) error {
 	_, err := q.db.ExecContext(ctx, deleteTable, id)
+	return err
+}
+
+const deleteToken = `-- name: DeleteToken :exec
+DELETE FROM token
+WHERE id = ?
+`
+
+func (q *Queries) DeleteToken(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, deleteToken, id)
 	return err
 }
 
@@ -636,6 +690,46 @@ func (q *Queries) GetTableId(ctx context.Context, id int64) (int64, error) {
 	return id, err
 }
 
+const getToken = `-- name: GetToken :one
+SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
+WHERE id = ? LIMIT 1
+`
+
+func (q *Queries) GetToken(ctx context.Context, id int64) (Token, error) {
+	row := q.db.QueryRowContext(ctx, getToken, id)
+	var i Token
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenType,
+		&i.Token,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.Revoked,
+	)
+	return i, err
+}
+
+const getTokenByUserId = `-- name: GetTokenByUserId :one
+SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
+WHERE user_id = ? LIMIT 1
+`
+
+func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) (Token, error) {
+	row := q.db.QueryRowContext(ctx, getTokenByUserId, userID)
+	var i Token
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenType,
+		&i.Token,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.Revoked,
+	)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
 SELECT id, datecreated, datemodified, username, name, email, hash, role FROM user
 WHERE id = ? LIMIT 1
@@ -657,13 +751,35 @@ func (q *Queries) GetUser(ctx context.Context, id int64) (User, error) {
 	return i, err
 }
 
-const getUserId = `-- name: GetUserId :one
-SELECT id FROM user
-WHERE id = ? LIMIT 1
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, datecreated, datemodified, username, name, email, hash, role FROM user
+WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserId(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getUserId, id)
+func (q *Queries) GetUserByEmail(ctx context.Context, email sql.NullString) (User, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Datecreated,
+		&i.Datemodified,
+		&i.Username,
+		&i.Name,
+		&i.Email,
+		&i.Hash,
+		&i.Role,
+	)
+	return i, err
+}
+
+const getUserId = `-- name: GetUserId :one
+SELECT id FROM user
+WHERE email = ? LIMIT 1
+`
+
+func (q *Queries) GetUserId(ctx context.Context, email sql.NullString) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getUserId, email)
+	var id int64
 	err := row.Scan(&id)
 	return id, err
 }
@@ -1256,6 +1372,34 @@ type UpdateTableParams struct {
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
 	_, err := q.db.ExecContext(ctx, updateTable, arg.Label, arg.ID)
+	return err
+}
+
+const updateToken = `-- name: UpdateToken :exec
+UPDATE token
+set token = ?,
+issued_at = ?,
+expires_at= ?,
+revoked = ?
+WHERE id = ?
+`
+
+type UpdateTokenParams struct {
+	Token     string       `json:"token"`
+	IssuedAt  string       `json:"issued_at"`
+	ExpiresAt string       `json:"expires_at"`
+	Revoked   sql.NullBool `json:"revoked"`
+	ID        int64        `json:"id"`
+}
+
+func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
+	_, err := q.db.ExecContext(ctx, updateToken,
+		arg.Token,
+		arg.IssuedAt,
+		arg.ExpiresAt,
+		arg.Revoked,
+		arg.ID,
+	)
 	return err
 }
 

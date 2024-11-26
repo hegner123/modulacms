@@ -1,17 +1,16 @@
-CREATE TABLE field (
+CREATE TABLE datatype (
     id INTEGER PRIMARY KEY,
-    routeid INTEGER  DEFAULT NULL,
+    routeid INTEGER DEFAULT NULL,
     parentid INTEGER DEFAULT NULL,
-    label TEXT NOT NULL DEFAULT "unlabeled",
-    data TEXT NOT NULL DEFAULT "",
-    type TEXT NOT NULL DEFAULT "text",
+    label TEXT NOT NULL,
+    type TEXT NOT NULL,
     struct TEXT DEFAULT NULL,
     author TEXT NOT NULL DEFAULT "system",
     authorid TEXT NOT NULL DEFAULT "0",
-    datecreated TEXT NOT NULL DEFAULT LOCALTIMESTAMP,
+    datecreated TEXT  DEFAULT LOCALTIMESTAMP, 
     datemodified TEXT DEFAULT LOCALTIMESTAMP,
     FOREIGN KEY (author) REFERENCES user(name) ON DELETE SET DEFAULT,
     FOREIGN KEY (authorid) REFERENCES user(id) ON DELETE SET DEFAULT,
     FOREIGN KEY (routeid) REFERENCES adminroute(id) ON DELETE SET DEFAULT,
-    FOREIGN KEY (parentid) REFERENCES datatype(id) ON DELETE SET DEFAULT
+    FOREIGN KEY (parentid) REFERENCES field(id) ON DELETE SET DEFAULT
 );

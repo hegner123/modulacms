@@ -81,6 +81,16 @@ type Tables struct {
 	Label sql.NullString `json:"label"`
 }
 
+type Token struct {
+	ID        int64        `json:"id"`
+	UserID    int64        `json:"user_id"`
+	TokenType string       `json:"token_type"`
+	Token     string       `json:"token"`
+	IssuedAt  string       `json:"issued_at"`
+	ExpiresAt string       `json:"expires_at"`
+	Revoked   sql.NullBool `json:"revoked"`
+}
+
 type User struct {
 	ID           int64          `json:"id"`
 	Datecreated  sql.NullString `json:"datecreated"`

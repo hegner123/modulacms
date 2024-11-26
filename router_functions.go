@@ -6,6 +6,23 @@ import (
 	"strings"
 )
 
+func checkPath(rawURL, match string) bool  {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return false
+	}
+
+	path := strings.Trim(parsedURL.Path, "/")
+
+	segments := strings.Split(path, "/")
+
+	if len(segments) > 0 && segments[0] == match {
+		return true
+	}
+
+	return false
+}
+
 func checkAPIPath(rawURL string) bool {
 	parsedURL, err := url.Parse(rawURL)
 	if err != nil {

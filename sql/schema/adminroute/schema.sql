@@ -8,6 +8,7 @@ CREATE TABLE adminroute (
     datecreated TEXT, 
     datemodified TEXT, 
     content TEXT, 
-    template TEXT
+    template TEXT,
+    deleted INTEGER
 );
 

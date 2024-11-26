@@ -8,6 +8,7 @@ require golang.org/x/image v0.22.0
 
 require (
 	github.com/aws/aws-sdk-go v1.55.5 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 )

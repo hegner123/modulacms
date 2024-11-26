@@ -21,9 +21,8 @@ status,
 datecreated,
 datemodified, 
 content, 
-template
 ) VALUES (
-?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?
 ) RETURNING *;
 
 
@@ -33,7 +32,6 @@ set slug = ?,
     title = ?,
     status = ?,
     content = ?, 
-    template = ?,
     author = ?,
     authorid = ?,
     datecreated = ?,

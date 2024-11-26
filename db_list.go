@@ -80,3 +80,11 @@ func dbListFieldsByRoute(db *sql.DB,ctx context.Context, id int64)[]mdb.ListFiel
     }
     return fetchedFields
 }
+
+func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64){
+//TODO implement dependency checking for delete candidate
+
+}
+
+
+
