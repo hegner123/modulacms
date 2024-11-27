@@ -5,7 +5,8 @@ import (
 	"reflect"
 	"testing"
 )
-func compareStructs(a, b interface{})bool {
+
+func compareStructs(a, b interface{}) bool {
 	if reflect.DeepEqual(a, b) {
 		return true
 	}
@@ -28,38 +29,36 @@ func compareStructs(a, b interface{})bool {
 		// Compare field values
 		if !reflect.DeepEqual(fieldA.Interface(), fieldB.Interface()) {
 			fmt.Printf("Field '%s' is different: %v != %v\n", fieldName, fieldA.Interface(), fieldB.Interface())
-            return false
+			return false
 		}
 	}
-    return false
+	return false
 }
 
 func TestLoadConfig(t *testing.T) {
 	fakeFlag := false
 	conf := loadConfig(&fakeFlag)
 
-    expected := Config{
-        Port:"8080",
-        SSL_Port: "8443",
-        Client_Site: "example.com",
-        Db_Driver: "sqlite",
-        Db_URL: "default",
-        Db_Name: "default",
-        Db_Password:"none",
-        Bucket_Url: "local",
-        Bucket_Password:"none",
-        Backup_Option:"",
-        Backup_Paths: []string{},
-        Oauth_Client_Id:"clientId",
-        Oauth_Client_Secret: "clientSecret",
-        Oauth_Scopes:[]string{"profile","profilePic"},
-        Oauth_Endpoint: map[Endpoint]string{oauthAuthURL:"https://provider.com/o/oauth2/auth", oauthTokenURL:"https://provider.com/o/oauth2/token"}, 
-    }
-    
-    res:=compareStructs(conf,expected)
-    if !res{
-        t.FailNow()
-    }
+	expected := Config{
+		Port:                "8080",
+		SSL_Port:            "8443",
+		Client_Site:         "example.com",
+		Db_Driver:           "sqlite",
+		Db_URL:              "default",
+		Db_Name:             "default",
+		Db_Password:         "none",
+		Bucket_Url:          "local",
+		Bucket_Password:     "none",
+		Backup_Option:       "",
+		Backup_Paths:        []string{},
+		Oauth_Client_Id:     "clientId",
+		Oauth_Client_Secret: "clientSecret",
+		Oauth_Scopes:        []string{"profile", "profilePic"},
+		Oauth_Endpoint:      map[Endpoint]string{oauthAuthURL: "https://provider.com/o/oauth2/auth", oauthTokenURL: "https://provider.com/o/oauth2/token"},
+	}
 
-
+	res := compareStructs(conf, expected)
+	if !res {
+		t.FailNow()
+	}
 }

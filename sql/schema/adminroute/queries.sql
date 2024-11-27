@@ -22,25 +22,22 @@ slug,
 title,
 status,
 datecreated,
-datemodified, 
-content, 
+datemodified,
 template
 ) VALUES (
-?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?
 ) RETURNING *;
-
 
 -- name: UpdateAdminRoute :exec
 UPDATE adminroute
 set slug = ?,
     title = ?,
     status = ?,
-    content = ?, 
-    template = ?,
     author = ?,
     authorid = ?,
     datecreated = ?,
-    datemodified = ?
+    datemodified = ?,
+    template = ?
     WHERE slug = ?
     RETURNING *;
 

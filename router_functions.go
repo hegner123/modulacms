@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
 	"strings"
@@ -55,4 +56,58 @@ func stripAPIPath(rawURL string) (string, error) {
 	}
 	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/api/")
 	return parsedURL.String(), nil
+}
+func stripDeletePath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/delete/")
+	return parsedURL.String(), nil
+}
+func stripGetPath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/get/")
+	return parsedURL.String(), nil
+}
+func stripListPath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/list/")
+	return parsedURL.String(), nil
+}
+func stripCreatePath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/create/")
+	return parsedURL.String(), nil
+}
+func stripUpdatePath(rawURL string) (string, error) {
+	parsedURL, err := url.Parse(rawURL)
+	if err != nil {
+		return "", err
+	}
+	parsedURL.Path = strings.TrimPrefix(parsedURL.Path, "/update/")
+	return parsedURL.String(), nil
+}
+
+
+func formMapJson(r *http.Request)[]byte{
+	formData := make(map[string]string)
+	for key, values := range r.Form {
+		formData[key] = values[0]
+	}
+
+	jsonBytes, err := json.Marshal(formData)
+    if err != nil { 
+        logError("failed to Marshal JSON", err)
+    }
+    return jsonBytes
 }

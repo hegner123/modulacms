@@ -75,6 +75,7 @@ func readSchemaFiles() (string, error) {
 	// Join all the file contents
 	return strings.Join(result, "\n"), nil
 }
+
 func generateKey() []byte {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
@@ -84,31 +85,25 @@ func generateKey() []byte {
 	return key
 }
 
-
-func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
-
+func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 	times := timestampS()
 	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test1"+modify),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Content:      ns("Test content"),
-		Template:     ns("page.html"),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test1" + modify,
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
 	})
 	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test1"+modify),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Content:      ns("Test content"),
-		Template:     ns("page.html"),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test1" + modify,
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
 	})
 	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
@@ -116,11 +111,11 @@ func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             ns("system"),
-		Authorid:           ni(0),
-		Datecreated:        ns(times),
-		Datemodified:       ns(times),
-		Url:                ns("public/2024/11/test1.png"+modify),
+		Author:             "system",
+		Authorid:           "0",
+		Datecreated:        times,
+		Datemodified:       times,
+		Url:                ns("public/2024/11/test1.png" + modify),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
 		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
@@ -130,7 +125,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
 	})
 
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
+		Routeid:      ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
@@ -144,15 +139,15 @@ func createSetupInserts(db *sql.DB, ctx context.Context,modify string) {
 		Datemodified: ns(times),
 		Username:     ns("system"),
 		Name:         ns("system"),
-		Email:        ns("system@modulacms.com"+modify),
+		Email:        ns("system@modulacms.com" + modify),
 		Hash:         ns("has"),
 		Role:         ns("admin"),
 	})
 	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
-		Label:  ns("Tablet"+modify),
+		Label:  ns("Tablet" + modify),
 		Width:  ni(1920),
 		Height: ni(1080),
 	})
 
-	dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test1"+modify)})
+	dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test1" + modify)})
 }

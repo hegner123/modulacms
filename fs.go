@@ -21,9 +21,8 @@ func DirExists(path string) bool {
 	return info.IsDir()
 }
 
-
-func ReadEmbedFS(directory string){
-dir, err := sqlFiles.ReadDir(directory)
+func ReadEmbedFS(directory string) {
+	dir, err := sqlFiles.ReadDir(directory)
 	if err != nil {
 		logError("error in ReadEmbedFS ", err)
 	}

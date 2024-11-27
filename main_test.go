@@ -12,36 +12,35 @@ type GlobalTestingState struct {
 	Db          *sql.DB
 }
 
-var globalTestingState GlobalTestingState;
-
+var globalTestingState GlobalTestingState
 
 func setup() {
-    fmt.Printf("TestMain setup\n")
-	db,ctx, err := getDb(Database{DB: "./modula_test.db"})
+	fmt.Printf("TestMain setup\n")
+	db, ctx, err := getDb(Database{DB: "./modula_test.db"})
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
-	err = initDb(db,ctx)
-    createSetupInserts(db,ctx,"")
-    if err!=nil {
-        fmt.Printf("%s\n",err)
-    }
+	err = initDb(db, ctx)
+	createSetupInserts(db, ctx, "")
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
 }
 
 func teardown() {
-    fmt.Printf("TestMain teardown\n")
+	fmt.Printf("TestMain teardown\n")
 	globalTestingState.Initialized = false
 	globalTestingState.Db.Close()
 }
 
 func TestMain(m *testing.M) {
-    fmt.Printf("TestMain init\n")
-    globalTestingState.Initialized = false
+	fmt.Printf("TestMain init\n")
+	globalTestingState.Initialized = false
 	setup()
 	code := m.Run()
 	teardown()
-    fmt.Printf("TestMain exit\n")
+	fmt.Printf("TestMain exit\n")
 	os.Exit(code)
 }

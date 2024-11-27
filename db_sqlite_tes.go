@@ -2,8 +2,5 @@ package main
 
 import "testing"
 
-
-func TestSQLC(t *testing.T){
-
-
+func TestSQLC(t *testing.T) {
 }

@@ -2,8 +2,6 @@ package main
 
 import (
 	"fmt"
-	"golang.org/x/image/draw"
-	"golang.org/x/image/webp"
 	"image"
 	"image/gif"
 	"image/jpeg"
@@ -11,6 +9,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/image/draw"
+	"golang.org/x/image/webp"
 )
 
 func optimizeUpload(fSrc string, fPath string) []string {
@@ -112,5 +113,4 @@ func writeEncodeMedia(image draw.Image, fName string) string {
 
 	}
 	return fName
-
 }

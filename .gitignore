@@ -24,6 +24,7 @@ go.work.sum
 node_modules/
 api/
 package-lock.json
+router/
 
 # diagrams
 *.drawio

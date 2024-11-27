@@ -12,7 +12,6 @@ import (
 )
 
 func TestCreateUser(t *testing.T) {
-
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -44,6 +43,7 @@ func TestCreateUser(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestCreateAdminRoute(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
@@ -53,33 +53,32 @@ func TestCreateAdminRoute(t *testing.T) {
 	defer db.Close()
 
 	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test"),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Content:      ns("Test content"),
-		Template:     ns("page.html"),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test",
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
+		Template:     "page.html",
 	})
 
 	expected := mdb.Adminroute{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test"),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Content:      ns("Test content"),
-		Template:     ns("page.html"),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test",
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
+		Template:     "page.html",
 	}
 
 	if reflect.DeepEqual(insertedAdminRoute, expected) {
 		t.FailNow()
 	}
 }
+
 func TestCreateRoute(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
@@ -89,33 +88,32 @@ func TestCreateRoute(t *testing.T) {
 	defer db.Close()
 
 	insertedRoute := dbCreateRoute(db, ctx, mdb.CreateRouteParams{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test"),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test",
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
 		Content:      ns("Test content"),
-		Template:     ns("page.html"),
 	})
 
 	expected := mdb.Route{
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test"),
-		Title:        ns("Test"),
-		Status:       ni(0),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test",
+		Title:        "Test",
+		Status:       0,
+		Datecreated:  times,
+		Datemodified: times,
 		Content:      ns("Test content"),
-		Template:     ns("page.html"),
 	}
 
 	if reflect.DeepEqual(insertedRoute, expected) {
 		t.FailNow()
 	}
 }
+
 func TestCreateMedia(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
@@ -130,10 +128,10 @@ func TestCreateMedia(t *testing.T) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             ns("system"),
-		Authorid:           ni(0),
-		Datecreated:        ns(times),
-		Datemodified:       ns(times),
+		Author:             "system",
+		Authorid:           "0",
+		Datecreated:        times,
+		Datemodified:       times,
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
@@ -149,10 +147,10 @@ func TestCreateMedia(t *testing.T) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             ns("system"),
-		Authorid:           ni(0),
-		Datecreated:        ns(times),
-		Datemodified:       ns(times),
+		Author:             "system",
+		Authorid:           "0",
+		Datecreated:        times,
+		Datemodified:       times,
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
@@ -166,6 +164,7 @@ func TestCreateMedia(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestCreateField(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
@@ -174,7 +173,7 @@ func TestCreateField(t *testing.T) {
 	}
 	defer db.Close()
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
+		Routeid:      ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
@@ -185,7 +184,7 @@ func TestCreateField(t *testing.T) {
 	})
 
 	insertedField := dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
+		Routeid:      ni(1),
 		Parentid:     ni(1),
 		Label:        "title",
 		Data:         "Test Field",
@@ -198,7 +197,7 @@ func TestCreateField(t *testing.T) {
 	})
 
 	expected := mdb.Field{
-		Routeid:      int64(1),
+		Routeid:      ni(1),
 		Parentid:     ni(1),
 		Label:        "title",
 		Data:         "Test Field",
@@ -214,6 +213,7 @@ func TestCreateField(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestCreateMediaDimension(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -237,6 +237,7 @@ func TestCreateMediaDimension(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestCreateTables(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -257,9 +258,9 @@ func TestCreateTables(t *testing.T) {
 
 func TestCreateToken(t *testing.T) {
 	var (
-		key []byte
-		tk  *jwt.Token
-		signedToken   string
+		key         []byte
+		tk          *jwt.Token
+		signedToken string
 	)
 
 	key = generateKey()
@@ -278,8 +279,8 @@ func TestCreateToken(t *testing.T) {
 		logError("failed to ParseDuration: ", err)
 	}
 	weeks := time.Now().Add(dur)
-    times := timestampS()
-    
+	times := timestampS()
+
 	insertedToken := dbCreateToken(db, ctx, mdb.CreateTokenParams{
 		UserID:    1,
 		IssuedAt:  times,

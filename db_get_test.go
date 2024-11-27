@@ -8,13 +8,12 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-func TestInit(t *testing.T){
-    db,ctx,err:=getDb(Database{DB:"modula_test.db"})
-    if err != nil { 
-        logError("failed to connect to database ", err)
-    }
-    createSetupInserts(db,ctx,"1")
-
+func TestInit(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect to database ", err)
+	}
+	createSetupInserts(db, ctx, "1")
 }
 
 func TestGetUser(t *testing.T) {
@@ -23,7 +22,7 @@ func TestGetUser(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-    id:=int64(2)
+	id := int64(2)
 
 	userRow, err := dbGetUser(db, ctx, id)
 	if err != nil {
@@ -70,12 +69,11 @@ func TestGetAdminRoute(t *testing.T) {
 		ID:           int64(1),
 		Author:       ns("system"),
 		Authorid:     ns("0"),
-		Slug:         ns("/test11"),
-		Title:        ns("Test"),
-		Status:       ni(0),
+		Slug:         "/test11",
+		Title:        "Test",
+		Status:       int64(0),
 		Datecreated:  adminRouteRow.Datecreated,
 		Datemodified: adminRouteRow.Datemodified,
-		Content:      ns("Test content"),
 		Template:     ns("page.html"),
 	}
 
@@ -83,6 +81,7 @@ func TestGetAdminRoute(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestGetRoute(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -94,28 +93,27 @@ func TestGetRoute(t *testing.T) {
 
 	expected := mdb.Route{
 		ID:           int64(1),
-		Author:       ns("system"),
-		Authorid:     ns("0"),
-		Slug:         ns("/test11"),
-		Title:        ns("Test"),
-		Status:       ni(0),
+		Author:       "system",
+		Authorid:     "0",
+		Slug:         "/test11",
+		Title:        "Test",
+		Status:       int64(0),
 		Datecreated:  routeRow.Datecreated,
 		Datemodified: routeRow.Datemodified,
-		Content:      ns("Test content"),
-		Template:     ns("page.html"),
 	}
 
 	if reflect.DeepEqual(routeRow, expected) {
 		t.FailNow()
 	}
 }
+
 func TestGetMedia(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-    id:=int64(2)
+	id := int64(2)
 
 	mediaRow := dbGetMedia(db, ctx, id)
 
@@ -126,8 +124,8 @@ func TestGetMedia(t *testing.T) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             ns("system"),
-		Authorid:           ni(0),
+		Author:             "system",
+		Authorid:           "0",
 		Datecreated:        mediaRow.Datecreated,
 		Datemodified:       mediaRow.Datemodified,
 		Url:                ns("public/2024/11/test.png1"),
@@ -143,17 +141,18 @@ func TestGetMedia(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestGetField(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-    id:=int64(3)
+	id := int64(3)
 	fieldRow := dbGetField(db, ctx, id)
 
 	expected := mdb.Field{
-		Routeid:      int64(1),
+		Routeid:      ni(1),
 		Parentid:     ni(1),
 		Label:        "title",
 		Data:         "Test Field",
@@ -169,13 +168,14 @@ func TestGetField(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestGetMediaDimension(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-    id:=int64(2)
+	id := int64(2)
 
 	mediaDimensionRow := dbGetMediaDimension(db, ctx, id)
 
@@ -189,13 +189,14 @@ func TestGetMediaDimension(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestGetTables(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-    id:=int64(2)
+	id := int64(2)
 	tableRow := dbGetTable(db, ctx, id)
 
 	expected := mdb.Tables{

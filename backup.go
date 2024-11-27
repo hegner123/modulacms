@@ -10,12 +10,11 @@ import (
 
 type backupName func(string, string) string
 
-func timestampBackupName(output string, timestamp string)string{
+func timestampBackupName(output string, timestamp string) string {
 	return fmt.Sprintf("%s_%s.zip", output, timestamp)
 }
 
 func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) error {
-
 	dbF := FileExists(dbFile)
 	mediaD := DirExists(mediaDir)
 	pluginD := DirExists(pluginDir)
@@ -25,8 +24,7 @@ func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) 
 		return fmt.Errorf("dbFile Exists: %v, mediaDir exists: %v, pluginDir exists: %v,outputDir exists: %v\n", dbF, mediaD, pluginD, outD)
 	}
 
-
-	backupFile, err := os.Create(bname(output,timestampS()))
+	backupFile, err := os.Create(bname(output, timestampS()))
 	if err != nil {
 		return fmt.Errorf("failed to create backup file: %w", err)
 	}

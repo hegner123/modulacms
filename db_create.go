@@ -9,7 +9,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-
 func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.Adminroute {
 	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
@@ -18,6 +17,16 @@ func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteP
 	}
 
 	return insertedAdminRoute
+}
+
+func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) mdb.Datatype {
+	queries := mdb.New(db)
+	insertedDatatype, err := queries.CreateDatatype(ctx, s)
+	if err != nil {
+		logError("failed to create field ", err)
+	}
+
+	return insertedDatatype
 }
 
 func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) mdb.Field {
@@ -41,7 +50,6 @@ func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb
 }
 
 func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimension {
-
 	queries := mdb.New(db)
 	insertedMediaDimension, err := queries.CreateMediaDimension(ctx, s)
 	if err != nil {
@@ -52,7 +60,6 @@ func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDi
 }
 
 func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Route {
-
 	queries := mdb.New(db)
 	insertedRoute, err := queries.CreateRoute(ctx, s)
 	if err != nil {
@@ -60,17 +67,6 @@ func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb
 	}
 
 	return insertedRoute
-
-}
-
-func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.User {
-	queries := mdb.New(db)
-	insertedUser, err := queries.CreateUser(ctx, s)
-	if err != nil {
-		logError("failed to create user ", err)
-	}
-
-	return insertedUser
 }
 
 func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
@@ -91,4 +87,14 @@ func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb
 	}
 
 	return insertedToken
+}
+
+func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.User {
+	queries := mdb.New(db)
+	insertedUser, err := queries.CreateUser(ctx, s)
+	if err != nil {
+		logError("failed to create user ", err)
+	}
+
+	return insertedUser
 }

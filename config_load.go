@@ -9,7 +9,6 @@ import (
 )
 
 func loadConfig(verbose *bool) Config {
-
 	file, err := os.Open("config.json")
 	if err != nil {
 		log.Fatal("Error opening file:", err)
@@ -27,8 +26,6 @@ func loadConfig(verbose *bool) Config {
 	}
 	if *verbose {
 		fmt.Printf("%s\n", bytes)
-
 	}
 	return config
-
 }

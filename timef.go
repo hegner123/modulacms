@@ -5,9 +5,10 @@ import (
 	"time"
 )
 
-func timestampI()int64{
-    return time.Now().Unix()
+func timestampI() int64 {
+	return time.Now().Unix()
 }
+
 func timestampS() string {
 	return fmt.Sprint(time.Now().Unix())
 }

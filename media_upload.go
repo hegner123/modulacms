@@ -13,7 +13,7 @@ func handleCompletedMediaUpload(tmpFile string, fName string) {
 
 	optimized := optimizeUpload(tmpFile, fName)
 
-    //TODO: write paths to optimized files to db
+	// TODO: write paths to optimized files to db
 
 	for _, v := range optimized {
 		err := objectUpload(v, newPath)
@@ -22,5 +22,4 @@ func handleCompletedMediaUpload(tmpFile string, fName string) {
 		}
 
 	}
-
 }

@@ -18,49 +18,13 @@ func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.Adminroute {
 	return fetchedAdminRoutes
 }
 
-func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Route {
+func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatype {
 	queries := mdb.New(db)
-	fetchedRoutes, err := queries.ListRoute(ctx)
+	fetchedDatatypes, err := queries.ListDatatype(ctx)
 	if err != nil {
-		logError("failed to get Routes ", err)
+		logError("failed to get Datatypes ", err)
 	}
-	return fetchedRoutes
-}
-
-func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
-	queries := mdb.New(db)
-	fetchedUsers, err := queries.ListUser(ctx)
-	if err != nil {
-		logError("failed to get Users ", err)
-	}
-	return fetchedUsers
-}
-
-func dbListMedia(db *sql.DB, ctx context.Context) []mdb.Media {
-	queries := mdb.New(db)
-	fetchedMedias, err := queries.ListMedia(ctx)
-	if err != nil {
-		logError("failed to get Medias ", err)
-	}
-	return fetchedMedias 
-}
-
-func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension {
-	queries := mdb.New(db)
-	fetchedMediaDimensions, err := queries.ListMediaDimension(ctx)
-	if err != nil {
-		logError("failed to get MediaDimensions ", err)
-	}
-	return fetchedMediaDimensions
-}
-
-func dbListTable(db *sql.DB, ctx context.Context) []mdb.Tables {
-	queries := mdb.New(db)
-	fetchedTables, err := queries.ListTable(ctx)
-	if err != nil {
-		logError("failed to get Tables ", err)
-	}
-	return fetchedTables
+	return fetchedDatatypes
 }
 
 func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
@@ -72,19 +36,61 @@ func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
 	return fetchedFields
 }
 
-func dbListFieldsByRoute(db *sql.DB,ctx context.Context, id int64)[]mdb.ListFieldJoinRow{
+func dbListFieldsByRoute(db *sql.DB, ctx context.Context, id int64) []mdb.ListFieldJoinRow {
 	queries := mdb.New(db)
-	fetchedFields, err := queries.ListFieldJoin(ctx,id)
-    if err != nil { 
-        logError("failed to list and join fields: ", err)
-    }
-    return fetchedFields
+	fetchedFields, err := queries.ListFieldJoin(ctx, ni64(id))
+	if err != nil {
+		logError("failed to list and join fields: ", err)
+	}
+	return fetchedFields
 }
 
-func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64){
-//TODO implement dependency checking for delete candidate
-
+func dbListMedia(db *sql.DB, ctx context.Context) []mdb.Media {
+	queries := mdb.New(db)
+	fetchedMedias, err := queries.ListMedia(ctx)
+	if err != nil {
+		logError("failed to get Medias ", err)
+	}
+	return fetchedMedias
 }
 
+func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension {
+	queries := mdb.New(db)
+	fetchedMediaDimensions, err := queries.ListMediaDimension(ctx)
+	if err != nil {
+		logError("failed to get MediaDimensions ", err)
+	}
+	return fetchedMediaDimensions
+}
 
+func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Route {
+	queries := mdb.New(db)
+	fetchedRoutes, err := queries.ListRoute(ctx)
+	if err != nil {
+		logError("failed to get Routes ", err)
+	}
+	return fetchedRoutes
+}
 
+func dbListTable(db *sql.DB, ctx context.Context) []mdb.Tables {
+	queries := mdb.New(db)
+	fetchedTables, err := queries.ListTable(ctx)
+	if err != nil {
+		logError("failed to get Tables ", err)
+	}
+	return fetchedTables
+}
+
+func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
+	queries := mdb.New(db)
+	fetchedUsers, err := queries.ListUser(ctx)
+	if err != nil {
+		logError("failed to get Users ", err)
+	}
+	return fetchedUsers
+}
+
+func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
+	// TODO implement dependency checking for delete candidate
+
+}

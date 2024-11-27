@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 )
 
-
-
 func apiHandleUploadWithProgress(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/plain")
 	w.Header().Set("Transfer-Encoding", "chunked")

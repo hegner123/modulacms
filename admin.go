@@ -7,7 +7,6 @@ type ModulaAdminMenu struct {
 	Style            Theme
 }
 
-
 type AdminLink struct {
 	Name          string
 	Href          string
@@ -24,7 +23,6 @@ type IconSrc struct {
 	Svg string
 	Src string
 }
-
 
 type Theme struct {
 	PrimaryColor    string `json:"primarycolor"`
@@ -50,36 +48,24 @@ type Theme struct {
 }
 
 type ModulaSidebarMenu struct {
-    Sections []SidebarSection
+	Sections []SidebarSection
 }
 
-
-type SidebarSection struct{
-    Label string
-    Links []AdminLink
-
+type SidebarSection struct {
+	Label string
+	Links []AdminLink
 }
 
+func initAdmin() {
+	adminMenu := ModulaAdminMenu{}
+	destinationLinks := []AdminLink{}
+	toolbarsSecondary := []AdminLink{}
 
+	visitSite := AdminLink{Name: "Visit Site", Href: "/", Target: false, ListClasses: "modula-admin-menu-primary", Type: "main"}
+	logout := AdminLink{Name: "Logout", Href: "/admin/logout", Target: false, ListClasses: "modula-admin-logout", Type: "link"}
 
-func initAdmin(){
-    adminMenu := ModulaAdminMenu{}
-    destinationLinks :=[]AdminLink{}
-    toolbarsSecondary :=[]AdminLink{}
-    
-    visitSite:= AdminLink{Name: "Visit Site",Href: "/",Target: false,ListClasses:"modula-admin-menu-primary",Type: "main" }
-    logout := AdminLink{Name:"Logout", Href:"/admin/logout", Target: false, ListClasses: "modula-admin-logout", Type: "link"}
-    
-
-    destinationLinks[0]=visitSite
-    toolbarsSecondary[0]=logout
-    adminMenu.DestinationLinks = destinationLinks
-    adminMenu.ToolbarSecondary = toolbarsSecondary
+	destinationLinks[0] = visitSite
+	toolbarsSecondary[0] = logout
+	adminMenu.DestinationLinks = destinationLinks
+	adminMenu.ToolbarSecondary = toolbarsSecondary
 }
-
-
-
-
-
-
-

@@ -22,6 +22,7 @@ func TestListUser(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListAdminRoute(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -38,6 +39,7 @@ func TestListAdminRoute(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListRoute(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -54,6 +56,7 @@ func TestListRoute(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListMedia(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -70,6 +73,7 @@ func TestListMedia(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListField(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -86,6 +90,7 @@ func TestListField(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListMediaDimension(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -102,6 +107,7 @@ func TestListMediaDimension(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListTables(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {

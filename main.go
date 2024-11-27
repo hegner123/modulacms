@@ -84,12 +84,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-
 }
 
 func initFileCheck() (bool, bool) {
-	var useSSL = true
-	var dbFileExists = true
+	useSSL := true
+	dbFileExists := true
 	_, err := os.Open("modula.db")
 	if err != nil {
 		dbFileExists = false

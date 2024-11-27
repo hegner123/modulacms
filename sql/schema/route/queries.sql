@@ -1,4 +1,3 @@
-
 -- name: GetRoute :one
 SELECT * FROM route
 WHERE slug = ? LIMIT 1;
@@ -20,11 +19,10 @@ title,
 status,
 datecreated,
 datemodified, 
-content, 
+content
 ) VALUES (
 ?,?,?,?,?,?,?,?
 ) RETURNING *;
-
 
 -- name: UpdateRoute :exec
 UPDATE route

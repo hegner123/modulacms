@@ -11,39 +11,29 @@ import (
 
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminroute {
 	queries := mdb.New(db)
-	params := ns(slug)
-	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, params)
+	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
 	if err != nil {
 		logError("failed to create database dump in archive: ", err)
 	}
 	return fetchedAdminRoute
 }
 
-func dbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Route {
+func dbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatype {
 	queries := mdb.New(db)
-	fetchedRoute, err := queries.GetRoute(ctx, ns(slug))
+	fetchedDatatype, err := queries.GetDatatype(ctx, id)
 	if err != nil {
-		logError("failed to get Route ", err)
+		logError("failed to get Field ", err)
 	}
-	return fetchedRoute
+	return fetchedDatatype
 }
 
-func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
+func dbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Field {
 	queries := mdb.New(db)
-	fetchedUser, err := queries.GetUser(ctx, id)
+	fetchedField, err := queries.GetField(ctx, id)
 	if err != nil {
-		logError("failed to get User ", err)
-		return fetchedUser, err
+		logError("failed to get Field ", err)
 	}
-	return fetchedUser, nil
-}
-func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.User {
-	queries := mdb.New(db)
-	fetchedUser, err := queries.GetUserByEmail(ctx, ns(email))
-	if err != nil {
-		logError("failed to get UserId ", err)
-	}
-	return fetchedUser
+	return fetchedField
 }
 
 func dbGetMedia(db *sql.DB, ctx context.Context, id int64) mdb.Media {
@@ -62,7 +52,15 @@ func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDim
 		logError("failed to get MediaDimension ", err)
 	}
 	return fetchedMediaDimension
+}
 
+func dbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Route {
+	queries := mdb.New(db)
+	fetchedRoute, err := queries.GetRoute(ctx, slug)
+	if err != nil {
+		logError("failed to get Route ", err)
+	}
+	return fetchedRoute
 }
 
 func dbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
@@ -74,12 +72,30 @@ func dbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
 	return fetchedTable
 }
 
-func dbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Field {
+func dbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Token {
 	queries := mdb.New(db)
-	fetchedField, err := queries.GetField(ctx, id)
+	fetchedToken, err := queries.GetToken(ctx, id)
 	if err != nil {
-		logError("failed to get Field ", err)
+		logError("failed to get Table ", err)
 	}
-	return fetchedField
+	return fetchedToken
+}
 
+func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
+	queries := mdb.New(db)
+	fetchedUser, err := queries.GetUser(ctx, id)
+	if err != nil {
+		logError("failed to get User ", err)
+		return fetchedUser, err
+	}
+	return fetchedUser, nil
+}
+
+func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.User {
+	queries := mdb.New(db)
+	fetchedUser, err := queries.GetUserByEmail(ctx, ns(email))
+	if err != nil {
+		logError("failed to get UserId ", err)
+	}
+	return fetchedUser
 }

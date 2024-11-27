@@ -19,6 +19,16 @@ func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteP
 	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
 }
 
+func dbUpdateDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateDatatypeParams) error {
+	queries := mdb.New(db)
+	err := queries.UpdateDatatype(ctx, s)
+	if err != nil {
+		logError("failed to update field ", err)
+		return err
+	}
+	return nil
+}
+
 func dbUpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) string {
 	queries := mdb.New(db)
 	err := queries.UpdateField(ctx, s)
@@ -71,4 +81,13 @@ func dbUpdateTable(db *sql.DB, ctx context.Context, s mdb.UpdateTableParams) str
 		logError("failed to update table ", err)
 	}
 	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+}
+
+func dbUpdateToken(db *sql.DB, ctx context.Context, s mdb.UpdateTokenParams) error {
+	queries := mdb.New(db)
+	err := queries.UpdateToken(ctx, s)
+	if err != nil {
+		logError("failed to update table ", err)
+	}
+	return nil
 }
