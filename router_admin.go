@@ -20,3 +20,17 @@ func handleAdminRoutes(w http.ResponseWriter, r *http.Request) {
 		logError("failed to write response : ", err)
 	}
 }
+
+func handleAdminAuth(w http.ResponseWriter, r *http.Request){
+	err := r.ParseForm()
+		if err != nil {
+			logError("failed to ParseForm ", err)
+		}
+		// status, err := handleAuth(r.Form)
+		if err != nil {
+			logError("failed to handle auth: ", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+
+
+}

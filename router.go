@@ -1,28 +1,38 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"path/filepath"
+	"strings"
+)
+
+type Segment int
+
+const (
+	CLIENT    Segment = 1
+	CROUTE    Segment = 2
+	ADMIN     Segment = 1
+	AROUTE    Segment = 2
+	ENDPOINT  Segment = 1
+	VERSION   Segment = 2
+	DBMETHOD Segment = 3
+    TABLE     Segment = 4
+	AUTHROUTE Segment = 3
 )
 
 func router(w http.ResponseWriter, r *http.Request) {
-    fmt.Println(r.URL.Path)
+	segments := strings.Split(r.URL.Path, "/")
+
 	switch {
 	case hasFileExtension(r.URL.Path):
-		fmt.Print("static route\n")
 		staticFileHandler(w, r)
-	case checkPath(r.URL.Path, "api"):
-		fmt.Print("api/v1 route\n")
-		apiRoutes(w, r)
-	case checkPath(r.URL.Path, "admin"):
-		fmt.Print("admin route\n")
+	case checkPath(segments, ENDPOINT, "api"):
+		apiRoutes(w, r, segments)
+	case checkPath(segments, ENDPOINT, "admin"):
 		handleAdminRoutes(w, r)
-	case r.URL.Path == "/404":
-		fmt.Print("404 route\n")
+	case checkPath(segments, ENDPOINT, "404"):
 		notFoundHandler(w, r)
 	default:
-		fmt.Print("client route\n")
 		handleClientRoutes(w, r)
 	}
 }

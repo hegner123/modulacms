@@ -25,6 +25,9 @@ func apiGetAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(fetchedAdminRoute)
+    if err != nil { 
+        logError("failed to encode json ", err)
+    }
 	return nil
 }
 func apiGetDatatype(w http.ResponseWriter, r *http.Request) error {

@@ -20,9 +20,16 @@ func logGetVersion() string {
 }
 
 func logError(message string, err error) {
-	fmt.Print("err\n")
-	er := fmt.Errorf("%s %w\n", message, err)
+	er := fmt.Errorf("%serr\n %s\n\n %v\n %s", RED, message, err, RESET)
 	if er != nil {
 		fmt.Printf("%s\n", er)
 	}
+}
+
+func pLog(args ...any) {
+	fmt.Printf("%s", BLUE)
+	for _, arg := range args {
+		fmt.Print( arg)
+	}
+	fmt.Printf("%s\n", RESET)
 }

@@ -19,3 +19,13 @@ const (
 	oauthAuthURL  Endpoint = "oauth_auth_url"
 	oauthTokenURL Endpoint = "oauth_token_url"
 )
+
+type ANSIColor string
+
+const (
+	RED    ANSIColor = "\033[31m"
+	GREEN  ANSIColor = "\033[32m"
+	YELLOW ANSIColor = "\033[33m"
+	BLUE   ANSIColor = "\033[34m"
+	RESET  ANSIColor = "\033[0m" // Reset
+)

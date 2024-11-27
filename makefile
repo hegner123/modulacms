@@ -17,6 +17,11 @@ RESET  := $(shell tput -Txterm sgr0)
 
 all: help
 
+## Dev
+dev: ## Prepare binaries and templates in src dir for faster iteration
+	cd templates/components && npm run build && cd -
+	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) .	
+
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	cd templates/components && npm run build && cd -

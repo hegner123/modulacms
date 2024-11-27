@@ -6,15 +6,9 @@ import (
 	"net/http"
 )
 
-func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
-	putRoute, err := stripUpdatePath(r.URL.Path)
-	if err != nil {
-		fmt.Print("UM, this ain't a url bud.")
-		fmt.Printf("\nerror: %s", err)
-		return
-	}
+func apiPutHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
-	case matchesPath(putRoute, "adminroute"):
+	case checkPath(segments, DBMETHOD, "adminroute"):
 		res := fmt.Sprintf("updated adminroute %v successfully\n", r.FormValue("slug"))
 		err := apiUpdateAdminRoute(w, r)
 		if err != nil {
@@ -27,7 +21,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "datatype"):
+	case checkPath(segments, DBMETHOD, "datatype"):
 		res := fmt.Sprintf("updated datatype  %v successfully\n", r.FormValue("id"))
 		err := apiUpdateDatatype(w, r)
 		if err != nil {
@@ -40,20 +34,20 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "field"):
+	case checkPath(segments, DBMETHOD, "field"):
 		res := fmt.Sprintf("updated field %v successfully\n", r.FormValue("id"))
-		err = apiUpdateField(w, r)
+        err := apiUpdateField(w, r)
 		if err != nil {
 			res = fmt.Sprintf("Error updating field:%v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
-		err := json.NewEncoder(w).Encode(map[string]string{"result": res})
+		err = json.NewEncoder(w).Encode(map[string]string{"result": res})
 		if err != nil {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "media"):
+	case checkPath(segments, DBMETHOD, "media"):
 		res := fmt.Sprintf("updated media %v successfully\n", r.FormValue("id"))
 		err := apiUpdateMedia(w, r)
 		if err != nil {
@@ -66,7 +60,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "mediadimension"):
+	case checkPath(segments, DBMETHOD, "mediadimension"):
 		res := fmt.Sprintf("updated mediadimension %v successfully\n", r.FormValue("id"))
 		err := apiUpdateMediaDimension(w, r)
 		if err != nil {
@@ -79,7 +73,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "route"):
+	case checkPath(segments, DBMETHOD, "route"):
 		res := fmt.Sprintf("updated route %v successfully\n", r.FormValue("slug"))
 		err := apiUpdateRoute(w, r)
 		if err != nil {
@@ -92,7 +86,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "table"):
+	case checkPath(segments, DBMETHOD, "table"):
 		res := fmt.Sprintf("updated table %v successfully\n", r.FormValue("id"))
 		err := apiUpdateTables(w, r)
 		if err != nil {
@@ -105,7 +99,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "token"):
+	case checkPath(segments, DBMETHOD, "token"):
 		res := fmt.Sprintf("updated token %v successfully\n", r.FormValue("id"))
 		err := apiUpdateToken(w, r)
 		if err != nil {
@@ -118,7 +112,7 @@ func apiPutHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
 			fmt.Printf("\nerror: %s", err)
 			return
 		}
-	case matchesPath(putRoute, "user"):
+	case checkPath(segments, DBMETHOD, "user"):
 		res := fmt.Sprintf("updated user %v successfully\n", r.FormValue("id"))
 		err := apiUpdateUser(w, r)
 		if err != nil {

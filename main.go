@@ -37,7 +37,7 @@ func main() {
 	config := loadConfig(verbose)
 
 	if *reset {
-		fmt.Println("Verbose mode:")
+		fmt.Println("Reset DB:")
 		err := os.Remove("./modula.db")
 		if err != nil {
 			log.Fatal("Error deleting file:", err)
@@ -59,9 +59,10 @@ func main() {
 		}
 		err = initDb(db, ctx)
          
-        createSetupInserts(db, ctx, "")
+        createSetupInserts(db, ctx, "1")
+        createSetupInserts(db, ctx, "2")
 		if err != nil {
-			fmt.Printf("\nFailed to initialize database: %s", err)
+			fmt.Printf("\nFailed to initialize database: %s\n", err)
 		}
 		defer db.Close()
 	}
@@ -74,13 +75,13 @@ func main() {
 
 	if useSSL {
 
-		log.Printf("\n\nServer is running at https://localhost:%s", config.SSL_Port)
+		log.Printf("\n\nServer is running at https://localhost:%s\n", config.SSL_Port)
 		err := http.ListenAndServeTLS(":"+config.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
-	log.Printf("\n\nServer is running at localhost:%s", config.Port)
+	log.Printf("\n\nServer is running at localhost:%s\n", config.Port)
 	err := http.ListenAndServe(":"+config.Port, mux)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
@@ -98,11 +99,13 @@ func initFileCheck() (bool, bool) {
 	_, err = os.Open("certs/localhost.crt")
 	cert = true
 	if err != nil {
+        fmt.Printf("Error opening localhost.crt %s\n",err)
 		cert = false
 	}
 	_, err = os.Open("certs/localhost.key")
 	key = true
 	if err != nil {
+        fmt.Printf("Error opening localhost.key %s\n",err)
 		key = false
 	}
 	if !cert || !key {

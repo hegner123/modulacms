@@ -13,7 +13,7 @@ func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminrout
 	queries := mdb.New(db)
 	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
 	if err != nil {
-		logError("failed to create database dump in archive: ", err)
+		logError("failed to get admin route", err)
 	}
 	return fetchedAdminRoute
 }
@@ -22,7 +22,7 @@ func dbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatype {
 	queries := mdb.New(db)
 	fetchedDatatype, err := queries.GetDatatype(ctx, id)
 	if err != nil {
-		logError("failed to get Field ", err)
+		logError("failed to get Datatype ", err)
 	}
 	return fetchedDatatype
 }
@@ -95,7 +95,7 @@ func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.User {
 	queries := mdb.New(db)
 	fetchedUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		logError("failed to get UserId ", err)
+		logError("failed to get User via email ", err)
 	}
 	return fetchedUser
 }

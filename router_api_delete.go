@@ -1,62 +1,55 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
-func apiDeleteHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
-	deleteRoute, err := stripDeletePath(r.URL.Path)
-	if err != nil {
-		fmt.Print("UM, this ain't a url bud.")
-		fmt.Printf("\nerror: %s", err)
-		return
-	}
+func apiDeleteHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
-	case matchesPath(deleteRoute, "adminroute"):
+	case checkPath(segments, DBMETHOD, "adminroute"):
 		err := apiDeleteAdminRoute(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete adminroute", err)
 		}
-	case matchesPath(deleteRoute, "datatype"):
+	case checkPath(segments, DBMETHOD, "datatype"):
 		err := apiDeleteDataType(w, r)
 		if err != nil {
-			logError("failed to delete datatype: ", err)
+			logError("failed to delete datatype", err)
 		}
-	case matchesPath(deleteRoute, "field"):
+	case checkPath(segments, DBMETHOD, "field"):
 		err := apiDeleteField(w, r)
 		if err != nil {
-			logError("failed to delete field: ", err)
+			logError("failed to delete field", err)
 		}
-	case matchesPath(deleteRoute, "media"):
+	case checkPath(segments, DBMETHOD, "media"):
 		err := apiDeleteMedia(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete media", err)
 		}
-	case matchesPath(deleteRoute, "mediadimension"):
+	case checkPath(segments, DBMETHOD, "mediadimension"):
 		err := apiDeleteMediaDimension(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete mediadimension", err)
 		}
-	case matchesPath(deleteRoute, "route"):
+	case checkPath(segments, DBMETHOD, "route"):
 		err := apiDeleteRoute(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete route", err)
 		}
-	case matchesPath(deleteRoute, "table"):
+	case checkPath(segments, DBMETHOD, "table"):
 		err := apiDeleteTable(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete table", err)
 		}
-	case matchesPath(deleteRoute, "token"):
+	case checkPath(segments, DBMETHOD, "token"):
 		err := apiDeleteToken(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete token", err)
 		}
-	case matchesPath(deleteRoute, "user"):
+	case checkPath(segments, DBMETHOD, "user"):
 		err := apiDeleteUser(w, r)
 		if err != nil {
-			logError("failed to list Routes: ", err)
+			logError("failed to delete user", err)
 		}
 	}
 }

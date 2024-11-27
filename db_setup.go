@@ -19,7 +19,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 		Role:         "admin",
 	})
 	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
-		Author:       "systeminit",
+		Author:       "systeminit" + modify,
 		Authorid:     1,
 		Slug:         "/test1" + modify,
 		Title:        "Test",
@@ -29,7 +29,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 		Datemodified: times,
 	})
 	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
-		Author:       "systeminit",
+		Author:       "systeminit" + modify,
 		Authorid:     1,
 		Slug:         "/test1" + modify,
 		Title:        "Test",
@@ -43,17 +43,17 @@ func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             "systeminit",
+		Author:             "systeminit"+modify,
 		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
 		Url:                ns("public/2024/11/test1.png" + modify),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+		Optimizedmobile:    ns("public/2024/11/test-mobile.png"+modify),
+		Optimizedtablet:    ns("public/2024/11/test-tablet.png"+modify),
+		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"+modify),
+		Optimizedultrawide: ns("public/2024/11/test-ultra.png"+modify),
 	})
 
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
@@ -61,7 +61,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       "systeminit",
+		Author:       "systeminit"+modify,
 		Authorid:     1,
 		Datecreated:  ns(times),
 		Datemodified: ns(times),

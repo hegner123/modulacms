@@ -1,35 +1,28 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 )
 
-func apiPostHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
-	postRoute, err := stripCreatePath(r.URL.Path)
-	if err != nil {
-		fmt.Print("UM, this ain't a url bud.")
-		fmt.Printf("\nerror: %s", err)
-		return
-	}
+func apiPostHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
-	case matchesPath(postRoute, "adminroute"):
+	case checkPath(segments, DBMETHOD, "adminroute"):
 		apiCreateAdminRoute(w, r)
-	case matchesPath(postRoute, "datatype"):
+	case checkPath(segments, DBMETHOD, "datatype"):
 		apiCreateDatatype(w, r)
-	case matchesPath(postRoute, "field"):
+	case checkPath(segments, DBMETHOD, "field"):
 		apiCreateField(w, r)
-	case matchesPath(postRoute, "media"):
+	case checkPath(segments, DBMETHOD, "media"):
 		apiCreateMedia(w, r)
-	case matchesPath(postRoute, "mediadimension"):
+	case checkPath(segments, DBMETHOD, "mediadimension"):
 		apiCreateMediaDimension(w, r)
-	case matchesPath(postRoute, "route"):
+	case checkPath(segments, DBMETHOD, "route"):
 		apiCreateRoute(w, r)
-	case matchesPath(postRoute, "table"):
+	case checkPath(segments, DBMETHOD, "table"):
 		apiCreateTable(w, r)
-	case matchesPath(postRoute, "token"):
+	case checkPath(segments, DBMETHOD, "token"):
 		apiCreateToken(w, r)
-	case matchesPath(postRoute, "user"):
+	case checkPath(segments, DBMETHOD, "user"):
 		apiCreateUser(w, r)
 	}
 }
