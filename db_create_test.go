@@ -164,6 +164,7 @@ func TestCreateMedia(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestCreateDatatype(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})

@@ -55,7 +55,7 @@ type Media struct {
 	Caption            sql.NullString `json:"caption"`
 	Description        sql.NullString `json:"description"`
 	Class              sql.NullString `json:"class"`
-	Author             string         `json:"author"`
+	Author             interface{}    `json:"author"`
 	Authorid           int64          `json:"authorid"`
 	Datecreated        string         `json:"datecreated"`
 	Datemodified       string         `json:"datemodified"`
@@ -77,7 +77,7 @@ type MediaDimension struct {
 
 type Route struct {
 	ID           int64          `json:"id"`
-	Author       string         `json:"author"`
+	Author       interface{}    `json:"author"`
 	Authorid     int64          `json:"authorid"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`

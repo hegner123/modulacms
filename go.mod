@@ -4,11 +4,16 @@ go 1.23.1
 
 require github.com/mattn/go-sqlite3 v1.14.24
 
-require golang.org/x/image v0.22.0
+require (
+	github.com/aws/aws-sdk-go v1.55.5
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	golang.org/x/image v0.22.0
+	golang.org/x/oauth2 v0.24.0
+)
 
 require (
-	github.com/aws/aws-sdk-go v1.55.5 // indirect
-	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	golang.org/x/oauth2 v0.24.0 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

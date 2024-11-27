@@ -58,6 +58,8 @@ func main() {
 			fmt.Printf("%s\n", err)
 		}
 		err = initDb(db, ctx)
+         
+        createSetupInserts(db, ctx, "")
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 		}
@@ -73,7 +75,7 @@ func main() {
 	if useSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s", config.SSL_Port)
-		err := http.ListenAndServeTLS(":"+config.SSL_Port, "localhost.crt", "localhost.key", mux)
+		err := http.ListenAndServeTLS(":"+config.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
@@ -93,12 +95,12 @@ func initFileCheck() (bool, bool) {
 		dbFileExists = false
 	}
 	var cert, key bool
-	_, err = os.Open("cert.pem")
+	_, err = os.Open("certs/localhost.crt")
 	cert = true
 	if err != nil {
 		cert = false
 	}
-	_, err = os.Open("key.pem")
+	_, err = os.Open("certs/localhost.key")
 	key = true
 	if err != nil {
 		key = false

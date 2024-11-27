@@ -1,0 +1,11 @@
+
+references/
+*.drawio
+router/
+api/
+node_modules/
+*.test
+tests/
+backups/
+legacydb/
+ignore/

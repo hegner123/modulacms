@@ -72,6 +72,7 @@ func readSchemaFiles() (string, error) {
 		return "", err
 	}
 	// Join all the file contents
+    fmt.Println(strings.Join(result, "\n"))
 	return strings.Join(result, "\n"), nil
 }
 

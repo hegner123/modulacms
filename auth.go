@@ -17,6 +17,7 @@ func handleAuth(form url.Values) {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
 		logError("failed to : ", err)
+
 	}
 	user := dbGetUserByEmail(db, ctx, form.Get("email"))
 	requestHash := authMakeHash(form.Get("hash"), "modulacms")

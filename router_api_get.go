@@ -6,12 +6,13 @@ import (
 )
 
 func apiGetHandler(w http.ResponseWriter, r *http.Request, apiRoute string) {
-	getRoute, err := stripGetPath(r.URL.Path)
+	getRoute, err := stripGetPath(apiRoute)
 	if err != nil {
 		fmt.Print("UM, this ain't a url bud.")
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
+    fmt.Println(getRoute)
 	switch {
 	case matchesPath(getRoute, "adminroute"):
 		err := apiGetAdminRoute(w, r)

@@ -20,15 +20,12 @@ all: help
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	cd templates/components && npm run build && cd -
-	rm -fr ./out
-	mkdir -p out/bin
-	mkdir -p out/bin/public out/bin/templates
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .	
-	cp -R public/* out/bin/public
-	cp -R templates/*.html out/bin/templates
-	cp -R certs/* out/bin
-	cp *.json out/bin/
-
+	rsync -av --delete public/ out/bin/public/
+	rsync -av --delete templates/*.html out/bin/templates/
+	rsync -av --delete certs/ out/bin/certs/
+	rsync -av --delete *.json out/bin/
+	
 clean: ## Remove build related file
 	rm -fr ./bin
 	rm -fr ./out

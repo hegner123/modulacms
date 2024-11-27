@@ -7,11 +7,12 @@ import (
 )
 
 func router(w http.ResponseWriter, r *http.Request) {
+    fmt.Println(r.URL.Path)
 	switch {
 	case hasFileExtension(r.URL.Path):
 		fmt.Print("static route\n")
 		staticFileHandler(w, r)
-	case checkPath(r.URL.Path, "api/v1"):
+	case checkPath(r.URL.Path, "api"):
 		fmt.Print("api/v1 route\n")
 		apiRoutes(w, r)
 	case checkPath(r.URL.Path, "admin"):

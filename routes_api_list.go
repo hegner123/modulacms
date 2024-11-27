@@ -127,6 +127,7 @@ func apiListUsers(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+    defer db.Close()
 	fetchedUsers := dbListUser(db, ctx)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
