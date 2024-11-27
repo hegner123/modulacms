@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"testing"
-
-	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 func TestDeleteAdminRoute(t *testing.T) {
@@ -14,7 +12,6 @@ func TestDeleteAdminRoute(t *testing.T) {
 	}
 	defer db.Close()
 	slug := "/to_delete"
-	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{Slug: slug})
 	result := dbDeleteAdminRoute(db, ctx, slug)
 	expected := fmt.Sprintf("Deleted Admin Route %s successfully", slug)
 	if expected != result {

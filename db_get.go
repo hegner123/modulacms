@@ -93,7 +93,7 @@ func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
 
 func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.User {
 	queries := mdb.New(db)
-	fetchedUser, err := queries.GetUserByEmail(ctx, ns(email))
+	fetchedUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
 		logError("failed to get UserId ", err)
 	}

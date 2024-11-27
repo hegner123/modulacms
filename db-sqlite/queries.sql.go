@@ -143,7 +143,7 @@ type CreateFieldParams struct {
 	Type         interface{}    `json:"type"`
 	Struct       sql.NullString `json:"struct"`
 	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Datecreated  interface{}    `json:"datecreated"`
 	Datemodified interface{}    `json:"datemodified"`
 }
@@ -211,7 +211,7 @@ type CreateMediaParams struct {
 	Description        sql.NullString `json:"description"`
 	Class              sql.NullString `json:"class"`
 	Author             string         `json:"author"`
-	Authorid           string         `json:"authorid"`
+	Authorid           int64          `json:"authorid"`
 	Datecreated        string         `json:"datecreated"`
 	Datemodified       string         `json:"datemodified"`
 	Url                sql.NullString `json:"url"`
@@ -313,7 +313,7 @@ content
 
 type CreateRouteParams struct {
 	Author       string         `json:"author"`
-	Authorid     string         `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
@@ -426,13 +426,13 @@ RETURNING id, datecreated, datemodified, username, name, email, hash, role
 `
 
 type CreateUserParams struct {
-	Datecreated  sql.NullString `json:"datecreated"`
-	Datemodified sql.NullString `json:"datemodified"`
-	Username     sql.NullString `json:"username"`
-	Name         sql.NullString `json:"name"`
-	Email        sql.NullString `json:"email"`
-	Hash         sql.NullString `json:"hash"`
-	Role         sql.NullString `json:"role"`
+	Datecreated  string `json:"datecreated"`
+	Datemodified string `json:"datemodified"`
+	Username     string `json:"username"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Hash         string `json:"hash"`
+	Role         string `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
@@ -845,7 +845,7 @@ SELECT id, datecreated, datemodified, username, name, email, hash, role FROM use
 WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email sql.NullString) (User, error) {
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
@@ -866,7 +866,7 @@ SELECT id FROM user
 WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserId(ctx context.Context, email sql.NullString) (int64, error) {
+func (q *Queries) GetUserId(ctx context.Context, email string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, getUserId, email)
 	var id int64
 	err := row.Scan(&id)
@@ -1094,7 +1094,7 @@ type ListFieldJoinRow struct {
 	Type           interface{}    `json:"type"`
 	Struct         sql.NullString `json:"struct"`
 	Author         interface{}    `json:"author"`
-	Authorid       interface{}    `json:"authorid"`
+	Authorid       int64          `json:"authorid"`
 	Datecreated    interface{}    `json:"datecreated"`
 	Datemodified   interface{}    `json:"datemodified"`
 	ID_2           sql.NullInt64  `json:"id_2"`
@@ -1105,7 +1105,7 @@ type ListFieldJoinRow struct {
 	Type_2         interface{}    `json:"type_2"`
 	Struct_2       sql.NullString `json:"struct_2"`
 	Author_2       interface{}    `json:"author_2"`
-	Authorid_2     interface{}    `json:"authorid_2"`
+	Authorid_2     sql.NullInt64  `json:"authorid_2"`
 	Datecreated_2  interface{}    `json:"datecreated_2"`
 	Datemodified_2 interface{}    `json:"datemodified_2"`
 }
@@ -1448,7 +1448,7 @@ type UpdateFieldParams struct {
 	Type         interface{}    `json:"type"`
 	Struct       sql.NullString `json:"struct"`
 	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Datecreated  interface{}    `json:"datecreated"`
 	Datemodified interface{}    `json:"datemodified"`
 	ID           int64          `json:"id"`
@@ -1501,7 +1501,7 @@ type UpdateMediaParams struct {
 	Description        sql.NullString `json:"description"`
 	Class              sql.NullString `json:"class"`
 	Author             string         `json:"author"`
-	Authorid           string         `json:"authorid"`
+	Authorid           int64          `json:"authorid"`
 	Datecreated        string         `json:"datecreated"`
 	Datemodified       string         `json:"datemodified"`
 	Url                sql.NullString `json:"url"`
@@ -1583,7 +1583,7 @@ type UpdateRouteParams struct {
 	Status       int64          `json:"status"`
 	Content      sql.NullString `json:"content"`
 	Author       string         `json:"author"`
-	Authorid     string         `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Datecreated  string         `json:"datecreated"`
 	Datemodified string         `json:"datemodified"`
 	Slug_2       string         `json:"slug_2"`
@@ -1661,14 +1661,14 @@ WHERE id = ?
 `
 
 type UpdateUserParams struct {
-	Datecreated  sql.NullString `json:"datecreated"`
-	Datemodified sql.NullString `json:"datemodified"`
-	Username     sql.NullString `json:"username"`
-	Name         sql.NullString `json:"name"`
-	Email        sql.NullString `json:"email"`
-	Hash         sql.NullString `json:"hash"`
-	Role         sql.NullString `json:"role"`
-	ID           int64          `json:"id"`
+	Datecreated  string `json:"datecreated"`
+	Datemodified string `json:"datemodified"`
+	Username     string `json:"username"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Hash         string `json:"hash"`
+	Role         string `json:"role"`
+	ID           int64  `json:"id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {

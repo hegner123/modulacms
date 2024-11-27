@@ -42,7 +42,7 @@ type Field struct {
 	Type         interface{}    `json:"type"`
 	Struct       sql.NullString `json:"struct"`
 	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Datecreated  interface{}    `json:"datecreated"`
 	Datemodified interface{}    `json:"datemodified"`
 }
@@ -56,7 +56,7 @@ type Media struct {
 	Description        sql.NullString `json:"description"`
 	Class              sql.NullString `json:"class"`
 	Author             string         `json:"author"`
-	Authorid           string         `json:"authorid"`
+	Authorid           int64          `json:"authorid"`
 	Datecreated        string         `json:"datecreated"`
 	Datemodified       string         `json:"datemodified"`
 	Url                sql.NullString `json:"url"`
@@ -78,7 +78,7 @@ type MediaDimension struct {
 type Route struct {
 	ID           int64          `json:"id"`
 	Author       string         `json:"author"`
-	Authorid     string         `json:"authorid"`
+	Authorid     int64          `json:"authorid"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
@@ -103,12 +103,12 @@ type Token struct {
 }
 
 type User struct {
-	ID           int64          `json:"id"`
-	Datecreated  sql.NullString `json:"datecreated"`
-	Datemodified sql.NullString `json:"datemodified"`
-	Username     sql.NullString `json:"username"`
-	Name         sql.NullString `json:"name"`
-	Email        sql.NullString `json:"email"`
-	Hash         sql.NullString `json:"hash"`
-	Role         sql.NullString `json:"role"`
+	ID           int64  `json:"id"`
+	Datecreated  string `json:"datecreated"`
+	Datemodified string `json:"datemodified"`
+	Username     string `json:"username"`
+	Name         string `json:"name"`
+	Email        string `json:"email"`
+	Hash         string `json:"hash"`
+	Role         string `json:"role"`
 }

@@ -20,23 +20,23 @@ func TestCreateUser(t *testing.T) {
 	defer db.Close()
 
 	insertedUser := dbCreateUser(db, ctx, mdb.CreateUserParams{
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Username:     ns("system"),
-		Name:         ns("system"),
-		Email:        ns("test@modulacms.com"),
-		Hash:         ns("has"),
-		Role:         ns("admin"),
+		Datecreated:  times,
+		Datemodified: times,
+		Username:     "system",
+		Name:         "system",
+		Email:        "test2@modulacms.com",
+		Hash:         "has",
+		Role:         "admin",
 	})
 
 	expected := mdb.User{
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-		Username:     ns("system"),
-		Name:         ns("system"),
-		Email:        ns("test@modulacms.com"),
-		Hash:         ns("has"),
-		Role:         ns("admin"),
+		Datecreated:  times,
+		Datemodified: times,
+		Username:     "system",
+		Name:         "system",
+		Email:        "test2@modulacms.com",
+		Hash:         "has",
+		Role:         "admin",
 	}
 
 	if reflect.DeepEqual(insertedUser, expected) {
@@ -53,8 +53,8 @@ func TestCreateAdminRoute(t *testing.T) {
 	defer db.Close()
 
 	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
-		Author:       "system",
-		Authorid:     "0",
+		Author:       "systeminit",
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -64,8 +64,8 @@ func TestCreateAdminRoute(t *testing.T) {
 	})
 
 	expected := mdb.Adminroute{
-		Author:       "system",
-		Authorid:     "0",
+		Author:       "systeminit",
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -89,7 +89,7 @@ func TestCreateRoute(t *testing.T) {
 
 	insertedRoute := dbCreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "system",
-		Authorid:     "0",
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -100,7 +100,7 @@ func TestCreateRoute(t *testing.T) {
 
 	expected := mdb.Route{
 		Author:       "system",
-		Authorid:     "0",
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -129,7 +129,7 @@ func TestCreateMedia(t *testing.T) {
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           "0",
+		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
 		Url:                ns("public/2024/11/test.png"),
@@ -148,7 +148,7 @@ func TestCreateMedia(t *testing.T) {
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           "0",
+		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
 		Url:                ns("public/2024/11/test.png"),
@@ -161,6 +161,51 @@ func TestCreateMedia(t *testing.T) {
 	}
 
 	if reflect.DeepEqual(insertedMedia, expected) {
+		t.FailNow()
+	}
+}
+func TestCreateDatatype(t *testing.T) {
+	times := timestampS()
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+		Routeid:      ni(1),
+		Label:        "Parent",
+		Type:         "text",
+		Author:       "systeminit",
+		Authorid:     int64(1),
+		Datecreated:  times,
+		Datemodified: times,
+	})
+
+	insertedDatatype := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+		Routeid:      ni(1),
+		Parentid:     ni(1),
+		Label:        "title",
+		Type:         "text",
+		Struct:       ns("text"),
+		Author:       "systeminit",
+		Authorid:     int64(1),
+		Datecreated:  times,
+		Datemodified: times,
+	})
+
+	expected := mdb.Datatype{
+		Routeid:      ni(1),
+		Parentid:     ni(1),
+		Label:        "title",
+		Type:         "text",
+		Struct:       ns("text"),
+		Author:       "systeminit",
+		Authorid:     1,
+		Datecreated:  times,
+		Datemodified: times,
+	}
+
+	if reflect.DeepEqual(insertedDatatype, expected) {
 		t.FailNow()
 	}
 }
@@ -177,8 +222,8 @@ func TestCreateField(t *testing.T) {
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Author:       "system",
+		Authorid:     int64(1),
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	})
@@ -190,8 +235,8 @@ func TestCreateField(t *testing.T) {
 		Data:         "Test Field",
 		Type:         "text",
 		Struct:       ns("text"),
-		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Author:       "systeminit",
+		Authorid:     int64(1),
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	})
@@ -203,8 +248,8 @@ func TestCreateField(t *testing.T) {
 		Data:         "Test Field",
 		Type:         "text",
 		Struct:       ns("text"),
-		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Author:       "systeminit",
+		Authorid:     1,
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	}

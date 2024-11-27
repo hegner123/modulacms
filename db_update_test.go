@@ -16,12 +16,10 @@ func TestUpdateUser(t *testing.T) {
 	defer db.Close()
 	id := int64(1)
 	params := mdb.UpdateUserParams{
-		Datemodified: ns(times),
-		Username:     ns("system"),
-		Name:         ns("system"),
-		Email:        ns("test@modulacms.com"),
-		Hash:         ns("has"),
-		Role:         ns("admin"),
+		Datemodified: times,
+		Name:         "system",
+		Hash:         "has",
+		Role:         "admin",
 		ID:           id,
 	}
 
@@ -43,7 +41,7 @@ func TestUpdateAdminRoute(t *testing.T) {
 
 	params := mdb.UpdateAdminRouteParams{
 		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -70,7 +68,7 @@ func TestUpdateRoute(t *testing.T) {
 
 	params := mdb.UpdateRouteParams{
 		Author:       "system",
-		Authorid:     "0",
+		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
@@ -102,7 +100,7 @@ func TestUpdateMedia(t *testing.T) {
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           "0",
+		Authorid:           1,
 		Datemodified:       times,
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
@@ -136,7 +134,7 @@ func TestUpdateField(t *testing.T) {
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Authorid:     1,
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 		ID:           id,

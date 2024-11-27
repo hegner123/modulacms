@@ -58,6 +58,12 @@ ifeq ($(EXPORT_RESULT), true)
 	gocov convert profile.cov | gocov-xml > coverage.xml
 endif
 
+## SQL
+sqlc: ## Run sqlc generate in sql directory
+	cd ./sql && sqlc generate && echo "generated coded successfully"
+	
+
+
 ## Lint:
 lint: lint-go lint-dockerfile lint-yaml ## Run all available linters
 

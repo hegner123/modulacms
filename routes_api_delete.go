@@ -25,8 +25,12 @@ func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteDataType(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -50,8 +54,12 @@ func apiDeleteDataType(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteField(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -75,8 +83,12 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteMedia(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -100,8 +112,12 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -125,6 +141,9 @@ func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
 
@@ -147,8 +166,12 @@ func apiDeleteRoute(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteTable(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -172,8 +195,12 @@ func apiDeleteTable(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
+
 func apiDeleteToken(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -197,6 +224,9 @@ func apiDeleteToken(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }
 
@@ -223,5 +253,8 @@ func apiDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+    if err != nil { 
+        logError("failed to : ", err)
+    }
 	return nil
 }

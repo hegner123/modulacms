@@ -1,11 +1,10 @@
-
 CREATE TABLE user(
     id INTEGER PRIMARY KEY,
-    datecreated TEXT,
-    datemodified TEXT,
-    username TEXT,
-    name TEXT,
-    email TEXT UNIQUE,
-    hash TEXT,
-    role TEXT
+    datecreated TEXT NOT NULL,
+    datemodified TEXT NOT NULL,
+    username TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    email TEXT UNIQUE NOT NULL,
+    hash TEXT NOT NULL,
+    role TEXT NOT NULL
 );

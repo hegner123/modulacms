@@ -34,11 +34,11 @@ func TestGetUser(t *testing.T) {
 		ID:           int64(2),
 		Datecreated:  userRow.Datecreated,
 		Datemodified: userRow.Datemodified,
-		Username:     ns("system"),
-		Name:         ns("system"),
-		Email:        ns("system@modulacms.com1"),
-		Hash:         ns("has"),
-		Role:         ns("admin"),
+		Username:     "system",
+		Name:         "system",
+		Email:        "system@modulacms.com1",
+		Hash:         "has",
+		Role:         "admin",
 	}
 
 	if reflect.DeepEqual(userRow, expected) {
@@ -68,7 +68,7 @@ func TestGetAdminRoute(t *testing.T) {
 	expected := mdb.Adminroute{
 		ID:           int64(1),
 		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Authorid:     1,
 		Slug:         "/test11",
 		Title:        "Test",
 		Status:       int64(0),
@@ -94,7 +94,7 @@ func TestGetRoute(t *testing.T) {
 	expected := mdb.Route{
 		ID:           int64(1),
 		Author:       "system",
-		Authorid:     "0",
+		Authorid:     1,
 		Slug:         "/test11",
 		Title:        "Test",
 		Status:       int64(0),
@@ -125,7 +125,7 @@ func TestGetMedia(t *testing.T) {
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           "0",
+		Authorid:           1,
 		Datecreated:        mediaRow.Datecreated,
 		Datemodified:       mediaRow.Datemodified,
 		Url:                ns("public/2024/11/test.png1"),
@@ -159,7 +159,7 @@ func TestGetField(t *testing.T) {
 		Type:         "text",
 		Struct:       ns("text"),
 		Author:       ns("system"),
-		Authorid:     ns("0"),
+		Authorid:     1,
 		Datecreated:  fieldRow.Datecreated,
 		Datemodified: fieldRow.Datemodified,
 	}

@@ -6,6 +6,6 @@ CREATE TABLE token (
     issued_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     revoked BOOLEAN DEFAULT 0,
-    FOREIGN KEY (user_id) REFERENCES user (id)
+    FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE ON UPDATE CASCADE
 );
 

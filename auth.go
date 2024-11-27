@@ -20,7 +20,7 @@ func handleAuth(form url.Values) {
 	}
 	user := dbGetUserByEmail(db, ctx, form.Get("email"))
 	requestHash := authMakeHash(form.Get("hash"), "modulacms")
-	if compareHashes(user.Hash.String, requestHash) {
+	if compareHashes(user.Hash, requestHash) {
 	}
 }
 

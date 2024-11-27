@@ -61,7 +61,6 @@ func main() {
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s", err)
 		}
-		createSetupInserts(db, ctx, "")
 		defer db.Close()
 	}
 

@@ -23,10 +23,10 @@ func setup() {
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
 	err = initDb(db, ctx)
-	createSetupInserts(db, ctx, "")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
+    createSetupInserts(db, ctx, "")
 }
 
 func teardown() {
