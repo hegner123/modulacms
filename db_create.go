@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"strings"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -93,7 +94,11 @@ func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.U
 	queries := mdb.New(db)
 	insertedUser, err := queries.CreateUser(ctx, s)
 	if err != nil {
-		logError("failed to create user ", err)
+		splitErr := strings.Split(popError(err), ".")
+		property := splitErr[len(splitErr)-1]
+		v := getCreateUserParamsKey(property, s)
+
+		logError("failed to create user ", err, property, v)
 	}
 
 	return insertedUser

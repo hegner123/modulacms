@@ -57,10 +57,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("%s\n", err)
 		}
-		err = initDb(db, ctx)
+		err = initDb(db, ctx, verbose)
          
-        createSetupInserts(db, ctx, "1")
-        createSetupInserts(db, ctx, "2")
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s\n", err)
 		}

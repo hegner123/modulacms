@@ -9,6 +9,7 @@ import (
 
 func createSetupInserts(db *sql.DB, ctx context.Context, modify string) {
 	times := timestampS()
+    createBaseAdminRoutes()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
 		Datecreated:  times,
 		Datemodified: times,

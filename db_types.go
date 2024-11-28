@@ -3,6 +3,8 @@ package main
 import (
 	"database/sql"
 	"time"
+
+	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 func ns(s string) sql.NullString {
@@ -31,4 +33,25 @@ func nt(t time.Time) sql.NullTime {
 
 func nby(by byte) sql.NullByte {
 	return sql.NullByte{Byte: by, Valid: true}
+}
+
+func getCreateUserParamsKey(key string, params mdb.CreateUserParams) string {
+	switch key {
+	case "datecreated":
+		return params.Datecreated
+	case "datemodified":
+		return params.Datemodified
+	case "username":
+		return params.Username
+	case "name":
+		return params.Name
+	case "email":
+		return params.Email
+	case "hash":
+		return params.Hash
+	case "role":
+		return params.Role
+	default:
+		return "property not found"
+	}
 }

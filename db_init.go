@@ -37,11 +37,17 @@ func getDb(dbName Database) (*sql.DB, context.Context, error) {
 	return db, ctx, nil
 }
 
-func initDb(db *sql.DB, ctx context.Context) error {
-	tables, err := readSchemaFiles()
+func initDb(db *sql.DB, ctx context.Context,v *bool) error {
+	tables, err := readSchemaFiles(v)
 	if err != nil {
 		logError("couldn't read schema files.", err)
 	}
+    if !checkInstallStatus(){
+        createSystemUser()
+        createBaseAdminRoutes()
+        createSetupInserts(db, ctx, "1")
+        createSetupInserts(db, ctx, "2")
+    }
 
 	if _, err := db.ExecContext(ctx, tables); err != nil {
 		return err
@@ -50,7 +56,7 @@ func initDb(db *sql.DB, ctx context.Context) error {
 	return nil
 }
 
-func readSchemaFiles() (string, error) {
+func readSchemaFiles(verbose *bool) (string, error) {
 	var result []string
 
 	// Walk through the embedded file system
@@ -72,7 +78,10 @@ func readSchemaFiles() (string, error) {
 		return "", err
 	}
 	// Join all the file contents
-    fmt.Println(strings.Join(result, "\n"))
+    if *verbose{
+        fmt.Println(strings.Join(result, "\n"))
+
+    }
 	return strings.Join(result, "\n"), nil
 }
 

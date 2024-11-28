@@ -14,7 +14,7 @@ func apiRoutes(w http.ResponseWriter, r *http.Request, urlSegments []string) {
 		apiPostHandler(w, r, urlSegments)
 	case r.Method == http.MethodPut:
 		apiPutHandler(w, r, urlSegments)
-	case checkPath(urlSegments,AUTHROUTE,  "admin"):
+	case checkPath(urlSegments, AUTHROUTE, "admin"):
 		handleAdminAuth(w, r)
 	}
 }
