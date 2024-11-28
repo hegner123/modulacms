@@ -96,7 +96,7 @@ func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.U
 	if err != nil {
 		splitErr := strings.Split(popError(err), ".")
 		property := splitErr[len(splitErr)-1]
-		v := getCreateUserParamsKey(property, s)
+		v := getColumnValue(property, s)
 
 		logError("failed to create user ", err, property, v)
 	}

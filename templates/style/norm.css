@@ -375,6 +375,7 @@ fieldset {
 
 button {
     -webkit-appearance: button;
+    appearance: button;
 }
 
 input,
@@ -385,6 +386,7 @@ button,
 meter,
 progress {
     -webkit-writing-mode: horizontal-tb !important;
+    writing-mode: horizontal-tb !important;
 }
 
 input,
@@ -412,16 +414,19 @@ input[type="hidden" i] {
 
 input {
     -webkit-appearance: textfield;
+    appearance: textfield;
     padding: 0;
     background-color: white;
     border: none;
     -webkit-rtl-ordering: logical;
     -webkit-user-select: text;
+    user-select: text;
     cursor: auto;
 }
 
 input[type="search" i] {
     -webkit-appearance: searchfield;
+    appearance: searchfield;
     box-sizing: border-box;
 }
 
@@ -512,10 +517,12 @@ keygen::-webkit-keygen-select {
 
 textarea {
     -webkit-appearance: textarea;
+    appearance: textarea;
     background-color: white;
     border: none;
     -webkit-rtl-ordering: logical;
     -webkit-user-select: text;
+    user-select: text;
     flex-direction: column;
     resize: auto;
     cursor: auto;
@@ -545,6 +552,7 @@ input[type="hidden" i],
 input[type="image" i],
 input[type="file" i] {
     -webkit-appearance: initial;
+    appearance: initial;
     padding: 0;
     background-color: initial;
     border: none;
@@ -576,7 +584,9 @@ input[type="button" i],
 input[type="submit" i],
 input[type="reset" i] {
     -webkit-appearance: push-button;
+    appearance: push-button;
     -webkit-user-select: none;
+    user-select: none;
     white-space: pre
 }
 
@@ -605,6 +615,7 @@ button {
 
 input[type="range" i] {
     -webkit-appearance: slider-horizontal;
+    appearance: slider-horizontal;
     padding: 0;
     border: none;
     margin:0;
@@ -686,16 +697,19 @@ param {
 
 input[type="checkbox" i] {
     -webkit-appearance: checkbox;
+    appearance: checkbox;
     box-sizing: border-box;
 }
 
 input[type="radio" i] {
     -webkit-appearance: radio;
+    appearance: radio;
     box-sizing: border-box;
 }
 
 input[type="color" i] {
     -webkit-appearance: square-button;
+    appearance: square-button;
     width: 44px;
     height: 23px;
     background-color: ButtonFace;
@@ -722,6 +736,7 @@ input[type="color" i]::-webkit-color-swatch {
 
 input[type="color" i][list] {
     -webkit-appearance: menulist;
+    appearance: menulist;
     width: 88px;
     height: 23px
 }
@@ -778,6 +793,7 @@ input[readonly]::-webkit-calendar-picker-indicator {
 
 select {
     -webkit-appearance: menulist;
+    appearance: menulist;
     box-sizing: border-box;
     align-items: center;
     border: none;
@@ -794,6 +810,7 @@ select:not(:-internal-list-box) {
 
 select:-internal-list-box {
     -webkit-appearance: listbox;
+    appearance: listbox;
     align-items: flex-start;
     border: none;
     border-radius: initial;
@@ -801,6 +818,7 @@ select:-internal-list-box {
     overflow-y: scroll;
     vertical-align: text-bottom;
     -webkit-user-select: none;
+    user-select: none;
     white-space: nowrap;
 }
 
@@ -847,6 +865,7 @@ output {
 
 meter {
     -webkit-appearance: meter;
+    appearance: meter;
     box-sizing: border-box;
     display: inline-block;
     height: 1em;
@@ -893,6 +912,7 @@ meter::-webkit-meter-even-less-good-value {
 
 progress {
     -webkit-appearance: progress-bar;
+    appearance: progress-bar;
     box-sizing: border-box;
     display: inline-block;
     height: 1em;
@@ -1048,6 +1068,7 @@ rt {
 rt {
     line-height: normal;
     -webkit-text-emphasis: none;
+    text-emphasis: none;
 }
 
 ruby>rt {
@@ -1145,5 +1166,6 @@ dialog::backdrop {
 @media print {
     * {
         -webkit-columns: auto !important;
+        columns: auto !important;
     }
 }

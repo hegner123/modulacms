@@ -21,30 +21,30 @@ type Adminroute struct {
 }
 
 type Datatype struct {
-	ID           int64          `json:"id"`
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
+	ID           int64         `json:"id"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        string        `json:"label"`
+	Type         string        `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     interface{}   `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
 }
 
 type Field struct {
-	ID           int64          `json:"id"`
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     int64          `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
+	ID           int64         `json:"id"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        interface{}   `json:"label"`
+	Data         interface{}   `json:"data"`
+	Type         interface{}   `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     int64         `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
 }
 
 type Media struct {

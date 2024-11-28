@@ -2,9 +2,10 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
+	"reflect"
+	"strings"
 	"time"
-
-	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 func ns(s string) sql.NullString {
@@ -35,23 +36,23 @@ func nby(by byte) sql.NullByte {
 	return sql.NullByte{Byte: by, Valid: true}
 }
 
-func getCreateUserParamsKey(key string, params mdb.CreateUserParams) string {
-	switch key {
-	case "datecreated":
-		return params.Datecreated
-	case "datemodified":
-		return params.Datemodified
-	case "username":
-		return params.Username
-	case "name":
-		return params.Name
-	case "email":
-		return params.Email
-	case "hash":
-		return params.Hash
-	case "role":
-		return params.Role
-	default:
-		return "property not found"
+func getColumnValue(column string, s interface{}) string {
+	v := reflect.ValueOf(s)
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
+
+	t := v.Type()
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+		if strings.EqualFold(field.Name, column) {
+			fieldValue := v.Field(i)
+			if fieldValue.Kind() == reflect.String {
+				return fieldValue.String()
+			}
+			return fmt.Sprintf("%v", fieldValue.Interface())
+		}
+	}
+
+	return ""
 }

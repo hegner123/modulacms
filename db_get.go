@@ -11,7 +11,7 @@ import (
 
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminroute {
 	queries := mdb.New(db)
-	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
+	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, "/"+slug)
 	if err != nil {
 		logError("failed to get admin route", err)
 	}

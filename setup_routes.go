@@ -3,7 +3,7 @@ package main
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 
 func createBaseAdminRoutes() {
-	db, ctx, err := getDb(Database{DB: "modula.db"})
+	db, ctx, err := getDb(Database{})
 	if err != nil {
 		logError("failed to get db", err)
 	}
@@ -22,8 +22,24 @@ func createBaseAdminRoutes() {
 	dbCreateAdminRoute(db, ctx, homePage)
 }
 
+func createSystemTableEntries() {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		logError("failed to get db", err)
+	}
+	defer db.Close()
+	systemTables := []string{
+		"adminroute", "datatype", "field", "media", "media_dimension", "route",
+		"table", "token", "user",
+	}
+    for _,v := range systemTables{
+        table := mdb.Tables{Label: ns(v)}
+        dbCreateTable(db,ctx, table)
+    }
+}
+
 func createSystemUser() {
-	db, ctx, err := getDb(Database{DB: "modula.db"})
+	db, ctx, err := getDb(Database{})
 	if err != nil {
 		logError("failed to get db", err)
 	}

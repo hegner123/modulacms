@@ -9,10 +9,10 @@ import (
 type Segment int
 
 const (
-	CLIENT    Segment = 1
-	CROUTE    Segment = 2
-	ADMIN     Segment = 1
-	AROUTE    Segment = 2
+	CLIENT    Segment = 2
+	CROUTE    Segment = 3
+	ADMIN     Segment = 2
+	AROUTE    Segment = 3
 	ENDPOINT  Segment = 1
 	VERSION   Segment = 2
 	DBMETHOD Segment = 3
@@ -29,7 +29,7 @@ func router(w http.ResponseWriter, r *http.Request) {
 	case checkPath(segments, ENDPOINT, "api"):
 		apiRoutes(w, r, segments)
 	case checkPath(segments, ENDPOINT, "admin"):
-		handleAdminRoutes(w, r)
+		handleAdminRoutes(w, r, segments)
 	case checkPath(segments, ENDPOINT, "404"):
 		notFoundHandler(w, r)
 	default:

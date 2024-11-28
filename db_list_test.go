@@ -124,3 +124,21 @@ func TestListTables(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestListDatatype(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	res := func() interface{} {
+		return dbListDatatype(db, ctx)
+	}()
+
+	if _, ok := res.([]mdb.Datatype); ok {
+		return
+	} else {
+		t.FailNow()
+	}
+}
+
+

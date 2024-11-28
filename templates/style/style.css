@@ -1,23 +1,18 @@
-:root{
-    --modula-theme-primary:#000;
-    --modula-theme-text:#000;
-    color:;
+:root {
+    --modula-theme-primary: #000;
+    --modula-theme-text: #ccc;
+    --modula-accent-1: #37393A;
+    --modula-accent-2: #77b6ea;
+    --modula-accent-3: #c7d3dd;
+    --modula-accent-4: #d6c9c9;
+    --modula-accent-5: #e8eef2;
 }
-
-
-
-
-
-
-
-
-
-
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    color: var(--modula-theme-text);
 }
 
 html {
@@ -26,12 +21,28 @@ html {
     font-size: 16px;
 }
 
+body {
+    min-height: 100vh;
+    background: var(--modula-theme-primary);
+}
+
+input,
+select,
+textarea {
+    background: #555;
+}
+
+select {
+    background: #555;
+    color:#777;
+}
+
 .modula-admin {
     height: 32px;
 }
 
 .modula-sidebar {
-    margin-top:32px;
+    margin-top: 32px;
 }
 
 .navigation {
@@ -61,13 +72,32 @@ html {
     grid-template-columns: 100px repeat(12, 1fr) 100px;
 }
 
-.grid-child {
+.nested-grid {
     grid-column: 1/-1;
     display: grid;
     grid-template-columns: inherit;
 }
 
-.add-post-form {    
-    padding:1rem;
+.grid-content-container {
+    grid-column: 2/-2;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+}
 
+.grid-form-container {
+    grid-column: 2/-2;
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    place-items: center;
+}
+
+.add-post-form {
+    padding: 1rem;
+
+}
+
+.form {
+    grid-column: 1/-1;
+    width: 300px;
+    display: grid;
 }

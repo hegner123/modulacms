@@ -65,38 +65,38 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 const createDatatype = `-- name: CreateDatatype :one
 INSERT INTO datatype (
     routeid,
+    adminrouteid,
     parentid,
     label,
     type,
-    struct,
     author,
     authorid,
     datecreated,
     datemodified
     ) VALUES (
-  ?,?, ?,?,?, ?,?,?,?
-    ) RETURNING id, routeid, parentid, label, type, struct, author, authorid, datecreated, datemodified
+  ?,?, ?,?, ?,?, ?,?,?
+    ) RETURNING id, routeid, adminrouteid, parentid, label, type, author, authorid, datecreated, datemodified
 `
 
 type CreateDatatypeParams struct {
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        string        `json:"label"`
+	Type         string        `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     interface{}   `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) (Datatype, error) {
 	row := q.db.QueryRowContext(ctx, createDatatype,
 		arg.Routeid,
+		arg.Adminrouteid,
 		arg.Parentid,
 		arg.Label,
 		arg.Type,
-		arg.Struct,
 		arg.Author,
 		arg.Authorid,
 		arg.Datecreated,
@@ -106,10 +106,10 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	err := row.Scan(
 		&i.ID,
 		&i.Routeid,
+		&i.Adminrouteid,
 		&i.Parentid,
 		&i.Label,
 		&i.Type,
-		&i.Struct,
 		&i.Author,
 		&i.Authorid,
 		&i.Datecreated,
@@ -121,41 +121,41 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 const createField = `-- name: CreateField :one
 INSERT INTO field (
     routeid,
+    adminrouteid,
     parentid,
     label,
     data,
     type,
-    struct,
     author,
     authorid,
     datecreated,
     datemodified
     ) VALUES (
-    ?,?,?, ?,?,?, ?,?,?,?
-    ) RETURNING id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified
+?,?, ?,?, ?,?, ?,?, ?,?
+    ) RETURNING id, routeid, adminrouteid, parentid, label, data, type, author, authorid, datecreated, datemodified
 `
 
 type CreateFieldParams struct {
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     int64          `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        interface{}   `json:"label"`
+	Data         interface{}   `json:"data"`
+	Type         interface{}   `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     int64         `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
 }
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field, error) {
 	row := q.db.QueryRowContext(ctx, createField,
 		arg.Routeid,
+		arg.Adminrouteid,
 		arg.Parentid,
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Struct,
 		arg.Author,
 		arg.Authorid,
 		arg.Datecreated,
@@ -165,11 +165,11 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 	err := row.Scan(
 		&i.ID,
 		&i.Routeid,
+		&i.Adminrouteid,
 		&i.Parentid,
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Struct,
 		&i.Author,
 		&i.Authorid,
 		&i.Datecreated,
@@ -606,7 +606,7 @@ func (q *Queries) GetAdminRouteId(ctx context.Context, slug string) (int64, erro
 }
 
 const getDatatype = `-- name: GetDatatype :one
-SELECT id, routeid, parentid, label, type, struct, author, authorid, datecreated, datemodified FROM datatype
+SELECT id, routeid, adminrouteid, parentid, label, type, author, authorid, datecreated, datemodified FROM datatype
 WHERE id = ? LIMIT 1
 `
 
@@ -616,10 +616,10 @@ func (q *Queries) GetDatatype(ctx context.Context, id int64) (Datatype, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Routeid,
+		&i.Adminrouteid,
 		&i.Parentid,
 		&i.Label,
 		&i.Type,
-		&i.Struct,
 		&i.Author,
 		&i.Authorid,
 		&i.Datecreated,
@@ -640,7 +640,7 @@ func (q *Queries) GetDatatypeId(ctx context.Context, id int64) (int64, error) {
 }
 
 const getField = `-- name: GetField :one
-SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM field
+SELECT id, routeid, adminrouteid, parentid, label, data, type, author, authorid, datecreated, datemodified FROM field
 WHERE id = ? LIMIT 1
 `
 
@@ -650,11 +650,11 @@ func (q *Queries) GetField(ctx context.Context, id int64) (Field, error) {
 	err := row.Scan(
 		&i.ID,
 		&i.Routeid,
+		&i.Adminrouteid,
 		&i.Parentid,
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Struct,
 		&i.Author,
 		&i.Authorid,
 		&i.Datecreated,
@@ -912,7 +912,7 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]Adminroute, error) {
 }
 
 const listDatatype = `-- name: ListDatatype :many
-SELECT id, routeid, parentid, label, type, struct, author, authorid, datecreated, datemodified FROM datatype
+SELECT id, routeid, adminrouteid, parentid, label, type, author, authorid, datecreated, datemodified FROM datatype
 ORDER BY id
 `
 
@@ -928,95 +928,14 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatype, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Routeid,
+			&i.Adminrouteid,
 			&i.Parentid,
 			&i.Label,
 			&i.Type,
-			&i.Struct,
 			&i.Author,
 			&i.Authorid,
 			&i.Datecreated,
 			&i.Datemodified,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listDatatypeJoin = `-- name: ListDatatypeJoin :many
-SELECT 
-    f1.id, f1.routeid, f1.parentid, f1.label, f1.type, f1.struct, f1.author, f1.authorid, f1.datecreated, f1.datemodified,
-    f2.id, f2.routeid, f2.parentid, f2.label, f2.type, f2.struct, f2.author, f2.authorid, f2.datecreated, f2.datemodified
-FROM 
-    datatype f1
-LEFT JOIN 
-    datatype f2
-ON 
-    f1.datatypeid = f2.parentid
-WHERE 
-    f1.routeid = ?
-`
-
-type ListDatatypeJoinRow struct {
-	ID             int64          `json:"id"`
-	Routeid        sql.NullInt64  `json:"routeid"`
-	Parentid       sql.NullInt64  `json:"parentid"`
-	Label          string         `json:"label"`
-	Type           string         `json:"type"`
-	Struct         sql.NullString `json:"struct"`
-	Author         interface{}    `json:"author"`
-	Authorid       interface{}    `json:"authorid"`
-	Datecreated    interface{}    `json:"datecreated"`
-	Datemodified   interface{}    `json:"datemodified"`
-	ID_2           sql.NullInt64  `json:"id_2"`
-	Routeid_2      sql.NullInt64  `json:"routeid_2"`
-	Parentid_2     sql.NullInt64  `json:"parentid_2"`
-	Label_2        sql.NullString `json:"label_2"`
-	Type_2         sql.NullString `json:"type_2"`
-	Struct_2       sql.NullString `json:"struct_2"`
-	Author_2       interface{}    `json:"author_2"`
-	Authorid_2     interface{}    `json:"authorid_2"`
-	Datecreated_2  interface{}    `json:"datecreated_2"`
-	Datemodified_2 interface{}    `json:"datemodified_2"`
-}
-
-func (q *Queries) ListDatatypeJoin(ctx context.Context, routeid sql.NullInt64) ([]ListDatatypeJoinRow, error) {
-	rows, err := q.db.QueryContext(ctx, listDatatypeJoin, routeid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListDatatypeJoinRow
-	for rows.Next() {
-		var i ListDatatypeJoinRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Routeid,
-			&i.Parentid,
-			&i.Label,
-			&i.Type,
-			&i.Struct,
-			&i.Author,
-			&i.Authorid,
-			&i.Datecreated,
-			&i.Datemodified,
-			&i.ID_2,
-			&i.Routeid_2,
-			&i.Parentid_2,
-			&i.Label_2,
-			&i.Type_2,
-			&i.Struct_2,
-			&i.Author_2,
-			&i.Authorid_2,
-			&i.Datecreated_2,
-			&i.Datemodified_2,
 		); err != nil {
 			return nil, err
 		}
@@ -1032,7 +951,7 @@ func (q *Queries) ListDatatypeJoin(ctx context.Context, routeid sql.NullInt64) (
 }
 
 const listField = `-- name: ListField :many
-SELECT id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified FROM field
+SELECT id, routeid, adminrouteid, parentid, label, data, type, author, authorid, datecreated, datemodified FROM field
 ORDER BY id
 `
 
@@ -1048,100 +967,15 @@ func (q *Queries) ListField(ctx context.Context) ([]Field, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Routeid,
+			&i.Adminrouteid,
 			&i.Parentid,
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Struct,
 			&i.Author,
 			&i.Authorid,
 			&i.Datecreated,
 			&i.Datemodified,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listFieldJoin = `-- name: ListFieldJoin :many
-SELECT 
-    f1.id, f1.routeid, f1.parentid, f1.label, f1.data, f1.type, f1.struct, f1.author, f1.authorid, f1.datecreated, f1.datemodified,
-    f2.id, f2.routeid, f2.parentid, f2.label, f2.data, f2.type, f2.struct, f2.author, f2.authorid, f2.datecreated, f2.datemodified
-FROM 
-    field f1
-LEFT JOIN 
-    field f2
-ON 
-    f1.fieldid = f2.parentid
-WHERE 
-    f1.routeid = ?
-`
-
-type ListFieldJoinRow struct {
-	ID             int64          `json:"id"`
-	Routeid        sql.NullInt64  `json:"routeid"`
-	Parentid       sql.NullInt64  `json:"parentid"`
-	Label          interface{}    `json:"label"`
-	Data           interface{}    `json:"data"`
-	Type           interface{}    `json:"type"`
-	Struct         sql.NullString `json:"struct"`
-	Author         interface{}    `json:"author"`
-	Authorid       int64          `json:"authorid"`
-	Datecreated    interface{}    `json:"datecreated"`
-	Datemodified   interface{}    `json:"datemodified"`
-	ID_2           sql.NullInt64  `json:"id_2"`
-	Routeid_2      sql.NullInt64  `json:"routeid_2"`
-	Parentid_2     sql.NullInt64  `json:"parentid_2"`
-	Label_2        interface{}    `json:"label_2"`
-	Data_2         interface{}    `json:"data_2"`
-	Type_2         interface{}    `json:"type_2"`
-	Struct_2       sql.NullString `json:"struct_2"`
-	Author_2       interface{}    `json:"author_2"`
-	Authorid_2     sql.NullInt64  `json:"authorid_2"`
-	Datecreated_2  interface{}    `json:"datecreated_2"`
-	Datemodified_2 interface{}    `json:"datemodified_2"`
-}
-
-func (q *Queries) ListFieldJoin(ctx context.Context, routeid sql.NullInt64) ([]ListFieldJoinRow, error) {
-	rows, err := q.db.QueryContext(ctx, listFieldJoin, routeid)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListFieldJoinRow
-	for rows.Next() {
-		var i ListFieldJoinRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.Routeid,
-			&i.Parentid,
-			&i.Label,
-			&i.Data,
-			&i.Type,
-			&i.Struct,
-			&i.Author,
-			&i.Authorid,
-			&i.Datecreated,
-			&i.Datemodified,
-			&i.ID_2,
-			&i.Routeid_2,
-			&i.Parentid_2,
-			&i.Label_2,
-			&i.Data_2,
-			&i.Type_2,
-			&i.Struct_2,
-			&i.Author_2,
-			&i.Authorid_2,
-			&i.Datecreated_2,
-			&i.Datemodified_2,
 		); err != nil {
 			return nil, err
 		}
@@ -1339,6 +1173,118 @@ func (q *Queries) ListUser(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const recursiveJoinByRoute = `-- name: RecursiveJoinByRoute :many
+WITH RECURSIVE datatype_hierarchy AS (
+    -- Anchor member: Select datatypes with the given routeid
+    SELECT
+        dt.id,
+        dt.parentid,
+        dt.routeid,
+        dt.adminrouteid,
+        dt.label,
+        dt.type,
+        dt.author,
+        dt.authorid,
+        dt.datecreated,
+        dt.datemodified
+    FROM
+        datatype dt
+    WHERE
+        dt.routeid = ?
+
+    UNION ALL
+
+    -- Recursive member: Select child datatypes
+    SELECT
+        child_dt.id,
+        child_dt.parentid,
+        child_dt.routeid,
+        child_dt.adminrouteid,
+        child_dt.label,
+        child_dt.type,
+        child_dt.author,
+        child_dt.authorid,
+        child_dt.datecreated,
+        child_dt.datemodified
+    FROM
+        datatype child_dt
+    INNER JOIN
+        datatype_hierarchy dh ON child_dt.parentid = dh.id
+)
+
+SELECT
+    dh.id AS datatype_id,
+    dh.label AS datatype_label,
+    dh.type AS datatype_type,
+    dh.author AS datatype_author,
+    dh.datecreated AS datatype_datecreated,
+    dh.datemodified AS datatype_datemodified,
+    f.id AS field_id,
+    f.label AS field_label,
+    f.data AS field_data,
+    f.type AS field_type,
+    f.author AS field_author,
+    f.datecreated AS field_datecreated,
+    f.datemodified AS field_datemodified
+FROM
+    datatype_hierarchy dh
+LEFT JOIN
+    field f ON f.parentid = dh.id
+`
+
+type RecursiveJoinByRouteRow struct {
+	DatatypeID           int64         `json:"datatype_id"`
+	DatatypeLabel        string        `json:"datatype_label"`
+	DatatypeType         string        `json:"datatype_type"`
+	DatatypeAuthor       interface{}   `json:"datatype_author"`
+	DatatypeDatecreated  interface{}   `json:"datatype_datecreated"`
+	DatatypeDatemodified interface{}   `json:"datatype_datemodified"`
+	FieldID              sql.NullInt64 `json:"field_id"`
+	FieldLabel           interface{}   `json:"field_label"`
+	FieldData            interface{}   `json:"field_data"`
+	FieldType            interface{}   `json:"field_type"`
+	FieldAuthor          interface{}   `json:"field_author"`
+	FieldDatecreated     interface{}   `json:"field_datecreated"`
+	FieldDatemodified    interface{}   `json:"field_datemodified"`
+}
+
+func (q *Queries) RecursiveJoinByRoute(ctx context.Context, routeid sql.NullInt64) ([]RecursiveJoinByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, recursiveJoinByRoute, routeid)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RecursiveJoinByRouteRow
+	for rows.Next() {
+		var i RecursiveJoinByRouteRow
+		if err := rows.Scan(
+			&i.DatatypeID,
+			&i.DatatypeLabel,
+			&i.DatatypeType,
+			&i.DatatypeAuthor,
+			&i.DatatypeDatecreated,
+			&i.DatatypeDatemodified,
+			&i.FieldID,
+			&i.FieldLabel,
+			&i.FieldData,
+			&i.FieldType,
+			&i.FieldAuthor,
+			&i.FieldDatecreated,
+			&i.FieldDatemodified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateAdminRoute = `-- name: UpdateAdminRoute :exec
 UPDATE adminroute
 set slug = ?,
@@ -1383,38 +1329,38 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 const updateDatatype = `-- name: UpdateDatatype :exec
 UPDATE datatype
 set routeid = ?,
+    adminrouteid = ?,
     parentid = ?,
     label = ?,
     type = ?,
-    struct = ?,
     author = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
     WHERE id = ?
-    RETURNING id, routeid, parentid, label, type, struct, author, authorid, datecreated, datemodified
+    RETURNING id, routeid, adminrouteid, parentid, label, type, author, authorid, datecreated, datemodified
 `
 
 type UpdateDatatypeParams struct {
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     interface{}    `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
-	ID           int64          `json:"id"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        string        `json:"label"`
+	Type         string        `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     interface{}   `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
+	ID           int64         `json:"id"`
 }
 
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateDatatype,
 		arg.Routeid,
+		arg.Adminrouteid,
 		arg.Parentid,
 		arg.Label,
 		arg.Type,
-		arg.Struct,
 		arg.Author,
 		arg.Authorid,
 		arg.Datecreated,
@@ -1427,41 +1373,41 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 const updateField = `-- name: UpdateField :exec
 UPDATE field
 set routeid = ?,
+    adminrouteid = ?,
     parentid = ?,
     label = ?,
     data = ?,
     type = ?,
-    struct = ?,
     author = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
     WHERE id = ?
-    RETURNING id, routeid, parentid, label, data, type, struct, author, authorid, datecreated, datemodified
+    RETURNING id, routeid, adminrouteid, parentid, label, data, type, author, authorid, datecreated, datemodified
 `
 
 type UpdateFieldParams struct {
-	Routeid      sql.NullInt64  `json:"routeid"`
-	Parentid     sql.NullInt64  `json:"parentid"`
-	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
-	Struct       sql.NullString `json:"struct"`
-	Author       interface{}    `json:"author"`
-	Authorid     int64          `json:"authorid"`
-	Datecreated  interface{}    `json:"datecreated"`
-	Datemodified interface{}    `json:"datemodified"`
-	ID           int64          `json:"id"`
+	Routeid      sql.NullInt64 `json:"routeid"`
+	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        interface{}   `json:"label"`
+	Data         interface{}   `json:"data"`
+	Type         interface{}   `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     int64         `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
+	ID           int64         `json:"id"`
 }
 
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateField,
 		arg.Routeid,
+		arg.Adminrouteid,
 		arg.Parentid,
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Struct,
 		arg.Author,
 		arg.Authorid,
 		arg.Datecreated,

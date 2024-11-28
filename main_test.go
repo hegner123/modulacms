@@ -15,6 +15,7 @@ type GlobalTestingState struct {
 var globalTestingState GlobalTestingState
 
 func setup() {
+    resetFlag:=false
 	fmt.Printf("TestMain setup\n")
 	db, ctx, err := getDb(Database{DB: "./modula_test.db"})
 	if err != nil {
@@ -22,7 +23,8 @@ func setup() {
 	}
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
-	err = initDb(db, ctx)
+
+	err = initDb(db, ctx, &resetFlag )
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}

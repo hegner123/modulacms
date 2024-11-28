@@ -37,21 +37,20 @@ func getDb(dbName Database) (*sql.DB, context.Context, error) {
 	return db, ctx, nil
 }
 
-func initDb(db *sql.DB, ctx context.Context,v *bool) error {
+func initDb(db *sql.DB, ctx context.Context, v *bool) error {
 	tables, err := readSchemaFiles(v)
 	if err != nil {
 		logError("couldn't read schema files.", err)
 	}
-    if !checkInstallStatus(){
-        createSystemUser()
-        createBaseAdminRoutes()
-        createSetupInserts(db, ctx, "1")
-        createSetupInserts(db, ctx, "2")
-    }
-
 	if _, err := db.ExecContext(ctx, tables); err != nil {
 		return err
 	}
+	if !checkInstallStatus() {
+        createSystemTableEntries()
+		createSystemUser()
+		createBaseAdminRoutes()
+	}
+
 
 	return nil
 }
@@ -59,12 +58,10 @@ func initDb(db *sql.DB, ctx context.Context,v *bool) error {
 func readSchemaFiles(verbose *bool) (string, error) {
 	var result []string
 
-	// Walk through the embedded file system
 	err := fs.WalkDir(sqlFiles, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return err // Handle traversal errors
+			return err
 		}
-		// Match only files named "schema.sql"
 		if !d.IsDir() && filepath.Base(path) == "schema.sql" {
 			data, err := sqlFiles.ReadFile(path)
 			if err != nil {
@@ -77,11 +74,9 @@ func readSchemaFiles(verbose *bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	// Join all the file contents
-    if *verbose{
-        fmt.Println(strings.Join(result, "\n"))
-
-    }
+	if *verbose {
+		fmt.Println(strings.Join(result, "\n"))
+	}
 	return strings.Join(result, "\n"), nil
 }
 

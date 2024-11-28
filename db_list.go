@@ -27,20 +27,20 @@ func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatype {
 	return fetchedDatatypes
 }
 
+func dbJoinDatatypeByRoute(db *sql.DB, ctx context.Context, id int64) []mdb.RecursiveJoinByRouteRow {
+	queries := mdb.New(db)
+	fetchedDatatypes, err := queries.RecursiveJoinByRoute(ctx, ni64(id))
+	if err != nil {
+		logError("failed to list and join fields: ", err)
+	}
+	return fetchedDatatypes
+}
+
 func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
 	queries := mdb.New(db)
 	fetchedFields, err := queries.ListField(ctx)
 	if err != nil {
 		logError("failed to get Fields ", err)
-	}
-	return fetchedFields
-}
-
-func dbListFieldsByRoute(db *sql.DB, ctx context.Context, id int64) []mdb.ListFieldJoinRow {
-	queries := mdb.New(db)
-	fetchedFields, err := queries.ListFieldJoin(ctx, ni64(id))
-	if err != nil {
-		logError("failed to list and join fields: ", err)
 	}
 	return fetchedFields
 }
@@ -92,5 +92,4 @@ func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
 
 func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
 	// TODO implement dependency checking for delete candidate
-
 }
