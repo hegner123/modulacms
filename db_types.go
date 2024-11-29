@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
-	"time"
+
 )
+
+
 
 func ns(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
@@ -15,7 +17,7 @@ func ns(s string) sql.NullString {
 func ni(i int) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
-
+/*
 func ni64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
@@ -23,11 +25,11 @@ func ni64(i int64) sql.NullInt64 {
 func nf(f float64) sql.NullFloat64 {
 	return sql.NullFloat64{Float64: f, Valid: true}
 }
-
+*/
 func nb(b bool) sql.NullBool {
 	return sql.NullBool{Bool: b, Valid: true}
 }
-
+/*
 func nt(t time.Time) sql.NullTime {
 	return sql.NullTime{Time: t, Valid: true}
 }
@@ -35,7 +37,7 @@ func nt(t time.Time) sql.NullTime {
 func nby(by byte) sql.NullByte {
 	return sql.NullByte{Byte: by, Valid: true}
 }
-
+*/
 func getColumnValue(column string, s interface{}) string {
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Ptr {
@@ -56,3 +58,7 @@ func getColumnValue(column string, s interface{}) string {
 
 	return ""
 }
+
+
+
+

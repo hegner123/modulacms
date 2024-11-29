@@ -1,15 +1,28 @@
 -- name: GetField :one
 SELECT * FROM field
-WHERE field_id = ? LIMIT 1;
+WHERE id = ? LIMIT 1;
 
--- name: CountField :one
-SELECT COUNT(*)
-FROM field;
-
+-- name: GetFieldId :one
+SELECT id FROM field
+WHERE id = ? LIMIT 1;
 
 -- name: ListField :many
 SELECT * FROM field
-ORDER BY field_id;
+ORDER BY id;
+
+-- name: ListFieldJoin :many
+SELECT 
+    f1.*,
+    f2.*
+FROM 
+    field f1
+LEFT JOIN 
+    field f2
+ON 
+    f1.fieldid = f2.parentid
+WHERE 
+    f1.routeid = ?;
+
 
 -- name: CreateField :one
 INSERT INTO field (
@@ -18,12 +31,13 @@ INSERT INTO field (
     label,
     data,
     type,
+    struct,
     author,
     authorid,
     datecreated,
     datemodified
     ) VALUES (
-?,?, ?,?, ?, ?,?, ?,?
+    ?,?,?, ?,?,?, ?,?,?,?
     ) RETURNING *;
 
 
@@ -34,20 +48,14 @@ set routeid = ?,
     label = ?,
     data = ?,
     type = ?,
+    struct = ?,
     author = ?,
     authorid = ?,
     datecreated = ?,
     datemodified = ?
-    WHERE field_id = ?
+    WHERE id = ?
     RETURNING *;
 
 -- name: DeleteField :exec
 DELETE FROM field
-WHERE field_id = ?;
-
-
-
--- name: ListFieldByRouteId :many
-SELECT field_id, routeid, parentid, label, data, type
-FROM field
-WHERE routeid = ?;
+WHERE id = ?;

@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"os"
 	"testing"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
@@ -124,6 +126,7 @@ func TestListTables(t *testing.T) {
 		t.FailNow()
 	}
 }
+
 func TestListDatatype(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
@@ -141,4 +144,67 @@ func TestListDatatype(t *testing.T) {
 	}
 }
 
+func TestListDatatypeByRoute(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	res := func() interface{} {
+		return dbListDatatypeById(db, ctx, 1)
+	}()
 
+	if _, ok := res.([]mdb.ListDatatypeByRouteIdRow); ok {
+		return
+	} else {
+		t.FailNow()
+	}
+}
+
+func TestListFieldByRoute(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	res := func() interface{} {
+		return dbListFieldById(db, ctx, 1)
+	}()
+
+	if _, ok := res.([]mdb.ListFieldByRouteIdRow); ok {
+		return
+	} else {
+		t.FailNow()
+	}
+}
+
+func TestListChildrenOfRoute(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	datas := dbListDatatypeById(db, ctx, 1)
+
+	field := dbListFieldById(db, ctx, 1)
+
+	file, err := os.Create("log.txt")
+	if err != nil {
+		logError("failed to create file ", err)
+	}
+	dataMap := map[string][]mdb.ListDatatypeByRouteIdRow{
+		"Datatypes": datas,
+	}
+	fieldMap := map[string][]mdb.ListFieldByRouteIdRow{
+		"Fields": field,
+	}
+	w := json.NewEncoder(file)
+	err = w.Encode(dataMap)
+	if err != nil {
+		logError("failed to encode datas", err)
+	}
+	err = w.Encode(fieldMap)
+	if err != nil {
+		logError("failed to encode field", err)
+	}
+}

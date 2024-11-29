@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+//	"fmt"
 	"net/http"
-	"strconv"
+//	"strconv"
 )
 
 func apiListAdminRoutes(w http.ResponseWriter, r *http.Request) error {
@@ -68,6 +68,7 @@ func apiListMediaDimensions(w http.ResponseWriter, r *http.Request) error {
 }
 
 func apiListFieldsForRoute(w http.ResponseWriter, r *http.Request) error {
+    /*
 	var routeid int64
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -96,6 +97,8 @@ func apiListFieldsForRoute(w http.ResponseWriter, r *http.Request) error {
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(fields)
 	return nil
+    */
+    return nil
 }
 
 func apiListRoutes(w http.ResponseWriter, r *http.Request) error {

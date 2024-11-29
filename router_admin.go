@@ -6,17 +6,23 @@ import (
 )
 
 func handleAdminRoutes(w http.ResponseWriter, r *http.Request, segments []string) {
+	pLog("admin router")
 	db, ctx, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
 	defer db.Close()
-	s := segments[ADMIN]
+	s := r.URL.Path
+	pLog(s)
 	w.Header().Set("Content-Type", "text/html")
 	route := dbGetAdminRoute(db, ctx, s)
-	res := servePageFromRoute(route)
-	err = res.ExecuteTemplate(w, "admin", res)
+	s, ok := route.Template.(string)
+	if !ok {
+		return
+	} 
+	res := servePageFromRoute(s)
+	err = res.ExecuteTemplate(w, s, res)
 	if err != nil {
 		logError("failed to write response : ", err)
 	}

@@ -8,10 +8,10 @@ FROM adminroute;
 
 -- name: GetAdminRouteById :one
 SELECT * FROM adminroute
-WHERE id = ? LIMIT 1;
+WHERE admin_route_id = ? LIMIT 1;
 
 -- name: GetAdminRouteId :one
-SELECT id FROM adminroute
+SELECT admin_route_id FROM adminroute
 WHERE slug = ? LIMIT 1;
 
 -- name: ListAdminRoute :many
@@ -48,3 +48,5 @@ set slug = ?,
 -- name: DeleteAdminRoute :exec
 DELETE FROM adminroute
 WHERE slug = ?;
+
+

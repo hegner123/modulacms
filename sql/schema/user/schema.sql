@@ -1,5 +1,5 @@
 CREATE TABLE user(
-    id INTEGER PRIMARY KEY,
+    user_id INTEGER PRIMARY KEY,
     datecreated TEXT NOT NULL,
     datemodified TEXT NOT NULL,
     username TEXT NOT NULL UNIQUE,

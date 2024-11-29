@@ -14,13 +14,13 @@ func TestUpdateUser(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	id := int64(1)
+	id := int64(2)
 	params := mdb.UpdateUserParams{
 		Datemodified: times,
-		Name:         "system",
+		Name:         "systemupdate",
 		Hash:         "has",
 		Role:         "admin",
-		ID:           id,
+		UserID:       id,
 	}
 
 	updatedUser := dbUpdateUser(db, ctx, params)
@@ -84,42 +84,6 @@ func TestUpdateRoute(t *testing.T) {
 	}
 }
 
-func TestUpdateMedia(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	id := int64(1)
-
-	params := mdb.UpdateMediaParams{
-		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
-		Alt:                ns("test"),
-		Caption:            ns("test"),
-		Description:        ns("test"),
-		Author:             "system",
-		Authorid:           1,
-		Datemodified:       times,
-		Url:                ns("public/2024/11/test.png"),
-		Mimetype:           ns("image/png"),
-		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
-		ID:                 id,
-	}
-
-	updatedMedia := dbUpdateMedia(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Name)
-
-	if updatedMedia != expected {
-		t.FailNow()
-	}
-}
-
 func TestUpdateField(t *testing.T) {
 	times := timestampS()
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
@@ -127,23 +91,73 @@ func TestUpdateField(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	id := int64(1)
+	id := int64(3)
 	params := mdb.UpdateFieldParams{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
+		Parentid:     int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       ns("system"),
+		Author:       "system",
 		Authorid:     1,
-		Datecreated:  ns(times),
 		Datemodified: ns(times),
-		ID:           id,
+		Datecreated:  ns(times),
+		FieldID:      id,
 	}
 
 	updatedField := dbUpdateField(db, ctx, params)
 	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
 
 	if updatedField != expected {
+		t.FailNow()
+	}
+}
+
+func TestUpdateDatatype(t *testing.T) {
+	times := timestampS()
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	id := int64(1)
+	params := mdb.UpdateDatatypeParams{
+		Routeid:      int64(1),
+		Parentid:     ni(1),
+		Label:        "Parent",
+		Type:         "text",
+		Author:       "system",
+		Authorid:     1,
+		Datemodified: ns(times),
+		DatatypeID:   id,
+	}
+
+	updatedDatatype := dbUpdateDatatype(db, ctx, params)
+	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
+
+	if updatedDatatype != expected {
+		t.FailNow()
+	}
+}
+
+func TestUpdateMedia(t *testing.T) {
+	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+
+	params := mdb.UpdateMediaParams{
+		Name: ns("Best"),
+        Author: "system",
+        Authorid: int64(1),
+		ID:   int64(2),
+	}
+
+	updatedMedia := dbUpdateMedia(db, ctx, params)
+	expected := fmt.Sprintf("Successfully updated %v\n", params.Name)
+
+	if updatedMedia != expected {
 		t.FailNow()
 	}
 }

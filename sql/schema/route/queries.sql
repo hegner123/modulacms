@@ -7,7 +7,7 @@ SELECT COUNT(*)
 FROM route;
 
 -- name: GetRouteId :one
-SELECT id FROM route
+SELECT route_id FROM route
 WHERE slug = ? LIMIT 1;
 
 -- name: ListRoute :many

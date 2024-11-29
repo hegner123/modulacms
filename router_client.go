@@ -1,7 +1,7 @@
 package main
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -12,12 +12,14 @@ func handleClientRoutes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, ctx, err := getDb(Database{})
+	db, _, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
     defer db.Close()
+    return
+    /*
 	matchedRoute := dbGetRoute(db, ctx, r.URL.Path)
 	if err != nil {
 		redirectTo404(w, r)
@@ -29,6 +31,6 @@ func handleClientRoutes(w http.ResponseWriter, r *http.Request) {
 
 		err = json.NewEncoder(w).Encode(fields)
 		http.Error(w, "Failed to encode json", http.StatusInternalServerError)
-	
+*/	
 
 }

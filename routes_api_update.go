@@ -57,7 +57,7 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request) error {
 	updatedDatatype := mdb.UpdateDatatypeParams{}
 	jsonDatatype := formMapJson(r)
 	json.Unmarshal(jsonDatatype, updatedDatatype)
-	updatedDatatype.ID = intDatatypeId
+	updatedDatatype.DatatypeID = intDatatypeId
 	_ = dbUpdateDatatype(db, ctx, updatedDatatype)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
@@ -89,7 +89,7 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request) error {
 	updatedField := mdb.UpdateFieldParams{}
 	jsonField := formMapJson(r)
 	json.Unmarshal(jsonField, updatedField)
-	updatedField.ID = intFieldId
+	updatedField.FieldID = intFieldId
 	_ = dbUpdateField(db, ctx, updatedField)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
@@ -276,7 +276,7 @@ func apiUpdateUser(w http.ResponseWriter, r *http.Request) error {
 	updatedUser := mdb.UpdateUserParams{}
 	jsonUser := formMapJson(r)
 	json.Unmarshal(jsonUser, updatedUser)
-	updatedUser.ID = intUserId
+	updatedUser.UserID = intUserId
 	_ = dbUpdateUser(db, ctx, updatedUser)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)

@@ -22,20 +22,19 @@ func TestCreateUser(t *testing.T) {
 	insertedUser := dbCreateUser(db, ctx, mdb.CreateUserParams{
 		Datecreated:  times,
 		Datemodified: times,
-		Username:     "system",
-		Name:         "system",
-		Email:        "test2@modulacms.com",
+		Username:     "systemtest",
+		Name:         "systemtest",
+		Email:        "test2@modulacmstest.com",
 		Hash:         "has",
 		Role:         "admin",
 	})
-    logDb("modula_test.db")
 
 	expected := mdb.User{
 		Datecreated:  times,
 		Datemodified: times,
-		Username:     "system",
-		Name:         "system",
-		Email:        "test2@modulacms.com",
+		Username:     "systemtest",
+		Name:         "systemtest",
+		Email:        "test2@modulacmstest.com",
 		Hash:         "has",
 		Role:         "admin",
 	}
@@ -174,7 +173,7 @@ func TestCreateDatatype(t *testing.T) {
 	}
 	defer db.Close()
 	_, err = dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "system",
@@ -182,12 +181,12 @@ func TestCreateDatatype(t *testing.T) {
 		Datecreated:  times,
 		Datemodified: times,
 	})
-    if err != nil { 
-        logError("failed to create datatype", err)
-    }
+	if err != nil {
+		logError("failed to create datatype", err)
+	}
 
 	insertedDatatype, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
 		Parentid:     ni(1),
 		Label:        "title",
 		Type:         "text",
@@ -202,7 +201,7 @@ func TestCreateDatatype(t *testing.T) {
 	}
 
 	expected := mdb.Datatype{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
 		Parentid:     ni(1),
 		Label:        "title",
 		Type:         "text",
@@ -224,8 +223,9 @@ func TestCreateField(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      ni(1),
+	insertedField, _ := dbCreateField(db, ctx, mdb.CreateFieldParams{
+		Routeid:      int64(1),
+		Parentid:     int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
@@ -234,33 +234,14 @@ func TestCreateField(t *testing.T) {
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	})
-	if err != nil {
-		logError("failed to create field", err)
-	}
-
-	insertedField, err := dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      ni(1),
-		Parentid:     ni(1),
-		Label:        "title",
+	expected := mdb.Field{
+		Routeid:      int64(1),
+		Parentid:     int64(1),
+		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "system",
 		Authorid:     int64(1),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
-	})
-	if err != nil {
-		logError("failed to create field", err)
-	}
-
-	expected := mdb.Field{
-		Routeid:      ni(1),
-		Parentid:     ni(1),
-		Label:        "title",
-		Data:         "Test Field",
-		Type:         "text",
-		Author:       "system",
-		Authorid:     1,
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	}

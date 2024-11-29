@@ -2,12 +2,12 @@ package main
 
 import (
 	"html/template"
-
-	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-func servePageFromRoute(route mdb.Adminroute) *template.Template {
-	t, err := template.ParseGlob("./templates")
+func servePageFromRoute(templatePath string) *template.Template {
+	base := "./templates/"
+	concat := base + templatePath
+	t, err := template.ParseGlob(concat)
 	if err != nil {
 		logError("failed to parseTemplate", err)
 	}

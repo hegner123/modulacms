@@ -8,8 +8,33 @@ import (
 	"database/sql"
 )
 
+type AdminDatatype struct {
+	AdminDtID    int64         `json:"admin_dt_id"`
+	Adminrouteid int64         `json:"adminrouteid"`
+	Parentid     sql.NullInt64 `json:"parentid"`
+	Label        string        `json:"label"`
+	Type         string        `json:"type"`
+	Author       interface{}   `json:"author"`
+	Authorid     int64         `json:"authorid"`
+	Datecreated  interface{}   `json:"datecreated"`
+	Datemodified interface{}   `json:"datemodified"`
+}
+
+type AdminField struct {
+	AdminFieldID int64       `json:"admin_field_id"`
+	Adminrouteid int64       `json:"adminrouteid"`
+	Parentid     int64       `json:"parentid"`
+	Label        interface{} `json:"label"`
+	Data         interface{} `json:"data"`
+	Type         interface{} `json:"type"`
+	Author       interface{} `json:"author"`
+	Authorid     int64       `json:"authorid"`
+	Datecreated  interface{} `json:"datecreated"`
+	Datemodified interface{} `json:"datemodified"`
+}
+
 type Adminroute struct {
-	ID           int64       `json:"id"`
+	AdminRouteID int64       `json:"admin_route_id"`
 	Author       interface{} `json:"author"`
 	Authorid     interface{} `json:"authorid"`
 	Slug         string      `json:"slug"`
@@ -21,9 +46,8 @@ type Adminroute struct {
 }
 
 type Datatype struct {
-	ID           int64         `json:"id"`
-	Routeid      sql.NullInt64 `json:"routeid"`
-	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
+	DatatypeID   int64         `json:"datatype_id"`
+	Routeid      int64         `json:"routeid"`
 	Parentid     sql.NullInt64 `json:"parentid"`
 	Label        string        `json:"label"`
 	Type         string        `json:"type"`
@@ -34,17 +58,16 @@ type Datatype struct {
 }
 
 type Field struct {
-	ID           int64         `json:"id"`
-	Routeid      sql.NullInt64 `json:"routeid"`
-	Adminrouteid sql.NullInt64 `json:"adminrouteid"`
-	Parentid     sql.NullInt64 `json:"parentid"`
-	Label        interface{}   `json:"label"`
-	Data         interface{}   `json:"data"`
-	Type         interface{}   `json:"type"`
-	Author       interface{}   `json:"author"`
-	Authorid     int64         `json:"authorid"`
-	Datecreated  interface{}   `json:"datecreated"`
-	Datemodified interface{}   `json:"datemodified"`
+	FieldID      int64       `json:"field_id"`
+	Routeid      int64       `json:"routeid"`
+	Parentid     int64       `json:"parentid"`
+	Label        interface{} `json:"label"`
+	Data         interface{} `json:"data"`
+	Type         interface{} `json:"type"`
+	Author       interface{} `json:"author"`
+	Authorid     int64       `json:"authorid"`
+	Datecreated  interface{} `json:"datecreated"`
+	Datemodified interface{} `json:"datemodified"`
 }
 
 type Media struct {
@@ -76,7 +99,7 @@ type MediaDimension struct {
 }
 
 type Route struct {
-	ID           int64          `json:"id"`
+	RouteID      int64          `json:"route_id"`
 	Author       interface{}    `json:"author"`
 	Authorid     int64          `json:"authorid"`
 	Slug         string         `json:"slug"`
@@ -103,7 +126,7 @@ type Token struct {
 }
 
 type User struct {
-	ID           int64  `json:"id"`
+	UserID       int64  `json:"user_id"`
 	Datecreated  string `json:"datecreated"`
 	Datemodified string `json:"datemodified"`
 	Username     string `json:"username"`

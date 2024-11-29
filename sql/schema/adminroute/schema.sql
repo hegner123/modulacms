@@ -1,5 +1,5 @@
 CREATE TABLE adminroute (
-    id INTEGER PRIMARY KEY,
+    admin_route_id INTEGER PRIMARY KEY,
     author TEXT NOT NULL DEFAULT "system", 
     authorid INTEGER NOT NULL DEFAULT "0", 
     slug TEXT UNIQUE NOT NULL, 

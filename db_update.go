@@ -19,14 +19,13 @@ func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteP
 	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
 }
 
-func dbUpdateDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateDatatypeParams) error {
+func dbUpdateDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateDatatypeParams) string {
 	queries := mdb.New(db)
 	err := queries.UpdateDatatype(ctx, s)
 	if err != nil {
-		logError("failed to update field ", err)
-		return err
+		logError("failed to update datatype", err)
 	}
-	return nil
+	return fmt.Sprintf("Successfully updated %v\n", s.Label)
 }
 
 func dbUpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) string {

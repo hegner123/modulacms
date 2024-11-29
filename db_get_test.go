@@ -13,9 +13,9 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		logError("failed to connect to database ", err)
 	}
-    for i:=0;i<5;i++{
-	    insertPlaceholders(db, ctx, fmt.Sprint(i))
-    }
+	for i := 0; i < 5; i++ {
+		insertPlaceholders(db, ctx, fmt.Sprint(i))
+	}
 }
 
 func TestGetUser(t *testing.T) {
@@ -33,7 +33,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	expected := mdb.User{
-		ID:           int64(2),
+		UserID:       int64(2),
 		Datecreated:  userRow.Datecreated,
 		Datemodified: userRow.Datemodified,
 		Username:     "system",
@@ -65,18 +65,18 @@ func TestGetAdminRoute(t *testing.T) {
 	}
 	defer db.Close()
 
-	adminRouteRow := dbGetAdminRoute(db, ctx, "/test11")
+	adminRouteRow := dbGetAdminRoute(db, ctx, "/")
 
 	expected := mdb.Adminroute{
-		ID:           int64(1),
-		Author:       ns("system"),
+		AdminRouteID: int64(1),
+		Author:       "system",
 		Authorid:     1,
-		Slug:         "/test11",
-		Title:        "Test",
+		Slug:         "/",
+		Title:        "ModulaCMS",
 		Status:       int64(0),
 		Datecreated:  adminRouteRow.Datecreated,
 		Datemodified: adminRouteRow.Datemodified,
-		Template:     ns("page.html"),
+		Template:     ns("modula_base.html"),
 	}
 
 	if reflect.DeepEqual(adminRouteRow, expected) {
@@ -94,7 +94,7 @@ func TestGetRoute(t *testing.T) {
 	routeRow := dbGetRoute(db, ctx, "/test11")
 
 	expected := mdb.Route{
-		ID:           int64(1),
+		RouteID:      int64(1),
 		Author:       "system",
 		Authorid:     1,
 		Slug:         "/test11",
@@ -154,8 +154,8 @@ func TestGetField(t *testing.T) {
 	fieldRow := dbGetField(db, ctx, id)
 
 	expected := mdb.Field{
-		Routeid:      ni(1),
-		Parentid:     ni(1),
+		Routeid:      int64(1),
+		Parentid:     int64(1),
 		Label:        "title",
 		Data:         "Test Field",
 		Type:         "text",

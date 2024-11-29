@@ -7,9 +7,7 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-
 func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
-    
 	times := timestampS()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
 		Datecreated:  times,
@@ -45,25 +43,25 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             "systeminit"+modify,
+		Author:             "systeminit" + modify,
 		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
 		Url:                ns("public/2024/11/test1.png" + modify),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"+modify),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"+modify),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"+modify),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"+modify),
+		Optimizedmobile:    ns("public/2024/11/test-mobile.png" + modify),
+		Optimizedtablet:    ns("public/2024/11/test-tablet.png" + modify),
+		Optimizeddesktop:   ns("public/2024/11/test-desktop.png" + modify),
+		Optimizedultrawide: ns("public/2024/11/test-ultra.png" + modify),
 	})
 
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       "systeminit"+modify,
+		Author:       "systeminit" + modify,
 		Authorid:     1,
 		Datecreated:  ns(times),
 		Datemodified: ns(times),

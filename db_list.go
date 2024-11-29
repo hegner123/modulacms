@@ -27,15 +27,6 @@ func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatype {
 	return fetchedDatatypes
 }
 
-func dbJoinDatatypeByRoute(db *sql.DB, ctx context.Context, id int64) []mdb.RecursiveJoinByRouteRow {
-	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.RecursiveJoinByRoute(ctx, ni64(id))
-	if err != nil {
-		logError("failed to list and join fields: ", err)
-	}
-	return fetchedDatatypes
-}
-
 func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
 	queries := mdb.New(db)
 	fetchedFields, err := queries.ListField(ctx)
@@ -92,4 +83,21 @@ func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
 
 func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
 	// TODO implement dependency checking for delete candidate
+}
+
+func dbListDatatypeById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListDatatypeByRouteIdRow {
+	queries := mdb.New(db)
+	fetchedDatatypes, err := queries.ListDatatypeByRouteId(ctx, routeId)
+	if err != nil {
+		logError("failed to get Users ", err)
+	}
+	return fetchedDatatypes
+}
+func dbListFieldById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListFieldByRouteIdRow {
+	queries := mdb.New(db)
+	fetchedDatatypes, err := queries.ListFieldByRouteId(ctx, routeId)
+	if err != nil {
+		logError("failed to get Users ", err)
+	}
+	return fetchedDatatypes
 }

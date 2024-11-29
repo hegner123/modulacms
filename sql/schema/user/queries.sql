@@ -1,6 +1,6 @@
 -- name: GetUser :one
 SELECT * FROM user
-WHERE id = ? LIMIT 1;
+WHERE user_id = ? LIMIT 1;
 
 -- name: CountUsers :one
 SELECT COUNT(*)
@@ -11,12 +11,12 @@ SELECT * FROM user
 WHERE email = ? LIMIT 1;
 
 -- name: GetUserId :one
-SELECT id FROM user
+SELECT user_id FROM user
 WHERE email = ? LIMIT 1;
 
 -- name: ListUser :many
 SELECT * FROM user 
-ORDER BY id ;
+ORDER BY user_id ;
 
 -- name: CreateUser :one
 INSERT INTO user (
@@ -41,8 +41,8 @@ set datecreated = ?,
     email = ?,
     hash = ?,
     role = ?
-WHERE id = ?;
+WHERE user_id = ?;
 
 -- name: DeleteUser :exec
 DELETE FROM user
-WHERE id = ?;
+WHERE user_id = ?;

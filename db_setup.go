@@ -56,7 +56,6 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
 	})
 	_, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		Adminrouteid: ni(1),
 		Label:        "Parent",
 		Type:         "Navigation",
 		Author:       "system",
@@ -69,7 +68,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
     }
 
 	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      ni(1),
+		Routeid:      int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",

@@ -1,5 +1,5 @@
 CREATE TABLE route (
-    id INTEGER PRIMARY KEY,
+    route_id INTEGER PRIMARY KEY,
     author TEXT NOT NULL DEFAULT "system", 
     authorid INTEGER NOT NULL DEFAULT 1, 
     slug TEXT UNIQUE NOT NULL, 
