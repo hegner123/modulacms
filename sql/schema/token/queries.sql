@@ -2,6 +2,10 @@
 SELECT * FROM token
 WHERE id = ? LIMIT 1;
 
+-- name: CountTokens :one
+SELECT COUNT(*)
+FROM token;
+
 -- name: GetTokenByUserId :one
 SELECT * FROM token
 WHERE user_id = ? LIMIT 1;

@@ -10,6 +10,114 @@ import (
 	"database/sql"
 )
 
+const countAdminroute = `-- name: CountAdminroute :one
+SELECT COUNT(*)
+FROM adminroute
+`
+
+func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminroute)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countDatatype = `-- name: CountDatatype :one
+SELECT COUNT(*)
+FROM datatype
+`
+
+func (q *Queries) CountDatatype(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDatatype)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countField = `-- name: CountField :one
+SELECT COUNT(*)
+FROM field
+`
+
+func (q *Queries) CountField(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countField)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMD = `-- name: CountMD :one
+SELECT COUNT(*)
+FROM media_dimension
+`
+
+func (q *Queries) CountMD(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMD)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMedia = `-- name: CountMedia :one
+SELECT COUNT(*)
+FROM media
+`
+
+func (q *Queries) CountMedia(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMedia)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countRoute = `-- name: CountRoute :one
+SELECT COUNT(*)
+FROM route
+`
+
+func (q *Queries) CountRoute(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countRoute)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTables = `-- name: CountTables :one
+SELECT COUNT(*)
+FROM tables
+`
+
+func (q *Queries) CountTables(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTables)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countTokens = `-- name: CountTokens :one
+SELECT COUNT(*)
+FROM token
+`
+
+func (q *Queries) CountTokens(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countTokens)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUsers = `-- name: CountUsers :one
+SELECT COUNT(*)
+FROM user
+`
+
+func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAdminRoute = `-- name: CreateAdminRoute :one
 INSERT INTO adminroute (
 author,
@@ -85,7 +193,7 @@ type CreateDatatypeParams struct {
 	Label        string        `json:"label"`
 	Type         string        `json:"type"`
 	Author       interface{}   `json:"author"`
-	Authorid     interface{}   `json:"authorid"`
+	Authorid     int64         `json:"authorid"`
 	Datecreated  interface{}   `json:"datecreated"`
 	Datemodified interface{}   `json:"datemodified"`
 }
@@ -1348,7 +1456,7 @@ type UpdateDatatypeParams struct {
 	Label        string        `json:"label"`
 	Type         string        `json:"type"`
 	Author       interface{}   `json:"author"`
-	Authorid     interface{}   `json:"authorid"`
+	Authorid     int64         `json:"authorid"`
 	Datecreated  interface{}   `json:"datecreated"`
 	Datemodified interface{}   `json:"datemodified"`
 	ID           int64         `json:"id"`

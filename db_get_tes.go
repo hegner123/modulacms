@@ -13,7 +13,9 @@ func TestInit(t *testing.T) {
 	if err != nil {
 		logError("failed to connect to database ", err)
 	}
-	createSetupInserts(db, ctx, "1")
+    for i:=0;i<5;i++{
+	    insertPlaceholders(db, ctx, fmt.Sprint(i))
+    }
 }
 
 func TestGetUser(t *testing.T) {
@@ -157,7 +159,6 @@ func TestGetField(t *testing.T) {
 		Label:        "title",
 		Data:         "Test Field",
 		Type:         "text",
-		Struct:       ns("text"),
 		Author:       ns("system"),
 		Authorid:     1,
 		Datecreated:  fieldRow.Datecreated,

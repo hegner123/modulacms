@@ -3,6 +3,10 @@
 SELECT * FROM media
 WHERE id = ? LIMIT 1;
 
+-- name: CountMedia :one
+SELECT COUNT(*)
+FROM media;
+
 -- name: ListMedia :many
 SELECT * FROM media
 ORDER BY name;

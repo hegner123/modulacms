@@ -43,8 +43,14 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 	}
 	jsonBytes := formMapJson(r)
-	json.Unmarshal(jsonBytes, datatype)
-	newDatatype := dbCreateDataType(db, ctx, datatype)
+	err = json.Unmarshal(jsonBytes, &datatype)
+	if err != nil {
+		logError("failed to unmarshall", err)
+	}
+	newDatatype, err := dbCreateDataType(db, ctx, datatype)
+	if err != nil {
+		logError("failed to create", err)
+	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(newDatatype)
@@ -66,8 +72,14 @@ func apiCreateField(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
 	}
 	jsonBytes := formMapJson(r)
-	json.Unmarshal(jsonBytes, field)
-	newField := dbCreateField(db, ctx, field)
+	err = json.Unmarshal(jsonBytes, field)
+    if err != nil { 
+        logError("failed to unmarshall", err)
+    }
+	newField, err := dbCreateField(db, ctx, field)
+    if err != nil { 
+        logError("failed to create failed", err)
+    }
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(newField)

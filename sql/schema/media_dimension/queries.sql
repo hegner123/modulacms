@@ -3,6 +3,9 @@
 SELECT * FROM media_dimension
 WHERE id = ? LIMIT 1;
 
+-- name: CountMD :one
+SELECT COUNT(*)
+FROM media_dimension;
 -- name: ListMediaDimension :many
 SELECT * FROM media_dimension 
 ORDER BY label;

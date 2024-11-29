@@ -57,7 +57,7 @@ func main() {
 		if err != nil {
 			fmt.Printf("%s\n", err)
 		}
-		err = initDb(db, ctx, verbose)
+		err = initDb(db, ctx, verbose, "modula.db")
          
 		if err != nil {
 			fmt.Printf("\nFailed to initialize database: %s\n", err)

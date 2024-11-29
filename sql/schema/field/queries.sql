@@ -2,6 +2,10 @@
 SELECT * FROM field
 WHERE id = ? LIMIT 1;
 
+-- name: CountField :one
+SELECT COUNT(*)
+FROM field;
+
 -- name: GetFieldId :one
 SELECT id FROM field
 WHERE id = ? LIMIT 1;

@@ -20,24 +20,26 @@ func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteP
 	return insertedAdminRoute
 }
 
-func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) mdb.Datatype {
+func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatype, error) {
 	queries := mdb.New(db)
 	insertedDatatype, err := queries.CreateDatatype(ctx, s)
 	if err != nil {
 		logError("failed to create field ", err)
+		return insertedDatatype, err
 	}
 
-	return insertedDatatype
+	return insertedDatatype, nil
 }
 
-func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) mdb.Field {
+func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Field, error) {
 	queries := mdb.New(db)
 	insertedField, err := queries.CreateField(ctx, s)
 	if err != nil {
 		logError("failed to create field ", err)
+		return insertedField, err
 	}
 
-	return insertedField
+	return insertedField, nil
 }
 
 func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {

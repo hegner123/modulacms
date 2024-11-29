@@ -2,8 +2,8 @@ package main
 
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 
-func createBaseAdminRoutes() {
-	db, ctx, err := getDb(Database{})
+func createBaseAdminRoutes(dbName string) {
+	db, ctx, err := getDb(Database{DB: dbName})
 	if err != nil {
 		logError("failed to get db", err)
 	}
@@ -38,8 +38,8 @@ func createSystemTableEntries() {
     }
 }
 
-func createSystemUser() {
-	db, ctx, err := getDb(Database{})
+func createSystemUser(name string) {
+    db, ctx, err := getDb(Database{DB:name})
 	if err != nil {
 		logError("failed to get db", err)
 	}

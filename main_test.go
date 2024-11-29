@@ -24,11 +24,12 @@ func setup() {
 	globalTestingState.Initialized = true
 	globalTestingState.Db = db
 
-	err = initDb(db, ctx, &resetFlag )
+	err = initDb(db, ctx, &resetFlag , "modula_test.db")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-    createSetupInserts(db, ctx, "")
+    //createSetupInserts(db,ctx)
+   // insertPlaceholders(db, ctx, "")
 }
 
 func teardown() {

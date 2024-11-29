@@ -37,7 +37,7 @@ func getDb(dbName Database) (*sql.DB, context.Context, error) {
 	return db, ctx, nil
 }
 
-func initDb(db *sql.DB, ctx context.Context, v *bool) error {
+func initDb(db *sql.DB, ctx context.Context, v *bool, database string) error {
 	tables, err := readSchemaFiles(v)
 	if err != nil {
 		logError("couldn't read schema files.", err)
@@ -45,10 +45,10 @@ func initDb(db *sql.DB, ctx context.Context, v *bool) error {
 	if _, err := db.ExecContext(ctx, tables); err != nil {
 		return err
 	}
-	if !checkInstallStatus() {
-        createSystemTableEntries()
-		createSystemUser()
-		createBaseAdminRoutes()
+	if !checkInstallStatus(database) {
+		createSystemUser("modula_test.db")
+        logDb("modula_test.db")
+		createBaseAdminRoutes("modula_test.db")
 	}
 
 

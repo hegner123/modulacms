@@ -1,7 +1,14 @@
-select * from field;
+-- adminroute
 select * from adminroute;
-select * from route;
-select * from user;
-select * from media_dimension;
-select * from tables;
+-- field
+select * from field;
+-- media
 select * from media;
+-- media_dimension
+select * from media_dimension;
+-- route
+select * from route;
+-- tables
+select * from tables;
+-- user
+select * from user;

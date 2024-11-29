@@ -3,6 +3,10 @@
 SELECT * FROM datatype
 WHERE id = ? LIMIT 1;
 
+-- name: CountDatatype :one
+SELECT COUNT(*)
+FROM datatype;
+
 -- name: GetDatatypeId :one
 SELECT id FROM datatype
 WHERE id = ? LIMIT 1;

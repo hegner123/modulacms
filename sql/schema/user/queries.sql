@@ -2,6 +2,10 @@
 SELECT * FROM user
 WHERE id = ? LIMIT 1;
 
+-- name: CountUsers :one
+SELECT COUNT(*)
+FROM user;
+
 -- name: GetUserByEmail :one
 SELECT * FROM user
 WHERE email = ? LIMIT 1;

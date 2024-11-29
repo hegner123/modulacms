@@ -28,7 +28,7 @@ type Datatype struct {
 	Label        string        `json:"label"`
 	Type         string        `json:"type"`
 	Author       interface{}   `json:"author"`
-	Authorid     interface{}   `json:"authorid"`
+	Authorid     int64         `json:"authorid"`
 	Datecreated  interface{}   `json:"datecreated"`
 	Datemodified interface{}   `json:"datemodified"`
 }

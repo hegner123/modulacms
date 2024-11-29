@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -52,4 +53,31 @@ func pLog(args ...any) {
 		fmt.Print(arg)
 	}
 	fmt.Printf("%s\n", RESET)
+}
+
+func logDb(dbName string) {
+	db, ctx, err := getDb(Database{DB: dbName})
+	if err != nil {
+		logError("failed to : ", err)
+	}
+	adminroutes := dbListAdminRoute(db, ctx)
+	datatypes := dbListDatatype(db, ctx)
+	users := dbListUser(db, ctx)
+	fields := dbListField(db, ctx)
+	routes := dbListRoute(db, ctx)
+    pLog(users)
+	pLog(adminroutes)
+    pLog(datatypes)
+    pLog(fields)
+    pLog(routes)
+}
+
+
+func logStruct(struc any){
+jsonStr, err := json.Marshal(struc)
+	if err != nil {
+		fmt.Println("Error:", err)
+		return
+	}
+	fmt.Println(string(jsonStr))
 }

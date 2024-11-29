@@ -25,7 +25,7 @@ func handleClientRoutes(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("\nerror: %s", err)
 		return
 	}
-	fields := dbListFieldsByRoute(db, ctx, matchedRoute.ID)
+	fields := dbJoinDatatypeByRoute(db, ctx, matchedRoute.ID)
 
 		err = json.NewEncoder(w).Encode(fields)
 		http.Error(w, "Failed to encode json", http.StatusInternalServerError)

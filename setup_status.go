@@ -1,29 +1,27 @@
 package main
 
-func checkInstallStatus() bool {
+import "fmt"
+
+func checkInstallStatus(database string) bool {
 	var userExists, routeExists bool
-	db, ctx, err := getDb(Database{})
+	db, ctx, err := getDb(Database{DB: database})
 	if err != nil {
 		logError("failed to get db", err)
 	}
 	defer db.Close()
 	userExists = false
-    routeExists = false
+	routeExists = false
 
-	user, err := dbGetUser(db, ctx, int64(1))
-	if err != nil {
-		logError("failed to confirm system user install", err)
-	}
-	homeRes := dbGetAdminRoute(db, ctx, "/")
+	userCount := countUsers(db, ctx)
+	fmt.Printf("userCount :%d\n", userCount)
+	adminRoutes := countAdminRoutes(db, ctx)
 
-
-	if user.Email == "system@modulacms.com" {
+	if userCount > 0 {
 		userExists = true
 	}
-	if homeRes.Slug == "/" {
+	if adminRoutes > 0 {
 		routeExists = true
 	}
-
 
 	if userExists && routeExists {
 		return true

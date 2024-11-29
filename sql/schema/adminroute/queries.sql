@@ -2,6 +2,10 @@
 SELECT * FROM adminroute
 WHERE slug = ? LIMIT 1;
 
+-- name: CountAdminroute :one
+SELECT COUNT(*)
+FROM adminroute;
+
 -- name: GetAdminRouteById :one
 SELECT * FROM adminroute
 WHERE id = ? LIMIT 1;

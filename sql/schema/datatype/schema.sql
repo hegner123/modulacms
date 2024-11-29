@@ -6,7 +6,7 @@ CREATE TABLE datatype (
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author TEXT NOT NULL DEFAULT "system",
-    authorid INTEGER NOT NULL DEFAULT "0",
+    authorid INTEGER NOT NULL DEFAULT 1,
     datecreated TEXT  DEFAULT LOCALTIMESTAMP, 
     datemodified TEXT DEFAULT LOCALTIMESTAMP,
     FOREIGN KEY (author) REFERENCES user(username) ON DELETE SET DEFAULT ON UPDATE CASCADE,

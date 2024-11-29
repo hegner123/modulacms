@@ -3,6 +3,10 @@
 SELECT * FROM tables
 WHERE id = ? LIMIT 1;
 
+-- name: CountTables :one
+SELECT COUNT(*)
+FROM tables;
+
 -- name: GetTableId :one
 SELECT id FROM tables
 WHERE id = ? LIMIT 1;

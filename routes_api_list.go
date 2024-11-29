@@ -86,7 +86,7 @@ func apiListFieldsForRoute(w http.ResponseWriter, r *http.Request) error {
 	} else {
 		fmt.Fprintf(w, "Key '%s' does not exist\n", key)
 	}
-	fs := dbListFieldsByRoute(db, ctx, routeid)
+	fs := dbJoinDatatypeByRoute(db, ctx, routeid)
 	fields, err := json.Marshal(fs)
 	if err != nil {
 		logError("failed to Marshal : ", err)

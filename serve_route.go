@@ -7,10 +7,10 @@ import (
 )
 
 func servePageFromRoute(route mdb.Adminroute) *template.Template {
-    t,err:=template.ParseGlob("./templates")
-    if err != nil { 
-        logError("failed to parseTemplate", err)
-    }
-        
+	t, err := template.ParseGlob("./templates")
+	if err != nil {
+		logError("failed to parseTemplate", err)
+	}
+
 	return t
 }
