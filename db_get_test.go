@@ -2,20 +2,28 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"testing"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-func TestInit(t *testing.T) {
+func TestGetInit(t *testing.T) {
 	db, ctx, err := getDb(Database{DB: "modula_test.db"})
 	if err != nil {
-		logError("failed to connect to database ", err)
+		logError("failed to connect or create database", err)
 	}
-	for i := 0; i < 5; i++ {
-		insertPlaceholders(db, ctx, fmt.Sprint(i))
+	defer db.Close()
+	file, err := os.ReadFile("./sql/test1.sql")
+	if err != nil {
+		logError("failed to find or open file", err)
 	}
+	s := fmt.Sprint(file)
+    _,err = db.ExecContext(ctx, s)
+    if err != nil { 
+        t.Failed()
+    }
 }
 
 func TestGetUser(t *testing.T) {
@@ -24,7 +32,7 @@ func TestGetUser(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	id := int64(2)
+	id := int64(1)
 
 	userRow, err := dbGetUser(db, ctx, id)
 	if err != nil {
@@ -33,7 +41,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	expected := mdb.User{
-		UserID:       int64(2),
+		UserID:       int64(1),
 		Datecreated:  userRow.Datecreated,
 		Datemodified: userRow.Datemodified,
 		Username:     "system",
@@ -65,7 +73,7 @@ func TestGetAdminRoute(t *testing.T) {
 	}
 	defer db.Close()
 
-	adminRouteRow := dbGetAdminRoute(db, ctx, "/")
+	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/")
 
 	expected := mdb.Adminroute{
 		AdminRouteID: int64(1),

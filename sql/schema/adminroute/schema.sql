@@ -8,7 +8,7 @@ CREATE TABLE adminroute (
     datecreated TEXT NOT NULL, 
     datemodified TEXT NOT NULL, 
     template TEXT NOT NULL DEFAULT "modula_base.html",
-    FOREIGN KEY (author) REFERENCES user(username) ON DELETE SET DEFAULT ON UPDATE CASCADE,
-    FOREIGN KEY (authorid) REFERENCES user(id) ON DELETE SET DEFAULT ON UPDATE CASCADE
+    FOREIGN KEY (author) REFERENCES user (username) ON DELETE SET DEFAULT ON UPDATE CASCADE,
+    FOREIGN KEY (authorid) REFERENCES user (user_id) ON DELETE SET DEFAULT ON UPDATE CASCADE
 );
 

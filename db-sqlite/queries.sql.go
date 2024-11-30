@@ -227,14 +227,14 @@ INSERT INTO admin_datatype (
 `
 
 type CreateAdminDatatypeParams struct {
-	Adminrouteid int64         `json:"adminrouteid"`
-	Parentid     sql.NullInt64 `json:"parentid"`
-	Label        string        `json:"label"`
-	Type         string        `json:"type"`
-	Author       interface{}   `json:"author"`
-	Authorid     int64         `json:"authorid"`
-	Datecreated  interface{}   `json:"datecreated"`
-	Datemodified interface{}   `json:"datemodified"`
+	Adminrouteid int64          `json:"adminrouteid"`
+	Parentid     sql.NullInt64  `json:"parentid"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       string         `json:"author"`
+	Authorid     int64          `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
 }
 
 func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) (AdminDatatype, error) {
@@ -1805,15 +1805,15 @@ set adminrouteid = ?,
 `
 
 type UpdateAdminDatatypeParams struct {
-	Adminrouteid int64         `json:"adminrouteid"`
-	Parentid     sql.NullInt64 `json:"parentid"`
-	Label        string        `json:"label"`
-	Type         string        `json:"type"`
-	Author       interface{}   `json:"author"`
-	Authorid     int64         `json:"authorid"`
-	Datecreated  interface{}   `json:"datecreated"`
-	Datemodified interface{}   `json:"datemodified"`
-	AdminDtID    int64         `json:"admin_dt_id"`
+	Adminrouteid int64          `json:"adminrouteid"`
+	Parentid     sql.NullInt64  `json:"parentid"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       string         `json:"author"`
+	Authorid     int64          `json:"authorid"`
+	Datecreated  sql.NullString `json:"datecreated"`
+	Datemodified sql.NullString `json:"datemodified"`
+	AdminDtID    int64          `json:"admin_dt_id"`
 }
 
 func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDatatypeParams) error {

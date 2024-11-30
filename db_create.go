@@ -86,7 +86,7 @@ func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb
 	queries := mdb.New(db)
 	insertedToken, err := queries.CreateToken(ctx, s)
 	if err != nil {
-		logError("failed to create table ", err)
+		logError("failed to create token", err)
 	}
 
 	return insertedToken

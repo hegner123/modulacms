@@ -25,7 +25,7 @@ func TestDeleteField(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	id := 2
+	id := 1
 	result := dbDeleteField(db, ctx, int64(id))
 	expected := fmt.Sprintf("Deleted Field %d successfully", id)
 	if expected != result {

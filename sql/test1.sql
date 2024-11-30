@@ -1,3 +1,5 @@
+PRAGMA foreign_keys = ON;
+
 INSERT INTO admin_datatype (admin_dt_id,adminrouteid,parentid,label,"type",author,authorid,datecreated,datemodified) VALUES
 	 (1,1,NULL,'Parent','text','system',1,'LOCALTIMESTAMP','LOCALTIMESTAMP'),
 	 (2,1,1,'Child','text','system',1,'LOCALTIMESTAMP','LOCALTIMESTAMP');
@@ -31,4 +33,194 @@ INSERT INTO route (route_id,author,authorid,slug,title,status,datecreated,datemo
 	 (4,'system',1,'/get/sponsors','Test Site',0,'18723972','18274981273','');
 INSERT INTO "user" (user_id,datecreated,datemodified,username,name,email,hash,"role") VALUES
 	 (1,'98450298365','19827409124','system','system','system@modulacms.com','ioweyoiquyteksdbvl','admin');
+
+INSERT INTO media (
+    name,
+    displayname,
+    alt,
+    caption,
+    description,
+    class,
+    author,
+    authorid,
+    datecreated,
+    datemodified,
+    url,
+    mimetype,
+    dimensions,
+    optimizedmobile,
+    optimizedtablet,
+    optimizeddesktop,
+    optimizedultrawide
+) VALUES (
+    'media1',
+    'Media One',
+    'Alt text for media one',
+    'Caption for media one',
+    'Description for media one',
+    'class1',
+    'system',
+    1,
+    '2023-10-01 12:00:00',
+    '2023-10-01 12:00:00',
+    'http://example.com/media1',
+    'image/jpeg',
+    '800x600',
+    'media1_mobile.jpg',
+    'media1_tablet.jpg',
+    'media1_desktop.jpg',
+    'media1_ultrawide.jpg'
+);
+
+INSERT INTO media (
+    name,
+    displayname,
+    alt,
+    caption,
+    description,
+    class,
+    author,
+    authorid,
+    datecreated,
+    datemodified,
+    url,
+    mimetype,
+    dimensions,
+    optimizedmobile,
+    optimizedtablet,
+    optimizeddesktop,
+    optimizedultrawide
+) VALUES (
+    'media2',
+    'Media Two',
+    'Alt text for media two',
+    'Caption for media two',
+    'Description for media two',
+    'class2',
+    'system',
+    1,
+    '2023-10-02 13:00:00',
+    '2023-10-02 13:00:00',
+    'http://example.com/media2',
+    'image/png',
+    '1024x768',
+    'media2_mobile.png',
+    'media2_tablet.png',
+    'media2_desktop.png',
+    'media2_ultrawide.png'
+);
+
+INSERT INTO media (
+    name,
+    displayname,
+    alt,
+    caption,
+    description,
+    class,
+    author,
+    authorid,
+    datecreated,
+    datemodified,
+    url,
+    mimetype,
+    dimensions,
+    optimizedmobile,
+    optimizedtablet,
+    optimizeddesktop,
+    optimizedultrawide
+) VALUES (
+    'media3',
+    'Media Three',
+    'Alt text for media three',
+    'Caption for media three',
+    'Description for media three',
+    'class3',
+    'system',
+    1,
+    '2023-10-03 14:00:00',
+    '2023-10-03 14:00:00',
+    'http://example.com/media3',
+    'video/mp4',
+    '1920x1080',
+    'media3_mobile.mp4',
+    'media3_tablet.mp4',
+    'media3_desktop.mp4',
+    'media3_ultrawide.mp4'
+);
+
+INSERT INTO media (
+    name,
+    displayname,
+    alt,
+    caption,
+    description,
+    class,
+    author,
+    authorid,
+    datecreated,
+    datemodified,
+    url,
+    mimetype,
+    dimensions,
+    optimizedmobile,
+    optimizedtablet,
+    optimizeddesktop,
+    optimizedultrawide
+) VALUES (
+    'media4',
+    'Media Four',
+    'Alt text for media four',
+    'Caption for media four',
+    'Description for media four',
+    'class4',
+    'system',
+    1,
+    '2023-10-04 15:00:00',
+    '2023-10-04 15:00:00',
+    'http://example.com/media4',
+    'audio/mpeg',
+    'N/A',
+    'media4_mobile.mp3',
+    'media4_tablet.mp3',
+    'media4_desktop.mp3',
+    'media4_ultrawide.mp3'
+);
+
+INSERT INTO media (
+    name,
+    displayname,
+    alt,
+    caption,
+    description,
+    class,
+    author,
+    authorid,
+    datecreated,
+    datemodified,
+    url,
+    mimetype,
+    dimensions,
+    optimizedmobile,
+    optimizedtablet,
+    optimizeddesktop,
+    optimizedultrawide
+) VALUES (
+    'media5',
+    'Media Five',
+    'Alt text for media five',
+    'Caption for media five',
+    'Description for media five',
+    'class5',
+    'system',
+    1,
+    '2023-10-05 16:00:00',
+    '2023-10-05 16:00:00',
+    'http://example.com/media5',
+    'application/pdf',
+    'A4',
+    'media5_mobile.pdf',
+    'media5_tablet.pdf',
+    'media5_desktop.pdf',
+    'media5_ultrawide.pdf'
+);
 

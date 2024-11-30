@@ -63,9 +63,9 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	})
-    if err != nil { 
-        logError("failed to create datatype: ", err)
-    }
+	if err != nil {
+		logError("failed to create datatype: ", err)
+	}
 
 	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
 		Routeid:      int64(1),
@@ -77,9 +77,9 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
 	})
-    if err != nil { 
-        logError("failed to create field: ", err)
-    }
+	if err != nil {
+		logError("failed to create field: ", err)
+	}
 	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
 		Label:  ns("Tablet"),
 		Width:  ni(1920),

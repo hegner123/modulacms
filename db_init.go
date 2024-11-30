@@ -47,10 +47,9 @@ func initDb(db *sql.DB, ctx context.Context, v *bool, database string) error {
 	}
 	if !checkInstallStatus(database) {
 		createSystemUser("modula_test.db")
-        logDb("modula_test.db")
-		createBaseAdminRoutes("modula_test.db")
+		logDb("modula_test.db")
+		//		createBaseAdminRoutes("modula_test.db")
 	}
-
 
 	return nil
 }

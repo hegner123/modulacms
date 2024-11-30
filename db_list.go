@@ -93,6 +93,7 @@ func dbListDatatypeById(db *sql.DB, ctx context.Context, routeId int64) []mdb.Li
 	}
 	return fetchedDatatypes
 }
+
 func dbListFieldById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListFieldByRouteIdRow {
 	queries := mdb.New(db)
 	fetchedDatatypes, err := queries.ListFieldByRouteId(ctx, routeId)

@@ -64,16 +64,59 @@
 
 
 ## Flags
--h Display help information about the application
--v Print the version of the application and exit
--q Run the application with minimal or no output
--V|V|V|V Provide more detailed output for debugging or analysis
--p Specify a network port
---config Specify a configuration file
--S Enable SSL/TLS for secure connections
---db use a connection string to connect to a db
---reset clear tables and reset. 
+- -h Display help information about the application
+- -v Print the version of the application and exit
+- -q Run the application with minimal or no output
+- -V|V|V|V Provide more detailed output for debugging or analysis
+- -p Specify a network port
+- --config Specify a configuration file
+- -S Enable SSL/TLS for secure connections
+- --db use a connection string to connect to a db
+- --reset clear tables and reset. 
 
+## Admin Bar Links
+- Github
+- Support
+- Documentation
+- Help
+- Logout
+
+## Sidebar Links
+- Dashboard
+- Routes
+- Data types
+- Fields
+- Media
+- Plugins
+- Users
+
+## Style Sections
+_______________________________
+|________Admin Bar_____________| 
+|     |                        | 
+|     |                        | 
+| Left|                        | 
+| Side|        Editor          |
+| Bar |                        |
+|     |                        |
+|     |                        |
+|_____|________________________|
+
+- [ ] Admin Bar 
+    - Typography - sans-serif
+    - Color 
+        - Background Off Black - lightest
+        - Text Off white/grey
+- [ ] Side Bar
+    - Typography - sans-serif
+    - Color 
+        - Background Off Black - mid
+        - Text Off white/grey
+- [ ] Editor
+    - Typography - sans-serif
+    - Color 
+        - Background Off Black - darkest
+        - Text Off white/grey
 
 ## End Goal 
 - **CMS deliverable as an executable with templates.**

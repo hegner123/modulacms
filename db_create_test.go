@@ -54,7 +54,7 @@ func TestCreateAdminRoute(t *testing.T) {
 
 	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "system",
-		Authorid:     1,
+		Authorid:     int64(1),
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,

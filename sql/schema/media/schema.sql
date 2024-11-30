@@ -17,7 +17,7 @@ CREATE TABLE media(
     optimizedtablet TEXT,
     optimizeddesktop TEXT,
     optimizedultrawide TEXT,
-    FOREIGN KEY (author) REFERENCES user(username) ON DELETE SET DEFAULT ON UPDATE CASCADE,
-    FOREIGN KEY (authorid) REFERENCES user(id) ON DELETE SET DEFAULT ON UPDATE CASCADE
+    FOREIGN KEY (author) REFERENCES user (username) ON DELETE SET DEFAULT ON UPDATE CASCADE,
+    FOREIGN KEY (authorid) REFERENCES user (user_id) ON DELETE SET DEFAULT ON UPDATE CASCADE
 );
 
