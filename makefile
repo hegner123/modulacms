@@ -45,13 +45,14 @@ watch: ## Run the code with cosmtrek/air to have automatic reload on changes
 
 ## Test:
 test: ## Run the tests of the project
-	touch ./modula_test.db
+	touch testdb/create_tests.db	
+	touch ./testdb/testing2348263.db
+	rm ./testdb/*.db
 	
 	touch ./backups/tmp.zip
 	rm ./backups/*.zip
-	rm ./modula_test.db
-##	cp ./testdb/modula_test.db ./modula_test.db
 	$(GOTEST) -v -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
+	rm ./testdb/*.db
 
 coverage: ## Run the tests of the project and export the coverage
 	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...

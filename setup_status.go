@@ -4,7 +4,7 @@ import "fmt"
 
 func checkInstallStatus(database string) bool {
 	var userExists, routeExists bool
-	db, ctx, err := getDb(Database{DB: database})
+	db, ctx, err := getDb(Database{src: database})
 	if err != nil {
 		logError("failed to get db", err)
 	}

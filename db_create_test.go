@@ -11,9 +11,20 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
+var createTestTable string
+
+func TestCreateDBCopy(t *testing.T) {
+	testTable, err := createDbCopy("create_tests.db")
+	if err != nil {
+		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+		t.FailNow()
+	}
+	createTestTable = testTable
+}
+
 func TestCreateUser(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -46,14 +57,14 @@ func TestCreateUser(t *testing.T) {
 
 func TestCreateAdminRoute(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
 
 	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     int64(1),
 		Slug:         "/test",
 		Title:        "Test",
@@ -64,7 +75,7 @@ func TestCreateAdminRoute(t *testing.T) {
 	})
 
 	expected := mdb.Adminroute{
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
@@ -81,14 +92,14 @@ func TestCreateAdminRoute(t *testing.T) {
 
 func TestCreateRoute(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
 
 	insertedRoute := dbCreateRoute(db, ctx, mdb.CreateRouteParams{
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
@@ -99,7 +110,7 @@ func TestCreateRoute(t *testing.T) {
 	})
 
 	expected := mdb.Route{
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     1,
 		Slug:         "/test",
 		Title:        "Test",
@@ -116,7 +127,7 @@ func TestCreateRoute(t *testing.T) {
 
 func TestCreateMedia(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -128,7 +139,7 @@ func TestCreateMedia(t *testing.T) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             "system",
+		Author:             "systemtest",
 		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
@@ -147,7 +158,7 @@ func TestCreateMedia(t *testing.T) {
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
-		Author:             "system",
+		Author:             "systemtest",
 		Authorid:           1,
 		Datecreated:        times,
 		Datemodified:       times,
@@ -167,7 +178,7 @@ func TestCreateMedia(t *testing.T) {
 
 func TestCreateDatatype(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -176,7 +187,7 @@ func TestCreateDatatype(t *testing.T) {
 		Routeid:      int64(1),
 		Label:        "Parent",
 		Type:         "text",
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     int64(1),
 		Datecreated:  times,
 		Datemodified: times,
@@ -190,7 +201,7 @@ func TestCreateDatatype(t *testing.T) {
 		Parentid:     ni(1),
 		Label:        "title",
 		Type:         "text",
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     int64(1),
 		Datecreated:  times,
 		Datemodified: times,
@@ -205,7 +216,7 @@ func TestCreateDatatype(t *testing.T) {
 		Parentid:     ni(1),
 		Label:        "title",
 		Type:         "text",
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     1,
 		Datecreated:  times,
 		Datemodified: times,
@@ -218,7 +229,7 @@ func TestCreateDatatype(t *testing.T) {
 
 func TestCreateField(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -229,7 +240,7 @@ func TestCreateField(t *testing.T) {
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     int64(1),
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
@@ -240,7 +251,7 @@ func TestCreateField(t *testing.T) {
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
-		Author:       "system",
+		Author:       "systemtest",
 		Authorid:     int64(1),
 		Datecreated:  ns(times),
 		Datemodified: ns(times),
@@ -252,7 +263,7 @@ func TestCreateField(t *testing.T) {
 }
 
 func TestCreateMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -276,7 +287,7 @@ func TestCreateMediaDimension(t *testing.T) {
 }
 
 func TestCreateTables(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -306,7 +317,7 @@ func TestCreateToken(t *testing.T) {
 	if err != nil {
 		logError("failed to : ", err)
 	}
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: createTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}

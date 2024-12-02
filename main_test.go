@@ -1,41 +1,27 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 )
 
 type GlobalTestingState struct {
 	Initialized bool
-	Db          *sql.DB
 }
 
 var globalTestingState GlobalTestingState
 
 func setup() {
-    resetFlag:=false
 	fmt.Printf("TestMain setup\n")
-	db, ctx, err := getDb(Database{DB: "./modula_test.db"})
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
 	globalTestingState.Initialized = true
-	globalTestingState.Db = db
-
-	err = initDb(db, ctx, &resetFlag , "modula_test.db")
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
-    //createSetupInserts(db,ctx)
-   // insertPlaceholders(db, ctx, "")
 }
 
 func teardown() {
 	fmt.Printf("TestMain teardown\n")
 	globalTestingState.Initialized = false
-	globalTestingState.Db.Close()
 }
 
 func TestMain(m *testing.M) {
@@ -46,4 +32,32 @@ func TestMain(m *testing.M) {
 	teardown()
 	fmt.Printf("TestMain exit\n")
 	os.Exit(code)
+}
+
+func createDbCopy(dbName string) (string, error) {
+    times:= timestampS()
+	backup := " testdb/backups/"
+	base := "testdb/"
+    db:=strings.TrimSuffix(dbName,".db")
+	srcSQLName := backup + db + ".sql"
+
+	dstDbName := base + "testing" + times + dbName
+    _, err := os.Create(dstDbName)
+	if err != nil {
+		logError("failed to : ", err)
+	}
+
+	dstCmd := exec.Command("sqlite3", dstDbName, ".read " +srcSQLName )
+    output, err := dstCmd.CombinedOutput()
+
+	if err != nil {
+		fmt.Printf("Command failed: %s\n", err)
+	}
+
+	fmt.Printf("Command output:\n%s\n", output)
+	if err != nil {
+		return "", err
+	}
+
+	return dstDbName, nil
 }

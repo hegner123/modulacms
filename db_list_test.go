@@ -8,8 +8,18 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
+var listTestTable string
+func TestDBCopy(t *testing.T) {
+	testTable,err := createDbCopy("list_tests.db")
+    if err != nil { 
+        logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+        t.FailNow()
+    }
+	listTestTable = testTable
+}
+
 func TestListUser(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -26,7 +36,7 @@ func TestListUser(t *testing.T) {
 }
 
 func TestListAdminRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -43,7 +53,7 @@ func TestListAdminRoute(t *testing.T) {
 }
 
 func TestListRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -60,7 +70,7 @@ func TestListRoute(t *testing.T) {
 }
 
 func TestListMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -77,7 +87,7 @@ func TestListMedia(t *testing.T) {
 }
 
 func TestListField(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -94,7 +104,7 @@ func TestListField(t *testing.T) {
 }
 
 func TestListMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -111,7 +121,7 @@ func TestListMediaDimension(t *testing.T) {
 }
 
 func TestListTables(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -128,7 +138,7 @@ func TestListTables(t *testing.T) {
 }
 
 func TestListDatatype(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -145,7 +155,7 @@ func TestListDatatype(t *testing.T) {
 }
 
 func TestListDatatypeByRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -162,7 +172,7 @@ func TestListDatatypeByRoute(t *testing.T) {
 }
 
 func TestListFieldByRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -179,7 +189,7 @@ func TestListFieldByRoute(t *testing.T) {
 }
 
 func TestListChildrenOfRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: listTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}

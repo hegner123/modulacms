@@ -7,9 +7,20 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
+var updateTestTable string
+
+func TestUpdateDBCopy(t *testing.T) {
+	testTable,err := createDbCopy("update_tests.db")
+    if err != nil { 
+        logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+        t.FailNow()
+    }
+	updateTestTable = testTable
+}
+
 func TestUpdateUser(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -33,7 +44,7 @@ func TestUpdateUser(t *testing.T) {
 
 func TestUpdateAdminRoute(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -60,7 +71,7 @@ func TestUpdateAdminRoute(t *testing.T) {
 
 func TestUpdateRoute(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -86,7 +97,7 @@ func TestUpdateRoute(t *testing.T) {
 
 func TestUpdateField(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -115,7 +126,7 @@ func TestUpdateField(t *testing.T) {
 
 func TestUpdateDatatype(t *testing.T) {
 	times := timestampS()
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -123,7 +134,6 @@ func TestUpdateDatatype(t *testing.T) {
 	id := int64(1)
 	params := mdb.UpdateDatatypeParams{
 		Routeid:      int64(1),
-		Parentid:     ni(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "system",
@@ -141,17 +151,17 @@ func TestUpdateDatatype(t *testing.T) {
 }
 
 func TestUpdateMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
 
 	params := mdb.UpdateMediaParams{
-		Name: ns("Best"),
-        Author: "system",
-        Authorid: int64(1),
-		ID:   int64(2),
+		Name:     ns("Best"),
+		Author:   "system",
+		Authorid: int64(1),
+		ID:       int64(2),
 	}
 
 	updatedMedia := dbUpdateMedia(db, ctx, params)
@@ -163,7 +173,7 @@ func TestUpdateMedia(t *testing.T) {
 }
 
 func TestUpdateMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -184,7 +194,7 @@ func TestUpdateMediaDimension(t *testing.T) {
 }
 
 func TestUpdateTables(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: updateTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -202,3 +212,4 @@ func TestUpdateTables(t *testing.T) {
 		t.FailNow()
 	}
 }
+

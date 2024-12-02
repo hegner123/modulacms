@@ -21,15 +21,15 @@ var sqlFiles embed.FS
 func getDb(dbName Database) (*sql.DB, context.Context, error) {
 	ctx := context.Background()
 
-	if dbName.DB == "" {
-		dbName.DB = "./modula.db"
+	if dbName.src == "" {
+		dbName.src = "./modula.db"
 	}
-	db, err := sql.Open("sqlite3", dbName.DB)
+	db, err := sql.Open("sqlite3", dbName.src)
 	if err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
 		return nil, ctx, err
 	}
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+    _, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 008 : %s\n", err)
 		return nil, ctx, err
@@ -46,8 +46,10 @@ func initDb(db *sql.DB, ctx context.Context, v *bool, database string) error {
 		return err
 	}
 	if !checkInstallStatus(database) {
-		createSystemUser("modula_test.db")
-		logDb("modula_test.db")
+		createSystemUser(database)
+		if *v {
+			logDb(database)
+		}
 		//		createBaseAdminRoutes("modula_test.db")
 	}
 

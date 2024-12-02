@@ -2214,3 +2214,402 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	)
 	return err
 }
+
+const utilityGetAdminDatatypes = `-- name: UtilityGetAdminDatatypes :many
+select admin_dt_id, label from admin_datatype
+`
+
+type UtilityGetAdminDatatypesRow struct {
+	AdminDtID int64  `json:"admin_dt_id"`
+	Label     string `json:"label"`
+}
+
+func (q *Queries) UtilityGetAdminDatatypes(ctx context.Context) ([]UtilityGetAdminDatatypesRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetAdminDatatypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetAdminDatatypesRow
+	for rows.Next() {
+		var i UtilityGetAdminDatatypesRow
+		if err := rows.Scan(&i.AdminDtID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetAdminRoutes = `-- name: UtilityGetAdminRoutes :many
+select admin_route_id, slug from adminroute
+`
+
+type UtilityGetAdminRoutesRow struct {
+	AdminRouteID int64  `json:"admin_route_id"`
+	Slug         string `json:"slug"`
+}
+
+func (q *Queries) UtilityGetAdminRoutes(ctx context.Context) ([]UtilityGetAdminRoutesRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetAdminRoutes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetAdminRoutesRow
+	for rows.Next() {
+		var i UtilityGetAdminRoutesRow
+		if err := rows.Scan(&i.AdminRouteID, &i.Slug); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetAdminfields = `-- name: UtilityGetAdminfields :many
+select admin_field_id, label from admin_field
+`
+
+type UtilityGetAdminfieldsRow struct {
+	AdminFieldID int64       `json:"admin_field_id"`
+	Label        interface{} `json:"label"`
+}
+
+func (q *Queries) UtilityGetAdminfields(ctx context.Context) ([]UtilityGetAdminfieldsRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetAdminfields)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetAdminfieldsRow
+	for rows.Next() {
+		var i UtilityGetAdminfieldsRow
+		if err := rows.Scan(&i.AdminFieldID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetDatatypes = `-- name: UtilityGetDatatypes :many
+select datatype_id, label from datatype
+`
+
+type UtilityGetDatatypesRow struct {
+	DatatypeID int64  `json:"datatype_id"`
+	Label      string `json:"label"`
+}
+
+func (q *Queries) UtilityGetDatatypes(ctx context.Context) ([]UtilityGetDatatypesRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetDatatypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetDatatypesRow
+	for rows.Next() {
+		var i UtilityGetDatatypesRow
+		if err := rows.Scan(&i.DatatypeID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetFields = `-- name: UtilityGetFields :many
+select field_id, label from field
+`
+
+type UtilityGetFieldsRow struct {
+	FieldID int64       `json:"field_id"`
+	Label   interface{} `json:"label"`
+}
+
+func (q *Queries) UtilityGetFields(ctx context.Context) ([]UtilityGetFieldsRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetFields)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetFieldsRow
+	for rows.Next() {
+		var i UtilityGetFieldsRow
+		if err := rows.Scan(&i.FieldID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetMedia = `-- name: UtilityGetMedia :many
+select id, name from media
+`
+
+type UtilityGetMediaRow struct {
+	ID   int64          `json:"id"`
+	Name sql.NullString `json:"name"`
+}
+
+func (q *Queries) UtilityGetMedia(ctx context.Context) ([]UtilityGetMediaRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetMedia)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetMediaRow
+	for rows.Next() {
+		var i UtilityGetMediaRow
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetMediaDimension = `-- name: UtilityGetMediaDimension :many
+select id, label from media_dimension
+`
+
+type UtilityGetMediaDimensionRow struct {
+	ID    int64          `json:"id"`
+	Label sql.NullString `json:"label"`
+}
+
+func (q *Queries) UtilityGetMediaDimension(ctx context.Context) ([]UtilityGetMediaDimensionRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetMediaDimension)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetMediaDimensionRow
+	for rows.Next() {
+		var i UtilityGetMediaDimensionRow
+		if err := rows.Scan(&i.ID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetRoute = `-- name: UtilityGetRoute :many
+select route_id, slug from route
+`
+
+type UtilityGetRouteRow struct {
+	RouteID int64  `json:"route_id"`
+	Slug    string `json:"slug"`
+}
+
+func (q *Queries) UtilityGetRoute(ctx context.Context) ([]UtilityGetRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetRoute)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetRouteRow
+	for rows.Next() {
+		var i UtilityGetRouteRow
+		if err := rows.Scan(&i.RouteID, &i.Slug); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetTables = `-- name: UtilityGetTables :many
+select id, label from tables
+`
+
+func (q *Queries) UtilityGetTables(ctx context.Context) ([]Tables, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetTables)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tables
+	for rows.Next() {
+		var i Tables
+		if err := rows.Scan(&i.ID, &i.Label); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetToken = `-- name: UtilityGetToken :many
+select id, user_id  from token
+`
+
+type UtilityGetTokenRow struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
+
+func (q *Queries) UtilityGetToken(ctx context.Context) ([]UtilityGetTokenRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetToken)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetTokenRow
+	for rows.Next() {
+		var i UtilityGetTokenRow
+		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityGetUsers = `-- name: UtilityGetUsers :many
+select user_id, username from user
+`
+
+type UtilityGetUsersRow struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+
+func (q *Queries) UtilityGetUsers(ctx context.Context) ([]UtilityGetUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityGetUsers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityGetUsersRow
+	for rows.Next() {
+		var i UtilityGetUsersRow
+		if err := rows.Scan(&i.UserID, &i.Username); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const utilityRecordCount = `-- name: UtilityRecordCount :many
+SELECT 'admin_datatype' AS table_name, COUNT(*) AS row_count FROM admin_datatype
+UNION ALL
+SELECT 'admin_field' AS table_name, COUNT(*) AS row_count FROM admin_field
+UNION ALL
+SELECT 'adminroute' AS table_name, COUNT(*) AS row_count FROM adminroute
+UNION ALL
+SELECT 'datatype' AS table_name, COUNT(*) AS row_count FROM datatype
+UNION ALL
+SELECT 'field' AS table_name, COUNT(*) AS row_count FROM field
+UNION ALL
+SELECT 'route' AS table_name, COUNT(*) AS row_count FROM route
+UNION ALL
+SELECT 'media' AS table_name, COUNT(*) AS row_count FROM media
+UNION ALL
+SELECT 'media_dimension' AS table_name, COUNT(*) AS row_count FROM media_dimension
+UNION ALL
+SELECT 'tables' AS table_name, COUNT(*) AS row_count FROM tables
+UNION ALL
+SELECT 'token' AS table_name, COUNT(*) AS row_count FROM token
+UNION ALL
+SELECT 'user' AS table_name, COUNT(*) AS row_count FROM user
+`
+
+type UtilityRecordCountRow struct {
+	TableName string `json:"table_name"`
+	RowCount  int64  `json:"row_count"`
+}
+
+func (q *Queries) UtilityRecordCount(ctx context.Context) ([]UtilityRecordCountRow, error) {
+	rows, err := q.db.QueryContext(ctx, utilityRecordCount)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UtilityRecordCountRow
+	for rows.Next() {
+		var i UtilityRecordCountRow
+		if err := rows.Scan(&i.TableName, &i.RowCount); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -3,10 +3,70 @@ package main
 import (
 	"fmt"
 	"testing"
+
+	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
+var deleteTestTable string
+
+func TestDeleteDBCopy(t *testing.T) {
+	testTable, err := createDbCopy("delete_tests.db")
+	if err != nil {
+		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+		t.FailNow()
+	}
+	deleteTestTable = testTable
+}
+func TestDeleteDb(t *testing.T){
+    db, ctx, err:= getDb(Database{src:deleteTestTable})
+    if err != nil { 
+        logError("failed to : ", err)
+    }
+    queries:= mdb.New(db)
+    tx, err := db.Begin()
+	if err != nil {
+        logError("failed to : ", err)
+	}
+	defer tx.Rollback()
+    qtx := queries.WithTx(tx)
+    rows, err:=qtx.UtilityRecordCount(ctx)
+    if err != nil { 
+        logError("failed to count records", err)
+    }
+    for _,v:= range rows{
+        fmt.Println(v)
+
+    }
+    tx.Commit()
+    if err != nil { 
+        logError("Commit transaction", err)
+    }
+    
+
+}
+
+func TestDeleteUser(t *testing.T) {
+	testTable, err := createDbCopy("delete_tests.db")
+	if err != nil {
+		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+		t.FailNow()
+	}
+	deleteTestTable = testTable
+	db, ctx, err := getDb(Database{src: deleteTestTable})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	id := 2
+	result := dbDeleteUser(db, ctx, int64(id))
+	expected := fmt.Sprintf("Deleted User %d successfully", id)
+	if expected != result {
+		t.FailNow()
+	}
+}
+
 func TestDeleteAdminRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -20,7 +80,7 @@ func TestDeleteAdminRoute(t *testing.T) {
 }
 
 func TestDeleteField(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -34,7 +94,7 @@ func TestDeleteField(t *testing.T) {
 }
 
 func TestDeleteMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -48,7 +108,7 @@ func TestDeleteMedia(t *testing.T) {
 }
 
 func TestDeleteMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -62,7 +122,7 @@ func TestDeleteMediaDimension(t *testing.T) {
 }
 
 func TestDeleteRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}
@@ -76,7 +136,7 @@ func TestDeleteRoute(t *testing.T) {
 }
 
 func TestDeleteTables(t *testing.T) {
-	db, ctx, err := getDb(Database{DB: "modula_test.db"})
+	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)
 	}

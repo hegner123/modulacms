@@ -53,7 +53,7 @@ func main() {
 		defer clientDB.Close()
 	}*/
 	if !dbFileExists || *reset {
-		db, ctx, err := getDb(Database{DB: "modula.db"})
+		db, ctx, err := getDb(Database{src: "modula.db"})
 		if err != nil {
 			fmt.Printf("%s\n", err)
 		}

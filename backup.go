@@ -33,7 +33,7 @@ func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) 
 	zipWriter := zip.NewWriter(backupFile)
 	defer zipWriter.Close()
 
-	db, _, err := getDb(Database{DB: dbFile})
+	db, _, err := getDb(Database{src: dbFile})
 	if err != nil {
 		logError("db failed to open", err)
 	}

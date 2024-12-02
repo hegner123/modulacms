@@ -56,7 +56,7 @@ func pLog(args ...any) {
 }
 
 func logDb(dbName string) {
-	db, ctx, err := getDb(Database{DB: dbName})
+	db, ctx, err := getDb(Database{src: dbName})
 	if err != nil {
 		logError("failed to : ", err)
 	}

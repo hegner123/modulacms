@@ -45,8 +45,6 @@ set routeid = ?,
 DELETE FROM field
 WHERE field_id = ?;
 
-
-
 -- name: ListFieldByRouteId :many
 SELECT field_id, routeid, parentid, label, data, type
 FROM field

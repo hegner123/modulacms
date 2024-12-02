@@ -1,8 +1,5 @@
 package main
 
-type Database struct {
-	DB string
-}
 
 
 type FieldType struct {
