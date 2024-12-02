@@ -51,7 +51,7 @@ test: ## Run the tests of the project
 	
 	touch ./backups/tmp.zip
 	rm ./backups/*.zip
-	$(GOTEST) -v -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
+	$(GOTEST) -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
 	rm ./testdb/*.db
 
 coverage: ## Run the tests of the project and export the coverage

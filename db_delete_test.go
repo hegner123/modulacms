@@ -3,8 +3,6 @@ package main
 import (
 	"fmt"
 	"testing"
-
-	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
 var deleteTestTable string
@@ -16,33 +14,6 @@ func TestDeleteDBCopy(t *testing.T) {
 		t.FailNow()
 	}
 	deleteTestTable = testTable
-}
-func TestDeleteDb(t *testing.T){
-    db, ctx, err:= getDb(Database{src:deleteTestTable})
-    if err != nil { 
-        logError("failed to : ", err)
-    }
-    queries:= mdb.New(db)
-    tx, err := db.Begin()
-	if err != nil {
-        logError("failed to : ", err)
-	}
-	defer tx.Rollback()
-    qtx := queries.WithTx(tx)
-    rows, err:=qtx.UtilityRecordCount(ctx)
-    if err != nil { 
-        logError("failed to count records", err)
-    }
-    for _,v:= range rows{
-        fmt.Println(v)
-
-    }
-    tx.Commit()
-    if err != nil { 
-        logError("Commit transaction", err)
-    }
-    
-
 }
 
 func TestDeleteUser(t *testing.T) {

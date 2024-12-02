@@ -48,13 +48,12 @@ func createDbCopy(dbName string) (string, error) {
 	}
 
 	dstCmd := exec.Command("sqlite3", dstDbName, ".read " +srcSQLName )
-    output, err := dstCmd.CombinedOutput()
+    _, err = dstCmd.CombinedOutput()
 
 	if err != nil {
 		fmt.Printf("Command failed: %s\n", err)
 	}
 
-	fmt.Printf("Command output:\n%s\n", output)
 	if err != nil {
 		return "", err
 	}
