@@ -15,14 +15,14 @@ ORDER BY datatype_id;
 
 -- name: CreateDatatype :one
 INSERT INTO datatype (
-    routeid,
-    parentid,
+    route_id,
+    parent_id,
     label,
     type,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
   ?, ?,?, ?,?, ?,?,?
     ) RETURNING *;
@@ -30,14 +30,14 @@ INSERT INTO datatype (
 
 -- name: UpdateDatatype :exec
 UPDATE datatype
-set routeid = ?,
-    parentid = ?,
+set route_id = ?,
+    parent_id = ?,
     label = ?,
     type = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE datatype_id = ?
     RETURNING *;
 
@@ -48,14 +48,6 @@ WHERE datatype_id = ?;
 
 
 -- name: ListDatatypeByRouteId :many
-SELECT datatype_id, routeid, parentid, label, type
+SELECT datatype_id, route_id, parent_id, label, type
 FROM datatype
-WHERE routeid = ?;
-
-
-
-
-
-
-
-
+WHERE route_id = ?;

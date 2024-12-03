@@ -31,8 +31,8 @@ func TestCreateUser(t *testing.T) {
 	defer db.Close()
 
 	insertedUser := dbCreateUser(db, ctx, mdb.CreateUserParams{
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Username:     "systemtest",
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
@@ -41,8 +41,8 @@ func TestCreateUser(t *testing.T) {
 	})
 
 	expected := mdb.User{
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Username:     "systemtest",
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
@@ -65,23 +65,23 @@ func TestCreateAdminRoute(t *testing.T) {
 
 	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "systemtest",
-		Authorid:     int64(1),
+		AuthorID:     int64(1),
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Template:     "page.html",
 	})
 
-	expected := mdb.Adminroute{
+	expected := mdb.AdminRoute{
 		Author:       "systemtest",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Template:     "page.html",
 	}
 
@@ -100,23 +100,23 @@ func TestCreateRoute(t *testing.T) {
 
 	insertedRoute := dbCreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "systemtest",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Content:      ns("Test content"),
 	})
 
 	expected := mdb.Route{
 		Author:       "systemtest",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Content:      ns("Test content"),
 	}
 
@@ -135,40 +135,40 @@ func TestCreateMedia(t *testing.T) {
 
 	insertedMedia := dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
+		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "systemtest",
-		Authorid:           1,
-		Datecreated:        times,
-		Datemodified:       times,
+		AuthorID:           1,
+		DateCreated:        times,
+		DateModified:       times,
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
+		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
+		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
+		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
 	})
 
 	expected := mdb.Media{
 		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
+		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "systemtest",
-		Authorid:           1,
-		Datecreated:        times,
-		Datemodified:       times,
+		AuthorID:           1,
+		DateCreated:        times,
+		DateModified:       times,
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
+		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
+		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
+		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
 	}
 
 	if reflect.DeepEqual(insertedMedia, expected) {
@@ -184,27 +184,27 @@ func TestCreateDatatype(t *testing.T) {
 	}
 	defer db.Close()
 	_, err = dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		Routeid:      int64(1),
+		RouteID:      int64(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "systemtest",
-		Authorid:     int64(1),
-		Datecreated:  times,
-		Datemodified: times,
+		AuthorID:     int64(1),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	if err != nil {
 		logError("failed to create datatype", err)
 	}
 
 	insertedDatatype, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		Routeid:      int64(1),
-		Parentid:     ni(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "title",
 		Type:         "text",
 		Author:       "systemtest",
-		Authorid:     int64(1),
-		Datecreated:  times,
-		Datemodified: times,
+		AuthorID:     int64(1),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	if err != nil {
 		logError("failed to create datatype", err)
@@ -212,14 +212,14 @@ func TestCreateDatatype(t *testing.T) {
 	}
 
 	expected := mdb.Datatype{
-		Routeid:      int64(1),
-		Parentid:     ni(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "title",
 		Type:         "text",
 		Author:       "systemtest",
-		Authorid:     1,
-		Datecreated:  times,
-		Datemodified: times,
+		AuthorID:     1,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	}
 
 	if reflect.DeepEqual(insertedDatatype, expected) {
@@ -235,26 +235,26 @@ func TestCreateField(t *testing.T) {
 	}
 	defer db.Close()
 	insertedField, _ := dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
-		Parentid:     int64(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "systemtest",
-		Authorid:     int64(1),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		AuthorID:     int64(1),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	expected := mdb.Field{
-		Routeid:      int64(1),
-		Parentid:     int64(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "systemtest",
-		Authorid:     int64(1),
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		AuthorID:     int64(1),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	}
 
 	if reflect.DeepEqual(insertedField, expected) {

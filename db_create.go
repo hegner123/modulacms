@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.Adminroute {
+func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoute {
 	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
 	if err != nil {

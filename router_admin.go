@@ -6,7 +6,6 @@ import (
 )
 
 func handleAdminRoutes(w http.ResponseWriter, r *http.Request, segments []string) {
-	pLog("admin router")
 	db, ctx, err := getDb(Database{})
 	if err != nil {
 		fmt.Printf("\nerror: %s", err)
@@ -14,7 +13,6 @@ func handleAdminRoutes(w http.ResponseWriter, r *http.Request, segments []string
 	}
 	defer db.Close()
 	s := r.URL.Path
-	pLog(s)
 	w.Header().Set("Content-Type", "text/html")
 	route := dbGetAdminRoute(db, ctx, s)
 	s, ok := route.Template.(string)

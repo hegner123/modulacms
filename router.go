@@ -15,8 +15,8 @@ const (
 	AROUTE    Segment = 3
 	ENDPOINT  Segment = 1
 	VERSION   Segment = 2
-	DBMETHOD Segment = 3
-    TABLE     Segment = 4
+	DBMETHOD  Segment = 3
+	TABLE     Segment = 4
 	AUTHROUTE Segment = 3
 )
 

@@ -9,7 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.Adminroute {
+func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoute {
 	queries := mdb.New(db)
 	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
 	if err != nil {

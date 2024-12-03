@@ -10,8 +10,8 @@ import (
 func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 	times := timestampS()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Username:     "systeminit" + modify,
 		Name:         "system",
 		Email:        "system@modulacms.com" + modify,
@@ -20,51 +20,51 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 	})
 	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "systeminit" + modify,
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test1" + modify,
 		Title:        "Test",
 		Status:       0,
 		Template:     "page.html",
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "systeminit" + modify,
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test1" + modify,
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 	})
 	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
+		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "systeminit" + modify,
-		Authorid:           1,
-		Datecreated:        times,
-		Datemodified:       times,
+		AuthorID:           1,
+		DateCreated:        times,
+		DateModified:       times,
 		Url:                ns("public/2024/11/test1.png" + modify),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png" + modify),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png" + modify),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png" + modify),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png" + modify),
+		OptimizedMobile:    ns("public/2024/11/test-mobile.png" + modify),
+		OptimizedTablet:    ns("public/2024/11/test-tablet.png" + modify),
+		OptimizedDesktop:   ns("public/2024/11/test-desktop.png" + modify),
+		OptimizedUltrawide: ns("public/2024/11/test-ultra.png" + modify),
 	})
 
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
+		RouteID:      int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "systeminit" + modify,
-		Authorid:     1,
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		AuthorID:     1,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
 		Label:  ns("Tablet" + modify),

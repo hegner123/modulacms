@@ -18,14 +18,14 @@ ORDER BY admin_dt_id ;
 
 -- name: CreateAdminDatatype :one
 INSERT INTO admin_datatype (
-    adminrouteid,
-    parentid,
+    admin_route_id,
+    parent_id,
     label,
     type,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
   ?, ?,?, ?,?, ?,?,?
     ) RETURNING *;
@@ -33,14 +33,14 @@ INSERT INTO admin_datatype (
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatype
-set adminrouteid = ?,
-    parentid = ?,
+set admin_route_id = ?,
+    parent_id = ?,
     label = ?,
     type = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE admin_dt_id = ?
     RETURNING *;
 
@@ -49,16 +49,16 @@ DELETE FROM admin_datatype
 WHERE admin_dt_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
-SELECT admin_dt_id, adminrouteid, parentid, label, type
+SELECT admin_dt_id, admin_route_id, parent_id, label, type
 FROM admin_datatype
-WHERE adminrouteid = ?;
+WHERE admin_route_id = ?;
 
 -- name: CheckAuthorIdExists :one
 SELECT EXISTS(SELECT 1 FROM user WHERE user_id=?);
 -- name: CheckAuthorExists :one
 SELECT EXISTS(SELECT 1 FROM user WHERE username=?);
 -- name: CheckAdminRouteExists :one
-SELECT EXISTS(SELECT 1 FROM adminroute WHERE admin_route_id=?);
+SELECT EXISTS(SELECT 1 FROM admin_route WHERE admin_route_id=?);
 -- name: CheckAdminParentExists :one
 SELECT EXISTS(SELECT 1 FROM admin_datatype WHERE admin_dt_id =?);
 -- name: CheckRouteExists :one

@@ -14,22 +14,22 @@ ORDER BY name;
 -- name: CreateMedia :one
 INSERT INTO media (
     name,
-    displayname,
+    display_name,
     alt,
     caption,
     description,
     class,
     author,
-    authorid,
-    datecreated,
-    datemodified,
+    author_id,
+    date_created,
+    date_modified,
     url,
     mimetype,
     dimensions,
-    optimizedmobile,
-    optimizedtablet,
-    optimizeddesktop,
-    optimizedultrawide
+    optimized_mobile,
+    optimized_tablet,
+    optimized_desktop,
+    optimized_ultrawide
 ) VALUES (
  ?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?
 )
@@ -38,22 +38,22 @@ RETURNING *;
 -- name: UpdateMedia :exec
 UPDATE media
   set   name = ?,
-        displayname = ?,
+        display_name = ?,
         alt = ?,
         caption = ?,
         description = ?,
         class = ?,
         author = ?,
-        authorid = ?,
-        datecreated = ?,
-        datemodified = ?,
+        author_id = ?,
+        date_created = ?,
+        date_modified = ?,
         url = ?,
         mimetype = ?,
         dimensions = ?,
-        optimizedmobile = ?,
-        optimizedtablet = ?,
-        optimizeddesktop = ?,
-        optimizedultrawide = ?
+        optimized_mobile = ?,
+        optimized_tablet = ?,
+        optimized_desktop = ?,
+        optimized_ultrawide = ?
         WHERE id = ?;
 
 -- name: DeleteMedia :exec

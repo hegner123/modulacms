@@ -14,6 +14,7 @@
 ## Proof of concept requires
 - [x] Go Server
 - [x] Go DB connection
+- [x] DB functions
 - [ ] Handle routes for Admin
 - [ ] Load and confirm bucket connection
 - [ ] Render html pages and templates

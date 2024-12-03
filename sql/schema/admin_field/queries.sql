@@ -16,15 +16,15 @@ ORDER BY admin_field_id;
 
 -- name: CreateAdminField :one
 INSERT INTO admin_field (
-    adminrouteid,
-    parentid,
+    admin_route_id,
+    parent_id,
     label,
     data,
     type,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
 ?,?, ?,?, ?, ?,?, ?,?
     ) RETURNING *;
@@ -32,15 +32,15 @@ INSERT INTO admin_field (
 
 -- name: UpdateAdminField :exec
 UPDATE admin_field
-set adminrouteid = ?,
-    parentid = ?,
+set admin_route_id = ?,
+    parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE admin_field_id = ?
     RETURNING *;
 
@@ -49,7 +49,7 @@ DELETE FROM admin_field
 WHERE admin_field_id = ?;
 
 -- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id, adminrouteid, parentid, label, data, type
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type
 FROM admin_field
-WHERE adminrouteid = ?;
+WHERE admin_route_id = ?;
 

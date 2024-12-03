@@ -10,8 +10,8 @@ import (
 func createSetupInserts(db *sql.DB, ctx context.Context) {
 	times := timestampS()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 		Username:     "system",
 		Name:         "system",
 		Email:        "system@modulacms.com",
@@ -20,62 +20,62 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 	})
 	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/",
 		Title:        "Admin",
 		Status:       0,
 		Template:     "modula_base.html",
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/api/v1/",
 		Title:        "Test",
 		Status:       0,
-		Datecreated:  times,
-		Datemodified: times,
+		DateCreated:  times,
+		DateModified: times,
 	})
 	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
+		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           1,
-		Datecreated:        times,
-		Datemodified:       times,
+		AuthorID:           1,
+		DateCreated:        times,
+		DateModified:       times,
 		Url:                ns("public/2024/11/test1.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
+		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
+		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
+		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
 	})
 	_, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
 		Label:        "Parent",
 		Type:         "Navigation",
 		Author:       "system",
-		Authorid:     1,
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		AuthorID:     1,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	if err != nil {
 		logError("failed to create datatype: ", err)
 	}
 
 	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
-		Routeid:      int64(1),
+		RouteID:      int64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "system",
-		Authorid:     1,
-		Datecreated:  ns(times),
-		Datemodified: ns(times),
+		AuthorID:     1,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	if err != nil {
 		logError("failed to create field: ", err)

@@ -11,12 +11,12 @@ func createBaseAdminRoutes(dbName string) {
 
 	homePage := mdb.CreateAdminRouteParams{
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/",
 		Title:        "ModulaCMS",
 		Status:       0,
-		Datecreated:  timestampS(),
-		Datemodified: timestampS(),
+		DateCreated:  ns(timestampS()),
+		DateModified: ns(timestampS()),
 		Template:     "modula_base.html",
 	}
 	dbCreateAdminRoute(db, ctx, homePage)
@@ -46,8 +46,8 @@ func createSystemUser(name string) {
 	defer db.Close()
 
 	systemUser := mdb.CreateUserParams{
-		Datecreated:  timestampS(),
-		Datemodified: timestampS(),
+		DateCreated:  timestampS(),
+		DateModified: timestampS(),
 		Username:     "system",
 		Email:        "system@modulacms.com",
 		Name:         "system",

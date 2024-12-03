@@ -20,8 +20,8 @@ ORDER BY user_id ;
 
 -- name: CreateUser :one
 INSERT INTO user (
-    datecreated,
-    datemodified,
+    date_created,
+    date_modified,
     username,
     name,
     email ,
@@ -34,8 +34,8 @@ RETURNING *;
 
 -- name: UpdateUser :exec
 UPDATE user
-set datecreated = ?,
-    datemodified = ?,
+set date_created = ?,
+    date_modified = ?,
     username = ?,
     name = ?,
     email = ?,

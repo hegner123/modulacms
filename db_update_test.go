@@ -27,7 +27,7 @@ func TestUpdateUser(t *testing.T) {
 	defer db.Close()
 	id := int64(2)
 	params := mdb.UpdateUserParams{
-		Datemodified: times,
+		DateModified: times,
 		Name:         "systemupdate",
 		Hash:         "has",
 		Role:         "admin",
@@ -52,11 +52,11 @@ func TestUpdateAdminRoute(t *testing.T) {
 
 	params := mdb.UpdateAdminRouteParams{
 		Author:       ns("system"),
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datemodified: times,
+		DateModified: ns(times),
 		Template:     ns("page.html"),
 		Slug_2:       "/test",
 	}
@@ -79,11 +79,11 @@ func TestUpdateRoute(t *testing.T) {
 
 	params := mdb.UpdateRouteParams{
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		Datemodified: times,
+		DateModified: times,
 		Slug_2:       "/test",
 	}
 
@@ -104,15 +104,15 @@ func TestUpdateField(t *testing.T) {
 	defer db.Close()
 	id := int64(3)
 	params := mdb.UpdateFieldParams{
-		Routeid:      int64(1),
-		Parentid:     int64(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       "system",
-		Authorid:     1,
-		Datemodified: ns(times),
-		Datecreated:  ns(times),
+		AuthorID:     1,
+		DateModified: ns(times),
+		DateCreated:  ns(times),
 		FieldID:      id,
 	}
 
@@ -133,12 +133,12 @@ func TestUpdateDatatype(t *testing.T) {
 	defer db.Close()
 	id := int64(1)
 	params := mdb.UpdateDatatypeParams{
-		Routeid:      int64(1),
+		RouteID:      int64(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "system",
-		Authorid:     1,
-		Datemodified: ns(times),
+		AuthorID:     1,
+		DateModified: ns(times),
 		DatatypeID:   id,
 	}
 
@@ -160,7 +160,7 @@ func TestUpdateMedia(t *testing.T) {
 	params := mdb.UpdateMediaParams{
 		Name:     ns("Best"),
 		Author:   "system",
-		Authorid: int64(1),
+		AuthorID: int64(1),
 		ID:       int64(2),
 	}
 

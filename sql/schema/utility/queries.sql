@@ -5,7 +5,7 @@ select admin_dt_id, label from admin_datatype;
 select admin_field_id, label from admin_field;
 
 -- name: UtilityGetAdminRoutes :many
-select admin_route_id, slug from adminroute;
+select admin_route_id, slug from admin_route;
 
 -- name: UtilityGetDatatypes :many
 select datatype_id, label from datatype;
@@ -36,7 +36,7 @@ SELECT 'admin_datatype' AS table_name, COUNT(*) AS row_count FROM admin_datatype
 UNION ALL
 SELECT 'admin_field' AS table_name, COUNT(*) AS row_count FROM admin_field
 UNION ALL
-SELECT 'adminroute' AS table_name, COUNT(*) AS row_count FROM adminroute
+SELECT 'admin_route' AS table_name, COUNT(*) AS row_count FROM admin_route
 UNION ALL
 SELECT 'datatype' AS table_name, COUNT(*) AS row_count FROM datatype
 UNION ALL

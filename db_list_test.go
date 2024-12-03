@@ -45,7 +45,7 @@ func TestListAdminRoute(t *testing.T) {
 		return dbListAdminRoute(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.Adminroute); ok {
+	if _, ok := res.([]mdb.AdminRoute); ok {
 		return
 	} else {
 		t.FailNow()

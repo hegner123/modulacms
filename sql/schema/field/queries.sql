@@ -13,15 +13,15 @@ ORDER BY field_id;
 
 -- name: CreateField :one
 INSERT INTO field (
-    routeid,
-    parentid,
+    route_id,
+    parent_id,
     label,
     data,
     type,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
 ?,?, ?,?, ?, ?,?, ?,?
     ) RETURNING *;
@@ -29,15 +29,15 @@ INSERT INTO field (
 
 -- name: UpdateField :exec
 UPDATE field
-set routeid = ?,
-    parentid = ?,
+set route_id = ?,
+    parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE field_id = ?
     RETURNING *;
 
@@ -46,6 +46,6 @@ DELETE FROM field
 WHERE field_id = ?;
 
 -- name: ListFieldByRouteId :many
-SELECT field_id, routeid, parentid, label, data, type
+SELECT field_id, route_id, parent_id, label, data, type
 FROM field
-WHERE routeid = ?;
+WHERE route_id = ?;

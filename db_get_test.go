@@ -51,8 +51,8 @@ func TestGetUser(t *testing.T) {
 
 	expected := mdb.User{
 		UserID:       int64(1),
-		Datecreated:  userRow.Datecreated,
-		Datemodified: userRow.Datemodified,
+		DateCreated:  userRow.DateCreated,
+		DateModified: userRow.DateModified,
 		Username:     "system",
 		Name:         "system",
 		Email:        "system@modulacms.com1",
@@ -84,15 +84,15 @@ func TestGetAdminRoute(t *testing.T) {
 
 	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/")
 
-	expected := mdb.Adminroute{
+	expected := mdb.AdminRoute{
 		AdminRouteID: int64(1),
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/",
 		Title:        "ModulaCMS",
 		Status:       int64(0),
-		Datecreated:  adminRouteRow.Datecreated,
-		Datemodified: adminRouteRow.Datemodified,
+		DateCreated:  adminRouteRow.DateCreated,
+		DateModified: adminRouteRow.DateModified,
 		Template:     ns("modula_base.html"),
 	}
 
@@ -113,12 +113,12 @@ func TestGetRoute(t *testing.T) {
 	expected := mdb.Route{
 		RouteID:      int64(1),
 		Author:       "system",
-		Authorid:     1,
+		AuthorID:     1,
 		Slug:         "/get/home",
 		Title:        "Test",
 		Status:       int64(0),
-		Datecreated:  routeRow.Datecreated,
-		Datemodified: routeRow.Datemodified,
+		DateCreated:  routeRow.DateCreated,
+		DateModified: routeRow.DateModified,
 	}
 
 	if reflect.DeepEqual(routeRow, expected) {
@@ -139,21 +139,21 @@ func TestGetMedia(t *testing.T) {
 	expected := mdb.Media{
 		ID:                 int64(1),
 		Name:               ns("test.png"),
-		Displayname:        ns("Test"),
+		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
 		Caption:            ns("test"),
 		Description:        ns("test"),
 		Author:             "system",
-		Authorid:           1,
-		Datecreated:        mediaRow.Datecreated,
-		Datemodified:       mediaRow.Datemodified,
+		AuthorID:           1,
+		DateCreated:        mediaRow.DateCreated,
+		DateModified:       mediaRow.DateModified,
 		Url:                ns("public/2024/11/test.png1"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
-		Optimizedmobile:    ns("public/2024/11/test-mobile.png"),
-		Optimizedtablet:    ns("public/2024/11/test-tablet.png"),
-		Optimizeddesktop:   ns("public/2024/11/test-desktop.png"),
-		Optimizedultrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
+		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
+		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
+		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
 	}
 
 	if reflect.DeepEqual(mediaRow, expected) {
@@ -171,15 +171,15 @@ func TestGetField(t *testing.T) {
 	fieldRow := dbGetField(db, ctx, id)
 
 	expected := mdb.Field{
-		Routeid:      int64(1),
-		Parentid:     int64(1),
+		RouteID:      int64(1),
+		ParentID:     ni(1),
 		Label:        "title",
 		Data:         "Test Field",
 		Type:         "text",
 		Author:       ns("system"),
-		Authorid:     1,
-		Datecreated:  fieldRow.Datecreated,
-		Datemodified: fieldRow.Datemodified,
+		AuthorID:     1,
+		DateCreated:  fieldRow.DateCreated,
+		DateModified: fieldRow.DateModified,
 	}
 
 	if reflect.DeepEqual(fieldRow, expected) {

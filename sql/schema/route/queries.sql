@@ -17,12 +17,12 @@ ORDER BY slug;
 -- name: CreateRoute :one
 INSERT INTO route (
 author,
-authorid,
+author_id,
 slug,
 title,
 status,
-datecreated,
-datemodified, 
+date_created,
+date_modified, 
 content
 ) VALUES (
 ?,?,?,?,?,?,?,?
@@ -35,9 +35,9 @@ set slug = ?,
     status = ?,
     content = ?, 
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE slug = ?
     RETURNING *;
 
