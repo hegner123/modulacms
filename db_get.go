@@ -9,7 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatype{
+func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatypes{
 	queries := mdb.New(db)
     fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
 	if err != nil {
@@ -18,7 +18,7 @@ func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDataty
     return fetchedGlobalAdminDatatypeId
 }
 
-func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoute {
+func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoutes {
 	queries := mdb.New(db)
 	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
 	if err != nil {
@@ -27,7 +27,7 @@ func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRout
 	return fetchedAdminRoute
 }
 
-func dbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatype {
+func dbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatypes {
 	queries := mdb.New(db)
 	fetchedDatatype, err := queries.GetDatatype(ctx, id)
 	if err != nil {
@@ -36,7 +36,7 @@ func dbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatype {
 	return fetchedDatatype
 }
 
-func dbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Field {
+func dbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Fields {
 	queries := mdb.New(db)
 	fetchedField, err := queries.GetField(ctx, id)
 	if err != nil {
@@ -54,7 +54,7 @@ func dbGetMedia(db *sql.DB, ctx context.Context, id int64) mdb.Media {
 	return fetchedMedia
 }
 
-func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDimension {
+func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDimensions {
 	queries := mdb.New(db)
 	fetchedMediaDimension, err := queries.GetMediaDimension(ctx, id)
 	if err != nil {
@@ -63,7 +63,7 @@ func dbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDim
 	return fetchedMediaDimension
 }
 
-func dbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Route {
+func dbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Routes {
 	queries := mdb.New(db)
 	fetchedRoute, err := queries.GetRoute(ctx, slug)
 	if err != nil {
@@ -81,7 +81,7 @@ func dbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
 	return fetchedTable
 }
 
-func dbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Token {
+func dbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Tokens {
 	queries := mdb.New(db)
 	fetchedToken, err := queries.GetToken(ctx, id)
 	if err != nil {
@@ -90,7 +90,7 @@ func dbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Token {
 	return fetchedToken
 }
 
-func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
+func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.Users, error) {
 	queries := mdb.New(db)
 	fetchedUser, err := queries.GetUser(ctx, id)
 	if err != nil {
@@ -100,7 +100,7 @@ func dbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.User, error) {
 	return fetchedUser, nil
 }
 
-func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.User {
+func dbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.Users {
 	queries := mdb.New(db)
 	fetchedUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {

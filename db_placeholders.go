@@ -10,8 +10,8 @@ import (
 func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 	times := timestampS()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
-		DateCreated:  times,
-		DateModified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Username:     "systeminit" + modify,
 		Name:         "system",
 		Email:        "system@modulacms.com" + modify,
@@ -34,8 +34,8 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Slug:         "/test1" + modify,
 		Title:        "Test",
 		Status:       0,
-		DateCreated:  times,
-		DateModified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
@@ -45,19 +45,19 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Description:        ns("test"),
 		Author:             "systeminit" + modify,
 		AuthorID:           1,
-		DateCreated:        times,
-		DateModified:       times,
+		DateCreated:        ns(times),
+		DateModified:       ns(times),
 		Url:                ns("public/2024/11/test1.png" + modify),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
 		OptimizedMobile:    ns("public/2024/11/test-mobile.png" + modify),
 		OptimizedTablet:    ns("public/2024/11/test-tablet.png" + modify),
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png" + modify),
-		OptimizedUltrawide: ns("public/2024/11/test-ultra.png" + modify),
+		OptimizedUltraWide: ns("public/2024/11/test-ultra.png" + modify),
 	})
 
 	dbCreateField(db, ctx, mdb.CreateFieldParams{
-		RouteID:      int64(1),
+		RouteID:      ni64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",

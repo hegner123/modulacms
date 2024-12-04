@@ -61,7 +61,7 @@ func TestGetUser(t *testing.T) {
 		t.FailNow()
 	}
 
-	expected := mdb.User{
+	expected := mdb.Users{
 		UserID:       int64(1),
 		DateCreated:  userRow.DateCreated,
 		DateModified: userRow.DateModified,
@@ -96,7 +96,7 @@ func TestGetAdminRoute(t *testing.T) {
 
 	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/")
 
-	expected := mdb.AdminRoute{
+	expected := mdb.AdminRoutes{
 		AdminRouteID: int64(1),
 		Author:       "system",
 		AuthorID:     1,
@@ -122,7 +122,7 @@ func TestGetRoute(t *testing.T) {
 
 	routeRow := dbGetRoute(db, ctx, "/get/home")
 
-	expected := mdb.Route{
+	expected := mdb.Routes{
 		RouteID:      int64(1),
 		Author:       "system",
 		AuthorID:     1,
@@ -149,7 +149,7 @@ func TestGetMedia(t *testing.T) {
 	mediaRow := dbGetMedia(db, ctx, id)
 
 	expected := mdb.Media{
-		ID:                 int64(1),
+		MediaID:            int64(1),
 		Name:               ns("test.png"),
 		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
@@ -165,7 +165,7 @@ func TestGetMedia(t *testing.T) {
 		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
 		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
-		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedUltraWide: ns("public/2024/11/test-ultra.png"),
 	}
 
 	if reflect.DeepEqual(mediaRow, expected) {
@@ -182,8 +182,8 @@ func TestGetField(t *testing.T) {
 	id := int64(3)
 	fieldRow := dbGetField(db, ctx, id)
 
-	expected := mdb.Field{
-		RouteID:      int64(1),
+	expected := mdb.Fields{
+		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "title",
 		Data:         "Test Field",
@@ -209,7 +209,7 @@ func TestGetMediaDimension(t *testing.T) {
 
 	mediaDimensionRow := dbGetMediaDimension(db, ctx, id)
 
-	expected := mdb.MediaDimension{
+	expected := mdb.MediaDimensions{
 		Label:  ns("Desktop1"),
 		Width:  ni(1920),
 		Height: ni(1080),

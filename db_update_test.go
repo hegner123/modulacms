@@ -27,7 +27,7 @@ func TestUpdateUser(t *testing.T) {
 	defer db.Close()
 	id := int64(2)
 	params := mdb.UpdateUserParams{
-		DateModified: times,
+		DateModified: ns(times),
 		Name:         "systemupdate",
 		Hash:         "has",
 		Role:         "admin",
@@ -83,7 +83,7 @@ func TestUpdateRoute(t *testing.T) {
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		DateModified: times,
+		DateModified: ns(times),
 		Slug_2:       "/test",
 	}
 
@@ -104,7 +104,7 @@ func TestUpdateField(t *testing.T) {
 	defer db.Close()
 	id := int64(3)
 	params := mdb.UpdateFieldParams{
-		RouteID:      int64(1),
+		RouteID:      ni64(1),
 		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -133,7 +133,7 @@ func TestUpdateDatatype(t *testing.T) {
 	defer db.Close()
 	id := int64(1)
 	params := mdb.UpdateDatatypeParams{
-		RouteID:      int64(1),
+		RouteID:      ni64(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "system",
@@ -161,7 +161,7 @@ func TestUpdateMedia(t *testing.T) {
 		Name:     ns("Best"),
 		Author:   "system",
 		AuthorID: int64(1),
-		ID:       int64(2),
+		MediaID:       int64(2),
 	}
 
 	updatedMedia := dbUpdateMedia(db, ctx, params)

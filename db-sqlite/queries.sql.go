@@ -11,7 +11,7 @@ import (
 )
 
 const checkAdminParentExists = `-- name: CheckAdminParentExists :one
-SELECT EXISTS(SELECT 1 FROM admin_datatype WHERE admin_dt_id =?)
+SELECT EXISTS(SELECT 1 FROM admin_datatypes WHERE admin_dt_id =?)
 `
 
 func (q *Queries) CheckAdminParentExists(ctx context.Context, adminDtID int64) (int64, error) {
@@ -22,7 +22,7 @@ func (q *Queries) CheckAdminParentExists(ctx context.Context, adminDtID int64) (
 }
 
 const checkAdminRouteExists = `-- name: CheckAdminRouteExists :one
-SELECT EXISTS(SELECT 1 FROM admin_route WHERE admin_route_id=?)
+SELECT EXISTS(SELECT 1 FROM admin_routes WHERE admin_route_id=?)
 `
 
 func (q *Queries) CheckAdminRouteExists(ctx context.Context, adminRouteID int64) (int64, error) {
@@ -33,7 +33,7 @@ func (q *Queries) CheckAdminRouteExists(ctx context.Context, adminRouteID int64)
 }
 
 const checkAuthorExists = `-- name: CheckAuthorExists :one
-SELECT EXISTS(SELECT 1 FROM user WHERE username=?)
+SELECT EXISTS(SELECT 1 FROM users WHERE username=?)
 `
 
 func (q *Queries) CheckAuthorExists(ctx context.Context, username string) (int64, error) {
@@ -44,7 +44,7 @@ func (q *Queries) CheckAuthorExists(ctx context.Context, username string) (int64
 }
 
 const checkAuthorIdExists = `-- name: CheckAuthorIdExists :one
-SELECT EXISTS(SELECT 1 FROM user WHERE user_id=?)
+SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?)
 `
 
 func (q *Queries) CheckAuthorIdExists(ctx context.Context, userID int64) (int64, error) {
@@ -55,7 +55,7 @@ func (q *Queries) CheckAuthorIdExists(ctx context.Context, userID int64) (int64,
 }
 
 const checkParentExists = `-- name: CheckParentExists :one
-SELECT EXISTS(SELECT 1 FROM datatype WHERE datatype_id =?)
+SELECT EXISTS(SELECT 1 FROM datatypes WHERE datatype_id =?)
 `
 
 func (q *Queries) CheckParentExists(ctx context.Context, datatypeID int64) (int64, error) {
@@ -66,7 +66,7 @@ func (q *Queries) CheckParentExists(ctx context.Context, datatypeID int64) (int6
 }
 
 const checkRouteExists = `-- name: CheckRouteExists :one
-SELECT EXISTS(SELECT 1 FROM route WHERE route_id=?)
+SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?)
 `
 
 func (q *Queries) CheckRouteExists(ctx context.Context, routeID int64) (int64, error) {
@@ -78,7 +78,7 @@ func (q *Queries) CheckRouteExists(ctx context.Context, routeID int64) (int64, e
 
 const countAdminDatatype = `-- name: CountAdminDatatype :one
 SELECT COUNT(*)
-FROM admin_datatype
+FROM admin_datatypes
 `
 
 func (q *Queries) CountAdminDatatype(ctx context.Context) (int64, error) {
@@ -90,7 +90,7 @@ func (q *Queries) CountAdminDatatype(ctx context.Context) (int64, error) {
 
 const countAdminField = `-- name: CountAdminField :one
 SELECT COUNT(*)
-FROM admin_field
+FROM admin_fields
 `
 
 func (q *Queries) CountAdminField(ctx context.Context) (int64, error) {
@@ -102,7 +102,7 @@ func (q *Queries) CountAdminField(ctx context.Context) (int64, error) {
 
 const countAdminroute = `-- name: CountAdminroute :one
 SELECT COUNT(*)
-FROM admin_route
+FROM admin_routes
 `
 
 func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
@@ -114,7 +114,7 @@ func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
 
 const countDatatype = `-- name: CountDatatype :one
 SELECT COUNT(*)
-FROM datatype
+FROM datatypes
 `
 
 func (q *Queries) CountDatatype(ctx context.Context) (int64, error) {
@@ -126,7 +126,7 @@ func (q *Queries) CountDatatype(ctx context.Context) (int64, error) {
 
 const countField = `-- name: CountField :one
 SELECT COUNT(*)
-FROM field
+FROM fields
 `
 
 func (q *Queries) CountField(ctx context.Context) (int64, error) {
@@ -138,7 +138,7 @@ func (q *Queries) CountField(ctx context.Context) (int64, error) {
 
 const countMD = `-- name: CountMD :one
 SELECT COUNT(*)
-FROM media_dimension
+FROM media_dimensions
 `
 
 func (q *Queries) CountMD(ctx context.Context) (int64, error) {
@@ -162,7 +162,7 @@ func (q *Queries) CountMedia(ctx context.Context) (int64, error) {
 
 const countRoute = `-- name: CountRoute :one
 SELECT COUNT(*)
-FROM route
+FROM routes
 `
 
 func (q *Queries) CountRoute(ctx context.Context) (int64, error) {
@@ -186,7 +186,7 @@ func (q *Queries) CountTables(ctx context.Context) (int64, error) {
 
 const countTokens = `-- name: CountTokens :one
 SELECT COUNT(*)
-FROM token
+FROM tokens
 `
 
 func (q *Queries) CountTokens(ctx context.Context) (int64, error) {
@@ -198,7 +198,7 @@ func (q *Queries) CountTokens(ctx context.Context) (int64, error) {
 
 const countUsers = `-- name: CountUsers :one
 SELECT COUNT(*)
-FROM user
+FROM users
 `
 
 func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
@@ -209,7 +209,7 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 }
 
 const createAdminDatatype = `-- name: CreateAdminDatatype :one
-INSERT INTO admin_datatype (
+INSERT INTO admin_datatypes (
     admin_route_id,
     parent_id,
     label,
@@ -219,22 +219,22 @@ INSERT INTO admin_datatype (
     date_created,
     date_modified
     ) VALUES (
-  ?, ?,?, ?,?, ?,?,?
+?,?,?,?,?,?,?,?
     ) RETURNING admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified
 `
 
 type CreateAdminDatatypeParams struct {
-	AdminRouteID int64          `json:"admin_route_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Author       interface{}    `json:"author"`
+	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 
-func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) (AdminDatatype, error) {
+func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) (AdminDatatypes, error) {
 	row := q.db.QueryRowContext(ctx, createAdminDatatype,
 		arg.AdminRouteID,
 		arg.ParentID,
@@ -245,7 +245,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 		arg.DateCreated,
 		arg.DateModified,
 	)
-	var i AdminDatatype
+	var i AdminDatatypes
 	err := row.Scan(
 		&i.AdminDtID,
 		&i.AdminRouteID,
@@ -261,7 +261,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 }
 
 const createAdminField = `-- name: CreateAdminField :one
-INSERT INTO admin_field (
+INSERT INTO admin_fields (
     admin_route_id,
     parent_id,
     label,
@@ -272,13 +272,13 @@ INSERT INTO admin_field (
     date_created,
     date_modified
     ) VALUES (
-?,?, ?,?, ?, ?,?, ?,?
+?,?,?,?,?,?,?,?,?
     ) RETURNING admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified
 `
 
 type CreateAdminFieldParams struct {
-	AdminRouteID int64          `json:"admin_route_id"`
-	ParentID     int64          `json:"parent_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
 	Data         interface{}    `json:"data"`
 	Type         interface{}    `json:"type"`
@@ -288,7 +288,7 @@ type CreateAdminFieldParams struct {
 	DateModified sql.NullString `json:"date_modified"`
 }
 
-func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) (AdminField, error) {
+func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) (AdminFields, error) {
 	row := q.db.QueryRowContext(ctx, createAdminField,
 		arg.AdminRouteID,
 		arg.ParentID,
@@ -300,7 +300,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		arg.DateCreated,
 		arg.DateModified,
 	)
-	var i AdminField
+	var i AdminFields
 	err := row.Scan(
 		&i.AdminFieldID,
 		&i.AdminRouteID,
@@ -317,7 +317,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 }
 
 const createAdminRoute = `-- name: CreateAdminRoute :one
-INSERT INTO admin_route (
+INSERT INTO admin_routes (
 author,
 author_id,
 slug,
@@ -328,12 +328,12 @@ date_modified,
 template
 ) VALUES (
 ?,?,?,?,?,?,?,?
-) RETURNING admin_route_id, author, author_id, slug, title, status, date_created, date_modified, template
+) RETURNING admin_route_id, slug, title, status, author, author_id, date_created, date_modified, template
 `
 
 type CreateAdminRouteParams struct {
 	Author       interface{}    `json:"author"`
-	AuthorID     interface{}    `json:"author_id"`
+	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
@@ -342,7 +342,7 @@ type CreateAdminRouteParams struct {
 	Template     interface{}    `json:"template"`
 }
 
-func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) (AdminRoute, error) {
+func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) (AdminRoutes, error) {
 	row := q.db.QueryRowContext(ctx, createAdminRoute,
 		arg.Author,
 		arg.AuthorID,
@@ -353,14 +353,14 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 		arg.DateModified,
 		arg.Template,
 	)
-	var i AdminRoute
+	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.Author,
-		&i.AuthorID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
+		&i.Author,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.Template,
@@ -369,7 +369,7 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 }
 
 const createDatatype = `-- name: CreateDatatype :one
-INSERT INTO datatype (
+INSERT INTO datatypes (
     route_id,
     parent_id,
     label,
@@ -384,7 +384,7 @@ INSERT INTO datatype (
 `
 
 type CreateDatatypeParams struct {
-	RouteID      int64          `json:"route_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
@@ -394,7 +394,7 @@ type CreateDatatypeParams struct {
 	DateModified sql.NullString `json:"date_modified"`
 }
 
-func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) (Datatype, error) {
+func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) (Datatypes, error) {
 	row := q.db.QueryRowContext(ctx, createDatatype,
 		arg.RouteID,
 		arg.ParentID,
@@ -405,7 +405,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 		arg.DateCreated,
 		arg.DateModified,
 	)
-	var i Datatype
+	var i Datatypes
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.RouteID,
@@ -421,7 +421,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 }
 
 const createField = `-- name: CreateField :one
-INSERT INTO field (
+INSERT INTO fields  (
     route_id,
     parent_id,
     label,
@@ -437,18 +437,18 @@ INSERT INTO field (
 `
 
 type CreateFieldParams struct {
-	RouteID      int64          `json:"route_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	Author       interface{}    `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 
-func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field, error) {
+func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Fields, error) {
 	row := q.db.QueryRowContext(ctx, createField,
 		arg.RouteID,
 		arg.ParentID,
@@ -460,7 +460,7 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		arg.DateCreated,
 		arg.DateModified,
 	)
-	var i Field
+	var i Fields
 	err := row.Scan(
 		&i.FieldID,
 		&i.RouteID,
@@ -494,11 +494,11 @@ INSERT INTO media (
     optimized_mobile,
     optimized_tablet,
     optimized_desktop,
-    optimized_ultrawide
+    optimized_ultra_wide
 ) VALUES (
  ?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?
 )
-RETURNING id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, url, mimetype, dimensions, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultrawide
+RETURNING media_id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide
 `
 
 type CreateMediaParams struct {
@@ -510,15 +510,15 @@ type CreateMediaParams struct {
 	Class              sql.NullString `json:"class"`
 	Author             interface{}    `json:"author"`
 	AuthorID           int64          `json:"author_id"`
-	DateCreated        string         `json:"date_created"`
-	DateModified       string         `json:"date_modified"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
 	Url                sql.NullString `json:"url"`
 	Mimetype           sql.NullString `json:"mimetype"`
 	Dimensions         sql.NullString `json:"dimensions"`
 	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
 	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
 	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltrawide sql.NullString `json:"optimized_ultrawide"`
+	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media, error) {
@@ -539,11 +539,11 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		arg.OptimizedMobile,
 		arg.OptimizedTablet,
 		arg.OptimizedDesktop,
-		arg.OptimizedUltrawide,
+		arg.OptimizedUltraWide,
 	)
 	var i Media
 	err := row.Scan(
-		&i.ID,
+		&i.MediaID,
 		&i.Name,
 		&i.DisplayName,
 		&i.Alt,
@@ -554,59 +554,66 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
-		&i.Url,
 		&i.Mimetype,
 		&i.Dimensions,
+		&i.Url,
 		&i.OptimizedMobile,
 		&i.OptimizedTablet,
 		&i.OptimizedDesktop,
-		&i.OptimizedUltrawide,
+		&i.OptimizedUltraWide,
 	)
 	return i, err
 }
 
 const createMediaDimension = `-- name: CreateMediaDimension :one
-INSERT INTO media_dimension(
+INSERT INTO media_dimensions(
     label,
     width,
-    height
+    height,
+    aspect_ratio
 ) VALUES (
-  ?, ?, ?
+  ?, ?, ?, ?
 )
-RETURNING id, label, width, height
+RETURNING md_id, label, width, height, aspect_ratio
 `
 
 type CreateMediaDimensionParams struct {
-	Label  sql.NullString `json:"label"`
-	Width  sql.NullInt64  `json:"width"`
-	Height sql.NullInt64  `json:"height"`
+	Label       sql.NullString `json:"label"`
+	Width       sql.NullInt64  `json:"width"`
+	Height      sql.NullInt64  `json:"height"`
+	AspectRatio sql.NullString `json:"aspect_ratio"`
 }
 
-func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimensionParams) (MediaDimension, error) {
-	row := q.db.QueryRowContext(ctx, createMediaDimension, arg.Label, arg.Width, arg.Height)
-	var i MediaDimension
+func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimensionParams) (MediaDimensions, error) {
+	row := q.db.QueryRowContext(ctx, createMediaDimension,
+		arg.Label,
+		arg.Width,
+		arg.Height,
+		arg.AspectRatio,
+	)
+	var i MediaDimensions
 	err := row.Scan(
-		&i.ID,
+		&i.MdID,
 		&i.Label,
 		&i.Width,
 		&i.Height,
+		&i.AspectRatio,
 	)
 	return i, err
 }
 
 const createRoute = `-- name: CreateRoute :one
-INSERT INTO route (
+INSERT INTO routes (
 author,
 author_id,
 slug,
 title,
 status,
 date_created,
-date_modified, 
-content
+date_modified
 ) VALUES (
-?,?,?,?,?,?,?,?
-) RETURNING route_id, author, author_id, slug, title, status, date_created, date_modified, content
+?,?,?,?,?,?,?
+) RETURNING route_id, author, author_id, slug, title, status, date_created, date_modified
 `
 
 type CreateRouteParams struct {
@@ -615,12 +622,11 @@ type CreateRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	DateCreated  string         `json:"date_created"`
-	DateModified string         `json:"date_modified"`
-	Content      sql.NullString `json:"content"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
 }
 
-func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Route, error) {
+func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Routes, error) {
 	row := q.db.QueryRowContext(ctx, createRoute,
 		arg.Author,
 		arg.AuthorID,
@@ -629,9 +635,8 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Route
 		arg.Status,
 		arg.DateCreated,
 		arg.DateModified,
-		arg.Content,
 	)
-	var i Route
+	var i Routes
 	err := row.Scan(
 		&i.RouteID,
 		&i.Author,
@@ -641,7 +646,6 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Route
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
-		&i.Content,
 	)
 	return i, err
 }
@@ -652,18 +656,18 @@ INSERT INTO tables (
 ) VALUES (
   ?
 )
-RETURNING id, label
+RETURNING id, label, author_id
 `
 
 func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Tables, error) {
 	row := q.db.QueryRowContext(ctx, createTable, label)
 	var i Tables
-	err := row.Scan(&i.ID, &i.Label)
+	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
 	return i, err
 }
 
 const createToken = `-- name: CreateToken :one
-INSERT INTO token (
+INSERT INTO tokens (
     user_id,
     token_type,
     token,
@@ -684,7 +688,7 @@ type CreateTokenParams struct {
 	Revoked   sql.NullBool `json:"revoked"`
 }
 
-func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token, error) {
+func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Tokens, error) {
 	row := q.db.QueryRowContext(ctx, createToken,
 		arg.UserID,
 		arg.TokenType,
@@ -693,7 +697,7 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token
 		arg.ExpiresAt,
 		arg.Revoked,
 	)
-	var i Token
+	var i Tokens
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -709,31 +713,31 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token
 const createUser = `-- name: CreateUser :one
 ;
 
-INSERT INTO user (
+INSERT INTO users (
     date_created,
     date_modified,
     username,
     name,
-    email ,
+    email,
     hash,
     role
 ) VALUES (
 ?,?,?,?,?,?,?
 )
-RETURNING user_id, date_created, date_modified, username, name, email, hash, role
+RETURNING user_id, username, name, email, hash, role, date_created, date_modified
 `
 
 type CreateUserParams struct {
-	DateCreated  string `json:"date_created"`
-	DateModified string `json:"date_modified"`
-	Username     string `json:"username"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	Hash         string `json:"hash"`
-	Role         string `json:"role"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         string         `json:"role"`
 }
 
-func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
+func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
 	row := q.db.QueryRowContext(ctx, createUser,
 		arg.DateCreated,
 		arg.DateModified,
@@ -743,22 +747,22 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		arg.Hash,
 		arg.Role,
 	)
-	var i User
+	var i Users
 	err := row.Scan(
 		&i.UserID,
-		&i.DateCreated,
-		&i.DateModified,
 		&i.Username,
 		&i.Name,
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.DateCreated,
+		&i.DateModified,
 	)
 	return i, err
 }
 
 const deleteAdminDatatype = `-- name: DeleteAdminDatatype :exec
-DELETE FROM admin_datatype
+DELETE FROM admin_datatypes
 WHERE admin_dt_id = ?
 `
 
@@ -768,7 +772,7 @@ func (q *Queries) DeleteAdminDatatype(ctx context.Context, adminDtID int64) erro
 }
 
 const deleteAdminField = `-- name: DeleteAdminField :exec
-DELETE FROM admin_field
+DELETE FROM admin_fields
 WHERE admin_field_id = ?
 `
 
@@ -778,7 +782,7 @@ func (q *Queries) DeleteAdminField(ctx context.Context, adminFieldID int64) erro
 }
 
 const deleteAdminRoute = `-- name: DeleteAdminRoute :exec
-DELETE FROM admin_route
+DELETE FROM admin_routes
 WHERE slug = ?
 `
 
@@ -788,7 +792,7 @@ func (q *Queries) DeleteAdminRoute(ctx context.Context, slug string) error {
 }
 
 const deleteDatatype = `-- name: DeleteDatatype :exec
-DELETE FROM datatype
+DELETE FROM datatypes
 WHERE datatype_id = ?
 `
 
@@ -798,7 +802,7 @@ func (q *Queries) DeleteDatatype(ctx context.Context, datatypeID int64) error {
 }
 
 const deleteField = `-- name: DeleteField :exec
-DELETE FROM field
+DELETE FROM fields 
 WHERE field_id = ?
 `
 
@@ -809,26 +813,26 @@ func (q *Queries) DeleteField(ctx context.Context, fieldID int64) error {
 
 const deleteMedia = `-- name: DeleteMedia :exec
 DELETE FROM media
-WHERE id = ?
+WHERE media_id = ?
 `
 
-func (q *Queries) DeleteMedia(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMedia, id)
+func (q *Queries) DeleteMedia(ctx context.Context, mediaID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteMedia, mediaID)
 	return err
 }
 
 const deleteMediaDimension = `-- name: DeleteMediaDimension :exec
-DELETE FROM media_dimension
-WHERE id = ?
+DELETE FROM media_dimensions
+WHERE md_id = ?
 `
 
-func (q *Queries) DeleteMediaDimension(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMediaDimension, id)
+func (q *Queries) DeleteMediaDimension(ctx context.Context, mdID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteMediaDimension, mdID)
 	return err
 }
 
 const deleteRoute = `-- name: DeleteRoute :exec
-DELETE FROM route
+DELETE FROM routes
 WHERE slug = ?
 `
 
@@ -848,7 +852,7 @@ func (q *Queries) DeleteTable(ctx context.Context, id int64) error {
 }
 
 const deleteToken = `-- name: DeleteToken :exec
-DELETE FROM token
+DELETE FROM tokens
 WHERE id = ?
 `
 
@@ -858,7 +862,7 @@ func (q *Queries) DeleteToken(ctx context.Context, id int64) error {
 }
 
 const deleteUser = `-- name: DeleteUser :exec
-DELETE FROM user
+DELETE FROM users
 WHERE user_id = ?
 `
 
@@ -868,13 +872,13 @@ func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
 }
 
 const getAdminDatatype = `-- name: GetAdminDatatype :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatypes
 WHERE admin_dt_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminDatatype(ctx context.Context, adminDtID int64) (AdminDatatype, error) {
+func (q *Queries) GetAdminDatatype(ctx context.Context, adminDtID int64) (AdminDatatypes, error) {
 	row := q.db.QueryRowContext(ctx, getAdminDatatype, adminDtID)
-	var i AdminDatatype
+	var i AdminDatatypes
 	err := row.Scan(
 		&i.AdminDtID,
 		&i.AdminRouteID,
@@ -890,7 +894,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, adminDtID int64) (AdminD
 }
 
 const getAdminDatatypeId = `-- name: GetAdminDatatypeId :one
-SELECT admin_dt_id FROM admin_datatype
+SELECT admin_dt_id FROM admin_datatypes
 WHERE admin_dt_id = ? LIMIT 1
 `
 
@@ -902,13 +906,13 @@ func (q *Queries) GetAdminDatatypeId(ctx context.Context, adminDtID int64) (int6
 }
 
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM admin_field
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int64) (AdminField, error) {
+func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int64) (AdminFields, error) {
 	row := q.db.QueryRowContext(ctx, getAdminField, adminFieldID)
-	var i AdminField
+	var i AdminFields
 	err := row.Scan(
 		&i.AdminFieldID,
 		&i.AdminRouteID,
@@ -925,7 +929,7 @@ func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int64) (AdminF
 }
 
 const getAdminFieldId = `-- name: GetAdminFieldId :one
-SELECT admin_field_id FROM admin_field
+SELECT admin_field_id FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
 `
 
@@ -937,20 +941,20 @@ func (q *Queries) GetAdminFieldId(ctx context.Context, adminFieldID int64) (int6
 }
 
 const getAdminRouteById = `-- name: GetAdminRouteById :one
-SELECT admin_route_id, author, author_id, slug, title, status, date_created, date_modified, template FROM admin_route
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, template FROM admin_routes
 WHERE admin_route_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (AdminRoute, error) {
+func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (AdminRoutes, error) {
 	row := q.db.QueryRowContext(ctx, getAdminRouteById, adminRouteID)
-	var i AdminRoute
+	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.Author,
-		&i.AuthorID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
+		&i.Author,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.Template,
@@ -959,20 +963,20 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (Ad
 }
 
 const getAdminRouteBySlug = `-- name: GetAdminRouteBySlug :one
-SELECT admin_route_id, author, author_id, slug, title, status, date_created, date_modified, template FROM admin_route
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, template FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRoute, error) {
+func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRoutes, error) {
 	row := q.db.QueryRowContext(ctx, getAdminRouteBySlug, slug)
-	var i AdminRoute
+	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.Author,
-		&i.AuthorID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
+		&i.Author,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.Template,
@@ -981,7 +985,7 @@ func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRo
 }
 
 const getAdminRouteId = `-- name: GetAdminRouteId :one
-SELECT admin_route_id FROM admin_route
+SELECT admin_route_id FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
@@ -993,13 +997,13 @@ func (q *Queries) GetAdminRouteId(ctx context.Context, slug string) (int64, erro
 }
 
 const getDatatype = `-- name: GetDatatype :one
-SELECT datatype_id, route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM datatype
+SELECT datatype_id, route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM datatypes
 WHERE datatype_id = ? LIMIT 1
 `
 
-func (q *Queries) GetDatatype(ctx context.Context, datatypeID int64) (Datatype, error) {
+func (q *Queries) GetDatatype(ctx context.Context, datatypeID int64) (Datatypes, error) {
 	row := q.db.QueryRowContext(ctx, getDatatype, datatypeID)
-	var i Datatype
+	var i Datatypes
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.RouteID,
@@ -1015,13 +1019,13 @@ func (q *Queries) GetDatatype(ctx context.Context, datatypeID int64) (Datatype, 
 }
 
 const getField = `-- name: GetField :one
-SELECT field_id, route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM field
+SELECT field_id, route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM fields 
 WHERE field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetField(ctx context.Context, fieldID int64) (Field, error) {
+func (q *Queries) GetField(ctx context.Context, fieldID int64) (Fields, error) {
 	row := q.db.QueryRowContext(ctx, getField, fieldID)
-	var i Field
+	var i Fields
 	err := row.Scan(
 		&i.FieldID,
 		&i.RouteID,
@@ -1040,13 +1044,13 @@ func (q *Queries) GetField(ctx context.Context, fieldID int64) (Field, error) {
 const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
 ;
 
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatypes
 WHERE type = "GLOBAL" AND parent_id = NULL AND admin_route_id = NULL LIMIT 1
 `
 
-func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatype, error) {
+func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes, error) {
 	row := q.db.QueryRowContext(ctx, getGlobalAdminDatatypeId)
-	var i AdminDatatype
+	var i AdminDatatypes
 	err := row.Scan(
 		&i.AdminDtID,
 		&i.AdminRouteID,
@@ -1062,15 +1066,15 @@ func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatype, 
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, url, mimetype, dimensions, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultrawide FROM media
-WHERE id = ? LIMIT 1
+SELECT media_id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide FROM media
+WHERE media_id = ? LIMIT 1
 `
 
-func (q *Queries) GetMedia(ctx context.Context, id int64) (Media, error) {
-	row := q.db.QueryRowContext(ctx, getMedia, id)
+func (q *Queries) GetMedia(ctx context.Context, mediaID int64) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMedia, mediaID)
 	var i Media
 	err := row.Scan(
-		&i.ID,
+		&i.MediaID,
 		&i.Name,
 		&i.DisplayName,
 		&i.Alt,
@@ -1081,42 +1085,43 @@ func (q *Queries) GetMedia(ctx context.Context, id int64) (Media, error) {
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
-		&i.Url,
 		&i.Mimetype,
 		&i.Dimensions,
+		&i.Url,
 		&i.OptimizedMobile,
 		&i.OptimizedTablet,
 		&i.OptimizedDesktop,
-		&i.OptimizedUltrawide,
+		&i.OptimizedUltraWide,
 	)
 	return i, err
 }
 
 const getMediaDimension = `-- name: GetMediaDimension :one
-SELECT id, label, width, height FROM media_dimension
-WHERE id = ? LIMIT 1
+SELECT md_id, label, width, height, aspect_ratio FROM media_dimensions
+WHERE md_id = ? LIMIT 1
 `
 
-func (q *Queries) GetMediaDimension(ctx context.Context, id int64) (MediaDimension, error) {
-	row := q.db.QueryRowContext(ctx, getMediaDimension, id)
-	var i MediaDimension
+func (q *Queries) GetMediaDimension(ctx context.Context, mdID int64) (MediaDimensions, error) {
+	row := q.db.QueryRowContext(ctx, getMediaDimension, mdID)
+	var i MediaDimensions
 	err := row.Scan(
-		&i.ID,
+		&i.MdID,
 		&i.Label,
 		&i.Width,
 		&i.Height,
+		&i.AspectRatio,
 	)
 	return i, err
 }
 
 const getRoute = `-- name: GetRoute :one
-SELECT route_id, author, author_id, slug, title, status, date_created, date_modified, content FROM route
+SELECT route_id, author, author_id, slug, title, status, date_created, date_modified FROM routes
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetRoute(ctx context.Context, slug string) (Route, error) {
+func (q *Queries) GetRoute(ctx context.Context, slug string) (Routes, error) {
 	row := q.db.QueryRowContext(ctx, getRoute, slug)
-	var i Route
+	var i Routes
 	err := row.Scan(
 		&i.RouteID,
 		&i.Author,
@@ -1126,13 +1131,12 @@ func (q *Queries) GetRoute(ctx context.Context, slug string) (Route, error) {
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
-		&i.Content,
 	)
 	return i, err
 }
 
 const getRouteId = `-- name: GetRouteId :one
-SELECT route_id FROM route
+SELECT route_id FROM routes
 WHERE slug = ? LIMIT 1
 `
 
@@ -1144,14 +1148,14 @@ func (q *Queries) GetRouteId(ctx context.Context, slug string) (int64, error) {
 }
 
 const getTable = `-- name: GetTable :one
-SELECT id, label FROM tables
+SELECT id, label, author_id FROM tables
 WHERE id = ? LIMIT 1
 `
 
 func (q *Queries) GetTable(ctx context.Context, id int64) (Tables, error) {
 	row := q.db.QueryRowContext(ctx, getTable, id)
 	var i Tables
-	err := row.Scan(&i.ID, &i.Label)
+	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
 	return i, err
 }
 
@@ -1167,13 +1171,13 @@ func (q *Queries) GetTableId(ctx context.Context, id int64) (int64, error) {
 }
 
 const getToken = `-- name: GetToken :one
-SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
+SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetToken(ctx context.Context, id int64) (Token, error) {
+func (q *Queries) GetToken(ctx context.Context, id int64) (Tokens, error) {
 	row := q.db.QueryRowContext(ctx, getToken, id)
-	var i Token
+	var i Tokens
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -1187,13 +1191,13 @@ func (q *Queries) GetToken(ctx context.Context, id int64) (Token, error) {
 }
 
 const getTokenByUserId = `-- name: GetTokenByUserId :one
-SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
+SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
 WHERE user_id = ? LIMIT 1
 `
 
-func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) (Token, error) {
+func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) (Tokens, error) {
 	row := q.db.QueryRowContext(ctx, getTokenByUserId, userID)
-	var i Token
+	var i Tokens
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
@@ -1207,49 +1211,49 @@ func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) (Token, er
 }
 
 const getUser = `-- name: GetUser :one
-SELECT user_id, date_created, date_modified, username, name, email, hash, role FROM user
+SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users
 WHERE user_id = ? LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, userID int64) (User, error) {
+func (q *Queries) GetUser(ctx context.Context, userID int64) (Users, error) {
 	row := q.db.QueryRowContext(ctx, getUser, userID)
-	var i User
+	var i Users
 	err := row.Scan(
 		&i.UserID,
-		&i.DateCreated,
-		&i.DateModified,
 		&i.Username,
 		&i.Name,
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.DateCreated,
+		&i.DateModified,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, date_created, date_modified, username, name, email, hash, role FROM user
+SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users
 WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, error) {
 	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
-	var i User
+	var i Users
 	err := row.Scan(
 		&i.UserID,
-		&i.DateCreated,
-		&i.DateModified,
 		&i.Username,
 		&i.Name,
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.DateCreated,
+		&i.DateModified,
 	)
 	return i, err
 }
 
 const getUserId = `-- name: GetUserId :one
-SELECT user_id FROM user
+SELECT user_id FROM users
 WHERE email = ? LIMIT 1
 `
 
@@ -1261,19 +1265,19 @@ func (q *Queries) GetUserId(ctx context.Context, email string) (int64, error) {
 }
 
 const listAdminDatatype = `-- name: ListAdminDatatype :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatypes
 ORDER BY admin_dt_id
 `
 
-func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatype, error) {
+func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminDatatype)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatype
+	var items []AdminDatatypes
 	for rows.Next() {
-		var i AdminDatatype
+		var i AdminDatatypes
 		if err := rows.Scan(
 			&i.AdminDtID,
 			&i.AdminRouteID,
@@ -1300,19 +1304,19 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatype, error
 
 const listAdminDatatypeByRouteId = `-- name: ListAdminDatatypeByRouteId :many
 SELECT admin_dt_id, admin_route_id, parent_id, label, type
-FROM admin_datatype
+FROM admin_datatypes
 WHERE admin_route_id = ?
 `
 
 type ListAdminDatatypeByRouteIdRow struct {
 	AdminDtID    int64         `json:"admin_dt_id"`
-	AdminRouteID int64         `json:"admin_route_id"`
+	AdminRouteID sql.NullInt64 `json:"admin_route_id"`
 	ParentID     sql.NullInt64 `json:"parent_id"`
 	Label        string        `json:"label"`
 	Type         string        `json:"type"`
 }
 
-func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID int64) ([]ListAdminDatatypeByRouteIdRow, error) {
+func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID sql.NullInt64) ([]ListAdminDatatypeByRouteIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminDatatypeByRouteId, adminRouteID)
 	if err != nil {
 		return nil, err
@@ -1342,19 +1346,19 @@ func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID i
 }
 
 const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatypes
 WHERE parent_id = ?
 `
 
-func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.NullInt64) ([]AdminDatatype, error) {
+func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.NullInt64) ([]AdminDatatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildren, parentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatype
+	var items []AdminDatatypes
 	for rows.Next() {
-		var i AdminDatatype
+		var i AdminDatatypes
 		if err := rows.Scan(
 			&i.AdminDtID,
 			&i.AdminRouteID,
@@ -1380,19 +1384,19 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.Nu
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM admin_field
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM admin_fields
 ORDER BY admin_field_id
 `
 
-func (q *Queries) ListAdminField(ctx context.Context) ([]AdminField, error) {
+func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminField)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminField
+	var items []AdminFields
 	for rows.Next() {
-		var i AdminField
+		var i AdminFields
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.AdminRouteID,
@@ -1420,20 +1424,20 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminField, error) {
 
 const listAdminFieldByRouteId = `-- name: ListAdminFieldByRouteId :many
 SELECT admin_field_id, admin_route_id, parent_id, label, data, type
-FROM admin_field
+FROM admin_fields
 WHERE admin_route_id = ?
 `
 
 type ListAdminFieldByRouteIdRow struct {
-	AdminFieldID int64       `json:"admin_field_id"`
-	AdminRouteID int64       `json:"admin_route_id"`
-	ParentID     int64       `json:"parent_id"`
-	Label        interface{} `json:"label"`
-	Data         interface{} `json:"data"`
-	Type         interface{} `json:"type"`
+	AdminFieldID int64         `json:"admin_field_id"`
+	AdminRouteID sql.NullInt64 `json:"admin_route_id"`
+	ParentID     sql.NullInt64 `json:"parent_id"`
+	Label        interface{}   `json:"label"`
+	Data         interface{}   `json:"data"`
+	Type         interface{}   `json:"type"`
 }
 
-func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID int64) ([]ListAdminFieldByRouteIdRow, error) {
+func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.NullInt64) ([]ListAdminFieldByRouteIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminFieldByRouteId, adminRouteID)
 	if err != nil {
 		return nil, err
@@ -1464,26 +1468,26 @@ func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID int6
 }
 
 const listAdminRoute = `-- name: ListAdminRoute :many
-SELECT admin_route_id, author, author_id, slug, title, status, date_created, date_modified, template FROM admin_route
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, template FROM admin_routes
 ORDER BY slug
 `
 
-func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoute, error) {
+func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminRoute)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminRoute
+	var items []AdminRoutes
 	for rows.Next() {
-		var i AdminRoute
+		var i AdminRoutes
 		if err := rows.Scan(
 			&i.AdminRouteID,
-			&i.Author,
-			&i.AuthorID,
 			&i.Slug,
 			&i.Title,
 			&i.Status,
+			&i.Author,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.Template,
@@ -1502,19 +1506,19 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoute, error) {
 }
 
 const listDatatype = `-- name: ListDatatype :many
-SELECT datatype_id, route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM datatype
+SELECT datatype_id, route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM datatypes
 ORDER BY datatype_id
 `
 
-func (q *Queries) ListDatatype(ctx context.Context) ([]Datatype, error) {
+func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listDatatype)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Datatype
+	var items []Datatypes
 	for rows.Next() {
-		var i Datatype
+		var i Datatypes
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.RouteID,
@@ -1541,19 +1545,19 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatype, error) {
 
 const listDatatypeByRouteId = `-- name: ListDatatypeByRouteId :many
 SELECT datatype_id, route_id, parent_id, label, type
-FROM datatype
+FROM datatypes
 WHERE route_id = ?
 `
 
 type ListDatatypeByRouteIdRow struct {
 	DatatypeID int64         `json:"datatype_id"`
-	RouteID    int64         `json:"route_id"`
+	RouteID    sql.NullInt64 `json:"route_id"`
 	ParentID   sql.NullInt64 `json:"parent_id"`
 	Label      string        `json:"label"`
 	Type       string        `json:"type"`
 }
 
-func (q *Queries) ListDatatypeByRouteId(ctx context.Context, routeID int64) ([]ListDatatypeByRouteIdRow, error) {
+func (q *Queries) ListDatatypeByRouteId(ctx context.Context, routeID sql.NullInt64) ([]ListDatatypeByRouteIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, listDatatypeByRouteId, routeID)
 	if err != nil {
 		return nil, err
@@ -1583,19 +1587,21 @@ func (q *Queries) ListDatatypeByRouteId(ctx context.Context, routeID int64) ([]L
 }
 
 const listField = `-- name: ListField :many
-SELECT field_id, route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM field
+;
+
+SELECT field_id, route_id, parent_id, label, data, type, author, author_id, date_created, date_modified FROM fields 
 ORDER BY field_id
 `
 
-func (q *Queries) ListField(ctx context.Context) ([]Field, error) {
+func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 	rows, err := q.db.QueryContext(ctx, listField)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Field
+	var items []Fields
 	for rows.Next() {
-		var i Field
+		var i Fields
 		if err := rows.Scan(
 			&i.FieldID,
 			&i.RouteID,
@@ -1623,20 +1629,20 @@ func (q *Queries) ListField(ctx context.Context) ([]Field, error) {
 
 const listFieldByRouteId = `-- name: ListFieldByRouteId :many
 SELECT field_id, route_id, parent_id, label, data, type
-FROM field
+FROM fields 
 WHERE route_id = ?
 `
 
 type ListFieldByRouteIdRow struct {
 	FieldID  int64         `json:"field_id"`
-	RouteID  int64         `json:"route_id"`
+	RouteID  sql.NullInt64 `json:"route_id"`
 	ParentID sql.NullInt64 `json:"parent_id"`
 	Label    interface{}   `json:"label"`
-	Data     interface{}   `json:"data"`
-	Type     interface{}   `json:"type"`
+	Data     string        `json:"data"`
+	Type     string        `json:"type"`
 }
 
-func (q *Queries) ListFieldByRouteId(ctx context.Context, routeID int64) ([]ListFieldByRouteIdRow, error) {
+func (q *Queries) ListFieldByRouteId(ctx context.Context, routeID sql.NullInt64) ([]ListFieldByRouteIdRow, error) {
 	rows, err := q.db.QueryContext(ctx, listFieldByRouteId, routeID)
 	if err != nil {
 		return nil, err
@@ -1667,7 +1673,7 @@ func (q *Queries) ListFieldByRouteId(ctx context.Context, routeID int64) ([]List
 }
 
 const listMedia = `-- name: ListMedia :many
-SELECT id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, url, mimetype, dimensions, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultrawide FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide FROM media
 ORDER BY name
 `
 
@@ -1681,7 +1687,7 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 	for rows.Next() {
 		var i Media
 		if err := rows.Scan(
-			&i.ID,
+			&i.MediaID,
 			&i.Name,
 			&i.DisplayName,
 			&i.Alt,
@@ -1692,13 +1698,13 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
-			&i.Url,
 			&i.Mimetype,
 			&i.Dimensions,
+			&i.Url,
 			&i.OptimizedMobile,
 			&i.OptimizedTablet,
 			&i.OptimizedDesktop,
-			&i.OptimizedUltrawide,
+			&i.OptimizedUltraWide,
 		); err != nil {
 			return nil, err
 		}
@@ -1714,24 +1720,25 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 }
 
 const listMediaDimension = `-- name: ListMediaDimension :many
-SELECT id, label, width, height FROM media_dimension 
+SELECT md_id, label, width, height, aspect_ratio FROM media_dimensions 
 ORDER BY label
 `
 
-func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimension, error) {
+func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimensions, error) {
 	rows, err := q.db.QueryContext(ctx, listMediaDimension)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MediaDimension
+	var items []MediaDimensions
 	for rows.Next() {
-		var i MediaDimension
+		var i MediaDimensions
 		if err := rows.Scan(
-			&i.ID,
+			&i.MdID,
 			&i.Label,
 			&i.Width,
 			&i.Height,
+			&i.AspectRatio,
 		); err != nil {
 			return nil, err
 		}
@@ -1747,19 +1754,19 @@ func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimension, err
 }
 
 const listRoute = `-- name: ListRoute :many
-SELECT route_id, author, author_id, slug, title, status, date_created, date_modified, content FROM route
+SELECT route_id, author, author_id, slug, title, status, date_created, date_modified FROM routes
 ORDER BY slug
 `
 
-func (q *Queries) ListRoute(ctx context.Context) ([]Route, error) {
+func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 	rows, err := q.db.QueryContext(ctx, listRoute)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Route
+	var items []Routes
 	for rows.Next() {
-		var i Route
+		var i Routes
 		if err := rows.Scan(
 			&i.RouteID,
 			&i.Author,
@@ -1769,7 +1776,6 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Route, error) {
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
-			&i.Content,
 		); err != nil {
 			return nil, err
 		}
@@ -1785,7 +1791,7 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Route, error) {
 }
 
 const listTable = `-- name: ListTable :many
-SELECT id, label FROM tables 
+SELECT id, label, author_id FROM tables 
 ORDER BY label
 `
 
@@ -1798,7 +1804,7 @@ func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
 	var items []Tables
 	for rows.Next() {
 		var i Tables
-		if err := rows.Scan(&i.ID, &i.Label); err != nil {
+		if err := rows.Scan(&i.ID, &i.Label, &i.AuthorID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -1813,28 +1819,28 @@ func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
 }
 
 const listUser = `-- name: ListUser :many
-SELECT user_id, date_created, date_modified, username, name, email, hash, role FROM user 
+SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users 
 ORDER BY user_id
 `
 
-func (q *Queries) ListUser(ctx context.Context) ([]User, error) {
+func (q *Queries) ListUser(ctx context.Context) ([]Users, error) {
 	rows, err := q.db.QueryContext(ctx, listUser)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []User
+	var items []Users
 	for rows.Next() {
-		var i User
+		var i Users
 		if err := rows.Scan(
 			&i.UserID,
-			&i.DateCreated,
-			&i.DateModified,
 			&i.Username,
 			&i.Name,
 			&i.Email,
 			&i.Hash,
 			&i.Role,
+			&i.DateCreated,
+			&i.DateModified,
 		); err != nil {
 			return nil, err
 		}
@@ -1850,7 +1856,7 @@ func (q *Queries) ListUser(ctx context.Context) ([]User, error) {
 }
 
 const updateAdminDatatype = `-- name: UpdateAdminDatatype :exec
-UPDATE admin_datatype
+UPDATE admin_datatypes
 set admin_route_id = ?,
     parent_id = ?,
     label = ?,
@@ -1864,11 +1870,11 @@ set admin_route_id = ?,
 `
 
 type UpdateAdminDatatypeParams struct {
-	AdminRouteID int64          `json:"admin_route_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Author       interface{}    `json:"author"`
+	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -1891,7 +1897,7 @@ func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDataty
 }
 
 const updateAdminField = `-- name: UpdateAdminField :exec
-UPDATE admin_field
+UPDATE admin_fields
 set admin_route_id = ?,
     parent_id = ?,
     label = ?,
@@ -1906,8 +1912,8 @@ set admin_route_id = ?,
 `
 
 type UpdateAdminFieldParams struct {
-	AdminRouteID int64          `json:"admin_route_id"`
-	ParentID     int64          `json:"parent_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
 	Data         interface{}    `json:"data"`
 	Type         interface{}    `json:"type"`
@@ -1935,7 +1941,7 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 }
 
 const updateAdminRoute = `-- name: UpdateAdminRoute :exec
-UPDATE admin_route
+UPDATE admin_routes
 set slug = ?,
     title = ?,
     status = ?,
@@ -1945,7 +1951,7 @@ set slug = ?,
     date_modified = ?,
     template = ?
     WHERE slug = ?
-    RETURNING admin_route_id, author, author_id, slug, title, status, date_created, date_modified, template
+    RETURNING admin_route_id, slug, title, status, author, author_id, date_created, date_modified, template
 `
 
 type UpdateAdminRouteParams struct {
@@ -1953,7 +1959,7 @@ type UpdateAdminRouteParams struct {
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
 	Author       interface{}    `json:"author"`
-	AuthorID     interface{}    `json:"author_id"`
+	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	Template     interface{}    `json:"template"`
@@ -1976,7 +1982,7 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 }
 
 const updateDatatype = `-- name: UpdateDatatype :exec
-UPDATE datatype
+UPDATE datatypes
 set route_id = ?,
     parent_id = ?,
     label = ?,
@@ -1990,7 +1996,7 @@ set route_id = ?,
 `
 
 type UpdateDatatypeParams struct {
-	RouteID      int64          `json:"route_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
@@ -2017,7 +2023,7 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 }
 
 const updateField = `-- name: UpdateField :exec
-UPDATE field
+UPDATE fields 
 set route_id = ?,
     parent_id = ?,
     label = ?,
@@ -2032,11 +2038,11 @@ set route_id = ?,
 `
 
 type UpdateFieldParams struct {
-	RouteID      int64          `json:"route_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	Author       interface{}    `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
@@ -2078,8 +2084,8 @@ UPDATE media
         optimized_mobile = ?,
         optimized_tablet = ?,
         optimized_desktop = ?,
-        optimized_ultrawide = ?
-        WHERE id = ?
+        optimized_ultra_wide = ?
+        WHERE media_id = ?
 `
 
 type UpdateMediaParams struct {
@@ -2091,16 +2097,16 @@ type UpdateMediaParams struct {
 	Class              sql.NullString `json:"class"`
 	Author             interface{}    `json:"author"`
 	AuthorID           int64          `json:"author_id"`
-	DateCreated        string         `json:"date_created"`
-	DateModified       string         `json:"date_modified"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
 	Url                sql.NullString `json:"url"`
 	Mimetype           sql.NullString `json:"mimetype"`
 	Dimensions         sql.NullString `json:"dimensions"`
 	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
 	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
 	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltrawide sql.NullString `json:"optimized_ultrawide"`
-	ID                 int64          `json:"id"`
+	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
+	MediaID            int64          `json:"media_id"`
 }
 
 func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error {
@@ -2121,25 +2127,27 @@ func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error 
 		arg.OptimizedMobile,
 		arg.OptimizedTablet,
 		arg.OptimizedDesktop,
-		arg.OptimizedUltrawide,
-		arg.ID,
+		arg.OptimizedUltraWide,
+		arg.MediaID,
 	)
 	return err
 }
 
 const updateMediaDimension = `-- name: UpdateMediaDimension :exec
-UPDATE media_dimension
+UPDATE media_dimensions
 set label = ?,
     width = ?,
-    height = ? 
-WHERE id = ?
+    height = ?,
+    aspect_ratio = ?
+WHERE md_id = ?
 `
 
 type UpdateMediaDimensionParams struct {
-	Label  sql.NullString `json:"label"`
-	Width  sql.NullInt64  `json:"width"`
-	Height sql.NullInt64  `json:"height"`
-	ID     int64          `json:"id"`
+	Label       sql.NullString `json:"label"`
+	Width       sql.NullInt64  `json:"width"`
+	Height      sql.NullInt64  `json:"height"`
+	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        int64          `json:"md_id"`
 }
 
 func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimensionParams) error {
@@ -2147,34 +2155,33 @@ func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimen
 		arg.Label,
 		arg.Width,
 		arg.Height,
-		arg.ID,
+		arg.AspectRatio,
+		arg.MdID,
 	)
 	return err
 }
 
 const updateRoute = `-- name: UpdateRoute :exec
-UPDATE route
+UPDATE routes
 set slug = ?,
     title = ?,
     status = ?,
-    content = ?, 
     author = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
     WHERE slug = ?
-    RETURNING route_id, author, author_id, slug, title, status, date_created, date_modified, content
+    RETURNING route_id, author, author_id, slug, title, status, date_created, date_modified
 `
 
 type UpdateRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	Content      sql.NullString `json:"content"`
 	Author       interface{}    `json:"author"`
 	AuthorID     int64          `json:"author_id"`
-	DateCreated  string         `json:"date_created"`
-	DateModified string         `json:"date_modified"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
 	Slug_2       string         `json:"slug_2"`
 }
 
@@ -2183,7 +2190,6 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 		arg.Slug,
 		arg.Title,
 		arg.Status,
-		arg.Content,
 		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
@@ -2210,10 +2216,10 @@ func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error 
 }
 
 const updateToken = `-- name: UpdateToken :exec
-UPDATE token
+UPDATE tokens
 set token = ?,
 issued_at = ?,
-expires_at= ?,
+expires_at = ?,
 revoked = ?
 WHERE id = ?
 `
@@ -2238,7 +2244,7 @@ func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error 
 }
 
 const updateUser = `-- name: UpdateUser :exec
-UPDATE user
+UPDATE users
 set date_created = ?,
     date_modified = ?,
     username = ?,
@@ -2250,14 +2256,14 @@ WHERE user_id = ?
 `
 
 type UpdateUserParams struct {
-	DateCreated  string `json:"date_created"`
-	DateModified string `json:"date_modified"`
-	Username     string `json:"username"`
-	Name         string `json:"name"`
-	Email        string `json:"email"`
-	Hash         string `json:"hash"`
-	Role         string `json:"role"`
-	UserID       int64  `json:"user_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         string         `json:"role"`
+	UserID       int64          `json:"user_id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
@@ -2275,7 +2281,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 }
 
 const utilityGetAdminDatatypes = `-- name: UtilityGetAdminDatatypes :many
-select admin_dt_id, label from admin_datatype
+select admin_dt_id, label from admin_datatypes
 `
 
 type UtilityGetAdminDatatypesRow struct {
@@ -2307,7 +2313,7 @@ func (q *Queries) UtilityGetAdminDatatypes(ctx context.Context) ([]UtilityGetAdm
 }
 
 const utilityGetAdminRoutes = `-- name: UtilityGetAdminRoutes :many
-select admin_route_id, slug from admin_route
+select admin_route_id, slug from admin_routes
 `
 
 type UtilityGetAdminRoutesRow struct {
@@ -2339,7 +2345,7 @@ func (q *Queries) UtilityGetAdminRoutes(ctx context.Context) ([]UtilityGetAdminR
 }
 
 const utilityGetAdminfields = `-- name: UtilityGetAdminfields :many
-select admin_field_id, label from admin_field
+select admin_field_id, label from admin_fields
 `
 
 type UtilityGetAdminfieldsRow struct {
@@ -2371,7 +2377,7 @@ func (q *Queries) UtilityGetAdminfields(ctx context.Context) ([]UtilityGetAdminf
 }
 
 const utilityGetDatatypes = `-- name: UtilityGetDatatypes :many
-select datatype_id, label from datatype
+select datatype_id, label from datatypes
 `
 
 type UtilityGetDatatypesRow struct {
@@ -2403,7 +2409,7 @@ func (q *Queries) UtilityGetDatatypes(ctx context.Context) ([]UtilityGetDatatype
 }
 
 const utilityGetFields = `-- name: UtilityGetFields :many
-select field_id, label from field
+select field_id, label from fields
 `
 
 type UtilityGetFieldsRow struct {
@@ -2435,12 +2441,12 @@ func (q *Queries) UtilityGetFields(ctx context.Context) ([]UtilityGetFieldsRow, 
 }
 
 const utilityGetMedia = `-- name: UtilityGetMedia :many
-select id, name from media
+select media_id, name from media
 `
 
 type UtilityGetMediaRow struct {
-	ID   int64          `json:"id"`
-	Name sql.NullString `json:"name"`
+	MediaID int64          `json:"media_id"`
+	Name    sql.NullString `json:"name"`
 }
 
 func (q *Queries) UtilityGetMedia(ctx context.Context) ([]UtilityGetMediaRow, error) {
@@ -2452,7 +2458,7 @@ func (q *Queries) UtilityGetMedia(ctx context.Context) ([]UtilityGetMediaRow, er
 	var items []UtilityGetMediaRow
 	for rows.Next() {
 		var i UtilityGetMediaRow
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+		if err := rows.Scan(&i.MediaID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -2467,11 +2473,11 @@ func (q *Queries) UtilityGetMedia(ctx context.Context) ([]UtilityGetMediaRow, er
 }
 
 const utilityGetMediaDimension = `-- name: UtilityGetMediaDimension :many
-select id, label from media_dimension
+select md_id, label from media_dimensions
 `
 
 type UtilityGetMediaDimensionRow struct {
-	ID    int64          `json:"id"`
+	MdID  int64          `json:"md_id"`
 	Label sql.NullString `json:"label"`
 }
 
@@ -2484,7 +2490,7 @@ func (q *Queries) UtilityGetMediaDimension(ctx context.Context) ([]UtilityGetMed
 	var items []UtilityGetMediaDimensionRow
 	for rows.Next() {
 		var i UtilityGetMediaDimensionRow
-		if err := rows.Scan(&i.ID, &i.Label); err != nil {
+		if err := rows.Scan(&i.MdID, &i.Label); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -2499,7 +2505,7 @@ func (q *Queries) UtilityGetMediaDimension(ctx context.Context) ([]UtilityGetMed
 }
 
 const utilityGetRoute = `-- name: UtilityGetRoute :many
-select route_id, slug from route
+select route_id, slug from routes
 `
 
 type UtilityGetRouteRow struct {
@@ -2534,15 +2540,20 @@ const utilityGetTables = `-- name: UtilityGetTables :many
 select id, label from tables
 `
 
-func (q *Queries) UtilityGetTables(ctx context.Context) ([]Tables, error) {
+type UtilityGetTablesRow struct {
+	ID    int64          `json:"id"`
+	Label sql.NullString `json:"label"`
+}
+
+func (q *Queries) UtilityGetTables(ctx context.Context) ([]UtilityGetTablesRow, error) {
 	rows, err := q.db.QueryContext(ctx, utilityGetTables)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tables
+	var items []UtilityGetTablesRow
 	for rows.Next() {
-		var i Tables
+		var i UtilityGetTablesRow
 		if err := rows.Scan(&i.ID, &i.Label); err != nil {
 			return nil, err
 		}
@@ -2558,7 +2569,7 @@ func (q *Queries) UtilityGetTables(ctx context.Context) ([]Tables, error) {
 }
 
 const utilityGetToken = `-- name: UtilityGetToken :many
-select id, user_id  from token
+select id, user_id  from tokens
 `
 
 type UtilityGetTokenRow struct {
@@ -2590,7 +2601,7 @@ func (q *Queries) UtilityGetToken(ctx context.Context) ([]UtilityGetTokenRow, er
 }
 
 const utilityGetUsers = `-- name: UtilityGetUsers :many
-select user_id, username from user
+select user_id, username from users
 `
 
 type UtilityGetUsersRow struct {
@@ -2622,27 +2633,27 @@ func (q *Queries) UtilityGetUsers(ctx context.Context) ([]UtilityGetUsersRow, er
 }
 
 const utilityRecordCount = `-- name: UtilityRecordCount :many
-SELECT 'admin_datatype' AS table_name, COUNT(*) AS row_count FROM admin_datatype
+SELECT 'admin_datatypes' AS table_name, COUNT(*) AS row_count FROM admin_datatypes
 UNION ALL
-SELECT 'admin_field' AS table_name, COUNT(*) AS row_count FROM admin_field
+SELECT 'admin_fields' AS table_name, COUNT(*) AS row_count FROM admin_fields
 UNION ALL
-SELECT 'admin_route' AS table_name, COUNT(*) AS row_count FROM admin_route
+SELECT 'admin_routes' AS table_name, COUNT(*) AS row_count FROM admin_routes
 UNION ALL
-SELECT 'datatype' AS table_name, COUNT(*) AS row_count FROM datatype
+SELECT 'datatypes' AS table_name, COUNT(*) AS row_count FROM datatypes
 UNION ALL
-SELECT 'field' AS table_name, COUNT(*) AS row_count FROM field
+SELECT 'fields' AS table_name, COUNT(*) AS row_count FROM fields
 UNION ALL
-SELECT 'route' AS table_name, COUNT(*) AS row_count FROM route
+SELECT 'routes' AS table_name, COUNT(*) AS row_count FROM routes
 UNION ALL
 SELECT 'media' AS table_name, COUNT(*) AS row_count FROM media
 UNION ALL
-SELECT 'media_dimension' AS table_name, COUNT(*) AS row_count FROM media_dimension
+SELECT 'media_dimensions' AS table_name, COUNT(*) AS row_count FROM media_dimensions
 UNION ALL
 SELECT 'tables' AS table_name, COUNT(*) AS row_count FROM tables
 UNION ALL
-SELECT 'token' AS table_name, COUNT(*) AS row_count FROM token
+SELECT 'tokens' AS table_name, COUNT(*) AS row_count FROM tokens
 UNION ALL
-SELECT 'user' AS table_name, COUNT(*) AS row_count FROM user
+SELECT 'users' AS table_name, COUNT(*) AS row_count FROM users
 `
 
 type UtilityRecordCountRow struct {

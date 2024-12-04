@@ -22,7 +22,7 @@ slug,
 title,
 status,
 date_created,
-date_modified, 
+date_modified
 ) VALUES (
 ?,?,?,?,?,?,?
 ) RETURNING *;

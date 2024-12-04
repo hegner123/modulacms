@@ -28,7 +28,7 @@ func TestListUser(t *testing.T) {
 		return dbListUser(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.User); ok {
+	if _, ok := res.([]mdb.Users); ok {
 		return
 	} else {
 		t.FailNow()
@@ -45,7 +45,7 @@ func TestListAdminRoute(t *testing.T) {
 		return dbListAdminRoute(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.AdminRoute); ok {
+	if _, ok := res.([]mdb.AdminRoutes); ok {
 		return
 	} else {
 		t.FailNow()
@@ -62,7 +62,7 @@ func TestListRoute(t *testing.T) {
 		return dbListRoute(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.Route); ok {
+	if _, ok := res.([]mdb.Routes); ok {
 		return
 	} else {
 		t.FailNow()
@@ -96,7 +96,7 @@ func TestListField(t *testing.T) {
 		return dbListField(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.Field); ok {
+	if _, ok := res.([]mdb.Fields); ok {
 		return
 	} else {
 		t.FailNow()
@@ -113,7 +113,7 @@ func TestListMediaDimension(t *testing.T) {
 		return dbListMediaDimension(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.MediaDimension); ok {
+	if _, ok := res.([]mdb.MediaDimensions); ok {
 		return
 	} else {
 		t.FailNow()
@@ -147,7 +147,7 @@ func TestListDatatype(t *testing.T) {
 		return dbListDatatype(db, ctx)
 	}()
 
-	if _, ok := res.([]mdb.Datatype); ok {
+	if _, ok := res.([]mdb.Datatypes); ok {
 		return
 	} else {
 		t.FailNow()

@@ -11,8 +11,8 @@ type TemplateDataTree struct {
 	AdminRouteId int64
 	Child        *TemplateDataTree
 	Parent       *TemplateDataTree
-	Datatypes    []mdb.AdminDatatype
-	Fields       []mdb.AdminField
+	Datatypes    []mdb.AdminDatatypes
+	Fields       []mdb.AdminFields
 }
 type TestNested struct {
 	Child  *TestNested

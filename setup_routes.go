@@ -32,22 +32,22 @@ func createSystemTableEntries() {
 		"adminroute", "datatype", "field", "media", "media_dimension", "route",
 		"table", "token", "user",
 	}
-    for _,v := range systemTables{
-        table := mdb.Tables{Label: ns(v)}
-        dbCreateTable(db,ctx, table)
-    }
+	for _, v := range systemTables {
+		table := mdb.Tables{Label: ns(v)}
+		dbCreateTable(db, ctx, table)
+	}
 }
 
 func createSystemUser(name string) {
-    db, ctx, err := getDb(Database{src:name})
+	db, ctx, err := getDb(Database{src: name})
 	if err != nil {
 		logError("failed to get db", err)
 	}
 	defer db.Close()
 
 	systemUser := mdb.CreateUserParams{
-		DateCreated:  timestampS(),
-		DateModified: timestampS(),
+		DateCreated:  ns(timestampS()),
+		DateModified: ns(timestampS()),
 		Username:     "system",
 		Email:        "system@modulacms.com",
 		Name:         "system",

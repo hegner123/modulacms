@@ -9,7 +9,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.AdminRoute {
+func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.AdminRoutes {
 	queries := mdb.New(db)
 	fetchedAdminRoutes, err := queries.ListAdminRoute(ctx)
 	if err != nil {
@@ -18,7 +18,7 @@ func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.AdminRoute {
 	return fetchedAdminRoutes
 }
 
-func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatype {
+func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatypes {
 	queries := mdb.New(db)
 	fetchedDatatypes, err := queries.ListDatatype(ctx)
 	if err != nil {
@@ -27,7 +27,7 @@ func dbListDatatype(db *sql.DB, ctx context.Context) []mdb.Datatype {
 	return fetchedDatatypes
 }
 
-func dbListField(db *sql.DB, ctx context.Context) []mdb.Field {
+func dbListField(db *sql.DB, ctx context.Context) []mdb.Fields {
 	queries := mdb.New(db)
 	fetchedFields, err := queries.ListField(ctx)
 	if err != nil {
@@ -45,7 +45,7 @@ func dbListMedia(db *sql.DB, ctx context.Context) []mdb.Media {
 	return fetchedMedias
 }
 
-func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension {
+func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimensions {
 	queries := mdb.New(db)
 	fetchedMediaDimensions, err := queries.ListMediaDimension(ctx)
 	if err != nil {
@@ -54,7 +54,7 @@ func dbListMediaDimension(db *sql.DB, ctx context.Context) []mdb.MediaDimension 
 	return fetchedMediaDimensions
 }
 
-func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Route {
+func dbListRoute(db *sql.DB, ctx context.Context) []mdb.Routes {
 	queries := mdb.New(db)
 	fetchedRoutes, err := queries.ListRoute(ctx)
 	if err != nil {
@@ -72,7 +72,7 @@ func dbListTable(db *sql.DB, ctx context.Context) []mdb.Tables {
 	return fetchedTables
 }
 
-func dbListUser(db *sql.DB, ctx context.Context) []mdb.User {
+func dbListUser(db *sql.DB, ctx context.Context) []mdb.Users {
 	queries := mdb.New(db)
 	fetchedUsers, err := queries.ListUser(ctx)
 	if err != nil {
@@ -87,7 +87,7 @@ func dbListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
 
 func dbListDatatypeById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListDatatypeByRouteIdRow {
 	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.ListDatatypeByRouteId(ctx, routeId)
+	fetchedDatatypes, err := queries.ListDatatypeByRouteId(ctx, ni64(routeId))
 	if err != nil {
 		logError("failed to get Users ", err)
 	}
@@ -96,7 +96,7 @@ func dbListDatatypeById(db *sql.DB, ctx context.Context, routeId int64) []mdb.Li
 
 func dbListFieldById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListFieldByRouteIdRow {
 	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.ListFieldByRouteId(ctx, routeId)
+	fetchedDatatypes, err := queries.ListFieldByRouteId(ctx, ni64(routeId))
 	if err != nil {
 		logError("failed to get Users ", err)
 	}

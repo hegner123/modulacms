@@ -10,7 +10,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoute {
+func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoutes {
 	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
 	if err != nil {
@@ -20,26 +20,26 @@ func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteP
 	return insertedAdminRoute
 }
 
-func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatype, error) {
+func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatypes, error) {
 	queries := mdb.New(db)
-	insertedDatatype, err := queries.CreateDatatype(ctx, s)
+	insertedDatatypes, err := queries.CreateDatatype(ctx, s)
 	if err != nil {
 		logError("failed to create field ", err)
-		return insertedDatatype, err
+		return insertedDatatypes, err
 	}
 
-	return insertedDatatype, nil
+	return insertedDatatypes, nil
 }
 
-func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Field, error) {
+func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Fields, error) {
 	queries := mdb.New(db)
-	insertedField, err := queries.CreateField(ctx, s)
+	insertedFields, err := queries.CreateField(ctx, s)
 	if err != nil {
 		logError("failed to create field ", err)
-		return insertedField, err
+		return insertedFields, err
 	}
 
-	return insertedField, nil
+	return insertedFields, nil
 }
 
 func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {
@@ -52,7 +52,7 @@ func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb
 	return insertedMedia
 }
 
-func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimension {
+func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimensions {
 	queries := mdb.New(db)
 	insertedMediaDimension, err := queries.CreateMediaDimension(ctx, s)
 	if err != nil {
@@ -62,7 +62,7 @@ func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDi
 	return insertedMediaDimension
 }
 
-func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Route {
+func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Routes {
 	queries := mdb.New(db)
 	insertedRoute, err := queries.CreateRoute(ctx, s)
 	if err != nil {
@@ -82,7 +82,7 @@ func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
 	return insertedTable
 }
 
-func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Token {
+func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Tokens {
 	queries := mdb.New(db)
 	insertedToken, err := queries.CreateToken(ctx, s)
 	if err != nil {
@@ -92,7 +92,7 @@ func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb
 	return insertedToken
 }
 
-func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.User {
+func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.Users {
 	queries := mdb.New(db)
 	insertedUser, err := queries.CreateUser(ctx, s)
 	if err != nil {

@@ -10,8 +10,8 @@ import (
 func createSetupInserts(db *sql.DB, ctx context.Context) {
 	times := timestampS()
 	dbCreateUser(db, ctx, mdb.CreateUserParams{
-		DateCreated:  times,
-		DateModified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Username:     "system",
 		Name:         "system",
 		Email:        "system@modulacms.com",
@@ -34,8 +34,8 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Slug:         "/api/v1/",
 		Title:        "Test",
 		Status:       0,
-		DateCreated:  times,
-		DateModified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
@@ -45,15 +45,15 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Description:        ns("test"),
 		Author:             "system",
 		AuthorID:           1,
-		DateCreated:        times,
-		DateModified:       times,
+		DateCreated:        ns(times),
+		DateModified:       ns(times),
 		Url:                ns("public/2024/11/test1.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
 		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
 		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
-		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedUltraWide: ns("public/2024/11/test-ultra.png"),
 	})
 	_, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
 		Label:        "Parent",
@@ -68,7 +68,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 	}
 
 	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
-		RouteID:      int64(1),
+		RouteID:      ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
 		Type:         "text",

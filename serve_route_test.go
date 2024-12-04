@@ -9,7 +9,7 @@ import (
 
 
 func TestServeTemplate(t *testing.T) {
-	testTemplate := mdb.AdminRoute{Template: "modula_base_test.html"}
+	testTemplate := mdb.AdminRoutes{Template: "modula_base_test.html"}
 	t1 := TestNested{Value: "t1 Parent"}
 	t2 := TestNested{Parent: &t1, Value: "t2 Child"}
 	t1.Child = &t2

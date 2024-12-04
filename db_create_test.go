@@ -31,8 +31,8 @@ func TestCreateUser(t *testing.T) {
 	defer db.Close()
 
 	insertedUser := dbCreateUser(db, ctx, mdb.CreateUserParams{
-		DateCreated:  times,
-		DateModified: times,
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Username:     "systemtest",
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
@@ -40,9 +40,9 @@ func TestCreateUser(t *testing.T) {
 		Role:         "admin",
 	})
 
-	expected := mdb.User{
-		DateCreated:  times,
-		DateModified: times,
+	expected := mdb.Users{
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 		Username:     "systemtest",
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
@@ -74,7 +74,7 @@ func TestCreateAdminRoute(t *testing.T) {
 		Template:     "page.html",
 	})
 
-	expected := mdb.AdminRoute{
+	expected := mdb.AdminRoutes{
 		Author:       "systemtest",
 		AuthorID:     1,
 		Slug:         "/test",
@@ -104,20 +104,18 @@ func TestCreateRoute(t *testing.T) {
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		DateCreated:  times,
-		DateModified: times,
-		Content:      ns("Test content"),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	})
 
-	expected := mdb.Route{
+	expected := mdb.Routes{
 		Author:       "systemtest",
 		AuthorID:     1,
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
-		DateCreated:  times,
-		DateModified: times,
-		Content:      ns("Test content"),
+		DateCreated:  ns(times),
+		DateModified: ns(times),
 	}
 
 	if reflect.DeepEqual(insertedRoute, expected) {
@@ -141,15 +139,15 @@ func TestCreateMedia(t *testing.T) {
 		Description:        ns("test"),
 		Author:             "systemtest",
 		AuthorID:           1,
-		DateCreated:        times,
-		DateModified:       times,
+		DateCreated:        ns(times),
+		DateModified:       ns(times),
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
 		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
 		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
-		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedUltraWide: ns("public/2024/11/test-ultra.png"),
 	})
 
 	expected := mdb.Media{
@@ -160,15 +158,15 @@ func TestCreateMedia(t *testing.T) {
 		Description:        ns("test"),
 		Author:             "systemtest",
 		AuthorID:           1,
-		DateCreated:        times,
-		DateModified:       times,
+		DateCreated:        ns(times),
+		DateModified:       ns(times),
 		Url:                ns("public/2024/11/test.png"),
 		Mimetype:           ns("image/png"),
 		Dimensions:         ns("1000x1000"),
 		OptimizedMobile:    ns("public/2024/11/test-mobile.png"),
 		OptimizedTablet:    ns("public/2024/11/test-tablet.png"),
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
-		OptimizedUltrawide: ns("public/2024/11/test-ultra.png"),
+		OptimizedUltraWide: ns("public/2024/11/test-ultra.png"),
 	}
 
 	if reflect.DeepEqual(insertedMedia, expected) {
@@ -184,7 +182,7 @@ func TestCreateDatatype(t *testing.T) {
 	}
 	defer db.Close()
 	_, err = dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		RouteID:      int64(1),
+		RouteID:      ni(1),
 		Label:        "Parent",
 		Type:         "text",
 		Author:       "systemtest",
@@ -196,8 +194,8 @@ func TestCreateDatatype(t *testing.T) {
 		logError("failed to create datatype", err)
 	}
 
-	insertedDatatype, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
-		RouteID:      int64(1),
+	insertedDatatypes, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "title",
 		Type:         "text",
@@ -211,8 +209,8 @@ func TestCreateDatatype(t *testing.T) {
 		t.FailNow()
 	}
 
-	expected := mdb.Datatype{
-		RouteID:      int64(1),
+	expected := mdb.Datatypes{
+		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "title",
 		Type:         "text",
@@ -222,7 +220,7 @@ func TestCreateDatatype(t *testing.T) {
 		DateModified: ns(times),
 	}
 
-	if reflect.DeepEqual(insertedDatatype, expected) {
+	if reflect.DeepEqual(insertedDatatypes, expected) {
 		t.FailNow()
 	}
 }
@@ -234,8 +232,8 @@ func TestCreateField(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	insertedField, _ := dbCreateField(db, ctx, mdb.CreateFieldParams{
-		RouteID:      int64(1),
+	insertedFields, _ := dbCreateField(db, ctx, mdb.CreateFieldParams{
+		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -245,8 +243,8 @@ func TestCreateField(t *testing.T) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	expected := mdb.Field{
-		RouteID:      int64(1),
+	expected := mdb.Fields{
+		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -257,7 +255,7 @@ func TestCreateField(t *testing.T) {
 		DateModified: ns(times),
 	}
 
-	if reflect.DeepEqual(insertedField, expected) {
+	if reflect.DeepEqual(insertedFields, expected) {
 		t.FailNow()
 	}
 }
@@ -275,7 +273,7 @@ func TestCreateMediaDimension(t *testing.T) {
 		Height: ni(1080),
 	})
 
-	expected := mdb.MediaDimension{
+	expected := mdb.MediaDimensions{
 		Label:  ns("Desktop"),
 		Width:  ni(1920),
 		Height: ni(1080),
@@ -338,7 +336,7 @@ func TestCreateToken(t *testing.T) {
 		Revoked:   nb(false),
 	})
 
-	expected := mdb.Token{
+	expected := mdb.Tokens{
 		UserID:    1,
 		IssuedAt:  times,
 		ExpiresAt: fmt.Sprint(weeks.Unix()),

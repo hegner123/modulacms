@@ -26,7 +26,7 @@ INSERT INTO tokens (
 UPDATE tokens
 set token = ?,
 issued_at = ?,
-expires_at= ?,
+expires_at = ?,
 revoked = ?
 WHERE id = ?;
 

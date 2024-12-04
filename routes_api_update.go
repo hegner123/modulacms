@@ -121,7 +121,7 @@ func apiUpdateMedia(w http.ResponseWriter, r *http.Request) error {
 	updatedMedia := mdb.UpdateMediaParams{}
 	jsonMedia := formMapJson(r)
 	json.Unmarshal(jsonMedia, updatedMedia)
-	updatedMedia.ID = intMediaId
+	updatedMedia.MediaID = intMediaId
 	_ = dbUpdateMedia(db, ctx, updatedMedia)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
@@ -153,7 +153,7 @@ func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request) error {
 	updatedMediaDimension := mdb.UpdateMediaDimensionParams{}
 	jsonMediaDimension := formMapJson(r)
 	json.Unmarshal(jsonMediaDimension, updatedMediaDimension)
-	updatedMediaDimension.ID = intMediaDimensionId
+	updatedMediaDimension.MdID = intMediaDimensionId
 	_ = dbUpdateMediaDimension(db, ctx, updatedMediaDimension)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)

@@ -17,11 +17,11 @@ func ns(s string) sql.NullString {
 func ni(i int) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
-/*
+
 func ni64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
-
+/*
 func nf(f float64) sql.NullFloat64 {
 	return sql.NullFloat64{Float64: f, Valid: true}
 }

@@ -24,7 +24,7 @@ INSERT INTO users (
     date_modified,
     username,
     name,
-    email ,
+    email,
     hash,
     role
 ) VALUES (

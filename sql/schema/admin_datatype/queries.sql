@@ -34,7 +34,7 @@ INSERT INTO admin_datatypes (
     date_created,
     date_modified
     ) VALUES (
-  ?, ?,?, ?,?, ?,?,?
+?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
