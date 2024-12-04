@@ -25,6 +25,7 @@
 - [ ] Route editor
 - [ ] Create field
 - [ ] Create elements
+- [x] Connect to Bucket Storage
 - [ ] Media upload
 - [ ] Media Optimize
 - [ ] Backup

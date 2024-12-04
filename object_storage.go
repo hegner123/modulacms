@@ -9,17 +9,12 @@ import (
     "github.com/aws/aws-sdk-go/service/s3"
 )
 
-func objectConfirmConnection() {
-    // Replace these with your actual credentials and endpoint
-    accessKey := "YOUR_ACCESS_KEY"
-    secretKey := "YOUR_SECRET_KEY"
-    endpoint := "https://us-east-1.linodeobjects.com" // Example endpoint
+func objectConfirmConnection(cs S3Credintials) {
 
-    // Create a new session with the provided credentials and endpoint
     sess, err := session.NewSession(&aws.Config{
-        Credentials:      credentials.NewStaticCredentials(accessKey, secretKey, ""),
-        Endpoint:         aws.String(endpoint),
-        Region:           aws.String("us-east-1"), // Use any valid AWS region
+        Credentials:      credentials.NewStaticCredentials(cs.AccessKey, cs.SecretKey, ""),
+        Endpoint:         aws.String(cs.URL),
+        Region:           aws.String("us-southeast-1"), // Use any valid AWS region
         S3ForcePathStyle: aws.Bool(true),          // Required for Linode Object Storage
     })
     if err != nil {

@@ -1,7 +1,5 @@
 package main
 
-
-
 type FieldType struct {
 	Name        string      `json:"name"`
 	Type        string      `json:"type"`
@@ -19,4 +17,10 @@ type Backup struct {
 	Hash    string
 	DbFile  string
 	Archive string
+}
+
+type S3Credintials struct {
+	AccessKey string
+	SecretKey string
+	URL       string
 }

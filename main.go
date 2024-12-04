@@ -10,6 +10,7 @@ import (
 )
 
 var useSSL, dbFileExists bool = initFileCheck()
+var Env = Config{}
 
 func hasFileExtension(path string) bool {
 	ext := filepath.Ext(path)
