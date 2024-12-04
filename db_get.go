@@ -9,6 +9,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatype{
+	queries := mdb.New(db)
+    fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
+	if err != nil {
+		logError("failed to get admin route", err)
+	}
+    return fetchedGlobalAdminDatatypeId
+}
+
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoute {
 	queries := mdb.New(db)
 	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)

@@ -209,9 +209,6 @@ func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
 }
 
 const createAdminDatatype = `-- name: CreateAdminDatatype :one
-;
-
-
 INSERT INTO admin_datatype (
     admin_route_id,
     parent_id,
@@ -1040,6 +1037,30 @@ func (q *Queries) GetField(ctx context.Context, fieldID int64) (Field, error) {
 	return i, err
 }
 
+const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
+;
+
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+WHERE type = "GLOBAL" AND parent_id = NULL AND admin_route_id = NULL LIMIT 1
+`
+
+func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatype, error) {
+	row := q.db.QueryRowContext(ctx, getGlobalAdminDatatypeId)
+	var i AdminDatatype
+	err := row.Scan(
+		&i.AdminDtID,
+		&i.AdminRouteID,
+		&i.ParentID,
+		&i.Label,
+		&i.Type,
+		&i.Author,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT id, name, display_name, alt, caption, description, class, author, author_id, date_created, date_modified, url, mimetype, dimensions, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultrawide FROM media
 WHERE id = ? LIMIT 1
@@ -1306,6 +1327,44 @@ func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID i
 			&i.ParentID,
 			&i.Label,
 			&i.Type,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatype
+WHERE parent_id = ?
+`
+
+func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.NullInt64) ([]AdminDatatype, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildren, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatype
+	for rows.Next() {
+		var i AdminDatatype
+		if err := rows.Scan(
+			&i.AdminDtID,
+			&i.AdminRouteID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.Author,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
 		); err != nil {
 			return nil, err
 		}

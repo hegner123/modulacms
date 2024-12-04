@@ -1,2 +1,8 @@
 
-CREATE TABLE tables (id INTEGER PRIMARY KEY, label TEXT UNIQUE);
+CREATE TABLE tables (
+    id INTEGER PRIMARY KEY,
+    label TEXT UNIQUE,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT
+);

@@ -1,16 +1,22 @@
-CREATE TABLE field (
-    field_id INTEGER PRIMARY KEY,
-    route_id INTEGER NOT NULL DEFAULT 1,
-    parent_id INTEGER, 
-    label TEXT NOT NULL DEFAULT "unlabeled",
-    data TEXT NOT NULL DEFAULT "",
-    type TEXT NOT NULL DEFAULT "text",
-    author TEXT NOT NULL DEFAULT "system",
-    author_id INTEGER NOT NULL DEFAULT 1,
-    date_created TEXT,
-    date_modified TEXT,
-    FOREIGN KEY (author) REFERENCES user (username) ON DELETE SET DEFAULT ON UPDATE CASCADE,
-    FOREIGN KEY (author_id) REFERENCES user (user_id) ON DELETE SET DEFAULT ON UPDATE CASCADE,
-    FOREIGN KEY (route_id) REFERENCES route (route_id) ON DELETE SET DEFAULT ON UPDATE CASCADE,
-    FOREIGN KEY (parent_id) REFERENCES datatype (datatype_id) ON DELETE SET NULL ON UPDATE CASCADE
+CREATE TABLE IF NOT EXISTS fields
+(
+    field_id      INTEGER
+        primary key,
+    route_id      INTEGER default NULL
+        references routes
+            on update cascade on delete set default,
+    parent_id     INTEGER default NULL
+        references datatypes
+            on update cascade on delete set default,
+    label         TEXT    default "unlabeled" not null,
+    data          TEXT                        not null,
+    type          TEXT                        not null,
+    author        TEXT    default "system"    not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id     INTEGER default 1           not null
+        references users (user_id)
+            on update cascade on delete set default,
+    date_created  TEXT    default CURRENT_TIMESTAMP,
+    date_modified TEXT    default CURRENT_TIMESTAMP
 );

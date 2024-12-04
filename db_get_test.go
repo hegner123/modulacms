@@ -8,13 +8,15 @@ import (
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
+
 var getTestTable string
+
 func TestGetDBCopy(t *testing.T) {
-	testTable,err := createDbCopy("get_tests.db")
-    if err != nil { 
-        logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-        t.FailNow()
-    }
+	testTable, err := createDbCopy("get_tests.db")
+	if err != nil {
+		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+		t.FailNow()
+	}
 	getTestTable = testTable
 }
 
@@ -29,10 +31,20 @@ func TestGetInit(t *testing.T) {
 		logError("failed to find or open file", err)
 	}
 	s := fmt.Sprint(file)
-    _,err = db.ExecContext(ctx, s)
-    if err != nil { 
-        t.Failed()
-    }
+	_, err = db.ExecContext(ctx, s)
+	if err != nil {
+		t.Failed()
+	}
+}
+
+func TestGetGlobalAdminDatatypeId(t *testing.T) {
+	db, ctx, err := getDb(Database{src: getTestTable})
+	if err != nil {
+		logError("failed to connect or create database", err)
+	}
+	defer db.Close()
+	row := dbGetAdminDatatypeGlobalId(db, ctx)
+	fmt.Println(row)
 }
 
 func TestGetUser(t *testing.T) {

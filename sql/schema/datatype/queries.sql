@@ -1,20 +1,20 @@
 
 -- name: GetDatatype :one
-SELECT * FROM datatype
+SELECT * FROM datatypes
 WHERE datatype_id = ? LIMIT 1;
 
 -- name: CountDatatype :one
 SELECT COUNT(*)
-FROM datatype;
+FROM datatypes;
 
 
 -- name: ListDatatype :many
-SELECT * FROM datatype
+SELECT * FROM datatypes
 ORDER BY datatype_id;
 
 
 -- name: CreateDatatype :one
-INSERT INTO datatype (
+INSERT INTO datatypes (
     route_id,
     parent_id,
     label,
@@ -29,7 +29,7 @@ INSERT INTO datatype (
 
 
 -- name: UpdateDatatype :exec
-UPDATE datatype
+UPDATE datatypes
 set route_id = ?,
     parent_id = ?,
     label = ?,
@@ -42,12 +42,12 @@ set route_id = ?,
     RETURNING *;
 
 -- name: DeleteDatatype :exec
-DELETE FROM datatype
+DELETE FROM datatypes
 WHERE datatype_id = ?;
 
 
 
 -- name: ListDatatypeByRouteId :many
 SELECT datatype_id, route_id, parent_id, label, type
-FROM datatype
+FROM datatypes
 WHERE route_id = ?;

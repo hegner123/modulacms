@@ -1,7 +1,11 @@
 
-CREATE TABLE media_dimension (
-    id INTEGER PRIMARY KEY,
-    label TEXT UNIQUE, 
-    width INTEGER, 
-    height INTEGER
+CREATE TABLE IF NOT EXISTS media_dimensions
+(
+    md_id         INTEGER
+        primary key,
+    label         TEXT
+        unique,
+    width         INTEGER,
+    height        INTEGER,
+    aspect_ratio TEXT
 );

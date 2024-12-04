@@ -1,0 +1,76 @@
+{{/* A sample HTML template demonstrating various Go template features */}}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ .Title | html }}</title>
+</head>
+<body>
+
+<h1>{{ .Title }}</h1>
+
+<p>{{ .Description }}</p>
+
+{{/* Conditional statements */}}
+{{ if .IsAdmin }}
+    <p>Welcome, administrator!</p>
+{{ else if .IsLoggedIn }}
+    <p>Welcome back, {{ .UserName }}!</p>
+{{ else }}
+    <p>Please log in to access more features.</p>
+{{ end }}
+
+{{/* Looping over a slice */}}
+<h2>Your Favorite Hobbies:</h2>
+<ul>
+    {{ range .Hobbies }}
+        <li>{{ . }}</li>
+    {{ else }}
+        <li>You have no hobbies listed.</li>
+    {{ end }}
+</ul>
+
+{{/* Looping over a map */}}
+<h2>Your Skills:</h2>
+<ul>
+    {{ range $skill, $level := .Skills }}
+        <li>{{ $skill }}: Level {{ $level }}</li>
+    {{ end }}
+</ul>
+
+{{/* Using variables and pipelines */}}
+{{ $greeting := printf "Hello, %s!" .UserName }}
+<p>{{ $greeting }}</p>
+
+<p>Title Length: {{ len .Title }}</p>
+
+{{/* Defining and using a block (for template inheritance) */}}
+{{ define "content" }}
+    <p>This is the main content area.</p>
+{{ end }}
+
+{{/* Including the content block */}}
+{{ template "content" . }}
+
+{{/* Defining and using a nested template */}}
+{{ define "footer" }}
+<footer>
+    <p>&copy; {{ .Year }}</p>
+</footer>
+{{ end }}
+
+{{ template "footer" . }}
+
+{{/* Using the 'with' action */}}
+{{ with .Address }}
+    <h2>Your Address:</h2>
+    <p>{{ .Street }}, {{ .City }}, {{ .Country }}</p>
+{{ else }}
+    <p>No address provided.</p>
+{{ end }}
+
+{{/* Comments in templates */}}
+{{/* This is a comment and won't be rendered in the HTML output */}}
+
+</body>
+</html>
+

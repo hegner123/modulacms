@@ -1,55 +1,55 @@
 -- name: UtilityGetAdminDatatypes :many
-select admin_dt_id, label from admin_datatype;
+select admin_dt_id, label from admin_datatypes;
 
 -- name: UtilityGetAdminfields :many
-select admin_field_id, label from admin_field;
+select admin_field_id, label from admin_fields;
 
 -- name: UtilityGetAdminRoutes :many
-select admin_route_id, slug from admin_route;
+select admin_route_id, slug from admin_routes;
 
 -- name: UtilityGetDatatypes :many
-select datatype_id, label from datatype;
+select datatype_id, label from datatypes;
 
 -- name: UtilityGetFields :many
-select field_id, label from field;
+select field_id, label from fields;
 
 -- name: UtilityGetMedia :many
-select id, name from media;
+select media_id, name from media;
 
 -- name: UtilityGetMediaDimension :many
-select id, label from media_dimension;
+select md_id, label from media_dimensions;
 
 -- name: UtilityGetRoute :many
-select route_id, slug from route;
+select route_id, slug from routes;
 
 -- name: UtilityGetTables :many
 select id, label from tables;
 
 -- name: UtilityGetToken :many
-select id, user_id  from token;
+select id, user_id  from tokens;
 
 -- name: UtilityGetUsers :many
-select user_id, username from user;
+select user_id, username from users;
 
 -- name: UtilityRecordCount :many
-SELECT 'admin_datatype' AS table_name, COUNT(*) AS row_count FROM admin_datatype
+SELECT 'admin_datatypes' AS table_name, COUNT(*) AS row_count FROM admin_datatypes
 UNION ALL
-SELECT 'admin_field' AS table_name, COUNT(*) AS row_count FROM admin_field
+SELECT 'admin_fields' AS table_name, COUNT(*) AS row_count FROM admin_fields
 UNION ALL
-SELECT 'admin_route' AS table_name, COUNT(*) AS row_count FROM admin_route
+SELECT 'admin_routes' AS table_name, COUNT(*) AS row_count FROM admin_routes
 UNION ALL
-SELECT 'datatype' AS table_name, COUNT(*) AS row_count FROM datatype
+SELECT 'datatypes' AS table_name, COUNT(*) AS row_count FROM datatypes
 UNION ALL
-SELECT 'field' AS table_name, COUNT(*) AS row_count FROM field
+SELECT 'fields' AS table_name, COUNT(*) AS row_count FROM fields
 UNION ALL
-SELECT 'route' AS table_name, COUNT(*) AS row_count FROM route
+SELECT 'routes' AS table_name, COUNT(*) AS row_count FROM routes
 UNION ALL
 SELECT 'media' AS table_name, COUNT(*) AS row_count FROM media
 UNION ALL
-SELECT 'media_dimension' AS table_name, COUNT(*) AS row_count FROM media_dimension
+SELECT 'media_dimensions' AS table_name, COUNT(*) AS row_count FROM media_dimensions
 UNION ALL
 SELECT 'tables' AS table_name, COUNT(*) AS row_count FROM tables
 UNION ALL
-SELECT 'token' AS table_name, COUNT(*) AS row_count FROM token
+SELECT 'tokens' AS table_name, COUNT(*) AS row_count FROM tokens
 UNION ALL
-SELECT 'user' AS table_name, COUNT(*) AS row_count FROM user;
+SELECT 'users' AS table_name, COUNT(*) AS row_count FROM users;

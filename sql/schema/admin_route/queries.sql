@@ -1,25 +1,25 @@
 -- name: GetAdminRouteBySlug :one
-SELECT * FROM admin_route
+SELECT * FROM admin_routes
 WHERE slug = ? LIMIT 1;
 
 -- name: CountAdminroute :one
 SELECT COUNT(*)
-FROM admin_route;
+FROM admin_routes;
 
 -- name: GetAdminRouteById :one
-SELECT * FROM admin_route
+SELECT * FROM admin_routes
 WHERE admin_route_id = ? LIMIT 1;
 
 -- name: GetAdminRouteId :one
-SELECT admin_route_id FROM admin_route
+SELECT admin_route_id FROM admin_routes
 WHERE slug = ? LIMIT 1;
 
 -- name: ListAdminRoute :many
-SELECT * FROM admin_route
+SELECT * FROM admin_routes
 ORDER BY slug;
 
 -- name: CreateAdminRoute :one
-INSERT INTO admin_route (
+INSERT INTO admin_routes (
 author,
 author_id,
 slug,
@@ -33,7 +33,7 @@ template
 ) RETURNING *;
 
 -- name: UpdateAdminRoute :exec
-UPDATE admin_route
+UPDATE admin_routes
 set slug = ?,
     title = ?,
     status = ?,
@@ -46,5 +46,5 @@ set slug = ?,
     RETURNING *;
 
 -- name: DeleteAdminRoute :exec
-DELETE FROM admin_route
+DELETE FROM admin_routes
 WHERE slug = ?;

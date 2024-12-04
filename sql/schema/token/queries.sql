@@ -1,17 +1,17 @@
 -- name: GetToken :one
-SELECT * FROM token
+SELECT * FROM tokens
 WHERE id = ? LIMIT 1;
 
 -- name: CountTokens :one
 SELECT COUNT(*)
-FROM token;
+FROM tokens;
 
 -- name: GetTokenByUserId :one
-SELECT * FROM token
+SELECT * FROM tokens
 WHERE user_id = ? LIMIT 1;
 
 -- name: CreateToken :one
-INSERT INTO token (
+INSERT INTO tokens (
     user_id,
     token_type,
     token,
@@ -23,7 +23,7 @@ INSERT INTO token (
     ) RETURNING *;
 
 -- name: UpdateToken :exec
-UPDATE token
+UPDATE tokens
 set token = ?,
 issued_at = ?,
 expires_at= ?,
@@ -31,5 +31,5 @@ revoked = ?
 WHERE id = ?;
 
 -- name: DeleteToken :exec
-DELETE FROM token
+DELETE FROM tokens
 WHERE id = ?;

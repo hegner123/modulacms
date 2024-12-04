@@ -1,32 +1,35 @@
 
 -- name: GetMediaDimension :one
-SELECT * FROM media_dimension
-WHERE id = ? LIMIT 1;
+SELECT * FROM media_dimensions
+WHERE md_id = ? LIMIT 1;
 
 -- name: CountMD :one
 SELECT COUNT(*)
-FROM media_dimension;
+FROM media_dimensions;
+
 -- name: ListMediaDimension :many
-SELECT * FROM media_dimension 
+SELECT * FROM media_dimensions 
 ORDER BY label;
 
 -- name: CreateMediaDimension :one
-INSERT INTO media_dimension(
+INSERT INTO media_dimensions(
     label,
     width,
-    height
+    height,
+    aspect_ratio
 ) VALUES (
-  ?, ?, ?
+  ?, ?, ?, ?
 )
 RETURNING *;
 
 -- name: UpdateMediaDimension :exec
-UPDATE media_dimension
+UPDATE media_dimensions
 set label = ?,
     width = ?,
-    height = ? 
-WHERE id = ?;
+    height = ?,
+    aspect_ratio = ?
+WHERE md_id = ?;
 
 -- name: DeleteMediaDimension :exec
-DELETE FROM media_dimension
-WHERE id = ?;
+DELETE FROM media_dimensions
+WHERE md_id = ?;

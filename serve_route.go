@@ -6,7 +6,6 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-
 type TemplateDataTree struct {
 	Label        string
 	AdminRouteId int64
@@ -17,9 +16,12 @@ type TemplateDataTree struct {
 }
 type TestNested struct {
 	Child  *TestNested
+    Children []TestNested
 	Parent *TestNested
 	Value  string
+	Values []string
 }
+
 func servePageFromRoute(templatePath string) *template.Template {
 	base := "./templates/"
 	concat := base + templatePath
@@ -30,3 +32,12 @@ func servePageFromRoute(templatePath string) *template.Template {
 
 	return t
 }
+
+func CreateTemplateTree(){}
+
+
+// Search an adminRouteId
+
+// fetch Datatypes that match dynamic adminRouteId 
+
+// fetch globalDataTypes.

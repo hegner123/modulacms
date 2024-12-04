@@ -1,25 +1,25 @@
 -- name: GetUser :one
-SELECT * FROM user
+SELECT * FROM users
 WHERE user_id = ? LIMIT 1;
 
 -- name: CountUsers :one
 SELECT COUNT(*)
-FROM user;
+FROM users;
 
 -- name: GetUserByEmail :one
-SELECT * FROM user
+SELECT * FROM users
 WHERE email = ? LIMIT 1;
 
 -- name: GetUserId :one
-SELECT user_id FROM user
+SELECT user_id FROM users
 WHERE email = ? LIMIT 1;
 
 -- name: ListUser :many
-SELECT * FROM user 
+SELECT * FROM users 
 ORDER BY user_id ;
 
 -- name: CreateUser :one
-INSERT INTO user (
+INSERT INTO users (
     date_created,
     date_modified,
     username,
@@ -33,7 +33,7 @@ INSERT INTO user (
 RETURNING *;
 
 -- name: UpdateUser :exec
-UPDATE user
+UPDATE users
 set date_created = ?,
     date_modified = ?,
     username = ?,
@@ -44,5 +44,5 @@ set date_created = ?,
 WHERE user_id = ?;
 
 -- name: DeleteUser :exec
-DELETE FROM user
+DELETE FROM users
 WHERE user_id = ?;

@@ -1,7 +1,7 @@
 
 -- name: GetMedia :one
 SELECT * FROM media
-WHERE id = ? LIMIT 1;
+WHERE media_id = ? LIMIT 1;
 
 -- name: CountMedia :one
 SELECT COUNT(*)
@@ -29,7 +29,7 @@ INSERT INTO media (
     optimized_mobile,
     optimized_tablet,
     optimized_desktop,
-    optimized_ultrawide
+    optimized_ultra_wide
 ) VALUES (
  ?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?,? ,?,?
 )
@@ -53,9 +53,9 @@ UPDATE media
         optimized_mobile = ?,
         optimized_tablet = ?,
         optimized_desktop = ?,
-        optimized_ultrawide = ?
-        WHERE id = ?;
+        optimized_ultra_wide = ?
+        WHERE media_id = ?;
 
 -- name: DeleteMedia :exec
 DELETE FROM media
-WHERE id = ?;
+WHERE media_id = ?;

@@ -1,23 +1,30 @@
 
 -- name: GetAdminDatatype :one
-SELECT * FROM admin_datatype
+SELECT * FROM admin_datatypes
 WHERE admin_dt_id = ? LIMIT 1;
 
 -- name: CountAdminDatatype :one
 SELECT COUNT(*)
-FROM admin_datatype;
+FROM admin_datatypes;
 
 -- name: GetAdminDatatypeId :one
-SELECT admin_dt_id FROM admin_datatype
+SELECT admin_dt_id FROM admin_datatypes
 WHERE admin_dt_id = ? LIMIT 1;
 
 -- name: ListAdminDatatype :many
-SELECT * FROM admin_datatype
+SELECT * FROM admin_datatypes
 ORDER BY admin_dt_id ;
 
+-- name: GetGlobalAdminDatatypeId :one
+SELECT * FROM admin_datatypes
+WHERE type = "GLOBAL" AND parent_id = NULL AND admin_route_id = NULL LIMIT 1;
+
+-- name: ListAdminDatatypeChildren :many
+SELECT * FROM admin_datatypes
+WHERE parent_id = ?;
 
 -- name: CreateAdminDatatype :one
-INSERT INTO admin_datatype (
+INSERT INTO admin_datatypes (
     admin_route_id,
     parent_id,
     label,
@@ -32,7 +39,7 @@ INSERT INTO admin_datatype (
 
 
 -- name: UpdateAdminDatatype :exec
-UPDATE admin_datatype
+UPDATE admin_datatypes
 set admin_route_id = ?,
     parent_id = ?,
     label = ?,
@@ -45,23 +52,23 @@ set admin_route_id = ?,
     RETURNING *;
 
 -- name: DeleteAdminDatatype :exec
-DELETE FROM admin_datatype
+DELETE FROM admin_datatypes
 WHERE admin_dt_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
 SELECT admin_dt_id, admin_route_id, parent_id, label, type
-FROM admin_datatype
+FROM admin_datatypes
 WHERE admin_route_id = ?;
 
 -- name: CheckAuthorIdExists :one
-SELECT EXISTS(SELECT 1 FROM user WHERE user_id=?);
+SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?);
 -- name: CheckAuthorExists :one
-SELECT EXISTS(SELECT 1 FROM user WHERE username=?);
+SELECT EXISTS(SELECT 1 FROM users WHERE username=?);
 -- name: CheckAdminRouteExists :one
-SELECT EXISTS(SELECT 1 FROM admin_route WHERE admin_route_id=?);
+SELECT EXISTS(SELECT 1 FROM admin_routes WHERE admin_route_id=?);
 -- name: CheckAdminParentExists :one
-SELECT EXISTS(SELECT 1 FROM admin_datatype WHERE admin_dt_id =?);
+SELECT EXISTS(SELECT 1 FROM admin_datatypes WHERE admin_dt_id =?);
 -- name: CheckRouteExists :one
-SELECT EXISTS(SELECT 1 FROM route WHERE route_id=?);
+SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?);
 -- name: CheckParentExists :one
-SELECT EXISTS(SELECT 1 FROM datatype WHERE datatype_id =?);
+SELECT EXISTS(SELECT 1 FROM datatypes WHERE datatype_id =?);

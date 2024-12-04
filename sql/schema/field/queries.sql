@@ -1,18 +1,17 @@
 -- name: GetField :one
-SELECT * FROM field
+SELECT * FROM fields 
 WHERE field_id = ? LIMIT 1;
 
 -- name: CountField :one
 SELECT COUNT(*)
-FROM field;
-
+FROM fields ;
 
 -- name: ListField :many
-SELECT * FROM field
+SELECT * FROM fields 
 ORDER BY field_id;
 
 -- name: CreateField :one
-INSERT INTO field (
+INSERT INTO fields  (
     route_id,
     parent_id,
     label,
@@ -28,7 +27,7 @@ INSERT INTO field (
 
 
 -- name: UpdateField :exec
-UPDATE field
+UPDATE fields 
 set route_id = ?,
     parent_id = ?,
     label = ?,
@@ -42,10 +41,10 @@ set route_id = ?,
     RETURNING *;
 
 -- name: DeleteField :exec
-DELETE FROM field
+DELETE FROM fields 
 WHERE field_id = ?;
 
 -- name: ListFieldByRouteId :many
 SELECT field_id, route_id, parent_id, label, data, type
-FROM field
+FROM fields 
 WHERE route_id = ?;
