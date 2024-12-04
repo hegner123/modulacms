@@ -84,5 +84,6 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Label:  ns("Tablet"),
 		Width:  ni(1920),
 		Height: ni(1080),
+        AspectRatio: ns("16:9"),
 	})
 }

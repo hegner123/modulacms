@@ -44,7 +44,9 @@ func TestGetGlobalAdminDatatypeId(t *testing.T) {
 	}
 	defer db.Close()
 	row := dbGetAdminDatatypeGlobalId(db, ctx)
-	fmt.Println(row)
+    if row.AdminDtID == 0 {
+        t.FailNow()
+    }
 }
 
 func TestGetUser(t *testing.T) {
@@ -94,13 +96,13 @@ func TestGetAdminRoute(t *testing.T) {
 	}
 	defer db.Close()
 
-	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/")
+	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/login")
 
 	expected := mdb.AdminRoutes{
 		AdminRouteID: int64(1),
 		Author:       "system",
 		AuthorID:     1,
-		Slug:         "/",
+		Slug:         "/admin/login",
 		Title:        "ModulaCMS",
 		Status:       int64(0),
 		DateCreated:  adminRouteRow.DateCreated,
@@ -120,13 +122,13 @@ func TestGetRoute(t *testing.T) {
 	}
 	defer db.Close()
 
-	routeRow := dbGetRoute(db, ctx, "/get/home")
+	routeRow := dbGetRoute(db, ctx, "/")
 
 	expected := mdb.Routes{
 		RouteID:      int64(1),
 		Author:       "system",
 		AuthorID:     1,
-		Slug:         "/get/home",
+		Slug:         "/",
 		Title:        "Test",
 		Status:       int64(0),
 		DateCreated:  routeRow.DateCreated,
@@ -179,7 +181,7 @@ func TestGetField(t *testing.T) {
 		logError("failed to connect or create database", err)
 	}
 	defer db.Close()
-	id := int64(3)
+	id := int64(2)
 	fieldRow := dbGetField(db, ctx, id)
 
 	expected := mdb.Fields{

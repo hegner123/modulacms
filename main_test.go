@@ -44,7 +44,7 @@ func createDbCopy(dbName string) (string, error) {
 	dstDbName := base + "testing" + times + dbName
     _, err := os.Create(dstDbName)
 	if err != nil {
-		logError("failed to : ", err)
+		logError("couldn't create file", err)
 	}
 
 	dstCmd := exec.Command("sqlite3", dstDbName, ".read " +srcSQLName )

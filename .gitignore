@@ -48,7 +48,7 @@ tests/
 backups/
 legacydb/
 ignore/
-
+testing-config.json
 #certs
 certs/
 *.pem

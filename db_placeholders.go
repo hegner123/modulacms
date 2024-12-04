@@ -56,7 +56,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		OptimizedUltraWide: ns("public/2024/11/test-ultra.png" + modify),
 	})
 
-	dbCreateField(db, ctx, mdb.CreateFieldParams{
+	_,_ =dbCreateField(db, ctx, mdb.CreateFieldParams{
 		RouteID:      ni64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -70,6 +70,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Label:  ns("Tablet" + modify),
 		Width:  ni(1920),
 		Height: ni(1080),
+        AspectRatio: ns("100x100"),
 	})
 
 	dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test1" + modify)})

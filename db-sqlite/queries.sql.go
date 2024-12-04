@@ -1045,7 +1045,7 @@ const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
 ;
 
 SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified FROM admin_datatypes
-WHERE type = "GLOBAL" AND parent_id = NULL AND admin_route_id = NULL LIMIT 1
+WHERE type = "GLOBAL" LIMIT 1
 `
 
 func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes, error) {

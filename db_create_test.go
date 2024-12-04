@@ -271,12 +271,14 @@ func TestCreateMediaDimension(t *testing.T) {
 		Label:  ns("Desktop"),
 		Width:  ni(1920),
 		Height: ni(1080),
+        AspectRatio: ns("16:9"),
 	})
 
 	expected := mdb.MediaDimensions{
 		Label:  ns("Desktop"),
 		Width:  ni(1920),
 		Height: ni(1080),
+        AspectRatio: ns("16:9"),
 	}
 
 	if reflect.DeepEqual(insertedMediaDimension, expected) {

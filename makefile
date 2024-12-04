@@ -51,7 +51,7 @@ test: ## Run the tests of the project
 	
 	touch ./backups/tmp.zip
 	rm ./backups/*.zip
-	$(GOTEST) -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
+	$(GOTEST) -v -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
 	rm ./testdb/*.db
 
 test1: ## Run router tests

@@ -13,7 +13,7 @@ func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDataty
 	queries := mdb.New(db)
     fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
 	if err != nil {
-		logError("failed to get admin route", err)
+		logError("failed to get Global AdminDatatypes", err)
 	}
     return fetchedGlobalAdminDatatypeId
 }

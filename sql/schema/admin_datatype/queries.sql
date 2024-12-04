@@ -17,7 +17,7 @@ ORDER BY admin_dt_id ;
 
 -- name: GetGlobalAdminDatatypeId :one
 SELECT * FROM admin_datatypes
-WHERE type = "GLOBAL" AND parent_id = NULL AND admin_route_id = NULL LIMIT 1;
+WHERE type = "GLOBAL" LIMIT 1;
 
 -- name: ListAdminDatatypeChildren :many
 SELECT * FROM admin_datatypes
