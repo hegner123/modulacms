@@ -7,7 +7,9 @@
     "db_name": "default",
     "db_password": "none",
     "bucket_url": "local",
-    "bucket_password": "none",
+    "bucket_endpoint":"locale",
+    "bucket_access_key": "none",
+    "bucket_secret_key":"none",
     "backup_option": "",
     "backup_path": [
     ],

@@ -14,12 +14,7 @@ func handleCompletedMediaUpload(tmpFile string, fName string) {
 	optimized := optimizeUpload(tmpFile, fName)
 
 	// TODO: write paths to optimized files to db
+    fmt.Println(optimized)
+    fmt.Println(newPath)
 
-	for _, v := range optimized {
-		err := objectUpload(v, newPath)
-		if err != nil {
-			logError("failed to upload optimized files to blob storage ", err)
-		}
-
-	}
 }
