@@ -4,18 +4,51 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatypes{
+func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatypes {
 	queries := mdb.New(db)
-    fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
+	fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
 	if err != nil {
 		logError("failed to get Global AdminDatatypes", err)
 	}
-    return fetchedGlobalAdminDatatypeId
+	return fetchedGlobalAdminDatatypeId
+}
+
+func dbGetAdminDatatypeId(db *sql.DB, ctx context.Context, id int64) mdb.AdminDatatypes {
+	queries := mdb.New(db)
+	fetchedAdminDatatype, err := queries.GetAdminDatatype(ctx, id)
+	if err != nil {
+		logError("failed to get Global AdminDatatypes", err)
+	}
+	return fetchedAdminDatatype
+}
+
+func dbGetRootAdIdByAdRtId(db *sql.DB, ctx context.Context, adminRtId int64) sql.NullInt64  {
+	queries := mdb.New(db)
+    res := sql.NullInt64{Int64: int64(0),Valid: true}
+	fetchedAdminDatatype, err := queries.GetRootAdminDtByAdminRtId(ctx, ni64(adminRtId))
+	if err != nil {
+        fmt.Printf("adminRtId %d\n", adminRtId)
+		logError("failed to get  Admin Datatype", err)
+        res = sql.NullInt64{Valid:false}
+        return res
+	}
+    res.Int64 = fetchedAdminDatatype.AdminDtID
+	return res 
+}
+
+func dbGetAdminField(db *sql.DB, ctx context.Context, id int64) mdb.AdminFields {
+	queries := mdb.New(db)
+	fetchedAdminField, err := queries.GetAdminField(ctx, id)
+	if err != nil {
+		logError("failed to get Global AdminDatatypes", err)
+	}
+	return fetchedAdminField
 }
 
 func dbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoutes {
@@ -84,6 +117,15 @@ func dbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
 func dbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Tokens {
 	queries := mdb.New(db)
 	fetchedToken, err := queries.GetToken(ctx, id)
+	if err != nil {
+		logError("failed to get Token ", err)
+	}
+	return fetchedToken
+}
+
+func dbGetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) mdb.Tokens {
+	queries := mdb.New(db)
+	fetchedToken, err := queries.GetTokenByUserId(ctx, userId)
 	if err != nil {
 		logError("failed to get Token ", err)
 	}

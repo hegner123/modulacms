@@ -14,7 +14,7 @@ import (
 )
 
 func handleAuth(form url.Values) {
-	db, ctx, err := getDb(Database{})
+	db, ctx, err := getDb(Database{ })
 	if err != nil {
 		logError("failed to : ", err)
 

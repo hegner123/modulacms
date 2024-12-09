@@ -17,7 +17,7 @@ ORDER BY admin_dt_id ;
 
 -- name: GetGlobalAdminDatatypeId :one
 SELECT * FROM admin_datatypes
-WHERE type = "GLOBAL" LIMIT 1;
+WHERE type = "GLOBALS" LIMIT 1;
 
 -- name: ListAdminDatatypeChildren :many
 SELECT * FROM admin_datatypes
@@ -32,9 +32,10 @@ INSERT INTO admin_datatypes (
     author,
     author_id,
     date_created,
-    date_modified
+    date_modified,
+    template
     ) VALUES (
-?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
@@ -47,7 +48,8 @@ set admin_route_id = ?,
     author = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?
+    date_modified = ?,
+    template = ?
     WHERE admin_dt_id = ?
     RETURNING *;
 
@@ -56,9 +58,16 @@ DELETE FROM admin_datatypes
 WHERE admin_dt_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
 FROM admin_datatypes
 WHERE admin_route_id = ?;
+
+-- name: GetRootAdminDtByAdminRtId :one
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
+FROM admin_datatypes
+WHERE admin_route_id = ?
+ORDER BY admin_dt_id;
+
 
 -- name: CheckAuthorIdExists :one
 SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?);

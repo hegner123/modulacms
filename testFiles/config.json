@@ -1,0 +1,26 @@
+{
+    "port": "8080",
+    "ssl_port": "8443",
+    "client_site": "example.com",
+    "db_driver": "sqlite",
+    "db_url": "default",
+    "db_name": "default",
+    "db_password": "none",
+    "bucket_url": "local",
+    "bucket_endpoint":"locale",
+    "bucket_access_key": "none",
+    "bucket_secret_key":"none",
+    "backup_option": "",
+    "backup_path": [
+    ],
+    "oauth_client_id": "clientId",
+    "oauth_client_secret": "clientSecret",
+    "oauth_scopes": [
+        "profile",
+        "profilePic"
+    ],
+    "oauth_endpoint": {
+        "oauth_auth_url": "https://provider.com/o/oauth2/auth",
+        "oauth_token_url": "https://provider.com/o/oauth2/token"
+    }
+}

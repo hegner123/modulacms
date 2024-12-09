@@ -2,7 +2,7 @@ package main
 
 import (
 	"net/http"
-	"path/filepath"
+	"os"
 	"strings"
 )
 
@@ -32,40 +32,31 @@ func router(w http.ResponseWriter, r *http.Request) {
 		handleAdminRoutes(w, r, segments)
 	case checkPath(segments, ENDPOINT, "404"):
 		notFoundHandler(w, r)
+	case checkPath(segments, ENDPOINT, "state"):
+		stateHandler(w, r,segments)
 	default:
 		handleClientRoutes(w, r)
 	}
 }
 
 func staticFileHandler(w http.ResponseWriter, r *http.Request) {
-	filePath := filepath.Join("public", r.URL.Path)
-	switch {
-	case filepath.Ext(filePath) == ".css":
-		w.Header().Set("Content-Type", "text/css")
-	case filepath.Ext(filePath) == ".js":
-		w.Header().Set("Content-Type", "application/javascript")
-	case filepath.Ext(filePath) == ".webp":
-		w.Header().Set("Content-Type", "image/webp")
-	case filepath.Ext(filePath) == ".jpeg":
-		w.Header().Set("Content-Type", "image/jpeg")
-	case filepath.Ext(filePath) == ".gif":
-		w.Header().Set("Content-Type", "image/gif")
-	case filepath.Ext(filePath) == ".bmp":
-		w.Header().Set("Content-Type", "image/bmp")
-	case filepath.Ext(filePath) == ".tiff":
-		w.Header().Set("Content-Type", "image/tiff")
-	case filepath.Ext(filePath) == ".svg":
-		w.Header().Set("Content-Type", "image/svg+xml")
-	case filepath.Ext(filePath) == ".heif":
-		w.Header().Set("Content-Type", "image/heif")
-	case filepath.Ext(filePath) == ".heic":
-		w.Header().Set("Content-Type", "image/heic")
-	case filepath.Ext(filePath) == ".png":
-		w.Header().Set("Content-Type", "image/png")
-	case filepath.Ext(filePath) == ".txt":
-		w.Header().Set("Content-Type", "text/plain")
-
+	wd, err := os.Getwd()
+	if err != nil {
+		logError("failed to : ", err)
 	}
+	filePath := r.URL.Path
+	segments := strings.Split(filePath, "/")
 
-	http.ServeFile(w, r, filePath)
+	if len(segments) > 1 {
+		segments = segments[2:]
+	}
+	trimmedPath := wd + "/" + strings.Join(segments, "/")
+	file, err := os.Open(trimmedPath)
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	defer file.Close()
+	info, _ := file.Stat()
+	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
 }

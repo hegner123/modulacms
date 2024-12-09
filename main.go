@@ -72,7 +72,7 @@ func main() {
 		router(w, r)
 	})
 
-	if useSSL {
+	if !useSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s\n", config.SSL_Port)
 		err := http.ListenAndServeTLS(":"+config.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)

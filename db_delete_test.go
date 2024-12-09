@@ -8,7 +8,7 @@ import (
 var deleteTestTable string
 
 func TestDeleteDBCopy(t *testing.T) {
-	testTable, err := createDbCopy("delete_tests.db")
+	testTable, err := createDbCopy("delete_tests.db",false)
 	if err != nil {
 		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
 		t.FailNow()
@@ -17,12 +17,6 @@ func TestDeleteDBCopy(t *testing.T) {
 }
 
 func TestDeleteUser(t *testing.T) {
-	testTable, err := createDbCopy("delete_tests.db")
-	if err != nil {
-		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-		t.FailNow()
-	}
-	deleteTestTable = testTable
 	db, ctx, err := getDb(Database{src: deleteTestTable})
 	if err != nil {
 		logError("failed to connect or create database", err)

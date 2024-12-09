@@ -15,11 +15,14 @@ func handleAdminRoutes(w http.ResponseWriter, r *http.Request, segments []string
 	s := r.URL.Path
 	w.Header().Set("Content-Type", "text/html")
 	route := dbGetAdminRoute(db, ctx, s)
-	s, ok := route.Template.(string)
+    rts:=[]string{}
+	rt, ok := route.Template.(string)
 	if !ok {
 		return
 	} 
-	res := servePageFromRoute(s)
+    rts = append(rts, rt)
+
+	res := servePageFromRoute(rts)
 	err = res.ExecuteTemplate(w, s, res)
 	if err != nil {
 		logError("failed to write response : ", err)

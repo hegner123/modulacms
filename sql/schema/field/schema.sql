@@ -18,5 +18,6 @@ CREATE TABLE IF NOT EXISTS fields
         references users (user_id)
             on update cascade on delete set default,
     date_created  TEXT    default CURRENT_TIMESTAMP,
-    date_modified TEXT    default CURRENT_TIMESTAMP
+    date_modified TEXT    default CURRENT_TIMESTAMP,
+    template      TEXT
 );

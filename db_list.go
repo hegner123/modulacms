@@ -9,6 +9,15 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func dbListAdminDatatypes(db *sql.DB, ctx context.Context) []mdb.AdminDatatypes {
+	queries := mdb.New(db)
+	fetchedAdminDatatypes, err := queries.ListAdminDatatype(ctx)
+	if err != nil {
+		logError("failed to get Admin Datatypes: ", err)
+	}
+	return fetchedAdminDatatypes
+}
+
 func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.AdminRoutes {
 	queries := mdb.New(db)
 	fetchedAdminRoutes, err := queries.ListAdminRoute(ctx)
@@ -101,4 +110,22 @@ func dbListFieldById(db *sql.DB, ctx context.Context, routeId int64) []mdb.ListF
 		logError("failed to get Users ", err)
 	}
 	return fetchedDatatypes
+}
+
+func dbListAdminFieldByAdminDtId(db *sql.DB, ctx context.Context, admin_datatype_id int64) []mdb.ListAdminFieldByAdminDtIdRow {
+	queries := mdb.New(db)
+	fetchedFields, err := queries.ListAdminFieldByAdminDtId(ctx, ni64(admin_datatype_id))
+	if err != nil {
+		logError("failed to get Users ", err)
+	}
+	return fetchedFields
+}
+
+func dbListAdminDatatypeByAdminRouteId(db *sql.DB, ctx context.Context, adminRouteId int64) []mdb.ListAdminDatatypeByRouteIdRow {
+	queries := mdb.New(db)
+	fetchedAdminDatatypes, err := queries.ListAdminDatatypeByRouteId(ctx, ni64(adminRouteId))
+	if err != nil {
+		logError("failed to get Users ", err)
+	}
+	return fetchedAdminDatatypes
 }

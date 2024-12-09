@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 )
 
@@ -80,4 +81,27 @@ jsonStr, err := json.Marshal(struc)
 		return
 	}
 	fmt.Println(string(jsonStr))
+}
+func PrintStringFields(v interface{}) {
+	val := reflect.ValueOf(v)
+
+	// Ensure we're working with a struct or pointer to a struct
+	if val.Kind() == reflect.Ptr {
+		val = val.Elem()
+	}
+	if val.Kind() != reflect.Struct {
+		fmt.Println("Error: input must be a struct or a pointer to a struct")
+		return
+	}
+
+	typ := val.Type()
+	for i := 0; i < val.NumField(); i++ {
+		field := typ.Field(i)
+		fieldValue := val.Field(i)
+
+        if field.Name == "AdminDtID"{
+            fmt.Printf("\n%s : %d\n",field.Name, fieldValue.Int())
+        }
+
+	}
 }

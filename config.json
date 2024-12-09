@@ -1,26 +1,26 @@
 {
     "port": "8080",
     "ssl_port": "8443",
-    "client_site": "example.com",
+    "client_site": "modulacms.com",
     "db_driver": "sqlite",
-    "db_url": "default",
-    "db_name": "default",
+    "db_url": "./modula.db",
+    "db_name": "modula.db",
     "db_password": "none",
-    "bucket_url": "local",
-    "bucket_endpoint":"locale",
-    "bucket_access_key": "none",
-    "bucket_secret_key":"none",
+    "bucket_url": "us-iad-10.linodeobjects.com",
+    "bucket_endpoint": "backups.us-iad-10.linodeobjects.com",
+    "bucket_access_key": "RMK7Q10WV4AUMFAZYI7E",
+    "bucket_secret_key": "LNbFZDSi25erOCWdRbADU4hmeLw97W8IHHx20sk4",
     "backup_option": "",
     "backup_path": [
+        ""
     ],
-    "oauth_client_id": "clientId",
-    "oauth_client_secret": "clientSecret",
-    "oauth_scopes": [
-        "profile",
-        "profilePic"
+    "oauthClientID": "Ov23liFoy8pVGnAnGgrE",
+    "oauthClientSecret": "f57dda6a58faa59e4803f08efca11362478dcd3c",
+    "oauthScopes": [
+        "user"
     ],
-    "oauth_endpoint": {
-        "oauth_auth_url": "https://provider.com/o/oauth2/auth",
-        "oauth_token_url": "https://provider.com/o/oauth2/token"
+    "oauthEndpoint": {
+        "oauthAuthURL": "https://github.com/login/oauth/authorize",
+        "oauthTokenURL": "https://github.com/login/oauth2/token"
     }
 }

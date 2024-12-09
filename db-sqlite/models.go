@@ -18,6 +18,7 @@ type AdminDatatypes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	Template     sql.NullString `json:"template"`
 }
 
 type AdminFields struct {
@@ -31,6 +32,7 @@ type AdminFields struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	Template     sql.NullString `json:"template"`
 }
 
 type AdminRoutes struct {
@@ -55,6 +57,7 @@ type Datatypes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	Template     sql.NullString `json:"template"`
 }
 
 type Fields struct {
@@ -68,6 +71,7 @@ type Fields struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	Template     sql.NullString `json:"template"`
 }
 
 type Media struct {

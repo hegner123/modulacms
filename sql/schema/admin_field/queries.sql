@@ -24,9 +24,10 @@ INSERT INTO admin_fields (
     author,
     author_id,
     date_created,
-    date_modified
+    date_modified,
+    template
     ) VALUES (
-?,?,?,?,?,?,?,?,?
+    ?,?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
@@ -40,7 +41,8 @@ set admin_route_id = ?,
     author = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?
+    date_modified = ?,
+    template = ?
     WHERE admin_field_id = ?
     RETURNING *;
 
@@ -49,7 +51,13 @@ DELETE FROM admin_fields
 WHERE admin_field_id = ?;
 
 -- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
 FROM admin_fields
 WHERE admin_route_id = ?;
+
+
+-- name: ListAdminFieldByAdminDtId :many
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
+FROM admin_fields
+WHERE parent_id = ?;
 

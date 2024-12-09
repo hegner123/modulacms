@@ -10,7 +10,7 @@ import (
 
 var listTestTable string
 func TestDBCopy(t *testing.T) {
-	testTable,err := createDbCopy("list_tests.db")
+	testTable,err := createDbCopy("list_tests.db",false)
     if err != nil { 
         logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
         t.FailNow()

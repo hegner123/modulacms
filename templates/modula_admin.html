@@ -15,17 +15,8 @@ ChildLinks []AdminLink
 <nav class="modula-admin">
 
     <ul class="modula-admin-primary">
-        {{range .DestinationLinks}}
-        {{template "MenuLink" .Link}}
-        {{end}}
-        {{range .ToolbarPrimary}}
-        {{template "MenuLink" .Link}}
-        {{end}}
     </ul>
     <ul class="modula-admin-secondary">
-        {{range .ToolbarSecondary}}
-        {{template "MenuLink" .Link}}
-        {{end}}
         <a href="/admin/github" class="admin-bar-link">Github</a>
         <a href="/admin/support" class="admin-bar-link">Support</a>
         <a href="/admin/documentation" class="admin-bar-link">Documentation</a>

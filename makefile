@@ -19,12 +19,15 @@ all: help
 
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
-	cd templates/components && npm run build && cd -
+	npm run build 
+	rsync -av --delete templates/styles/*.css public/styles
+	npx tailwindcss -o ./public/styles/output.css 
 	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) .	
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
-	cd templates/components && npm run build && cd -
+	npm run build 
+	npx tailwindcss -o ./public/styles/output.css 
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .	
 	rsync -av --delete public/ out/bin/public/
 	rsync -av --delete templates/*.html out/bin/templates/
@@ -69,6 +72,10 @@ endif
 ## SQL
 sqlc: ## Run sqlc generate in sql directory
 	cd ./sql && sqlc generate && echo "generated coded successfully"
+
+## DB 
+db: 
+	sqlite3 reference .read 
 	
 
 

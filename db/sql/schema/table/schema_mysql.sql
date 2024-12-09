@@ -1,0 +1,2 @@
+
+CREATE TABLE tables (id INTEGER PRIMARY KEY, label TEXT UNIQUE);

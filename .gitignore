@@ -47,7 +47,7 @@ plugins/
 tests/
 backups/
 legacydb/
-ignore/
+Ignore/
 testing-config.json
 #certs
 certs/
