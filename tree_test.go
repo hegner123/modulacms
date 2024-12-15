@@ -30,7 +30,7 @@ func TestTree(t *testing.T) {
 	t1 := NewTree(Scan)
 
 	for i := 0; i < len(rows); i++ {
-		dt := dbGetAdminDatatypeId(db, ctx, rows[i])
+		dt := dbGetAdminDatatypeById(db, ctx, rows[i])
 		t1.Add(dt)
 	}
     t1.Root.AddTreeFields("")

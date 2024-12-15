@@ -8,6 +8,66 @@ import (
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
+func apiUpdateAdminDatatype(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		logError("failed to get database: ", err)
+	}
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+	}
+	updateId := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+    id,err:=strconv.ParseInt(updateId,10,64)
+    if err != nil { 
+        return err
+    }
+	updatedAdminDatatype := mdb.UpdateAdminDatatypeParams{}
+	jsonAdminDatatype := formMapJson(r)
+	json.Unmarshal(jsonAdminDatatype, updatedAdminDatatype)
+	updatedAdminDatatype.AdminDtID = id
+	_ = dbUpdateAdminDatatype(db, ctx, updatedAdminDatatype)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	err = json.NewEncoder(w).Encode(updatedAdminDatatype)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	return nil
+}
+func apiUpdateAdminField(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		logError("failed to get database: ", err)
+	}
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+	}
+	updateId := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+    id,err:=strconv.ParseInt(updateId,10,64)
+    if err != nil { 
+        return err
+    }
+	updatedAdminField := mdb.UpdateAdminFieldParams{}
+	jsonAdminField := formMapJson(r)
+	json.Unmarshal(jsonAdminField, updatedAdminField)
+	updatedAdminField.AdminFieldID = id
+	_ = dbUpdateAdminField(db, ctx, updatedAdminField)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusAccepted)
+	err = json.NewEncoder(w).Encode(updatedAdminField)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	return nil
+}
 
 func apiUpdateAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})

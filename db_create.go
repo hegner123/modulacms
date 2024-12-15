@@ -10,6 +10,25 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func dbCreateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.CreateAdminDatatypeParams) mdb.AdminDatatypes {
+	queries := mdb.New(db)
+	insertedAdminDatatype, err := queries.CreateAdminDatatype(ctx, s)
+	if err != nil {
+		logError("failed to create admin route ", err)
+	}
+
+	return insertedAdminDatatype
+}
+func dbCreateAdminField(db *sql.DB, ctx context.Context, s mdb.CreateAdminFieldParams) mdb.AdminFields {
+	queries := mdb.New(db)
+	insertedAdminField, err := queries.CreateAdminField(ctx, s)
+	if err != nil {
+		logError("failed to create admin route ", err)
+	}
+
+	return insertedAdminField
+}
+
 func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoutes {
 	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)

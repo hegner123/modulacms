@@ -19,7 +19,7 @@ func dbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDataty
 	return fetchedGlobalAdminDatatypeId
 }
 
-func dbGetAdminDatatypeId(db *sql.DB, ctx context.Context, id int64) mdb.AdminDatatypes {
+func dbGetAdminDatatypeById(db *sql.DB, ctx context.Context, id int64) mdb.AdminDatatypes {
 	queries := mdb.New(db)
 	fetchedAdminDatatype, err := queries.GetAdminDatatype(ctx, id)
 	if err != nil {

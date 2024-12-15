@@ -6,12 +6,64 @@ import (
 	"strconv"
 )
 
+func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return err
+	}
+	adminDatatypeIdInput := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+	adminDatatypeId, err := strconv.ParseInt(adminDatatypeIdInput, 10, 64)
+	fetchedAdminDatatype := dbGetAdminDatatypeById(db, ctx, adminDatatypeId)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(fetchedAdminDatatype)
+	if err != nil {
+		logError("failed to encode json ", err)
+	}
+	return nil
+}
+
+func apiGetAdminField(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return err
+	}
+	adminFieldInput := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+	adminFieldId, err := strconv.ParseInt(adminFieldInput, 10, 64)
+	fetchedAdminField := dbGetAdminDatatypeById(db, ctx, adminFieldId)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(fetchedAdminField)
+	if err != nil {
+		logError("failed to encode json ", err)
+	}
+	return nil
+}
+
 func apiGetAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -25,17 +77,18 @@ func apiGetAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(fetchedAdminRoute)
-    if err != nil { 
-        logError("failed to encode json ", err)
-    }
+	if err != nil {
+		logError("failed to encode json ", err)
+	}
 	return nil
 }
+
 func apiGetDatatype(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -61,7 +114,7 @@ func apiGetField(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -87,7 +140,7 @@ func apiGetMedia(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -113,7 +166,7 @@ func apiGetMediaDimension(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -139,7 +192,7 @@ func apiGetRoute(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -161,7 +214,7 @@ func apiGetTable(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -187,7 +240,7 @@ func apiGetToken(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)
@@ -213,7 +266,7 @@ func apiGetUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-    defer db.Close()
+	defer db.Close()
 	err = r.ParseForm()
 	if err != nil {
 		http.Error(w, "Error parsing form", http.StatusBadRequest)

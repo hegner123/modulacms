@@ -1,17 +1,17 @@
 package main
 
-type FieldType struct {
-	Name        string      `json:"name"`
-	Type        string      `json:"type"`
-	Description string      `json:"description"`
-	Required    bool        `json:"required"`
-	Example     interface{} `json:"example"`
+import mdb "github.com/hegner123/modulacms/db-sqlite"
+
+type DbEndpoints struct{
+    Content Content
 }
 
-type Schema struct {
-	ObjectName string      `json:"objectName"`
-	Fields     []FieldType `json:"fields"`
+type Content struct{
+    AdminDts []mdb.AdminDatatypes
+    AdminFields []mdb.AdminFields
+    AdminRoutes []mdb.AdminRoutes
 }
+
 
 type Backup struct {
 	Hash    string

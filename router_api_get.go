@@ -15,6 +15,16 @@ func apiGetHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 
 func getRouter(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
+	case checkPath(segments, TABLE, "admindatatype"):
+		err := apiGetAdminDatatype(w, r)
+		if err != nil {
+			logError("failed to get adminroute", err)
+		}
+	case checkPath(segments, TABLE, "adminfields"):
+		err := apiGetAdminField(w, r)
+		if err != nil {
+			logError("failed to get adminroute", err)
+		}
 	case checkPath(segments, TABLE, "adminroute"):
 		err := apiGetAdminRoute(w, r)
 		if err != nil {
@@ -65,7 +75,16 @@ func getRouter(w http.ResponseWriter, r *http.Request, segments []string) {
 
 func listRouter(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
-
+	case checkPath(segments, TABLE, "admindatatype"):
+		err := apiListAdminDatatypes(w, r)
+		if err != nil {
+			logError("failed to list admindatatype", err)
+		}
+	case checkPath(segments, TABLE, "adminfield"):
+		err := apiListAdminFields(w, r)
+		if err != nil {
+			logError("failed to list adminfield", err)
+		}
 	case checkPath(segments, TABLE, "adminroutes"):
 		err := apiListAdminRoutes(w, r)
 		if err != nil {

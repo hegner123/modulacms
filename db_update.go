@@ -10,6 +10,24 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func dbUpdateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateAdminDatatypeParams) string {
+	queries := mdb.New(db)
+	err := queries.UpdateAdminDatatype(ctx, s)
+	if err != nil {
+		logError("failed to update admin route ", err)
+	}
+	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+}
+
+func dbUpdateAdminField(db *sql.DB, ctx context.Context, s mdb.UpdateAdminFieldParams) string {
+	queries := mdb.New(db)
+	err := queries.UpdateAdminField(ctx, s)
+	if err != nil {
+		logError("failed to update admin route ", err)
+	}
+	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+}
+
 func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteParams) string {
 	queries := mdb.New(db)
 	err := queries.UpdateAdminRoute(ctx, s)
@@ -64,15 +82,6 @@ func dbUpdateRoute(db *sql.DB, ctx context.Context, s mdb.UpdateRouteParams) str
 	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
 }
 
-func dbUpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) string {
-	queries := mdb.New(db)
-	err := queries.UpdateUser(ctx, s)
-	if err != nil {
-		logError("failed to update user ", err)
-	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Name)
-}
-
 func dbUpdateTable(db *sql.DB, ctx context.Context, s mdb.UpdateTableParams) string {
 	queries := mdb.New(db)
 	err := queries.UpdateTable(ctx, s)
@@ -89,4 +98,13 @@ func dbUpdateToken(db *sql.DB, ctx context.Context, s mdb.UpdateTokenParams) err
 		logError("failed to update table ", err)
 	}
 	return nil
+}
+
+func dbUpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) string {
+	queries := mdb.New(db)
+	err := queries.UpdateUser(ctx, s)
+	if err != nil {
+		logError("failed to update user ", err)
+	}
+	return fmt.Sprintf("Successfully updated %v\n", s.Name)
 }

@@ -6,6 +6,10 @@ import (
 
 func apiPostHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
+	case checkPath(segments, DBMETHOD, "admindatatype"):
+		apiCreateAdminDatatype(w, r)
+	case checkPath(segments, DBMETHOD, "adminfield"):
+		apiCreateAdminField(w, r)
 	case checkPath(segments, DBMETHOD, "adminroute"):
 		apiCreateAdminRoute(w, r)
 	case checkPath(segments, DBMETHOD, "datatype"):

@@ -2,10 +2,10 @@ package main
 
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 
-func createBaseAdminRoutes(dbName string) {
+func createBaseAdminRoutes(dbName string) error {
 	db, ctx, err := getDb(Database{src: dbName})
 	if err != nil {
-		logError("failed to get db", err)
+		return err
 	}
 	defer db.Close()
 
@@ -20,12 +20,13 @@ func createBaseAdminRoutes(dbName string) {
 		Template:     "modula_base.html",
 	}
 	dbCreateAdminRoute(db, ctx, homePage)
+	return nil
 }
 
-func createSystemTableEntries() {
+func createSystemTableEntries() error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
-		logError("failed to get db", err)
+        return err
 	}
 	defer db.Close()
 	systemTables := []string{
@@ -36,13 +37,15 @@ func createSystemTableEntries() {
 		table := mdb.Tables{Label: ns(v)}
 		dbCreateTable(db, ctx, table)
 	}
+    return nil
 }
 
-func createSystemUser(name string) {
+func createSystemUser(name string)error {
 	db, ctx, err := getDb(Database{src: name})
 	if err != nil {
-		logError("failed to get db", err)
+        return err
 	}
+
 	defer db.Close()
 
 	systemUser := mdb.CreateUserParams{
@@ -55,4 +58,5 @@ func createSystemUser(name string) {
 		Role:         "Admin",
 	}
 	dbCreateUser(db, ctx, systemUser)
+    return err
 }

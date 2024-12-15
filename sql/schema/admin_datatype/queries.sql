@@ -15,6 +15,17 @@ WHERE admin_dt_id = ? LIMIT 1;
 SELECT * FROM admin_datatypes
 ORDER BY admin_dt_id ;
 
+-- name: ListAdminDatatypeTree :many
+SELECT 
+    child.admin_dt_id AS child_id,
+    child.label       AS child_label,
+    parent.admin_dt_id AS parent_id,
+    parent.label       AS parent_label
+FROM admin_datatypes AS child
+LEFT JOIN admin_datatypes AS parent 
+    ON child.parent_id = parent.admin_dt_id;
+
+
 -- name: GetGlobalAdminDatatypeId :one
 SELECT * FROM admin_datatypes
 WHERE type = "GLOBALS" LIMIT 1;

@@ -1,9 +1,11 @@
+{{define "base"}}
 <!DOCTYPE html>
 <html lang="en">
-{{template "head"}}
+{{template "head" .}}
 
 <body class="bg-gray-900 primary-grid-parent">
     <header class="modula-admin">
+            {{template "modula-admin" .}}
         <nav class="modula-admin-nav">
 
             <ul class="modula-admin-primary">
@@ -47,8 +49,16 @@
                 <li class="modula-sidebar-link-item">
                     <a href="/admin/routes" class="menu-link">Routes</a>
                 </li>
-                <li class="modula-sidebar-link-item">
+                <li class="modula-sidebar-link-item active">
                     <a href="/admin/datatypes" class="menu-link">Datatypes</a>
+                    <ul class="modula-sidebar-submenu">
+                        <li class="modula-sidebar-link-item">
+                            <a href="/manage" class="menu-link">Manage</a>
+                        </li>
+                        <li class="modula-sidebar-link-item">
+                            <a href="/addnew" class="menu-link">Add New</a>
+                        </li>
+                    </ul>
                 </li>
                 <li class="modula-sidebar-link-item">
                     <a href="/admin/fields" class="menu-link">Fields</a>
@@ -59,16 +69,8 @@
                 <li class="modula-sidebar-link-item">
                     <a href="/admin/plugins" class="menu-link">Plugins</a>
                 </li>
-                <li class="modula-sidebar-link-item active">
+                <li class="modula-sidebar-link-item ">
                     <a href="/admin/users" class="menu-link">Users</a>
-                    <ul class="modula-sidebar-submenu">
-                        <li class="modula-sidebar-link-item">
-                            <a href="/" class="menu-link">Manage</a>
-                        </li>
-                        <li class="modula-sidebar-link-item">
-                            <a href="/" class="menu-link">Add New</a>
-                        </li>
-                    </ul>
                 </li>
             </ul>
         </nav>
@@ -80,9 +82,14 @@
             </ul>
         </nav>
     </aside>
+        <main class="p-5" style="grid-area: admin;">
+            {{template "content" .Content}}
+
+        </main>
     <script src="public/js/index.js"></script>
     <script src="public/js/htmx.min.js"></script>
     <script defer src="public/js/bundle.js"></script>
 </body>
 
 </html>
+{{end}}

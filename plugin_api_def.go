@@ -1,14 +1,15 @@
 package main
 
 type PluginAPI struct {
-	ID         int                 `json:"id"`
-	Name       string              `json:"name"`
-	Version    string              `json:"version"`
-	Author     string              `json:"author"`
-	AuthorUrl  string              `json:"authorUrl"`
-	AddsTables bool                `json:"addsTables"`
-	Tables     []PluginAPITable    `json:"tables"`
-	Relations  []PluginAPIRelation `json:"relations"`
+	ID            int                 `json:"id"`
+	Name          string              `json:"name"`
+	Version       string              `json:"version"`
+	Author        string              `json:"author"`
+	AuthorUrl     string              `json:"authorUrl"`
+	AddsTables    bool                `json:"addsTables"`
+	Tables        []PluginAPITable    `json:"tables"`
+	Relations     []PluginAPIRelation `json:"relations"`
+	TemplatePaths string              `json:"TemplatePaths"`
 }
 
 type PluginAPITable struct {

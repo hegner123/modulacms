@@ -10,6 +10,26 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func dbDeleteAdminDatatype(db *sql.DB, ctx context.Context, id int64) string {
+	queries := mdb.New(db)
+	err := queries.DeleteAdminDatatype(ctx, id)
+	if err != nil {
+		logError("failed to delete admin route ", err)
+		return fmt.Sprintf("failed to delete Admin Route %s ", id)
+	}
+	return fmt.Sprintf("Deleted Admin Route %s successfully", id)
+}
+
+func dbDeleteAdminField(db *sql.DB, ctx context.Context, id int64) string {
+	queries := mdb.New(db)
+	err := queries.DeleteAdminField(ctx, id)
+	if err != nil {
+		logError("failed to delete admin route ", err)
+		return fmt.Sprintf("failed to delete Admin Route %s ", id)
+	}
+	return fmt.Sprintf("Deleted Admin Route %s successfully", id)
+}
+
 func dbDeleteAdminRoute(db *sql.DB, ctx context.Context, slug string) string {
 	queries := mdb.New(db)
 	err := queries.DeleteAdminRoute(ctx, slug)

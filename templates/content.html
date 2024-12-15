@@ -1,0 +1,11 @@
+{{define "content" }}
+{{ if .AdminDts }}
+{{template "admin-dt" .}}
+{{ else if .AdminFields }}
+{{template "admin-fields" .Content}}
+{{ else if .AdminRoutes }}
+{{template "admin-routes" .Content}}
+{{ else }}
+<p>No Valid Properties listed</p>
+{{ end }}
+{{end}}

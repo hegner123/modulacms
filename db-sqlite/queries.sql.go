@@ -1062,8 +1062,6 @@ func (q *Queries) GetField(ctx context.Context, fieldID int64) (Fields, error) {
 }
 
 const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
-;
-
 SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, template FROM admin_datatypes
 WHERE type = "GLOBALS" LIMIT 1
 `
@@ -1424,6 +1422,54 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.Nu
 			&i.DateCreated,
 			&i.DateModified,
 			&i.Template,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeTree = `-- name: ListAdminDatatypeTree :many
+;
+
+SELECT 
+    child.admin_dt_id AS child_id,
+    child.label       AS child_label,
+    parent.admin_dt_id AS parent_id,
+    parent.label       AS parent_label
+FROM admin_datatypes AS child
+LEFT JOIN admin_datatypes AS parent 
+    ON child.parent_id = parent.admin_dt_id
+`
+
+type ListAdminDatatypeTreeRow struct {
+	ChildID     int64          `json:"child_id"`
+	ChildLabel  string         `json:"child_label"`
+	ParentID    sql.NullInt64  `json:"parent_id"`
+	ParentLabel sql.NullString `json:"parent_label"`
+}
+
+func (q *Queries) ListAdminDatatypeTree(ctx context.Context) ([]ListAdminDatatypeTreeRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeTree)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAdminDatatypeTreeRow
+	for rows.Next() {
+		var i ListAdminDatatypeTreeRow
+		if err := rows.Scan(
+			&i.ChildID,
+			&i.ChildLabel,
+			&i.ParentID,
+			&i.ParentLabel,
 		); err != nil {
 			return nil, err
 		}

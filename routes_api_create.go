@@ -7,6 +7,48 @@ import (
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
+func apiCreateAdminDatatype(w http.ResponseWriter, r *http.Request) {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		logError("failed to get database: ", err)
+	}
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+	}
+	newAdminDatatype := mdb.CreateAdminDatatypeParams{}
+	jsonUser := formMapJson(r)
+	json.Unmarshal(jsonUser, newAdminDatatype)
+
+	_ = dbCreateAdminDatatype(db, ctx, newAdminDatatype)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(newAdminDatatype)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+}
+func apiCreateAdminField(w http.ResponseWriter, r *http.Request) {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		logError("failed to get database: ", err)
+	}
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+	}
+	newAdminField := mdb.CreateAdminFieldParams{}
+	jsonUser := formMapJson(r)
+	json.Unmarshal(jsonUser, newAdminField)
+
+	_ = dbCreateAdminField(db, ctx, newAdminField)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(newAdminField)
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+}
 
 func apiCreateAdminRoute(w http.ResponseWriter, r *http.Request) {
 	db, ctx, err := getDb(Database{})

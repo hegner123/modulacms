@@ -6,6 +6,16 @@ import (
 
 func apiDeleteHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
+	case checkPath(segments, DBMETHOD, "admindatatype"):
+		err := apiDeleteAdminDatatype(w, r)
+		if err != nil {
+			logError("failed to delete admindatatype", err)
+		}
+	case checkPath(segments, DBMETHOD, "adminfield"):
+		err := apiDeleteAdminField(w, r)
+		if err != nil {
+			logError("failed to delete adminfield", err)
+		}
 	case checkPath(segments, DBMETHOD, "adminroute"):
 		err := apiDeleteAdminRoute(w, r)
 		if err != nil {

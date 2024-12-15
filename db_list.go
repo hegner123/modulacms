@@ -18,6 +18,15 @@ func dbListAdminDatatypes(db *sql.DB, ctx context.Context) []mdb.AdminDatatypes 
 	return fetchedAdminDatatypes
 }
 
+func dbListAdminFields(db *sql.DB, ctx context.Context) []mdb.AdminFields {
+	queries := mdb.New(db)
+	fetchedAdminFields, err := queries.ListAdminField(ctx)
+	if err != nil {
+		logError("failed to get Admin Fields: ", err)
+	}
+	return fetchedAdminFields
+}
+
 func dbListAdminRoute(db *sql.DB, ctx context.Context) []mdb.AdminRoutes {
 	queries := mdb.New(db)
 	fetchedAdminRoutes, err := queries.ListAdminRoute(ctx)

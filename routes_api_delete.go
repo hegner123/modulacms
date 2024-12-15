@@ -6,6 +6,64 @@ import (
 	"strconv"
 )
 
+func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return err
+	}
+	adminDatatypeId := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+	dtId,err := strconv.ParseInt(adminDatatypeId, 10, 64)
+    if err != nil { 
+        return err
+    }
+	res := dbDeleteAdminDatatype(db, ctx, dtId)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
+	return nil
+}
+
+func apiDeleteAdminField(w http.ResponseWriter, r *http.Request) error {
+	db, ctx, err := getDb(Database{})
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	err = r.ParseForm()
+	if err != nil {
+		http.Error(w, "Error parsing form", http.StatusBadRequest)
+		return err
+	}
+	adminFieldId := r.FormValue("id")
+	if err != nil {
+		return err
+	}
+	fieldId,err := strconv.ParseInt(adminFieldId, 10, 64)
+    if err != nil { 
+        return err
+    }
+    res := dbDeleteAdminField(db, ctx, fieldId)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
+	if err != nil {
+		logError("failed to : ", err)
+	}
+	return nil
+}
+
 func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request) error {
 	db, ctx, err := getDb(Database{})
 	if err != nil {
@@ -253,8 +311,8 @@ func apiDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(map[string]string{"res": res})
-    if err != nil { 
-        logError("failed to : ", err)
-    }
+	if err != nil {
+		logError("failed to : ", err)
+	}
 	return nil
 }

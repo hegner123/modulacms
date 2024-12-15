@@ -12,18 +12,12 @@ func handleAdminRoutes(w http.ResponseWriter, r *http.Request, segments []string
 		return
 	}
 	defer db.Close()
-	s := r.URL.Path
 	w.Header().Set("Content-Type", "text/html")
-	route := dbGetAdminRoute(db, ctx, s)
-    rts:=[]string{}
-	rt, ok := route.Template.(string)
-	if !ok {
-		return
-	} 
-    rts = append(rts, rt)
-
-	res := servePageFromRoute(rts)
-	err = res.ExecuteTemplate(w, s, res)
+    adt:=dbListAdminDatatypes(db,ctx)
+    content:=Content{AdminDts: adt}
+    dbe:=DbEndpoints{Content: content}
+	res,err := servePageFromRoute()
+	err = res.ExecuteTemplate(w, "base", dbe)
 	if err != nil {
 		logError("failed to write response : ", err)
 	}

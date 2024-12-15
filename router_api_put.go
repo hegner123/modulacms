@@ -8,6 +8,32 @@ import (
 
 func apiPutHandler(w http.ResponseWriter, r *http.Request, segments []string) {
 	switch {
+	case checkPath(segments, DBMETHOD, "admindatatype"):
+		res := fmt.Sprintf("updated admindatatype %v successfully\n", r.FormValue("id"))
+		err := apiUpdateAdminDatatype(w, r)
+		if err != nil {
+			res = fmt.Sprintf("Error updating admindatatype:%v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(map[string]string{"result": res})
+		if err != nil {
+			fmt.Printf("\nerror: %s", err)
+			return
+		}
+	case checkPath(segments, DBMETHOD, "adminfield"):
+		res := fmt.Sprintf("updated adminfield %v successfully\n", r.FormValue("id"))
+		err := apiUpdateAdminField(w, r)
+		if err != nil {
+			res = fmt.Sprintf("Error updating adminfield:%v", err)
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		err = json.NewEncoder(w).Encode(map[string]string{"result": res})
+		if err != nil {
+			fmt.Printf("\nerror: %s", err)
+			return
+		}
 	case checkPath(segments, DBMETHOD, "adminroute"):
 		res := fmt.Sprintf("updated adminroute %v successfully\n", r.FormValue("slug"))
 		err := apiUpdateAdminRoute(w, r)

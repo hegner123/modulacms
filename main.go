@@ -80,7 +80,7 @@ func main() {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
-	log.Printf("\n\nServer is running at localhost:%s\n", config.Port)
+    log.Printf("\n\nServer is running at http://localhost:%s\n", config.Port)
 	err := http.ListenAndServe(":"+config.Port, mux)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
