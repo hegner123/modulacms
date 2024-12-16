@@ -1,4 +1,4 @@
-package main
+package media
 
 func assertMedia(pName string) {
 }

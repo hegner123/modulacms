@@ -1,4 +1,4 @@
-package main
+package utility
 
 type StorageUnit int64
 

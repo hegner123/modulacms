@@ -1,4 +1,5 @@
-package main
+
+package mTemplate
 
 import (
 	"fmt"

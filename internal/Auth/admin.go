@@ -1,4 +1,4 @@
-package main
+package auth
 
 type ModulaAdminMenu struct {
 	DestinationLinks []AdminLink

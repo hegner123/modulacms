@@ -1,4 +1,5 @@
-package main
+
+package mTemplate
 
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 

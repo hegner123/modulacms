@@ -1,4 +1,4 @@
-package main
+package mTemplate
 
 import (
 	"fmt"
@@ -33,6 +33,6 @@ func TestTree(t *testing.T) {
 		dt := dbGetAdminDatatypeById(db, ctx, rows[i])
 		t1.Add(dt)
 	}
-    t1.Root.AddTreeFields("")
-    t1.Root.PrintTree(0)
+	t1.Root.AddTreeFields("")
+	t1.Root.PrintTree(0)
 }

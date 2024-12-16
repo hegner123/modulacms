@@ -1,4 +1,4 @@
-package main
+package utility
 
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 
