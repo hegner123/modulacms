@@ -6,19 +6,16 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	config "github.com/hegner123/modulacms/internal/Config"
-    db "github.com/hegner123/modulacms/internal/Db"
+	db "github.com/hegner123/modulacms/internal/Db"
+	router "github.com/hegner123/modulacms/internal/Router"
+	api_v1 "github.com/hegner123/modulacms/internal/Server"
 )
 
 var useSSL, dbFileExists bool = initFileCheck()
 var Env = config.Config{}
 
-func hasFileExtension(path string) bool {
-	ext := filepath.Ext(path)
-	return ext != ""
-}
 
 func main() {
 	versionFlag := flag.Bool("v", false, "Print version and exit")
@@ -71,8 +68,10 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
+    api := api_v1.ApiServerV1{}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        
 		router(w, r)
 	})
 
