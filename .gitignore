@@ -26,6 +26,9 @@ api/
 package-lock.json
 router/
 
+# UI development
+ui
+
 # diagrams
 *.drawio
 # env file
