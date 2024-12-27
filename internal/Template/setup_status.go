@@ -1,26 +1,33 @@
-
 package mTemplate
 
-import "fmt"
+import (
+	"fmt"
+
+	db "github.com/hegner123/modulacms/internal/Db"
+)
 
 func checkInstallStatus(database string) bool {
+
 	var userExists, routeExists bool
-	db, ctx, err := getDb(Database{src: database})
-	if err != nil {
-		logError("failed to get db", err)
-	}
-	defer db.Close()
+	connectedDb := db.GetDb(db.Database{})
+	defer connectedDb.Connection.Close()
 	userExists = false
 	routeExists = false
 
-	userCount := countUsers(db, ctx)
+	userCount, err := db.CountUsers(connectedDb.Connection, connectedDb.Context)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
 	fmt.Printf("userCount :%d\n", userCount)
-	adminRoutes := countAdminRoutes(db, ctx)
+	adminRoutes, err := db.CountAdminRoutes(connectedDb.Connection, connectedDb.Context)
+	if err != nil {
+		fmt.Printf("%v\n", err)
+	}
 
-	if userCount > 0 {
+	if *userCount > 0 {
 		userExists = true
 	}
-	if adminRoutes > 0 {
+	if *adminRoutes > 0 {
 		routeExists = true
 	}
 

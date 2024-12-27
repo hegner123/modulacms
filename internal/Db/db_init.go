@@ -18,13 +18,13 @@ import (
 //go:embed sql/*
 var sqlFiles embed.FS
 
-func GetDb(dbName Database) Database {
+func GetDb(dbSrc Database) Database {
 	ctx := context.Background()
 
-	if dbName.Src == "" {
-		dbName.Src = "./modula.db"
+	if dbSrc.Src == "" {
+		dbSrc.Src = "./modula.db"
 	}
-	db, err := sql.Open("sqlite3", dbName.Src)
+	db, err := sql.Open("sqlite3", dbSrc.Src)
 	if err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
 		return Database{Err: err}

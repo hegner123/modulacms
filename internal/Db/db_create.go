@@ -4,122 +4,122 @@ import (
 	"context"
 	"database/sql"
 	_ "embed"
+	"fmt"
 	"strings"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbCreateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.CreateAdminDatatypeParams) mdb.AdminDatatypes {
+func CreateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.CreateAdminDatatypeParams) mdb.AdminDatatypes {
 	queries := mdb.New(db)
 	insertedAdminDatatype, err := queries.CreateAdminDatatype(ctx, s)
 	if err != nil {
-		logError("failed to create admin route ", err)
+		fmt.Printf("failed to CreateAdminDatatype  %v \n", err)
 	}
 
 	return insertedAdminDatatype
 }
-func dbCreateAdminField(db *sql.DB, ctx context.Context, s mdb.CreateAdminFieldParams) mdb.AdminFields {
+func CreateAdminField(db *sql.DB, ctx context.Context, s mdb.CreateAdminFieldParams) mdb.AdminFields {
 	queries := mdb.New(db)
 	insertedAdminField, err := queries.CreateAdminField(ctx, s)
 	if err != nil {
-		logError("failed to create admin route ", err)
+		fmt.Printf("failed to CreateAdminField  %v \n", err)
 	}
 
 	return insertedAdminField
 }
 
-func dbCreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoutes {
+func CreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoutes {
 	queries := mdb.New(db)
 	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
 	if err != nil {
-		logError("failed to create admin route ", err)
+		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
 	}
 
 	return insertedAdminRoute
 }
 
-func dbCreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatypes, error) {
+func CreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatypes, error) {
 	queries := mdb.New(db)
 	insertedDatatypes, err := queries.CreateDatatype(ctx, s)
 	if err != nil {
-		logError("failed to create field ", err)
+		fmt.Printf("failed to CreateDatatype  %v \n", err)
 		return insertedDatatypes, err
 	}
 
 	return insertedDatatypes, nil
 }
 
-func dbCreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Fields, error) {
+func CreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Fields, error) {
 	queries := mdb.New(db)
 	insertedFields, err := queries.CreateField(ctx, s)
 	if err != nil {
-		logError("failed to create field ", err)
+		fmt.Printf("failed to CreateField  %v \n", err)
 		return insertedFields, err
 	}
 
 	return insertedFields, nil
 }
 
-func dbCreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {
+func CreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {
 	queries := mdb.New(db)
 	insertedMedia, err := queries.CreateMedia(ctx, s)
 	if err != nil {
-		logError("failed to create media ", err)
+		fmt.Printf("failed to CreateMedia.\n%v \n", err)
 	}
 
 	return insertedMedia
 }
 
-func dbCreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimensions {
+func CreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimensions {
 	queries := mdb.New(db)
 	insertedMediaDimension, err := queries.CreateMediaDimension(ctx, s)
 	if err != nil {
-		logError("failed to create MediaDimension ", err)
+		fmt.Printf("failed to CreateMediaDimension.\n%v \n", err)
 	}
 
 	return insertedMediaDimension
 }
 
-func dbCreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Routes {
+func CreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Routes {
 	queries := mdb.New(db)
 	insertedRoute, err := queries.CreateRoute(ctx, s)
 	if err != nil {
-		logError("failed to create route ", err)
+		fmt.Printf("failed to CreateRoute.\n %v\n", err)
 	}
 
 	return insertedRoute
 }
 
-func dbCreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
+func CreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
 	queries := mdb.New(db)
 	insertedTable, err := queries.CreateTable(ctx, s.Label)
 	if err != nil {
-		logError("failed to create table ", err)
+		fmt.Printf("failed to CreateTable.\n %v\n", err)
 	}
 
 	return insertedTable
 }
 
-func dbCreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Tokens {
+func CreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Tokens {
 	queries := mdb.New(db)
 	insertedToken, err := queries.CreateToken(ctx, s)
 	if err != nil {
-		logError("failed to create token", err)
+		fmt.Printf("failed to CreateToken.\n %v\n", err)
 	}
 
 	return insertedToken
 }
 
-func dbCreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.Users {
+func CreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.Users {
 	queries := mdb.New(db)
 	insertedUser, err := queries.CreateUser(ctx, s)
 	if err != nil {
-		splitErr := strings.Split(popError(err), ".")
+		splitErr := strings.Split(err.Error(), ".")
 		property := splitErr[len(splitErr)-1]
 		v := getColumnValue(property, s)
-
-		logError("failed to create user ", err, property, v)
+		fmt.Printf("failed to CreateUser.\n %v\n %v\n %v\n", err, property, v)
 	}
 
 	return insertedUser
