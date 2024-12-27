@@ -10,112 +10,112 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbDeleteAdminDatatype(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteAdminDatatype(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteAdminDatatype(ctx, id)
 	if err != nil {
-		logError("failed to delete admin route ", err)
-		return fmt.Sprintf("failed to delete Admin Route %s ", id)
+		return nil, fmt.Errorf("failed to delete Admin Route %s ", id)
 	}
-	return fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	s := fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	return &s, nil
 }
 
-func dbDeleteAdminField(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteAdminField(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteAdminField(ctx, id)
 	if err != nil {
-		logError("failed to delete admin route ", err)
-		return fmt.Sprintf("failed to delete Admin Route %s ", id)
+		return nil, fmt.Errorf("failed to delete Admin Route %s ", id)
 	}
-	return fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	s := fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	return &s, nil
 }
 
-func dbDeleteAdminRoute(db *sql.DB, ctx context.Context, slug string) string {
+func DeleteAdminRoute(db *sql.DB, ctx context.Context, slug string) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteAdminRoute(ctx, slug)
 	if err != nil {
-		logError("failed to delete admin route ", err)
-		return fmt.Sprintf("failed to delete Admin Route %s ", slug)
+		return nil, fmt.Errorf("failed to delete Admin Route %s ", slug)
 	}
-	return fmt.Sprintf("Deleted Admin Route %s successfully", slug)
+	s := fmt.Sprintf("Deleted Admin Route %s successfully", slug)
+	return &s, nil
 }
 
-func dbDeleteDataType(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteDataType(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteDatatype(ctx, id)
 	if err != nil {
-		logError("failed to delete Field ", err)
-		return fmt.Sprintf("failed to delete datatype %d ", id)
+		return nil, fmt.Errorf("failed to delete datatype %d ", id)
 	}
-	return fmt.Sprintf("Deleted Field %d successfully", id)
+	s := fmt.Sprintf("Deleted Field %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteField(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteField(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteField(ctx, int64(id))
 	if err != nil {
-		logError("failed to delete Field ", err)
-		return fmt.Sprintf("failed to delete Field %d ", id)
+		return nil, fmt.Errorf("failed to delete Field %d ", id)
 	}
-	return fmt.Sprintf("Deleted Field %d successfully", id)
+	s := fmt.Sprintf("Deleted Field %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteMedia(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteMedia(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteMedia(ctx, int64(id))
 	if err != nil {
-		logError("failed to delete Media ", err)
-		return fmt.Sprintf("failed to delete Media %d ", id)
+		return nil, fmt.Errorf("failed to delete Media %d ", id)
 	}
-	return fmt.Sprintf("Deleted Media %d successfully", id)
+	s := fmt.Sprintf("Deleted Media %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteMediaDimension(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteMediaDimension(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteMediaDimension(ctx, int64(id))
 	if err != nil {
-		logError("failed to delete MediaDimension ", err)
-		return fmt.Sprintf("failed to delete MediaDimension %d ", id)
+		return nil, fmt.Errorf("failed to delete MediaDimension %d ", id)
 	}
-	return fmt.Sprintf("Deleted Media Dimension %d successfully", id)
+	s := fmt.Sprintf("Deleted Media Dimension %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteRoute(db *sql.DB, ctx context.Context, slug string) string {
+func DeleteRoute(db *sql.DB, ctx context.Context, slug string) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteRoute(ctx, slug)
 	if err != nil {
-		logError("failed to delete Route ", err)
-		return fmt.Sprintf("failed to delete  Route %s ", slug)
+		return nil, fmt.Errorf("failed to delete  Route %s ", slug)
 	}
-	return fmt.Sprintf("Deleted Route %s successfully", slug)
+	s := fmt.Sprintf("Deleted Route %s successfully", slug)
+	return &s, nil
 }
 
-func dbDeleteTable(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteTable(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteTable(ctx, id)
 	if err != nil {
-		logError("failed to delete Table ", err)
-		return fmt.Sprintf("failed to delete table %d ", id)
+		return nil, err
 	}
-	return fmt.Sprintf("Deleted Table %d successfully", id)
+	s := fmt.Sprintf("Deleted Table %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteToken(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteToken(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteToken(ctx, id)
 	if err != nil {
-		logError("failed to delete Table ", err)
-		return fmt.Sprintf("failed to delete Token %d ", id)
+		return nil, fmt.Errorf("failed to delete Token %d ", id)
 	}
-	return fmt.Sprintf("Deleted Table %d successfully", id)
+	s := fmt.Sprintf("Deleted Table %d successfully", id)
+	return &s, nil
 }
 
-func dbDeleteUser(db *sql.DB, ctx context.Context, id int64) string {
+func DeleteUser(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteUser(ctx, id)
 	if err != nil {
-		logError("failed to delete User ", err)
-		return fmt.Sprintf("failed to delete User %d ", id)
+		return nil, fmt.Errorf("failed to delete User %d ", id)
 	}
-	return fmt.Sprintf("Deleted User %d successfully", id)
+	s := fmt.Sprintf("Deleted User %d successfully", id)
+	return &s, nil
 }
