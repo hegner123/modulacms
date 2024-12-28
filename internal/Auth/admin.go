@@ -56,7 +56,7 @@ type SidebarSection struct {
 	Links []AdminLink
 }
 
-func initAdmin() {
+func InitAdmin() {
 	adminMenu := ModulaAdminMenu{}
 	destinationLinks := []AdminLink{}
 	toolbarsSecondary := []AdminLink{}

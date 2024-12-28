@@ -10,22 +10,21 @@ import (
 	"net/http"
 	"net/url"
 
+	db "github.com/hegner123/modulacms/internal/Db"
 	"golang.org/x/oauth2"
 )
 
-func handleAuth(form url.Values) {
-	db, ctx, err := getDb(Database{ })
-	if err != nil {
-		logError("failed to : ", err)
+func HandleAuth(form url.Values) {
+	mdb := db.GetDb(db.Database{})
+	
 
-	}
-	user := dbGetUserByEmail(db, ctx, form.Get("email"))
+	user := (mdb.Connection, mdb.Context, form.Get("email"))
 	requestHash := authMakeHash(form.Get("hash"), "modulacms")
 	if compareHashes(user.Hash, requestHash) {
 	}
 }
 
-func authMakeHash(data, salt string) string {
+func AuthMakeHash(data, salt string) string {
 	input := data + salt
 	hash := sha256.Sum256([]byte(input))
 

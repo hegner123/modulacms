@@ -10,143 +10,142 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func DbGetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) mdb.AdminDatatypes {
+func GetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) (*mdb.AdminDatatypes, error) {
 	queries := mdb.New(db)
 	fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
 	if err != nil {
-		logError("failed to get Global AdminDatatypes", err)
+		return nil, err
 	}
-	return fetchedGlobalAdminDatatypeId
+	return &fetchedGlobalAdminDatatypeId, nil
 }
 
-func DbGetAdminDatatypeById(db *sql.DB, ctx context.Context, id int64) mdb.AdminDatatypes {
+func GetAdminDatatypeById(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminDatatypes, error) {
 	queries := mdb.New(db)
 	fetchedAdminDatatype, err := queries.GetAdminDatatype(ctx, id)
 	if err != nil {
-		logError("failed to get Global AdminDatatypes", err)
+		return nil, err
 	}
-	return fetchedAdminDatatype
+	return &fetchedAdminDatatype, nil
 }
 
-func DbGetRootAdIdByAdRtId(db *sql.DB, ctx context.Context, adminRtId int64) sql.NullInt64  {
+func GetRootAdIdByAdRtId(db *sql.DB, ctx context.Context, adminRtId int64) (*sql.NullInt64, error) {
 	queries := mdb.New(db)
-    res := sql.NullInt64{Int64: int64(0),Valid: true}
+	res := sql.NullInt64{Int64: int64(0), Valid: true}
 	fetchedAdminDatatype, err := queries.GetRootAdminDtByAdminRtId(ctx, ni64(adminRtId))
 	if err != nil {
-        fmt.Printf("adminRtId %d\n", adminRtId)
-		logError("failed to get  Admin Datatype", err)
-        res = sql.NullInt64{Valid:false}
-        return res
+		fmt.Printf("adminRtId %d\n", adminRtId)
+		res = sql.NullInt64{Valid: false}
+		return nil, err
 	}
-    res.Int64 = fetchedAdminDatatype.AdminDtID
-	return res 
+	res.Int64 = fetchedAdminDatatype.AdminDtID
+	return &res, nil
 }
 
-func DbGetAdminField(db *sql.DB, ctx context.Context, id int64) mdb.AdminFields {
+func GetAdminField(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminFields, error) {
 	queries := mdb.New(db)
 	fetchedAdminField, err := queries.GetAdminField(ctx, id)
 	if err != nil {
-		logError("failed to get Global AdminDatatypes", err)
+		return nil, err
 	}
-	return fetchedAdminField
+	return &fetchedAdminField, nil
 }
 
-func DbGetAdminRoute(db *sql.DB, ctx context.Context, slug string) mdb.AdminRoutes {
+func GetAdminRoute(db *sql.DB, ctx context.Context, slug string) (*mdb.AdminRoutes, error) {
 	queries := mdb.New(db)
 	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
 	if err != nil {
-		logError("failed to get admin route", err)
+		return nil, err
 	}
-	return fetchedAdminRoute
+	return &fetchedAdminRoute, nil
 }
 
-func DbGetDatatype(db *sql.DB, ctx context.Context, id int64) mdb.Datatypes {
+func GetDatatype(db *sql.DB, ctx context.Context, id int64) (*mdb.Datatypes, error) {
 	queries := mdb.New(db)
 	fetchedDatatype, err := queries.GetDatatype(ctx, id)
 	if err != nil {
-		logError("failed to get Datatype ", err)
+		return nil, err
 	}
-	return fetchedDatatype
+	return &fetchedDatatype, nil
 }
 
-func DbGetField(db *sql.DB, ctx context.Context, id int64) mdb.Fields {
+func GetField(db *sql.DB, ctx context.Context, id int64) (*mdb.Fields, error) {
 	queries := mdb.New(db)
 	fetchedField, err := queries.GetField(ctx, id)
 	if err != nil {
-		logError("failed to get Field ", err)
+		return nil, err
 	}
-	return fetchedField
+	return &fetchedField, nil
 }
 
-func DbGetMedia(db *sql.DB, ctx context.Context, id int64) mdb.Media {
+func GetMedia(db *sql.DB, ctx context.Context, id int64) (*mdb.Media, error) {
 	queries := mdb.New(db)
 	fetchedMedia, err := queries.GetMedia(ctx, id)
 	if err != nil {
-		logError("failed to get Media ", err)
+		return nil, err
 	}
-	return fetchedMedia
+	return &fetchedMedia, nil
 }
 
-func DbGetMediaDimension(db *sql.DB, ctx context.Context, id int64) mdb.MediaDimensions {
+func GetMediaDimension(db *sql.DB, ctx context.Context, id int64) (*mdb.MediaDimensions, error) {
 	queries := mdb.New(db)
 	fetchedMediaDimension, err := queries.GetMediaDimension(ctx, id)
 	if err != nil {
-		logError("failed to get MediaDimension ", err)
+		return nil, err
 	}
-	return fetchedMediaDimension
+	return &fetchedMediaDimension, nil
 }
 
-func DbGetRoute(db *sql.DB, ctx context.Context, slug string) mdb.Routes {
+func GetRoute(db *sql.DB, ctx context.Context, slug string) (*mdb.Routes, error) {
 	queries := mdb.New(db)
 	fetchedRoute, err := queries.GetRoute(ctx, slug)
 	if err != nil {
-		logError("failed to get Route ", err)
+		return nil, err
 	}
-	return fetchedRoute
+	return &fetchedRoute, nil
 }
 
-func DbGetTable(db *sql.DB, ctx context.Context, id int64) mdb.Tables {
+func GetTable(db *sql.DB, ctx context.Context, id int64) (*mdb.Tables, error) {
 	queries := mdb.New(db)
 	fetchedTable, err := queries.GetTable(ctx, id)
 	if err != nil {
-		logError("failed to get Table ", err)
+		return nil, err
 	}
-	return fetchedTable
+	return &fetchedTable, nil
 }
 
-func DbGetToken(db *sql.DB, ctx context.Context, id int64) mdb.Tokens {
+func GetToken(db *sql.DB, ctx context.Context, id int64) (*mdb.Tokens, error) {
 	queries := mdb.New(db)
 	fetchedToken, err := queries.GetToken(ctx, id)
 	if err != nil {
-		logError("failed to get Token ", err)
+		return nil, err
+
 	}
-	return fetchedToken
+	return &fetchedToken, nil
 }
 
-func DbGetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) mdb.Tokens {
+func GetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) (*mdb.Tokens, error) {
 	queries := mdb.New(db)
 	fetchedToken, err := queries.GetTokenByUserId(ctx, userId)
 	if err != nil {
-		logError("failed to get Token ", err)
+		return nil, err
 	}
-	return fetchedToken
+	return &fetchedToken, nil
 }
 
-func DbGetUser(db *sql.DB, ctx context.Context, id int64) (mdb.Users, error) {
+func GetUser(db *sql.DB, ctx context.Context, id int64) (*mdb.Users, error) {
 	queries := mdb.New(db)
 	fetchedUser, err := queries.GetUser(ctx, id)
 	if err != nil {
-		logError("failed to get User ", err)
-		return fetchedUser, err
+		return nil, err
 	}
-	return fetchedUser, nil
+	return &fetchedUser, nil
 }
 
-func DbGetUserByEmail(db *sql.DB, ctx context.Context, email string) mdb.Users {
+func GetUserByEmail(db *sql.DB, ctx context.Context, email string) (*mdb.Users, error) {
 	queries := mdb.New(db)
 	fetchedUser, err := queries.GetUserByEmail(ctx, email)
 	if err != nil {
-		logError("failed to get User via email ", err)
+		return nil, err
 	}
-	return fetchedUser
+	return &fetchedUser, nil
 }
