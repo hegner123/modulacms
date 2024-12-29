@@ -10,101 +10,112 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func dbUpdateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateAdminDatatypeParams) string {
+func UpdateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateAdminDatatypeParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateAdminDatatype(ctx, s)
 	if err != nil {
-		logError("failed to update admin route ", err)
+		return nil, fmt.Errorf("failed to update admin route ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateAdminField(db *sql.DB, ctx context.Context, s mdb.UpdateAdminFieldParams) string {
+func UpdateAdminField(db *sql.DB, ctx context.Context, s mdb.UpdateAdminFieldParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateAdminField(ctx, s)
 	if err != nil {
-		logError("failed to update admin route ", err)
+		return nil, fmt.Errorf("failed to update admin route ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteParams) string {
+func UpdateAdminRoute(db *sql.DB, ctx context.Context, s mdb.UpdateAdminRouteParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateAdminRoute(ctx, s)
 	if err != nil {
-		logError("failed to update admin route ", err)
+		return nil, fmt.Errorf("failed to update admin route ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &u, nil
 }
 
-func dbUpdateDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateDatatypeParams) string {
+func UpdateDatatype(db *sql.DB, ctx context.Context, s mdb.UpdateDatatypeParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateDatatype(ctx, s)
 	if err != nil {
-		logError("failed to update datatype", err)
+		return nil, fmt.Errorf("failed to update datatype", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) string {
+func UpdateField(db *sql.DB, ctx context.Context, s mdb.UpdateFieldParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateField(ctx, s)
 	if err != nil {
-		logError("failed to update field ", err)
+		return nil, fmt.Errorf("failed to update field ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateMedia(db *sql.DB, ctx context.Context, s mdb.UpdateMediaParams) string {
+func UpdateMedia(db *sql.DB, ctx context.Context, s mdb.UpdateMediaParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateMedia(ctx, s)
 	if err != nil {
-		logError("failed to update media ", err)
+		return nil, fmt.Errorf("failed to update media ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Name)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	return &u, nil
 }
 
-func dbUpdateMediaDimension(db *sql.DB, ctx context.Context, s mdb.UpdateMediaDimensionParams) string {
+func UpdateMediaDimension(db *sql.DB, ctx context.Context, s mdb.UpdateMediaDimensionParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateMediaDimension(ctx, s)
 	if err != nil {
-		logError("failed to update MediaDimension ", err)
+		return nil, fmt.Errorf("failed to update MediaDimension ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateRoute(db *sql.DB, ctx context.Context, s mdb.UpdateRouteParams) string {
+func UpdateRoute(db *sql.DB, ctx context.Context, s mdb.UpdateRouteParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateRoute(ctx, s)
 	if err != nil {
-		logError("failed to update route ", err)
+		return nil, fmt.Errorf("failed to update route ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &u, nil
 }
 
-func dbUpdateTable(db *sql.DB, ctx context.Context, s mdb.UpdateTableParams) string {
+func UpdateTable(db *sql.DB, ctx context.Context, s mdb.UpdateTableParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateTable(ctx, s)
 	if err != nil {
-		logError("failed to update table ", err)
+		return nil, fmt.Errorf("failed to update table ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Label)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &u, nil
 }
 
-func dbUpdateToken(db *sql.DB, ctx context.Context, s mdb.UpdateTokenParams) error {
+func UpdateToken(db *sql.DB, ctx context.Context, s mdb.UpdateTokenParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateToken(ctx, s)
 	if err != nil {
-		logError("failed to update table ", err)
+		return nil, fmt.Errorf("failed to update table ", err)
 	}
-	return nil
+	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &u, nil
 }
 
-func dbUpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) string {
+func UpdateUser(db *sql.DB, ctx context.Context, s mdb.UpdateUserParams) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.UpdateUser(ctx, s)
 	if err != nil {
-		logError("failed to update user ", err)
+		return nil, fmt.Errorf("failed to update user ", err)
 	}
-	return fmt.Sprintf("Successfully updated %v\n", s.Name)
+	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
+	return &u, nil
 }
