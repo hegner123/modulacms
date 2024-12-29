@@ -8,8 +8,8 @@ import (
 )
 
 func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
-	times := timestampS()
-	dbCreateUser(db, ctx, mdb.CreateUserParams{
+	times := TimestampS()
+	CreateUser(db, ctx, mdb.CreateUserParams{
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 		Username:     "systeminit" + modify,
@@ -18,7 +18,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Hash:         "has",
 		Role:         "admin",
 	})
-	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
+	CreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "systeminit" + modify,
 		AuthorID:     1,
 		Slug:         "/test1" + modify,
@@ -28,7 +28,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
+	CreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "systeminit" + modify,
 		AuthorID:     1,
 		Slug:         "/test1" + modify,
@@ -37,7 +37,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
+	CreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
 		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
@@ -56,7 +56,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		OptimizedUltraWide: ns("public/2024/11/test-ultra.png" + modify),
 	})
 
-	_,_ =dbCreateField(db, ctx, mdb.CreateFieldParams{
+	_, _ = CreateField(db, ctx, mdb.CreateFieldParams{
 		RouteID:      ni64(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -66,12 +66,12 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
-		Label:  ns("Tablet" + modify),
-		Width:  ni(1920),
-		Height: ni(1080),
-        AspectRatio: ns("100x100"),
+	CreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
+		Label:       ns("Tablet" + modify),
+		Width:       ni(1920),
+		Height:      ni(1080),
+		AspectRatio: ns("100x100"),
 	})
 
-	dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test1" + modify)})
+	CreateTable(db, ctx, mdb.Tables{Label: ns("Test1" + modify)})
 }

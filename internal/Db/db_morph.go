@@ -58,7 +58,3 @@ func getColumnValue(column string, s interface{}) string {
 
 	return ""
 }
-
-
-
-
