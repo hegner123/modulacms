@@ -25,22 +25,22 @@ type Database struct {
 }
 
 func (db Database) GetDb(s string) (*sql.DB, context.Context, error) {
-	if db.status == open {
+	if db.Status == open {
 		return &sql.DB{}, context.TODO(), errors.New("db_is already open")
 	}
-	db.context = context.Background()
+	db.Context = context.Background()
 
 	if s == "" {
-		db.src = "./modula.db"
+		db.Src = "./modula.db"
 	}
-	db.connection, db.err = sql.Open("sqlite3", db.src)
-	if db.err != nil {
+	db.Connection, db.Err = sql.Open("sqlite3", db.Src)
+	if db.Err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
 	}
-	v, err := db.connection.Exec("PRAGMA foreign_keys = ON;")
+	v, err := db.Connection.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 008 : %s\n", err)
 	}
 	fmt.Println(v)
-	return db.connection, db.context, nil
+	return db.Connection, db.Context, nil
 }
