@@ -22,13 +22,13 @@ dev: ## Prepare binaries and templates in src dir for faster iteration
 	npm run build 
 	rsync -av --delete templates/styles/*.css public/styles
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) .	
+	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) ./cmd
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	npm run build 
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .	
+	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) ./cmd	
 	rsync -av --delete public/ out/bin/public/
 	rsync -av --delete templates/*.html out/bin/templates/
 	rsync -av --delete certs/ out/bin/certs/
@@ -54,7 +54,7 @@ test: ## Run the tests of the project
 	
 	touch ./backups/tmp.zip
 	rm ./backups/*.zip
-	$(GOTEST) -v -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
+	$(GOTEST) -v ./... 
 	rm ./testdb/*.db
 
 test1: ## Run router tests

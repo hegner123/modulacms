@@ -1,110 +1,92 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
-	tea "github.com/charmbracelet/bubbletea"
-	"os"
+	"log"
+
+	huh "github.com/charmbracelet/huh"
+)
+var (
+    burger       string
+    toppings     []string
+    sauceLevel   int
+    name         string
+    instructions string
+    discount     bool
 )
 
-type model struct {
-	choices  []string         // items on the to-do list
-	cursor   int              // which to-do list item our cursor is pointing at
-	selected map[int]struct{} // which to-do items are selected
-}
+func form() {
+	form := huh.NewForm(
+		huh.NewGroup(
+			// Ask the user for a base burger and toppings.
+			huh.NewSelect[string]().
+				Title("Choose your burger").
+				Options(
+					huh.NewOption("Charmburger Classic", "classic"),
+					huh.NewOption("Chickwich", "chickwich"),
+					huh.NewOption("Fishburger", "fishburger"),
+					huh.NewOption("Charmpossible™ Burger", "charmpossible"),
+				).
+				Value(&burger), // store the chosen option in the "burger" variable
 
-func initialModel() model {
-	return model{
-		// Our to-do list is a grocery list
-		choices: []string{"Buy carrots", "Buy celery", "Buy kohlrabi"},
+			// Let the user select multiple toppings.
+			huh.NewMultiSelect[string]().
+				Title("Toppings").
+				Options(
+					huh.NewOption("Lettuce", "lettuce").Selected(true),
+					huh.NewOption("Tomatoes", "tomatoes").Selected(true),
+					huh.NewOption("Jalapeños", "jalapeños"),
+					huh.NewOption("Cheese", "cheese"),
+					huh.NewOption("Vegan Cheese", "vegan cheese"),
+					huh.NewOption("Nutella", "nutella"),
+				).
+				Limit(4). // there’s a 4 topping limit!
+				Value(&toppings),
 
-		// A map which indicates which choices are selected. We're using
-		// the  map like a mathematical set. The keys refer to the indexes
-		// of the `choices` slice, above.
-		selected: make(map[int]struct{}),
-	}
-}
+			// Option values in selects and multi selects can be any type you
+			// want. We’ve been recording strings above, but here we’ll store
+			// answers as integers. Note the generic "[int]" directive below.
+			huh.NewSelect[int]().
+				Title("How much Charm Sauce do you want?").
+				Options(
+					huh.NewOption("None", 0),
+					huh.NewOption("A little", 1),
+					huh.NewOption("A lot", 2),
+				).
+				Value(&sauceLevel),
+		),
 
-func (m model) Init() tea.Cmd {
-	// Just return `nil`, which means "no I/O right now, please."
-	return nil
-}
+		// Gather some final details about the order.
+		huh.NewGroup(
+			huh.NewInput().
+				Title("What’s your name?").
+				Value(&name).
+				// Validating fields is easy. The form will mark erroneous fields
+				// and display error messages accordingly.
+				Validate(func(str string) error {
+					if str == "Frank" {
+						return errors.New("Sorry, we don’t serve customers named Frank.")
+					}
+					return nil
+				}),
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
+			huh.NewText().
+				Title("Special Instructions").
+				CharLimit(400).
+				Value(&instructions),
 
-	// Is it a key press?
-	case tea.KeyMsg:
-
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
-
-		// The "up" and "k" keys move the cursor up
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-
-		// The "down" and "j" keys move the cursor down
-		case "down", "j":
-			if m.cursor < len(m.choices)-1 {
-				m.cursor++
-			}
-
-		// The "enter" key and the spacebar (a literal space) toggle
-		// the selected state for the item that the cursor is pointing at.
-		case "enter", " ":
-			_, ok := m.selected[m.cursor]
-			if ok {
-				delete(m.selected, m.cursor)
-			} else {
-				m.selected[m.cursor] = struct{}{}
-			}
-		}
-	}
-
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
-	return m, nil
-}
-
-func (m model) View() string {
-	// The header
-	s := "What should we buy at the market?\n\n"
-
-	// Iterate over our choices
-	for i, choice := range m.choices {
-
-		// Is the cursor pointing at this choice?
-		cursor := " " // no cursor
-		if m.cursor == i {
-			cursor = ">" // cursor!
-		}
-
-		// Is this choice selected?
-		checked := " " // not selected
-		if _, ok := m.selected[i]; ok {
-			checked = "x" // selected!
-		}
-
-		// Render the row
-		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+			huh.NewConfirm().
+				Title("Would you like 15% off?").
+				Value(&discount),
+		),
+	)
+	err := form.Run()
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	// The footer
-	s += "\nPress q to quit.\n"
-
-	// Send the UI for rendering
-	return s
-}
-
-func RunTest() {
-	p := tea.NewProgram(initialModel())
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
+	if !discount {
+		fmt.Println("What? You didn’t take the discount?!")
 	}
 }
