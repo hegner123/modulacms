@@ -1,6 +1,12 @@
 package config
 
 type ConfigOption string
+type Endpoint string
+
+const (
+	oauthAuthURL  Endpoint = "oauth_auth_url"
+	oauthTokenURL Endpoint = "oauth_token_url"
+)
 
 type Config struct {
 	Port                string              `json:"port"`

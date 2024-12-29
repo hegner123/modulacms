@@ -3,28 +3,17 @@ package mEmbed
 import (
 	"fmt"
 	"os"
+
+	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-func FileExists(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return info.Mode().IsRegular()
-}
-
-func DirExists(path string) bool {
-	info, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		return false
-	}
-	return info.IsDir()
-}
 
 func ReadEmbedFS(directory string) {
-	dir, err := sqlFiles.ReadDir(directory)
+    
+	dir, err := db.SqlFiles.ReadDir(directory)
 	if err != nil {
-		logError("error in ReadEmbedFS ", err)
+		utility.LogError("error in ReadEmbedFS ", err)
 	}
 	for key, value := range dir {
 		fmt.Printf("%d:%s\n", key, value)

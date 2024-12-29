@@ -10,6 +10,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	mdb "github.com/hegner123/modulacms/db-sqlite"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type Metadata map[string]string
@@ -56,7 +57,7 @@ func PrintBuckets(s3 *s3.S3) {
 func ObjectUpload(s3 *s3.S3, payload *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	upload, err := s3.PutObject(payload)
 	if err != nil {
-		logError("failed to upload ", err)
+		utility.LogError("failed to upload ", err)
 	}
 	return upload, nil
 }

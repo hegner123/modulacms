@@ -6,6 +6,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 func CompareStructs(a, b interface{}) bool {
@@ -64,7 +66,7 @@ func TestLoadConfig(t *testing.T) {
 	e := json.NewEncoder(os.Stdout)
 	err := e.Encode(expected)
 	if err != nil {
-		logError("failed to encode ", err)
+	utility.LogError("failed to encode ", err)
 	}
 	fmt.Println()
 

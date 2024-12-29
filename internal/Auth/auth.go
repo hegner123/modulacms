@@ -11,17 +11,19 @@ import (
 	"net/url"
 
 	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 	"golang.org/x/oauth2"
 )
 
-func HandleAuth(form url.Values) {
-	mdb := db.GetDb(db.Database{})
-	
+func HandleAuth(form url.Values) bool {
+	dbc := db.GetDb(db.Database{})
 
-	user := (mdb.Connection, mdb.Context, form.Get("email"))
-	requestHash := authMakeHash(form.Get("hash"), "modulacms")
-	if compareHashes(user.Hash, requestHash) {
+	user, err := db.GetUserByEmail(dbc.Connection, dbc.Context, form.Get("email"))
+	if err != nil {
+		utility.LogError("failed to : ", err)
 	}
+	requestHash := AuthMakeHash(form.Get("hash"), "modulacms")
+	return compareHashes(user.Hash, requestHash)
 }
 
 func AuthMakeHash(data, salt string) string {
@@ -41,7 +43,7 @@ func compareHashes(hash1, hash2 string) bool {
 	return subtle.ConstantTimeCompare(hash1Bytes, hash2Bytes) == 1
 }
 
-func authMiddleware(next http.Handler) http.Handler {
+func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if the auth cookie exists
 		cookie, err := r.Cookie("auth_token")
@@ -61,7 +63,7 @@ func authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func oauthSettings() {
+func OauthSettings() {
 	ctx := context.Background()
 	conf := &oauth2.Config{
 		ClientID:     "YOUR_CLIENT_ID",
@@ -95,5 +97,8 @@ func oauthSettings() {
 	}
 
 	client := conf.Client(ctx, tok)
-	client.Get("...")
+	_, err = client.Get("...")
+	if err != nil {
+		utility.LogError("failed to : ", err)
+	}
 }

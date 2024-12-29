@@ -1,11 +1,11 @@
-
 package mTemplate
 
 import (
 	"fmt"
-	"runtime"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
+	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 
@@ -86,15 +86,13 @@ func (node *Node) AddTreeFields(dbName string) {
 			if dbName == "" {
 				dbName = ""
 			}
-			db, ctx, err := getDb(Database{src: dbName})
-			if err != nil {
-				logError("failed to connect to db", err)
-				_, file, line, _ := runtime.Caller(0)
-				fmt.Printf("Current line number: %s:%d\n", file, line)
-			}
-			defer db.Close()
-			field := dbGetAdminField(db, ctx, fieldId)
-			node.Fields = append(node.Fields, field)
+			dbc := db.GetDb(db.Database{})
+            defer dbc.Connection.Close()
+			field,err := db.GetAdminField(dbc.Connection, dbc.Context, fieldId)
+            if err != nil { 
+                utility.LogError("failed to : ", err)
+            }
+			node.Fields = append(node.Fields, *field)
 		}
 	}
 	for _, junior := range node.Juniors {
@@ -102,32 +100,23 @@ func (node *Node) AddTreeFields(dbName string) {
 	}
 }
 
-func dbGetChildren(res []int64, id int, dbName string, message string) []int64 {
+func dbGetChildren(res []int64, id int64, dbName string, message string) []int64 {
 	if dbName == "" {
 		dbName = ""
 	}
-	db, ctx, err := getDb(Database{src: dbName})
-	if err != nil {
-		logError("failed to connect to db", err)
-		_, file, line, _ := runtime.Caller(0)
-		fmt.Printf("Current line number: %s:%d\n", file, line)
-	}
-	defer db.Close()
-	queries := mdb.New(db)
-	rows, err := queries.ListAdminDatatypeChildren(ctx, ni(id))
-	if err != nil {
-		logError("failed to query admin Datatypes ", err)
-		_, file, line, _ := runtime.Caller(0)
-		fmt.Printf("Current line number: %s:%d\n", file, line)
-	}
-	if len(rows) == 0 {
+    dbc:= db.GetDb(db.Database{})
+	rows,err := db.ListAdminDatatypeChildren(dbc.Connection,dbc.Context, id)
+    if err != nil { 
+        utility.LogError("failed to : ", err)
+    }
+	if len(*rows) == 0 {
 		return res
 	} else {
-		for i, row := range rows {
+		for i, row := range *rows {
 			res = append(res, row.AdminDtID)
-			l := fmt.Sprintf("Rows %d ", len(rows))
+			l := fmt.Sprintf("Rows %d ", len(*rows))
 			s := fmt.Sprintf("row index:%d, id %d, %s\n\n", i, id, l)
-			res = dbGetChildren(res, int(row.AdminDtID), dbName, s)
+			res = dbGetChildren(res, int64(row.AdminDtID), dbName, s)
 		}
 		return res
 	}
@@ -137,15 +126,14 @@ func dbGetFields(res []int64, id int, dbName string, message string) []int64 {
 	if dbName == "" {
 		dbName = ""
 	}
-	db, ctx, err := getDb(Database{src: dbName})
-	if err != nil {
-		logError("failed to connect to db", err)
-		_, file, line, _ := runtime.Caller(0)
-		fmt.Printf("Current line number: %s:%d\n", file, line)
-	}
-	defer db.Close()
-	rows := dbListAdminFieldByAdminDtId(db, ctx, int64(id))
-	for _, row := range rows {
+    
+	dbc := db.GetDb(db.Database{}) 
+	defer dbc.Connection.Close()
+	rows,err := db.ListAdminFieldByAdminDtId(dbc.Connection, dbc.Context, int64(id))
+    if err != nil { 
+        fmt.Printf("failed to : %v", err)
+    }
+	for _, row := range *rows {
 		res = append(res, row.AdminFieldID)
 	}
 	return res

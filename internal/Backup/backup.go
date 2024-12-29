@@ -6,25 +6,28 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type backupName func(string, string) string
 
-func timestampBackupName(output string, timestamp string) string {
+func TimestampBackupName(output string, timestamp string) string {
 	return fmt.Sprintf("%s_%s.zip", output, timestamp)
 }
 
 func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) error {
-	dbF := FileExists(dbFile)
-	mediaD := DirExists(mediaDir)
-	pluginD := DirExists(pluginDir)
-	outD := DirExists(output)
+	dbF := utility.FileExists(dbFile)
+	mediaD := utility.DirExists(mediaDir)
+	pluginD := utility.DirExists(pluginDir)
+	outD := utility.DirExists(output)
 
 	if !dbF || !mediaD || !pluginD || !outD {
 		return fmt.Errorf("dbFile Exists: %v, mediaDir exists: %v, pluginDir exists: %v,outputDir exists: %v\n", dbF, mediaD, pluginD, outD)
 	}
 
-	backupFile, err := os.Create(bname(output, timestampS()))
+	backupFile, err := os.Create(bname(output, utility.TimestampS()))
 	if err != nil {
 		return fmt.Errorf("failed to create backup file: %w", err)
 	}
@@ -33,17 +36,14 @@ func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) 
 	zipWriter := zip.NewWriter(backupFile)
 	defer zipWriter.Close()
 
-	db, _, err := getDb(Database{src: dbFile})
-	if err != nil {
-		logError("db failed to open", err)
-	}
+	dbc := db.GetDb(db.Database{Src: dbFile})
 
 	dbDumpFile, err := zipWriter.Create("database.sql")
 	if err != nil {
-		logError("failed to create database dump in archive: ", err)
+		utility.LogError("failed to create database dump in archive: ", err)
 	}
 
-	rows, err := db.Query("SELECT sql FROM sqlite_master WHERE type='table'")
+	rows, err := dbc.Connection.Query("SELECT sql FROM sqlite_master WHERE type='table'")
 	if err != nil {
 		return fmt.Errorf("failed to dump database: %w", err)
 	}

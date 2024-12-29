@@ -1,27 +1,22 @@
 package utility
 
 import (
-	"encoding/json"
+	"embed"
+	_ "embed"
 	"fmt"
-	"io"
-	"os"
 	"reflect"
 	"strings"
-
-	modula_db "github.com/hegner123/modulacms/internal/Db"
 )
 
-func LogGetVersion() string {
-	file, err := os.Open("version.json")
+//go:embed version.json
+var vJson embed.FS
+
+func GetVersion() string {
+	file, err := vJson.ReadFile("version.json")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
-	defer file.Close()
-	bytes, err := io.ReadAll(file)
-	if err != nil {
-		return "Error reading file:"
-	}
-	return string(bytes)
+	return string(file)
 }
 
 func PopError(err error) string {
@@ -50,7 +45,7 @@ func LogError(message string, err error, args ...any) {
 	}
 }
 
-func pLog(args ...any) {
+func Plog(args ...any) {
 	fmt.Printf("%s", BLUE)
 	for _, arg := range args {
 		fmt.Print(arg)
@@ -58,33 +53,6 @@ func pLog(args ...any) {
 	fmt.Printf("%s\n", RESET)
 }
 
-func logDb(dbName string) {
-    
-	db, ctx, err := modula_db.getDb(modula_db.Database{src: dbName})
-	if err != nil {
-		logError("failed to : ", err)
-	}
-	adminroutes := dbListAdminRoute(db, ctx)
-	datatypes := dbListDatatype(db, ctx)
-	users := dbListUser(db, ctx)
-	fields := dbListField(db, ctx)
-	routes := dbListRoute(db, ctx)
-    pLog(users)
-	pLog(adminroutes)
-    pLog(datatypes)
-    pLog(fields)
-    pLog(routes)
-}
-
-
-func logStruct(struc any){
-jsonStr, err := json.Marshal(struc)
-	if err != nil {
-		fmt.Println("Error:", err)
-		return
-	}
-	fmt.Println(string(jsonStr))
-}
 func PrintStringFields(v interface{}) {
 	val := reflect.ValueOf(v)
 
@@ -102,9 +70,9 @@ func PrintStringFields(v interface{}) {
 		field := typ.Field(i)
 		fieldValue := val.Field(i)
 
-        if field.Name == "AdminDtID"{
-            fmt.Printf("\n%s : %d\n",field.Name, fieldValue.Int())
-        }
+		if field.Name == "AdminDtID" {
+			fmt.Printf("\n%s : %d\n", field.Name, fieldValue.Int())
+		}
 
 	}
 }

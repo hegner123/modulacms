@@ -10,18 +10,17 @@ import (
 	"path/filepath"
 	"strings"
 
+	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
 
-func optimizeUpload(fSrc string, fPath string) []string {
-	db, ctx, err := getDb(Database{})
-	if err != nil {
-		logError("failed to create database: ", err)
-	}
+func OptimizeUpload(fSrc string, fPath string) []string {
+	dbc := db.GetDb(db.Database{})
 	file, err := os.Open(fSrc)
 	if err != nil {
-		logError("couldn't find tmp file ", err)
+		utility.LogError("couldn't find tmp file ", err)
 	}
 	defer file.Close()
 	baseName := strings.TrimSuffix(fPath, filepath.Ext(fPath))
@@ -29,14 +28,18 @@ func optimizeUpload(fSrc string, fPath string) []string {
 	src := decodeMedia(file, fPath)
 
 	in := []draw.Interpolator{draw.CatmullRom}
-	dimensions := dbListMediaDimension(db, ctx)
+
+	dimensions, err := db.ListMediaDimension(dbc.Connection, dbc.Context)
+	if err != nil {
+		utility.LogError("failed to : ", err)
+	}
 	images := []draw.Image{}
-	for i, dx := range dimensions {
+	for i, dx := range *dimensions {
 		in[0].Scale(images[i], image.Rect(0, 0, int(dx.Width.Int64), int(dx.Height.Int64)), src, src.Bounds(), draw.Over, nil)
 	}
 	var paths []string
-	for i, im := range images {
-		path := writeEncodeMedia(im, fmt.Sprintf("%s-%v.%s", baseName, dimensions[i].Label, filepath.Ext(fPath)))
+	for _, im := range images {
+		path := writeEncodeMedia(im, fmt.Sprintf("%s-%v.%s", baseName, im, filepath.Ext(fPath)))
 
 		paths = append(paths, path)
 	}

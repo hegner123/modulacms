@@ -139,3 +139,13 @@ func ListAdminDatatypeByAdminRouteId(db *sql.DB, ctx context.Context, adminRoute
 	}
 	return &fetchedAdminDatatypes, nil
 }
+
+func ListAdminDatatypeChildren(db *sql.DB, ctx context.Context, parentId int64) (*[]mdb.AdminDatatypes, error) {
+	queries := mdb.New(db)
+	fetchedAdminDatatypeChildren, err := queries.ListAdminDatatypeChildren(ctx, ni64(parentId))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypes by AdminRouteId %v\n", err)
+	}
+	return &fetchedAdminDatatypeChildren, nil
+
+}

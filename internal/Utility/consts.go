@@ -9,16 +9,11 @@ const (
 	TB StorageUnit = 1 << 40
 )
 
-func sizeInBytes(value int64, unit StorageUnit) int64 {
+func SizeInBytes(value int64, unit StorageUnit) int64 {
 	return value * int64(unit)
 }
 
-type Endpoint string
 
-const (
-	oauthAuthURL  Endpoint = "oauth_auth_url"
-	oauthTokenURL Endpoint = "oauth_token_url"
-)
 
 type ANSIColor string
 

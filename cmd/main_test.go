@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"strings"
 	"testing"
+
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type GlobalTestingState struct {
@@ -34,8 +36,8 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func createDbCopy(dbName string, useDefault bool) (string, error) {
-	times := timestampS()
+func CreateDbCopy(dbName string, useDefault bool) (string, error) {
+	times := utility.TimestampS()
 	backup := " testdb/backups/"
 	base := "testdb/"
 	db := strings.TrimSuffix(dbName, ".db")
@@ -44,7 +46,7 @@ func createDbCopy(dbName string, useDefault bool) (string, error) {
 	dstDbName := base + "testing" + times + dbName
 	_, err := os.Create(dstDbName)
 	if err != nil {
-		logError("couldn't create file", err)
+		utility.LogError("couldn't create file", err)
 	}
 	if useDefault {
 		srcSQLName = backup + "test.sql"

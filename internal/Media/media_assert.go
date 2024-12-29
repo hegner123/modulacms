@@ -1,6 +1,6 @@
 package media
 
-func assertMedia(pName string) {
+func AssertMedia(pName string) {
 }
 
 // function to return list of files in path

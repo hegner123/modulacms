@@ -16,7 +16,7 @@ import (
 )
 
 //go:embed sql/*
-var sqlFiles embed.FS
+var SqlFiles embed.FS
 
 func GetDb(dbSrc Database) Database {
 	ctx := context.Background()
@@ -51,12 +51,12 @@ func (init Database) InitDb(Db Database, v *bool, database string) error {
 func ReadSchemaFiles(verbose *bool) (string, error) {
 	var result []string
 
-	err := fs.WalkDir(sqlFiles, ".", func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(SqlFiles, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() && filepath.Base(path) == "schema.sql" {
-			data, err := sqlFiles.ReadFile(path)
+			data, err := SqlFiles.ReadFile(path)
 			if err != nil {
 				return fmt.Errorf("failed to read file %s: %w", path, err)
 			}

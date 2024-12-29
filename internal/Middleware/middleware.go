@@ -4,15 +4,16 @@ import (
 	"net/http"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
+	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 func UserIsAuth(u mdb.Users, r *http.Request) bool {
-	db, ctx, err := getDb(Database{})
+	dbc := db.GetDb(db.Database{})
+	tkn, err := db.GetTokenByUserId(dbc.Connection, dbc.Context, u.UserID)
 	if err != nil {
-		logError("failed to get database ", err)
+		utility.LogError("failed to : ", err)
 	}
-	defer db.Close()
-	tkn := dbGetTokenByUserId(db, ctx, u.UserID)
 	if tkn.TokenType == "Access" && !tkn.Revoked.Bool {
 		return true
 	}
