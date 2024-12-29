@@ -4,12 +4,22 @@ import (
 	"context"
 	"database/sql"
 
+	"fmt"
 	mdb "github.com/hegner123/modulacms/db-sqlite"
+	"time"
 )
 
-func createSetupInserts(db *sql.DB, ctx context.Context) {
-	times := timestampS()
-	dbCreateUser(db, ctx, mdb.CreateUserParams{
+func TimestampI() int64 {
+	return time.Now().Unix()
+}
+
+func TimestampS() string {
+	return fmt.Sprint(time.Now().Unix())
+}
+
+func createSetupInserts(db *sql.DB, ctx context.Context) error {
+	times := TimestampS()
+	CreateUser(db, ctx, mdb.CreateUserParams{
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 		Username:     "system",
@@ -18,7 +28,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		Hash:         "has",
 		Role:         "admin",
 	})
-	dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
+	CreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "system",
 		AuthorID:     1,
 		Slug:         "/",
@@ -28,7 +38,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	dbCreateRoute(db, ctx, mdb.CreateRouteParams{
+	CreateRoute(db, ctx, mdb.CreateRouteParams{
 		Author:       "system",
 		AuthorID:     1,
 		Slug:         "/api/v1/",
@@ -37,7 +47,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	dbCreateMedia(db, ctx, mdb.CreateMediaParams{
+	CreateMedia(db, ctx, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
 		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
@@ -55,7 +65,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		OptimizedDesktop:   ns("public/2024/11/test-desktop.png"),
 		OptimizedUltraWide: ns("public/2024/11/test-ultra.png"),
 	})
-	_, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+	_, err := CreateDataType(db, ctx, mdb.CreateDatatypeParams{
 		Label:        "Parent",
 		Type:         "Navigation",
 		Author:       "system",
@@ -64,10 +74,10 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		DateModified: ns(times),
 	})
 	if err != nil {
-		logError("failed to create datatype: ", err)
+		return err
 	}
 
-	_, err = dbCreateField(db, ctx, mdb.CreateFieldParams{
+	_, err = CreateField(db, ctx, mdb.CreateFieldParams{
 		RouteID:      ni(1),
 		Label:        "Parent",
 		Data:         "Test Field",
@@ -78,12 +88,13 @@ func createSetupInserts(db *sql.DB, ctx context.Context) {
 		DateModified: ns(times),
 	})
 	if err != nil {
-		logError("failed to create field: ", err)
+		return err
 	}
-	dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
-		Label:  ns("Tablet"),
-		Width:  ni(1920),
-		Height: ni(1080),
-        AspectRatio: ns("16:9"),
+	CreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
+		Label:       ns("Tablet"),
+		Width:       ni(1920),
+		Height:      ni(1080),
+		AspectRatio: ns("16:9"),
 	})
+	return nil
 }
