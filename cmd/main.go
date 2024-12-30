@@ -67,6 +67,7 @@ func main() {
 		cli.Form()
 		os.Exit(0)
 	}
+
 	mux := http.NewServeMux()
 	api := api_v1.ApiServerV1{}
 
