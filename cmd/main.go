@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	cli "github.com/hegner123/modulacms/internal/Cli"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	router "github.com/hegner123/modulacms/internal/Router"
@@ -18,6 +19,7 @@ var useSSL, dbFileExists bool = initFileCheck()
 var Env = config.Config{}
 
 func main() {
+	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
 	versionFlag := flag.Bool("v", false, "Print version and exit")
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
 	verbose := flag.Bool("V", false, "Enable verbose mode")
@@ -61,6 +63,10 @@ func main() {
 		defer dbc.Connection.Close()
 	}
 
+	if *cliFlag {
+		cli.Form()
+		os.Exit(0)
+	}
 	mux := http.NewServeMux()
 	api := api_v1.ApiServerV1{}
 
