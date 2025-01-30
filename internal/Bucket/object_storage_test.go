@@ -15,8 +15,6 @@ import (
 func TestObjectStorage(t *testing.T) {
 	config := config.Config{}
 
-	fmt.Println("Load config from file")
-
 	file, err := os.Open("testing-config.json")
 	if err != nil {
 		utility.LogError("failed to open config ", err)
@@ -40,7 +38,6 @@ func TestObjectStorage(t *testing.T) {
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
-	fmt.Println(config)
 	S3Access := S3Credintials{
 		AccessKey: config.Bucket_Access_Key,
 		SecretKey: config.Bucket_Secret_Key,
@@ -48,15 +45,14 @@ func TestObjectStorage(t *testing.T) {
 	}
 	bucket := S3Access.getBucket()
 	if bucket == nil {
+		t.FailNow()
+
 	}
-	fmt.Println("pass arguments to function")
-	fmt.Println("return result")
 }
 
 func TestUpload(t *testing.T) {
 	config := config.Config{}
 
-	fmt.Println("Load config from file")
 
 	file, err := os.Open("testing-config.json")
 	if err != nil {
@@ -87,22 +83,21 @@ func TestUpload(t *testing.T) {
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
-	fmt.Println(config)
 	S3Access := S3Credintials{
 		AccessKey: config.Bucket_Access_Key,
 		SecretKey: config.Bucket_Secret_Key,
 		URL:       config.Bucket_Url,
 	}
 	bucket := S3Access.getBucket()
-    payload,err:=UploadPrep("media/test1.png", "backups", file)
-    if err != nil { 
-        utility.LogError("failed to : ", err)
-        _, file, line, _ := runtime.Caller(0)
-        fmt.Printf("Current line number: %s:%d\n", file, line)
-        t.FailNow()
-    }
-    _,err=ObjectUpload(bucket,payload)
-    if err != nil { 
-        utility.LogError("failed to : ", err)
-    }
+	payload, err := UploadPrep("media/test1.png", "backups", file)
+	if err != nil {
+		utility.LogError("failed to : ", err)
+		_, file, line, _ := runtime.Caller(0)
+		fmt.Printf("Current line number: %s:%d\n", file, line)
+		t.FailNow()
+	}
+	_, err = ObjectUpload(bucket, payload)
+	if err != nil {
+		utility.LogError("failed to : ", err)
+	}
 }

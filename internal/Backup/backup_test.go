@@ -12,7 +12,7 @@ func makeTestBackup(output string, timestamp string) string {
 }
 
 func TestMakeBackup(t *testing.T) {
-	err := createBackup("modula.db", "public/media", "plugins/", "backups/", makeTestBackup)
+	err := createBackup("../../modula.db", "../../public/media", "../../plugins/", "../../backups/", makeTestBackup)
 	if err != nil {
 		t.Errorf("%s\n", err)
 	}

@@ -41,7 +41,7 @@ func CompareStructs(a, b interface{}) bool {
 
 func TestLoadConfig(t *testing.T) {
 	fakeFlag := false
-	conf := LoadConfig(&fakeFlag)
+	conf := LoadConfig(&fakeFlag,"testing-config.json")
 
 	expected := Config{
 		Port:                "8080",
@@ -56,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 		Bucket_Access_Key:   "RMK7Q10WV4AUMFAZYI7E",
 		Bucket_Secret_Key:   "LNbFZDSi25erOCWdRbADU4hmeLw97W8IHHx20sk4",
 		Backup_Option:       "",
-		Backup_Paths:        []string{""},
+		Backup_Paths:        []string{"test"},
 		Oauth_Client_Id:     "Ov23liFoy8pVGnAnGgrE",
 		Oauth_Client_Secret: "f57dda6a58faa59e4803f08efca11362478dcd3c",
 		Oauth_Scopes:        []string{"profile", "profilePic"},

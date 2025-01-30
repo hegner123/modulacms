@@ -37,7 +37,7 @@ func main() {
 		message := utility.GetVersion()
 		log.Fatal(message)
 	}
-	config := config.LoadConfig(verbose)
+	config := config.LoadConfig(verbose,"")
 
 	if *reset {
 		fmt.Println("Reset DB:")

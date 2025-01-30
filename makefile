@@ -53,6 +53,7 @@ build: ## Build your project and put the output binary in out/bin/
 	npx tailwindcss -o ./public/styles/output.css 
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) ./cmd	
 	rsync -av --delete public/ out/bin/public/
+	rsync -av --delete plugins/ out/bin/plugins/
 	rsync -av --delete templates/*.html out/bin/templates/
 	rsync -av --delete certs/ out/bin/certs/
 	rsync -av --delete *.json out/bin/

@@ -22,7 +22,7 @@ type Config struct {
 	Bucket_Access_Key   string              `json:"bucket_access_key"`
 	Bucket_Secret_Key   string              `json:"bucket_secret_key"`
 	Backup_Option       string              `json:"backup_option"`
-	Backup_Paths        []string            `json:"backup_path"`
+	Backup_Paths        []string            `json:"backup_paths"`
 	Oauth_Client_Id     string              `json:"oauth_client_id"`
 	Oauth_Client_Secret string              `json:"oauth_client_secret"`
 	Oauth_Scopes        []string            `json:"oauth_scopes"`

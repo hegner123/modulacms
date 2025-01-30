@@ -8,10 +8,24 @@ import (
 	"os"
 )
 
-func LoadConfig(verbose *bool) Config {
-	file, err := os.Open("config.json")
-	if err != nil {
-		log.Fatal("Error opening file:", err)
+var file *os.File
+var err error
+
+func LoadConfig(verbose *bool, altConfig string) Config {
+	if altConfig != "" {
+		file, err = os.Open(altConfig)
+		if *verbose {
+			fmt.Println("load alt config")
+			fmt.Println(altConfig)
+		}
+		if err != nil {
+			log.Fatal("Error opening file:", err)
+		}
+	} else {
+		file, err = os.Open("config.json")
+		if err != nil {
+			log.Fatal("Error opening file:", err)
+		}
 	}
 	defer file.Close()
 

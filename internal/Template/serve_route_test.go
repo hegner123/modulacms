@@ -1,16 +1,14 @@
 package mTemplate
 
 import (
-	"fmt"
-	"os"
 	"testing"
 )
 
 func TestServeTemplate(t *testing.T) {
-	t1, err := BuildTemplateStructFromRouteId(int64(1), "")
-	templ, err := parseTemplateGlobs("./templates", "*.html")
-	err = templ.Execute(os.Stdout, t1)
+	test := []string{"../../templates/modula_base.html"}
+	_, err := ParseTemplates(test)
 	if err != nil {
-		fmt.Printf("%v\n", err)
+		t.FailNow()
+		return
 	}
 }
