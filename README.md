@@ -1,5 +1,8 @@
 # Modula CMS
 
+## scripts
+- make
+
 ## ToDo
 - [ ] Server: GO
 - [ ] Endpoints:

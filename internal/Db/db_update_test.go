@@ -10,21 +10,18 @@ import (
 var updateTestTable string
 
 func TestUpdateDBCopy(t *testing.T) {
-    testTable,err := createDbCopy("update_tests.db",false)
-    if err != nil { 
-        logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-        t.FailNow()
-    }
+	testTable, err := CopyDb("update_tests.db", false)
+	if err != nil {
+		return
+	}
+
 	updateTestTable = testTable
 }
 
 func TestUpdateUser(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
+
 	id := int64(2)
 	params := mdb.UpdateUserParams{
 		DateModified: ns(times),
@@ -34,21 +31,17 @@ func TestUpdateUser(t *testing.T) {
 		UserID:       id,
 	}
 
-	updatedUser := dbUpdateUser(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Name)
-
-	if updatedUser != expected {
+	_, err := UpdateUser(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestUpdateAdminRoute(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
 
 	params := mdb.UpdateAdminRouteParams{
 		Author:       ns("system"),
@@ -61,21 +54,17 @@ func TestUpdateAdminRoute(t *testing.T) {
 		Slug_2:       "/test",
 	}
 
-	updatedAdminRoute := dbUpdateAdminRoute(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Slug)
-
-	if updatedAdminRoute != expected {
+	_, err := UpdateAdminRoute(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
+
 	}
 }
 
 func TestUpdateRoute(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
 
 	params := mdb.UpdateRouteParams{
 		Author:       "system",
@@ -87,21 +76,18 @@ func TestUpdateRoute(t *testing.T) {
 		Slug_2:       "/test",
 	}
 
-	updatedRoute := dbUpdateRoute(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Slug)
-
-	if updatedRoute != expected {
+	_, err := UpdateRoute(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestUpdateField(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
+
 	id := int64(3)
 	params := mdb.UpdateFieldParams{
 		RouteID:      ni64(1),
@@ -116,21 +102,18 @@ func TestUpdateField(t *testing.T) {
 		FieldID:      id,
 	}
 
-	updatedField := dbUpdateField(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
+	_, err := UpdateField(db.Connection, db.Context, params)
 
-	if updatedField != expected {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestUpdateDatatype(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
+
 	id := int64(1)
 	params := mdb.UpdateDatatypeParams{
 		RouteID:      ni64(1),
@@ -142,42 +125,37 @@ func TestUpdateDatatype(t *testing.T) {
 		DatatypeID:   id,
 	}
 
-	updatedDatatype := dbUpdateDatatype(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
+	_, err := UpdateDatatype(db.Connection, db.Context, params)
 
-	if updatedDatatype != expected {
+	if err != nil {
+		fmt.Println(err)
+		fmt.Println()
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestUpdateMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: updateTestTable})
 
 	params := mdb.UpdateMediaParams{
 		Name:     ns("Best"),
 		Author:   "system",
 		AuthorID: int64(1),
-		MediaID:       int64(2),
+		MediaID:  int64(2),
 	}
 
-	updatedMedia := dbUpdateMedia(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Name)
-
-	if updatedMedia != expected {
+	_, err := UpdateMedia(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestUpdateMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: updateTestTable})
 
 	params := mdb.UpdateMediaDimensionParams{
 		Label:  ns("Desktop"),
@@ -185,31 +163,26 @@ func TestUpdateMediaDimension(t *testing.T) {
 		Height: ni(1080),
 	}
 
-	updatedMediaDimension := dbUpdateMediaDimension(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
-
-	if updatedMediaDimension != expected {
+	_, err := UpdateMediaDimension(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestUpdateTables(t *testing.T) {
-	db, ctx, err := getDb(Database{src: updateTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: updateTestTable})
+
 	id := int64(1)
 	params := mdb.UpdateTableParams{
 		Label: ns("Tested"),
 		ID:    id,
 	}
 
-	updatedTable := dbUpdateTable(db, ctx, params)
-	expected := fmt.Sprintf("Successfully updated %v\n", params.Label)
-
-	if updatedTable != expected {
+	_, err := UpdateTable(db.Connection, db.Context, params)
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
-

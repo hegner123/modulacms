@@ -8,108 +8,87 @@ import (
 var deleteTestTable string
 
 func TestDeleteDBCopy(t *testing.T) {
-	testTable, err := createDbCopy("delete_tests.db",false)
+	testTable, err := CopyDb("delete_tests.db", false)
 	if err != nil {
-		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
+		fmt.Printf("failed to create copy of the database, I have to hurry, I'm running out of time!!!  %v", err)
 		t.FailNow()
 	}
 	deleteTestTable = testTable
 }
 
 func TestDeleteUser(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	id := 2
-	result := dbDeleteUser(db, ctx, int64(id))
-	expected := fmt.Sprintf("Deleted User %d successfully", id)
-	if expected != result {
+	result, err := DeleteUser(db.Connection, db.Context, int64(id))
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteAdminRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	slug := "/to_delete"
-	result := dbDeleteAdminRoute(db, ctx, slug)
-	expected := fmt.Sprintf("Deleted Admin Route %s successfully", slug)
-	if expected != result {
+	result, err := DeleteAdminRoute(db.Connection, db.Context, slug)
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteField(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	id := 1
-	result := dbDeleteField(db, ctx, int64(id))
-	expected := fmt.Sprintf("Deleted Field %d successfully", id)
-	if expected != result {
+	result, err := DeleteField(db.Connection, db.Context, int64(id))
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	id := 1
-	result := dbDeleteMedia(db, ctx, int64(id))
-	expected := fmt.Sprintf("Deleted Media %d successfully", id)
-	if expected != result {
+	result, err := DeleteMedia(db.Connection, db.Context, int64(id))
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	id := 1
-	result := dbDeleteMediaDimension(db, ctx, int64(id))
-	expected := fmt.Sprintf("Deleted Media Dimension %d successfully", id)
-	if expected != result {
+	result, err := DeleteMediaDimension(db.Connection, db.Context, int64(id))
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: deleteTestTable})
 	slug := "/test1"
-	result := dbDeleteRoute(db, ctx, slug)
-	expected := fmt.Sprintf("Deleted Route %s successfully", slug)
-	if expected != result {
+	result, err := DeleteRoute(db.Connection, db.Context, slug)
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }
 
 func TestDeleteTables(t *testing.T) {
-	db, ctx, err := getDb(Database{src: deleteTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
 	id := 1
-	result := dbDeleteTable(db, ctx, int64(id))
-	expected := fmt.Sprintf("Deleted Table %d successfully", id)
-	if expected != result {
+	db := GetDb(Database{Src: deleteTestTable})
+	result, err := DeleteTable(db.Connection, db.Context, int64(id))
+	if err != nil {
+		fmt.Printf("%v", err)
 		t.FailNow()
 	}
+	fmt.Printf("%v", result)
 }

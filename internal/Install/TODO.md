@@ -8,6 +8,7 @@ Try to connect to provided db. Panic if can't ping db.
 
 ## Try config bucket
 Try to connect to provided bucket. Panic if can't upload or download from bucket.
+Require flag to enable local storage for files.
 
 ## Try oauth providers
 If providers present. Logs failures and shows warning on dashboard.

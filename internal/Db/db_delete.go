@@ -14,9 +14,9 @@ func DeleteAdminDatatype(db *sql.DB, ctx context.Context, id int64) (*string, er
 	queries := mdb.New(db)
 	err := queries.DeleteAdminDatatype(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete Admin Route %s ", id)
+		return nil, fmt.Errorf("failed to delete Admin Route %d ", id)
 	}
-	s := fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	s := fmt.Sprintf("Deleted Admin Route %d successfully", id)
 	return &s, nil
 }
 
@@ -24,9 +24,9 @@ func DeleteAdminField(db *sql.DB, ctx context.Context, id int64) (*string, error
 	queries := mdb.New(db)
 	err := queries.DeleteAdminField(ctx, id)
 	if err != nil {
-		return nil, fmt.Errorf("failed to delete Admin Route %s ", id)
+		return nil, fmt.Errorf("failed to delete Admin Route %d ", id)
 	}
-	s := fmt.Sprintf("Deleted Admin Route %s successfully", id)
+	s := fmt.Sprintf("Deleted Admin Route %d successfully", id)
 	return &s, nil
 }
 

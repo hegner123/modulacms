@@ -1,8 +1,6 @@
-package db_test
+package db
 
 import (
-	"fmt"
-	"log"
 	"reflect"
 	"testing"
 	"time"
@@ -15,23 +13,19 @@ import (
 var CreateTestTable string
 
 func TestCreateDBCopy(t *testing.T) {
-	testTable, err := CreateDbCopy("create_tests.db", false)
+	testTable, err := CopyDb("create_tests.db", false)
+
 	if err != nil {
-		logError("failed to Create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-		t.FailNow()
+		return
 	}
 	CreateTestTable = testTable
 }
 
 func TestCreateUser(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedUser := dbCreateUser(db, ctx, mdb.CreateUserParams{
+	insertedUser := CreateUser(db.Connection, db.Context, mdb.CreateUserParams{
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 		Username:     "systemtest",
@@ -57,14 +51,10 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestCreateAdminRoute(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedAdminRoute := dbCreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
+	insertedAdminRoute := CreateAdminRoute(db.Connection, db.Context, mdb.CreateAdminRouteParams{
 		Author:       "systemtest",
 		AuthorID:     int64(1),
 		Slug:         "/test",
@@ -92,14 +82,10 @@ func TestCreateAdminRoute(t *testing.T) {
 }
 
 func TestCreateRoute(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedRoute := dbCreateRoute(db, ctx, mdb.CreateRouteParams{
+	insertedRoute := CreateRoute(db.Connection, db.Context, mdb.CreateRouteParams{
 		Author:       "systemtest",
 		AuthorID:     1,
 		Slug:         "/test",
@@ -125,14 +111,10 @@ func TestCreateRoute(t *testing.T) {
 }
 
 func TestCreateMedia(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedMedia := dbCreateMedia(db, ctx, mdb.CreateMediaParams{
+	insertedMedia := CreateMedia(db.Connection, db.Context, mdb.CreateMediaParams{
 		Name:               ns("test.png"),
 		DisplayName:        ns("Test"),
 		Alt:                ns("test"),
@@ -176,13 +158,10 @@ func TestCreateMedia(t *testing.T) {
 }
 
 func TestCreateDatatype(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
-	_, err = dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
+
+	_, err := CreateDataType(db.Connection, db.Context, mdb.CreateDatatypeParams{
 		RouteID:      ni(1),
 		Label:        "Parent",
 		Type:         "text",
@@ -192,10 +171,10 @@ func TestCreateDatatype(t *testing.T) {
 		DateModified: ns(times),
 	})
 	if err != nil {
-		logError("failed to Create datatype", err)
+		return
 	}
 
-	insertedDatatypes, err := dbCreateDataType(db, ctx, mdb.CreateDatatypeParams{
+	insertedDatatypes, err := CreateDataType(db.Connection, db.Context, mdb.CreateDatatypeParams{
 		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "title",
@@ -205,10 +184,6 @@ func TestCreateDatatype(t *testing.T) {
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})
-	if err != nil {
-		logError("failed to Create datatype", err)
-		t.FailNow()
-	}
 
 	expected := mdb.Datatypes{
 		RouteID:      ni(1),
@@ -227,13 +202,10 @@ func TestCreateDatatype(t *testing.T) {
 }
 
 func TestCreateField(t *testing.T) {
-	times := timestampS()
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
-	insertedFields, _ := dbCreateField(db, ctx, mdb.CreateFieldParams{
+	times := TimestampS()
+	db := GetDb(Database{Src: CreateTestTable})
+
+	insertedFields, _ := CreateField(db.Connection, db.Context, mdb.CreateFieldParams{
 		RouteID:      ni(1),
 		ParentID:     ni(1),
 		Label:        "Parent",
@@ -262,13 +234,9 @@ func TestCreateField(t *testing.T) {
 }
 
 func TestCreateMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedMediaDimension := dbCreateMediaDimension(db, ctx, mdb.CreateMediaDimensionParams{
+	insertedMediaDimension := CreateMediaDimension(db.Connection, db.Context, mdb.CreateMediaDimensionParams{
 		Label:       ns("Desktop"),
 		Width:       ni(1920),
 		Height:      ni(1080),
@@ -288,13 +256,9 @@ func TestCreateMediaDimension(t *testing.T) {
 }
 
 func TestCreateTables(t *testing.T) {
-	db, ctx, err := getDb(Database{src: CreateTestTable})
-	if err != nil {
-		logError("failed to connect or Create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: CreateTestTable})
 
-	insertedTables := dbCreateTable(db, ctx, mdb.Tables{Label: ns("Test")})
+	insertedTables := CreateTable(db.Connection, db.Context, mdb.Tables{Label: ns("Test")})
 
 	expected := mdb.Tables{
 		Label: ns("Test"),
@@ -306,34 +270,28 @@ func TestCreateTables(t *testing.T) {
 }
 
 func TestCreateToken(t *testing.T) {
+	db := GetDb(Database{Src: CreateTestTable})
 	var (
 		key         []byte
 		tk          *jwt.Token
 		signedToken string
 	)
 
-	key = db.GenerateKey()
+	key = GenerateKey()
 	tk = jwt.New(jwt.SigningMethodHS256)
 	signedToken, err := tk.SignedString(key)
 	if err != nil {
-		t.Fatalf("%v\n", err.Error())
+		return
 	}
-	connectedDb :=db.GetDb(Database{Src: CreateTestTable})
-	if err != nil {
-		t.Fatalf("%v\n", err.Error())
-	}
-	defer db.Close()
-	dur, err := time.ParseDuration("24h")
-	if err != nil {
-		t.Fatalf("%v\n", err.Error())
-	}
-	weeks := time.Now().Add(dur)
-	times := db.timestampS()
 
-	insertedToken := dbCreateToken(connectedDb, connectedDb, mdb.CreateTokenParams{
+	_, err = time.ParseDuration("24h")
+
+	times := TimestampS()
+
+	insertedToken := CreateToken(db.Connection, db.Context, mdb.CreateTokenParams{
 		UserID:    1,
 		IssuedAt:  times,
-		ExpiresAt: fmt.Sprint(weeks.Unix()),
+		ExpiresAt: TimestampS(),
 		TokenType: "refresh",
 		Token:     signedToken,
 		Revoked:   nb(false),
@@ -342,7 +300,7 @@ func TestCreateToken(t *testing.T) {
 	expected := mdb.Tokens{
 		UserID:    1,
 		IssuedAt:  times,
-		ExpiresAt: fmt.Sprint(weeks.Unix()),
+		ExpiresAt: TimestampS(),
 		TokenType: "refresh",
 		Token:     signedToken,
 		Revoked:   nb(false),

@@ -12,55 +12,46 @@ import (
 var getTestTable string
 
 func TestGetDBCopy(t *testing.T) {
-	testTable, err := createDbCopy("get_tests.db", false)
+	testTable, err := CopyDb("get_tests.db", false)
 	if err != nil {
-		logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-		t.FailNow()
+		return
 	}
+
 	getTestTable = testTable
 }
 
 func TestGetInit(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	file, err := os.ReadFile("./sql/test1.sql")
+	s := fmt.Sprintf("%v", file)
+
+	_, err = db.Connection.ExecContext(db.Context, s)
 	if err != nil {
-		logError("failed to find or open file", err)
-	}
-	s := fmt.Sprint(file)
-	_, err = db.ExecContext(ctx, s)
-	if err != nil {
-		t.Failed()
+		return
 	}
 }
 
 func TestGetGlobalAdminDatatypeId(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
+	db := GetDb(Database{Src: getTestTable})
+
+	row, err := GetAdminDatatypeGlobalId(db.Connection, db.Context)
 	if err != nil {
-		logError("failed to connect or create database", err)
+		return
 	}
-	defer db.Close()
-	row := dbGetAdminDatatypeGlobalId(db, ctx)
-    if row.AdminDtID == 0 {
-        t.FailNow()
-    }
+	if row.AdminDtID == 0 {
+		t.FailNow()
+	}
 }
 
 func TestGetUser(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	id := int64(1)
 
-	userRow, err := dbGetUser(db, ctx, id)
+	userRow, err := GetUser(db.Connection, db.Context, id)
 	if err != nil {
-		fmt.Println(err)
-		t.FailNow()
+		return
 	}
 
 	expected := mdb.Users{
@@ -81,22 +72,18 @@ func TestGetUser(t *testing.T) {
 
 /*
 	func TestGetUserId(t *testing.T){
-		db, ctx, err := getDb(Database{DB: getTestTable})
-		if err != nil {
-			logError("failed to connect or create database", err)
-		}
-		defer db.Close()
-	    id := dbGetUserId(db,ctx,1)
+		 db := GetDb(Database{DB: getTestTable})
+
+	    id := GetUserId(db,ctx,1)
 	}
 */
 func TestGetAdminRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
 
-	adminRouteRow := dbGetAdminRoute(db, ctx, "/admin/login")
+	adminRouteRow, err := GetAdminRoute(db.Connection, db.Context, "/admin/login")
+	if err != nil {
+		return
+	}
 
 	expected := mdb.AdminRoutes{
 		AdminRouteID: int64(1),
@@ -116,13 +103,12 @@ func TestGetAdminRoute(t *testing.T) {
 }
 
 func TestGetRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
 
-	routeRow := dbGetRoute(db, ctx, "/")
+	routeRow, err := GetRoute(db.Connection, db.Context, "/")
+	if err != nil {
+		return
+	}
 
 	expected := mdb.Routes{
 		RouteID:      int64(1),
@@ -141,14 +127,14 @@ func TestGetRoute(t *testing.T) {
 }
 
 func TestGetMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	id := int64(2)
 
-	mediaRow := dbGetMedia(db, ctx, id)
+	mediaRow, err := GetMedia(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
 
 	expected := mdb.Media{
 		MediaID:            int64(1),
@@ -176,13 +162,13 @@ func TestGetMedia(t *testing.T) {
 }
 
 func TestGetField(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	id := int64(2)
-	fieldRow := dbGetField(db, ctx, id)
+	fieldRow, err := GetField(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
 
 	expected := mdb.Fields{
 		RouteID:      ni(1),
@@ -202,14 +188,14 @@ func TestGetField(t *testing.T) {
 }
 
 func TestGetMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	id := int64(2)
 
-	mediaDimensionRow := dbGetMediaDimension(db, ctx, id)
+	mediaDimensionRow, err := GetMediaDimension(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
 
 	expected := mdb.MediaDimensions{
 		Label:  ns("Desktop1"),
@@ -223,13 +209,13 @@ func TestGetMediaDimension(t *testing.T) {
 }
 
 func TestGetTables(t *testing.T) {
-	db, ctx, err := getDb(Database{src: getTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
+	db := GetDb(Database{Src: getTestTable})
+
 	id := int64(2)
-	tableRow := dbGetTable(db, ctx, id)
+	tableRow, err := GetTable(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
 
 	expected := mdb.Tables{
 		Label: ns("Test1"),

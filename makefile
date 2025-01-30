@@ -17,6 +17,29 @@ RESET  := $(shell tput -Txterm sgr0)
 
 all: help
 
+## Test:
+test: ## Run the tests of the project
+	touch testdb/create_tests.db	
+	touch ./testdb/testing2348263.db
+	rm ./testdb/*.db
+	
+	touch ./backups/tmp.zip
+	rm ./backups/*.zip
+	$(GOTEST) -v ./... 
+	rm ./testdb/*.db
+
+template-test: ## Run the template test
+	$(GOTEST) -run TestServeTemplate  -outputdir tests 
+
+coverage: ## Run the tests of the project and export the coverage
+	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...
+	$(GOCMD) tool cover -func profile.cov
+ifeq ($(EXPORT_RESULT), true)
+	GO111MODULE=off go get -u github.com/AlekSi/gocov-xml
+	GO111MODULE=off go get -u github.com/axw/gocov/gocov
+	gocov convert profile.cov | gocov-xml > coverage.xml
+endif
+
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
 	npm run build 
@@ -46,39 +69,11 @@ watch: ## Run the code with cosmtrek/air to have automatic reload on changes
 	$(eval PACKAGE_NAME=$(shell head -n 1 go.mod | cut -d ' ' -f2))
 	docker run -it --rm -w /go/src/$(PACKAGE_NAME) -v $(shell pwd):/go/src/$(PACKAGE_NAME) -p $(SERVICE_PORT):$(SERVICE_PORT) cosmtrek/air
 
-## Test:
-test: ## Run the tests of the project
-	touch testdb/create_tests.db	
-	touch ./testdb/testing2348263.db
-	rm ./testdb/*.db
-	
-	touch ./backups/tmp.zip
-	rm ./backups/*.zip
-	$(GOTEST) -v ./... 
-	rm ./testdb/*.db
-
-test1: ## Run router tests
-	$(GOTEST) -run TestServeTemplate  -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
-
-coverage: ## Run the tests of the project and export the coverage
-	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...
-	$(GOCMD) tool cover -func profile.cov
-ifeq ($(EXPORT_RESULT), true)
-	GO111MODULE=off go get -u github.com/AlekSi/gocov-xml
-	GO111MODULE=off go get -u github.com/axw/gocov/gocov
-	gocov convert profile.cov | gocov-xml > coverage.xml
-endif
-
 ## SQL
 sqlc: ## Run sqlc generate in sql directory
 	cd ./sql && sqlc generate && echo "generated coded successfully"
 
-## DB 
-db: 
-	sqlite3 reference .read 
 	
-
-
 ## Lint:
 lint: lint-go lint-dockerfile lint-yaml ## Run all available linters
 

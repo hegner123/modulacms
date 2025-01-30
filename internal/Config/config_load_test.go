@@ -70,7 +70,7 @@ func TestLoadConfig(t *testing.T) {
 	}
 	fmt.Println()
 
-	res := compareStructs(conf, expected)
+	res := CompareStructs(conf, expected)
 	if !res {
 		t.FailNow()
 	}

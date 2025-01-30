@@ -2,6 +2,7 @@ package db
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -9,212 +10,161 @@ import (
 )
 
 var listTestTable string
+
 func TestDBCopy(t *testing.T) {
-	testTable,err := createDbCopy("list_tests.db",false)
-    if err != nil { 
-        logError("failed to create copy of the database, I have to hurry, I'm running out of time!!! ", err)
-        t.FailNow()
-    }
+	testTable, err := CopyDb("list_tests.db", false)
+	if err != nil {
+		fmt.Printf("%v", err)
+		t.FailNow()
+	}
 	listTestTable = testTable
 }
 
 func TestListUser(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListUser(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Users, error) {
+		return ListUser(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.Users); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestListAdminRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListAdminRoute(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.AdminRoutes, error) {
+		return ListAdminRoute(db.Connection, db.Context)
 	}()
 
-	if _, ok := res.([]mdb.AdminRoutes); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListRoute(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Routes, error) {
+		return ListRoute(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.Routes); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListMedia(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListMedia(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Media, error) {
+		return ListMedia(db.Connection, db.Context)
 	}()
 
-	if _, ok := res.([]mdb.Media); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListField(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListField(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Fields, error) {
+		return ListField(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.Fields); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestListMediaDimension(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListMediaDimension(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.MediaDimensions, error) {
+		return ListMediaDimension(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.MediaDimensions); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestListTables(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListTable(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Tables, error) {
+		return ListTable(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.Tables); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListDatatype(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListDatatype(db, ctx)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Datatypes, error) {
+		return ListDatatype(db.Connection, db.Context)
 	}()
-
-	if _, ok := res.([]mdb.Datatypes); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListDatatypeByRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListDatatypeById(db, ctx, 1)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.ListDatatypeByRouteIdRow, error) {
+		return ListDatatypeById(db.Connection, db.Context, 1)
 	}()
-
-	if _, ok := res.([]mdb.ListDatatypeByRouteIdRow); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
 }
 
 func TestListFieldByRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
-	if err != nil {
-		logError("failed to connect or create database", err)
-	}
-	defer db.Close()
-	res := func() interface{} {
-		return dbListFieldById(db, ctx, 1)
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.ListFieldByRouteIdRow, error) {
+		return ListFieldByRouteId(db.Connection, db.Context, 1)
 	}()
-
-	if _, ok := res.([]mdb.ListFieldByRouteIdRow); ok {
-		return
-	} else {
+	if err != nil {
 		t.FailNow()
+		return
 	}
+
 }
 
 func TestListChildrenOfRoute(t *testing.T) {
-	db, ctx, err := getDb(Database{src: listTestTable})
+	db := GetDb(Database{Src: listTestTable})
+	datas, err := ListDatatypeById(db.Connection, db.Context, 1)
 	if err != nil {
-		logError("failed to connect or create database", err)
+		return
 	}
-	defer db.Close()
-	datas := dbListDatatypeById(db, ctx, 1)
 
-	field := dbListFieldById(db, ctx, 1)
+	field, err := ListFieldByRouteId(db.Connection, db.Context, 1)
+	if err != nil {
+		return
+	}
 
 	file, err := os.Create("log.txt")
 	if err != nil {
-		logError("failed to create file ", err)
+		fmt.Printf("%v", err)
 	}
 	dataMap := map[string][]mdb.ListDatatypeByRouteIdRow{
-		"Datatypes": datas,
+		"Datatypes": *datas,
 	}
 	fieldMap := map[string][]mdb.ListFieldByRouteIdRow{
-		"Fields": field,
+		"Fields": *field,
 	}
 	w := json.NewEncoder(file)
 	err = w.Encode(dataMap)
 	if err != nil {
-		logError("failed to encode datas", err)
+		fmt.Printf("%v", err)
 	}
 	err = w.Encode(fieldMap)
 	if err != nil {
-		logError("failed to encode field", err)
+		fmt.Printf("%v", err)
 	}
 }
