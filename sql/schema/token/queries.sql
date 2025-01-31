@@ -6,9 +6,12 @@ WHERE id = ? LIMIT 1;
 SELECT COUNT(*)
 FROM tokens;
 
--- name: GetTokenByUserId :one
+-- name: GetTokensByUserId :many
 SELECT * FROM tokens
-WHERE user_id = ? LIMIT 1;
+WHERE user_id = ?;
+
+-- name: ListTokens :many
+SELECT * FROM tokens;
 
 -- name: CreateToken :one
 INSERT INTO tokens (

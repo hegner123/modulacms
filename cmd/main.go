@@ -15,10 +15,11 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-var useSSL, dbFileExists bool = initFileCheck()
+var useSSL, dbFileExists bool
 var Env = config.Config{}
 
 func main() {
+	useSSL, dbFileExists = InitFileCheck()
 	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
 	versionFlag := flag.Bool("v", false, "Print version and exit")
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
@@ -34,10 +35,13 @@ func main() {
 
 	flag.Parse()
 	if *versionFlag {
-		message := utility.GetVersion()
+		message,err := utility.GetVersion()
+        if err!=nil {
+            return
+        }
 		log.Fatal(message)
 	}
-	config := config.LoadConfig(verbose,"")
+	config := config.LoadConfig(verbose, "")
 
 	if *reset {
 		fmt.Println("Reset DB:")
@@ -69,7 +73,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	api := api_v1.ApiServerV1{}
+	api := api_v1.ApiServerV1{
+        DeleteHandler: router.ApiDeleteHandler,
+        GetHandler: router.ApiGetHandler,
+        PutHandler: router.ApiPutHandler,
+        PostHandler: router.ApiPostHandler,
+    }
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		router.Router(w, r, &api)
@@ -91,7 +100,7 @@ func main() {
 	}
 }
 
-func initFileCheck() (bool, bool) {
+func InitFileCheck() (bool, bool) {
 	useSSL := true
 	dbFileExists := true
 	_, err := os.Open("modula.db")
@@ -99,13 +108,14 @@ func initFileCheck() (bool, bool) {
 		dbFileExists = false
 	}
 	var cert, key bool
-	_, err = os.Open("certs/localhost.crt")
+
+	_, err = os.Open("./certs/localhost.crt")
 	cert = true
 	if err != nil {
 		fmt.Printf("Error opening localhost.crt %s\n", err)
 		cert = false
 	}
-	_, err = os.Open("certs/localhost.key")
+	_, err = os.Open("./certs/localhost.key")
 	key = true
 	if err != nil {
 		fmt.Printf("Error opening localhost.key %s\n", err)

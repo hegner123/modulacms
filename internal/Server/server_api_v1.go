@@ -7,15 +7,15 @@ import (
 type (
 	Segment            int
 	UrlSegments        []string
-	RequestHandlerFunc func(http.ResponseWriter, *http.Request, UrlSegments)
 	AuthHandlerFunc    func(http.ResponseWriter, *http.Request)
 	ApiServerV1        struct {
 		UrlSegments   []string
 		AuthHandler   AuthHandlerFunc
-		DeleteHandler RequestHandlerFunc
-		GetHandler    RequestHandlerFunc
-		PostHandler   RequestHandlerFunc
-		PutHandler    RequestHandlerFunc
+		DeleteHandler func(http.ResponseWriter, *http.Request, UrlSegments)
+		GetHandler    func(http.ResponseWriter, *http.Request, UrlSegments)
+		PostHandler   func(http.ResponseWriter, *http.Request, UrlSegments)
+		PutHandler    func(http.ResponseWriter, *http.Request, UrlSegments)
+
 	}
 )
 

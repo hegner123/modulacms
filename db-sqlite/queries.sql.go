@@ -1229,24 +1229,40 @@ func (q *Queries) GetToken(ctx context.Context, id int64) (Tokens, error) {
 	return i, err
 }
 
-const getTokenByUserId = `-- name: GetTokenByUserId :one
+const getTokensByUserId = `-- name: GetTokensByUserId :many
 SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
-WHERE user_id = ? LIMIT 1
+WHERE user_id = ?
 `
 
-func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) (Tokens, error) {
-	row := q.db.QueryRowContext(ctx, getTokenByUserId, userID)
-	var i Tokens
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.TokenType,
-		&i.Token,
-		&i.IssuedAt,
-		&i.ExpiresAt,
-		&i.Revoked,
-	)
-	return i, err
+func (q *Queries) GetTokensByUserId(ctx context.Context, userID int64) ([]Tokens, error) {
+	rows, err := q.db.QueryContext(ctx, getTokensByUserId, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tokens
+	for rows.Next() {
+		var i Tokens
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TokenType,
+			&i.Token,
+			&i.IssuedAt,
+			&i.ExpiresAt,
+			&i.Revoked,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getUser = `-- name: GetUser :one
@@ -1946,6 +1962,41 @@ func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
 	for rows.Next() {
 		var i Tables
 		if err := rows.Scan(&i.ID, &i.Label, &i.AuthorID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listTokens = `-- name: ListTokens :many
+Select id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
+`
+
+func (q *Queries) ListTokens(ctx context.Context) ([]Tokens, error) {
+	rows, err := q.db.QueryContext(ctx, listTokens)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tokens
+	for rows.Next() {
+		var i Tokens
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.TokenType,
+			&i.Token,
+			&i.IssuedAt,
+			&i.ExpiresAt,
+			&i.Revoked,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

@@ -99,6 +99,14 @@ func ListUser(db *sql.DB, ctx context.Context) (*[]mdb.Users, error) {
 	}
 	return &fetchedUsers, nil
 }
+func ListTokens(db *sql.DB, ctx context.Context) (*[]mdb.Tokens, error) {
+	queries := mdb.New(db)
+	fetchedTokens, err := queries.ListTokens(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Users: %v\n", err)
+	}
+	return &fetchedTokens, nil
+}
 
 func ListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
 	// TODO implement dependency checking for delete candidate

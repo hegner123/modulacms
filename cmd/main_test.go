@@ -4,28 +4,27 @@ import (
 	"fmt"
 	"os"
 	"testing"
-
 )
 
 type GlobalTestingState struct {
 	Initialized bool
 }
 
-var globalTestingState GlobalTestingState
+var GlobalTesting GlobalTestingState
 
 func setup() {
 	fmt.Printf("TestMain setup\n")
-	globalTestingState.Initialized = true
+	GlobalTesting.Initialized = true
 }
 
 func teardown() {
 	fmt.Printf("TestMain teardown\n")
-	globalTestingState.Initialized = false
+	GlobalTesting.Initialized = false
 }
 
 func TestMain(m *testing.M) {
 	fmt.Printf("TestMain init\n")
-	globalTestingState.Initialized = false
+	GlobalTesting.Initialized = false
 	setup()
 	code := m.Run()
 	teardown()
@@ -33,3 +32,11 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
+func TestInit(t *testing.T) {
+	res1, res2 := InitFileCheck()
+
+	if !res1 || !res2 {
+		t.FailNow()
+	}
+
+}

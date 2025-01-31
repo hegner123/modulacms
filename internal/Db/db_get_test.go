@@ -14,6 +14,7 @@ var getTestTable string
 func TestGetDBCopy(t *testing.T) {
 	testTable, err := CopyDb("get_tests.db", false)
 	if err != nil {
+        t.FailNow()
 		return
 	}
 
@@ -24,6 +25,9 @@ func TestGetInit(t *testing.T) {
 	db := GetDb(Database{Src: getTestTable})
 
 	file, err := os.ReadFile("./sql/test1.sql")
+    if err!=nil {
+        return
+    }
 	s := fmt.Sprintf("%v", file)
 
 	_, err = db.Connection.ExecContext(db.Context, s)
@@ -225,3 +229,16 @@ func TestGetTables(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestGetTokens(t *testing.T) {
+	db := GetDb(Database{Src: getTestTable})
+
+	id := int64(2)
+	tokenRow, err := GetToken(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
+    fmt.Println(tokenRow)
+
+
+}
+

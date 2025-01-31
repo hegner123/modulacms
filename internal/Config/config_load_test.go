@@ -1,13 +1,9 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"reflect"
 	"testing"
-
-	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 func CompareStructs(a, b interface{}) bool {
@@ -41,7 +37,7 @@ func CompareStructs(a, b interface{}) bool {
 
 func TestLoadConfig(t *testing.T) {
 	fakeFlag := false
-	conf := LoadConfig(&fakeFlag,"testing-config.json")
+	conf := LoadConfig(&fakeFlag, "testing-config.json")
 
 	expected := Config{
 		Port:                "8080",
@@ -63,12 +59,6 @@ func TestLoadConfig(t *testing.T) {
 		Oauth_Endpoint:      map[Endpoint]string{oauthAuthURL: "https://github.com/login/oauth/authorize", oauthTokenURL: "https://github.com/login/oauth2/token"},
 	}
 
-	e := json.NewEncoder(os.Stdout)
-	err := e.Encode(expected)
-	if err != nil {
-	utility.LogError("failed to encode ", err)
-	}
-	fmt.Println()
 
 	res := CompareStructs(conf, expected)
 	if !res {

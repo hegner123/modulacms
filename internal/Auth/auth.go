@@ -11,6 +11,7 @@ import (
 	"net/url"
 
 	db "github.com/hegner123/modulacms/internal/Db"
+	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 	"golang.org/x/oauth2"
 )
@@ -46,20 +47,20 @@ func compareHashes(hash1, hash2 string) bool {
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if the auth cookie exists
-		cookie, err := r.Cookie("auth_token")
+		cookie, err := r.Cookie("modula_token")
 		if err != nil || cookie.Value == "" {
 			http.Error(w, "Unauthorized", http.StatusUnauthorized)
 			return
 		}
 
-		// Validate the token (in a real app, use a secure method like JWT validation)
-		if cookie.Value != "valid_token_example" {
+		if !middleware.UserIsAuth(r,""){
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
 		// Proceed to the next handler if authorized
 		next.ServeHTTP(w, r)
+        
 	})
 }
 

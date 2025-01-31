@@ -11,12 +11,13 @@ import (
 //go:embed version.json
 var vJson embed.FS
 
-func GetVersion() string {
+func GetVersion() (*string, error) {
 	file, err := vJson.ReadFile("version.json")
 	if err != nil {
-		fmt.Printf("%s\n", err)
+		return nil, err
 	}
-	return string(file)
+	versionString := string(file)
+	return &versionString, nil
 }
 
 func PopError(err error) string {

@@ -123,9 +123,9 @@ func GetToken(db *sql.DB, ctx context.Context, id int64) (*mdb.Tokens, error) {
 	return &fetchedToken, nil
 }
 
-func GetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) (*mdb.Tokens, error) {
+func GetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) (*[]mdb.Tokens, error) {
 	queries := mdb.New(db)
-	fetchedToken, err := queries.GetTokenByUserId(ctx, userId)
+	fetchedToken, err := queries.GetTokensByUserId(ctx, userId)
 	if err != nil {
 		return nil, err
 	}
