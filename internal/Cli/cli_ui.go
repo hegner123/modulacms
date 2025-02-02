@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"fmt"
 	"log"
 
 	huh "github.com/charmbracelet/huh"
@@ -59,6 +58,5 @@ func Form() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Print(table)
 
 }

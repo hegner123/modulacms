@@ -1,13 +1,13 @@
 package cli
 
-func cli_create(){
+func Cli_create(){
 
 }
 
-func cli_update(){}
+func Cli_update(){}
 
-func cli_read(){}
+func Cli_read(){}
 
-func cli_delete(){}
+func Cli_delete(){}
 
-func cli_list(){}
+func Cli_list(){}
