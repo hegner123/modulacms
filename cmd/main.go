@@ -68,7 +68,7 @@ func main() {
 	}
 
 	if *cliFlag {
-		cli.Form()
+		cli.CliRun()
 		os.Exit(0)
 	}
 

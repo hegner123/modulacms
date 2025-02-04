@@ -40,18 +40,33 @@ func LogError(message string, err error, args ...any) {
 	fullMessage := strings.Join(messageParts, " ")
 
 	// Format the final error message
-	er := fmt.Errorf("%sErr: %s\n%v\n%s", RED, fullMessage, err, RESET)
+	er := fmt.Errorf("%sErr: %s\n%v\n%s", REDF, fullMessage, err, RESET)
 	if er != nil {
 		fmt.Printf("%s\n", er)
 	}
 }
 
 func Plog(args ...any) {
-	fmt.Printf("%s", BLUE)
+	fmt.Print(BLUEF)
 	for _, arg := range args {
 		fmt.Print(arg)
 	}
-	fmt.Printf("%s\n", RESET)
+	fmt.Println(RESET)
+}
+
+func LogHeader(args ...any) {
+	fmt.Print(BRIGHTBLUEF)
+	for _, arg := range args {
+		fmt.Print(arg)
+	}
+	fmt.Println(RESET)
+}
+func LogBody(args ...any) {
+	fmt.Print(BLUEF)
+	for _, arg := range args {
+		fmt.Print(arg)
+	}
+	fmt.Println(RESET)
 }
 
 func PrintStringFields(v interface{}) {
