@@ -1,0 +1,39 @@
+-- name: GetContentData :one
+SELECT * FROM content_data
+WHERE content_data_id = ? LIMIT 1;
+
+-- name: CountContentData :one
+SELECT COUNT(*)
+FROM content_data;
+
+
+-- name: ListContentData :many
+SELECT * FROM content_data
+ORDER BY content_data_id;
+
+
+-- name: CreateContentData :one
+INSERT INTO content_data (
+    admin_dt_id,
+    date_created,
+    date_modified
+    ) VALUES (
+  ?,?,?,
+    ) RETURNING *;
+
+
+-- name: UpdateContentData :exec
+UPDATE content_data
+set admin_dt_id = ?,
+    date_created = ?,
+    date_modified = ?
+    WHERE content_data_id = ?
+    RETURNING *;
+
+-- name: DeleteContentData :exec
+DELETE FROM content_data
+WHERE content_data_id = ?;
+
+-- name: ListContentData :many
+SELECT * FROM content_data
+WHERE route_id = ?;

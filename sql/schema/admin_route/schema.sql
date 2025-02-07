@@ -1,10 +1,13 @@
 CREATE TABLE admin_routes (
     admin_route_id INTEGER
         PRIMARY KEY,
+    admin_dt_id INTEGER
+    REFERENCES admin_datatypes (),
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
+    
     author TEXT DEFAULT "system" NOT NULL
         REFERENCES users (username)
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
