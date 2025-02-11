@@ -15,6 +15,16 @@ type CliPage struct {
 	Children []*CliPage
 }
 
+type OptionList struct {
+	List []Option
+}
+
+type Option struct {
+	Index int
+	Key   string
+	Value string
+}
+
 type CliInterface string
 
 type model struct {
@@ -23,6 +33,7 @@ type model struct {
 	menu       []*CliPage
 	table      string
 	tables     []string
+	Options    []OptionList
 	cursor     int
 	selected   map[int]struct{}
 	header     string
@@ -54,7 +65,7 @@ var (
 )
 
 func CliRun() {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
+	p := tea.NewProgram(initialModel())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
@@ -65,20 +76,20 @@ func initialModel() model {
 	return model{
 		page:   *homePage,
 		tables: GetTables(""),
-		menu:   []*CliPage{
-            cmsPage, 
-            databasePage,
-            bucketPage,
-            oauthPage,
-            configPage,
-        },
+		menu: []*CliPage{
+			cmsPage,
+			databasePage,
+			bucketPage,
+			oauthPage,
+			configPage,
+		},
 		pages: []CliPage{
 			*homePage,
 			*cmsPage,
 			*databasePage,
-            *bucketPage,
-            *oauthPage,
-            *configPage,
+			*bucketPage,
+			*oauthPage,
+			*configPage,
 			*createPage,
 			*readPage,
 			*updatePage,
@@ -95,17 +106,29 @@ func (m model) Init() tea.Cmd {
 	return m.LaunchCms()
 }
 
+func (m model) ResetInterface() model {
+	m.cursor = 0
+	m.menu = []*CliPage{}
+	return m
+}
+
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch m.controller {
 	case createInterface:
+		m = m.ResetInterface()
 	case readInterface:
+		m = m.ResetInterface()
 	case updateInterface:
+		m = m.ResetInterface()
 	case deleteInterface:
+		m = m.ResetInterface()
 	case pageInterface:
+		m = m.ResetInterface()
 		return m.UpdatePageSelect(message)
 	case tableInterface:
+		m = m.ResetInterface()
 		return m.UpdateTableSelect(message)
-
 	}
 	return m, nil
 }
@@ -187,6 +210,7 @@ func (m model) RenderUI() string {
 	m.footer += fmt.Sprintf("%v\nPress q to quit.\n%v", utility.REDF, utility.RESET)
 	return m.header + m.body + m.footer
 }
+
 func (m model) PageCreate() string {
 	m.header = "ModulaCMS\n\nCreate\n"
 
@@ -199,14 +223,17 @@ func (m model) PageCreate() string {
 	}
 	return m.RenderUI()
 }
+
 func (m model) PageRead() string {
 	m.header = "ModulaCMS\n\nRead\n"
 	return m.RenderUI()
 }
+
 func (m model) PageUpdate() string {
 	m.header = "ModulaCMS\n\nUpdate\n"
 	return m.RenderUI()
 }
+
 func (m model) PageDelete() string {
 	m.header = "ModulaCMS\n\nDelete\n"
 	return m.RenderUI()
@@ -230,7 +257,6 @@ func (m model) PageHome() string {
 }
 
 func (m model) SelectTableUI() string {
-	m.tables = GetTables("")
 	m.header = "Select table to edit?\n\n"
 
 	for i, choice := range m.tables {
