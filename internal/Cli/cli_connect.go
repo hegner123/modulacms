@@ -54,19 +54,36 @@ func GetTables(dbName string) []string {
 
 }
 
-func GetFields(table string, dbName string) {
+func GetFields(table string, dbName string) string {
+	var r string
 	var dbc db.Database
 	if dbName == "" {
 		dbc = db.GetDb(db.Database{})
 	} else {
 		dbc = db.GetDb(db.Database{Src: dbName})
 	}
-	m, err := db.GetTableColumns(dbc.Context, dbc.Connection, table)
+	_, m, err := db.GetTableColumns(dbc.Context, dbc.Connection, table)
 	if err != nil {
 		utility.LogError("failed to : ", err)
 	}
-	fk := GetRelationships(table, dbc)
-	MapFields(m, fk, dbc)
+	//fk := GetRelationships(table, dbc)
+	//MapFields(m, fk, dbc)
+    // Extract the keys into a slice
+	keys := make([]int, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	// Sort the slice of keys
+	sort.Ints(keys)
+
+	// Iterate over the sorted keys and access the map's values
+	for _, k := range keys {
+        r += fmt.Sprintf("%d: %s\n", k, m[k])
+	}
+
+
+	return r
 
 }
 

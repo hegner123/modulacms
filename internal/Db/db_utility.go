@@ -9,6 +9,9 @@ import (
 	"strings"
 )
 
+type ColumnNameType map[string]string
+type ColumnIndexName map[int]string
+
 func CopyDb(dbName string, useDefault bool) (string, error) {
 	times := TimestampS()
 	backup := "../../testdb/backups/"
@@ -39,10 +42,10 @@ func CopyDb(dbName string, useDefault bool) (string, error) {
 }
 
 // GetTableColumns retrieves the columns and their types for a given table.
-func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (map[string]string, error) {
+func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (ColumnNameType, ColumnIndexName, error) {
 	// Optionally: validate tableName here to avoid SQL injection.
 	if tableName == "" {
-		return nil, fmt.Errorf("table name cannot be empty")
+		return nil, nil, fmt.Errorf("table name cannot be empty")
 	}
 
 	// Construct the PRAGMA query.
@@ -51,15 +54,17 @@ func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (map[str
 	// Execute the query using the provided context.
 	rows, err := db.QueryContext(ctx, query)
 	if err != nil {
-		return nil, fmt.Errorf("query failed: %w", err)
+		return nil, nil, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
 	// Prepare a map to hold the column names and their types.
-	columns := make(map[string]string)
+	columnsNT := make(ColumnNameType)
+	columnsIN := make(ColumnIndexName)
 
 	// PRAGMA table_info returns the following columns:
 	// cid, name, type, notnull, dflt_value, pk
+	index := 0
 	for rows.Next() {
 		var cid int
 		var name, colType string
@@ -68,19 +73,22 @@ func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (map[str
 
 		// Scan the row into local variables.
 		if err := rows.Scan(&cid, &name, &colType, &notnull, &dfltValue, &pk); err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
 		// Map the column name to its type.
-		columns[name] = colType
+		columnsNT[name] = colType
+		columnsIN[index] = name
+		index++
+
 	}
 
 	// Check for any errors encountered during iteration.
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("row iteration error: %w", err)
+		return nil, nil, fmt.Errorf("row iteration error: %w", err)
 	}
 
-	return columns, nil
+	return columnsNT, columnsIN, nil
 }
 
 func GetColumnRows(dbc Database, tableName string, columnName string) ([]any, error) {

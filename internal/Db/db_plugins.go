@@ -9,10 +9,11 @@ func GetPluginSchema(table *string) {
 	} else {
 		dbc = GetDb(Database{})
 	}
-	s, err := GetTableColumns(dbc.Context, dbc.Connection, *table)
+	s,t, err := GetTableColumns(dbc.Context, dbc.Connection, *table)
 	if err != nil {
 		return
 	}
-	fmt.Print(s)
+	fmt.Println(s)
+	fmt.Println(t)
 
 }
