@@ -5,6 +5,7 @@ import "fmt"
 var (
 	txtarea InputType = "textarea"
 )
+
 func (m model) PageEditor(page string) string {
 	m.header += fmt.Sprintf("ModulaCMS\n\nEdit %s \n", page)
 	for i := range m.Options {

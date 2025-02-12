@@ -1,6 +1,7 @@
 package cli
 
 import tea "github.com/charmbracelet/bubbletea"
+
 var (
 	createInterface CliInterface = "CreateInterface"
 	readInterface   CliInterface = "ReadInterface"
@@ -68,6 +69,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "enter":
+            m.PushHistory(m.page)
 			m.page = *m.menu[m.cursor]
 			m.menu = m.page.Children
 			m.controller = m.page.Controller

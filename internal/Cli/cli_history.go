@@ -1,51 +1,24 @@
 package cli
 
-import (
-	"fmt"
-	"io"
-	"os"
 
-	utility "github.com/hegner123/modulacms/internal/Utility"
-)
-
-func AddToHistory(p CliPage) error {
-	file, err := os.OpenFile("history.txt", os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		fmt.Println("Error opening or creating file:", err)
-		return err
-	}
-	defer file.Close()
-
-	h, err := io.ReadAll(file)
-	if err != nil {
-		return err
-	}
-	history := string(h)
-	entry := fmt.Sprintf("%s %d %s\n", utility.TimestampS(), p.Index, p.Label)
-	entry += history
-	_, err = file.WriteString(entry)
-	if err != nil {
-		return err
-	}
-	return nil
+func (m *model) PushHistory(entry CliPage)  {
+	m.history = append(m.history, entry)
 }
 
-func GetPrevHistory(index int) (string, int) {
-	file, err := os.OpenFile("history.txt", os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		fmt.Println("Error opening or creating file:", err)
-		return "err", 0
+func (m *model) PopHistory()  {
+    if len(m.history) == 0 {
+		return 
 	}
-	defer file.Close()
-	return "", 0
+	// Get the last element.
+	index := len(m.history) - 1
+	page := m.history[index]
+	m.history = m.history[:index]
+    m.page = page
 }
 
-func GetNextHistory(index int) (string, int) {
-	file, err := os.OpenFile("history.txt", os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		fmt.Println("Error opening or creating file:", err)
-		return "err", 0
+func (m *model) Peek() (*CliPage, bool) {
+	if len(m.history) == 0 {
+		return nil, false
 	}
-	defer file.Close()
-	return "", 0
+	return &m.history[len(m.history)-1], true
 }

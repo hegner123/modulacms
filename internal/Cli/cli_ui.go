@@ -7,14 +7,9 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-
 func (m model) Init() tea.Cmd {
 	return m.LaunchCms()
 }
-
-
-
-
 
 func (m model) LaunchCms() tea.Cmd {
 	m.tables = GetTables("")
@@ -30,7 +25,6 @@ func (m model) RenderUI() string {
 	m.footer += fmt.Sprintf("%v\nPress q to quit.\n%v", utility.REDF, utility.RESET)
 	return m.header + m.body + m.footer
 }
-
 
 func (m model) SelectTableUI(action string) string {
 	m.header += fmt.Sprintf("\nSelect table to %s\n\n", action)

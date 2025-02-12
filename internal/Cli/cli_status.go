@@ -20,7 +20,14 @@ func (m model) StatusTable() string {
 	}
 	controller := fmt.Sprintf("%vController%v\n%v\n", headerColor, r, m.controller)
 	tables := fmt.Sprintf("%vTables%v\n%v\n", headerColor, r, m.tables)
-	return page + i + menu + selected + controller + tables + "\n\n"
+	var history string
+	h, haspage := m.Peek()
+	if haspage {
+		history = fmt.Sprintf("%vHistory%v\nPrev:\n %v", headerColor, r, h.Label)
+	} else {
+		history = fmt.Sprintf("%vHistory%v\nPrev: No History", headerColor, r)
+	}
+	return page + i + menu + selected + controller + tables + history + "\n\n"
 }
 
 func getMenuLabels(m []*CliPage) string {

@@ -1,6 +1,7 @@
 package cli
 
 import "fmt"
+
 var (
 	homePage     *CliPage = &CliPage{Index: 0, Controller: pageInterface, Label: "Home", Parent: nil, Children: []*CliPage{cmsPage, databasePage, bucketPage, oauthPage, configPage}}
 	cmsPage      *CliPage = &CliPage{Index: 1, Controller: pageInterface, Label: "CMS", Parent: nil, Children: []*CliPage{contentPage, mediaPage, usersPage}}
@@ -60,21 +61,6 @@ func (m model) PageHome() string {
 
 }
 
-func (m model) SelectTableUI(action string) string {
-	m.header += fmt.Sprintf("\nSelect table to %s\n\n", action)
-
-	for i, choice := range m.tables {
-
-		cursor := " " // no cursor
-		if m.cursor == i {
-			cursor = "->" // cursor!
-		}
-
-		m.body += fmt.Sprintf("%s  %s\n", cursor, choice)
-	}
-
-	return m.RenderUI()
-}
 
 func (m model) PageDatabase() string {
 	m.header = fmt.Sprintf("%v\nEditing %s\n\n", m.header, m.table)
