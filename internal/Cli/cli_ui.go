@@ -76,6 +76,7 @@ func initialModel() model {
 	return model{
 		page:   *homePage,
 		tables: GetTables(""),
+		table:  "",
 		menu: []*CliPage{
 			cmsPage,
 			databasePage,
@@ -116,18 +117,14 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch m.controller {
 	case createInterface:
-		m = m.ResetInterface()
 	case readInterface:
-		m = m.ResetInterface()
 	case updateInterface:
-		m = m.ResetInterface()
 	case deleteInterface:
-		m = m.ResetInterface()
 	case pageInterface:
-		m = m.ResetInterface()
+		m.cursor = 0
 		return m.UpdatePageSelect(message)
 	case tableInterface:
-		m = m.ResetInterface()
+		m.cursor = 0
 		return m.UpdateTableSelect(message)
 	}
 	return m, nil
@@ -168,7 +165,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "enter":
-			m.page = *m.menu[m.cursor]
+			m.page = *m.menu[m.cursor+1]
 			m.menu = m.page.Children
 		}
 	}
@@ -176,6 +173,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
+    m.header = fmt.Sprintf("Page: %s, Page Index %d, cursor %d\n Menu Length: %d\nMenu %v\n", m.page.Label, m.page.Index, m.cursor,len(m.menu), m.menu)
 	var ui string
 	switch m.page.Index {
 	case homePage.Index:
@@ -212,7 +210,7 @@ func (m model) RenderUI() string {
 }
 
 func (m model) PageCreate() string {
-	m.header = "ModulaCMS\n\nCreate\n"
+	m.header = m.header + "ModulaCMS\n\nCreate\n"
 
 	if m.table == "" {
 		m.controller = tableInterface
@@ -220,27 +218,28 @@ func (m model) PageCreate() string {
 	} else {
 		m.header += m.table
 		m.controller = pageInterface
+		m.SelectTableUI()
 	}
 	return m.RenderUI()
 }
 
 func (m model) PageRead() string {
-	m.header = "ModulaCMS\n\nRead\n"
+	m.header = m.header + "ModulaCMS\n\nRead\n"
 	return m.RenderUI()
 }
 
 func (m model) PageUpdate() string {
-	m.header = "ModulaCMS\n\nUpdate\n"
+	m.header = m.header + "ModulaCMS\n\nUpdate\n"
 	return m.RenderUI()
 }
 
 func (m model) PageDelete() string {
-	m.header = "ModulaCMS\n\nDelete\n"
+	m.header = m.header + "ModulaCMS\n\nDelete\n"
 	return m.RenderUI()
 }
 
 func (m model) PageHome() string {
-	m.header = "ModulaCMS\n\n MAIN MENU\n"
+	m.header = m.header + "ModulaCMS\n\n MAIN MENU\n"
 
 	for i, choice := range m.menu {
 
@@ -257,7 +256,7 @@ func (m model) PageHome() string {
 }
 
 func (m model) SelectTableUI() string {
-	m.header = "Select table to edit?\n\n"
+	m.header = m.header + "\nSelect table to edit?\n\n"
 
 	for i, choice := range m.tables {
 
@@ -273,7 +272,7 @@ func (m model) SelectTableUI() string {
 }
 
 func (m model) PageDatabase() string {
-	m.header = "Select table to edit?\n\n"
+	m.header = fmt.Sprintf("%v\nEditing %s\n\n", m.header, m.table)
 
 	for i, choice := range m.menu {
 
@@ -289,7 +288,7 @@ func (m model) PageDatabase() string {
 }
 
 func (m model) PageCMS() string {
-	m.header = "ModulaCMS?\n\nEdit Your Content \n"
+	m.header = m.header + "ModulaCMS?\n\nEdit Your Content \n"
 	for i, choice := range m.menu {
 
 		cursor := " "
