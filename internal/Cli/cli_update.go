@@ -2,6 +2,12 @@ package cli
 
 import tea "github.com/charmbracelet/bubbletea"
 
+type input struct {
+	key   int
+	label string
+	value any
+}
+
 var (
 	createInterface CliInterface = "CreateInterface"
 	readInterface   CliInterface = "ReadInterface"
@@ -46,9 +52,12 @@ func (m model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "enter":
+			m.PushHistory(m.page)
 			m.table = m.tables[m.cursor]
 			m.cursor = 0
-			m.controller = pageInterface
+			m.page = *m.page.Next
+			m.controller = m.page.Controller
+			m.menu = m.page.Children
 		}
 	}
 	return m, nil
@@ -69,7 +78,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor++
 			}
 		case "enter":
-            m.PushHistory(m.page)
+			m.PushHistory(m.page)
 			m.page = *m.menu[m.cursor]
 			m.menu = m.page.Children
 			m.controller = m.page.Controller

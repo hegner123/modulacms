@@ -10,30 +10,16 @@ func (m model) View() string {
 		ui = m.PageDatabase()
 	case cmsPage.Index:
 		ui = m.PageCMS()
+	case tablePage.Index:
+		ui = m.PageTable()
 	case createPage.Index:
-		if m.table == "" {
-			ui = m.SelectTableUI("create row")
-		} else {
-			ui = m.PageCreate()
-		}
+		ui = m.PageCreate()
 	case readPage.Index:
-		if m.table == "" {
-			ui = m.SelectTableUI("read")
-		} else {
-			ui = m.PageRead()
-		}
+		ui = m.PageRead()
 	case updatePage.Index:
-		if m.table == "" {
-			ui = m.SelectTableUI("update row")
-		} else {
-			ui = m.PageUpdate()
-		}
+		ui = m.PageUpdate()
 	case deletePage.Index:
-		if m.table == "" {
-			ui = m.SelectTableUI("delete row")
-		} else {
-			ui = m.PageDelete()
-		}
+		ui = m.PageDelete()
 	}
 	return ui
 }

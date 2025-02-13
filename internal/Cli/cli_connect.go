@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
@@ -68,7 +67,7 @@ func GetFields(table string, dbName string) string {
 	}
 	//fk := GetRelationships(table, dbc)
 	//MapFields(m, fk, dbc)
-    // Extract the keys into a slice
+	// Extract the keys into a slice
 	keys := make([]int, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
@@ -79,9 +78,8 @@ func GetFields(table string, dbName string) string {
 
 	// Iterate over the sorted keys and access the map's values
 	for _, k := range keys {
-        r += fmt.Sprintf("%d: %s\n", k, m[k])
+		r += fmt.Sprintf("%d: %s\n", k, m[k])
 	}
-
 
 	return r
 
@@ -138,9 +136,10 @@ func GetRelationships(tableName string, dbc db.Database) []ForeignKeyReference {
 	return references
 }
 
-func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) []huh.Field {
-	var fields []huh.Field
+func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
+	var fields []any
 	var s []any
+	fmt.Print(fields...)
 	// Extract keys into a slice.
 	keys := make([]string, 0, len(m))
 	for key := range m {
@@ -159,46 +158,12 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) [
 		}
 		switch m[key] {
 		case "TEXT":
-			fields = append(fields, MakeTextInput(key, s))
 		case "INTEGER":
-			fields = append(fields, MakeIntInput(key, s))
 		}
 		b := fmt.Sprintf("Index: %d, Key: %s, Value: %s\n", i, key, m[key])
 		utility.LogBody(b)
 	}
-	return fields
-}
-
-func MakeTextInput(name string, s []any) huh.Field {
-	var ss []string
-	for _, suggestion := range s {
-		sp := fmt.Sprint(suggestion)
-		ss = append(ss, sp)
-
-	}
-	var t huh.Field
-	if s != nil {
-		t = huh.NewInput().Title(name).Key(name).Suggestions(ss).Description("Accepts Strings")
-	} else {
-		t = huh.NewText().Title(name).Key(name).Description("Accepts Strings")
-	}
-	return t
-}
-
-func MakeIntInput(name string, s []any) huh.Field {
-	var i huh.Field
-	if s != nil {
-		var ss []string
-		for _, suggestion := range s {
-			sp := fmt.Sprint(suggestion)
-			ss = append(ss, sp)
-
-			i = huh.NewInput().Title(name).Key(name).Suggestions(ss).Description("Accepts Integers")
-		}
-	} else {
-		i = huh.NewInput().Title(name).Key(name).Description("Accepts Integers")
-	}
-	return i
+    fmt.Print(s)
 }
 
 func MatchFk(name string, references []ForeignKeyReference) *ForeignKeyReference {

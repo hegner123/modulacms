@@ -7,13 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type CliPage struct {
-	Index      int
-	Controller CliInterface
-	Label      string
-	Parent     *CliPage
-	Children   []*CliPage
-}
 
 type OptionList struct {
 	Key  string
