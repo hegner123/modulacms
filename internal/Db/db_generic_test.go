@@ -2,16 +2,15 @@ package db
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 )
 
-func TestFormatSqlItems(t *testing.T) {
+func TestFormatSqlColumns(t *testing.T) {
 	source1 := []string{"test1", "test2", "test3"}
 	source2 := []string{"test1"}
-	s1 := FormatSqlColumns(source1)
-	s2 := FormatSqlColumns(source2)
-	e1 := "test1, test2, test3"
+	s1 := FormatSqlColumns(source1, false)
+	s2 := FormatSqlColumns(source2, false)
+	e1 := "test1,test2,test3"
 	e2 := "test1"
 
 	if s1 != e1 {
@@ -24,52 +23,49 @@ func TestFormatSqlItems(t *testing.T) {
 	}
 
 }
+/*
 func TestFormatSqlFilter(t *testing.T) {
-	var (
-		k1 string = "key1"
-		k2 string = "key2"
-		k3 string = "key3"
-		v1 string = "value1"
-		v2 string = "value2"
-		v3 string = "value3"
-	)
-	source1 := map[string]string{k1: v1, k2: v2, k3: v3}
-	source2 := map[string]string{k1: v1}
-	s1 := FormatSqlFilter(source1)
-	s2 := FormatSqlFilter(source2)
-	e11 := "key1=value1"
-	e12 := "key2=value2"
-	e13 := "key3=value3"
-	e14 := ","
 
-	r1 := strings.Contains(s1, e11)
-	r2 := strings.Contains(s1, e12)
-	r3 := strings.Contains(s1, e13)
-	r4 := string(s1[len(s1)-1]) != e14
-	r5 := string(s1[11]) == e14
-	r6 := string(s1[23]) == e14
-	if !r1 || !r2 || !r3 || !r4 || !r5 || !r6 {
-		fmt.Printf("\nr1: %v\n", r1)
-		fmt.Printf("\nr2: %v\n", r2)
-		fmt.Printf("\nr3: %v\n", r3)
-		fmt.Printf("\nr4: %v\n", r4)
-		fmt.Printf("\nr5: %v\n", r5)
-		fmt.Printf("\nr6: %v\n", r6)
+}
+*/
 
-		t.Fatal("s1 fail")
-	}
+func TestInsertQuery(t *testing.T) {
+	table := "users"
+	columnSlice := []string{"username", "email", "hash", "created", "2fa"}
+	valueSlice := []string{"petty76", "email@email.com", "89a7s6fdf69ss86f9f690e87efhf", "2025-01-15", "0"}
+	e1 := "INSERT INTO users (username,email,hash,created,2fa) VALUES ('petty76','email@email.com','89a7s6fdf69ss86f9f690e87efhf','2025-01-15',0);"
+	columns := FormatSqlColumns(columnSlice, false)
+	values := FormatSqlColumns(valueSlice, true)
+	q := InsertQuery(table, columns, values)
+	fmt.Printf("\nColumns: %v\n", columns)
+	fmt.Printf("\nValues: %v\n", values)
+	fmt.Printf("\nQuery: %v\n", q)
+	fmt.Printf("\nExpected: %v\n", e1)
 
-	e2 := "key1=value1"
-
-	if s2 != e2 {
-		fmt.Printf("\nSource2 test: %s\n", s2)
-		t.Fatal("s2 fail")
+	if q != e1 {
+		t.Fail()
 	}
 
 }
+func TestSelectQuery(t *testing.T) {
+	var fs []WhereKeyValue
+	table := "users"
+	columnSlice := []string{"username", "email", "hash", }
+	f1 := WhereKeyValue{key: "username", value: "petty76"}
+	f2 := WhereKeyValue{key: "email", value: "email@email.com", method: &and}
+	fs = append(fs, f1)
+	fs = append(fs, f2)
+	e1 := "SELECT (username,email,hash) FROM users WHERE username='petty76' AND email='email@email.com';"
+	columns := FormatSqlColumns(columnSlice, false)
+	filter := FormatSqlFU(fs,false)
 
+	q := SelectQuery(table, columns, filter)
+	fmt.Printf("\nColumns: %v\n", columns)
+	fmt.Printf("\nQuery: %v\n", q)
+	fmt.Printf("\nExpected: %v\n", e1)
 
-func TestInsertQuery(t *testing.T){
-    table:="users"
-    s1:=[]string{"id","username","email","hash"}
+	if q != e1 {
+		t.Fail()
+	}
+
 }
