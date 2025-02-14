@@ -1,6 +1,8 @@
 package cli
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 type input struct {
 	key   int
@@ -64,26 +66,30 @@ func (m model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
+
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+		return m.DefaultControls(msg, len(m.menu))
+		/*
+			switch msg.String() {
+			case "q", "esc", "ctrl+c":
+				return m, tea.Quit
+			case "up", "k":
+				if m.cursor > 0 {
+					m.cursor--
+				}
+			case "down", "j":
+				if m.cursor < len(m.menu)-1 {
+					m.cursor++
+				}
+			case "enter":
+				m.PushHistory(m.page)
+				m.page = *m.menu[m.cursor]
+				m.menu = m.page.Children
+				m.controller = m.page.Controller
+				m.cursor = 0
 			}
-		case "down", "j":
-			if m.cursor < len(m.menu)-1 {
-				m.cursor++
-			}
-		case "enter":
-			m.PushHistory(m.page)
-			m.page = *m.menu[m.cursor]
-			m.menu = m.page.Children
-			m.controller = m.page.Controller
-			m.cursor = 0
-		}
+		*/
 	}
 	return m, nil
 }

@@ -1,5 +1,13 @@
 # Stepper
 
+## Navigation
+1. q, ctl-c, and esc quit the program when not inputting data
+2. esc when inputting data exits the currently focused input
+3. ctl-c closes the program without committing any data, but does save in 
+   unsaved_<input name>.txt to be retrived at a later time
+4. shift-tab, left arrow, bkspc, and h when not inputting data will navigate to
+   the previous page
+
 ## Cms Steps
 
 ## Database Steps
