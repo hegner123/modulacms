@@ -140,3 +140,4 @@ func ReadNullString(ns sql.NullString) string {
 		return "NIll"
 	}
 }
+

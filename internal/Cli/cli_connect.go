@@ -9,6 +9,12 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
+type Column struct {
+	index     int
+	label     string
+	inputType string
+}
+
 // ForeignKeyReference holds the referenced table and column information.
 type ForeignKeyReference struct {
 	From   string
@@ -53,7 +59,7 @@ func GetTables(dbName string) []string {
 
 }
 
-func GetFields(table string, dbName string) string {
+func GetFieldsString(table string, dbName string) string {
 	var r string
 	var dbc db.Database
 	if dbName == "" {
@@ -82,6 +88,39 @@ func GetFields(table string, dbName string) string {
 	}
 
 	return r
+
+}
+
+func GetFields(table string, dbName string) []Column {
+	var columns []Column
+	var dbc db.Database
+	if dbName == "" {
+		dbc = db.GetDb(db.Database{})
+	} else {
+		dbc = db.GetDb(db.Database{Src: dbName})
+	}
+	t, m, err := db.GetTableColumns(dbc.Context, dbc.Connection, table)
+	if err != nil {
+		utility.LogError("failed to : ", err)
+	}
+	//fk := GetRelationships(table, dbc)
+	//MapFields(m, fk, dbc)
+	// Extract the keys into a slice
+	keys := make([]int, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+
+	// Sort the slice of keys
+	sort.Ints(keys)
+
+	// Iterate over the sorted keys and access the map's values
+	for _, k := range keys {
+		c := Column{index: k, label: m[k], inputType: t[m[k]]}
+		columns = append(columns, c)
+	}
+
+	return columns
 
 }
 
@@ -163,7 +202,7 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 		b := fmt.Sprintf("Index: %d, Key: %s, Value: %s\n", i, key, m[key])
 		utility.LogBody(b)
 	}
-    fmt.Print(s)
+	fmt.Print(s)
 }
 
 func MatchFk(name string, references []ForeignKeyReference) *ForeignKeyReference {

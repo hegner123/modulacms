@@ -99,18 +99,18 @@ func (m model) PageCreate() string {
 
 func (m model) PageRead() string {
 	m.header = m.header + "ModulaCMS\n\nRead\n"
-	m.body = fmt.Sprintf("%v", GetFields(m.table, ""))
+	m.body = fmt.Sprintf("%v", GetFieldsString(m.table, ""))
 	return m.RenderUI()
 }
 
 func (m model) PageUpdate() string {
 	m.header = m.header + "ModulaCMS\n\nUpdate\n"
-	m.body = fmt.Sprintf("%v", GetFields(m.table, ""))
+	m.body = fmt.Sprintf("%v", GetFieldsString(m.table, ""))
 	return m.RenderUI()
 }
 
 func (m model) PageDelete() string {
 	m.header = m.header + "ModulaCMS\n\nDelete\n"
-	m.body = fmt.Sprintf("%v", GetFields(m.table, ""))
+	m.body = fmt.Sprintf("%v", GetFieldsString(m.table, ""))
 	return m.RenderUI()
 }

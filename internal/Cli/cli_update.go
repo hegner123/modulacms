@@ -4,11 +4,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-type input struct {
-	key   int
-	label string
-	value any
-}
 
 var (
 	createInterface CliInterface = "CreateInterface"
@@ -17,13 +12,8 @@ var (
 	deleteInterface CliInterface = "DeleteInterface"
 	tableInterface  CliInterface = "TableInterface"
 	pageInterface   CliInterface = "PageInterface"
+	inputInterface  CliInterface = "InputInterface"
 )
-
-func (m model) ResetInterface() model {
-	m.cursor = 0
-	m.menu = []*CliPage{}
-	return m
-}
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
@@ -36,31 +26,14 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdatePageSelect(message)
 	case tableInterface:
 		return m.UpdateTableSelect(message)
+	case inputInterface:
 	}
 	return m, nil
 }
 func (m model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.tables)-1 {
-				m.cursor++
-			}
-		case "enter":
-			m.PushHistory(m.page)
-			m.table = m.tables[m.cursor]
-			m.cursor = 0
-			m.page = *m.page.Next
-			m.controller = m.page.Controller
-			m.menu = m.page.Children
-		}
+		return m.TableControls(msg, len(m.tables))
 	}
 	return m, nil
 }
@@ -69,27 +42,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DefaultControls(msg, len(m.menu))
-		/*
-			switch msg.String() {
-			case "q", "esc", "ctrl+c":
-				return m, tea.Quit
-			case "up", "k":
-				if m.cursor > 0 {
-					m.cursor--
-				}
-			case "down", "j":
-				if m.cursor < len(m.menu)-1 {
-					m.cursor++
-				}
-			case "enter":
-				m.PushHistory(m.page)
-				m.page = *m.menu[m.cursor]
-				m.menu = m.page.Children
-				m.controller = m.page.Controller
-				m.cursor = 0
-			}
-		*/
+		return m.PageControls(msg, len(m.menu))
 	}
 	return m, nil
 }
