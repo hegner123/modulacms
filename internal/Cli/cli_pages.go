@@ -114,3 +114,16 @@ func (m model) PageDelete() string {
 	m.body = fmt.Sprintf("%v", GetFieldsString(m.table, ""))
 	return m.RenderUI()
 }
+
+// View renders the UI.
+func (m model) InputsView() string {
+	s := "Dynamic Bubble Tea Inputs Example\n\n"
+	for i, input := range m.textInputs {
+		s += input.View() + "\n"
+		if i < len(m.textInputs)-1 {
+			s += "\n"
+		}
+	}
+	s += "\nPress tab/shift+tab or up/down to switch focus. Press esc or ctrl+c to quit."
+	return s
+}

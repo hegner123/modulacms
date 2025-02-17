@@ -13,10 +13,25 @@ var (
 	or  SqlMethod = "OR"
 )
 
+type SQLQuery struct {
+	method  string
+	table   string
+	columns []string
+	values  []string
+	filter  []WhereKeyValue
+	err     error
+}
+
+
 type WhereKeyValue struct {
 	key    string
 	value  string
 	method *SqlMethod
+}
+func NewQuery(method string, table string, columns []string, values []string, filter []WhereKeyValue) SQLQuery {
+    q := SQLQuery{method: method, table: table, columns: columns, values: values, filter: filter, err: nil}
+
+    return q
 }
 
 func FormatSqlColumns(columns []string, isValues bool) string {

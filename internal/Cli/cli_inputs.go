@@ -1,6 +1,10 @@
 package cli
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/charmbracelet/bubbles/textinput"
+)
 
 var (
 	txtarea InputType = "textarea"
@@ -26,4 +30,19 @@ func (m model) InputUI(o Option) string {
 
 	}
 	return view
+}
+
+func (m model) InputInit(numInputs int) model {
+	for i := 0; i < numInputs; i++ {
+		ti := textinput.New()
+		ti.Placeholder = fmt.Sprintf("Input %d", i+1)
+		ti.CharLimit = 32
+		if i == 0 {
+			ti.Focus()
+		} else {
+			ti.Blur()
+		}
+		m.textInputs[i] = ti
+	}
+	return m
 }
