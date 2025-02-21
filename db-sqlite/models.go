@@ -18,6 +18,7 @@ type AdminDatatypes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 	Template     sql.NullString `json:"template"`
 }
 
@@ -32,11 +33,13 @@ type AdminFields struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 	Template     sql.NullString `json:"template"`
 }
 
 type AdminRoutes struct {
 	AdminRouteID int64          `json:"admin_route_id"`
+	AdminDtID    sql.NullInt64  `json:"admin_dt_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
@@ -44,7 +47,26 @@ type AdminRoutes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 	Template     interface{}    `json:"template"`
+}
+
+type ContentData struct {
+	ContentDataID int64          `json:"content_data_id"`
+	AdminDtID     int64          `json:"admin_dt_id"`
+	History       sql.NullString `json:"history"`
+	DateCreated   sql.NullString `json:"date_created"`
+	DateModified  sql.NullString `json:"date_modified"`
+}
+
+type ContentFields struct {
+	ContentFieldID int64          `json:"content_field_id"`
+	ContentDataID  int64          `json:"content_data_id"`
+	AdminFieldID   int64          `json:"admin_field_id"`
+	FieldValue     string         `json:"field_value"`
+	History        sql.NullString `json:"history"`
+	DateCreated    sql.NullString `json:"date_created"`
+	DateModified   sql.NullString `json:"date_modified"`
 }
 
 type Datatypes struct {
@@ -55,6 +77,7 @@ type Datatypes struct {
 	Type         string         `json:"type"`
 	Author       interface{}    `json:"author"`
 	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
@@ -68,6 +91,7 @@ type Fields struct {
 	Type         string         `json:"type"`
 	Author       interface{}    `json:"author"`
 	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
@@ -108,6 +132,7 @@ type Routes struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
+	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }

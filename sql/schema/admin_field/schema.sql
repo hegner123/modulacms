@@ -19,5 +19,6 @@ CREATE TABLE IF NOT EXISTS admin_fields
             on update cascade on delete set default,
     date_created   TEXT    default CURRENT_TIMESTAMP,
     date_modified  TEXT    default CURRENT_TIMESTAMP,
+    history        TEXT,
     template       TEXT
 );

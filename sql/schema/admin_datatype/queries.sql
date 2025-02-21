@@ -44,9 +44,10 @@ INSERT INTO admin_datatypes (
     author_id,
     date_created,
     date_modified,
+    history,
     template
     ) VALUES (
-?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
@@ -60,6 +61,7 @@ set admin_route_id = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
+    history = ?,
     template = ?
     WHERE admin_dt_id = ?
     RETURNING *;

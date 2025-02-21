@@ -2,7 +2,6 @@
     "port": "8080",
     "ssl_port": "8443",
     "client_site": "modulacms.com",
-    "admin__site": "admin.modulacms.com",
     "db_driver": "sqlite",
     "db_url": "./modula.db",
     "db_name": "modula.db",

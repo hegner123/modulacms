@@ -23,3 +23,4 @@ func (m model) View() string {
 	}
 	return ui
 }
+

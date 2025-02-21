@@ -11,6 +11,7 @@ CREATE TABLE routes (
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
+    history TEXT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

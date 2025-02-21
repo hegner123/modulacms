@@ -15,16 +15,18 @@ ORDER BY content_data_id;
 -- name: CreateContentData :one
 INSERT INTO content_data (
     admin_dt_id,
+    history,
     date_created,
     date_modified
     ) VALUES (
-  ?,?,?,
+?,?,?,?
     ) RETURNING *;
 
 
 -- name: UpdateContentData :exec
 UPDATE content_data
 set admin_dt_id = ?,
+    history = ?,
     date_created = ?,
     date_modified = ?
     WHERE content_data_id = ?
@@ -34,6 +36,6 @@ set admin_dt_id = ?,
 DELETE FROM content_data
 WHERE content_data_id = ?;
 
--- name: ListContentData :many
+-- name: ListFilteredContentData :many
 SELECT * FROM content_data
-WHERE route_id = ?;
+WHERE content_data_id = ?;

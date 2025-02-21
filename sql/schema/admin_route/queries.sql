@@ -27,10 +27,11 @@ title,
 status,
 date_created,
 date_modified,
+history,
 template
-) VALUES (
-?,?,?,?,?,?,?,?
-) RETURNING *;
+    ) VALUES (
+?,?,?,?,?,?,?,?,?
+    ) RETURNING *;
 
 -- name: UpdateAdminRoute :exec
 UPDATE admin_routes
@@ -41,6 +42,7 @@ set slug = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
+    history = ?,
     template = ?
     WHERE slug = ?
     RETURNING *;

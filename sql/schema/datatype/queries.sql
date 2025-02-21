@@ -21,10 +21,11 @@ INSERT INTO datatypes (
     type,
     author,
     author_id,
+    history,
     date_created,
     date_modified
     ) VALUES (
-  ?,?,?,?,?,?,?,?
+  ?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
@@ -36,6 +37,7 @@ set route_id = ?,
     type = ?,
     author = ?,
     author_id = ?,
+    history = ?,
     date_created = ?,
     date_modified = ?
     WHERE datatype_id = ?

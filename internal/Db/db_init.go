@@ -40,6 +40,7 @@ func GetDb(dbSrc Database) Database {
 func (init Database) InitDb(Db Database, v *bool, database string) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
+        return err
 	}
 	if _, err := Db.Connection.ExecContext(Db.Context, tables); err != nil {
 		return err

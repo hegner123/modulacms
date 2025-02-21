@@ -1,5 +1,8 @@
 # Install
 
+## Try to read config
+
+
 ## Prompt for config path
 If no config path provided use default
 

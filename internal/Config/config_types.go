@@ -12,6 +12,7 @@ type Config struct {
 	Port                string              `json:"port"`
 	SSL_Port            string              `json:"ssl_port"`
 	Client_Site         string              `json:"client_site"`
+	Admin_Site          string              `json:"admin_site"`
 	Options             map[string][]any    `json:"options"`
 	Db_Driver           string              `json:"db_driver"`
 	Db_URL              string              `json:"db_url"`

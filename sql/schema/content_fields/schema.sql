@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES admin_fields(admin_field_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     field_value         TEXT NOT NULL,
+    history TEXT,
     date_created        TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified       TEXT DEFAULT CURRENT_TIMESTAMP
 );

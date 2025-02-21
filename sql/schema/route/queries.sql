@@ -21,10 +21,11 @@ author_id,
 slug,
 title,
 status,
+history,
 date_created,
 date_modified
 ) VALUES (
-?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?
 ) RETURNING *;
 
 -- name: UpdateRoute :exec
@@ -32,6 +33,7 @@ UPDATE routes
 set slug = ?,
     title = ?,
     status = ?,
+    history= ?,
     author = ?,
     author_id = ?,
     date_created = ?,
