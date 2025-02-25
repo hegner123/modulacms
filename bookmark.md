@@ -1,0 +1,2 @@
+db_generic_test.go
+TestInsertQuery

@@ -19,9 +19,9 @@ INSERT INTO fields  (
     type,
     author,
     author_id,
+    history,
     date_created,
-    date_modified,
-    template
+    date_modified
     ) VALUES (
 ?,?,?,?,?,?,?,?,?,?
     ) RETURNING *;
@@ -36,9 +36,9 @@ set route_id = ?,
     type = ?,
     author = ?,
     author_id = ?,
+    history =?,
     date_created = ?,
-    date_modified = ?,
-    template = ?
+    date_modified = ?
     WHERE field_id = ?
     RETURNING *;
 
@@ -47,6 +47,6 @@ DELETE FROM fields
 WHERE field_id = ?;
 
 -- name: ListFieldByRouteId :many
-SELECT field_id, route_id, parent_id, label, data, type, template
+SELECT field_id, route_id, parent_id, label, data, type
 FROM fields 
 WHERE route_id = ?;

@@ -1,7 +1,8 @@
 GOCMD=go
 GOTEST=$(GOCMD) test
 GOVET=$(GOCMD) vet
-BINARY_NAME=modulacms
+AMD_BINARY_NAME=modulacms-amd
+X86_BINARY_NAME=modulacms-x86
 VERSION?=0.0.0
 SERVICE_PORT?=8080
 DOCKER_REGISTRY?= #if set it should finished by /
@@ -17,22 +18,52 @@ RESET  := $(shell tput -Txterm sgr0)
 
 all: help
 
+## Test:
+test: ## Run the tests of the project
+	touch testdb/create_tests.db	
+	touch ./testdb/testing2348263.db
+	rm ./testdb/*.db
+	
+	touch ./backups/tmp.zip
+	rm ./backups/*.zip
+	$(GOTEST) -v ./... 
+	rm ./testdb/*.db
+
+template-test: ## Run the template test
+	$(GOTEST) -run TestServeTemplate  -outputdir tests 
+
+coverage: ## Run the tests of the project and export the coverage
+	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...
+	$(GOCMD) tool cover -func profile.cov
+ifeq ($(EXPORT_RESULT), true)
+	GO111MODULE=off go get -u github.com/AlekSi/gocov-xml
+	GO111MODULE=off go get -u github.com/axw/gocov/gocov
+	gocov convert profile.cov | gocov-xml > coverage.xml
+endif
+
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
 	npm run build 
 	rsync -av --delete templates/styles/*.css public/styles
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) .	
+	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	npm run build 
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) .	
-	rsync -av --delete public/ out/bin/public/
-	rsync -av --delete templates/*.html out/bin/templates/
-	rsync -av --delete certs/ out/bin/certs/
-	rsync -av --delete *.json out/bin/
+	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd	
+	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(AMD_BINARY_NAME) ./cmd	
+	rsync -av --delete public/ out/public/
+	rsync -av --delete plugins/ out/plugins/
+	rsync -av --delete templates/*.html out/templates/
+	rsync -av --delete certs/ out/certs/
+	rsync -av --delete *.json out/
+
+
+## Deploy:
+deploy:
+	rsync -av --delete out/ modula:/root/app/modula
 	
 clean: ## Remove build related file
 	rm -fr ./bin
@@ -46,39 +77,11 @@ watch: ## Run the code with cosmtrek/air to have automatic reload on changes
 	$(eval PACKAGE_NAME=$(shell head -n 1 go.mod | cut -d ' ' -f2))
 	docker run -it --rm -w /go/src/$(PACKAGE_NAME) -v $(shell pwd):/go/src/$(PACKAGE_NAME) -p $(SERVICE_PORT):$(SERVICE_PORT) cosmtrek/air
 
-## Test:
-test: ## Run the tests of the project
-	touch testdb/create_tests.db	
-	touch ./testdb/testing2348263.db
-	rm ./testdb/*.db
-	
-	touch ./backups/tmp.zip
-	rm ./backups/*.zip
-	$(GOTEST) -v -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
-	rm ./testdb/*.db
-
-test1: ## Run router tests
-	$(GOTEST) -run TestServeTemplate  -outputdir tests -trace trace.out -mutexprofile mutex.out -memprofile mem.out -cpuprofile cpu.out -coverprofile cover.out -blockprofile block.out -benchmem 
-
-coverage: ## Run the tests of the project and export the coverage
-	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...
-	$(GOCMD) tool cover -func profile.cov
-ifeq ($(EXPORT_RESULT), true)
-	GO111MODULE=off go get -u github.com/AlekSi/gocov-xml
-	GO111MODULE=off go get -u github.com/axw/gocov/gocov
-	gocov convert profile.cov | gocov-xml > coverage.xml
-endif
-
 ## SQL
 sqlc: ## Run sqlc generate in sql directory
 	cd ./sql && sqlc generate && echo "generated coded successfully"
 
-## DB 
-db: 
-	sqlite3 reference .read 
 	
-
-
 ## Lint:
 lint: lint-go lint-dockerfile lint-yaml ## Run all available linters
 

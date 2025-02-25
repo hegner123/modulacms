@@ -21,9 +21,9 @@ INSERT INTO datatypes (
     type,
     author,
     author_id,
+    history,
     date_created,
-    date_modified,
-    template
+    date_modified
     ) VALUES (
   ?,?,?,?,?,?,?,?,?
     ) RETURNING *;
@@ -37,9 +37,9 @@ set route_id = ?,
     type = ?,
     author = ?,
     author_id = ?,
+    history = ?,
     date_created = ?,
-    date_modified = ?,
-    template = ?
+    date_modified = ?
     WHERE datatype_id = ?
     RETURNING *;
 
@@ -50,6 +50,6 @@ WHERE datatype_id = ?;
 
 
 -- name: ListDatatypeByRouteId :many
-SELECT datatype_id, route_id, parent_id, label, type, template
+SELECT datatype_id, route_id, parent_id, label, type
 FROM datatypes
 WHERE route_id = ?;
