@@ -38,3 +38,8 @@ func CheckDb(path string) error {
 
 	return nil
 }
+
+func CheckCerts(path string) bool{
+    b:=true
+    return b
+}
