@@ -56,3 +56,4 @@ testing-config.json
 certs/
 *.pem
 config.json
+bookmark.md
