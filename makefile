@@ -1,7 +1,8 @@
 GOCMD=go
 GOTEST=$(GOCMD) test
 GOVET=$(GOCMD) vet
-BINARY_NAME=modulacms
+AMD_BINARY_NAME=modulacms-amd
+X86_BINARY_NAME=modulacms-x86
 VERSION?=0.0.0
 SERVICE_PORT?=8080
 DOCKER_REGISTRY?= #if set it should finished by /
@@ -45,18 +46,24 @@ dev: ## Prepare binaries and templates in src dir for faster iteration
 	npm run build 
 	rsync -av --delete templates/styles/*.css public/styles
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o $(BINARY_NAME) ./cmd
+	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	npm run build 
 	npx tailwindcss -o ./public/styles/output.css 
-	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(BINARY_NAME) ./cmd	
-	rsync -av --delete public/ out/bin/public/
-	rsync -av --delete plugins/ out/bin/plugins/
-	rsync -av --delete templates/*.html out/bin/templates/
-	rsync -av --delete certs/ out/bin/certs/
-	rsync -av --delete *.json out/bin/
+	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd	
+	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(AMD_BINARY_NAME) ./cmd	
+	rsync -av --delete public/ out/public/
+	rsync -av --delete plugins/ out/plugins/
+	rsync -av --delete templates/*.html out/templates/
+	rsync -av --delete certs/ out/certs/
+	rsync -av --delete *.json out/
+
+
+## Deploy:
+deploy:
+	rsync -av --delete out/ modula:/root/app/modula
 	
 clean: ## Remove build related file
 	rm -fr ./bin

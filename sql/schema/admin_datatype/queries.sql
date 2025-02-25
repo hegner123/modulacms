@@ -44,10 +44,9 @@ INSERT INTO admin_datatypes (
     author_id,
     date_created,
     date_modified,
-    history,
-    template
+    history
     ) VALUES (
-?,?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
@@ -61,8 +60,7 @@ set admin_route_id = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
-    history = ?,
-    template = ?
+    history = ?
     WHERE admin_dt_id = ?
     RETURNING *;
 
@@ -71,12 +69,12 @@ DELETE FROM admin_datatypes
 WHERE admin_dt_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?;
 
 -- name: GetRootAdminDtByAdminRtId :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?
 ORDER BY admin_dt_id;

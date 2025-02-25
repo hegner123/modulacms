@@ -19,7 +19,6 @@ type AdminDatatypes struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 }
 
 type AdminFields struct {
@@ -34,7 +33,6 @@ type AdminFields struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 }
 
 type AdminRoutes struct {
@@ -48,7 +46,6 @@ type AdminRoutes struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     interface{}    `json:"template"`
 }
 
 type ContentData struct {

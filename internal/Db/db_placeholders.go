@@ -24,7 +24,6 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Slug:         "/test1" + modify,
 		Title:        "Test",
 		Status:       0,
-		Template:     "page.html",
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})

@@ -4,8 +4,8 @@ type ConfigOption string
 type Endpoint string
 
 const (
-	oauthAuthURL  Endpoint = "oauth_auth_url"
-	oauthTokenURL Endpoint = "oauth_token_url"
+	OauthAuthURL  Endpoint = "oauth_auth_url"
+	OauthTokenURL Endpoint = "oauth_token_url"
 )
 
 type Config struct {

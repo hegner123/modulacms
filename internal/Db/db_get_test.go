@@ -98,7 +98,6 @@ func TestGetAdminRoute(t *testing.T) {
 		Status:       int64(0),
 		DateCreated:  adminRouteRow.DateCreated,
 		DateModified: adminRouteRow.DateModified,
-		Template:     ns("modula_base.html"),
 	}
 
 	if reflect.DeepEqual(adminRouteRow, expected) {

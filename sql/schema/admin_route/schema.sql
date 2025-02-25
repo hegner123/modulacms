@@ -16,6 +16,5 @@ CREATE TABLE IF NOT EXISTS admin_routes (
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
-    template TEXT DEFAULT "modula_base.html" NOT NULL
+    history TEXT
 );

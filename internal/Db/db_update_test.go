@@ -50,7 +50,7 @@ func TestUpdateAdminRoute(t *testing.T) {
 		Title:        "Test",
 		Status:       0,
 		DateModified: ns(times),
-		Template:     ns("page.html"),
+		History:      ns(""),
 		Slug_2:       "/test",
 	}
 
@@ -72,6 +72,7 @@ func TestUpdateRoute(t *testing.T) {
 		Slug:         "/test",
 		Title:        "Test",
 		Status:       0,
+		History:      ns(""),
 		DateModified: ns(times),
 		Slug_2:       "/test",
 	}
@@ -97,6 +98,7 @@ func TestUpdateField(t *testing.T) {
 		Type:         "text",
 		Author:       "system",
 		AuthorID:     1,
+		History:      ns(""),
 		DateModified: ns(times),
 		DateCreated:  ns(times),
 		FieldID:      id,
@@ -121,6 +123,7 @@ func TestUpdateDatatype(t *testing.T) {
 		Type:         "text",
 		Author:       "system",
 		AuthorID:     1,
+        History:      ns(""),
 		DateModified: ns(times),
 		DatatypeID:   id,
 	}

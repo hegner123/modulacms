@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -64,25 +65,24 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func OauthSettings() {
+func OauthSettings(c config.Config) {
 	ctx := context.Background()
 	conf := &oauth2.Config{
-		ClientID:     "YOUR_CLIENT_ID",
-		ClientSecret: "YOUR_CLIENT_SECRET",
-		Scopes:       []string{"SCOPE1", "SCOPE2"},
+		ClientID:     c.Oauth_Client_Id,
+		ClientSecret: c.Oauth_Client_Secret,
+		Scopes:       c.Oauth_Scopes,
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://provider.com/o/oauth2/auth",
-			TokenURL: "https://provider.com/o/oauth2/token",
+			AuthURL:  c.Oauth_Endpoint[config.OauthAuthURL],
+			TokenURL: c.Oauth_Endpoint[config.OauthAuthURL],
 		},
 	}
-	// use PKCE to protect against CSRF attacks
-	// https://www.ietf.org/archive/id/draft-ietf-oauth-security-topics-22.html#name-countermeasures-6
 	verifier := oauth2.GenerateVerifier()
 
 	// Redirect user to consent page to ask for permission
 	// for the scopes specified above.
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(verifier))
-	fmt.Printf("Visit the URL for the auth dialog: %v", url)
+    fmt.Printf("Visit the URL for the auth dialog:\n %v", url)
+
 
 	// Use the authorization code that is pushed to the redirect
 	// URL. Exchange will do the handshake to retrieve the

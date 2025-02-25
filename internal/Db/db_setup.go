@@ -34,7 +34,6 @@ func createSetupInserts(db *sql.DB, ctx context.Context) error {
 		Slug:         "/",
 		Title:        "Admin",
 		Status:       0,
-		Template:     "modula_base.html",
 		DateCreated:  ns(times),
 		DateModified: ns(times),
 	})

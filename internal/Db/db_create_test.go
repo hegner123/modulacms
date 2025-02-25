@@ -62,7 +62,6 @@ func TestCreateAdminRoute(t *testing.T) {
 		Status:       0,
 		DateCreated:  ns(times),
 		DateModified: ns(times),
-		Template:     "page.html",
 	})
 
 	expected := mdb.AdminRoutes{
@@ -73,7 +72,6 @@ func TestCreateAdminRoute(t *testing.T) {
 		Status:       0,
 		DateCreated:  ns(times),
 		DateModified: ns(times),
-		Template:     "page.html",
 	}
 
 	if reflect.DeepEqual(insertedAdminRoute, expected) {

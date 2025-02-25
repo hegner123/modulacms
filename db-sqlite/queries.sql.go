@@ -242,11 +242,10 @@ INSERT INTO admin_datatypes (
     author_id,
     date_created,
     date_modified,
-    history,
-    template
+    history
     ) VALUES (
-?,?,?,?,?,?,?,?,?,?
-    ) RETURNING admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template
+?,?,?,?,?,?,?,?,?
+    ) RETURNING admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history
 `
 
 type CreateAdminDatatypeParams struct {
@@ -259,7 +258,6 @@ type CreateAdminDatatypeParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 }
 
 func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) (AdminDatatypes, error) {
@@ -273,7 +271,6 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 	)
 	var i AdminDatatypes
 	err := row.Scan(
@@ -287,7 +284,6 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -303,11 +299,10 @@ INSERT INTO admin_fields (
     author_id,
     date_created,
     date_modified,
-    history,
-    template
+    history
     ) VALUES (
-    ?,?,?,?,?,?,?,?,?,?,?
-    ) RETURNING admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history, template
+    ?,?,?,?,?,?,?,?,?,?
+    ) RETURNING admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history
 `
 
 type CreateAdminFieldParams struct {
@@ -321,7 +316,6 @@ type CreateAdminFieldParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 }
 
 func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) (AdminFields, error) {
@@ -336,7 +330,6 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 	)
 	var i AdminFields
 	err := row.Scan(
@@ -351,7 +344,6 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -365,11 +357,10 @@ title,
 status,
 date_created,
 date_modified,
-history,
-template
+history
     ) VALUES (
-?,?,?,?,?,?,?,?,?
-    ) RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history, template
+?,?,?,?,?,?,?,?
+    ) RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history
 `
 
 type CreateAdminRouteParams struct {
@@ -381,7 +372,6 @@ type CreateAdminRouteParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     interface{}    `json:"template"`
 }
 
 func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) (AdminRoutes, error) {
@@ -394,7 +384,6 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 	)
 	var i AdminRoutes
 	err := row.Scan(
@@ -408,7 +397,6 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -1032,7 +1020,7 @@ func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
 }
 
 const getAdminDatatype = `-- name: GetAdminDatatype :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template FROM admin_datatypes
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
 WHERE admin_dt_id = ? LIMIT 1
 `
 
@@ -1050,7 +1038,6 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, adminDtID int64) (AdminD
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -1068,7 +1055,7 @@ func (q *Queries) GetAdminDatatypeId(ctx context.Context, adminDtID int64) (int6
 }
 
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history, template FROM admin_fields
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
 `
 
@@ -1087,7 +1074,6 @@ func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int64) (AdminF
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -1105,7 +1091,7 @@ func (q *Queries) GetAdminFieldId(ctx context.Context, adminFieldID int64) (int6
 }
 
 const getAdminRouteById = `-- name: GetAdminRouteById :one
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history, template FROM admin_routes
+SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 WHERE admin_route_id = ? LIMIT 1
 `
 
@@ -1123,13 +1109,12 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (Ad
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
 
 const getAdminRouteBySlug = `-- name: GetAdminRouteBySlug :one
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history, template FROM admin_routes
+SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
@@ -1147,7 +1132,6 @@ func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRo
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -1250,7 +1234,7 @@ func (q *Queries) GetField(ctx context.Context, fieldID int64) (Fields, error) {
 }
 
 const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template FROM admin_datatypes
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
 WHERE type = "GLOBALS" LIMIT 1
 `
 
@@ -1268,7 +1252,6 @@ func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
-		&i.Template,
 	)
 	return i, err
 }
@@ -1323,7 +1306,7 @@ func (q *Queries) GetMediaDimension(ctx context.Context, mdID int64) (MediaDimen
 }
 
 const getRootAdminDtByAdminRtId = `-- name: GetRootAdminDtByAdminRtId :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?
 ORDER BY admin_dt_id
@@ -1335,7 +1318,7 @@ type GetRootAdminDtByAdminRtIdRow struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Template     sql.NullString `json:"template"`
+	History      sql.NullString `json:"history"`
 }
 
 func (q *Queries) GetRootAdminDtByAdminRtId(ctx context.Context, adminRouteID sql.NullInt64) (GetRootAdminDtByAdminRtIdRow, error) {
@@ -1347,7 +1330,7 @@ func (q *Queries) GetRootAdminDtByAdminRtId(ctx context.Context, adminRouteID sq
 		&i.ParentID,
 		&i.Label,
 		&i.Type,
-		&i.Template,
+		&i.History,
 	)
 	return i, err
 }
@@ -1520,7 +1503,7 @@ func (q *Queries) GetUserId(ctx context.Context, email string) (int64, error) {
 }
 
 const listAdminDatatype = `-- name: ListAdminDatatype :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template FROM admin_datatypes
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
 ORDER BY admin_dt_id
 `
 
@@ -1544,7 +1527,6 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
-			&i.Template,
 		); err != nil {
 			return nil, err
 		}
@@ -1560,7 +1542,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 }
 
 const listAdminDatatypeByRouteId = `-- name: ListAdminDatatypeByRouteId :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, template
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?
 `
@@ -1571,7 +1553,7 @@ type ListAdminDatatypeByRouteIdRow struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Template     sql.NullString `json:"template"`
+	History      sql.NullString `json:"history"`
 }
 
 func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID sql.NullInt64) ([]ListAdminDatatypeByRouteIdRow, error) {
@@ -1589,7 +1571,7 @@ func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID s
 			&i.ParentID,
 			&i.Label,
 			&i.Type,
-			&i.Template,
+			&i.History,
 		); err != nil {
 			return nil, err
 		}
@@ -1605,7 +1587,7 @@ func (q *Queries) ListAdminDatatypeByRouteId(ctx context.Context, adminRouteID s
 }
 
 const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template FROM admin_datatypes
+SELECT admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
 WHERE parent_id = ?
 `
 
@@ -1629,7 +1611,6 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.Nu
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
-			&i.Template,
 		); err != nil {
 			return nil, err
 		}
@@ -1693,7 +1674,7 @@ func (q *Queries) ListAdminDatatypeTree(ctx context.Context) ([]ListAdminDatatyp
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history, template FROM admin_fields
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM admin_fields
 ORDER BY admin_field_id
 `
 
@@ -1718,7 +1699,6 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
-			&i.Template,
 		); err != nil {
 			return nil, err
 		}
@@ -1734,7 +1714,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 }
 
 const listAdminFieldByAdminDtId = `-- name: ListAdminFieldByAdminDtId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
 FROM admin_fields
 WHERE parent_id = ?
 `
@@ -1746,7 +1726,7 @@ type ListAdminFieldByAdminDtIdRow struct {
 	Label        interface{}    `json:"label"`
 	Data         interface{}    `json:"data"`
 	Type         interface{}    `json:"type"`
-	Template     sql.NullString `json:"template"`
+	History      sql.NullString `json:"history"`
 }
 
 func (q *Queries) ListAdminFieldByAdminDtId(ctx context.Context, parentID sql.NullInt64) ([]ListAdminFieldByAdminDtIdRow, error) {
@@ -1765,7 +1745,7 @@ func (q *Queries) ListAdminFieldByAdminDtId(ctx context.Context, parentID sql.Nu
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Template,
+			&i.History,
 		); err != nil {
 			return nil, err
 		}
@@ -1781,7 +1761,7 @@ func (q *Queries) ListAdminFieldByAdminDtId(ctx context.Context, parentID sql.Nu
 }
 
 const listAdminFieldByRouteId = `-- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
 FROM admin_fields
 WHERE admin_route_id = ?
 `
@@ -1793,7 +1773,7 @@ type ListAdminFieldByRouteIdRow struct {
 	Label        interface{}    `json:"label"`
 	Data         interface{}    `json:"data"`
 	Type         interface{}    `json:"type"`
-	Template     sql.NullString `json:"template"`
+	History      sql.NullString `json:"history"`
 }
 
 func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.NullInt64) ([]ListAdminFieldByRouteIdRow, error) {
@@ -1812,7 +1792,7 @@ func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Template,
+			&i.History,
 		); err != nil {
 			return nil, err
 		}
@@ -1828,7 +1808,7 @@ func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.
 }
 
 const listAdminRoute = `-- name: ListAdminRoute :many
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history, template FROM admin_routes
+SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 ORDER BY slug
 `
 
@@ -1852,7 +1832,6 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
-			&i.Template,
 		); err != nil {
 			return nil, err
 		}
@@ -2405,10 +2384,9 @@ set admin_route_id = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
-    history = ?,
-    template = ?
+    history = ?
     WHERE admin_dt_id = ?
-    RETURNING admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history, template
+    RETURNING admin_dt_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified, history
 `
 
 type UpdateAdminDatatypeParams struct {
@@ -2421,7 +2399,6 @@ type UpdateAdminDatatypeParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 	AdminDtID    int64          `json:"admin_dt_id"`
 }
 
@@ -2436,7 +2413,6 @@ func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDataty
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 		arg.AdminDtID,
 	)
 	return err
@@ -2453,10 +2429,9 @@ set admin_route_id = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
-    history =?,
-    template = ?
+    history =?
     WHERE admin_field_id = ?
-    RETURNING admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history, template
+    RETURNING admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history
 `
 
 type UpdateAdminFieldParams struct {
@@ -2470,7 +2445,6 @@ type UpdateAdminFieldParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     sql.NullString `json:"template"`
 	AdminFieldID int64          `json:"admin_field_id"`
 }
 
@@ -2486,7 +2460,6 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 		arg.AdminFieldID,
 	)
 	return err
@@ -2501,10 +2474,9 @@ set slug = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
-    history = ?,
-    template = ?
+    history = ?
     WHERE slug = ?
-    RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history, template
+    RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history
 `
 
 type UpdateAdminRouteParams struct {
@@ -2516,7 +2488,6 @@ type UpdateAdminRouteParams struct {
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	Template     interface{}    `json:"template"`
 	Slug_2       string         `json:"slug_2"`
 }
 
@@ -2530,7 +2501,6 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
-		arg.Template,
 		arg.Slug_2,
 	)
 	return err
