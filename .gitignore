@@ -55,3 +55,4 @@ testing-config.json
 #certs
 certs/
 *.pem
+*.json
