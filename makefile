@@ -43,10 +43,8 @@ endif
 
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
-	npm run build 
-	rsync -av --delete templates/styles/*.css public/styles
-	npx tailwindcss -o ./public/styles/output.css 
 	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
+	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o $(AMD_BINARY_NAME) ./cmd	
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/

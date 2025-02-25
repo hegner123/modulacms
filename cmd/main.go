@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	auth "github.com/hegner123/modulacms/internal/Auth"
 	cli "github.com/hegner123/modulacms/internal/Cli"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
@@ -15,16 +16,31 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-var useSSL, dbFileExists bool
+type ModulaInit struct {
+	UseSSL         bool
+	DbFileExists   bool
+	ContentVersion bool
+	Certificates   bool
+	Key            bool
+}
+
+var InitStatus ModulaInit
 var Env = config.Config{}
 
 func main() {
-	useSSL, dbFileExists = InitFileCheck()
+	InitStatus := InitFileCheck()
+	authFlag := flag.Bool("auth", false, "Run oauth tests")
+	updateFlag := flag.Bool("update", false, "Update binaries and plugins.")
 	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
 	versionFlag := flag.Bool("v", false, "Print version and exit")
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
 	verbose := flag.Bool("V", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
+	flag.Parse()
+
+	if *updateFlag {
+		fmt.Printf("TODO: update flag")
+	}
 
 	if *alphaFlag {
 		_, err := os.Open("test.txt")
@@ -33,15 +49,18 @@ func main() {
 		}
 	}
 
-	flag.Parse()
 	if *versionFlag {
-		message,err := utility.GetVersion()
-        if err!=nil {
-            return
-        }
+		message, err := utility.GetVersion()
+		if err != nil {
+			return
+		}
 		log.Fatal(message)
 	}
-	config := config.LoadConfig(verbose, "")
+	Env = config.LoadConfig(verbose, "")
+	if *authFlag {
+		auth.OauthSettings(Env)
+        os.Exit(0)
+	}
 
 	if *reset {
 		fmt.Println("Reset DB:")
@@ -59,70 +78,76 @@ func main() {
 		}
 		defer clientDB.Close()
 	}*/
-	if !dbFileExists || *reset {
+	if !InitStatus.DbFileExists || *reset {
 		dbc := db.GetDb(db.Database{})
-
-		//err = (dbc, ctx, verbose, "modula.db")
-
+		if dbc.Err != nil {
+			fmt.Printf("%v", dbc.Err)
+			os.Exit(0)
+		}
 		defer dbc.Connection.Close()
 	}
 
 	if *cliFlag {
-		cli.CliRun()
-		os.Exit(0)
+		r := cli.CliRun()
+		if !r {
+			os.Exit(0)
+		}
 	}
 
 	mux := http.NewServeMux()
 	api := api_v1.ApiServerV1{
-        DeleteHandler: router.ApiDeleteHandler,
-        GetHandler: router.ApiGetHandler,
-        PutHandler: router.ApiPutHandler,
-        PostHandler: router.ApiPostHandler,
-    }
+		DeleteHandler: router.ApiDeleteHandler,
+		GetHandler:    router.ApiGetHandler,
+		PutHandler:    router.ApiPutHandler,
+		PostHandler:   router.ApiPostHandler,
+	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		router.Router(w, r, &api)
 
 	})
 
-	if !useSSL {
+	if !InitStatus.UseSSL {
 
-		log.Printf("\n\nServer is running at https://localhost:%s\n", config.SSL_Port)
-		err := http.ListenAndServeTLS(":"+config.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)
+		log.Printf("\n\nServer is running at https://localhost:%s\n", Env.SSL_Port)
+		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
-	log.Printf("\n\nServer is running at http://localhost:%s\n", config.Port)
-	err := http.ListenAndServe(":"+config.Port, mux)
+	log.Printf("\n\nServer is running at http://localhost:%s\n", Env.Port)
+	err := http.ListenAndServe(":"+Env.Port, mux)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
 
-func InitFileCheck() (bool, bool) {
-	useSSL := true
-	dbFileExists := true
+func InitFileCheck() ModulaInit {
+	Status := ModulaInit{}
 	_, err := os.Open("modula.db")
 	if err != nil {
-		dbFileExists = false
+		Status.DbFileExists = false
 	}
-	var cert, key bool
 
 	_, err = os.Open("./certs/localhost.crt")
-	cert = true
+	Status.Certificates = true
 	if err != nil {
 		fmt.Printf("Error opening localhost.crt %s\n", err)
-		cert = false
+		Status.Certificates = false
 	}
 	_, err = os.Open("./certs/localhost.key")
-	key = true
+	Status.Key = true
 	if err != nil {
 		fmt.Printf("Error opening localhost.key %s\n", err)
-		key = false
+		Status.Key = false
 	}
-	if !cert || !key {
-		useSSL = false
+	if !Status.Certificates || !Status.Key {
+		Status.UseSSL = false
 	}
-	return useSSL, dbFileExists
+	_, err = os.Stat("./content.version")
+	if err != nil {
+		Status.ContentVersion = false
+
+	}
+	return Status
 }

@@ -33,9 +33,9 @@ func TestMain(m *testing.M) {
 }
 
 func TestInit(t *testing.T) {
-	res1, res2 := InitFileCheck()
+	s := InitFileCheck()
 
-	if !res1 || !res2 {
+	if !s.UseSSL || !s.DbFileExists {
 		t.FailNow()
 	}
 

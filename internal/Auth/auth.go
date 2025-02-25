@@ -64,6 +64,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
         
 	})
 }
+var Verifier string
 
 func OauthSettings(c config.Config) {
 	ctx := context.Background()
@@ -76,11 +77,11 @@ func OauthSettings(c config.Config) {
 			TokenURL: c.Oauth_Endpoint[config.OauthAuthURL],
 		},
 	}
-	verifier := oauth2.GenerateVerifier()
+	Verifier := oauth2.GenerateVerifier()
 
 	// Redirect user to consent page to ask for permission
 	// for the scopes specified above.
-	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(verifier))
+	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(Verifier))
     fmt.Printf("Visit the URL for the auth dialog:\n %v", url)
 
 
@@ -92,7 +93,7 @@ func OauthSettings(c config.Config) {
 	if _, err := fmt.Scan(&code); err != nil {
 		log.Fatal(err)
 	}
-	tok, err := conf.Exchange(ctx, code, oauth2.VerifierOption(verifier))
+	tok, err := conf.Exchange(ctx, code, oauth2.VerifierOption(Verifier))
 	if err != nil {
 		log.Fatal(err)
 	}

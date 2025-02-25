@@ -51,12 +51,14 @@ type model struct {
 	err          error
 }
 
-func CliRun() {
+var CliContinue bool = false
+
+func CliRun() bool {
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		log.Fatal(err)
 	}
-
+	return CliContinue
 }
 
 func initialModel() model {

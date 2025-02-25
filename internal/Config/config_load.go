@@ -10,6 +10,8 @@ import (
 
 var file *os.File
 var err error
+var config Config
+var Env Config
 
 func LoadConfig(verbose *bool, altConfig string) Config {
 	if altConfig != "" {
@@ -34,12 +36,12 @@ func LoadConfig(verbose *bool, altConfig string) Config {
 		log.Fatal("Error reading file:", err)
 	}
 
-	var config Config
 	if err := json.Unmarshal(bytes, &config); err != nil {
 		log.Fatal("Error parsing JSON:", err)
 	}
 	if *verbose {
 		fmt.Printf("%s\n", bytes)
 	}
+	Env = config
 	return config
 }
