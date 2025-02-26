@@ -1,4 +1,4 @@
-package mTemplate
+package ctree
 
 import (
 	"fmt"
@@ -8,12 +8,11 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-
 type (
-	Scanner func(parent, child mdb.AdminDatatypes) int
+	Scanner func(parent, child mdb.ListAdminDatatypeByRouteIdRow) int
 )
 
-func Scan(parent, child mdb.AdminDatatypes) int {
+func Scan(parent, child mdb.ListAdminDatatypeByRouteIdRow) int {
 	if parent.AdminDtID == child.ParentID.Int64 {
 		return 1
 	} else {
@@ -27,7 +26,7 @@ type Tree struct {
 }
 
 type Node struct {
-	Val     mdb.AdminDatatypes
+	Val     mdb.ListAdminDatatypeByRouteIdRow
 	Juniors []*Node
 	Fields  []mdb.AdminFields
 }
@@ -38,11 +37,11 @@ func NewTree(scanFunction Scanner) *Tree {
 	}
 }
 
-func (tree *Tree) Add(dt mdb.AdminDatatypes) {
+func (tree *Tree) Add(dt mdb.ListAdminDatatypeByRouteIdRow) {
 	tree.Root = tree.Root.Add(tree.fn, dt)
 }
 
-func (parent *Node) Add(compare Scanner, child mdb.AdminDatatypes) *Node {
+func (parent *Node) Add(compare Scanner, child mdb.ListAdminDatatypeByRouteIdRow) *Node {
 	if parent == nil {
 		return &Node{Val: child}
 	}
@@ -87,11 +86,11 @@ func (node *Node) AddTreeFields(dbName string) {
 				dbName = ""
 			}
 			dbc := db.GetDb(db.Database{})
-            defer dbc.Connection.Close()
-			field,err := db.GetAdminField(dbc.Connection, dbc.Context, fieldId)
-            if err != nil { 
-                utility.LogError("failed to : ", err)
-            }
+			defer dbc.Connection.Close()
+			field, err := db.GetAdminField(dbc.Connection, dbc.Context, fieldId)
+			if err != nil {
+				utility.LogError("failed to : ", err)
+			}
 			node.Fields = append(node.Fields, *field)
 		}
 	}
@@ -100,15 +99,15 @@ func (node *Node) AddTreeFields(dbName string) {
 	}
 }
 
-func dbGetChildren(res []int64, id int64, dbName string, message string) []int64 {
+func DbGetChildren(res []int64, id int64, dbName string, message string) []int64 {
 	if dbName == "" {
 		dbName = ""
 	}
-    dbc:= db.GetDb(db.Database{})
-	rows,err := db.ListAdminDatatypeChildren(dbc.Connection,dbc.Context, id)
-    if err != nil { 
-        utility.LogError("failed to : ", err)
-    }
+	dbc := db.GetDb(db.Database{})
+	rows, err := db.ListAdminDatatypeChildren(dbc.Connection, dbc.Context, id)
+	if err != nil {
+		utility.LogError("failed to : ", err)
+	}
 	if len(*rows) == 0 {
 		return res
 	} else {
@@ -116,23 +115,26 @@ func dbGetChildren(res []int64, id int64, dbName string, message string) []int64
 			res = append(res, row.AdminDtID)
 			l := fmt.Sprintf("Rows %d ", len(*rows))
 			s := fmt.Sprintf("row index:%d, id %d, %s\n\n", i, id, l)
-			res = dbGetChildren(res, int64(row.AdminDtID), dbName, s)
+			res = DbGetChildren(res, int64(row.AdminDtID), dbName, s)
 		}
 		return res
 	}
 }
 
-func dbGetFields(res []int64, id int, dbName string, message string) []int64 {
-	if dbName == "" {
+func dbGetFields(res []int64, id int, dbPath string, message string) []int64 {
+	var dbName string
+	if dbPath == "" {
 		dbName = ""
+	} else {
+		dbName = dbPath
 	}
-    
-	dbc := db.GetDb(db.Database{}) 
+
+	dbc := db.GetDb(db.Database{Src: dbName})
 	defer dbc.Connection.Close()
-	rows,err := db.ListAdminFieldByAdminDtId(dbc.Connection, dbc.Context, int64(id))
-    if err != nil { 
-        fmt.Printf("failed to : %v", err)
-    }
+	rows, err := db.ListAdminFieldByAdminDtId(dbc.Connection, dbc.Context, int64(id))
+	if err != nil {
+		fmt.Printf("failed to : %v", err)
+	}
 	for _, row := range *rows {
 		res = append(res, row.AdminFieldID)
 	}

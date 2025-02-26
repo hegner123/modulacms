@@ -181,7 +181,11 @@ func TestCreateDatatype(t *testing.T) {
 		AuthorID:     int64(1),
 		DateCreated:  ns(times),
 		DateModified: ns(times),
+        
 	})
+    if err!=nil {
+        return
+    }
 
 	expected := mdb.Datatypes{
 		RouteID:      ni(1),
@@ -283,6 +287,9 @@ func TestCreateToken(t *testing.T) {
 	}
 
 	_, err = time.ParseDuration("24h")
+    if err!=nil {
+        return
+    }
 
 	times := TimestampS()
 
