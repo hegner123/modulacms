@@ -17,7 +17,6 @@ func createBaseAdminRoutes(dbName string) error {
 		Status:       0,
 		DateCreated:  db.Ns(db.TimestampS()),
 		DateModified: db.Ns(db.TimestampS()),
-		Template:     "modula_base.html",
 	}
 	db.CreateAdminRoute(dbc.Connection, dbc.Context, homePage)
 	return nil

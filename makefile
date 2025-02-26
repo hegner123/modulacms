@@ -4,7 +4,7 @@ GOVET=$(GOCMD) vet
 AMD_BINARY_NAME=modulacms-amd
 X86_BINARY_NAME=modulacms-x86
 VERSION?=0.0.0
-SERVICE_PORT?=8080
+SERVICE_PORT?=3000
 DOCKER_REGISTRY?= #if set it should finished by /
 EXPORT_RESULT?=false # for CI please set EXPORT_RESULT to true
 
@@ -59,6 +59,10 @@ build: ## Build your project and put the output binary in out/bin/
 ## Deploy:
 deploy:
 	rsync -av --delete out/ modula:/root/app/modula
+
+## Release:
+release:
+	echo "Release update placeholder"
 	
 clean: ## Remove build related file
 	rm -fr ./bin
