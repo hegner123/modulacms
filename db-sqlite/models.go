@@ -37,7 +37,6 @@ type AdminFields struct {
 
 type AdminRoutes struct {
 	AdminRouteID int64          `json:"admin_route_id"`
-	AdminDtID    sql.NullInt64  `json:"admin_dt_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`

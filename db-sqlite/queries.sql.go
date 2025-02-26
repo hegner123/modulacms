@@ -360,7 +360,7 @@ date_modified,
 history
     ) VALUES (
 ?,?,?,?,?,?,?,?
-    ) RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history
+    ) RETURNING admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history
 `
 
 type CreateAdminRouteParams struct {
@@ -388,7 +388,6 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.AdminDtID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
@@ -1091,7 +1090,7 @@ func (q *Queries) GetAdminFieldId(ctx context.Context, adminFieldID int64) (int6
 }
 
 const getAdminRouteById = `-- name: GetAdminRouteById :one
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 WHERE admin_route_id = ? LIMIT 1
 `
 
@@ -1100,7 +1099,6 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (Ad
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.AdminDtID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
@@ -1114,7 +1112,7 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (Ad
 }
 
 const getAdminRouteBySlug = `-- name: GetAdminRouteBySlug :one
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
@@ -1123,7 +1121,6 @@ func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRo
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
-		&i.AdminDtID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
@@ -1808,7 +1805,7 @@ func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.
 }
 
 const listAdminRoute = `-- name: ListAdminRoute :many
-SELECT admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
 ORDER BY slug
 `
 
@@ -1823,7 +1820,6 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 		var i AdminRoutes
 		if err := rows.Scan(
 			&i.AdminRouteID,
-			&i.AdminDtID,
 			&i.Slug,
 			&i.Title,
 			&i.Status,
@@ -2476,7 +2472,7 @@ set slug = ?,
     date_modified = ?,
     history = ?
     WHERE slug = ?
-    RETURNING admin_route_id, admin_dt_id, slug, title, status, author, author_id, date_created, date_modified, history
+    RETURNING admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history
 `
 
 type UpdateAdminRouteParams struct {

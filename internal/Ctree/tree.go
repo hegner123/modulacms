@@ -1,6 +1,7 @@
 package ctree
 
 import (
+	"encoding/json"
 	"fmt"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
@@ -22,13 +23,13 @@ func Scan(parent, child mdb.ListAdminDatatypeByRouteIdRow) int {
 
 type Tree struct {
 	fn   Scanner
-	Root *Node
+	Root *Node `json:"root"`
 }
 
 type Node struct {
-	Val     mdb.ListAdminDatatypeByRouteIdRow
-	Juniors []*Node
-	Fields  []mdb.AdminFields
+	Val      mdb.ListAdminDatatypeByRouteIdRow `json:"node"`
+	Children []*Node                           `json:"children"`
+	Fields   []mdb.AdminFields                 `json:"fields"`
 }
 
 func NewTree(scanFunction Scanner) *Tree {
@@ -47,10 +48,10 @@ func (parent *Node) Add(compare Scanner, child mdb.ListAdminDatatypeByRouteIdRow
 	}
 	switch r := compare(parent.Val, child); {
 	case r == 1:
-		parent.Juniors = append(parent.Juniors, &Node{Val: child})
+		parent.Children = append(parent.Children, &Node{Val: child})
 	case r == 0:
-		for i := 0; i < len(parent.Juniors); i++ {
-			parent.Juniors[i].Add(compare, child)
+		for i := 0; i < len(parent.Children); i++ {
+			parent.Children[i].Add(compare, child)
 		}
 	}
 
@@ -69,7 +70,7 @@ func (node *Node) PrintTree(level int) {
 	for _, v := range node.Fields {
 		fmt.Printf("%s%d (%s)\n", "|"+indent, v.AdminFieldID, v.Label)
 	}
-	for _, junior := range node.Juniors {
+	for _, junior := range node.Children {
 		junior.PrintTree(level + 1)
 	}
 }
@@ -94,7 +95,7 @@ func (node *Node) AddTreeFields(dbName string) {
 			node.Fields = append(node.Fields, *field)
 		}
 	}
-	for _, junior := range node.Juniors {
+	for _, junior := range node.Children {
 		junior.AddTreeFields(dbName)
 	}
 }
@@ -139,4 +140,40 @@ func dbGetFields(res []int64, id int, dbPath string, message string) []int64 {
 		res = append(res, row.AdminFieldID)
 	}
 	return res
+
+}
+
+func BuildTree(p string) ([]byte, error) {
+	var dbName string
+	if p == "" {
+		dbName = ""
+	} else {
+		dbName = p
+	}
+
+	tree := Tree{fn: Scan}
+
+	dbc := db.GetDb(db.Database{Src: dbName})
+	if dbc.Err != nil {
+		return nil, dbc.Err
+	}
+	adts, err := db.ListAdminDatatypeByAdminRouteId(dbc.Connection, dbc.Context, int64(1))
+	if err != nil {
+		return nil, err
+	}
+	a := *adts
+
+	tree.Add(a[0])
+	for i := 1; i < len(a); i++ {
+		v := a[i]
+		tree.Root.Add(tree.fn, v)
+
+	}
+	tree.Root.AddTreeFields(dbName)
+
+	tp, err := json.Marshal(tree)
+	if err != nil {
+		return nil, err
+	}
+	return tp, nil
 }

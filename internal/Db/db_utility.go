@@ -25,7 +25,7 @@ func CopyDb(dbName string, useDefault bool) (string, error) {
 		fmt.Printf("Couldn't create file")
 	}
 	if useDefault {
-		srcSQLName = backup + "test.sql"
+		srcSQLName = backup + "tests.sql"
 	}
 
 	dstCmd := exec.Command("sqlite3", dstDbName, ".read "+srcSQLName)
@@ -34,9 +34,11 @@ func CopyDb(dbName string, useDefault bool) (string, error) {
 		fmt.Printf("Command failed: %s\n", err)
 	}
 
-	if err != nil {
-		return "", err
-	}
+	fmt.Printf("dbName: %v\n", dbName)
+	fmt.Printf("useDefault: %v\n", useDefault)
+	fmt.Printf("times: %v\n", times)
+	fmt.Printf("srcSQLName: %v\n", srcSQLName)
+	fmt.Printf("dstDbName: %v\n", dstDbName)
 
 	return dstDbName, nil
 }
@@ -140,4 +142,3 @@ func ReadNullString(ns sql.NullString) string {
 		return "NIll"
 	}
 }
-

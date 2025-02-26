@@ -1,7 +1,6 @@
 package db
 
 import (
-	"fmt"
 	"testing"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
@@ -12,6 +11,7 @@ var updateTestTable string
 func TestUpdateDBCopy(t *testing.T) {
 	testTable, err := CopyDb("update_tests.db", false)
 	if err != nil {
+		t.Fatal(err)
 		return
 	}
 
@@ -33,7 +33,7 @@ func TestUpdateUser(t *testing.T) {
 
 	_, err := UpdateUser(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 		return
 	}
 
@@ -56,7 +56,7 @@ func TestUpdateAdminRoute(t *testing.T) {
 
 	_, err := UpdateAdminRoute(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 		return
 
 	}
@@ -70,7 +70,7 @@ func TestUpdateRoute(t *testing.T) {
 		Author:       "system",
 		AuthorID:     1,
 		Slug:         "/test",
-		Title:        "Test",
+		Title:        "TEST",
 		Status:       0,
 		History:      ns(""),
 		DateModified: ns(times),
@@ -79,7 +79,7 @@ func TestUpdateRoute(t *testing.T) {
 
 	_, err := UpdateRoute(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+		t.Fatal(err)
 		return
 	}
 
@@ -107,7 +107,7 @@ func TestUpdateField(t *testing.T) {
 	_, err := UpdateField(db.Connection, db.Context, params)
 
 	if err != nil {
-		t.FailNow()
+        t.Fatal(err) 
 		return
 	}
 }
@@ -131,9 +131,7 @@ func TestUpdateDatatype(t *testing.T) {
 	_, err := UpdateDatatype(db.Connection, db.Context, params)
 
 	if err != nil {
-		fmt.Println(err)
-		fmt.Println()
-		t.FailNow()
+        t.Fatal(err) 
 		return
 	}
 
@@ -151,7 +149,7 @@ func TestUpdateMedia(t *testing.T) {
 
 	_, err := UpdateMedia(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+        t.Fatal(err) 
 		return
 	}
 
@@ -168,7 +166,7 @@ func TestUpdateMediaDimension(t *testing.T) {
 
 	_, err := UpdateMediaDimension(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+        t.Fatal(err) 
 		return
 	}
 
@@ -185,7 +183,7 @@ func TestUpdateTables(t *testing.T) {
 
 	_, err := UpdateTable(db.Connection, db.Context, params)
 	if err != nil {
-		t.FailNow()
+        t.Fatal(err) 
 		return
 	}
 }

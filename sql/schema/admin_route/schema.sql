@@ -1,8 +1,6 @@
 CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id INTEGER
         PRIMARY KEY,
-    admin_dt_id INTEGER
-    REFERENCES admin_datatypes (admin_dt_id),
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
