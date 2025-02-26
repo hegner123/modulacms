@@ -40,6 +40,26 @@ func CreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRoutePar
 	return insertedAdminRoute
 }
 
+func CreateContentData(db *sql.DB, ctx context.Context, s mdb.CreateContentDataParams) mdb.ContentData {
+	queries := mdb.New(db)
+	insertedContentData, err := queries.CreateContentData(ctx, s)
+	if err != nil {
+		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
+	}
+
+	return insertedContentData
+}
+
+func CreateContentField(db *sql.DB, ctx context.Context, s mdb.CreateContentFieldParams) mdb.ContentFields {
+	queries := mdb.New(db)
+	insertedContentField, err := queries.CreateContentField(ctx, s)
+	if err != nil {
+		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
+	}
+
+	return insertedContentField
+}
+
 func CreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatypes, error) {
 	queries := mdb.New(db)
 	insertedDatatypes, err := queries.CreateDatatype(ctx, s)

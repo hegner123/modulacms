@@ -56,7 +56,7 @@ FROM admin_fields
 WHERE admin_route_id = ?;
 
 
--- name: ListAdminFieldByAdminDtId :many
+-- name: ListAdminFieldsByDatatypeID :many
 SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
 FROM admin_fields
 WHERE parent_id = ?;

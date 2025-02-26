@@ -41,7 +41,7 @@ func GetRootAdIdByAdRtId(db *sql.DB, ctx context.Context, adminRtId int64) (*sql
 	return &res, nil
 }
 
-func GetAdminField(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminFields, error) {
+func GetAdminFieldID(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminFields, error) {
 	queries := mdb.New(db)
 	fetchedAdminField, err := queries.GetAdminField(ctx, id)
 	if err != nil {

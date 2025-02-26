@@ -1710,53 +1710,6 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 	return items, nil
 }
 
-const listAdminFieldByAdminDtId = `-- name: ListAdminFieldByAdminDtId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
-FROM admin_fields
-WHERE parent_id = ?
-`
-
-type ListAdminFieldByAdminDtIdRow struct {
-	AdminFieldID int64          `json:"admin_field_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        interface{}    `json:"label"`
-	Data         interface{}    `json:"data"`
-	Type         interface{}    `json:"type"`
-	History      sql.NullString `json:"history"`
-}
-
-func (q *Queries) ListAdminFieldByAdminDtId(ctx context.Context, parentID sql.NullInt64) ([]ListAdminFieldByAdminDtIdRow, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminFieldByAdminDtId, parentID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListAdminFieldByAdminDtIdRow
-	for rows.Next() {
-		var i ListAdminFieldByAdminDtIdRow
-		if err := rows.Scan(
-			&i.AdminFieldID,
-			&i.AdminRouteID,
-			&i.ParentID,
-			&i.Label,
-			&i.Data,
-			&i.Type,
-			&i.History,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const listAdminFieldByRouteId = `-- name: ListAdminFieldByRouteId :many
 SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
 FROM admin_fields
@@ -1782,6 +1735,53 @@ func (q *Queries) ListAdminFieldByRouteId(ctx context.Context, adminRouteID sql.
 	var items []ListAdminFieldByRouteIdRow
 	for rows.Next() {
 		var i ListAdminFieldByRouteIdRow
+		if err := rows.Scan(
+			&i.AdminFieldID,
+			&i.AdminRouteID,
+			&i.ParentID,
+			&i.Label,
+			&i.Data,
+			&i.Type,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminFieldsByDatatypeID = `-- name: ListAdminFieldsByDatatypeID :many
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
+FROM admin_fields
+WHERE parent_id = ?
+`
+
+type ListAdminFieldsByDatatypeIDRow struct {
+	AdminFieldID int64          `json:"admin_field_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         interface{}    `json:"data"`
+	Type         interface{}    `json:"type"`
+	History      sql.NullString `json:"history"`
+}
+
+func (q *Queries) ListAdminFieldsByDatatypeID(ctx context.Context, parentID sql.NullInt64) ([]ListAdminFieldsByDatatypeIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldsByDatatypeID, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAdminFieldsByDatatypeIDRow
+	for rows.Next() {
+		var i ListAdminFieldsByDatatypeIDRow
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.AdminRouteID,

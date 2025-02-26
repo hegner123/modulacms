@@ -12,6 +12,5 @@ func TestTreeParse(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-    fmt.Println(string(b))
-
+	fmt.Println(string(b))
 }

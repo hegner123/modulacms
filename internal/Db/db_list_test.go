@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"testing"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
@@ -22,16 +20,26 @@ func TestDBCopy(t *testing.T) {
 	listTestTable = testTable
 }
 
-func TestListUser(t *testing.T) {
+func TestListAdminDatatype(t *testing.T) {
 	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.Users, error) {
-		return ListUser(db.Connection, db.Context)
+	_, err := func() (*[]mdb.AdminDatatypes, error) {
+		return ListAdminDatatypes(db.Connection, db.Context)
 	}()
 	if err != nil {
 		t.FailNow()
 		return
 	}
+}
 
+func TestListAdminField(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.AdminFields, error) {
+		return ListAdminFields(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
 }
 
 func TestListAdminRoute(t *testing.T) {
@@ -46,10 +54,10 @@ func TestListAdminRoute(t *testing.T) {
 	}
 }
 
-func TestListRoute(t *testing.T) {
+func TestListContentData(t *testing.T) {
 	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.Routes, error) {
-		return ListRoute(db.Connection, db.Context)
+	_, err := func() (*[]mdb.ContentData, error) {
+		return ListContentData(db.Connection, db.Context)
 	}()
 	if err != nil {
 		t.FailNow()
@@ -57,46 +65,10 @@ func TestListRoute(t *testing.T) {
 	}
 }
 
-func TestListMedia(t *testing.T) {
+func TestListContentField(t *testing.T) {
 	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.Media, error) {
-		return ListMedia(db.Connection, db.Context)
-	}()
-
-	if err != nil {
-		t.FailNow()
-		return
-	}
-}
-
-func TestListField(t *testing.T) {
-	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.Fields, error) {
-		return ListField(db.Connection, db.Context)
-	}()
-	if err != nil {
-		t.FailNow()
-		return
-	}
-
-}
-
-func TestListMediaDimension(t *testing.T) {
-	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.MediaDimensions, error) {
-		return ListMediaDimension(db.Connection, db.Context)
-	}()
-	if err != nil {
-		t.FailNow()
-		return
-	}
-
-}
-
-func TestListTables(t *testing.T) {
-	db := GetDb(Database{Src: listTestTable})
-	_, err := func() (*[]mdb.Tables, error) {
-		return ListTable(db.Connection, db.Context)
+	_, err := func() (*[]mdb.ContentFields, error) {
+		return ListContentField(db.Connection, db.Context)
 	}()
 	if err != nil {
 		t.FailNow()
@@ -126,6 +98,17 @@ func TestListDatatypeByRoute(t *testing.T) {
 	}
 }
 
+func TestListField(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Fields, error) {
+		return ListField(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}
+
 func TestListFieldByRoute(t *testing.T) {
 	db := GetDb(Database{Src: listTestTable})
 	_, err := func() (*[]mdb.ListFieldByRouteIdRow, error) {
@@ -135,7 +118,40 @@ func TestListFieldByRoute(t *testing.T) {
 		t.FailNow()
 		return
 	}
+}
 
+func TestListMedia(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Media, error) {
+		return ListMedia(db.Connection, db.Context)
+	}()
+
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}
+
+func TestListMediaDimension(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.MediaDimensions, error) {
+		return ListMediaDimension(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}
+
+func TestListRoute(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Routes, error) {
+		return ListRoute(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
 }
 
 func TestListChildrenOfRoute(t *testing.T) {
@@ -171,33 +187,35 @@ func TestListChildrenOfRoute(t *testing.T) {
 	}
 }
 
-
-func LCopyDb(dbName string, useDefault bool) (string, error) {
-	times := TimestampS()
-	backup := "../../testdb/backups/"
-	base := "../../testdb/"
-	db := strings.TrimSuffix(dbName, ".db")
-	srcSQLName := backup + db + ".sql"
-
-	dstDbName := base + "testing" + times + dbName
-	_, err := os.Create(dstDbName)
+func TestListTables(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Tables, error) {
+		return ListTable(db.Connection, db.Context)
+	}()
 	if err != nil {
-		fmt.Printf("Couldn't create file")
+		t.FailNow()
+		return
 	}
-	if useDefault {
-		srcSQLName = backup + "test.sql"
-	}
-
-	dstCmd := exec.Command("sqlite3", dstDbName, ".read "+srcSQLName)
-	_, err = dstCmd.CombinedOutput()
-	if err != nil {
-		fmt.Printf("Command failed: %s\n", err)
-	}
-
-	if err != nil {
-		return "", err
-	}
-
-	return dstDbName, nil
 }
 
+func TestListTokens(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Tokens, error) {
+		return ListTokens(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}
+
+func TestListUser(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Users, error) {
+		return ListUser(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}

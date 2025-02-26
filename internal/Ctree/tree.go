@@ -132,7 +132,7 @@ func dbGetFields(res []int64, id int, dbPath string, message string) []int64 {
 
 	dbc := db.GetDb(db.Database{Src: dbName})
 	defer dbc.Connection.Close()
-	rows, err := db.ListAdminFieldByAdminDtId(dbc.Connection, dbc.Context, int64(id))
+	rows, err := db.ListAdminFieldsByDatatypeID(dbc.Connection, dbc.Context, int64(id))
 	if err != nil {
 		fmt.Printf("failed to : %v", err)
 	}

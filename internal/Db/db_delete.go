@@ -40,7 +40,27 @@ func DeleteAdminRoute(db *sql.DB, ctx context.Context, slug string) (*string, er
 	return &s, nil
 }
 
-func DeleteDataType(db *sql.DB, ctx context.Context, id int64) (*string, error) {
+func DeleteContentData(db *sql.DB, ctx context.Context, id int64) (*string, error) {
+	queries := mdb.New(db)
+	err := queries.DeleteContentData(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete content data %d ", id)
+	}
+	s := fmt.Sprintf("Deleted ContentData %d successfully", id)
+	return &s, nil
+}
+
+func DeleteContentField(db *sql.DB, ctx context.Context, id int64) (*string, error) {
+	queries := mdb.New(db)
+	err := queries.DeleteContentField(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to delete content field %d ", id)
+	}
+	s := fmt.Sprintf("Deleted Content Field %d successfully", id)
+	return &s, nil
+}
+
+func DeleteDatatype(db *sql.DB, ctx context.Context, id int64) (*string, error) {
 	queries := mdb.New(db)
 	err := queries.DeleteDatatype(ctx, id)
 	if err != nil {
