@@ -101,6 +101,17 @@ func CreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDime
 
 	return insertedMediaDimension
 }
+func (d Database) CreateRole(db *sql.DB, ctx context.Context, s CreateRoleParams) *Roles {
+	queries := mdb.New(db)
+	params := mdb.CreateRoleParams{Label: s.Label, Permissions: s.Permissions}
+	row, err := queries.CreateRole(ctx, params)
+	if err != nil {
+		fmt.Printf("failed to CreateRoute.\n %v\n", err)
+	}
+	res := Roles{RoleID: row.RoleID, Label: row.Label, Permissions: row.Permissions}
+
+	return &res
+}
 
 func CreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Routes {
 	queries := mdb.New(db)

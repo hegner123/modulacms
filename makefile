@@ -115,6 +115,10 @@ docker-release: ## Release the container with tag latest and version
 	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):latest
 	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):$(VERSION)
 
+## Docker:
+docker-db:
+	cd ./sql && docker-compose 
+
 ## Help:
 help: ## Show this help.
 	@echo ''

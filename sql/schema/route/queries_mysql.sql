@@ -1,46 +1,50 @@
-
 -- name: GetRoute :one
-SELECT * FROM route
-WHERE slug = ? LIMIT 1;
+SELECT * FROM routes
+WHERE slug = ? 
+LIMIT 1;
+
+-- name: CountRoute :one
+SELECT COUNT(*) 
+FROM routes;
 
 -- name: GetRouteId :one
-SELECT id FROM route
-WHERE slug = ? LIMIT 1;
+SELECT route_id 
+FROM routes
+WHERE slug = ? 
+LIMIT 1;
+
+-- name: GetLastRoute :one
+SELECT * FROM routes WHERE route_id = LAST_INSERT_ID();
 
 -- name: ListRoute :many
-SELECT * FROM route
+SELECT * FROM routes
 ORDER BY slug;
 
--- name: CreateRoute :one
-INSERT INTO route (
-author,
-authorid,
-slug,
-title,
-status,
-datecreated,
-datemodified, 
-content, 
-template
-) VALUES (
-?,?,?,?,?,?,?,?,?
-) RETURNING *;
-
+-- name: CreateRoute :exec
+INSERT INTO routes (
+    author,
+    author_id,
+    slug,
+    title,
+    status,
+    history,
+    date_created,
+    date_modified
+) VALUES (?,?,?,?,?,?,?,?);
 
 -- name: UpdateRoute :exec
-UPDATE route
-set slug = ?,
+UPDATE routes
+SET slug = ?,
     title = ?,
     status = ?,
-    content = ?, 
-    template = ?,
+    history = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
-    WHERE slug = ?
-    RETURNING *;
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE slug = ?;
 
 -- name: DeleteRoute :exec
-DELETE FROM route
+DELETE FROM routes
 WHERE slug = ?;
+

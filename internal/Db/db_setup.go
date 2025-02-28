@@ -26,7 +26,7 @@ func createSetupInserts(db *sql.DB, ctx context.Context) error {
 		Name:         "system",
 		Email:        "system@modulacms.com",
 		Hash:         "has",
-		Role:         "admin",
+		Role:         int64(1),
 	})
 	CreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "system",

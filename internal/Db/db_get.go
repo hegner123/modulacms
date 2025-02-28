@@ -94,6 +94,14 @@ func GetMediaDimension(db *sql.DB, ctx context.Context, id int64) (*mdb.MediaDim
 	}
 	return &fetchedMediaDimension, nil
 }
+func GetRole(db *sql.DB, ctx context.Context, id int64) (*mdb.Roles, error) {
+	queries := mdb.New(db)
+	fetchedRole, err := queries.GetRole(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &fetchedRole, nil
+}
 
 func GetRoute(db *sql.DB, ctx context.Context, slug string) (*mdb.Routes, error) {
 	queries := mdb.New(db)

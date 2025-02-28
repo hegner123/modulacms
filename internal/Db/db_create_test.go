@@ -227,7 +227,7 @@ func TestCreateContentField(t *testing.T) {
 		ContentDataID:  int64(1),
 		AdminFieldID:   int64(1),
 		FieldValue:     "Poop on floor and watch human clean up pee in human's bed until he cleans the litter box damn that dog so poop on the floor, break a planter, sprint, eat own hair, vomit hair, hiss, chirp at birds, eat a squirrel, hide from fireworks, lick toe beans, attack christmas tree. ",
-        History:        ns(""),
+		History:        ns(""),
 		DateCreated:    ns(times),
 		DateModified:   ns(times),
 	})
@@ -237,7 +237,7 @@ func TestCreateContentField(t *testing.T) {
 		ContentDataID:  int64(1),
 		AdminFieldID:   int64(1),
 		FieldValue:     "Poop on floor and watch human clean up pee in human's bed until he cleans the litter box damn that dog so poop on the floor, break a planter, sprint, eat own hair, vomit hair, hiss, chirp at birds, eat a squirrel, hide from fireworks, lick toe beans, attack christmas tree. ",
-        History:        ns(""),
+		History:        ns(""),
 		DateCreated:    ns(times),
 		DateModified:   ns(times),
 	}
@@ -315,6 +315,22 @@ func TestCreateMediaDimension(t *testing.T) {
 		t.FailNow()
 	}
 }
+func TestCreateRole(t *testing.T) {
+	db := GetDb(Database{Src: CreateTestTable})
+
+	insertedRole := db.CreateRole(db.Connection, db.Context, mdb.CreateRoleParams{
+		Label: "admin",
+	})
+
+	expected := mdb.Roles{
+		Label: "admin",
+	}
+
+	if reflect.DeepEqual(insertedRole, expected) {
+		t.FailNow()
+	}
+}
+
 func TestCreateRoute(t *testing.T) {
 	times := TimestampS()
 	db := GetDb(Database{Src: CreateTestTable})
@@ -414,7 +430,7 @@ func TestCreateUser(t *testing.T) {
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
 		Hash:         "has",
-		Role:         "admin",
+		Role:         int64(1),
 	})
 
 	expected := mdb.Users{
@@ -424,7 +440,7 @@ func TestCreateUser(t *testing.T) {
 		Name:         "systemtest",
 		Email:        "test2@modulacmstest.com",
 		Hash:         "has",
-		Role:         "admin",
+		Role:         int64(1),
 	}
 
 	if reflect.DeepEqual(insertedUser, expected) {

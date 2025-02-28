@@ -12,6 +12,17 @@
 - [ ] Bucket: Deployment require cloud storage endpoint
 - [ ] Reverse Proxy Bucket endpoints
 
+## Db Functions
+- [ ] DB MySql Queries
+- [ ] DB MySql Schema
+- [ ] DB MySql Functions
+- [ ] DB PostgreSQL Queries
+- [ ] DB PostgreSQL Schema
+- [ ] DB PostgreSQL Functions
+- [x] DB Sqlite Queries
+- [x] DB Sqlite Schema 
+- [x] DB Sqlite Functions
+
 ## Proof of concept requires
 - [x] Go Server
 - [x] Go DB connection

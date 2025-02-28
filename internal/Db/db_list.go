@@ -90,6 +90,14 @@ func ListMediaDimension(db *sql.DB, ctx context.Context) (*[]mdb.MediaDimensions
 	}
 	return &fetchedMediaDimensions, nil
 }
+func ListRoles(db *sql.DB, ctx context.Context) (*[]mdb.Roles, error) {
+	queries := mdb.New(db)
+	fetchedRoles, err := queries.ListRole(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes: %v\n", err)
+	}
+	return &fetchedRoles, nil
+}
 
 func ListRoute(db *sql.DB, ctx context.Context) (*[]mdb.Routes, error) {
 	queries := mdb.New(db)

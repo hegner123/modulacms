@@ -3,8 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 )
 
 type DbStatus string
@@ -15,6 +13,10 @@ const (
 	err    DbStatus = "error"
 )
 
+type Driver interface {
+    GetDb() string
+}
+
 type Database struct {
 	Src            string
 	Status         DbStatus
@@ -24,23 +26,34 @@ type Database struct {
 	Context        context.Context
 }
 
-func (db Database) GetDb(s string) (*sql.DB, context.Context, error) {
-	if db.Status == open {
-		return &sql.DB{}, context.TODO(), errors.New("db_is already open")
-	}
-	db.Context = context.Background()
+type MysqlDatabase struct {
+	Src            string
+	Status         DbStatus
+	Connection     *sql.DB
+	LastConnection string
+	Err            error
+	Context        context.Context
+}
+type PsqlDatabase struct {
+	Src            string
+	Status         DbStatus
+	Connection     *sql.DB
+	LastConnection string
+	Err            error
+	Context        context.Context
+}
+type CreateRoleParams struct {
+	Label       string `json:"label"`
+	Permissions string `json:"permissions"`
+}
 
-	if s == "" {
-		db.Src = "./modula.db"
-	}
-	db.Connection, db.Err = sql.Open("sqlite3", db.Src)
-	if db.Err != nil {
-		fmt.Printf("db exec err db_init 007 : %s\n", err)
-	}
-	v, err := db.Connection.Exec("PRAGMA foreign_keys = ON;")
-	if err != nil {
-		fmt.Printf("db exec err db_init 008 : %s\n", err)
-	}
-	fmt.Println(v)
-	return db.Connection, db.Context, nil
+type CreateRouteParams struct {
+	Author       string         `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 }

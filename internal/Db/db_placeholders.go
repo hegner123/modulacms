@@ -16,7 +16,7 @@ func insertPlaceholders(db *sql.DB, ctx context.Context, modify string) {
 		Name:         "system",
 		Email:        "system@modulacms.com" + modify,
 		Hash:         "has",
-		Role:         "admin",
+		Role:         int64(1),
 	})
 	CreateAdminRoute(db, ctx, mdb.CreateAdminRouteParams{
 		Author:       "systeminit" + modify,

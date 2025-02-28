@@ -121,16 +121,22 @@ type MediaDimensions struct {
 	AspectRatio sql.NullString `json:"aspect_ratio"`
 }
 
+type Roles struct {
+	RoleID      int64  `json:"role_id"`
+	Label       string `json:"label"`
+	Permissions string `json:"permissions"`
+}
+
 type Routes struct {
-	RouteID      int64          `json:"route_id"`
-	Author       interface{}    `json:"author"`
+	RouteID      interface{}    `json:"route_id"`
+	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 type Tables struct {
@@ -155,7 +161,8 @@ type Users struct {
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
-	Role         string         `json:"role"`
+	Role         int64          `json:"role"`
+	References   interface{}    `json:"references"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }

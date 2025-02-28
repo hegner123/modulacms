@@ -12,13 +12,14 @@ import (
 	"path/filepath"
 	"strings"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed sql/*
 var SqlFiles embed.FS
 
-func GetDb(dbSrc Database) Database {
+func (dbSrc Database) GetDb() TestDbDriver {
 	ctx := context.Background()
 
 	if dbSrc.Src == "" {
@@ -27,20 +28,89 @@ func GetDb(dbSrc Database) Database {
 	db, err := sql.Open("sqlite3", dbSrc.Src)
 	if err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
-		return Database{Err: err}
+        dbSrc.Err = err
+		return dbSrc
 	}
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 008 : %s\n", err)
-		return Database{Err: err}
+        dbSrc.Err = err
+		return dbSrc
 	}
-	return Database{Connection: db, Context: ctx, Err: nil}
+    dbSrc.Connection = db
+    dbSrc.Context = ctx
+    dbSrc.Err = nil
+	return dbSrc
+}
+func (dbSrc MysqlDatabase) GetDb() TestDbDriver {
+	ctx := context.Background()
+
+	if dbSrc.Src == "" {
+		dbSrc.Src = "./modula.db"
+	}
+	db, err := sql.Open("sqlite3", dbSrc.Src)
+	if err != nil {
+		fmt.Printf("db exec err db_init 007 : %s\n", err)
+        dbSrc.Err = err
+		return dbSrc
+	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		fmt.Printf("db exec err db_init 008 : %s\n", err)
+        dbSrc.Err = err
+		return dbSrc
+	}
+    dbSrc.Connection = db
+    dbSrc.Context = ctx
+    dbSrc.Err = nil
+	return dbSrc
+}
+func (dbSrc PsqlDatabase) GetDb() TestDbDriver {
+	ctx := context.Background()
+
+	if dbSrc.Src == "" {
+		dbSrc.Src = "./modula.db"
+	}
+	db, err := sql.Open("sqlite3", dbSrc.Src)
+	if err != nil {
+		fmt.Printf("db exec err db_init 007 : %s\n", err)
+        dbSrc.Err = err
+		return dbSrc
+	}
+	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	if err != nil {
+		fmt.Printf("db exec err db_init 008 : %s\n", err)
+        dbSrc.Err = err
+		return dbSrc
+	}
+    dbSrc.Connection = db
+    dbSrc.Context = ctx
+    dbSrc.Err = nil
+	return dbSrc
+}
+
+func DbConfig(env config.Config) TestDbDriver {
+	switch env.Db_Driver {
+	case config.Sqlite:
+		d := Database{Src: env.Db_Name}
+		dbc := d.GetDb()
+		return dbc
+	case config.Mysql:
+		d := MysqlDatabase{Src: env.Db_Name}
+		dbc := d.GetDb()
+		return dbc
+	case config.Psql:
+		d := PsqlDatabase{Src: env.Db_Name}
+		dbc := d.GetDb()
+		return dbc
+	}
+	return nil
 }
 
 func (init Database) InitDb(Db Database, v *bool, database string) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
-        return err
+		return err
 	}
 	if _, err := Db.Connection.ExecContext(Db.Context, tables); err != nil {
 		return err

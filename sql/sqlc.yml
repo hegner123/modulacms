@@ -1,0 +1,29 @@
+version: "2"
+sql:
+  - engine: "sqlite"
+    schema: "schema/**/schema.sql"
+    queries: "schema/**/queries.sql"
+    gen:
+      go:
+        package: "mdb"
+        emit_json_tags: true
+        out: "../db-sqlite"
+        emit_exact_table_names: true
+  - engine: "postgresql"
+    schema: "schema/**/schema_psql.sql"
+    queries: "schema/**/queries_psql.sql"
+    gen:
+      go:
+        package: "mdbp"
+        emit_json_tags: true
+        out: "../db-psql"
+        emit_exact_table_names: true
+  - engine: "mysql"
+    schema: "schema/**/schema_mysql.sql"
+    queries: "schema/**/queries_mysql.sql"
+    gen:
+      go:
+        package: "mdbm"
+        emit_json_tags: true
+        out: "../db-mysql"
+        emit_exact_table_names: true

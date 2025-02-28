@@ -69,7 +69,7 @@ const checkRouteExists = `-- name: CheckRouteExists :one
 SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?)
 `
 
-func (q *Queries) CheckRouteExists(ctx context.Context, routeID int64) (int64, error) {
+func (q *Queries) CheckRouteExists(ctx context.Context, routeID interface{}) (int64, error) {
 	row := q.db.QueryRowContext(ctx, checkRouteExists, routeID)
 	var column_1 int64
 	err := row.Scan(&column_1)
@@ -725,6 +725,30 @@ func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimen
 	return i, err
 }
 
+const createRole = `-- name: CreateRole :one
+;
+
+INSERT INTO roles (
+    label,
+    permissions
+) VALUES (
+?,?
+)
+RETURNING role_id, label, permissions
+`
+
+type CreateRoleParams struct {
+	Label       string `json:"label"`
+	Permissions string `json:"permissions"`
+}
+
+func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) (Roles, error) {
+	row := q.db.QueryRowContext(ctx, createRole, arg.Label, arg.Permissions)
+	var i Roles
+	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
+	return i, err
+}
+
 const createRoute = `-- name: CreateRoute :one
 INSERT INTO routes (
 author,
@@ -741,14 +765,14 @@ date_modified
 `
 
 type CreateRouteParams struct {
-	Author       interface{}    `json:"author"`
+	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Routes, error) {
@@ -851,7 +875,7 @@ INSERT INTO users (
 ) VALUES (
 ?,?,?,?,?,?,?
 )
-RETURNING user_id, username, name, email, hash, role, date_created, date_modified
+RETURNING user_id, username, name, email, hash, role, "references", date_created, date_modified
 `
 
 type CreateUserParams struct {
@@ -861,7 +885,7 @@ type CreateUserParams struct {
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
-	Role         string         `json:"role"`
+	Role         int64          `json:"role"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
@@ -882,6 +906,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.References,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -975,6 +1000,16 @@ WHERE md_id = ?
 
 func (q *Queries) DeleteMediaDimension(ctx context.Context, mdID int64) error {
 	_, err := q.db.ExecContext(ctx, deleteMediaDimension, mdID)
+	return err
+}
+
+const deleteRole = `-- name: DeleteRole :exec
+DELETE FROM roles
+WHERE role_id = ?
+`
+
+func (q *Queries) DeleteRole(ctx context.Context, roleID int64) error {
+	_, err := q.db.ExecContext(ctx, deleteRole, roleID)
 	return err
 }
 
@@ -1302,6 +1337,18 @@ func (q *Queries) GetMediaDimension(ctx context.Context, mdID int64) (MediaDimen
 	return i, err
 }
 
+const getRole = `-- name: GetRole :one
+SELECT role_id, label, permissions FROM roles
+WHERE role_id = ? LIMIT 1
+`
+
+func (q *Queries) GetRole(ctx context.Context, roleID int64) (Roles, error) {
+	row := q.db.QueryRowContext(ctx, getRole, roleID)
+	var i Roles
+	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
+	return i, err
+}
+
 const getRootAdminDtByAdminRtId = `-- name: GetRootAdminDtByAdminRtId :one
 SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
@@ -1359,9 +1406,9 @@ SELECT route_id FROM routes
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetRouteId(ctx context.Context, slug string) (int64, error) {
+func (q *Queries) GetRouteId(ctx context.Context, slug string) (interface{}, error) {
 	row := q.db.QueryRowContext(ctx, getRouteId, slug)
-	var route_id int64
+	var route_id interface{}
 	err := row.Scan(&route_id)
 	return route_id, err
 }
@@ -1446,7 +1493,7 @@ func (q *Queries) GetTokensByUserId(ctx context.Context, userID int64) ([]Tokens
 }
 
 const getUser = `-- name: GetUser :one
-SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users
+SELECT user_id, username, name, email, hash, role, "references", date_created, date_modified FROM users
 WHERE user_id = ? LIMIT 1
 `
 
@@ -1460,6 +1507,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (Users, error) {
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.References,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -1467,7 +1515,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (Users, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users
+SELECT user_id, username, name, email, hash, role, "references", date_created, date_modified FROM users
 WHERE email = ? LIMIT 1
 `
 
@@ -1481,6 +1529,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, erro
 		&i.Email,
 		&i.Hash,
 		&i.Role,
+		&i.References,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -2232,6 +2281,34 @@ func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimensions, er
 	return items, nil
 }
 
+const listRole = `-- name: ListRole :many
+SELECT role_id, label, permissions FROM roles 
+ORDER BY role_id
+`
+
+func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
+	rows, err := q.db.QueryContext(ctx, listRole)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Roles
+	for rows.Next() {
+		var i Roles
+		if err := rows.Scan(&i.RoleID, &i.Label, &i.Permissions); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRoute = `-- name: ListRoute :many
 SELECT route_id, author, author_id, slug, title, status, history, date_created, date_modified FROM routes
 ORDER BY slug
@@ -2334,7 +2411,7 @@ func (q *Queries) ListTokens(ctx context.Context) ([]Tokens, error) {
 }
 
 const listUser = `-- name: ListUser :many
-SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users 
+SELECT user_id, username, name, email, hash, role, "references", date_created, date_modified FROM users 
 ORDER BY user_id
 `
 
@@ -2354,6 +2431,7 @@ func (q *Queries) ListUser(ctx context.Context) ([]Users, error) {
 			&i.Email,
 			&i.Hash,
 			&i.Role,
+			&i.References,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -2755,6 +2833,24 @@ func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimen
 	return err
 }
 
+const updateRole = `-- name: UpdateRole :exec
+UPDATE roles
+set label=?,
+    permissions=?
+WHERE role_id = ?
+`
+
+type UpdateRoleParams struct {
+	Label       string `json:"label"`
+	Permissions string `json:"permissions"`
+	RoleID      int64  `json:"role_id"`
+}
+
+func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
+	_, err := q.db.ExecContext(ctx, updateRole, arg.Label, arg.Permissions, arg.RoleID)
+	return err
+}
+
 const updateRoute = `-- name: UpdateRoute :exec
 UPDATE routes
 set slug = ?,
@@ -2774,10 +2870,10 @@ type UpdateRouteParams struct {
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
 	History      sql.NullString `json:"history"`
-	Author       interface{}    `json:"author"`
+	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 	Slug_2       string         `json:"slug_2"`
 }
 
@@ -2859,7 +2955,7 @@ type UpdateUserParams struct {
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
-	Role         string         `json:"role"`
+	Role         int64          `json:"role"`
 	UserID       int64          `json:"user_id"`
 }
 
@@ -3106,8 +3202,8 @@ select route_id, slug from routes
 `
 
 type UtilityGetRouteRow struct {
-	RouteID int64  `json:"route_id"`
-	Slug    string `json:"slug"`
+	RouteID interface{} `json:"route_id"`
+	Slug    string      `json:"slug"`
 }
 
 func (q *Queries) UtilityGetRoute(ctx context.Context) ([]UtilityGetRouteRow, error) {

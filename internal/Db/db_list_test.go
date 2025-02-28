@@ -143,6 +143,17 @@ func TestListMediaDimension(t *testing.T) {
 	}
 }
 
+func TestListRoles(t *testing.T) {
+	db := GetDb(Database{Src: listTestTable})
+	_, err := func() (*[]mdb.Roles, error) {
+		return ListRoles(db.Connection, db.Context)
+	}()
+	if err != nil {
+		t.FailNow()
+		return
+	}
+}
+
 func TestListRoute(t *testing.T) {
 	db := GetDb(Database{Src: listTestTable})
 	_, err := func() (*[]mdb.Routes, error) {

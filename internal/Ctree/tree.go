@@ -88,7 +88,7 @@ func (node *Node) AddTreeFields(dbName string) {
 			}
 			dbc := db.GetDb(db.Database{})
 			defer dbc.Connection.Close()
-			field, err := db.GetAdminField(dbc.Connection, dbc.Context, fieldId)
+			field, err := db.GetAdminFieldId(dbc.Connection, dbc.Context, fieldId)
 			if err != nil {
 				utility.LogError("failed to : ", err)
 			}

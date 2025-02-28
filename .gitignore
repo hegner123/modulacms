@@ -25,6 +25,7 @@ node_modules/
 api/
 package-lock.json
 router/
+volumes/
 
 # UI development
 ui

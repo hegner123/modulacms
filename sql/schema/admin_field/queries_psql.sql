@@ -1,61 +1,63 @@
--- name: GetField :one
-SELECT * FROM field
-WHERE id = ? LIMIT 1;
+-- name: GetAdminField :one
+SELECT * FROM admin_fields
+WHERE admin_field_id = ? LIMIT 1;
 
--- name: GetFieldId :one
-SELECT id FROM field
-WHERE id = ? LIMIT 1;
+-- name: CountAdminField :one
+SELECT COUNT(*)
+FROM admin_fields;
 
--- name: ListField :many
-SELECT * FROM field
-ORDER BY id;
+-- name: GetAdminFieldId :one
+SELECT admin_field_id FROM admin_fields
+WHERE admin_field_id = ? LIMIT 1;
 
--- name: ListFieldJoin :many
-SELECT 
-    f1.*,
-    f2.*
-FROM 
-    field f1
-LEFT JOIN 
-    field f2
-ON 
-    f1.fieldid = f2.parentid
-WHERE 
-    f1.routeid = ?;
+-- name: ListAdminField :many
+SELECT * FROM admin_fields
+ORDER BY admin_field_id;
 
-
--- name: CreateField :one
-INSERT INTO field (
-    routeid,
-    parentid,
+-- name: CreateAdminField :one
+INSERT INTO admin_fields (
+    admin_route_id,
+    parent_id,
     label,
     data,
     type,
-    struct,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    date_created,
+    date_modified,
+    history
     ) VALUES (
-    ?,?,?, ?,?,?, ?,?,?,?
+    ?,?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
--- name: UpdateField :exec
-UPDATE field
-set routeid = ?,
-    parentid = ?,
+-- name: UpdateAdminField :exec
+UPDATE admin_fields
+set admin_route_id = ?,
+    parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
-    struct = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
-    WHERE id = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?,
+    history =?
+    WHERE admin_field_id = ?
     RETURNING *;
 
--- name: DeleteField :exec
-DELETE FROM field
-WHERE id = ?;
+-- name: DeleteAdminField :exec
+DELETE FROM admin_fields
+WHERE admin_field_id = ?;
+
+-- name: ListAdminFieldByRouteId :many
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
+FROM admin_fields
+WHERE admin_route_id = ?;
+
+
+-- name: ListAdminFieldsByDatatypeID :many
+SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
+FROM admin_fields
+WHERE parent_id = ?;
+

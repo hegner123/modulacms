@@ -18,26 +18,6 @@ func TestUpdateDBCopy(t *testing.T) {
 	updateTestTable = testTable
 }
 
-func TestUpdateUser(t *testing.T) {
-	times := TimestampS()
-	db := GetDb(Database{Src: updateTestTable})
-
-	id := int64(2)
-	params := mdb.UpdateUserParams{
-		DateModified: ns(times),
-		Name:         "systemupdate",
-		Hash:         "has",
-		Role:         "admin",
-		UserID:       id,
-	}
-
-	_, err := UpdateUser(db.Connection, db.Context, params)
-	if err != nil {
-		t.Fatal(err)
-		return
-	}
-
-}
 
 func TestUpdateAdminRoute(t *testing.T) {
 	times := TimestampS()
@@ -62,24 +42,26 @@ func TestUpdateAdminRoute(t *testing.T) {
 	}
 }
 
-func TestUpdateRoute(t *testing.T) {
+func TestUpdateDatatype(t *testing.T) {
 	times := TimestampS()
 	db := GetDb(Database{Src: updateTestTable})
 
-	params := mdb.UpdateRouteParams{
+	id := int64(1)
+	params := mdb.UpdateDatatypeParams{
+		RouteID:      ni64(1),
+		Label:        "Parent",
+		Type:         "text",
 		Author:       "system",
 		AuthorID:     1,
-		Slug:         "/test",
-		Title:        "TEST",
-		Status:       0,
-		History:      ns(""),
+        History:      ns(""),
 		DateModified: ns(times),
-		Slug_2:       "/test",
+		DatatypeID:   id,
 	}
 
-	_, err := UpdateRoute(db.Connection, db.Context, params)
+	_, err := UpdateDatatype(db.Connection, db.Context, params)
+
 	if err != nil {
-		t.Fatal(err)
+        t.Fatal(err) 
 		return
 	}
 
@@ -112,30 +94,6 @@ func TestUpdateField(t *testing.T) {
 	}
 }
 
-func TestUpdateDatatype(t *testing.T) {
-	times := TimestampS()
-	db := GetDb(Database{Src: updateTestTable})
-
-	id := int64(1)
-	params := mdb.UpdateDatatypeParams{
-		RouteID:      ni64(1),
-		Label:        "Parent",
-		Type:         "text",
-		Author:       "system",
-		AuthorID:     1,
-        History:      ns(""),
-		DateModified: ns(times),
-		DatatypeID:   id,
-	}
-
-	_, err := UpdateDatatype(db.Connection, db.Context, params)
-
-	if err != nil {
-        t.Fatal(err) 
-		return
-	}
-
-}
 
 func TestUpdateMedia(t *testing.T) {
 	db := GetDb(Database{Src: updateTestTable})
@@ -171,6 +129,28 @@ func TestUpdateMediaDimension(t *testing.T) {
 	}
 
 }
+func TestUpdateRoute(t *testing.T) {
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
+
+	params := mdb.UpdateRouteParams{
+		Author:       "system",
+		AuthorID:     1,
+		Slug:         "/test",
+		Title:        "TEST",
+		Status:       0,
+		History:      ns(""),
+		DateModified: ns(times),
+		Slug_2:       "/test",
+	}
+
+	_, err := UpdateRoute(db.Connection, db.Context, params)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
+}
 
 func TestUpdateTables(t *testing.T) {
 	db := GetDb(Database{Src: updateTestTable})
@@ -186,4 +166,24 @@ func TestUpdateTables(t *testing.T) {
         t.Fatal(err) 
 		return
 	}
+}
+func TestUpdateUser(t *testing.T) {
+	times := TimestampS()
+	db := GetDb(Database{Src: updateTestTable})
+
+	id := int64(2)
+	params := mdb.UpdateUserParams{
+		DateModified: ns(times),
+		Name:         "systemupdate",
+		Hash:         "has",
+		Role:         int64(1),
+		UserID:       id,
+	}
+
+	_, err := UpdateUser(db.Connection, db.Context, params)
+	if err != nil {
+		t.Fatal(err)
+		return
+	}
+
 }

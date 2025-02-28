@@ -14,7 +14,7 @@ var getTestTable string
 func TestGetDBCopy(t *testing.T) {
 	testTable, err := CopyDb("get_tests.db", false)
 	if err != nil {
-        t.FailNow()
+		t.FailNow()
 		return
 	}
 
@@ -25,9 +25,9 @@ func TestGetInit(t *testing.T) {
 	db := GetDb(Database{Src: getTestTable})
 
 	file, err := os.ReadFile("./sql/test1.sql")
-    if err!=nil {
-        return
-    }
+	if err != nil {
+		return
+	}
 	s := fmt.Sprintf("%v", file)
 
 	_, err = db.Connection.ExecContext(db.Context, s)
@@ -44,32 +44,6 @@ func TestGetGlobalAdminDatatypeId(t *testing.T) {
 		return
 	}
 	if row.AdminDtID == 0 {
-		t.FailNow()
-	}
-}
-
-func TestGetUser(t *testing.T) {
-	db := GetDb(Database{Src: getTestTable})
-
-	id := int64(1)
-
-	userRow, err := GetUser(db.Connection, db.Context, id)
-	if err != nil {
-		return
-	}
-
-	expected := mdb.Users{
-		UserID:       int64(1),
-		DateCreated:  userRow.DateCreated,
-		DateModified: userRow.DateModified,
-		Username:     "system",
-		Name:         "system",
-		Email:        "system@modulacms.com1",
-		Hash:         "has",
-		Role:         "admin",
-	}
-
-	if reflect.DeepEqual(userRow, expected) {
 		t.FailNow()
 	}
 }
@@ -101,6 +75,32 @@ func TestGetAdminRoute(t *testing.T) {
 	}
 
 	if reflect.DeepEqual(adminRouteRow, expected) {
+		t.FailNow()
+	}
+}
+
+func TestGetField(t *testing.T) {
+	db := GetDb(Database{Src: getTestTable})
+
+	id := int64(2)
+	fieldRow, err := GetField(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
+
+	expected := mdb.Fields{
+		RouteID:      ni(1),
+		ParentID:     ni(1),
+		Label:        "title",
+		Data:         "Test Field",
+		Type:         "text",
+		Author:       ns("system"),
+		AuthorID:     1,
+		DateCreated:  fieldRow.DateCreated,
+		DateModified: fieldRow.DateModified,
+	}
+
+	if reflect.DeepEqual(fieldRow, expected) {
 		t.FailNow()
 	}
 }
@@ -164,32 +164,6 @@ func TestGetMedia(t *testing.T) {
 	}
 }
 
-func TestGetField(t *testing.T) {
-	db := GetDb(Database{Src: getTestTable})
-
-	id := int64(2)
-	fieldRow, err := GetField(db.Connection, db.Context, id)
-	if err != nil {
-		return
-	}
-
-	expected := mdb.Fields{
-		RouteID:      ni(1),
-		ParentID:     ni(1),
-		Label:        "title",
-		Data:         "Test Field",
-		Type:         "text",
-		Author:       ns("system"),
-		AuthorID:     1,
-		DateCreated:  fieldRow.DateCreated,
-		DateModified: fieldRow.DateModified,
-	}
-
-	if reflect.DeepEqual(fieldRow, expected) {
-		t.FailNow()
-	}
-}
-
 func TestGetMediaDimension(t *testing.T) {
 	db := GetDb(Database{Src: getTestTable})
 
@@ -207,6 +181,23 @@ func TestGetMediaDimension(t *testing.T) {
 	}
 
 	if reflect.DeepEqual(mediaDimensionRow, expected) {
+		t.FailNow()
+	}
+}
+func TestGetRole(t *testing.T) {
+	db := GetDb(Database{Src: getTestTable})
+
+	id := int64(1)
+	tableRow, err := GetRole(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
+
+	expected := mdb.Roles{
+		RoleID: int64(1),
+	}
+
+	if reflect.DeepEqual(tableRow, expected) {
 		t.FailNow()
 	}
 }
@@ -236,8 +227,32 @@ func TestGetTokens(t *testing.T) {
 	if err != nil {
 		return
 	}
-    fmt.Println(tokenRow)
-
+	fmt.Println(tokenRow)
 
 }
 
+func TestGetUser(t *testing.T) {
+	db := GetDb(Database{Src: getTestTable})
+
+	id := int64(1)
+
+	userRow, err := GetUser(db.Connection, db.Context, id)
+	if err != nil {
+		return
+	}
+
+	expected := mdb.Users{
+		UserID:       int64(1),
+		DateCreated:  userRow.DateCreated,
+		DateModified: userRow.DateModified,
+		Username:     "system",
+		Name:         "system",
+		Email:        "system@modulacms.com1",
+		Hash:         "has",
+		Role:         int64(1),
+	}
+
+	if reflect.DeepEqual(userRow, expected) {
+		t.FailNow()
+	}
+}
