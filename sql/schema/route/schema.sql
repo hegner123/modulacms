@@ -1,4 +1,4 @@
-CREATE TABLE routes (
+CREATE TABLE IF NOT EXISTS routes (
     route_id SERIAL PRIMARY KEY,
     author TEXT DEFAULT 'system' NOT NULL
         REFERENCES users(username)

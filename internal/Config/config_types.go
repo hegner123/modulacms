@@ -25,6 +25,7 @@ type Config struct {
 	Db_Driver           DbDriver            `json:"db_driver"`
 	Db_URL              string              `json:"db_url"`
 	Db_Name             string              `json:"db_name"`
+	Db_User             string              `json:"db_username"`
 	Db_Password         string              `json:"db_password"`
 	Bucket_Url          string              `json:"bucket_url"`
 	Bucket_Endpoint     string              `json:"bucket_endpoint"`

@@ -3,19 +3,17 @@ package db
 import (
 	"context"
 	"database/sql"
+
+	config "github.com/hegner123/modulacms/internal/Config"
 )
 
 type DbStatus string
 
 const (
-	open   DbStatus = "open"
-	closed DbStatus = "closed"
-	err    DbStatus = "error"
+	Open   DbStatus = "open"
+	Closed DbStatus = "closed"
+	Err    DbStatus = "error"
 )
-
-type Driver interface {
-    GetDb() string
-}
 
 type Database struct {
 	Src            string
@@ -23,6 +21,7 @@ type Database struct {
 	Connection     *sql.DB
 	LastConnection string
 	Err            error
+	Config         config.Config
 	Context        context.Context
 }
 
@@ -32,6 +31,7 @@ type MysqlDatabase struct {
 	Connection     *sql.DB
 	LastConnection string
 	Err            error
+	Config         config.Config
 	Context        context.Context
 }
 type PsqlDatabase struct {
@@ -40,6 +40,7 @@ type PsqlDatabase struct {
 	Connection     *sql.DB
 	LastConnection string
 	Err            error
+	Config         config.Config
 	Context        context.Context
 }
 type CreateRoleParams struct {
@@ -56,4 +57,359 @@ type CreateRouteParams struct {
 	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullTime   `json:"date_created"`
 	DateModified sql.NullTime   `json:"date_modified"`
+}
+
+type ListDatatypeByRouteIdRow struct {
+	DatatypeID int64         `json:"datatype_id"`
+	RouteID    sql.NullInt64 `json:"route_id"`
+	ParentID   sql.NullInt64 `json:"parent_id"`
+	Label      string        `json:"label"`
+	Type       string        `json:"type"`
+}
+
+type ListFieldByRouteIdRow struct {
+	FieldID  int64         `json:"field_id"`
+	RouteID  sql.NullInt64 `json:"route_id"`
+	ParentID sql.NullInt64 `json:"parent_id"`
+	Label    interface{}   `json:"label"`
+	Data     string        `json:"data"`
+	Type     string        `json:"type"`
+}
+
+type ListAdminFieldsByDatatypeIDRow struct {
+	AdminFieldID int64          `json:"admin_field_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         interface{}    `json:"data"`
+	Type         interface{}    `json:"type"`
+	History      sql.NullString `json:"history"`
+}
+type ListAdminDatatypeByRouteIdRow struct {
+	AdminDtID    int64          `json:"admin_dt_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	History      sql.NullString `json:"history"`
+}
+type CreateAdminDatatypeParams struct {
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       string         `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+}
+type CreateAdminFieldParams struct {
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         interface{}    `json:"data"`
+	Type         interface{}    `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+}
+type CreateAdminRouteParams struct {
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+}
+type CreateContentDataParams struct {
+	AdminDtID    int64          `json:"admin_dt_id"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+type CreateContentFieldParams struct {
+	ContentFieldID int64          `json:"content_field_id"`
+	ContentDataID  int64          `json:"content_data_id"`
+	AdminFieldID   int64          `json:"admin_field_id"`
+	FieldValue     string         `json:"field_value"`
+	History        sql.NullString `json:"history"`
+	DateCreated    sql.NullString `json:"date_created"`
+	DateModified   sql.NullString `json:"date_modified"`
+}
+type CreateDatatypeParams struct {
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+type CreateFieldParams struct {
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+type CreateMediaParams struct {
+	Name               sql.NullString `json:"name"`
+	DisplayName        sql.NullString `json:"display_name"`
+	Alt                sql.NullString `json:"alt"`
+	Caption            sql.NullString `json:"caption"`
+	Description        sql.NullString `json:"description"`
+	Class              sql.NullString `json:"class"`
+	Author             interface{}    `json:"author"`
+	AuthorID           int64          `json:"author_id"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
+	Url                sql.NullString `json:"url"`
+	Mimetype           sql.NullString `json:"mimetype"`
+	Dimensions         sql.NullString `json:"dimensions"`
+	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
+	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
+	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
+	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
+}
+type CreateMediaDimensionParams struct {
+	Label       sql.NullString `json:"label"`
+	Width       sql.NullInt64  `json:"width"`
+	Height      sql.NullInt64  `json:"height"`
+	AspectRatio sql.NullString `json:"aspect_ratio"`
+}
+type CreateTokenParams struct {
+	UserID    int64        `json:"user_id"`
+	TokenType string       `json:"token_type"`
+	Token     string       `json:"token"`
+	IssuedAt  string       `json:"issued_at"`
+	ExpiresAt string       `json:"expires_at"`
+	Revoked   sql.NullBool `json:"revoked"`
+}
+type CreateUserParams struct {
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         int64         `json:"role"`
+}
+type ListAdminDatatypeTreeRow struct {
+	ChildID     int64          `json:"child_id"`
+	ChildLabel  string         `json:"child_label"`
+	ParentID    sql.NullInt64  `json:"parent_id"`
+	ParentLabel sql.NullString `json:"parent_label"`
+}
+type ListAdminFieldByRouteIdRow struct {
+	AdminFieldID int64          `json:"admin_field_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         interface{}    `json:"data"`
+	Type         interface{}    `json:"type"`
+	History      sql.NullString `json:"history"`
+}
+type UpdateAdminDatatypeParams struct {
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       string         `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+	AdminDtID    int64          `json:"admin_dt_id"`
+}
+type UpdateAdminFieldParams struct {
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         interface{}    `json:"data"`
+	Type         interface{}    `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+	AdminFieldID int64          `json:"admin_field_id"`
+}
+type UpdateAdminRouteParams struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+	Slug_2       string         `json:"slug_2"`
+}
+type UpdateContentDataParams struct {
+	AdminDtID     int64          `json:"admin_dt_id"`
+	History       sql.NullString `json:"history"`
+	DateCreated   sql.NullString `json:"date_created"`
+	DateModified  sql.NullString `json:"date_modified"`
+	ContentDataID int64          `json:"content_data_id"`
+}
+type UpdateContentFieldParams struct {
+	ContentFieldID   int64          `json:"content_field_id"`
+	ContentDataID    int64          `json:"content_data_id"`
+	AdminFieldID     int64          `json:"admin_field_id"`
+	FieldValue       string         `json:"field_value"`
+	History          sql.NullString `json:"history"`
+	DateCreated      sql.NullString `json:"date_created"`
+	DateModified     sql.NullString `json:"date_modified"`
+	ContentFieldID_2 int64          `json:"content_field_id_2"`
+}
+type UpdateDatatypeParams struct {
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	DatatypeID   int64          `json:"datatype_id"`
+}
+type UpdateFieldParams struct {
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        interface{}    `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Author       interface{}    `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	History      sql.NullString `json:"history"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	FieldID      int64          `json:"field_id"`
+}
+type UpdateMediaParams struct {
+	Name               sql.NullString `json:"name"`
+	DisplayName        sql.NullString `json:"display_name"`
+	Alt                sql.NullString `json:"alt"`
+	Caption            sql.NullString `json:"caption"`
+	Description        sql.NullString `json:"description"`
+	Class              sql.NullString `json:"class"`
+	Author             interface{}    `json:"author"`
+	AuthorID           int64          `json:"author_id"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
+	Url                sql.NullString `json:"url"`
+	Mimetype           sql.NullString `json:"mimetype"`
+	Dimensions         sql.NullString `json:"dimensions"`
+	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
+	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
+	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
+	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
+	MediaID            int64          `json:"media_id"`
+}
+type UpdateMediaDimensionParams struct {
+	Label       sql.NullString `json:"label"`
+	Width       sql.NullInt64  `json:"width"`
+	Height      sql.NullInt64  `json:"height"`
+	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        int64          `json:"md_id"`
+}
+type UpdateRoleParams struct {
+	Label       string `json:"label"`
+	Permissions string `json:"permissions"`
+	RoleID      int64  `json:"role_id"`
+}
+type UpdateRouteParams struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	History      sql.NullString `json:"history"`
+	Author       string         `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
+	Slug_2       string         `json:"slug_2"`
+}
+type UpdateTableParams struct {
+	Label sql.NullString `json:"label"`
+	ID    int64          `json:"id"`
+}
+type UpdateTokenParams struct {
+	Token     string       `json:"token"`
+	IssuedAt  string       `json:"issued_at"`
+	ExpiresAt string       `json:"expires_at"`
+	Revoked   sql.NullBool `json:"revoked"`
+	ID        int64        `json:"id"`
+}
+type UpdateUserParams struct {
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         int64          `json:"role"`
+	UserID       int64          `json:"user_id"`
+}
+type UtilityGetAdminDatatypesRow struct {
+	AdminDtID int64  `json:"admin_dt_id"`
+	Label     string `json:"label"`
+}
+type UtilityGetAdminRoutesRow struct {
+	AdminRouteID int64  `json:"admin_route_id"`
+	Slug         string `json:"slug"`
+}
+
+type UtilityGetAdminfieldsRow struct {
+	AdminFieldID int64       `json:"admin_field_id"`
+	Label        interface{} `json:"label"`
+}
+
+type UtilityGetDatatypesRow struct {
+	DatatypeID int64  `json:"datatype_id"`
+	Label      string `json:"label"`
+}
+type UtilityGetFieldsRow struct {
+	FieldID int64       `json:"field_id"`
+	Label   interface{} `json:"label"`
+}
+type UtilityGetMediaRow struct {
+	MediaID int64          `json:"media_id"`
+	Name    sql.NullString `json:"name"`
+}
+type UtilityGetMediaDimensionRow struct {
+	MdID  int64          `json:"md_id"`
+	Label sql.NullString `json:"label"`
+}
+type UtilityGetRouteRow struct {
+	RouteID interface{} `json:"route_id"`
+	Slug    string      `json:"slug"`
+}
+type UtilityGetTablesRow struct {
+	ID    int64          `json:"id"`
+	Label sql.NullString `json:"label"`
+}
+type UtilityGetTokenRow struct {
+	ID     int64 `json:"id"`
+	UserID int64 `json:"user_id"`
+}
+type UtilityGetUsersRow struct {
+	UserID   int64  `json:"user_id"`
+	Username string `json:"username"`
+}
+type UtilityRecordCountRow struct {
+	TableName string `json:"table_name"`
+	RowCount  int64  `json:"row_count"`
 }

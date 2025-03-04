@@ -56,7 +56,7 @@ func TestLoadConfig(t *testing.T) {
 		Oauth_Client_Id:     "Ov23liFoy8pVGnAnGgrE",
 		Oauth_Client_Secret: "f57dda6a58faa59e4803f08efca11362478dcd3c",
 		Oauth_Scopes:        []string{"profile", "profilePic"},
-		Oauth_Endpoint:      map[Endpoint]string{oauthAuthURL: "https://github.com/login/oauth/authorize", oauthTokenURL: "https://github.com/login/oauth2/token"},
+		Oauth_Endpoint:      map[Endpoint]string{OauthAuthURL: "https://github.com/login/oauth/authorize", OauthTokenURL: "https://github.com/login/oauth2/token"},
 	}
 
 

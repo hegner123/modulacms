@@ -1,8 +1,6 @@
 package db
 
 import (
-	"context"
-	"database/sql"
 	_ "embed"
 	"fmt"
 
@@ -10,177 +8,272 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func ListAdminDatatypes(db *sql.DB, ctx context.Context) (*[]mdb.AdminDatatypes, error) {
-	queries := mdb.New(db)
-	fetchedAdminDatatypes, err := queries.ListAdminDatatype(ctx)
+func (d Database) ListAdminDatatypes() (*[]AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Admin Datatypes: %v\n", err)
 	}
-	return &fetchedAdminDatatypes, nil
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListAdminFields(db *sql.DB, ctx context.Context) (*[]mdb.AdminFields, error) {
-	queries := mdb.New(db)
-	fetchedAdminFields, err := queries.ListAdminField(ctx)
+func (d Database) ListAdminFields() (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Admin Fields: %v\n", err)
 	}
-	return &fetchedAdminFields, nil
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListAdminRoute(db *sql.DB, ctx context.Context) (*[]mdb.AdminRoutes, error) {
-	queries := mdb.New(db)
-	fetchedAdminRoutes, err := queries.ListAdminRoute(ctx)
+func (d Database) ListAdminRoutes() (*[]AdminRoutes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminRoute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Admin Routes: %v\n", err)
 	}
-	return &fetchedAdminRoutes, nil
+	res := []AdminRoutes{}
+	for _, v := range rows {
+		m := d.MapAdminRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListContentData(db *sql.DB, ctx context.Context) (*[]mdb.ContentData, error) {
-	queries := mdb.New(db)
-	fetchedContentData, err := queries.ListContentData(ctx)
+func (d Database) ListContentData() (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentData(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}
-	return &fetchedContentData, nil
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListContentField(db *sql.DB, ctx context.Context) (*[]mdb.ContentFields, error) {
-	queries := mdb.New(db)
-	fetchedContentField, err := queries.ListContentField(ctx)
+func (d Database) ListContentFields() (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}
-	return &fetchedContentField, nil
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListDatatype(db *sql.DB, ctx context.Context) (*[]mdb.Datatypes, error) {
-	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.ListDatatype(ctx)
+func (d Database) ListDatatypes() (*[]Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}
-	return &fetchedDatatypes, nil
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListField(db *sql.DB, ctx context.Context) (*[]mdb.Fields, error) {
-	queries := mdb.New(db)
-	fetchedFields, err := queries.ListField(ctx)
+func (d Database) ListFields() (*[]Fields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Fields: %v\n", err)
 	}
-	return &fetchedFields, nil
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListMedia(db *sql.DB, ctx context.Context) (*[]mdb.Media, error) {
-	queries := mdb.New(db)
-	fetchedMedias, err := queries.ListMedia(ctx)
+func (d Database) ListMedia() (*[]Media, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListMedia(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Medias: %v\n", err)
 	}
-	return &fetchedMedias, nil
+	res := []Media{}
+	for _, v := range rows {
+		m := d.MapMedia(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListMediaDimension(db *sql.DB, ctx context.Context) (*[]mdb.MediaDimensions, error) {
-	queries := mdb.New(db)
-	fetchedMediaDimensions, err := queries.ListMediaDimension(ctx)
+func (d Database) ListMediaDimensions() (*[]MediaDimensions, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListMediaDimension(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get MediaDimensions: %v\n", err)
 	}
-	return &fetchedMediaDimensions, nil
+	res := []MediaDimensions{}
+	for _, v := range rows {
+		m := d.MapMediaDimension(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
-func ListRoles(db *sql.DB, ctx context.Context) (*[]mdb.Roles, error) {
-	queries := mdb.New(db)
-	fetchedRoles, err := queries.ListRole(ctx)
+func (d Database) ListRoles() (*[]Roles, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListRole(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Routes: %v\n", err)
 	}
-	return &fetchedRoles, nil
+	res := []Roles{}
+	for _, v := range rows {
+		m := d.MapRoles(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListRoute(db *sql.DB, ctx context.Context) (*[]mdb.Routes, error) {
-	queries := mdb.New(db)
-	fetchedRoutes, err := queries.ListRoute(ctx)
+func (d Database) ListRoutes() (*[]Routes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListRoute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Routes: %v\n", err)
 	}
-	return &fetchedRoutes, nil
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListTable(db *sql.DB, ctx context.Context) (*[]mdb.Tables, error) {
-	queries := mdb.New(db)
-	fetchedTables, err := queries.ListTable(ctx)
+func (d Database) ListTables() (*[]Tables, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListTable(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Tables: %v\n", err)
 	}
-	return &fetchedTables, nil
+	res := []Tables{}
+	for _, v := range rows {
+		m := d.MapTables(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListTokens(db *sql.DB, ctx context.Context) (*[]mdb.Tokens, error) {
-	queries := mdb.New(db)
-	fetchedTokens, err := queries.ListTokens(ctx)
+func (d Database) ListTokens() (*[]Tokens, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListTokens(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Users: %v\n", err)
 	}
-	return &fetchedTokens, nil
+	res := []Tokens{}
+	for _, v := range rows {
+		m := d.MapToken(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListUser(db *sql.DB, ctx context.Context) (*[]mdb.Users, error) {
-	queries := mdb.New(db)
-	fetchedUsers, err := queries.ListUser(ctx)
+func (d Database) ListUsers() (*[]Users, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListUser(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Users: %v\n", err)
 	}
-	return &fetchedUsers, nil
+	res := []Users{}
+	for _, v := range rows {
+		m := d.MapUser(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListTokenDependencies(db *sql.DB, ctx context.Context, id int64) {
+func (d Database) ListTokenDependencies(id int64) {
 	// TODO implement dependency checking for delete candidate
 }
 
-func ListDatatypeById(db *sql.DB, ctx context.Context, routeId int64) (*[]mdb.ListDatatypeByRouteIdRow, error) {
-	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.ListDatatypeByRouteId(ctx, ni64(routeId))
+func (d Database) ListDatatypeById(routeId int64) (*[]ListDatatypeByRouteIdRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeByRouteId(d.Context, ni64(routeId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Users: %v\n", err)
 	}
-	return &fetchedDatatypes, nil
+	res := []ListDatatypeByRouteIdRow{}
+	for _, v := range rows {
+		m := d.MapListDatatypeByRouteIdRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListFieldByRouteId(db *sql.DB, ctx context.Context, routeId int64) (*[]mdb.ListFieldByRouteIdRow, error) {
-	queries := mdb.New(db)
-	fetchedDatatypes, err := queries.ListFieldByRouteId(ctx, ni64(routeId))
+func (d Database) ListFieldByRouteId(routeId int64) (*[]ListFieldByRouteIdRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListFieldByRouteId(d.Context, ni64(routeId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get fields with route %d: %v\n", routeId, err)
 	}
-	return &fetchedDatatypes, nil
+	res := []ListFieldByRouteIdRow{}
+	for _, v := range rows {
+		m := d.MapListFieldByRouteIdRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListAdminFieldsByDatatypeID(db *sql.DB, ctx context.Context, admin_datatype_id int64) (*[]mdb.ListAdminFieldsByDatatypeIDRow, error) {
-	queries := mdb.New(db)
-	fetchedFields, err := queries.ListAdminFieldsByDatatypeID(ctx, ni64(admin_datatype_id))
+func (d Database) ListAdminFieldsByDatatypeID(admin_datatype_id int64) (*[]ListAdminFieldsByDatatypeIDRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldsByDatatypeID(d.Context, ni64(admin_datatype_id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminFields by AdminDatatypes id: %v\n ", err)
 	}
-	return &fetchedFields, nil
+	res := []ListAdminFieldsByDatatypeIDRow{}
+	for _, v := range rows {
+		m := d.MapListAdminFieldsByDatatypeIDRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListAdminDatatypeByAdminRouteId(db *sql.DB, ctx context.Context, adminRouteId int64) (*[]mdb.ListAdminDatatypeByRouteIdRow, error) {
-	queries := mdb.New(db)
-	fetchedAdminDatatypes, err := queries.ListAdminDatatypeByRouteId(ctx, ni64(adminRouteId))
+func (d Database) ListAdminDatatypeByAdminRouteId(adminRouteId int64) (*[]ListAdminDatatypeByRouteIdRow, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeByRouteId(d.Context, ni64(adminRouteId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminDatatypes by AdminRouteId %v\n", err)
 	}
-	return &fetchedAdminDatatypes, nil
+	res := []ListAdminDatatypeByRouteIdRow{}
+	for _, v := range rows {
+		m := d.MapListAdminDatatypeByRouteIdRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
-func ListAdminDatatypeChildren(db *sql.DB, ctx context.Context, parentId int64) (*[]mdb.AdminDatatypes, error) {
-	queries := mdb.New(db)
-	fetchedAdminDatatypeChildren, err := queries.ListAdminDatatypeChildren(ctx, ni64(parentId))
+func (d Database) ListAdminDatatypeChildren(parentId int64) (*[]AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeChildren(d.Context, ni64(parentId))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminDatatypes by AdminRouteId %v\n", err)
 	}
-	return &fetchedAdminDatatypeChildren, nil
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
 
 }

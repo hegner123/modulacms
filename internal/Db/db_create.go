@@ -1,157 +1,161 @@
 package db
 
 import (
-	"context"
-	"database/sql"
 	_ "embed"
 	"fmt"
-	"strings"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func CreateAdminDatatype(db *sql.DB, ctx context.Context, s mdb.CreateAdminDatatypeParams) mdb.AdminDatatypes {
-	queries := mdb.New(db)
-	insertedAdminDatatype, err := queries.CreateAdminDatatype(ctx, s)
+func (d Database) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDatatypes {
+    params := d.MapCreateAdminDatatypeParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateAdminDatatype(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateAdminDatatype  %v \n", err)
 	}
 
-	return insertedAdminDatatype
+	return d.MapAdminDatatype(row)
 }
-func CreateAdminField(db *sql.DB, ctx context.Context, s mdb.CreateAdminFieldParams) mdb.AdminFields {
-	queries := mdb.New(db)
-	insertedAdminField, err := queries.CreateAdminField(ctx, s)
+func (d Database) CreateAdminField(s CreateAdminFieldParams) AdminFields {
+    params := d.MapCreateAdminFieldParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateAdminField(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateAdminField  %v \n", err)
 	}
 
-	return insertedAdminField
+	return d.MapAdminField(row)
 }
 
-func CreateAdminRoute(db *sql.DB, ctx context.Context, s mdb.CreateAdminRouteParams) mdb.AdminRoutes {
-	queries := mdb.New(db)
-	insertedAdminRoute, err := queries.CreateAdminRoute(ctx, s)
+func (d Database) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
+    params:= d.MapCreateAdminRouteParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateAdminRoute(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
 	}
 
-	return insertedAdminRoute
+	return d.MapAdminRoute(row)
 }
 
-func CreateContentData(db *sql.DB, ctx context.Context, s mdb.CreateContentDataParams) mdb.ContentData {
-	queries := mdb.New(db)
-	insertedContentData, err := queries.CreateContentData(ctx, s)
+func (d Database) CreateContentData(s CreateContentDataParams) ContentData {
+    params := d.MapCreateContentDataParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateContentData(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
 	}
 
-	return insertedContentData
+	return d.MapContentData(row)
 }
 
-func CreateContentField(db *sql.DB, ctx context.Context, s mdb.CreateContentFieldParams) mdb.ContentFields {
-	queries := mdb.New(db)
-	insertedContentField, err := queries.CreateContentField(ctx, s)
+func (d Database) CreateContentField(s CreateContentFieldParams) ContentFields {
+    params:= d.MapCreateContentFieldParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateContentField(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
 	}
 
-	return insertedContentField
+	return d.MapContentField(row)
 }
 
-func CreateDataType(db *sql.DB, ctx context.Context, s mdb.CreateDatatypeParams) (mdb.Datatypes, error) {
-	queries := mdb.New(db)
-	insertedDatatypes, err := queries.CreateDatatype(ctx, s)
+func (d Database) CreateDatatype(s CreateDatatypeParams) Datatypes {
+    params := d.MapCreateDatatypeParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateDatatype(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateDatatype  %v \n", err)
-		return insertedDatatypes, err
 	}
 
-	return insertedDatatypes, nil
+	return d.MapDatatype(row)
 }
 
-func CreateField(db *sql.DB, ctx context.Context, s mdb.CreateFieldParams) (mdb.Fields, error) {
-	queries := mdb.New(db)
-	insertedFields, err := queries.CreateField(ctx, s)
+func (d Database) CreateField(s CreateFieldParams) Fields {
+    params := d.MapCreateFieldParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateField(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateField  %v \n", err)
-		return insertedFields, err
 	}
 
-	return insertedFields, nil
+	return d.MapField(row)
 }
 
-func CreateMedia(db *sql.DB, ctx context.Context, s mdb.CreateMediaParams) mdb.Media {
-	queries := mdb.New(db)
-	insertedMedia, err := queries.CreateMedia(ctx, s)
+func (d Database) CreateMedia(s CreateMediaParams) Media {
+    params := d.MapCreateMediaParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateMedia(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateMedia.\n%v \n", err)
 	}
 
-	return insertedMedia
+	return d.MapMedia(row)
 }
 
-func CreateMediaDimension(db *sql.DB, ctx context.Context, s mdb.CreateMediaDimensionParams) mdb.MediaDimensions {
-	queries := mdb.New(db)
-	insertedMediaDimension, err := queries.CreateMediaDimension(ctx, s)
+func (d Database) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimensions {
+    params := d.MapCreateMediaDimensionParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateMediaDimension(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateMediaDimension.\n%v \n", err)
 	}
 
-	return insertedMediaDimension
+	return d.MapMediaDimension(row)
 }
-func (d Database) CreateRole(db *sql.DB, ctx context.Context, s CreateRoleParams) *Roles {
-	queries := mdb.New(db)
-	params := mdb.CreateRoleParams{Label: s.Label, Permissions: s.Permissions}
-	row, err := queries.CreateRole(ctx, params)
-	if err != nil {
-		fmt.Printf("failed to CreateRoute.\n %v\n", err)
-	}
-	res := Roles{RoleID: row.RoleID, Label: row.Label, Permissions: row.Permissions}
-
-	return &res
-}
-
-func CreateRoute(db *sql.DB, ctx context.Context, s mdb.CreateRouteParams) mdb.Routes {
-	queries := mdb.New(db)
-	insertedRoute, err := queries.CreateRoute(ctx, s)
+func (d Database) CreateRole(s CreateRoleParams) Roles {
+    params := d.MapCreateRoleParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateRole(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateRoute.\n %v\n", err)
 	}
 
-	return insertedRoute
+	return d.MapRoles(row)
 }
 
-func CreateTable(db *sql.DB, ctx context.Context, s mdb.Tables) mdb.Tables {
-	queries := mdb.New(db)
-	insertedTable, err := queries.CreateTable(ctx, s.Label)
+func (d Database) CreateRoute(s CreateRouteParams) Routes {
+    params := d.MapCreateRouteParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateRoute(d.Context, params)
+	if err != nil {
+		fmt.Printf("failed to CreateRoute.\n %v\n", err)
+	}
+
+	return d.MapRoute(row)
+}
+
+func (d Database) CreateTable(s string) Tables {
+    params := ns(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateTable(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateTable.\n %v\n", err)
 	}
 
-	return insertedTable
+	return d.MapTables(row)
 }
 
-func CreateToken(db *sql.DB, ctx context.Context, s mdb.CreateTokenParams) mdb.Tokens {
-	queries := mdb.New(db)
-	insertedToken, err := queries.CreateToken(ctx, s)
+func (d Database) CreateToken(s CreateTokenParams) Tokens {
+    params := d.MapCreateTokenParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateToken(d.Context, params)
 	if err != nil {
 		fmt.Printf("failed to CreateToken.\n %v\n", err)
 	}
 
-	return insertedToken
+	return d.MapToken(row)
 }
 
-func CreateUser(db *sql.DB, ctx context.Context, s mdb.CreateUserParams) mdb.Users {
-	queries := mdb.New(db)
-	insertedUser, err := queries.CreateUser(ctx, s)
+func (d Database) CreateUser(s CreateUserParams) Users {
+    params := d.MapCreateUserParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateUser(d.Context, params)
 	if err != nil {
-		splitErr := strings.Split(err.Error(), ".")
-		property := splitErr[len(splitErr)-1]
-		v := getColumnValue(property, s)
-		fmt.Printf("failed to CreateUser.\n %v\n %v\n %v\n", err, property, v)
+		fmt.Printf("failed to CreateUser,\n %v\n", err)
 	}
 
-	return insertedUser
+	return d.MapUser(row)
 }

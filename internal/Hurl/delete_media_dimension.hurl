@@ -1,1 +1,1 @@
-POST https://localhost:8443/api/delete/mediadimension
+DELETE https://localhost:8443/api/delete/mediadimension

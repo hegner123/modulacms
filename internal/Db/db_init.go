@@ -12,107 +12,123 @@ import (
 	"path/filepath"
 	"strings"
 
+	_ "github.com/go-sql-driver/mysql"
 	config "github.com/hegner123/modulacms/internal/Config"
+	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
 
 //go:embed sql/*
 var SqlFiles embed.FS
 
-func (dbSrc Database) GetDb() TestDbDriver {
+func (d Database) GetDb() DbDriver {
+	fmt.Printf("Trying to connect to sqlite3 Db\n")
 	ctx := context.Background()
 
-	if dbSrc.Src == "" {
-		dbSrc.Src = "./modula.db"
+	if d.Src == "" {
+		d.Src = "./modula.db"
 	}
-	db, err := sql.Open("sqlite3", dbSrc.Src)
+
+	db, err := sql.Open("sqlite3", d.Src)
 	if err != nil {
 		fmt.Printf("db exec err db_init 007 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
+		d.Err = err
+		return d
 	}
+
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
 		fmt.Printf("db exec err db_init 008 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
+		d.Err = err
+		return d
 	}
-    dbSrc.Connection = db
-    dbSrc.Context = ctx
-    dbSrc.Err = nil
-	return dbSrc
+
+	d.Connection = db
+	d.Context = ctx
+	d.Err = nil
+	return d
 }
-func (dbSrc MysqlDatabase) GetDb() TestDbDriver {
+func (d MysqlDatabase) GetDb() DbDriver {
+	fmt.Printf("Trying to connect to mysql Db\n")
 	ctx := context.Background()
 
-	if dbSrc.Src == "" {
-		dbSrc.Src = "./modula.db"
-	}
-	db, err := sql.Open("sqlite3", dbSrc.Src)
-	if err != nil {
-		fmt.Printf("db exec err db_init 007 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
-	}
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
-	if err != nil {
-		fmt.Printf("db exec err db_init 008 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
-	}
-    dbSrc.Connection = db
-    dbSrc.Context = ctx
-    dbSrc.Err = nil
-	return dbSrc
-}
-func (dbSrc PsqlDatabase) GetDb() TestDbDriver {
-	ctx := context.Background()
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+    fmt.Printf("Connection:%v\n", dsn)
 
-	if dbSrc.Src == "" {
-		dbSrc.Src = "./modula.db"
-	}
-	db, err := sql.Open("sqlite3", dbSrc.Src)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		fmt.Printf("db exec err db_init 007 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
+		log.Fatalf("Error opening database: %v", err)
 	}
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+
+	d.Connection = db
+	d.Context = ctx
+	d.Err = nil
+	return d
+}
+func (d PsqlDatabase) GetDb() DbDriver {
+	fmt.Printf("Trying to connect to postgres Db\n")
+    ctx := context.Background()
+
+	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	fmt.Printf("Connection: %v\n", connStr)
+
+	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		fmt.Printf("db exec err db_init 008 : %s\n", err)
-        dbSrc.Err = err
-		return dbSrc
+		log.Fatalf("Error opening database: %v", err)
 	}
-    dbSrc.Connection = db
-    dbSrc.Context = ctx
-    dbSrc.Err = nil
-	return dbSrc
+
+	d.Connection = db
+	d.Context = ctx
+	d.Err = nil
+	return d
 }
 
-func DbConfig(env config.Config) TestDbDriver {
+func ConfigDB(env config.Config) DbDriver {
 	switch env.Db_Driver {
 	case config.Sqlite:
-		d := Database{Src: env.Db_Name}
+		d := Database{Src: env.Db_Name, Config: env}
 		dbc := d.GetDb()
 		return dbc
 	case config.Mysql:
-		d := MysqlDatabase{Src: env.Db_Name}
+		d := MysqlDatabase{Src: env.Db_Name, Config: env}
 		dbc := d.GetDb()
 		return dbc
 	case config.Psql:
-		d := PsqlDatabase{Src: env.Db_Name}
+		d := PsqlDatabase{Src: env.Db_Name, Config: env}
 		dbc := d.GetDb()
 		return dbc
 	}
 	return nil
 }
 
-func (init Database) InitDb(Db Database, v *bool, database string) error {
+func (d Database) InitDb( v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
 	}
-	if _, err := Db.Connection.ExecContext(Db.Context, tables); err != nil {
+	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (d MysqlDatabase) InitDb( v *bool) error {
+	tables, err := ReadSchemaFiles(v)
+	if err != nil {
+		return err
+	}
+	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
+		return err
+	}
+
+	return nil
+}
+func (d PsqlDatabase) InitDb( v *bool) error {
+	tables, err := ReadSchemaFiles(v)
+	if err != nil {
+		return err
+	}
+	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
 		return err
 	}
 
@@ -151,4 +167,9 @@ func GenerateKey() []byte {
 		log.Fatalf("Failed to generate key: %v", err)
 	}
 	return key
+}
+
+func (d MysqlDatabase) CreateTables(){
+    
+
 }

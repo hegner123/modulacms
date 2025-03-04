@@ -17,10 +17,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func HandleAuth(form url.Values) bool {
-	dbc := db.GetDb(db.Database{})
+func HandleAuth(conf config.Config,form url.Values) bool {
+	dbc := db.ConfigDB(conf)
 
-	user, err := db.GetUserByEmail(dbc.Connection, dbc.Context, form.Get("email"))
+	user, err := dbc.GetUser(1)
 	if err != nil {
 		utility.LogError("failed to : ", err)
 	}
@@ -45,7 +45,7 @@ func compareHashes(hash1, hash2 string) bool {
 	return subtle.ConstantTimeCompare(hash1Bytes, hash2Bytes) == 1
 }
 
-func AuthMiddleware(next http.Handler) http.Handler {
+func AuthMiddleware(next http.Handler, conf config.Config) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Check if the auth cookie exists
 		cookie, err := r.Cookie("modula_token")
@@ -54,7 +54,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		if !middleware.UserIsAuth(r,""){
+		if !middleware.UserIsAuth(r,conf){
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}

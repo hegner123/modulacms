@@ -7,13 +7,15 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type ColumnNameType map[string]string
 type ColumnIndexName map[int]string
 
 func CopyDb(dbName string, useDefault bool) (string, error) {
-	times := TimestampS()
+	times := utility.TimestampS()
 	backup := "../../testdb/backups/"
 	base := "../../testdb/"
 	db := strings.TrimSuffix(dbName, ".db")

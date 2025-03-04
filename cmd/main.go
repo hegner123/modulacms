@@ -59,7 +59,7 @@ func main() {
 	Env = config.LoadConfig(verbose, "")
 	if *authFlag {
 		auth.OauthSettings(Env)
-        os.Exit(0)
+		os.Exit(0)
 	}
 
 	if *reset {
@@ -79,12 +79,8 @@ func main() {
 		defer clientDB.Close()
 	}*/
 	if !InitStatus.DbFileExists || *reset {
-		dbc := db.GetDb(db.Database{})
-		if dbc.Err != nil {
-			fmt.Printf("%v", dbc.Err)
-			os.Exit(0)
-		}
-		defer dbc.Connection.Close()
+		dbc, _ := db.ConfigDB(Env).GetConnection()
+		defer dbc.Close()
 	}
 
 	if *cliFlag {
@@ -96,6 +92,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	api := api_v1.ApiServerV1{
+		Config:        Env,
 		DeleteHandler: router.ApiDeleteHandler,
 		GetHandler:    router.ApiGetHandler,
 		PutHandler:    router.ApiPutHandler,
@@ -103,6 +100,7 @@ func main() {
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+        fmt.Printf("Main Router Func\n\n")
 		router.Router(w, r, &api)
 
 	})

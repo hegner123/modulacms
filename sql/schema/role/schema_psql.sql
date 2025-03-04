@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS roles (
-    role_id INTEGER PRIMARY KEY,
-    label TEXT NOT NULL unique,
-    permissions TEXT NOT NULL unique
+    role_id SERIAL PRIMARY KEY,
+    label TEXT NOT NULL UNIQUE,
+    permissions JSONB
 );
+

@@ -1,4 +1,4 @@
-CREATE TABLE routes (
+CREATE TABLE IF NOT EXISTS routes (
     route_id INT NOT NULL AUTO_INCREMENT,
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
@@ -10,11 +10,11 @@ CREATE TABLE routes (
     date_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (route_id),
     UNIQUE KEY unique_slug (slug),
-    CONSTRAINT fk_routes_author FOREIGN KEY (author)
+    CONSTRAINT fk_routes_routes_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
-    CONSTRAINT fk_routes_author_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_routes_routes_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION

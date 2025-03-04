@@ -1,64 +1,124 @@
 package db
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-func CountAdminRoutes(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountAdminroute(ctx)
+func (d Database) CountAdminDatatypes() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountAdminDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountDatatypes(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountDatatype(ctx)
+func (d Database) CountAdminFields() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountAdminField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountField(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountField(ctx)
+
+func (d Database) CountAdminRoutes() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountAdminroute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountMedia(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountMedia(ctx)
+
+func (d Database) CountContentData() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountContentData(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountTables(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountTables(ctx)
+func (d Database) CountContentFields() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountContentField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountTokens(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountTokens(ctx)
+
+func (d Database) CountDatatypes() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func CountUsers(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdb.New(db)
-	c, err := queries.CountUsers(ctx)
+func (d Database) CountFields() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d Database) CountMedia() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountMedia(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d Database) CountMediaDimensions() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountMediaDimension(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d Database) CountRoles() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountRole(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d Database) CountRoutes() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountRoute(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d Database) CountTables() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountTables(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d Database) CountTokens() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountTokens(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d Database) CountUsers() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountUsers(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}

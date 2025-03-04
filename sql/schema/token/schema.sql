@@ -1,4 +1,4 @@
-CREATE TABLE tokens (
+CREATE TABLE IF NOT EXISTS tokens (
     id INTEGER
         PRIMARY KEY,
     user_id INTEGER NOT NULL

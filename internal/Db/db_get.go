@@ -1,8 +1,6 @@
 package db
 
 import (
-	"context"
-	"database/sql"
 	_ "embed"
 	"fmt"
 
@@ -10,150 +8,186 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func GetAdminDatatypeGlobalId(db *sql.DB, ctx context.Context) (*mdb.AdminDatatypes, error) {
-	queries := mdb.New(db)
-	fetchedGlobalAdminDatatypeId, err := queries.GetGlobalAdminDatatypeId(ctx)
+func (d Database) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetGlobalAdminDatatypeId(d.Context)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedGlobalAdminDatatypeId, nil
-}
-
-func GetAdminDatatypeById(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminDatatypes, error) {
-	queries := mdb.New(db)
-	fetchedAdminDatatype, err := queries.GetAdminDatatype(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return &fetchedAdminDatatype, nil
-}
-
-func GetRootAdIdByAdRtId(db *sql.DB, ctx context.Context, adminRtId int64) (*sql.NullInt64, error) {
-	queries := mdb.New(db)
-	res := sql.NullInt64{Int64: int64(0), Valid: true}
-	fetchedAdminDatatype, err := queries.GetRootAdminDtByAdminRtId(ctx, ni64(adminRtId))
-	if err != nil {
-		fmt.Printf("adminRtId %d\n", adminRtId)
-		res = sql.NullInt64{Valid: false}
-		return nil, err
-	}
-	res.Int64 = fetchedAdminDatatype.AdminDtID
+	res := d.MapAdminDatatype(row)
 	return &res, nil
 }
 
-func GetAdminFieldID(db *sql.DB, ctx context.Context, id int64) (*mdb.AdminFields, error) {
-	queries := mdb.New(db)
-	fetchedAdminField, err := queries.GetAdminField(ctx, id)
+func (d Database) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminDatatype(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedAdminField, nil
+	res := d.MapAdminDatatype(row)
+	return &res, nil
 }
 
-func GetAdminRoute(db *sql.DB, ctx context.Context, slug string) (*mdb.AdminRoutes, error) {
-	queries := mdb.New(db)
-	fetchedAdminRoute, err := queries.GetAdminRouteBySlug(ctx, slug)
+func (d Database) GetRootAdIdByAdRtId(adminRtId int64) (*int64, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetRootAdminDtByAdminRtId(d.Context, ni64(adminRtId))
 	if err != nil {
+		fmt.Printf("adminRtId %d\n", adminRtId)
 		return nil, err
 	}
-	return &fetchedAdminRoute, nil
+    res := row.AdminDtID
+	return &res, nil
 }
 
-func GetDatatype(db *sql.DB, ctx context.Context, id int64) (*mdb.Datatypes, error) {
-	queries := mdb.New(db)
-	fetchedDatatype, err := queries.GetDatatype(ctx, id)
+func (d Database) GetAdminField(id int64) (*AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminField(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedDatatype, nil
+	res := d.MapAdminField(row)
+	return &res, nil
 }
 
-func GetField(db *sql.DB, ctx context.Context, id int64) (*mdb.Fields, error) {
-	queries := mdb.New(db)
-	fetchedField, err := queries.GetField(ctx, id)
+func (d Database) GetAdminRoute(slug string) (*AdminRoutes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminRouteBySlug(d.Context, slug)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedField, nil
+	res := d.MapAdminRoute(row)
+	return &res, nil
 }
 
-func GetMedia(db *sql.DB, ctx context.Context, id int64) (*mdb.Media, error) {
-	queries := mdb.New(db)
-	fetchedMedia, err := queries.GetMedia(ctx, id)
+func (d Database) GetContentData(id int64) (*ContentData, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetContentData(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedMedia, nil
+	res := d.MapContentData(row)
+	return &res, nil
 }
 
-func GetMediaDimension(db *sql.DB, ctx context.Context, id int64) (*mdb.MediaDimensions, error) {
-	queries := mdb.New(db)
-	fetchedMediaDimension, err := queries.GetMediaDimension(ctx, id)
+func (d Database) GetContentField(id int64) (*ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetContentField(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedMediaDimension, nil
-}
-func GetRole(db *sql.DB, ctx context.Context, id int64) (*mdb.Roles, error) {
-	queries := mdb.New(db)
-	fetchedRole, err := queries.GetRole(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return &fetchedRole, nil
+	res := d.MapContentField(row)
+	return &res, nil
 }
 
-func GetRoute(db *sql.DB, ctx context.Context, slug string) (*mdb.Routes, error) {
-	queries := mdb.New(db)
-	fetchedRoute, err := queries.GetRoute(ctx, slug)
+func (d Database) GetDatatype(id int64) (*Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetDatatype(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedRoute, nil
+	res := d.MapDatatype(row)
+	return &res, nil
 }
 
-func GetTable(db *sql.DB, ctx context.Context, id int64) (*mdb.Tables, error) {
-	queries := mdb.New(db)
-	fetchedTable, err := queries.GetTable(ctx, id)
+func (d Database) GetField(id int64) (*Fields, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetField(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedTable, nil
+	res := d.MapField(row)
+	return &res, nil
 }
 
-func GetToken(db *sql.DB, ctx context.Context, id int64) (*mdb.Tokens, error) {
-	queries := mdb.New(db)
-	fetchedToken, err := queries.GetToken(ctx, id)
+func (d Database) GetMedia(id int64) (*Media, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetMedia(d.Context, id)
 	if err != nil {
 		return nil, err
-
 	}
-	return &fetchedToken, nil
+	res := d.MapMedia(row)
+	return &res, nil
 }
 
-func GetTokenByUserId(db *sql.DB, ctx context.Context, userId int64) (*[]mdb.Tokens, error) {
-	queries := mdb.New(db)
-	fetchedToken, err := queries.GetTokensByUserId(ctx, userId)
+func (d Database) GetMediaDimension(id int64) (*MediaDimensions, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetMediaDimension(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedToken, nil
+	res := d.MapMediaDimension(row)
+	return &res, nil
+}
+func (d Database) GetRole(id int64) (*Roles, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetRole(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapRoles(row)
+	return &res, nil
 }
 
-func GetUser(db *sql.DB, ctx context.Context, id int64) (*mdb.Users, error) {
-	queries := mdb.New(db)
-	fetchedUser, err := queries.GetUser(ctx, id)
+func (d Database) GetRoute(slug string) (*Routes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetRoute(d.Context, slug)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedUser, nil
+	res := d.MapRoute(row)
+	return &res, nil
 }
 
-func GetUserByEmail(db *sql.DB, ctx context.Context, email string) (*mdb.Users, error) {
-	queries := mdb.New(db)
-	fetchedUser, err := queries.GetUserByEmail(ctx, email)
+func (d Database) GetTable(id int64) (*Tables, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetTable(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
-	return &fetchedUser, nil
+	res := d.MapTables(row)
+	return &res, nil
+}
+
+func (d Database) GetToken(id int64) (*Tokens, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetToken(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapToken(row)
+	return &res, nil
+}
+
+func (d Database) GetTokenByUserId(userId int64) (*[]Tokens, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetTokensByUserId(d.Context, userId)
+	if err != nil {
+		return nil, err
+	}
+	res := []Tokens{}
+	for _, v := range row {
+        m := d.MapToken(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) GetUser(id int64) (*Users, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetUser(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUser(row)
+	return &res, nil
+}
+
+func (d Database) GetUserByEmail(email string) (*Users, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetUserByEmail(d.Context, email)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUser(row)
+	return &res, nil
 }

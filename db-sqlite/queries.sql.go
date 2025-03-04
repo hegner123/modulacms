@@ -160,18 +160,6 @@ func (q *Queries) CountField(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countMD = `-- name: CountMD :one
-SELECT COUNT(*)
-FROM media_dimensions
-`
-
-func (q *Queries) CountMD(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countMD)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
 const countMedia = `-- name: CountMedia :one
 SELECT COUNT(*)
 FROM media
@@ -179,6 +167,30 @@ FROM media
 
 func (q *Queries) CountMedia(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countMedia)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countMediaDimension = `-- name: CountMediaDimension :one
+SELECT COUNT(*)
+FROM media_dimensions
+`
+
+func (q *Queries) CountMediaDimension(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countMediaDimension)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countRole = `-- name: CountRole :one
+SELECT COUNT(*)
+FROM roles
+`
+
+func (q *Queries) CountRole(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countRole)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -288,6 +300,35 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	return i, err
 }
 
+const createAdminDatatypeTable = `-- name: CreateAdminDatatypeTable :exec
+CREATE TABLE IF NOT EXISTS admin_datatypes(
+    admin_dt_id    INTEGER
+        primary key,
+    admin_route_id INTEGER default NULL
+        references admin_routes
+            on update cascade on delete set default,
+    parent_id      INTEGER default NULL
+        references admin_datatypes
+            on update cascade on delete set default,
+    label          TEXT    not null,
+    type           TEXT    not null,
+    author         TEXT    not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id      INTEGER not null
+        references users (user_id)
+            on update cascade on delete set default,
+    date_created   TEXT    default CURRENT_TIMESTAMP,
+    date_modified  TEXT    default CURRENT_TIMESTAMP,
+    history        TEXT
+)
+`
+
+func (q *Queries) CreateAdminDatatypeTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminDatatypeTable)
+	return err
+}
+
 const createAdminField = `-- name: CreateAdminField :one
 INSERT INTO admin_fields (
     admin_route_id,
@@ -348,6 +389,37 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 	return i, err
 }
 
+const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
+CREATE TABLE IF NOT EXISTS admin_fields
+(
+    admin_field_id INTEGER
+        primary key,
+    admin_route_id INTEGER default 1
+        references admin_routes
+            on update cascade on delete set default,
+    parent_id      INTEGER default NULL
+        references admin_datatypes
+            on update cascade on delete set default,
+    label          TEXT    default "unlabeled" not null,
+    data           TEXT    default ""          not null,
+    type           TEXT    default "text"      not null,
+    author         TEXT    default "system"    not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id      INTEGER default 1           not null
+        references users (user_id)
+            on update cascade on delete set default,
+    date_created   TEXT    default CURRENT_TIMESTAMP,
+    date_modified  TEXT    default CURRENT_TIMESTAMP,
+    history        TEXT
+)
+`
+
+func (q *Queries) CreateAdminFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminFieldTable)
+	return err
+}
+
 const createAdminRoute = `-- name: CreateAdminRoute :one
 INSERT INTO admin_routes (
 author,
@@ -400,6 +472,32 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 	return i, err
 }
 
+const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
+CREATE TABLE IF NOT EXISTS admin_routes (
+    admin_route_id INTEGER
+        PRIMARY KEY,
+    slug TEXT NOT NULL
+        UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    
+    author TEXT DEFAULT "system" NOT NULL
+        REFERENCES users (username)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
+)
+`
+
+func (q *Queries) CreateAdminRouteTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminRouteTable)
+	return err
+}
+
 const createContentData = `-- name: CreateContentData :one
 INSERT INTO content_data (
     admin_dt_id,
@@ -434,6 +532,23 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createContentDataTable = `-- name: CreateContentDataTable :exec
+CREATE TABLE IF NOT EXISTS content_data (
+    content_data_id INTEGER PRIMARY KEY,
+    admin_dt_id   INTEGER NOT NULL
+        REFERENCES admin_datatypes(admin_dt_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    history TEXT  DEFAULT NULL,
+    date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateContentDataTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createContentDataTable)
+	return err
 }
 
 const createContentField = `-- name: CreateContentField :one
@@ -481,6 +596,27 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createContentFieldTable = `-- name: CreateContentFieldTable :exec
+CREATE TABLE IF NOT EXISTS content_fields (
+    content_field_id INTEGER PRIMARY KEY,
+    content_data_id       INTEGER NOT NULL
+        REFERENCES content_data(content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    admin_field_id      INTEGER NOT NULL
+        REFERENCES admin_fields(admin_field_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    field_value         TEXT NOT NULL,
+    history TEXT,
+    date_created        TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateContentFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createContentFieldTable)
+	return err
 }
 
 const createDatatype = `-- name: CreateDatatype :one
@@ -537,6 +673,36 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createDatatypeTable = `-- name: CreateDatatypeTable :exec
+CREATE TABLE IF NOT EXISTS datatypes
+(
+    datatype_id   INTEGER
+        primary key,
+    route_id      INTEGER default NULL
+        references routes
+            on update cascade on delete set default,
+    parent_id     INTEGER default NULL
+        references datatypes
+            on update cascade on delete set default,
+    label         TEXT                     not null,
+    type          TEXT                     not null,
+    author        TEXT    default "system" not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id     INTEGER default 1        not null
+        references users (user_id)
+            on update cascade on delete set default,
+    history TEXT,
+    date_created  TEXT    default CURRENT_TIMESTAMP,
+    date_modified TEXT    default CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateDatatypeTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createDatatypeTable)
+	return err
 }
 
 const createField = `-- name: CreateField :one
@@ -597,6 +763,37 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createFieldTable = `-- name: CreateFieldTable :exec
+CREATE TABLE IF NOT EXISTS fields
+(
+    field_id      INTEGER
+        primary key,
+    route_id      INTEGER default NULL
+        references routes
+            on update cascade on delete set default,
+    parent_id     INTEGER default NULL
+        references datatypes
+            on update cascade on delete set default,
+    label         TEXT    default "unlabeled" not null,
+    data          TEXT                        not null,
+    type          TEXT                        not null,
+    author        TEXT    default "system"    not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id     INTEGER default 1           not null
+        references users (user_id)
+            on update cascade on delete set default,
+    history TEXT,
+    date_created  TEXT    default CURRENT_TIMESTAMP,
+    date_modified TEXT    default CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createFieldTable)
+	return err
 }
 
 const createMedia = `-- name: CreateMedia :one
@@ -725,6 +922,57 @@ func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimen
 	return i, err
 }
 
+const createMediaDimensionTable = `-- name: CreateMediaDimensionTable :exec
+CREATE TABLE IF NOT EXISTS media_dimensions
+(
+    md_id         INTEGER primary key,
+    label         TEXT unique,
+    width         INTEGER,
+    height        INTEGER,
+    aspect_ratio  TEXT
+)
+`
+
+func (q *Queries) CreateMediaDimensionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createMediaDimensionTable)
+	return err
+}
+
+const createMediaTable = `-- name: CreateMediaTable :exec
+CREATE TABLE IF NOT EXISTS media
+(
+    media_id             INTEGER
+        primary key,
+    name                 TEXT,
+    display_name         TEXT,
+    alt                  TEXT,
+    caption              TEXT,
+    description          TEXT,
+    class                TEXT,
+    author               TEXT    default "system" not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id            INTEGER default 1        not null
+        references users (user_id)
+            on update cascade on delete set default,
+    date_created         TEXT    default CURRENT_TIMESTAMP,
+    date_modified        TEXT    default CURRENT_TIMESTAMP,
+    mimetype             TEXT,
+    dimensions           TEXT,
+    url                  TEXT
+        unique,
+    optimized_mobile     TEXT,
+    optimized_tablet     TEXT,
+    optimized_desktop    TEXT,
+    optimized_ultra_wide TEXT
+)
+`
+
+func (q *Queries) CreateMediaTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createMediaTable)
+	return err
+}
+
 const createRole = `-- name: CreateRole :one
 ;
 
@@ -747,6 +995,19 @@ func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) (Roles, 
 	var i Roles
 	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
 	return i, err
+}
+
+const createRoleTable = `-- name: CreateRoleTable :exec
+CREATE TABLE IF NOT EXISTS roles (
+    role_id INTEGER PRIMARY KEY,
+    label TEXT NOT NULL unique,
+    permissions TEXT NOT NULL unique
+)
+`
+
+func (q *Queries) CreateRoleTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createRoleTable)
+	return err
 }
 
 const createRoute = `-- name: CreateRoute :one
@@ -801,6 +1062,29 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Route
 	return i, err
 }
 
+const createRouteTable = `-- name: CreateRouteTable :exec
+CREATE TABLE IF NOT EXISTS routes (
+    route_id SERIAL PRIMARY KEY,
+    author TEXT DEFAULT 'system' NOT NULL
+        REFERENCES users(username)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users(user_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    slug TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    history TEXT,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateRouteTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createRouteTable)
+	return err
+}
+
 const createTable = `-- name: CreateTable :one
 INSERT INTO tables (
     label
@@ -815,6 +1099,21 @@ func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Tables
 	var i Tables
 	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
 	return i, err
+}
+
+const createTablesTable = `-- name: CreateTablesTable :exec
+CREATE TABLE IF NOT EXISTS tables (
+    id INTEGER PRIMARY KEY,
+    label TEXT UNIQUE,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT
+)
+`
+
+func (q *Queries) CreateTablesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createTablesTable)
+	return err
 }
 
 const createToken = `-- name: CreateToken :one
@@ -859,6 +1158,27 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token
 		&i.Revoked,
 	)
 	return i, err
+}
+
+const createTokenTable = `-- name: CreateTokenTable :exec
+CREATE TABLE IF NOT EXISTS tokens (
+    id INTEGER
+        PRIMARY KEY,
+    user_id INTEGER NOT NULL
+        REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    token_type TEXT NOT NULL,
+    token TEXT NOT NULL
+        UNIQUE,
+    issued_at TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    revoked BOOLEAN DEFAULT 0
+)
+`
+
+func (q *Queries) CreateTokenTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createTokenTable)
+	return err
 }
 
 const createUser = `-- name: CreateUser :one
@@ -911,6 +1231,26 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		&i.DateModified,
 	)
 	return i, err
+}
+
+const createUserTable = `-- name: CreateUserTable :exec
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    role INTEGER NOT NULL,
+        references role
+            on update cascade on delete set NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateUserTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createUserTable)
+	return err
 }
 
 const deleteAdminDatatype = `-- name: DeleteAdminDatatype :exec

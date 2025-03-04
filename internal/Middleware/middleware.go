@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net/http"
 
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
@@ -26,7 +26,7 @@ func ScanCookie(i []byte) (*MiddlewareCookie, error) {
 	return &c, nil
 
 }
-func UserIsAuth(r *http.Request, dbSrc string) bool {
+func UserIsAuth(r *http.Request, conf config.Config) bool {
 	var buf bytes.Buffer
 
 	// Retrieve the cookie
@@ -51,28 +51,18 @@ func UserIsAuth(r *http.Request, dbSrc string) bool {
 	}
 
 	// Get the database instance
-	var dbc db.Database
-	if dbSrc != "" {
-		dbc = db.GetDb(db.Database{Src: dbSrc})
-	} else {
-		dbc = db.GetDb(db.Database{})
-	}
+    dbc:=db.ConfigDB(conf)
 
-	// Ensure the database connection is valid
-	if dbc.Connection == nil {
-		fmt.Println("Database connection is nil")
-		return false
-	}
 
 	// Retrieve tokens from the database
-	tokens, err := db.GetTokenByUserId(dbc.Connection, dbc.Context, userCookie.UserId)
+	tokens, err := dbc.GetTokenByUserId( userCookie.UserId)
 	if err != nil || tokens == nil || len(*tokens) == 0 {
 		fmt.Println("Error retrieving tokens or no tokens found:", err)
 		return false
 	}
 
 	// Find the Access token
-	var accessToken *mdb.Tokens
+	var accessToken *db.Tokens
 	for _, t := range *tokens {
 		if t.TokenType == "Access" {
 			accessToken = &t

@@ -1,6 +1,16 @@
+-- name: CreateRoleTable :exec
+CREATE TABLE IF NOT EXISTS roles (
+    role_id INTEGER PRIMARY KEY,
+    label TEXT NOT NULL unique,
+    permissions TEXT NOT NULL unique
+);
 -- name: GetRole :one
 SELECT * FROM roles
 WHERE role_id = ? LIMIT 1;
+
+-- name: CountRole :one
+SELECT COUNT(*)
+FROM roles;
 
 -- name: ListRole :many
 SELECT * FROM roles 

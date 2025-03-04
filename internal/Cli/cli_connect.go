@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
@@ -24,17 +25,18 @@ type ForeignKeyReference struct {
 
 func GetTables(dbName string) []string {
 	var (
-		dbc    db.Database
+		d      db.DbDriver
 		labels []string
 	)
 
 	if dbName == "" {
-		dbc = db.GetDb(db.Database{})
+		d = db.ConfigDB(config.Env)
 	} else {
-		dbc = db.GetDb(db.Database{Src: dbName})
+		d = db.ConfigDB(config.Env)
 	}
+	con, ctx := d.GetConnection()
 	q := "SELECT * FROM tables;"
-	rows, err := dbc.Connection.QueryContext(dbc.Context, q)
+	rows, err := con.QueryContext(ctx, q)
 	if err != nil {
 		utility.LogError("", err)
 	}
@@ -61,13 +63,17 @@ func GetTables(dbName string) []string {
 
 func GetFieldsString(table string, dbName string) string {
 	var r string
-	var dbc db.Database
+	var (
+		d      db.DbDriver
+	)
+
 	if dbName == "" {
-		dbc = db.GetDb(db.Database{})
+		d = db.ConfigDB(config.Env)
 	} else {
-		dbc = db.GetDb(db.Database{Src: dbName})
+		d = db.ConfigDB(config.Env)
 	}
-	_, m, err := db.GetTableColumns(dbc.Context, dbc.Connection, table)
+	con, ctx := d.GetConnection()
+	_, m, err := db.GetTableColumns(ctx, con, table)
 	if err != nil {
 		utility.LogError("failed to : ", err)
 	}
@@ -93,13 +99,14 @@ func GetFieldsString(table string, dbName string) string {
 
 func GetFields(table string, dbName string) []Column {
 	var columns []Column
-	var dbc db.Database
+	var d db.DbDriver
 	if dbName == "" {
-		dbc = db.GetDb(db.Database{})
+		d = db.ConfigDB(config.Env)
 	} else {
-		dbc = db.GetDb(db.Database{Src: dbName})
+		d = db.ConfigDB(config.Env)
 	}
-	t, m, err := db.GetTableColumns(dbc.Context, dbc.Connection, table)
+	con, ctx := d.GetConnection()
+	t, m, err := db.GetTableColumns(ctx, con, table)
 	if err != nil {
 		utility.LogError("failed to : ", err)
 	}

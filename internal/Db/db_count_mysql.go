@@ -1,64 +1,124 @@
 package db
 
 import (
-	"context"
-	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
 
-func (d MysqlDatabase) CountAdminRoutes(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountAdminroute(ctx)
+func (d MysqlDatabase) CountAdminDatatypes() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountDatatypes(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountDatatype(ctx)
+func (d MysqlDatabase) CountAdminFields() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountField(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountField(ctx)
+
+func (d MysqlDatabase) CountAdminRoutes() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminroute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountMedia(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountMedia(ctx)
+
+func (d MysqlDatabase) CountContentData() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountContentData(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountTables(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountTables(ctx)
+func (d MysqlDatabase) CountContentFields() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountContentField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountTokens(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountTokens(ctx)
+
+func (d MysqlDatabase) CountDatatypes() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CountUsers(db *sql.DB, ctx context.Context) (*int64, error) {
-	queries := mdbm.New(db)
-	c, err := queries.CountUsers(ctx)
+func (d MysqlDatabase) CountFields() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d MysqlDatabase) CountMedia() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountMedia(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d MysqlDatabase) CountMediaDimensions() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountMediaDimension(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d MysqlDatabase) CountRoles() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountRole(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d MysqlDatabase) CountRoutes() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountRoute(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d MysqlDatabase) CountTables() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountTables(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d MysqlDatabase) CountTokens() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountTokens(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d MysqlDatabase) CountUsers() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountUsers(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}

@@ -3,7 +3,7 @@ FROM postgres:13
 
 # Set environment variables (these can be overridden at runtime)
 ENV POSTGRES_USER=modula_u
-ENV POSTGRES_PASSWORD=root#root
+ENV POSTGRES_PASSWORD=modula_pass
 ENV POSTGRES_DB=modula_db
 
 # Copy initialization script(s) to be executed during container startup.
