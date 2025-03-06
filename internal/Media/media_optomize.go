@@ -10,110 +10,101 @@ import (
 	"path/filepath"
 	"strings"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
+func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
+	d := db.ConfigDB(c)
 
-func OptimizeUpload(fSrc string, fPath string) []string {
-	dbc := db.GetDb(db.Database{})
+	// Open the source file.
 	file, err := os.Open(fSrc)
 	if err != nil {
-		utility.LogError("couldn't find tmp file ", err)
+		return fmt.Errorf("couldn't find tmp file: %w", err)
 	}
 	defer file.Close()
-	baseName := strings.TrimSuffix(fPath, filepath.Ext(fPath))
 
-	src := decodeMedia(file, fPath)
-
-	in := []draw.Interpolator{draw.CatmullRom}
-
-	dimensions, err := db.ListMediaDimension(dbc.Connection, dbc.Context)
+	// Get the dimensions.
+	dimensions, err := d.ListMediaDimensions()
 	if err != nil {
-		utility.LogError("failed to : ", err)
+		return fmt.Errorf("failed to list media dimensions: %w", err)
 	}
-	images := []draw.Image{}
-	for i, dx := range *dimensions {
-		in[0].Scale(images[i], image.Rect(0, 0, int(dx.Width.Int64), int(dx.Height.Int64)), src, src.Bounds(), draw.Over, nil)
+	if dimensions == nil {
+		return fmt.Errorf("dimensions list is nil")
 	}
-	var paths []string
-	for _, im := range images {
-		path := writeEncodeMedia(im, fmt.Sprintf("%s-%v.%s", baseName, im, filepath.Ext(fPath)))
 
-		paths = append(paths, path)
-	}
-	return paths
-}
+	baseName := strings.TrimSuffix(fPath, filepath.Ext(fPath))
+	ext := filepath.Ext(fSrc)
 
-func decodeMedia(fSrc *os.File, fName string) image.Image {
-	ext := filepath.Ext(fName)
+	// Decode the image.
+	var dImg image.Image
 	switch ext {
-	case "png":
-		src, err := png.Decode(fSrc)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return src
-	case "jpg", "jpeg":
-		src, err := jpeg.Decode(fSrc)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return src
-	case "webp":
-		src, err := webp.Decode(fSrc)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return src
-	case "gif":
+	case ".png":
+		dImg, err = png.Decode(file)
+	case ".jpg", ".jpeg":
+		dImg, err = jpeg.Decode(file)
+	case ".webp":
+		dImg, err = webp.Decode(file)
+	case ".gif":
+		dImg, err = gif.Decode(file)
+	default:
+		return fmt.Errorf("unsupported file extension: %s", ext)
+	}
+	if err != nil {
+		return fmt.Errorf("error decoding image: %w", err)
+	}
+	if dImg == nil {
+		return fmt.Errorf("decoded image is nil")
+	}
 
-		src, err := gif.Decode(fSrc)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return src
-	case "svg":
-		return nil
+	// Initialize scaler.
+	var in draw.Scaler = draw.BiLinear
+	images := []draw.Image{}
+	bounds := dImg.Bounds()
+	centerX := (bounds.Min.X + bounds.Max.X) / 2
+	centerY := (bounds.Min.Y + bounds.Max.Y) / 2
 
+	// Crop and scale images.
+	for _, dx := range *dimensions {
+		cropWidth := int(dx.Width.Int64)
+		cropHeight := int(dx.Height.Int64)
+		x0 := centerX - cropWidth/2
+		y0 := centerY - cropHeight/2
+		cropRect := image.Rect(x0, y0, x0+cropWidth, y0+cropHeight)
+		cropRect = cropRect.Intersect(bounds)
+
+		dstRect := image.Rect(0, 0, cropWidth, cropHeight)
+		img := image.NewRGBA(dstRect)
+		in.Scale(img, dstRect, dImg, cropRect, draw.Over, nil)
+		images = append(images, img)
+	}
+
+	// Encode and save images.
+	for i, im := range images {
+		filename := fmt.Sprintf("%s-%v%s", baseName, i, ext)
+		f, err := os.Create(filename)
+		if err != nil {
+			return fmt.Errorf("error creating file %s: %w", filename, err)
+		}
+		// Ensure the file is closed after encoding.
+		defer f.Close()
+
+		switch ext {
+		case ".png":
+			err = png.Encode(f, im)
+		case ".jpg", ".jpeg":
+			err = jpeg.Encode(f, im, nil)
+		case ".gif":
+			err = gif.Encode(f, im, nil)
+		default:
+			// In theory, this case won't be reached due to the earlier switch.
+			err = fmt.Errorf("unsupported encoding for extension: %s", ext)
+		}
+		if err != nil {
+			return fmt.Errorf("error encoding image %s: %w", filename, err)
+		}
 	}
 	return nil
 }
 
-func writeEncodeMedia(image draw.Image, fName string) string {
-	file, err := os.Create(fName)
-	if err != nil {
-		fmt.Printf("%s\n", err)
-	}
-	defer file.Close()
-
-	ext := filepath.Ext(fName)
-	switch ext {
-	case "png":
-		err := png.Encode(file, image)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return fName
-	case "jpg", "jpeg":
-		err := jpeg.Encode(file, image, nil)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return fName
-	case "webp":
-		return fName
-	case "gif":
-
-		err := gif.Encode(file, image, nil)
-		if err != nil {
-			fmt.Printf("%v\n", err)
-		}
-		return fName
-	case "svg":
-		return fName
-
-	}
-	return fName
-}

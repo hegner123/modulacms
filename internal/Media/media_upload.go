@@ -11,10 +11,10 @@ func HandleCompletedMediaUpload(tmpFile string, fName string) {
 	month := now.Month()
 	newPath := fmt.Sprintf("./media/%d/%d/%s", year, month, fName)
 
-	optimized := OptimizeUpload(tmpFile, fName)
+//	optimized := OptimizeUpload(tmpFile, fName)
 
 	// TODO: write paths to optimized files to db
-    fmt.Println(optimized)
+ //   fmt.Println(optimized)
     fmt.Println(newPath)
 
 }

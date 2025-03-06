@@ -11,6 +11,7 @@ import (
 	cli "github.com/hegner123/modulacms/internal/Cli"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
+	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	router "github.com/hegner123/modulacms/internal/Router"
 	api_v1 "github.com/hegner123/modulacms/internal/Server"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -100,21 +101,21 @@ func main() {
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-        fmt.Printf("Main Router Func\n\n")
 		router.Router(w, r, &api)
 
 	})
+	handler := middleware.Cors(mux)
 
 	if !InitStatus.UseSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s\n", Env.SSL_Port)
-		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", mux)
+		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", handler)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
 	log.Printf("\n\nServer is running at http://localhost:%s\n", Env.Port)
-	err := http.ListenAndServe(":"+Env.Port, mux)
+	err := http.ListenAndServe(":"+Env.Port, handler)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

@@ -22,7 +22,7 @@ import (
 var SqlFiles embed.FS
 
 func (d Database) GetDb() DbDriver {
-	fmt.Printf("Trying to connect to sqlite3 Db\n")
+	fmt.Printf("Connecting to sqlite3 Db.......")
 	ctx := context.Background()
 
 	if d.Src == "" {
@@ -31,10 +31,12 @@ func (d Database) GetDb() DbDriver {
 
 	db, err := sql.Open("sqlite3", d.Src)
 	if err != nil {
-		fmt.Printf("db exec err db_init 007 : %s\n", err)
+		fmt.Printf("ERROR\ndb exec err db_init 007 : %s\n", err)
 		d.Err = err
 		return d
 	}
+
+	fmt.Printf("OK\n")
 
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
@@ -49,34 +51,37 @@ func (d Database) GetDb() DbDriver {
 	return d
 }
 func (d MysqlDatabase) GetDb() DbDriver {
-	fmt.Printf("Trying to connect to mysql Db\n")
+	fmt.Printf("Connecting to mysql Db......")
 	ctx := context.Background()
 
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
-    fmt.Printf("Connection:%v\n", dsn)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
+		log.Fatalf("ERROR\nError opening database: %v", err)
 	}
 
+	fmt.Printf("OK\n")
+
+	fmt.Printf("Connection:%v\n", dsn)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil
 	return d
 }
 func (d PsqlDatabase) GetDb() DbDriver {
-	fmt.Printf("Trying to connect to postgres Db\n")
-    ctx := context.Background()
+	fmt.Printf("Connecting to postgres Db.......")
+	ctx := context.Background()
 
 	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
-	fmt.Printf("Connection: %v\n", connStr)
 
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatalf("Error opening database: %v", err)
+		log.Fatalf("ERROR\nError opening database: %v", err)
 	}
+	fmt.Printf("OK\n")
 
+	fmt.Printf("Connection: %v\n", connStr)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil
@@ -101,7 +106,7 @@ func ConfigDB(env config.Config) DbDriver {
 	return nil
 }
 
-func (d Database) InitDb( v *bool) error {
+func (d Database) InitDb(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
@@ -112,7 +117,7 @@ func (d Database) InitDb( v *bool) error {
 
 	return nil
 }
-func (d MysqlDatabase) InitDb( v *bool) error {
+func (d MysqlDatabase) InitDb(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
@@ -123,7 +128,7 @@ func (d MysqlDatabase) InitDb( v *bool) error {
 
 	return nil
 }
-func (d PsqlDatabase) InitDb( v *bool) error {
+func (d PsqlDatabase) InitDb(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
@@ -169,7 +174,6 @@ func GenerateKey() []byte {
 	return key
 }
 
-func (d MysqlDatabase) CreateTables(){
-    
+func (d MysqlDatabase) CreateTables() {
 
 }

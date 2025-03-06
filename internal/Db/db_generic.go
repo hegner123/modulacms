@@ -2,37 +2,36 @@ package db
 
 import (
 	"fmt"
-
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-type SqlMethod string
+type SqlLogicOperators string
+type SqlMethods int
 
-var (
-	and SqlMethod = "AND"
-	or  SqlMethod = "OR"
+const (
+	INSERT SqlMethods        = 1
+	SELECT SqlMethods        = 2
+	UPDATE SqlMethods        = 3
+	DELETE SqlMethods        = 4
+	AND    SqlLogicOperators = "AND"
+	OR     SqlLogicOperators = "OR"
 )
 
 type SQLQuery struct {
-	method  string
-	table   string
-	columns []string
-	values  []string
-	filter  []WhereKeyValue
-	err     error
+	Method  int
+	Table   string
+	Columns []string
+	Values  []string
+	Filter  []WhereKeyValue
+	Err     error
 }
-
 
 type WhereKeyValue struct {
 	key    string
 	value  string
-	method *SqlMethod
+	method *SqlLogicOperators
 }
-func NewQuery(method string, table string, columns []string, values []string, filter []WhereKeyValue) SQLQuery {
-    q := SQLQuery{method: method, table: table, columns: columns, values: values, filter: filter, err: nil}
 
-    return q
-}
 
 func FormatSqlColumns(columns []string, isValues bool) string {
 	var v string

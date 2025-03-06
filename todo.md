@@ -4,21 +4,21 @@
 - make
 
 ## ToDo
-- [ ] Server: GO
+- [x] Server: GO
 - [ ] Endpoints:
     - **api/vX/admin/** JSON endpoints to serve admin
     - **api/vX/client/** JSON endpoints to serve Clients
-- [ ] DB: SQLite 
-- [ ] Bucket: Deployment require cloud storage endpoint
+- [x] DB: SQLite 
+- [x] Bucket: Deployment require cloud storage endpoint
 - [ ] Reverse Proxy Bucket endpoints
 
 ## Db Functions
-- [ ] DB MySql Queries
-- [ ] DB MySql Schema
-- [ ] DB MySql Functions
-- [ ] DB PostgreSQL Queries
-- [ ] DB PostgreSQL Schema
-- [ ] DB PostgreSQL Functions
+- [x] DB MySql Queries
+- [x] DB MySql Schema
+- [x] DB MySql Functions
+- [x] DB PostgreSQL Queries
+- [x] DB PostgreSQL Schema
+- [x] DB PostgreSQL Functions
 - [x] DB Sqlite Queries
 - [x] DB Sqlite Schema 
 - [x] DB Sqlite Functions
@@ -35,7 +35,7 @@
 - [ ] Middleware
 - [x] Connect to Bucket Storage
 - [x] Media upload
-- [ ] Media Optimize
+- [x] Media Optimize
 - [x] Backup
 - [ ] Restore
 
