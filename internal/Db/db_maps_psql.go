@@ -8,18 +8,38 @@ import (
 )
 
 // Sqlite
+func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentData {
+	return AdminContentData{
+		AdminDatatypeID: int64(a.AdminDatatypeID.Int32),
+		AdminRouteID:    int64(a.AdminRouteID.Int32),
+		DateCreated:     Ns(nt(a.DateCreated)),
+		DateModified:    Ns(nt(a.DateModified)),
+		History:         a.History,
+	}
+}
+func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminContentFields {
+	return AdminContentFields{
+		AdminContentFieldID: int64(a.AdminContentFieldID),
+		AdminContentDataID:  int64(a.AdminContentDataID),
+		AdminFieldID:        int64(a.AdminFieldID),
+		AdminFieldValue:     a.AdminFieldValue,
+		History:             a.History,
+		DateCreated:         Ns(nt(a.DateCreated)),
+		DateModified:        Ns(nt(a.DateModified)),
+	}
+}
 func (d PsqlDatabase) MapAdminDatatype(a mdbp.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
-		AdminDtID:    int64(a.AdminDtID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID.Int32)),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
-		Label:        a.Label,
-		Type:         a.Type,
-		Author:       a.Author,
-		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
-		History:      a.History,
+		AdminDatatypeID: int64(a.AdminDatatypeID),
+		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
+		ParentID:        Ni64(int64(a.ParentID.Int32)),
+		Label:           a.Label,
+		Type:            a.Type,
+		Author:          a.Author,
+		AuthorID:        int64(a.AuthorID),
+		DateCreated:     Ns(nt(a.DateCreated)),
+		DateModified:    Ns(nt(a.DateModified)),
+		History:         a.History,
 	}
 }
 
@@ -56,7 +76,8 @@ func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: int64(a.ContentDataID),
-		AdminDtID:     int64(a.AdminDtID.Int32),
+		RouteID:       int64(a.RouteID.Int32),
+		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
 		DateCreated:   Ns(nt(a.DateCreated)),
 		DateModified:  Ns(nt(a.DateModified)),
@@ -66,8 +87,9 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
+		RouteID:        int64(a.RouteID.Int32),
 		ContentDataID:  int64(a.ContentDataID),
-		AdminFieldID:   int64(a.AdminFieldID),
+		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
 		DateCreated:    Ns(nt(a.DateCreated)),
@@ -228,15 +250,36 @@ func (d PsqlDatabase) MapListAdminFieldsByDatatypeIDRow(a mdbp.ListAdminFieldsBy
 
 func (d PsqlDatabase) MapListAdminDatatypeByRouteIdRow(a mdbp.ListAdminDatatypeByRouteIdRow) ListAdminDatatypeByRouteIdRow {
 	return ListAdminDatatypeByRouteIdRow{
-		AdminDtID:    int64(a.AdminDtID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID.Int32)),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
-		Label:        a.Label,
-		Type:         a.Type,
-		History:      a.History,
+		AdminDatatypeID: int64(a.AdminDatatypeID),
+		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
+		ParentID:        Ni64(int64(a.ParentID.Int32)),
+		Label:           a.Label,
+		Type:            a.Type,
+		History:         a.History,
 	}
 }
 
+func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbp.CreateAdminContentDataParams {
+	return mdbp.CreateAdminContentDataParams{
+		AdminRouteID:    Ni32(a.AdminRouteID),
+		AdminDatatypeID: Ni32(a.AdminDatatypeID),
+		History:         a.History,
+		DateCreated:     sTime(a.DateCreated.String),
+		DateModified:    sTime(a.DateModified.String),
+	}
+}
+func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbp.CreateAdminContentFieldParams {
+	return mdbp.CreateAdminContentFieldParams{
+		AdminRouteID:        Ni32(a.AdminRouteID),
+		AdminContentFieldID: int32(a.AdminContentFieldID),
+		AdminContentDataID:  int32(a.AdminContentDataID),
+		AdminFieldID:        int32(a.AdminFieldID),
+		AdminFieldValue:     a.AdminFieldValue,
+		History:             a.History,
+		DateCreated:         sTime(a.DateCreated.String),
+		DateModified:        sTime(a.DateModified.String),
+	}
+}
 
 func (d PsqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdbp.CreateAdminDatatypeParams {
 	return mdbp.CreateAdminDatatypeParams{
@@ -280,7 +323,8 @@ func (d PsqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbp.C
 }
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
-		AdminDtID:    Ni32(a.AdminDtID),
+		RouteID:      Ni32(a.RouteID),
+		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
 		DateCreated:  sTime(a.DateCreated.String),
 		DateModified: sTime(a.DateModified.String),
@@ -288,13 +332,14 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 }
 func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbp.CreateContentFieldParams {
 	return mdbp.CreateContentFieldParams{
+		RouteID:        Ni32(a.RouteID),
 		ContentFieldID: int32(a.ContentFieldID),
 		ContentDataID:  int32(a.ContentDataID),
-		AdminFieldID:   int32(a.AdminFieldID),
+		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:    sTime(a.DateCreated.String),
+		DateModified:   sTime(a.DateModified.String),
 	}
 }
 func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.CreateDatatypeParams {
@@ -303,7 +348,7 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-        History:      a.History,
+		History:      a.History,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  sTime(a.DateCreated.String),
@@ -333,10 +378,10 @@ func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMedia
 		Caption:            a.Caption,
 		Description:        a.Description,
 		Class:              a.Class,
-		Author:       AssertString(a.Author),
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		Author:             AssertString(a.Author),
+		AuthorID:           int32(a.AuthorID),
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
 		Url:                a.Url,
 		Mimetype:           a.Mimetype,
 		Dimensions:         a.Dimensions,
@@ -394,18 +439,41 @@ func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserPar
 		Role:         Ni32(a.Role),
 	}
 }
+func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbp.UpdateAdminContentDataParams {
+	return mdbp.UpdateAdminContentDataParams{
+		AdminRouteID:       Ni32(a.AdminRouteID),
+		AdminDatatypeID:    Ni32(a.AdminDatatypeID),
+		History:            a.History,
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
+		AdminContentDataID: int32(a.AdminContentDataID),
+	}
+}
+func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbp.UpdateAdminContentFieldParams {
+	return mdbp.UpdateAdminContentFieldParams{
+		AdminRouteID:          Ni32(a.AdminRouteID),
+		AdminContentFieldID:   int32(a.AdminContentFieldID),
+		AdminContentDataID:    int32(a.AdminContentDataID),
+		AdminFieldID:          int32(a.AdminFieldID),
+		AdminFieldValue:       a.AdminFieldValue,
+		History:               a.History,
+		DateCreated:           sTime(a.DateCreated.String),
+		DateModified:          sTime(a.DateModified.String),
+		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
+	}
+}
 func (d PsqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbp.UpdateAdminDatatypeParams {
 	return mdbp.UpdateAdminDatatypeParams{
-		AdminRouteID: Ni32(a.AdminRouteID.Int64),
-		ParentID:     Ni32(a.ParentID.Int64),
-		Label:        a.Label,
-		Type:         a.Type,
-		Author:       a.Author,
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
-		History:      a.History,
-		AdminDtID:    int32(a.AdminDtID),
+		AdminRouteID:    Ni32(a.AdminRouteID.Int64),
+		ParentID:        Ni32(a.ParentID.Int64),
+		Label:           a.Label,
+		Type:            a.Type,
+		Author:          a.Author,
+		AuthorID:        int32(a.AuthorID),
+		DateCreated:     sTime(a.DateCreated.String),
+		DateModified:    sTime(a.DateModified.String),
+		History:         a.History,
+		AdminDatatypeID: int32(a.AdminDatatypeID),
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.UpdateAdminFieldParams {
@@ -438,7 +506,8 @@ func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.U
 }
 func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp.UpdateContentDataParams {
 	return mdbp.UpdateContentDataParams{
-		AdminDtID:     Ni32(a.AdminDtID),
+		RouteID:       Ni32(a.RouteID),
+		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
 		DateCreated:   sTime(a.DateCreated.String),
 		DateModified:  sTime(a.DateModified.String),
@@ -447,9 +516,10 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 }
 func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbp.UpdateContentFieldParams {
 	return mdbp.UpdateContentFieldParams{
+		RouteID:          Ni32(a.RouteID),
 		ContentFieldID:   int32(a.ContentFieldID),
 		ContentDataID:    int32(a.ContentDataID),
-		AdminFieldID:     int32(a.AdminFieldID),
+		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
 		History:          a.History,
 		DateCreated:      sTime(a.DateCreated.String),
@@ -463,7 +533,7 @@ func (d PsqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbp.Updat
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-        History:      a.History,
+		History:      a.History,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  sTime(a.DateCreated.String),
@@ -494,10 +564,10 @@ func (d PsqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbp.UpdateMedia
 		Caption:            a.Caption,
 		Description:        a.Description,
 		Class:              a.Class,
-		Author:       AssertString(a.Author),
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		Author:             AssertString(a.Author),
+		AuthorID:           int32(a.AuthorID),
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
 		Url:                a.Url,
 		Mimetype:           a.Mimetype,
 		Dimensions:         a.Dimensions,

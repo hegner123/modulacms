@@ -24,6 +24,9 @@ func (d PsqlDatabase) CreateAllTables() error {
 	if err := d.CreateContentDataTable(); err != nil {
 		return err
 	}
+	if err := d.CreateAdminContentDataTable(); err != nil {
+		return err
+	}
 	if err := d.CreateDatatypeTable(); err != nil {
 		return err
 	}
@@ -34,6 +37,9 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 	if err := d.CreateContentFieldTable(); err != nil {
+		return err
+	}
+	if err := d.CreateAdminContentFieldTable(); err != nil {
 		return err
 	}
 	if err := d.CreateTableTable(); err != nil {
@@ -47,7 +53,17 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 	return nil
 }
+func (d PsqlDatabase) CreateAdminContentDataTable() error {
+	queries := mdbp.New(d.Connection)
+	err := queries.CreateAdminContentDataTable(d.Context)
+	return err
+}
 
+func (d PsqlDatabase) CreateAdminContentFieldTable() error {
+	queries := mdbp.New(d.Connection)
+	err := queries.CreateAdminContentFieldTable(d.Context)
+	return err
+}
 
 func (d PsqlDatabase) CreateAdminDatatypeTable() error {
 	queries := mdbp.New(d.Connection)

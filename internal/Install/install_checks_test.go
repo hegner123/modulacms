@@ -1,6 +1,10 @@
 package install
 
-import "testing"
+import (
+	"testing"
+
+	config "github.com/hegner123/modulacms/internal/Config"
+)
 
 func TestConfigPathCheck(t *testing.T) {
 	err := CheckConfigExists("")
@@ -11,7 +15,10 @@ func TestConfigPathCheck(t *testing.T) {
 }
 
 func TestDbExists(t *testing.T){
-    err := CheckDb("")
+    c := config.Config{
+        Db_Driver: "sqlite",
+    }
+    err := CheckDb(c)
 	if err != nil {
 		t.Fatal(err)
 	}

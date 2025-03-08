@@ -34,7 +34,7 @@ func GetTables(dbName string) []string {
 	} else {
 		d = db.ConfigDB(config.Env)
 	}
-	con, ctx := d.GetConnection()
+	con, ctx, _ := d.GetConnection()
 	q := "SELECT * FROM tables;"
 	rows, err := con.QueryContext(ctx, q)
 	if err != nil {
@@ -72,7 +72,7 @@ func GetFieldsString(table string, dbName string) string {
 	} else {
 		d = db.ConfigDB(config.Env)
 	}
-	con, ctx := d.GetConnection()
+	con, ctx, _ := d.GetConnection()
 	_, m, err := db.GetTableColumns(ctx, con, table)
 	if err != nil {
 		utility.LogError("failed to : ", err)
@@ -105,7 +105,7 @@ func GetFields(table string, dbName string) []Column {
 	} else {
 		d = db.ConfigDB(config.Env)
 	}
-	con, ctx := d.GetConnection()
+	con, ctx, _ := d.GetConnection()
 	t, m, err := db.GetTableColumns(ctx, con, table)
 	if err != nil {
 		utility.LogError("failed to : ", err)
@@ -196,7 +196,7 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	sort.Strings(keys)
 
 	// Use a classic for loop with an index over the slice of keys.
-	for i := 0; i < len(keys); i++ {
+    for i := range len(keys) {
 		key := keys[i]
 		k := MatchFk(key, fk)
 		if k != nil {

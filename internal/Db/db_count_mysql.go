@@ -6,6 +6,24 @@ import (
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
 
+func (d MysqlDatabase) CountAdminContentData() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminContentData(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d MysqlDatabase) CountAdminContentFields() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountAdminContentField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
 func (d MysqlDatabase) CountAdminDatatypes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminDatatype(d.Context)
@@ -14,6 +32,7 @@ func (d MysqlDatabase) CountAdminDatatypes() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountAdminFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminField(d.Context)
@@ -40,6 +59,7 @@ func (d MysqlDatabase) CountContentData() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountContentFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -57,6 +77,7 @@ func (d MysqlDatabase) CountDatatypes() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountField(d.Context)
@@ -65,6 +86,7 @@ func (d MysqlDatabase) CountFields() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountMedia() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountMedia(d.Context)
@@ -73,6 +95,7 @@ func (d MysqlDatabase) CountMedia() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountMediaDimensions() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountMediaDimension(d.Context)
@@ -108,6 +131,7 @@ func (d MysqlDatabase) CountTables() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountTokens() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountTokens(d.Context)
@@ -116,6 +140,7 @@ func (d MysqlDatabase) CountTokens() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d MysqlDatabase) CountUsers() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountUsers(d.Context)

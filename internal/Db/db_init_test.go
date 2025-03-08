@@ -10,9 +10,9 @@ import (
 func TestMysqlConnection(t *testing.T) {
 	c := config.Config{
 		Db_Driver:   "mysql",
-        Db_Name:     "modula_db",
+		Db_Name:     "modula_db",
 		Db_URL:      "localhost",
-        Db_User:     "modula_u",
+		Db_User:     "modula_u",
 		Db_Password: "modula_pass",
 	}
 	d := ConfigDB(c)
@@ -22,16 +22,16 @@ func TestMysqlConnection(t *testing.T) {
 	} else {
 		fmt.Printf("Connected Successfully\n")
 	}
-    connection,_ := d.GetConnection()
-    defer connection.Close()
+	connection, _, _ := d.GetConnection()
+	defer connection.Close()
 }
 
 func TestPsqlConnection(t *testing.T) {
 	c := config.Config{
 		Db_Driver:   "postgres",
-        Db_Name:     "modula_db",
+		Db_Name:     "modula_db",
 		Db_URL:      "localhost",
-        Db_User:     "modula_u",
+		Db_User:     "modula_u",
 		Db_Password: "modula_pass",
 	}
 	d := ConfigDB(c)
@@ -41,6 +41,6 @@ func TestPsqlConnection(t *testing.T) {
 	} else {
 		fmt.Printf("Connected Successfully\n")
 	}
-    connection,_ := d.GetConnection()
-    defer connection.Close()
+	connection, _, _ := d.GetConnection()
+	defer connection.Close()
 }

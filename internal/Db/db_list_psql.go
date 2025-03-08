@@ -6,6 +6,33 @@ import (
 
 	mdbp "github.com/hegner123/modulacms/db-psql"
 )
+func (d PsqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentData(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFields(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
 
 func (d PsqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 
@@ -66,7 +93,7 @@ func (d PsqlDatabase) ListContentData() (*[]ContentData, error) {
 
 func (d PsqlDatabase) ListContentFields() (*[]ContentFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentField(d.Context)
+	rows, err := queries.ListContentFields(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}

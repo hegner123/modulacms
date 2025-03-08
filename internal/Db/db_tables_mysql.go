@@ -24,6 +24,9 @@ func (d MysqlDatabase) CreateAllTables() error {
 	if err := d.CreateContentDataTable(); err != nil {
 		return err
 	}
+	if err := d.CreateAdminContentDataTable(); err != nil {
+		return err
+	}
 	if err := d.CreateDatatypeTable(); err != nil {
 		return err
 	}
@@ -36,6 +39,9 @@ func (d MysqlDatabase) CreateAllTables() error {
 	if err := d.CreateContentFieldTable(); err != nil {
 		return err
 	}
+	if err := d.CreateAdminContentFieldTable(); err != nil {
+		return err
+	}
 	if err := d.CreateTableTable(); err != nil {
 		return err
 	}
@@ -46,6 +52,17 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 	return nil
+}
+func (d MysqlDatabase) CreateAdminContentDataTable() error {
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateAdminContentDataTable(d.Context)
+	return err
+}
+
+func (d MysqlDatabase) CreateAdminContentFieldTable() error {
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateAdminContentFieldTable(d.Context)
+	return err
 }
 
 func (d MysqlDatabase) CreateAdminDatatypeTable() error {

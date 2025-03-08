@@ -5,14 +5,14 @@ import (
 	"database/sql"
 )
 
-func (d Database) GetConnection() (*sql.DB, context.Context) {
-	return d.Connection, d.Context
+func (d Database) GetConnection() (*sql.DB, context.Context, error) {
+	return d.Connection, d.Context, nil
 }
-func (d MysqlDatabase) GetConnection() (*sql.DB, context.Context) {
-	return d.Connection, d.Context
+func (d MysqlDatabase) GetConnection() (*sql.DB, context.Context, error) {
+	return d.Connection, d.Context, nil
 }
-func (d PsqlDatabase) GetConnection() (*sql.DB, context.Context) {
-	return d.Connection, d.Context
+func (d PsqlDatabase) GetConnection() (*sql.DB, context.Context, error) {
+	return d.Connection, d.Context, nil
 }
 
 func (d Database) Ping() error {

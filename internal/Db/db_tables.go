@@ -2,7 +2,6 @@ package db
 
 import mdb "github.com/hegner123/modulacms/db-sqlite"
 
-
 func (d Database) CreateAllTables() error {
 	if err := d.CreateRoleTable(); err != nil {
 		return err
@@ -25,6 +24,9 @@ func (d Database) CreateAllTables() error {
 	if err := d.CreateContentDataTable(); err != nil {
 		return err
 	}
+	if err := d.CreateAdminContentDataTable(); err != nil {
+		return err
+	}
 	if err := d.CreateDatatypeTable(); err != nil {
 		return err
 	}
@@ -37,6 +39,9 @@ func (d Database) CreateAllTables() error {
 	if err := d.CreateContentFieldTable(); err != nil {
 		return err
 	}
+	if err := d.CreateAdminContentFieldTable(); err != nil {
+		return err
+	}
 	if err := d.CreateTableTable(); err != nil {
 		return err
 	}
@@ -47,6 +52,17 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 	return nil
+}
+func (d Database) CreateAdminContentDataTable() error {
+	queries := mdb.New(d.Connection)
+	err := queries.CreateAdminContentDataTable(d.Context)
+	return err
+}
+
+func (d Database) CreateAdminContentFieldTable() error {
+	queries := mdb.New(d.Connection)
+	err := queries.CreateAdminContentFieldTable(d.Context)
+	return err
 }
 
 func (d Database) CreateAdminDatatypeTable() error {

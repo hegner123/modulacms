@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
@@ -17,7 +18,7 @@ func TimestampBackupName(output string, timestamp string) string {
 	return fmt.Sprintf("%s_%s.zip", output, timestamp)
 }
 
-func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) error {
+func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName, c config.Config) error {
 	dbF := utility.FileExists(dbFile)
 	mediaD := utility.DirExists(mediaDir)
 	pluginD := utility.DirExists(pluginDir)
@@ -35,15 +36,18 @@ func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName) 
 
 	zipWriter := zip.NewWriter(backupFile)
 	defer zipWriter.Close()
-
-	dbc := db.GetDb(db.Database{Src: dbFile})
+	d := db.ConfigDB(c)
+	Connection, _, err := d.GetConnection()
+	if err != nil {
+		utility.LogError("Db Connection failed", err)
+	}
 
 	dbDumpFile, err := zipWriter.Create("database.sql")
 	if err != nil {
 		utility.LogError("failed to create database dump in archive: ", err)
 	}
 
-	rows, err := dbc.Connection.Query("SELECT sql FROM sqlite_master WHERE type='table'")
+	rows, err := Connection.Query("SELECT sql FROM sqlite_master WHERE type='table'")
 	if err != nil {
 		return fmt.Errorf("failed to dump database: %w", err)
 	}

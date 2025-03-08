@@ -1,12 +1,9 @@
 package ctree
 
 import (
-	"encoding/json"
 	"fmt"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type (
@@ -14,7 +11,7 @@ type (
 )
 
 func Scan(parent, child mdb.ListAdminDatatypeByRouteIdRow) int {
-	if parent.AdminDtID == child.ParentID.Int64 {
+	if parent.AdminDatatypeID == child.ParentID.Int64 {
 		return 1
 	} else {
 		return 0
@@ -50,7 +47,7 @@ func (parent *Node) Add(compare Scanner, child mdb.ListAdminDatatypeByRouteIdRow
 	case r == 1:
 		parent.Children = append(parent.Children, &Node{Val: child})
 	case r == 0:
-		for i := 0; i < len(parent.Children); i++ {
+		for i := range parent.Children {
 			parent.Children[i].Add(compare, child)
 		}
 	}
@@ -63,117 +60,14 @@ func (node *Node) PrintTree(level int) {
 		return
 	}
 	indent := ""
-	for i := 0; i < level; i++ {
+	for range level {
 		indent += "  "
 	}
-	fmt.Printf("%s%d (%s)\n", indent, node.Val.AdminDtID, node.Val.Label)
+	fmt.Printf("%s%d (%s)\n", indent, node.Val.AdminDatatypeID, node.Val.Label)
 	for _, v := range node.Fields {
 		fmt.Printf("%s%d (%s)\n", "|"+indent, v.AdminFieldID, v.Label)
 	}
 	for _, junior := range node.Children {
 		junior.PrintTree(level + 1)
 	}
-}
-
-func (node *Node) AddTreeFields(dbName string) {
-	if node == nil {
-		return
-	}
-	var res []int64
-	rows := dbGetFields(res, int(node.Val.AdminDtID), "", "")
-	if len(rows) > 0 {
-		for _, fieldId := range rows {
-			if dbName == "" {
-				dbName = ""
-			}
-			dbc := db.GetDb(db.Database{})
-			defer dbc.Connection.Close()
-			field, err := db.GetAdminFieldId(dbc.Connection, dbc.Context, fieldId)
-			if err != nil {
-				utility.LogError("failed to : ", err)
-			}
-			node.Fields = append(node.Fields, *field)
-		}
-	}
-	for _, junior := range node.Children {
-		junior.AddTreeFields(dbName)
-	}
-}
-
-func DbGetChildren(res []int64, id int64, dbName string, message string) []int64 {
-	if dbName == "" {
-		dbName = ""
-	}
-	dbc := db.GetDb(db.Database{})
-	rows, err := db.ListAdminDatatypeChildren(dbc.Connection, dbc.Context, id)
-	if err != nil {
-		utility.LogError("failed to : ", err)
-	}
-	if len(*rows) == 0 {
-		return res
-	} else {
-		for i, row := range *rows {
-			res = append(res, row.AdminDtID)
-			l := fmt.Sprintf("Rows %d ", len(*rows))
-			s := fmt.Sprintf("row index:%d, id %d, %s\n\n", i, id, l)
-			res = DbGetChildren(res, int64(row.AdminDtID), dbName, s)
-		}
-		return res
-	}
-}
-
-func dbGetFields(res []int64, id int, dbPath string, message string) []int64 {
-	var dbName string
-	if dbPath == "" {
-		dbName = ""
-	} else {
-		dbName = dbPath
-	}
-
-	dbc := db.GetDb(db.Database{Src: dbName})
-	defer dbc.Connection.Close()
-	rows, err := db.ListAdminFieldsByDatatypeID(dbc.Connection, dbc.Context, int64(id))
-	if err != nil {
-		fmt.Printf("failed to : %v", err)
-	}
-	for _, row := range *rows {
-		res = append(res, row.AdminFieldID)
-	}
-	return res
-
-}
-
-func BuildTree(p string) ([]byte, error) {
-	var dbName string
-	if p == "" {
-		dbName = ""
-	} else {
-		dbName = p
-	}
-
-	tree := Tree{fn: Scan}
-
-	dbc := db.GetDb(db.Database{Src: dbName})
-	if dbc.Err != nil {
-		return nil, dbc.Err
-	}
-	adts, err := db.ListAdminDatatypeByAdminRouteId(dbc.Connection, dbc.Context, int64(1))
-	if err != nil {
-		return nil, err
-	}
-	a := *adts
-
-	tree.Add(a[0])
-	for i := 1; i < len(a); i++ {
-		v := a[i]
-		tree.Root.Add(tree.fn, v)
-
-	}
-	tree.Root.AddTreeFields(dbName)
-
-	tp, err := json.Marshal(tree)
-	if err != nil {
-		return nil, err
-	}
-	return tp, nil
 }

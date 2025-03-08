@@ -11,17 +11,37 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+type AdminContentData struct {
+	AdminContentDataID int32          `json:"admin_content_data_id"`
+	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
+	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
+	History            sql.NullString `json:"history"`
+	DateCreated        sql.NullTime   `json:"date_created"`
+	DateModified       sql.NullTime   `json:"date_modified"`
+}
+
+type AdminContentFields struct {
+	AdminContentFieldID int32          `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullInt32  `json:"admin_route_id"`
+	AdminContentDataID  int32          `json:"admin_content_data_id"`
+	AdminFieldID        int32          `json:"admin_field_id"`
+	AdminFieldValue     string         `json:"admin_field_value"`
+	History             sql.NullString `json:"history"`
+	DateCreated         sql.NullTime   `json:"date_created"`
+	DateModified        sql.NullTime   `json:"date_modified"`
+}
+
 type AdminDatatypes struct {
-	AdminDtID    int32          `json:"admin_dt_id"`
-	AdminRouteID sql.NullInt32  `json:"admin_route_id"`
-	ParentID     sql.NullInt32  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       string         `json:"author"`
-	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
-	History      sql.NullString `json:"history"`
+	AdminDatatypeID int32          `json:"admin_datatype_id"`
+	AdminRouteID    sql.NullInt32  `json:"admin_route_id"`
+	ParentID        sql.NullInt32  `json:"parent_id"`
+	Label           string         `json:"label"`
+	Type            string         `json:"type"`
+	Author          string         `json:"author"`
+	AuthorID        int32          `json:"author_id"`
+	DateCreated     sql.NullTime   `json:"date_created"`
+	DateModified    sql.NullTime   `json:"date_modified"`
+	History         sql.NullString `json:"history"`
 }
 
 type AdminFields struct {
@@ -52,7 +72,8 @@ type AdminRoutes struct {
 
 type ContentData struct {
 	ContentDataID int32          `json:"content_data_id"`
-	AdminDtID     sql.NullInt32  `json:"admin_dt_id"`
+	RouteID       sql.NullInt32  `json:"route_id"`
+	DatatypeID    sql.NullInt32  `json:"datatype_id"`
 	History       sql.NullString `json:"history"`
 	DateCreated   sql.NullTime   `json:"date_created"`
 	DateModified  sql.NullTime   `json:"date_modified"`
@@ -60,8 +81,9 @@ type ContentData struct {
 
 type ContentFields struct {
 	ContentFieldID int32          `json:"content_field_id"`
+	RouteID        sql.NullInt32  `json:"route_id"`
 	ContentDataID  int32          `json:"content_data_id"`
-	AdminFieldID   int32          `json:"admin_field_id"`
+	FieldID        int32          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
 	History        sql.NullString `json:"history"`
 	DateCreated    sql.NullTime   `json:"date_created"`

@@ -1,7 +1,28 @@
 package db
 
-import (
-)
+import ()
+
+func MapCreateAdminContentDataParams(a CreateAdminContentDataFormParams) CreateAdminContentDataParams {
+	return CreateAdminContentDataParams{
+		AdminRouteID:    Si(a.AdminRouteID),
+		AdminDatatypeID: Si(a.AdminDatatypeID),
+		History:         Ns(a.History),
+		DateCreated:     Ns(a.DateCreated),
+		DateModified:    Ns(a.DateModified),
+	}
+}
+func MapCreateAdminContentFieldParams(a CreateAdminContentFieldFormParams) CreateAdminContentFieldParams {
+	return CreateAdminContentFieldParams{
+		AdminRouteID:        Si(a.AdminRouteID),
+		AdminContentFieldID: Si(a.AdminContentFieldID),
+		AdminContentDataID:  Si(a.AdminContentDataID),
+		AdminFieldID:        Si(a.AdminFieldID),
+		AdminFieldValue:     a.AdminFieldValue,
+		History:             Ns(a.History),
+		DateCreated:         Ns(a.DateCreated),
+		DateModified:        Ns(a.DateModified),
+	}
+}
 
 func MapCreateAdminDatatypeParams(a CreateAdminDatatypeFormParams) CreateAdminDatatypeParams {
 	return CreateAdminDatatypeParams{
@@ -46,7 +67,8 @@ func MapCreateAdminRouteParams(a CreateAdminRouteFormParams) CreateAdminRoutePar
 }
 func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentDataParams {
 	return CreateContentDataParams{
-		AdminDtID:    Si(a.AdminDtID),
+		RouteID:      Si(a.RouteID),
+		DatatypeID:   Si(a.DatatypeID),
 		History:      Ns(a.History),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -54,9 +76,10 @@ func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentData
 }
 func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFieldParams {
 	return CreateContentFieldParams{
+		RouteID:        Si(a.RouteID),
 		ContentFieldID: Si(a.ContentFieldID),
 		ContentDataID:  Si(a.ContentDataID),
-		AdminFieldID:   Si(a.AdminFieldID),
+		FieldID:        Si(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        Ns(a.History),
 		DateCreated:    Ns(a.DateCreated),
@@ -157,18 +180,41 @@ func MapCreateUserParams(a CreateUserFormParams) CreateUserParams {
 		Role:         Si(a.Role),
 	}
 }
+func MapUpdateAdminContentDataParams(a UpdateAdminContentDataFormParams) UpdateAdminContentDataParams {
+	return UpdateAdminContentDataParams{
+		AdminRouteID:       Si(a.AdminRouteID),
+		AdminDatatypeID:    Si(a.AdminDatatypeID),
+		History:            Ns(a.History),
+		DateCreated:        Ns(a.DateCreated),
+		DateModified:       Ns(a.DateModified),
+		AdminContentDataID: Si(a.AdminContentDataID),
+	}
+}
+func MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldFormParams) UpdateAdminContentFieldParams {
+	return UpdateAdminContentFieldParams{
+		AdminRouteID:          Si(a.AdminRouteID),
+		AdminContentFieldID:   Si(a.AdminContentFieldID),
+		AdminContentDataID:    Si(a.AdminContentDataID),
+		AdminFieldID:          Si(a.AdminFieldID),
+		AdminFieldValue:       a.AdminFieldValue,
+		History:               Ns(a.History),
+		DateCreated:           Ns(a.DateCreated),
+		DateModified:          Ns(a.DateModified),
+		AdminContentFieldID_2: Si(a.AdminContentFieldID_2),
+	}
+}
 func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDatatypeParams {
 	return UpdateAdminDatatypeParams{
-		AdminRouteID: Nsi(a.AdminRouteID),
-		ParentID:     Nsi(a.ParentID),
-		Label:        a.Label,
-		Type:         a.Type,
-		Author:       a.Author,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
-		AdminDtID:    Si(a.AdminDtID),
+		AdminRouteID:    Nsi(a.AdminRouteID),
+		ParentID:        Nsi(a.ParentID),
+		Label:           a.Label,
+		Type:            a.Type,
+		Author:          a.Author,
+		AuthorID:        Si(a.AuthorID),
+		DateCreated:     Ns(a.DateCreated),
+		DateModified:    Ns(a.DateModified),
+		History:         Ns(a.History),
+		AdminDatatypeID: Si(a.AdminDatatypeID),
 	}
 }
 func MapUpdateAdminFieldParams(a UpdateAdminFieldFormParams) UpdateAdminFieldParams {
@@ -201,7 +247,8 @@ func MapUpdateAdminRouteParams(a UpdateAdminRouteFormParams) UpdateAdminRoutePar
 }
 func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentDataParams {
 	return UpdateContentDataParams{
-		AdminDtID:     Si(a.AdminDtID),
+		RouteID:       Si(a.RouteID),
+		DatatypeID:    Si(a.DatatypeID),
 		History:       Ns(a.History),
 		DateCreated:   Ns(a.DateCreated),
 		DateModified:  Ns(a.DateModified),
@@ -210,9 +257,10 @@ func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentData
 }
 func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFieldParams {
 	return UpdateContentFieldParams{
+		RouteID:          Si(a.RouteID),
 		ContentFieldID:   Si(a.ContentFieldID),
 		ContentDataID:    Si(a.ContentDataID),
-		AdminFieldID:     Si(a.AdminFieldID),
+		FieldID:          Si(a.FieldID),
 		FieldValue:       a.FieldValue,
 		History:          Ns(a.History),
 		DateCreated:      Ns(a.DateCreated),

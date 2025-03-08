@@ -8,6 +8,34 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func (d Database) ListAdminContentData() (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentData(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListAdminContentFields() (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFields(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminDatatype(d.Context)
@@ -66,7 +94,7 @@ func (d Database) ListContentData() (*[]ContentData, error) {
 
 func (d Database) ListContentFields() (*[]ContentFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListContentField(d.Context)
+	rows, err := queries.ListContentFields(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}

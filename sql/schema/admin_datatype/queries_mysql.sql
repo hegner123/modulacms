@@ -1,6 +1,6 @@
 -- name: CreateAdminDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_dt_id INT NOT NULL AUTO_INCREMENT,
+    admin_datatype_id INT NOT NULL AUTO_INCREMENT,
     admin_route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
@@ -10,13 +10,13 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
-    PRIMARY KEY (admin_dt_id),
+    PRIMARY KEY (admin_datatype_id),
     CONSTRAINT fk_admin_datatypes_admin_route_id FOREIGN KEY (admin_route_id)
         REFERENCES admin_routes(admin_route_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
     CONSTRAINT fk_admin_datatypes_parent_id FOREIGN KEY (parent_id)
-        REFERENCES admin_datatypes(admin_dt_id)
+        REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
     CONSTRAINT fk_admin_datatypes_author FOREIGN KEY (author)
@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
 
 -- name: GetAdminDatatype :one
 SELECT * FROM admin_datatypes
-WHERE admin_dt_id = ? 
+WHERE admin_datatype_id = ? 
 LIMIT 1;
 
 -- name: CountAdminDatatype :one
@@ -40,23 +40,23 @@ SELECT COUNT(*)
 FROM admin_datatypes;
 
 -- name: GetAdminDatatypeId :one
-SELECT admin_dt_id FROM admin_datatypes
-WHERE admin_dt_id = ? 
+SELECT admin_datatype_id FROM admin_datatypes
+WHERE admin_datatype_id = ? 
 LIMIT 1;
 
 -- name: ListAdminDatatype :many
 SELECT * FROM admin_datatypes
-ORDER BY admin_dt_id;
+ORDER BY admin_datatype_id;
 
 -- name: ListAdminDatatypeTree :many
 SELECT 
-    child.admin_dt_id AS child_id,
+    child.admin_datatype_id AS child_id,
     child.label AS child_label,
-    parent.admin_dt_id AS parent_id,
+    parent.admin_datatype_id AS parent_id,
     parent.label AS parent_label
 FROM admin_datatypes AS child
 LEFT JOIN admin_datatypes AS parent 
-    ON child.parent_id = parent.admin_dt_id;
+    ON child.parent_id = parent.admin_datatype_id;
 
 -- name: GetGlobalAdminDatatypeId :one
 SELECT * FROM admin_datatypes
@@ -83,7 +83,7 @@ INSERT INTO admin_datatypes (
 );
 -- To retrieve the inserted row, consider using LAST_INSERT_ID() in a subsequent SELECT.
 -- name: GetLastAdminDatatype :one
-SELECT * FROM admin_datatypes WHERE admin_dt_id = LAST_INSERT_ID();
+SELECT * FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID();
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
@@ -96,39 +96,20 @@ SET admin_route_id = ?,
     date_created = ?,
     date_modified = ?,
     history = ?
-WHERE admin_dt_id = ?;
+WHERE admin_datatype_id = ?;
 -- To retrieve the updated row, execute a subsequent SELECT.
 
 -- name: DeleteAdminDatatype :exec
 DELETE FROM admin_datatypes
-WHERE admin_dt_id = ?;
+WHERE admin_datatype_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
+SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?;
 
 -- name: GetRootAdminDtByAdminRtId :one
-SELECT admin_dt_id, admin_route_id, parent_id, label, type, history
+SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
 FROM admin_datatypes
 WHERE admin_route_id = ?
-ORDER BY admin_dt_id;
-
--- name: CheckAuthorIdExists :one
-SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?);
-
--- name: CheckAuthorExists :one
-SELECT EXISTS(SELECT 1 FROM users WHERE username=?);
-
--- name: CheckAdminRouteExists :one
-SELECT EXISTS(SELECT 1 FROM admin_routes WHERE admin_route_id=?);
-
--- name: CheckAdminParentExists :one
-SELECT EXISTS(SELECT 1 FROM admin_datatypes WHERE admin_dt_id =?);
-
--- name: CheckRouteExists :one
-SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?);
-
--- name: CheckParentExists :one
-SELECT EXISTS(SELECT 1 FROM datatypes WHERE datatype_id =?);
-
+ORDER BY admin_datatype_id;

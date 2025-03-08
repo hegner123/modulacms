@@ -6,6 +6,24 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
+func (d Database) CountAdminContentData() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountAdminContentData(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
+func (d Database) CountAdminContentFields() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountAdminContentField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
 func (d Database) CountAdminDatatypes() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminDatatype(d.Context)
@@ -14,6 +32,7 @@ func (d Database) CountAdminDatatypes() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountAdminFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminField(d.Context)
@@ -40,6 +59,7 @@ func (d Database) CountContentData() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountContentFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -57,6 +77,7 @@ func (d Database) CountDatatypes() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountField(d.Context)
@@ -65,6 +86,7 @@ func (d Database) CountFields() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountMedia() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountMedia(d.Context)
@@ -73,6 +95,7 @@ func (d Database) CountMedia() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountMediaDimensions() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountMediaDimension(d.Context)
@@ -108,6 +131,7 @@ func (d Database) CountTables() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountTokens() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountTokens(d.Context)
@@ -116,6 +140,7 @@ func (d Database) CountTokens() (*int64, error) {
 	}
 	return &c, nil
 }
+
 func (d Database) CountUsers() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountUsers(d.Context)

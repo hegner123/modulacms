@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_dt_id INT NOT NULL AUTO_INCREMENT,
+    admin_datatype_id INT NOT NULL AUTO_INCREMENT,
     admin_route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,

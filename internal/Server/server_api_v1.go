@@ -1,7 +1,6 @@
 package api_v1
 
 import (
-	"fmt"
 	"net/http"
 
 	config "github.com/hegner123/modulacms/internal/Config"
@@ -25,14 +24,10 @@ type (
 const AUTHROUTE Segment = 3
 
 func (server ApiServerV1) Routes(w http.ResponseWriter, r *http.Request) {
-	fmt.Print("\nRouter Switch\n")
 	switch {
-	case checkPath(server.UrlSegments, AUTHROUTE, "admin"):
-		server.AuthHandler(w, r)
 	case r.Method == http.MethodDelete:
 		server.DeleteHandler(w, r, server.UrlSegments, server.Config)
 	case r.Method == http.MethodGet:
-        fmt.Println("get method")
 		server.GetHandler(w, r, server.UrlSegments, server.Config)
 	case r.Method == http.MethodPost:
 		server.PostHandler(w, r, server.UrlSegments, server.Config)
@@ -41,6 +36,7 @@ func (server ApiServerV1) Routes(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+/*
 func checkPath(segments []string, index Segment, ref string) bool {
     if len(segments)<=int(index){
 	fmt.Println("index out of range")
@@ -52,3 +48,4 @@ func checkPath(segments []string, index Segment, ref string) bool {
 	fmt.Printf("\nSegments %v\n", segments[index])
 	return segments[index] == ref
 }
+*/

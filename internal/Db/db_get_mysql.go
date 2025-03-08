@@ -7,6 +7,25 @@ import (
 
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
+func (d MysqlDatabase) GetAdminContentData(id int64) (*AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetAdminContentData(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminContentData(row)
+	return &res, nil
+}
+
+func (d MysqlDatabase) GetAdminContentField(id int64) (*AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetAdminContentField(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminContentField(row)
+	return &res, nil
+}
 
 func (d MysqlDatabase) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
 	queries := mdbm.New(d.Connection)
@@ -35,7 +54,7 @@ func (d MysqlDatabase) GetRootAdIdByAdRtId(adminRtId int32) (*int64, error) {
 		fmt.Printf("adminRtId %d\n", adminRtId)
 		return nil, err
 	}
-    res := int64(row.AdminDtID)
+    res := int64(row.AdminDatatypeID)
 	return &res, nil
 }
 

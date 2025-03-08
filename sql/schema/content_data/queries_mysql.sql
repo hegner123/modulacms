@@ -1,14 +1,19 @@
 -- name: CreateContentDataTable :exec
 CREATE TABLE IF NOT EXISTS content_data (
     content_data_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_dt_id INT DEFAULT NULL,
+    route_id    INT DEFAULT NULL,
+    datatype_id INT DEFAULT NULL,
     history TEXT DEFAULT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_content_data_admin_datatypes FOREIGN KEY (admin_dt_id)
-        REFERENCES admin_datatypes(admin_dt_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+    CONSTRAINT fk_content_data_route_id FOREIGN KEY (route_id)
+        REFERENCES routes(route_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_content_data_datatypes FOREIGN KEY (datatype_id)
+        REFERENCES datatypes(datatype_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- name: GetContentData :one
 SELECT * FROM content_data
 WHERE content_data_id = ? LIMIT 1;
@@ -17,20 +22,19 @@ WHERE content_data_id = ? LIMIT 1;
 SELECT COUNT(*)
 FROM content_data;
 
-
 -- name: ListContentData :many
 SELECT * FROM content_data
 ORDER BY content_data_id;
 
-
 -- name: CreateContentData :exec
 INSERT INTO content_data (
-    admin_dt_id,
+    route_id,
+    datatype_id,
     history,
     date_created,
     date_modified
     ) VALUES (
-?,?,?,?
+?,?,?,?,?
     );
 -- name: GetLastContentData :one
 SELECT * FROM content_data WHERE content_data_id = LAST_INSERT_ID();
@@ -38,7 +42,8 @@ SELECT * FROM content_data WHERE content_data_id = LAST_INSERT_ID();
 
 -- name: UpdateContentData :exec
 UPDATE content_data
-set admin_dt_id = ?,
+set route_id = ?,
+    datatype_id = ?,
     history = ?,
     date_created = ?,
     date_modified = ?
@@ -48,6 +53,6 @@ set admin_dt_id = ?,
 DELETE FROM content_data
 WHERE content_data_id = ?;
 
--- name: ListFilteredContentData :many
+-- name: ListContentDataByRoute :many
 SELECT * FROM content_data
-WHERE content_data_id = ?;
+WHERE route_id = ?;

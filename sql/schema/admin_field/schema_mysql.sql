@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
         REFERENCES admin_routes(admin_route_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_admin_fields_admin_datatypes FOREIGN KEY (parent_id)
-        REFERENCES admin_datatypes(admin_dt_id)
+        REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_fields_users_username FOREIGN KEY (author)
         REFERENCES users(username)

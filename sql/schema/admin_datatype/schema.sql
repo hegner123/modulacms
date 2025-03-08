@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes(
-    admin_dt_id    INTEGER
+    admin_datatype_id    INTEGER
         primary key,
     admin_route_id INTEGER default NULL
         references admin_routes

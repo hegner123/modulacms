@@ -7,32 +7,59 @@ import (
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
 
+func (d MysqlDatabase) CreateAdminContentData(s CreateAdminContentDataParams) AdminContentData {
+	params := d.MapCreateAdminContentDataParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateAdminContentData(d.Context, params)
+	if err != nil {
+		fmt.Printf("Failed to CreateAdminContentData: %v\n", err)
+	}
+	row, err := queries.GetLastAdminContentData(d.Context)
+	if err != nil {
+		fmt.Printf("Failed to get last inserted AdminContentData: %v\n", err)
+	}
+	return d.MapAdminContentData(row)
+}
+
+func (d MysqlDatabase) CreateAdminContentField(s CreateAdminContentFieldParams) AdminContentFields {
+	params := d.MapCreateAdminContentFieldParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateAdminContentField(d.Context, params)
+	if err != nil {
+		fmt.Printf("Failed to CreateAdminContentField: %v\n", err)
+	}
+	row, err := queries.GetLastAdminContentField(d.Context)
+	if err != nil {
+		fmt.Printf("Failed to get last inserted AdminContentField: %v\n", err)
+	}
+	return d.MapAdminContentField(row)
+}
+
 func (d MysqlDatabase) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDatatypes {
 	params := d.MapCreateAdminDatatypeParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateAdminDatatype(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateAdminDatatype  %v \n", err)
+		fmt.Printf("Failed to CreateAdminDatatype: %v\n", err)
 	}
 	row, err := queries.GetLastAdminDatatype(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last admin datatype\n")
+		fmt.Printf("Failed to get last inserted AdminDatatype: %v\n", err)
 	}
-
 	return d.MapAdminDatatype(row)
 }
+
 func (d MysqlDatabase) CreateAdminField(s CreateAdminFieldParams) AdminFields {
 	params := d.MapCreateAdminFieldParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateAdminField(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateAdminField  %v \n", err)
+		fmt.Printf("Failed to CreateAdminField: %v\n", err)
 	}
 	row, err := queries.GetLastAdminField(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last admin field\n")
+		fmt.Printf("Failed to get last inserted AdminField: %v\n", err)
 	}
-
 	return d.MapAdminField(row)
 }
 
@@ -41,13 +68,12 @@ func (d MysqlDatabase) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateAdminRoute(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
+		fmt.Printf("Failed to CreateAdminRoute: %v\n", err)
 	}
 	row, err := queries.GetLastAdminRoute(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last admin route\n")
+		fmt.Printf("Failed to get last inserted AdminRoute: %v\n", err)
 	}
-
 	return d.MapAdminRoute(row)
 }
 
@@ -56,13 +82,12 @@ func (d MysqlDatabase) CreateContentData(s CreateContentDataParams) ContentData 
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateContentData(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
+		fmt.Printf("Failed to CreateContentData: %v\n", err)
 	}
 	row, err := queries.GetLastContentData(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last content data\n")
+		fmt.Printf("Failed to get last inserted ContentData: %v\n", err)
 	}
-
 	return d.MapContentData(row)
 }
 
@@ -71,13 +96,12 @@ func (d MysqlDatabase) CreateContentField(s CreateContentFieldParams) ContentFie
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateContentField(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateAdminRoute  %v \n", err)
+		fmt.Printf("Failed to CreateContentField: %v\n", err)
 	}
 	row, err := queries.GetLastContentField(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last content field\n")
+		fmt.Printf("Failed to get last inserted ContentField: %v\n", err)
 	}
-
 	return d.MapContentField(row)
 }
 
@@ -86,13 +110,12 @@ func (d MysqlDatabase) CreateDatatype(s CreateDatatypeParams) Datatypes {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateDatatype(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateDatatype  %v \n", err)
+		fmt.Printf("Failed to CreateDatatype: %v\n", err)
 	}
 	row, err := queries.GetLastDatatype(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last  datatype\n")
+		fmt.Printf("Failed to get last inserted Datatype: %v\n", err)
 	}
-
 	return d.MapDatatype(row)
 }
 
@@ -101,13 +124,12 @@ func (d MysqlDatabase) CreateField(s CreateFieldParams) Fields {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateField(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateField  %v \n", err)
+		fmt.Printf("Failed to CreateField: %v\n", err)
 	}
 	row, err := queries.GetLastField(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last field\n")
+		fmt.Printf("Failed to get last inserted Field: %v\n", err)
 	}
-
 	return d.MapField(row)
 }
 
@@ -116,13 +138,12 @@ func (d MysqlDatabase) CreateMedia(s CreateMediaParams) Media {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateMedia(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateMedia.\n%v \n", err)
+		fmt.Printf("Failed to CreateMedia: %v\n", err)
 	}
 	row, err := queries.GetLastMedia(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last media\n")
+		fmt.Printf("Failed to get last inserted Media: %v\n", err)
 	}
-
 	return d.MapMedia(row)
 }
 
@@ -131,27 +152,26 @@ func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaD
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateMediaDimension(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateMediaDimension.\n%v \n", err)
+		fmt.Printf("Failed to CreateMediaDimension: %v\n", err)
 	}
 	row, err := queries.GetLastMediaDimension(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last MediaDimensions\n")
+		fmt.Printf("Failed to get last inserted MediaDimension: %v\n", err)
 	}
-
 	return d.MapMediaDimension(row)
 }
+
 func (d MysqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	params := d.MapCreateRoleParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateRole(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateRoute.\n %v\n", err)
+		fmt.Printf("Failed to CreateRole: %v\n", err)
 	}
 	row, err := queries.GetLastRole(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last role\n")
+		fmt.Printf("Failed to get last inserted Role: %v\n", err)
 	}
-
 	return d.MapRoles(row)
 }
 
@@ -160,13 +180,12 @@ func (d MysqlDatabase) CreateRoute(s CreateRouteParams) Routes {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateRoute(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateRoute.\n %v\n", err)
+		fmt.Printf("Failed to CreateRoute: %v\n", err)
 	}
 	row, err := queries.GetLastRoute(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last route\n")
+		fmt.Printf("Failed to get last inserted Route: %v\n", err)
 	}
-
 	return d.MapRoute(row)
 }
 
@@ -175,13 +194,12 @@ func (d MysqlDatabase) CreateTable(s string) Tables {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateTable(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateTable.\n %v\n", err)
+		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
 	row, err := queries.GetLastTable(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last table\n")
+		fmt.Printf("Failed to get last inserted Table: %v\n", err)
 	}
-
 	return d.MapTables(row)
 }
 
@@ -190,27 +208,27 @@ func (d MysqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateToken(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateToken.\n %v\n", err)
+		fmt.Printf("Failed to CreateToken: %v\n", err)
 	}
 	row, err := queries.GetLastToken(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last token\n")
+		fmt.Printf("Failed to get last inserted Token: %v\n", err)
 	}
-
 	return d.MapToken(row)
 }
 
-func (d MysqlDatabase) CreateUser(s CreateUserParams) Users {
+func (d MysqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
 	params := d.MapCreateUserParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateUser(d.Context, params)
 	if err != nil {
-		fmt.Printf("failed to CreateUser,\n %v\n", err)
+		fmt.Printf("Failed to CreateUser: %v\n", err)
 	}
 	row, err := queries.GetLastUser(d.Context)
 	if err != nil {
-		fmt.Printf("Couldn't Get last user\n")
+		e := fmt.Errorf("Failed to get last inserted User: %v\n", err)
+		return nil, e
 	}
-
-	return d.MapUser(row)
+	u := d.MapUser(row)
+	return &u, nil
 }

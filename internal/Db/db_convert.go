@@ -4,9 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"reflect"
 	"strconv"
-	"strings"
 
 	"github.com/sqlc-dev/pqtype"
 )
@@ -47,16 +45,8 @@ func ns(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: true}
 }
 
-func ni(i int) sql.NullInt64 {
-	return sql.NullInt64{Int64: int64(i), Valid: true}
-}
-
 func ni64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
-}
-
-func nb(b bool) sql.NullBool {
-	return sql.NullBool{Bool: b, Valid: true}
 }
 
 func jrS(j json.RawMessage) string {
@@ -99,7 +89,7 @@ func sb(s string) bool {
 	}
 }
 
-func AssertString(i interface{}) string {
+func AssertString(i any) string {
 	s, ok := i.(string)
 	if !ok {
 		return fmt.Sprint(i)
@@ -107,7 +97,7 @@ func AssertString(i interface{}) string {
 	return s
 }
 
-func AssertInteger(i interface{}) int {
+func AssertInteger(i any) int {
 	d, ok := i.(int)
 	if !ok {
 		return 0
@@ -115,7 +105,7 @@ func AssertInteger(i interface{}) int {
 	return d
 }
 
-func AssertInt32(i interface{}) int32 {
+func AssertInt32(i any) int32 {
 	d, ok := i.(int32)
 	if !ok {
 		return 0
@@ -123,7 +113,7 @@ func AssertInt32(i interface{}) int32 {
 	return d
 }
 
-func AssertInt64(i interface{}) int64 {
+func AssertInt64(i any) int64 {
 	d, ok := i.(int64)
 	if !ok {
 		return 0
@@ -145,6 +135,7 @@ func Nsi(s string) sql.NullInt64 {
 
 }
 
+/*
 func getColumnValue(column string, s interface{}) string {
 	v := reflect.ValueOf(s)
 	if v.Kind() == reflect.Ptr {
@@ -165,3 +156,4 @@ func getColumnValue(column string, s interface{}) string {
 
 	return ""
 }
+*/

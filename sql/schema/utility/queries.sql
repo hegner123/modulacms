@@ -1,5 +1,5 @@
 -- name: UtilityGetAdminDatatypes :many
-select admin_dt_id, label from admin_datatypes;
+select admin_datatype_id, label from admin_datatypes;
 
 -- name: UtilityGetAdminfields :many
 select admin_field_id, label from admin_fields;
@@ -53,3 +53,16 @@ UNION ALL
 SELECT 'tokens' AS table_name, COUNT(*) AS row_count FROM tokens
 UNION ALL
 SELECT 'users' AS table_name, COUNT(*) AS row_count FROM users;
+
+-- name: CheckAuthorIdExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?);
+-- name: CheckAuthorExists :one
+SELECT EXISTS(SELECT 1 FROM users WHERE username=?);
+-- name: CheckAdminRouteExists :one
+SELECT EXISTS(SELECT 1 FROM admin_routes WHERE admin_route_id=?);
+-- name: CheckAdminParentExists :one
+SELECT EXISTS(SELECT 1 FROM admin_datatypes WHERE admin_datatype_id =?);
+-- name: CheckRouteExists :one
+SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?);
+-- name: CheckParentExists :one
+SELECT EXISTS(SELECT 1 FROM datatypes WHERE datatype_id =?);

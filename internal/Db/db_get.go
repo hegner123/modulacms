@@ -8,6 +8,26 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+func (d Database) GetAdminContentData(id int64) (*AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminContentData(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminContentData(row)
+	return &res, nil
+}
+
+func (d Database) GetAdminContentField(id int64) (*AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetAdminContentField(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapAdminContentField(row)
+	return &res, nil
+}
+
 func (d Database) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetGlobalAdminDatatypeId(d.Context)
@@ -35,7 +55,7 @@ func (d Database) GetRootAdIdByAdRtId(adminRtId int64) (*int64, error) {
 		fmt.Printf("adminRtId %d\n", adminRtId)
 		return nil, err
 	}
-    res := row.AdminDtID
+	res := row.AdminDatatypeID
 	return &res, nil
 }
 
@@ -166,7 +186,7 @@ func (d Database) GetTokenByUserId(userId int64) (*[]Tokens, error) {
 	}
 	res := []Tokens{}
 	for _, v := range row {
-        m := d.MapToken(v)
+		m := d.MapToken(v)
 		res = append(res, m)
 	}
 	return &res, nil

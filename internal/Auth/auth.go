@@ -17,7 +17,7 @@ import (
 	"golang.org/x/oauth2"
 )
 
-func HandleAuth(conf config.Config,form url.Values) bool {
+func HandleAuth(conf config.Config, form url.Values) bool {
 	dbc := db.ConfigDB(conf)
 
 	user, err := dbc.GetUser(1)
@@ -54,16 +54,18 @@ func AuthMiddleware(next http.Handler, conf config.Config) http.Handler {
 			return
 		}
 
-		if !middleware.UserIsAuth(r,conf){
+		_, err = middleware.UserIsAuth(r, conf)
+		if err != nil {
 			http.Error(w, "Invalid token", http.StatusUnauthorized)
 			return
 		}
 
 		// Proceed to the next handler if authorized
 		next.ServeHTTP(w, r)
-        
+
 	})
 }
+
 var Verifier string
 
 func OauthSettings(c config.Config) {
@@ -82,8 +84,7 @@ func OauthSettings(c config.Config) {
 	// Redirect user to consent page to ask for permission
 	// for the scopes specified above.
 	url := conf.AuthCodeURL("state", oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(Verifier))
-    fmt.Printf("Visit the URL for the auth dialog:\n %v", url)
-
+	fmt.Printf("Visit the URL for the auth dialog:\n %v", url)
 
 	// Use the authorization code that is pushed to the redirect
 	// URL. Exchange will do the handshake to retrieve the

@@ -7,8 +7,29 @@ import (
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
 
+func (d MysqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*string, error) {
+	params := d.MapUpdateAdminContentDataParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.UpdateAdminContentData(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update content data, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated content Data id %v\n", s.AdminDatatypeID)
+	return &u, nil
+}
+func (d MysqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*string, error) {
+	params := d.MapUpdateAdminContentFieldParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.UpdateAdminContentField(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update content data, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
+	return &u, nil
+}
+
 func (d MysqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, error) {
-    params := d.MapUpdateAdminDatatypeParams(s)
+	params := d.MapUpdateAdminDatatypeParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateAdminDatatype(d.Context, params)
 	if err != nil {
@@ -19,7 +40,7 @@ func (d MysqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string
 }
 
 func (d MysqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
-    params := d.MapUpdateAdminFieldParams(s)
+	params := d.MapUpdateAdminFieldParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateAdminField(d.Context, params)
 	if err != nil {
@@ -30,7 +51,7 @@ func (d MysqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, erro
 }
 
 func (d MysqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
-    params := d.MapUpdateAdminRouteParams(s)
+	params := d.MapUpdateAdminRouteParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateAdminRoute(d.Context, params)
 	if err != nil {
@@ -40,7 +61,7 @@ func (d MysqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, erro
 	return &u, nil
 }
 func (d MysqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, error) {
-    params := d.MapUpdateContentDataParams(s)
+	params := d.MapUpdateContentDataParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateContentData(d.Context, params)
 	if err != nil {
@@ -50,7 +71,7 @@ func (d MysqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, er
 	return &u, nil
 }
 func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
-    params := d.MapUpdateContentFieldParams(s)
+	params := d.MapUpdateContentFieldParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateContentField(d.Context, params)
 	if err != nil {
@@ -61,7 +82,7 @@ func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, 
 }
 
 func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
-    params := d.MapUpdateDatatypeParams(s)
+	params := d.MapUpdateDatatypeParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateDatatype(d.Context, params)
 	if err != nil {
@@ -72,7 +93,7 @@ func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
-    params := d.MapUpdateFieldParams(s)
+	params := d.MapUpdateFieldParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateField(d.Context, params)
 	if err != nil {
@@ -83,7 +104,7 @@ func (d MysqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
-    params := d.MapUpdateMediaParams(s)
+	params := d.MapUpdateMediaParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateMedia(d.Context, params)
 	if err != nil {
@@ -94,7 +115,7 @@ func (d MysqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, error) {
-    params := d.MapUpdateMediaDimensionParams(s)
+	params := d.MapUpdateMediaDimensionParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateMediaDimension(d.Context, params)
 	if err != nil {
@@ -104,7 +125,7 @@ func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*stri
 	return &u, nil
 }
 func (d MysqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
-    params := d.MapUpdateRoleParams(s)
+	params := d.MapUpdateRoleParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateRole(d.Context, params)
 	if err != nil {
@@ -115,7 +136,7 @@ func (d MysqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
-    params := d.MapUpdateRouteParams(s)
+	params := d.MapUpdateRouteParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateRoute(d.Context, params)
 	if err != nil {
@@ -126,7 +147,7 @@ func (d MysqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
-    params := d.MapUpdateTableParams(s)
+	params := d.MapUpdateTableParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateTable(d.Context, params)
 	if err != nil {
@@ -137,7 +158,7 @@ func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
-    params := d.MapUpdateTokenParams(s)
+	params := d.MapUpdateTokenParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateToken(d.Context, params)
 	if err != nil {
@@ -148,7 +169,7 @@ func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
 }
 
 func (d MysqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
-    params := d.MapUpdateUserParams(s)
+	params := d.MapUpdateUserParams(s)
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateUser(d.Context, params)
 	if err != nil {

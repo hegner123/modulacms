@@ -7,8 +7,30 @@ import (
 	mdbp "github.com/hegner123/modulacms/db-psql"
 )
 
+func (d PsqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*string, error) {
+	params := d.MapUpdateAdminContentDataParams(s)
+	queries := mdbp.New(d.Connection)
+	err := queries.UpdateAdminContentData(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update content data, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated content Data id %v\n", s.AdminDatatypeID)
+	return &u, nil
+}
+
+func (d PsqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*string, error) {
+	params := d.MapUpdateAdminContentFieldParams(s)
+	queries := mdbp.New(d.Connection)
+	err := queries.UpdateAdminContentField(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update content data, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
+	return &u, nil
+}
+
 func (d PsqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, error) {
-    params := d.MapUpdateAdminDatatypeParams(s)
+	params := d.MapUpdateAdminDatatypeParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateAdminDatatype(d.Context, params)
 	if err != nil {
@@ -19,7 +41,7 @@ func (d PsqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string,
 }
 
 func (d PsqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
-    params := d.MapUpdateAdminFieldParams(s)
+	params := d.MapUpdateAdminFieldParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateAdminField(d.Context, params)
 	if err != nil {
@@ -30,7 +52,7 @@ func (d PsqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, error
 }
 
 func (d PsqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
-    params := d.MapUpdateAdminRouteParams(s)
+	params := d.MapUpdateAdminRouteParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateAdminRoute(d.Context, params)
 	if err != nil {
@@ -40,7 +62,7 @@ func (d PsqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error
 	return &u, nil
 }
 func (d PsqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, error) {
-    params := d.MapUpdateContentDataParams(s)
+	params := d.MapUpdateContentDataParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateContentData(d.Context, params)
 	if err != nil {
@@ -50,7 +72,7 @@ func (d PsqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, err
 	return &u, nil
 }
 func (d PsqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
-    params := d.MapUpdateContentFieldParams(s)
+	params := d.MapUpdateContentFieldParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateContentField(d.Context, params)
 	if err != nil {
@@ -61,7 +83,7 @@ func (d PsqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, e
 }
 
 func (d PsqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
-    params := d.MapUpdateDatatypeParams(s)
+	params := d.MapUpdateDatatypeParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateDatatype(d.Context, params)
 	if err != nil {
@@ -72,7 +94,7 @@ func (d PsqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
-    params := d.MapUpdateFieldParams(s)
+	params := d.MapUpdateFieldParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateField(d.Context, params)
 	if err != nil {
@@ -83,7 +105,7 @@ func (d PsqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
-    params := d.MapUpdateMediaParams(s)
+	params := d.MapUpdateMediaParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateMedia(d.Context, params)
 	if err != nil {
@@ -94,7 +116,7 @@ func (d PsqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, error) {
-    params := d.MapUpdateMediaDimensionParams(s)
+	params := d.MapUpdateMediaDimensionParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateMediaDimension(d.Context, params)
 	if err != nil {
@@ -104,7 +126,7 @@ func (d PsqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*strin
 	return &u, nil
 }
 func (d PsqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
-    params := d.MapUpdateRoleParams(s)
+	params := d.MapUpdateRoleParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateRole(d.Context, params)
 	if err != nil {
@@ -115,7 +137,7 @@ func (d PsqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
-    params := d.MapUpdateRouteParams(s)
+	params := d.MapUpdateRouteParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateRoute(d.Context, params)
 	if err != nil {
@@ -126,7 +148,7 @@ func (d PsqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
-    params := d.MapUpdateTableParams(s)
+	params := d.MapUpdateTableParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateTable(d.Context, params)
 	if err != nil {
@@ -137,7 +159,7 @@ func (d PsqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
-    params := d.MapUpdateTokenParams(s)
+	params := d.MapUpdateTokenParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateToken(d.Context, params)
 	if err != nil {
@@ -148,7 +170,7 @@ func (d PsqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
 }
 
 func (d PsqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
-    params := d.MapUpdateUserParams(s)
+	params := d.MapUpdateUserParams(s)
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateUser(d.Context, params)
 	if err != nil {

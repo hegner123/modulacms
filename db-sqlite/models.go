@@ -8,17 +8,37 @@ import (
 	"database/sql"
 )
 
+type AdminContentData struct {
+	AdminContentDataID int64          `json:"admin_content_data_id"`
+	AdminRouteID       int64          `json:"admin_route_id"`
+	AdminDatatypeID    int64          `json:"admin_datatype_id"`
+	History            sql.NullString `json:"history"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
+}
+
+type AdminContentFields struct {
+	AdminContentFieldID int64          `json:"admin_content_field_id"`
+	AdminRouteID        int64          `json:"admin_route_id"`
+	AdminContentDataID  int64          `json:"admin_content_data_id"`
+	AdminFieldID        int64          `json:"admin_field_id"`
+	AdminFieldValue     string         `json:"admin_field_value"`
+	History             sql.NullString `json:"history"`
+	DateCreated         sql.NullString `json:"date_created"`
+	DateModified        sql.NullString `json:"date_modified"`
+}
+
 type AdminDatatypes struct {
-	AdminDtID    int64          `json:"admin_dt_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       string         `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
+	AdminDatatypeID int64          `json:"admin_datatype_id"`
+	AdminRouteID    sql.NullInt64  `json:"admin_route_id"`
+	ParentID        sql.NullInt64  `json:"parent_id"`
+	Label           string         `json:"label"`
+	Type            string         `json:"type"`
+	Author          string         `json:"author"`
+	AuthorID        int64          `json:"author_id"`
+	DateCreated     sql.NullString `json:"date_created"`
+	DateModified    sql.NullString `json:"date_modified"`
+	History         sql.NullString `json:"history"`
 }
 
 type AdminFields struct {
@@ -49,7 +69,8 @@ type AdminRoutes struct {
 
 type ContentData struct {
 	ContentDataID int64          `json:"content_data_id"`
-	AdminDtID     int64          `json:"admin_dt_id"`
+	RouteID       int64          `json:"route_id"`
+	DatatypeID    int64          `json:"datatype_id"`
 	History       sql.NullString `json:"history"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
@@ -57,8 +78,9 @@ type ContentData struct {
 
 type ContentFields struct {
 	ContentFieldID int64          `json:"content_field_id"`
+	RouteID        int64          `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
-	AdminFieldID   int64          `json:"admin_field_id"`
+	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
 	History        sql.NullString `json:"history"`
 	DateCreated    sql.NullString `json:"date_created"`

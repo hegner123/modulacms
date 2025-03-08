@@ -1,5 +1,5 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_dt_id SERIAL PRIMARY KEY,
+    admin_datatype_id SERIAL PRIMARY KEY,
     admin_route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,

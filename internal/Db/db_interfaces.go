@@ -5,16 +5,14 @@ import (
 	"database/sql"
 )
 
-type TestDbDriver interface {
-	GetConnection() (*sql.DB, context.Context)
-	CreateRole(*sql.DB, context.Context, CreateRoleParams) *Roles
-}
-
 type DbDriver interface {
-    InitDb(v *bool) error
+	CreateAllTables() error
+	InitDb(v *bool) error
 	Ping() error
+	GetConnection() (*sql.DB, context.Context, error)
 
-	GetConnection() (*sql.DB, context.Context)
+	CountAdminContentData() (*int64, error)
+	CountAdminContentFields() (*int64, error)
 	CountAdminDatatypes() (*int64, error)
 	CountAdminFields() (*int64, error)
 	CountAdminRoutes() (*int64, error)
@@ -30,6 +28,8 @@ type DbDriver interface {
 	CountTokens() (*int64, error)
 	CountUsers() (*int64, error)
 
+	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
+	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
 	CreateAdminDatatype(CreateAdminDatatypeParams) AdminDatatypes
 	CreateAdminField(CreateAdminFieldParams) AdminFields
 	CreateAdminRoute(CreateAdminRouteParams) AdminRoutes
@@ -43,10 +43,10 @@ type DbDriver interface {
 	CreateRoute(CreateRouteParams) Routes
 	CreateTable(string) Tables
 	CreateToken(CreateTokenParams) Tokens
-	CreateUser(CreateUserParams) Users
+	CreateUser(CreateUserParams) (*Users, error)
 
-    CreateAllTables() error
-
+	CreateAdminContentDataTable() error
+	CreateAdminContentFieldTable() error
 	CreateAdminDatatypeTable() error
 	CreateAdminFieldTable() error
 	CreateAdminRouteTable() error
@@ -62,6 +62,8 @@ type DbDriver interface {
 	CreateTokenTable() error
 	CreateUserTable() error
 
+	DeleteAdminContentData(int64) error
+	DeleteAdminContentField(int64) error
 	DeleteAdminDatatype(int64) error
 	DeleteAdminField(int64) error
 	DeleteAdminRoute(string) error
@@ -77,6 +79,8 @@ type DbDriver interface {
 	DeleteToken(int64) error
 	DeleteUser(int64) error
 
+	GetAdminContentData(int64) (*AdminContentData, error)
+	GetAdminContentField(int64) (*AdminContentFields, error)
 	GetAdminDatatypeById(int64) (*AdminDatatypes, error)
 	GetAdminField(int64) (*AdminFields, error)
 	GetAdminRoute(string) (*AdminRoutes, error)
@@ -93,6 +97,8 @@ type DbDriver interface {
 	GetTokenByUserId(int64) (*[]Tokens, error)
 	GetUser(int64) (*Users, error)
 
+	ListAdminContentData() (*[]AdminContentData, error)
+	ListAdminContentFields() (*[]AdminContentFields, error)
 	ListAdminDatatypes() (*[]AdminDatatypes, error)
 	ListAdminFields() (*[]AdminFields, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
@@ -108,6 +114,8 @@ type DbDriver interface {
 	ListTokens() (*[]Tokens, error)
 	ListUsers() (*[]Users, error)
 
+	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
+	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
 	UpdateAdminDatatype(UpdateAdminDatatypeParams) (*string, error)
 	UpdateAdminField(UpdateAdminFieldParams) (*string, error)
 	UpdateAdminRoute(UpdateAdminRouteParams) (*string, error)
@@ -122,162 +130,4 @@ type DbDriver interface {
 	UpdateTable(UpdateTableParams) (*string, error)
 	UpdateToken(UpdateTokenParams) (*string, error)
 	UpdateUser(UpdateUserParams) (*string, error)
-}
-type AdminDatatypes struct {
-	AdminDtID    int64          `json:"admin_dt_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       string         `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
-}
-
-type AdminFields struct {
-	AdminFieldID int64          `json:"admin_field_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
-}
-
-type AdminRoutes struct {
-	AdminRouteID int64          `json:"admin_route_id"`
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
-}
-
-type ContentData struct {
-	ContentDataID int64          `json:"content_data_id"`
-	AdminDtID     int64          `json:"admin_dt_id"`
-	History       sql.NullString `json:"history"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-}
-
-type ContentFields struct {
-	ContentFieldID int64          `json:"content_field_id"`
-	ContentDataID  int64          `json:"content_data_id"`
-	AdminFieldID   int64          `json:"admin_field_id"`
-	FieldValue     string         `json:"field_value"`
-	History        sql.NullString `json:"history"`
-	DateCreated    sql.NullString `json:"date_created"`
-	DateModified   sql.NullString `json:"date_modified"`
-}
-
-type Datatypes struct {
-	DatatypeID   int64          `json:"datatype_id"`
-	RouteID      sql.NullInt64  `json:"route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-}
-
-type Fields struct {
-	FieldID      int64          `json:"field_id"`
-	RouteID      sql.NullInt64  `json:"route_id"`
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-}
-
-type Media struct {
-	MediaID            int64          `json:"media_id"`
-	Name               sql.NullString `json:"name"`
-	DisplayName        sql.NullString `json:"display_name"`
-	Alt                sql.NullString `json:"alt"`
-	Caption            sql.NullString `json:"caption"`
-	Description        sql.NullString `json:"description"`
-	Class              sql.NullString `json:"class"`
-	Author             any            `json:"author"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
-	Mimetype           sql.NullString `json:"mimetype"`
-	Dimensions         sql.NullString `json:"dimensions"`
-	Url                sql.NullString `json:"url"`
-	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
-	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
-	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
-}
-
-type MediaDimensions struct {
-	MdID        int64          `json:"md_id"`
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
-}
-
-type Roles struct {
-	RoleID      int64  `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-}
-
-type Routes struct {
-	RouteID      int64          `json:"route_id"`
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-}
-
-type Tables struct {
-	ID       int64          `json:"id"`
-	Label    sql.NullString `json:"label"`
-	AuthorID int64          `json:"author_id"`
-}
-
-type Tokens struct {
-	ID        int64        `json:"id"`
-	UserID    int64        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  string       `json:"issued_at"`
-	ExpiresAt string       `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
-}
-
-type Users struct {
-	UserID       int64          `json:"user_id"`
-	Username     string         `json:"username"`
-	Name         string         `json:"name"`
-	Email        string         `json:"email"`
-	Hash         string         `json:"hash"`
-	Role         int64          `json:"role"`
-	References   any            `json:"references"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
 }

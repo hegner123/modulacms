@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
@@ -12,7 +13,9 @@ func makeTestBackup(output string, timestamp string) string {
 }
 
 func TestMakeBackup(t *testing.T) {
-	err := createBackup("../../modula.db", "../../public/media", "../../plugins/", "../../backups/", makeTestBackup)
+    verbose := false
+    c := config.LoadConfig(&verbose,"")
+	err := createBackup("../../modula.db", "../../public/media", "../../plugins/", "../../backups/", makeTestBackup, c)
 	if err != nil {
 		t.Errorf("%s\n", err)
 	}

@@ -3,6 +3,7 @@ package install
 import (
 	"os"
 
+	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 )
 
@@ -24,22 +25,17 @@ func CheckBucket() {}
 
 func CheckOauth() {}
 
-func CheckDb(path string) error {
-	var p string
-	if path != "" {
-		p = path
-	} else {
-		p = "modula.db"
-	}
-	dbc := db.GetDb(db.Database{Src: p})
-	if dbc.Err != nil {
-		return dbc.Err
+func CheckDb(c config.Config) error {
+	dbc := db.ConfigDB(c)
+	_, _, err := dbc.GetConnection()
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func CheckCerts(path string) bool{
-    b:=true
-    return b
+func CheckCerts(path string) bool {
+	b := true
+	return b
 }

@@ -80,7 +80,7 @@ func main() {
 		defer clientDB.Close()
 	}*/
 	if !InitStatus.DbFileExists || *reset {
-		dbc, _ := db.ConfigDB(Env).GetConnection()
+		dbc, _, _ := db.ConfigDB(Env).GetConnection()
 		defer dbc.Close()
 	}
 
@@ -102,20 +102,20 @@ func main() {
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		router.Router(w, r, &api)
-
 	})
-	handler := middleware.Cors(mux)
+
+	middlewareHandler := middleware.Serve(mux)
 
 	if !InitStatus.UseSSL {
 
 		log.Printf("\n\nServer is running at https://localhost:%s\n", Env.SSL_Port)
-		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", handler)
+		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", middlewareHandler)
 		if err != nil {
 			log.Fatalf("Failed to start server: %v", err)
 		}
 	}
 	log.Printf("\n\nServer is running at http://localhost:%s\n", Env.Port)
-	err := http.ListenAndServe(":"+Env.Port, handler)
+	err := http.ListenAndServe(":"+Env.Port, middlewareHandler)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

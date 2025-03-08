@@ -1,5 +1,22 @@
 package db
 
+type CreateAdminContentDataFormParams struct {
+	AdminRouteID    string `json:"admin_route_id"`
+	AdminDatatypeID string `json:"admin_datatype_id"`
+	History         string `json:"history"`
+	DateCreated     string `json:"date_created"`
+	DateModified    string `json:"date_modified"`
+}
+type CreateAdminContentFieldFormParams struct {
+	AdminRouteID        string `json:"admin_route_id"`
+	AdminContentFieldID string `json:"admin_content_field_id"`
+	AdminContentDataID  string `json:"admin_content_data_id"`
+	AdminFieldID        string `json:"admin_field_id"`
+	AdminFieldValue     string `json:"admin_field_value"`
+	History             string `json:"history"`
+	DateCreated         string `json:"date_created"`
+	DateModified        string `json:"date_modified"`
+}
 type CreateAdminDatatypeFormParams struct {
 	AdminRouteID string `json:"admin_route_id"`
 	ParentID     string `json:"parent_id"`
@@ -34,15 +51,17 @@ type CreateAdminRouteFormParams struct {
 	History      string `json:"history"`
 }
 type CreateContentDataFormParams struct {
-	AdminDtID    string `json:"admin_dt_id"`
+	RouteID      string `json:"route_id"`
+	DatatypeID   string `json:"datatype_id"`
 	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 }
 type CreateContentFieldFormParams struct {
+	RouteID        string `json:"route_id"`
 	ContentFieldID string `json:"content_field_id"`
 	ContentDataID  string `json:"content_data_id"`
-	AdminFieldID   string `json:"admin_field_id"`
+	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
 	History        string `json:"history"`
 	DateCreated    string `json:"date_created"`
@@ -127,17 +146,36 @@ type CreateUserFormParams struct {
 	Hash         string `json:"hash"`
 	Role         string `json:"role"`
 }
+type UpdateAdminContentDataFormParams struct {
+	AdminRouteID       string `json:"admin_route_id"`
+	AdminDatatypeID    string `json:"admin_datatype_id"`
+	History            string `json:"history"`
+	DateCreated        string `json:"date_created"`
+	DateModified       string `json:"date_modified"`
+	AdminContentDataID string `json:"admin_content_data_id"`
+}
+type UpdateAdminContentFieldFormParams struct {
+	AdminRouteID          string `json:"admin_route_id"`
+	AdminContentFieldID   string `json:"content_field_id"`
+	AdminContentDataID    string `json:"content_data_id"`
+	AdminFieldID          string `json:"admin_field_id"`
+	AdminFieldValue       string `json:"admin_field_value"`
+	History               string `json:"history"`
+	DateCreated           string `json:"date_created"`
+	DateModified          string `json:"date_modified"`
+	AdminContentFieldID_2 string `json:"admin_content_field_id_2"`
+}
 type UpdateAdminDatatypeFormParams struct {
-	AdminRouteID string `json:"admin_route_id"`
-	ParentID     string `json:"parent_id"`
-	Label        string `json:"label"`
-	Type         string `json:"type"`
-	Author       string `json:"author"`
-	AuthorID     string `json:"author_id"`
-	DateCreated  string `json:"date_created"`
-	DateModified string `json:"date_modified"`
-	History      string `json:"history"`
-	AdminDtID    string `json:"admin_dt_id"`
+	AdminRouteID    string `json:"admin_route_id"`
+	ParentID        string `json:"parent_id"`
+	Label           string `json:"label"`
+	Type            string `json:"type"`
+	Author          string `json:"author"`
+	AuthorID        string `json:"author_id"`
+	DateCreated     string `json:"date_created"`
+	DateModified    string `json:"date_modified"`
+	History         string `json:"history"`
+	AdminDatatypeID string `json:"admin_datatype_id"`
 }
 type UpdateAdminFieldFormParams struct {
 	AdminRouteID string `json:"admin_route_id"`
@@ -164,16 +202,18 @@ type UpdateAdminRouteFormParams struct {
 	Slug_2       string `json:"slug_2"`
 }
 type UpdateContentDataFormParams struct {
-	AdminDtID     string `json:"admin_dt_id"`
+	RouteID       string `json:"route_id"`
+	DatatypeID    string `json:"admin_datatype_id"`
 	History       string `json:"history"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
 	ContentDataID string `json:"content_data_id"`
 }
 type UpdateContentFieldFormParams struct {
+	RouteID          string `json:"route_id"`
 	ContentFieldID   string `json:"content_field_id"`
 	ContentDataID    string `json:"content_data_id"`
-	AdminFieldID     string `json:"admin_field_id"`
+	FieldID          string `json:"field_id"`
 	FieldValue       string `json:"field_value"`
 	History          string `json:"history"`
 	DateCreated      string `json:"date_created"`

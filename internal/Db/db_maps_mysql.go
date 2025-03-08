@@ -6,19 +6,43 @@ import (
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
 
-// Sqlite
+// Mysql
+func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContentData {
+	return AdminContentData{
+		AdminRouteID:       int64(a.AdminRouteID.Int32),
+		AdminContentDataID: int64(a.AdminContentDataID),
+		AdminDatatypeID:    int64(a.AdminDatatypeID.Int32),
+		History:            a.History,
+		DateCreated:        Ns(nt(a.DateCreated)),
+		DateModified:       ns(nt(a.DateModified)),
+	}
+}
+
+func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminContentFields {
+	return AdminContentFields{
+		AdminRouteID:        int64(a.AdminRouteID.Int32),
+		AdminContentFieldID: int64(a.AdminContentFieldID),
+		AdminContentDataID:  int64(a.AdminContentDataID),
+		AdminFieldID:        int64(a.AdminFieldID),
+		AdminFieldValue:     a.AdminFieldValue,
+		History:             a.History,
+		DateCreated:         Ns(nt(a.DateCreated)),
+		DateModified:        ns(nt(a.DateModified)),
+	}
+}
+
 func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
-		AdminDtID:    int64(a.AdminDtID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID.Int32)),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
-		Label:        a.Label,
-		Type:         a.Type,
-		Author:       a.Author,
-		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: ns(nt(a.DateModified)),
-		History:      a.History,
+		AdminDatatypeID: int64(a.AdminDatatypeID),
+		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
+		ParentID:        Ni64(int64(a.ParentID.Int32)),
+		Label:           a.Label,
+		Type:            a.Type,
+		Author:          a.Author,
+		AuthorID:        int64(a.AuthorID),
+		DateCreated:     Ns(nt(a.DateCreated)),
+		DateModified:    ns(nt(a.DateModified)),
+		History:         a.History,
 	}
 }
 
@@ -54,8 +78,9 @@ func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 
 func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
+		RouteID:       int64(a.RouteID.Int32),
 		ContentDataID: int64(a.ContentDataID),
-		AdminDtID:     int64(a.AdminDtID.Int32),
+		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
 		DateCreated:   Ns(nt(a.DateCreated)),
 		DateModified:  ns(nt(a.DateModified)),
@@ -64,9 +89,10 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 
 func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 	return ContentFields{
+		RouteID:        int64(a.RouteID.Int32),
 		ContentFieldID: int64(a.ContentFieldID),
 		ContentDataID:  int64(a.ContentDataID),
-		AdminFieldID:   int64(a.AdminFieldID),
+		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
 		DateCreated:    Ns(nt(a.DateCreated)),
@@ -191,6 +217,7 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		DateModified: ns(nt(a.DateModified)),
 	}
 }
+
 func (d MysqlDatabase) MapListDatatypeByRouteIdRow(a mdbm.ListDatatypeByRouteIdRow) ListDatatypeByRouteIdRow {
 	return ListDatatypeByRouteIdRow{
 		DatatypeID: int64(a.DatatypeID),
@@ -200,6 +227,7 @@ func (d MysqlDatabase) MapListDatatypeByRouteIdRow(a mdbm.ListDatatypeByRouteIdR
 		Type:       a.Type,
 	}
 }
+
 func (d MysqlDatabase) MapListFieldByRouteIdRow(a mdbm.ListFieldByRouteIdRow) ListFieldByRouteIdRow {
 	return ListFieldByRouteIdRow{
 		FieldID:  int64(a.FieldID),
@@ -222,14 +250,38 @@ func (d MysqlDatabase) MapListAdminFieldsByDatatypeIDRow(a mdbm.ListAdminFieldsB
 		History:      a.History,
 	}
 }
+
 func (d MysqlDatabase) MapListAdminDatatypeByRouteIdRow(a mdbm.ListAdminDatatypeByRouteIdRow) ListAdminDatatypeByRouteIdRow {
 	return ListAdminDatatypeByRouteIdRow{
-		AdminDtID:    int64(a.AdminDtID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID.Int32)),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
-		Label:        a.Label,
-		Type:         a.Type,
-		History:      a.History,
+		AdminDatatypeID: int64(a.AdminDatatypeID),
+		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
+		ParentID:        Ni64(int64(a.ParentID.Int32)),
+		Label:           a.Label,
+		Type:            a.Type,
+		History:         a.History,
+	}
+}
+
+func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbm.CreateAdminContentDataParams {
+	return mdbm.CreateAdminContentDataParams{
+		AdminRouteID:    Ni32(a.AdminRouteID),
+		AdminDatatypeID: Ni32(a.AdminDatatypeID),
+		History:         a.History,
+		DateCreated:     sTime(a.DateCreated.String),
+		DateModified:    sTime(a.DateModified.String),
+	}
+}
+
+func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbm.CreateAdminContentFieldParams {
+	return mdbm.CreateAdminContentFieldParams{
+		AdminRouteID:        Ni32(a.AdminRouteID),
+		AdminContentFieldID: int32(a.AdminContentFieldID),
+		AdminContentDataID:  int32(a.AdminContentDataID),
+		AdminFieldID:        int32(a.AdminFieldID),
+		AdminFieldValue:     a.AdminFieldValue,
+		History:             a.History,
+		DateCreated:         sTime(a.DateCreated.String),
+		DateModified:        sTime(a.DateModified.String),
 	}
 }
 
@@ -261,6 +313,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		History:      a.History,
 	}
 }
+
 func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.CreateAdminRouteParams {
 	return mdbm.CreateAdminRouteParams{
 		Slug:         a.Slug,
@@ -273,32 +326,37 @@ func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.
 		History:      a.History,
 	}
 }
+
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
-		AdminDtID:    Ni32(a.AdminDtID),
+		RouteID:      Ni32(a.RouteID),
+		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
 		DateCreated:  sTime(a.DateCreated.String),
 		DateModified: sTime(a.DateModified.String),
 	}
 }
+
 func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbm.CreateContentFieldParams {
 	return mdbm.CreateContentFieldParams{
+		RouteID:        Ni32(a.RouteID),
 		ContentFieldID: int32(a.ContentFieldID),
 		ContentDataID:  int32(a.ContentDataID),
-		AdminFieldID:   int32(a.AdminFieldID),
+		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:    sTime(a.DateCreated.String),
+		DateModified:   sTime(a.DateModified.String),
 	}
 }
+
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
 	return mdbm.CreateDatatypeParams{
 		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-        History:      a.History,
+		History:      a.History,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  sTime(a.DateCreated.String),
@@ -320,6 +378,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 		DateModified: sTime(a.DateModified.String),
 	}
 }
+
 func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMediaParams {
 	return mdbm.CreateMediaParams{
 		Name:               a.Name,
@@ -328,10 +387,10 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		Caption:            a.Caption,
 		Description:        a.Description,
 		Class:              a.Class,
-		Author:       AssertString(a.Author),
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		Author:             AssertString(a.Author),
+		AuthorID:           int32(a.AuthorID),
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
 		Url:                a.Url,
 		Mimetype:           a.Mimetype,
 		Dimensions:         a.Dimensions,
@@ -341,6 +400,7 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		OptimizedUltraWide: a.OptimizedUltraWide,
 	}
 }
+
 func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbm.CreateMediaDimensionParams {
 	return mdbm.CreateMediaDimensionParams{
 		Label:       a.Label,
@@ -349,12 +409,14 @@ func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParam
 		AspectRatio: a.AspectRatio,
 	}
 }
+
 func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
 	return mdbm.CreateRoleParams{
 		Label:       a.Label,
 		Permissions: json.RawMessage(a.Permissions),
 	}
 }
+
 func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRouteParams {
 	return mdbm.CreateRouteParams{
 		Author:       a.Author,
@@ -378,6 +440,7 @@ func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateToke
 		Revoked:   a.Revoked,
 	}
 }
+
 func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserParams {
 	return mdbm.CreateUserParams{
 		DateCreated:  sTime(a.DateCreated.String),
@@ -389,20 +452,47 @@ func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserPa
 		Role:         Ni32(a.Role),
 	}
 }
-func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbm.UpdateAdminDatatypeParams {
-	return mdbm.UpdateAdminDatatypeParams{
-		AdminRouteID: Ni32(a.AdminRouteID.Int64),
-		ParentID:     Ni32(a.ParentID.Int64),
-		Label:        a.Label,
-		Type:         a.Type,
-		Author:       a.Author,
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
-		History:      a.History,
-		AdminDtID:    int32(a.AdminDtID),
+
+func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbm.UpdateAdminContentDataParams {
+	return mdbm.UpdateAdminContentDataParams{
+		AdminRouteID:       Ni32(a.AdminRouteID),
+		AdminDatatypeID:    Ni32(a.AdminDatatypeID),
+		History:            a.History,
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
+		AdminContentDataID: int32(a.AdminContentDataID),
 	}
 }
+
+func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbm.UpdateAdminContentFieldParams {
+	return mdbm.UpdateAdminContentFieldParams{
+		AdminRouteID:          Ni32(a.AdminRouteID),
+		AdminContentFieldID:   int32(a.AdminContentFieldID),
+		AdminContentDataID:    int32(a.AdminContentDataID),
+		AdminFieldID:          int32(a.AdminFieldID),
+		AdminFieldValue:       a.AdminFieldValue,
+		History:               a.History,
+		DateCreated:           sTime(a.DateCreated.String),
+		DateModified:          sTime(a.DateModified.String),
+		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
+	}
+}
+
+func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbm.UpdateAdminDatatypeParams {
+	return mdbm.UpdateAdminDatatypeParams{
+		AdminRouteID:    Ni32(a.AdminRouteID.Int64),
+		ParentID:        Ni32(a.ParentID.Int64),
+		Label:           a.Label,
+		Type:            a.Type,
+		Author:          a.Author,
+		AuthorID:        int32(a.AuthorID),
+		DateCreated:     sTime(a.DateCreated.String),
+		DateModified:    sTime(a.DateModified.String),
+		History:         a.History,
+		AdminDatatypeID: int32(a.AdminDatatypeID),
+	}
+}
+
 func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.UpdateAdminFieldParams {
 	return mdbm.UpdateAdminFieldParams{
 		AdminRouteID: int32(a.AdminRouteID.Int64),
@@ -418,6 +508,7 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		AdminFieldID: int32(a.AdminFieldID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.UpdateAdminRouteParams {
 	return mdbm.UpdateAdminRouteParams{
 		Slug:         a.Slug,
@@ -431,20 +522,24 @@ func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.
 		Slug_2:       a.Slug_2,
 	}
 }
+
 func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbm.UpdateContentDataParams {
 	return mdbm.UpdateContentDataParams{
-		AdminDtID:     Ni32(a.AdminDtID),
+		RouteID:       Ni32(a.RouteID),
+		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
 		DateCreated:   sTime(a.DateCreated.String),
 		DateModified:  sTime(a.DateModified.String),
 		ContentDataID: int32(a.ContentDataID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbm.UpdateContentFieldParams {
 	return mdbm.UpdateContentFieldParams{
+		RouteID:          Ni32(a.RouteID),
 		ContentFieldID:   int32(a.ContentFieldID),
 		ContentDataID:    int32(a.ContentDataID),
-		AdminFieldID:     int32(a.AdminFieldID),
+		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
 		History:          a.History,
 		DateCreated:      sTime(a.DateCreated.String),
@@ -452,13 +547,14 @@ func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) m
 		ContentFieldID_2: int32(a.ContentFieldID_2),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.UpdateDatatypeParams {
 	return mdbm.UpdateDatatypeParams{
 		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-        History:      a.History,
+		History:      a.History,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  sTime(a.DateCreated.String),
@@ -466,6 +562,7 @@ func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.Upda
 		DatatypeID:   int32(a.DatatypeID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
 		RouteID:      Ni32(a.RouteID.Int64),
@@ -481,6 +578,7 @@ func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFiel
 		FieldID:      int32(a.FieldID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMediaParams {
 	return mdbm.UpdateMediaParams{
 		Name:               a.Name,
@@ -489,10 +587,10 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		Caption:            a.Caption,
 		Description:        a.Description,
 		Class:              a.Class,
-		Author:       AssertString(a.Author),
-		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		Author:             AssertString(a.Author),
+		AuthorID:           int32(a.AuthorID),
+		DateCreated:        sTime(a.DateCreated.String),
+		DateModified:       sTime(a.DateModified.String),
 		Url:                a.Url,
 		Mimetype:           a.Mimetype,
 		Dimensions:         a.Dimensions,
@@ -503,6 +601,7 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		MediaID:            int32(a.MediaID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbm.UpdateMediaDimensionParams {
 	return mdbm.UpdateMediaDimensionParams{
 		Label:       a.Label,
@@ -512,6 +611,7 @@ func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParam
 		MdID:        int32(a.MdID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
 	return mdbm.UpdateRoleParams{
 		Label:       a.Label,
@@ -519,6 +619,7 @@ func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRolePa
 		RoleID:      int32(a.RoleID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRouteParams {
 	return mdbm.UpdateRouteParams{
 		Slug:         a.Slug,
@@ -532,12 +633,14 @@ func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRout
 		Slug_2:       a.Slug_2,
 	}
 }
+
 func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTableParams {
 	return mdbm.UpdateTableParams{
 		Label: a.Label,
 		ID:    int32(a.ID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateTokenParams {
 	return mdbm.UpdateTokenParams{
 		Token:     a.Token,
@@ -547,6 +650,7 @@ func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateToke
 		ID:        int32(a.ID),
 	}
 }
+
 func (d MysqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbm.UpdateUserParams {
 	return mdbm.UpdateUserParams{
 		DateCreated:  sTime(a.DateCreated.String),

@@ -6,6 +6,34 @@ import (
 
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
+func (d MysqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentData(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFields(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 
 func (d MysqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	queries := mdbm.New(d.Connection)
@@ -65,7 +93,7 @@ func (d MysqlDatabase) ListContentData() (*[]ContentData, error) {
 
 func (d MysqlDatabase) ListContentFields() (*[]ContentFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentField(d.Context)
+	rows, err := queries.ListContentFields(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}

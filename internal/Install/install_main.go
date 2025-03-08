@@ -18,7 +18,7 @@ func InstallMain(configPath string, v *bool) error {
         installConfig = true
 	}
 	c := config.LoadConfig(v, configPath)
-	err = CheckDb(c.Db_URL)
+	err = CheckDb(c)
 	if err != nil {
 		installDb = true
 	}
