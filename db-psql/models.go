@@ -164,6 +164,17 @@ type Routes struct {
 	DateModified sql.NullString `json:"date_modified"`
 }
 
+type Sessions struct {
+	SessionID   int32          `json:"session_id"`
+	UserID      int32          `json:"user_id"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	ExpiresAt   sql.NullTime   `json:"expires_at"`
+	LastAccess  sql.NullTime   `json:"last_access"`
+	IpAddress   sql.NullString `json:"ip_address"`
+	UserAgent   sql.NullString `json:"user_agent"`
+	SessionData sql.NullString `json:"session_data"`
+}
+
 type Tables struct {
 	ID       int32          `json:"id"`
 	Label    sql.NullString `json:"label"`
@@ -178,6 +189,17 @@ type Tokens struct {
 	IssuedAt  time.Time    `json:"issued_at"`
 	ExpiresAt time.Time    `json:"expires_at"`
 	Revoked   sql.NullBool `json:"revoked"`
+}
+
+type UserOauth struct {
+	UserOauthID         int32          `json:"user_oauth_id"`
+	UserID              int32          `json:"user_id"`
+	OauthProvider       string         `json:"oauth_provider"`
+	OauthProviderUserID string         `json:"oauth_provider_user_id"`
+	AccessToken         sql.NullString `json:"access_token"`
+	RefreshToken        sql.NullString `json:"refresh_token"`
+	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
+	DateCreated         sql.NullTime   `json:"date_created"`
 }
 
 type Users struct {

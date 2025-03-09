@@ -181,3 +181,25 @@ func (d Database) CreateUser(s CreateUserParams) (*Users, error) {
 	u := d.MapUser(row)
 	return &u, nil
 }
+func (d Database) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
+	params := d.MapCreateUserOauthParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateUserOauth(d.Context, params)
+	if err != nil {
+		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
+		return nil, e
+	}
+	u := d.MapUserOauth(row)
+	return &u, nil
+}
+func (d Database) CreateSession(s CreateSessionParams) (*Sessions, error) {
+	params := d.MapCreateSessionParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreateSession(d.Context, params)
+	if err != nil {
+		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
+		return nil, e
+	}
+	u := d.MapSession(row)
+	return &u, nil
+}

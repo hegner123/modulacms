@@ -304,3 +304,29 @@ func (d MysqlDatabase) ListAdminDatatypeChildren(parentId int64) (*[]AdminDataty
 	return &res, nil
 
 }
+func (d MysqlDatabase) ListUserOauths() (*[]UserOauth, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListUserOauth(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Users: %v\n", err)
+	}
+	res := []UserOauth{}
+	for _, v := range rows {
+		m := d.MapUserOauth(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d MysqlDatabase) ListSessions() (*[]Sessions, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListSessions(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Users: %v\n", err)
+	}
+	res := []Sessions{}
+	for _, v := range rows {
+		m := d.MapSession(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}

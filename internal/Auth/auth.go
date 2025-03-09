@@ -7,25 +7,31 @@ import (
 	"encoding/hex"
 	"fmt"
 	"log"
-	"net/http"
-	"net/url"
+	"mime/multipart"
 
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
-	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 	"golang.org/x/oauth2"
 )
 
-func HandleAuth(conf config.Config, form url.Values) bool {
+func HandleAuthForm(conf config.Config, form *multipart.Form) (bool, *db.Users, error) {
+	ue := form.Value["email"][0]
+	up := form.Value["password"][0]
+	if ue == "" || up == "" {
+		err := fmt.Errorf("email: %s, password: %s\n", ue, up)
+		return false, nil, err
+	}
 	dbc := db.ConfigDB(conf)
 
-	user, err := dbc.GetUser(1)
+	user, err := dbc.GetUserByEmail(ue)
 	if err != nil {
 		utility.LogError("failed to : ", err)
+        return false, nil, err
 	}
-	requestHash := AuthMakeHash(form.Get("hash"), "modulacms")
-	return compareHashes(user.Hash, requestHash)
+	requestHash := AuthMakeHash(up, config.Env.Auth_Salt)
+	hashMatch := compareHashes(user.Hash, requestHash)
+	return hashMatch, user, nil
 }
 
 func AuthMakeHash(data, salt string) string {
@@ -43,27 +49,6 @@ func compareHashes(hash1, hash2 string) bool {
 		return false
 	}
 	return subtle.ConstantTimeCompare(hash1Bytes, hash2Bytes) == 1
-}
-
-func AuthMiddleware(next http.Handler, conf config.Config) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Check if the auth cookie exists
-		cookie, err := r.Cookie("modula_token")
-		if err != nil || cookie.Value == "" {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
-			return
-		}
-
-		_, err = middleware.UserIsAuth(r, conf)
-		if err != nil {
-			http.Error(w, "Invalid token", http.StatusUnauthorized)
-			return
-		}
-
-		// Proceed to the next handler if authorized
-		next.ServeHTTP(w, r)
-
-	})
 }
 
 var Verifier string

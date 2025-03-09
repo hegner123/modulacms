@@ -46,7 +46,10 @@ func ReadCookie(c *http.Cookie) (*MiddlewareCookie, error) {
 	if err != nil {
 		return nil, err
 	}
-	json.Unmarshal(b, &k)
+	err = json.Unmarshal(b, &k)
+	if err != nil {
+		return nil, err
+	}
 
 	return &k, nil
 }

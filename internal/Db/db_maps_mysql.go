@@ -184,6 +184,18 @@ func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
 		History:  a.History,
 	}
 }
+func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
+	return Sessions{
+		SessionID:   int64(a.SessionID),
+		UserID:      int64(a.UserID),
+		CreatedAt:   Ns(a.CreatedAt.Time.String()),
+		ExpiresAt:   Ns(a.ExpiresAt.Time.String()),
+		LastAccess:  Ns(a.LastAccess.Time.String()),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
 
 func (d MysqlDatabase) MapTables(a mdbm.Tables) Tables {
 	return Tables{
@@ -215,6 +227,18 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		Role:         int64(a.Role.Int32),
 		DateCreated:  Ns(nt(a.DateCreated)),
 		DateModified: ns(nt(a.DateModified)),
+	}
+}
+func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
+	return UserOauth{
+		UserOauthID:         int64(a.UserOauthID),
+		UserID:              int64(a.UserID),
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
+		DateCreated:         Ns(a.DateCreated.Time.String()),
 	}
 }
 
@@ -429,6 +453,17 @@ func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRout
 		DateModified: a.DateModified.Time,
 	}
 }
+func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
+	return mdbm.CreateSessionParams{
+		UserID:      int32(a.UserID),
+		CreatedAt:   sTime(a.CreatedAt.String),
+		ExpiresAt:   sTime(a.ExpiresAt.String),
+		LastAccess:  sTime(a.LastAccess.String),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
 
 func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateTokenParams {
 	return mdbm.CreateTokenParams{
@@ -450,6 +485,17 @@ func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserPa
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         Ni32(a.Role),
+	}
+}
+func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.CreateUserOauthParams {
+	return mdbm.CreateUserOauthParams{
+		UserID:              int32(a.UserID),
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      sTime(a.TokenExpiresAt.String),
+		DateCreated:         sTime(a.DateCreated.String),
 	}
 }
 
@@ -633,6 +679,18 @@ func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRout
 		Slug_2:       a.Slug_2,
 	}
 }
+func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.UpdateSessionParams {
+	return mdbm.UpdateSessionParams{
+		UserID:      int32(a.UserID),
+		CreatedAt:   sTime(a.CreatedAt.String),
+		ExpiresAt:   sTime(a.ExpiresAt.String),
+		LastAccess:  sTime(a.LastAccess.String),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+		SessionID:   int32(Nsi(a.SessionID).Int64),
+	}
+}
 
 func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTableParams {
 	return mdbm.UpdateTableParams{
@@ -661,5 +719,13 @@ func (d MysqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbm.UpdateUserPa
 		Hash:         a.Hash,
 		Role:         Ni32(a.Role),
 		UserID:       int32(a.UserID),
+	}
+}
+func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.UpdateUserOauthParams {
+	return mdbm.UpdateUserOauthParams{
+		AccessToken:    a.AccessToken,
+		RefreshToken:   a.RefreshToken,
+		TokenExpiresAt: sTime(a.TokenExpiresAt.String),
+		UserOauthID:    int32(a.UserOauthID),
 	}
 }

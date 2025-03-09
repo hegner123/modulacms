@@ -181,6 +181,18 @@ func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
 		History:  a.History,
 	}
 }
+func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
+	return Sessions{
+		SessionID:   int64(a.SessionID),
+		UserID:      int64(a.UserID),
+		CreatedAt:   Ns(a.CreatedAt.Time.String()),
+		ExpiresAt:   Ns(a.ExpiresAt.Time.String()),
+		LastAccess:  Ns(a.LastAccess.Time.String()),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
 
 func (d PsqlDatabase) MapTables(a mdbp.Tables) Tables {
 	return Tables{
@@ -212,6 +224,19 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 		Role:         int64(a.Role.Int32),
 		DateCreated:  Ns(nt(a.DateCreated)),
 		DateModified: Ns(nt(a.DateModified)),
+	}
+}
+
+func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
+	return UserOauth{
+		UserOauthID:         int64(a.UserOauthID),
+		UserID:              int64(a.UserID),
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
+		DateCreated:         Ns(a.DateCreated.Time.String()),
 	}
 }
 
@@ -418,6 +443,18 @@ func (d PsqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbp.CreateRoute
 	}
 }
 
+func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateSessionParams {
+	return mdbp.CreateSessionParams{
+		UserID:      int32(a.UserID),
+		CreatedAt:   sTime(a.CreatedAt.String),
+		ExpiresAt:   sTime(a.ExpiresAt.String),
+		LastAccess:  sTime(a.ExpiresAt.String),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
+
 func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateTokenParams {
 	return mdbp.CreateTokenParams{
 		UserID:    int32(a.UserID),
@@ -439,6 +476,19 @@ func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserPar
 		Role:         Ni32(a.Role),
 	}
 }
+
+func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.CreateUserOauthParams {
+	return mdbp.CreateUserOauthParams{
+		UserID:              int32(a.UserID),
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      sTime(a.TokenExpiresAt.String),
+		DateCreated:         sTime(a.DateCreated.String),
+	}
+}
+
 func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbp.UpdateAdminContentDataParams {
 	return mdbp.UpdateAdminContentDataParams{
 		AdminRouteID:       Ni32(a.AdminRouteID),
@@ -607,6 +657,18 @@ func (d PsqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbp.UpdateRoute
 		Slug_2:       a.Slug_2,
 	}
 }
+func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateSessionParams {
+	return mdbp.UpdateSessionParams{
+		UserID:      int32(a.UserID),
+		CreatedAt:   sTime(a.CreatedAt.String),
+		ExpiresAt:   sTime(a.ExpiresAt.String),
+		LastAccess:  sTime(a.LastAccess.String),
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+		SessionID:   int32(Nsi(a.SessionID).Int64),
+	}
+}
 func (d PsqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbp.UpdateTableParams {
 	return mdbp.UpdateTableParams{
 		Label: a.Label,
@@ -632,5 +694,13 @@ func (d PsqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbp.UpdateUserPar
 		Hash:         a.Hash,
 		Role:         Ni32(a.Role),
 		UserID:       int32(a.UserID),
+	}
+}
+func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.UpdateUserOauthParams {
+	return mdbp.UpdateUserOauthParams{
+		AccessToken:    a.AccessToken,
+		RefreshToken:   a.RefreshToken,
+		TokenExpiresAt: sTime(a.TokenExpiresAt.String),
+		UserOauthID:    int32(a.UserOauthID),
 	}
 }

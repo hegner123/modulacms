@@ -159,6 +159,18 @@ func MapCreateRouteParams(a CreateRouteFormParams) CreateRouteParams {
 	}
 }
 
+func MapCreateSessionParams(a CreateSessionFormParams) CreateSessionParams {
+	return CreateSessionParams{
+		UserID:      Si(a.UserID),
+		CreatedAt:   Ns(a.CreatedAt),
+		ExpiresAt:   Ns(a.ExpiresAt),
+		LastAccess:  Ns(a.LastAccess),
+		IpAddress:   Ns(a.IpAddress),
+		UserAgent:   Ns(a.UserAgent),
+		SessionData: Ns(a.SessionData),
+	}
+}
+
 func MapCreateTokenParams(a CreateTokenFormParams) CreateTokenParams {
 	return CreateTokenParams{
 		UserID:    Si(a.UserID),
@@ -178,6 +190,17 @@ func MapCreateUserParams(a CreateUserFormParams) CreateUserParams {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         Si(a.Role),
+	}
+}
+func MapCreateUserOauthParams(a CreateUserOauthFormParams) CreateUserOauthParams {
+	return CreateUserOauthParams{
+		UserID:              Si(a.UserID),
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         Ns(a.AccessToken),
+		RefreshToken:        Ns(a.RefreshToken),
+		TokenExpiresAt:      Ns(a.TokenExpiresAt),
+		DateCreated:         Ns(a.DateCreated),
 	}
 }
 func MapUpdateAdminContentDataParams(a UpdateAdminContentDataFormParams) UpdateAdminContentDataParams {
@@ -348,6 +371,18 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 		Slug_2:       a.Slug_2,
 	}
 }
+func MapUpdateSessionParams(a UpdateSessionFormParams) UpdateSessionParams {
+	return UpdateSessionParams{
+		UserID:      Si(a.UserID),
+		CreatedAt:   Ns(a.CreatedAt),
+		ExpiresAt:   Ns(a.ExpiresAt),
+		LastAccess:  Ns(a.LastAccess),
+		IpAddress:   Ns(a.IpAddress),
+		UserAgent:   Ns(a.UserAgent),
+		SessionData: Ns(a.SessionData),
+		SessionID:   a.Session_ID,
+	}
+}
 func MapUpdateTableParams(a UpdateTableFormParams) UpdateTableParams {
 	return UpdateTableParams{
 		Label: Ns(a.Label),
@@ -373,5 +408,13 @@ func MapUpdateUserParams(a UpdateUserFormParams) UpdateUserParams {
 		Hash:         a.Hash,
 		Role:         Si(a.Role),
 		UserID:       Si(a.UserID),
+	}
+}
+func MapUpdateUserOauthParams(a UpdateUserOauthFormParams) UpdateUserOauthParams {
+	return UpdateUserOauthParams{
+		AccessToken:    Ns(a.AccessToken),
+		RefreshToken:   Ns(a.RefreshToken),
+		TokenExpiresAt: Ns(a.TokenExpiresAt),
+		UserOauthID:    Si(a.UserOauthID),
 	}
 }

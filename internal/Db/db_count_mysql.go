@@ -149,3 +149,19 @@ func (d MysqlDatabase) CountUsers() (*int64, error) {
 	}
 	return &c, nil
 }
+func (d MysqlDatabase) CountSessions() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountSessions(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d MysqlDatabase) CountUserOauths() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountUserOauths(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}

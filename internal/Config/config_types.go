@@ -25,6 +25,7 @@ type Config struct {
 	Auth_Salt           string              `json:"auth_salt"`
 	Cookie_Name         string              `json:"cookie_name"`
 	Cookie_Duration     string              `json:"cookie_duration"`
+	Token_Secret        string              `json:"token_secret"`
 	Db_Driver           DbDriver            `json:"db_driver"`
 	Db_URL              string              `json:"db_url"`
 	Db_Name             string              `json:"db_name"`

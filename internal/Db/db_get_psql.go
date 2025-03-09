@@ -211,3 +211,35 @@ func (d PsqlDatabase) GetUserByEmail(email string) (*Users, error) {
 	res := d.MapUser(row)
 	return &res, nil
 }
+func (d PsqlDatabase) GetSession(id int64) (*Sessions, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetSession(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapSession(row)
+	return &res, nil
+}
+func (d PsqlDatabase) GetSessionsByUserId(id int64) (*[]Sessions, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetSessionsByUserId(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	sessions := []Sessions{}
+	for _, v := range row {
+		s := d.MapSession(v)
+		sessions = append(sessions, s)
+	}
+	return &sessions, nil
+}
+
+func (d PsqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetUserOauth(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}

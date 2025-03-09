@@ -178,3 +178,24 @@ func (d MysqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
 	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
 	return &u, nil
 }
+func (d MysqlDatabase) UpdateUserOauth(s UpdateUserOauthParams) (*string, error) {
+	params := d.MapUpdateUserOauthParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.UpdateUserOauth(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user oauth, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	return &u, nil
+}
+
+func (d MysqlDatabase) UpdateSession(s UpdateSessionParams) (*string, error) {
+	params := d.MapUpdateSessionParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.UpdateSession(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update user oauth, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	return &u, nil
+}

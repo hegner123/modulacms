@@ -165,3 +165,22 @@ func (d MysqlDatabase) DeleteUser(id int64) error {
 
 	return nil
 }
+func (d MysqlDatabase) DeleteSession(id int64) error {
+	queries := mdbm.New(d.Connection)
+	err := queries.DeleteSession(d.Context, int32(id))
+	if err != nil {
+		return fmt.Errorf("Failed to Delete Session: %v ", id)
+	}
+
+	return nil
+}
+
+func (d MysqlDatabase) DeleteUserOauth(id int64) error {
+	queries := mdbm.New(d.Connection)
+	err := queries.DeleteUserOauth(d.Context, int32(id))
+	if err != nil {
+		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
+	}
+
+	return nil
+}

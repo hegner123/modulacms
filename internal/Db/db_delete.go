@@ -166,3 +166,23 @@ func (d Database) DeleteUser(id int64) error {
 
 	return nil
 }
+
+func (d Database) DeleteSession(id int64) error {
+	queries := mdb.New(d.Connection)
+	err := queries.DeleteSession(d.Context, id)
+	if err != nil {
+		return fmt.Errorf("Failed to Delete Session: %v ", id)
+	}
+
+	return nil
+}
+
+func (d Database) DeleteUserOauth(id int64) error {
+	queries := mdb.New(d.Connection)
+	err := queries.DeleteUserOauth(d.Context, id)
+	if err != nil {
+		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
+	}
+
+	return nil
+}

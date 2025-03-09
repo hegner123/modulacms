@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/sqlc-dev/pqtype"
 )
@@ -47,6 +48,10 @@ func ns(s string) sql.NullString {
 
 func ni64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
+}
+
+func NTT(t time.Time) sql.NullTime {
+	return sql.NullTime{Time: t, Valid: true}
 }
 
 func jrS(j json.RawMessage) string {

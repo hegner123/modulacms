@@ -149,3 +149,14 @@ func (d PsqlDatabase) CreateUserTable() error {
 	return err
 }
 
+func (d PsqlDatabase) CreateSessionTable() error {
+	queries := mdbp.New(d.Connection)
+	err := queries.CreateSessionTable(d.Context)
+	return err
+}
+
+func (d PsqlDatabase) CreateUserOauthTable() error {
+	queries := mdbp.New(d.Connection)
+	err := queries.CreateUserOauthTable(d.Context)
+	return err
+}

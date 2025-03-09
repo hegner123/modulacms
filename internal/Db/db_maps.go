@@ -189,6 +189,18 @@ func (d Database) MapTables(a mdb.Tables) Tables {
 		AuthorID: a.AuthorID,
 	}
 }
+func (d Database) MapSession(a mdb.Sessions) Sessions {
+	return Sessions{
+		SessionID:   AssertInt64(a.SessionID),
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
+		LastAccess:  a.LastAccess,
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
 
 func (d Database) MapToken(a mdb.Tokens) Tokens {
 	return Tokens{
@@ -213,6 +225,18 @@ func (d Database) MapUser(a mdb.Users) Users {
 		References:   a.References,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+	}
+}
+func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
+	return UserOauth{
+		UserOauthID:         a.UserOauthID,
+		UserID:              a.UserID,
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      a.TokenExpiresAt,
+		DateCreated:         a.DateCreated,
 	}
 }
 
@@ -437,6 +461,18 @@ func (d Database) MapCreateRouteParams(a CreateRouteParams) mdb.CreateRouteParam
 	}
 }
 
+func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessionParams {
+	return mdb.CreateSessionParams{
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
+		LastAccess:  a.LastAccess,
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+	}
+}
+
 func (d Database) MapCreateTokenParams(a CreateTokenParams) mdb.CreateTokenParams {
 	return mdb.CreateTokenParams{
 		UserID:    a.UserID,
@@ -457,6 +493,17 @@ func (d Database) MapCreateUserParams(a CreateUserParams) mdb.CreateUserParams {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         a.Role,
+	}
+}
+func (d Database) MapCreateUserOauthParams(a CreateUserOauthParams) mdb.CreateUserOauthParams {
+	return mdb.CreateUserOauthParams{
+		UserID:              a.UserID,
+		OauthProvider:       a.OauthProvider,
+		OauthProviderUserID: a.OauthProviderUserID,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      a.TokenExpiresAt,
+		DateCreated:         a.DateCreated,
 	}
 }
 
@@ -641,6 +688,19 @@ func (d Database) MapUpdateRouteParams(a UpdateRouteParams) mdb.UpdateRouteParam
 	}
 }
 
+func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessionParams {
+	return mdb.UpdateSessionParams{
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
+		LastAccess:  a.LastAccess,
+		IpAddress:   a.IpAddress,
+		UserAgent:   a.UserAgent,
+		SessionData: a.SessionData,
+		SessionID:   a.SessionID,
+	}
+}
+
 func (d Database) MapUpdateTableParams(a UpdateTableParams) mdb.UpdateTableParams {
 	return mdb.UpdateTableParams{
 		Label: a.Label,
@@ -668,6 +728,14 @@ func (d Database) MapUpdateUserParams(a UpdateUserParams) mdb.UpdateUserParams {
 		Hash:         a.Hash,
 		Role:         a.Role,
 		UserID:       a.UserID,
+	}
+}
+func (d Database) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdb.UpdateUserOauthParams {
+	return mdb.UpdateUserOauthParams{
+		AccessToken:    a.AccessToken,
+		RefreshToken:   a.RefreshToken,
+		TokenExpiresAt: a.TokenExpiresAt,
+		UserOauthID:    a.UserOauthID,
 	}
 }
 

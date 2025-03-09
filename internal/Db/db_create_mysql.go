@@ -232,3 +232,35 @@ func (d MysqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
 	u := d.MapUser(row)
 	return &u, nil
 }
+func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
+	params := d.MapCreateUserOauthParams(s)
+	queries := mdbm.New(d.Connection)
+	 err := queries.CreateUserOauth(d.Context, params)
+	if err != nil {
+		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
+		return nil, e
+	}
+	row, err := queries.GetLastUserOauth(d.Context)
+	if err != nil {
+		e := fmt.Errorf("Failed to get last inserted UserOauth: %v\n", err)
+		return nil, e
+	}
+	u := d.MapUserOauth(row)
+	return &u, nil
+}
+func (d MysqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
+	params := d.MapCreateSessionParams(s)
+	queries := mdbm.New(d.Connection)
+	 err := queries.CreateSession(d.Context, params)
+	if err != nil {
+		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
+		return nil, e
+	}
+	row, err := queries.GetLastSession(d.Context)
+	if err != nil {
+		e := fmt.Errorf("Failed to get last inserted Session: %v\n", err)
+		return nil, e
+	}
+	u := d.MapSession(row)
+	return &u, nil
+}

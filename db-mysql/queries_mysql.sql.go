@@ -232,6 +232,18 @@ func (q *Queries) CountRoute(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countSessions = `-- name: CountSessions :one
+SELECT COUNT(*)
+FROM sessions
+`
+
+func (q *Queries) CountSessions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countSessions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countTables = `-- name: CountTables :one
 SELECT COUNT(*)
 FROM ` + "`" + `tables` + "`" + `
@@ -251,6 +263,18 @@ FROM tokens
 
 func (q *Queries) CountTokens(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countTokens)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUserOauths = `-- name: CountUserOauths :one
+SELECT COUNT(*)
+FROM user_oauth
+`
+
+func (q *Queries) CountUserOauths(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUserOauths)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -1128,6 +1152,65 @@ func (q *Queries) CreateRouteTable(ctx context.Context) error {
 	return err
 }
 
+const createSession = `-- name: CreateSession :exec
+INSERT INTO sessions (
+    user_id,
+    created_at,
+    expires_at,
+    last_access,
+    ip_address,
+    user_agent,
+    session_data
+    ) VALUES( 
+    ?,?,?,?,?,?,?
+    )
+`
+
+type CreateSessionParams struct {
+	UserID      int32          `json:"user_id"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	ExpiresAt   sql.NullTime   `json:"expires_at"`
+	LastAccess  sql.NullTime   `json:"last_access"`
+	IpAddress   sql.NullString `json:"ip_address"`
+	UserAgent   sql.NullString `json:"user_agent"`
+	SessionData sql.NullString `json:"session_data"`
+}
+
+func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
+	_, err := q.db.ExecContext(ctx, createSession,
+		arg.UserID,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+		arg.LastAccess,
+		arg.IpAddress,
+		arg.UserAgent,
+		arg.SessionData,
+	)
+	return err
+}
+
+const createSessionTable = `-- name: CreateSessionTable :exec
+CREATE TABLE sessions (
+    session_id   INTEGER NOT NULL AUTO_INCREMENT,
+    user_id      INTEGER NOT NULL, 
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at   TIMESTAMP,
+    last_access  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address   VARCHAR(45),
+    user_agent   TEXT,
+    session_data TEXT,
+    CONSTRAINT fk_sessions_user_id FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+`
+
+func (q *Queries) CreateSessionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createSessionTable)
+	return err
+}
+
 const createTable = `-- name: CreateTable :exec
 INSERT INTO ` + "`" + `tables` + "`" + ` (
     label
@@ -1247,6 +1330,63 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 		arg.Hash,
 		arg.Role,
 	)
+	return err
+}
+
+const createUserOauth = `-- name: CreateUserOauth :exec
+INSERT INTO user_oauth (
+    user_id,
+    oauth_provider,
+    oauth_provider_user_id,
+    access_token,
+    refresh_token,
+    token_expires_at,
+    date_created
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?
+)
+`
+
+type CreateUserOauthParams struct {
+	UserID              int32          `json:"user_id"`
+	OauthProvider       string         `json:"oauth_provider"`
+	OauthProviderUserID string         `json:"oauth_provider_user_id"`
+	AccessToken         sql.NullString `json:"access_token"`
+	RefreshToken        sql.NullString `json:"refresh_token"`
+	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
+	DateCreated         sql.NullTime   `json:"date_created"`
+}
+
+func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) error {
+	_, err := q.db.ExecContext(ctx, createUserOauth,
+		arg.UserID,
+		arg.OauthProvider,
+		arg.OauthProviderUserID,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.TokenExpiresAt,
+		arg.DateCreated,
+	)
+	return err
+}
+
+const createUserOauthTable = `-- name: CreateUserOauthTable :exec
+CREATE TABLE IF NOT EXISTS user_oauth (
+    user_oauth_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    oauth_provider VARCHAR(255) NOT NULL,        -- e.g., 'google', 'facebook'
+    oauth_provider_user_id VARCHAR(255) NOT NULL,  -- Unique identifier provided by the OAuth provider
+    access_token TEXT,                             -- Optional: for making API calls on behalf of the user
+    refresh_token TEXT,                            -- Optional: if token refresh is required
+    token_expires_at TIMESTAMP NULL,               -- Optional: expiry time for the access token
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+)
+`
+
+func (q *Queries) CreateUserOauthTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createUserOauthTable)
 	return err
 }
 
@@ -1407,6 +1547,16 @@ func (q *Queries) DeleteRoute(ctx context.Context, slug string) error {
 	return err
 }
 
+const deleteSession = `-- name: DeleteSession :exec
+DELETE FROM sessions
+WHERE session_id = ?
+`
+
+func (q *Queries) DeleteSession(ctx context.Context, sessionID int32) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, sessionID)
+	return err
+}
+
 const deleteTable = `-- name: DeleteTable :exec
 
 DELETE FROM ` + "`" + `tables` + "`" + `
@@ -1436,6 +1586,16 @@ WHERE user_id = ?
 
 func (q *Queries) DeleteUser(ctx context.Context, userID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteUser, userID)
+	return err
+}
+
+const deleteUserOauth = `-- name: DeleteUserOauth :exec
+DELETE FROM user_oauth
+WHERE user_oauth_id = ?
+`
+
+func (q *Queries) DeleteUserOauth(ctx context.Context, userOauthID int32) error {
+	_, err := q.db.ExecContext(ctx, deleteUserOauth, userOauthID)
 	return err
 }
 
@@ -1987,6 +2147,26 @@ func (q *Queries) GetLastRoute(ctx context.Context) (Routes, error) {
 	return i, err
 }
 
+const getLastSession = `-- name: GetLastSession :one
+ SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions WHERE session_id = LAST_INSERT_ID()
+`
+
+func (q *Queries) GetLastSession(ctx context.Context) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getLastSession)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
+}
+
 const getLastTable = `-- name: GetLastTable :one
  SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + ` WHERE id = LAST_INSERT_ID()
 `
@@ -2034,6 +2214,28 @@ func (q *Queries) GetLastUser(ctx context.Context) (Users, error) {
 		&i.Role,
 		&i.DateCreated,
 		&i.DateModified,
+	)
+	return i, err
+}
+
+const getLastUserOauth = `-- name: GetLastUserOauth :one
+SELECT user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access_token, refresh_token, token_expires_at, date_created
+FROM user_oauth
+WHERE user_oauth_id = LAST_INSERT_ID()
+`
+
+func (q *Queries) GetLastUserOauth(ctx context.Context) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getLastUserOauth)
+	var i UserOauth
+	err := row.Scan(
+		&i.UserOauthID,
+		&i.UserID,
+		&i.OauthProvider,
+		&i.OauthProviderUserID,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenExpiresAt,
+		&i.DateCreated,
 	)
 	return i, err
 }
@@ -2166,6 +2368,64 @@ func (q *Queries) GetRouteId(ctx context.Context, slug string) (int32, error) {
 	return route_id, err
 }
 
+const getSession = `-- name: GetSession :one
+SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+WHERE session_id = ? LIMIT 1
+`
+
+func (q *Queries) GetSession(ctx context.Context, sessionID int32) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSession, sessionID)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
+}
+
+const getSessionsByUserId = `-- name: GetSessionsByUserId :many
+SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+WHERE session_id = ?
+`
+
+func (q *Queries) GetSessionsByUserId(ctx context.Context, sessionID int32) ([]Sessions, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionsByUserId, sessionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Sessions
+	for rows.Next() {
+		var i Sessions
+		if err := rows.Scan(
+			&i.SessionID,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.LastAccess,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.SessionData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getTable = `-- name: GetTable :one
 SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + `
 WHERE id = ?
@@ -2296,6 +2556,68 @@ WHERE email = ? LIMIT 1
 
 func (q *Queries) GetUserId(ctx context.Context, email string) (int32, error) {
 	row := q.db.QueryRowContext(ctx, getUserId, email)
+	var user_id int32
+	err := row.Scan(&user_id)
+	return user_id, err
+}
+
+const getUserOauth = `-- name: GetUserOauth :one
+SELECT user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access_token, refresh_token, token_expires_at, date_created
+FROM user_oauth
+WHERE user_oauth_id = ?
+LIMIT 1
+`
+
+func (q *Queries) GetUserOauth(ctx context.Context, userOauthID int32) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauth, userOauthID)
+	var i UserOauth
+	err := row.Scan(
+		&i.UserOauthID,
+		&i.UserID,
+		&i.OauthProvider,
+		&i.OauthProviderUserID,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenExpiresAt,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const getUserOauthByEmail = `-- name: GetUserOauthByEmail :one
+SELECT uo.user_oauth_id, uo.user_id, uo.oauth_provider, uo.oauth_provider_user_id, uo.access_token, uo.refresh_token, uo.token_expires_at, uo.date_created
+FROM user_oauth uo
+JOIN users u ON uo.user_id = u.user_id
+WHERE u.email = ?
+LIMIT 1
+`
+
+func (q *Queries) GetUserOauthByEmail(ctx context.Context, email string) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauthByEmail, email)
+	var i UserOauth
+	err := row.Scan(
+		&i.UserOauthID,
+		&i.UserID,
+		&i.OauthProvider,
+		&i.OauthProviderUserID,
+		&i.AccessToken,
+		&i.RefreshToken,
+		&i.TokenExpiresAt,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const getUserOauthId = `-- name: GetUserOauthId :one
+SELECT uo.user_id
+FROM user_oauth uo
+JOIN users u ON uo.user_id = u.user_id
+WHERE u.email = ?
+LIMIT 1
+`
+
+func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauthId, email)
 	var user_id int32
 	err := row.Scan(&user_id)
 	return user_id, err
@@ -3243,6 +3565,42 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 	return items, nil
 }
 
+const listSessions = `-- name: ListSessions :many
+SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+`
+
+func (q *Queries) ListSessions(ctx context.Context) ([]Sessions, error) {
+	rows, err := q.db.QueryContext(ctx, listSessions)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Sessions
+	for rows.Next() {
+		var i Sessions
+		if err := rows.Scan(
+			&i.SessionID,
+			&i.UserID,
+			&i.CreatedAt,
+			&i.ExpiresAt,
+			&i.LastAccess,
+			&i.IpAddress,
+			&i.UserAgent,
+			&i.SessionData,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listTable = `-- name: ListTable :many
 SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + `
 ORDER BY label
@@ -3329,6 +3687,44 @@ func (q *Queries) ListUser(ctx context.Context) ([]Users, error) {
 			&i.Role,
 			&i.DateCreated,
 			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUserOauth = `-- name: ListUserOauth :many
+SELECT user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access_token, refresh_token, token_expires_at, date_created
+FROM user_oauth
+ORDER BY user_oauth_id
+`
+
+func (q *Queries) ListUserOauth(ctx context.Context) ([]UserOauth, error) {
+	rows, err := q.db.QueryContext(ctx, listUserOauth)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UserOauth
+	for rows.Next() {
+		var i UserOauth
+		if err := rows.Scan(
+			&i.UserOauthID,
+			&i.UserID,
+			&i.OauthProvider,
+			&i.OauthProviderUserID,
+			&i.AccessToken,
+			&i.RefreshToken,
+			&i.TokenExpiresAt,
+			&i.DateCreated,
 		); err != nil {
 			return nil, err
 		}
@@ -3856,6 +4252,43 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 	return err
 }
 
+const updateSession = `-- name: UpdateSession :exec
+UPDATE sessions
+    SET user_id=?,
+    created_at=?,
+    expires_at=?,
+    last_access=?,
+    ip_address=?,
+    user_agent=?,
+    session_data=?
+WHERE session_id = ?
+`
+
+type UpdateSessionParams struct {
+	UserID      int32          `json:"user_id"`
+	CreatedAt   sql.NullTime   `json:"created_at"`
+	ExpiresAt   sql.NullTime   `json:"expires_at"`
+	LastAccess  sql.NullTime   `json:"last_access"`
+	IpAddress   sql.NullString `json:"ip_address"`
+	UserAgent   sql.NullString `json:"user_agent"`
+	SessionData sql.NullString `json:"session_data"`
+	SessionID   int32          `json:"session_id"`
+}
+
+func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) error {
+	_, err := q.db.ExecContext(ctx, updateSession,
+		arg.UserID,
+		arg.CreatedAt,
+		arg.ExpiresAt,
+		arg.LastAccess,
+		arg.IpAddress,
+		arg.UserAgent,
+		arg.SessionData,
+		arg.SessionID,
+	)
+	return err
+}
+
 const updateTable = `-- name: UpdateTable :exec
 UPDATE ` + "`" + `tables` + "`" + `
 SET label = ?
@@ -3933,6 +4366,31 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Hash,
 		arg.Role,
 		arg.UserID,
+	)
+	return err
+}
+
+const updateUserOauth = `-- name: UpdateUserOauth :exec
+UPDATE user_oauth
+SET access_token = ?,
+    refresh_token = ?,
+    token_expires_at = ?
+WHERE user_oauth_id = ?
+`
+
+type UpdateUserOauthParams struct {
+	AccessToken    sql.NullString `json:"access_token"`
+	RefreshToken   sql.NullString `json:"refresh_token"`
+	TokenExpiresAt sql.NullTime   `json:"token_expires_at"`
+	UserOauthID    int32          `json:"user_oauth_id"`
+}
+
+func (q *Queries) UpdateUserOauth(ctx context.Context, arg UpdateUserOauthParams) error {
+	_, err := q.db.ExecContext(ctx, updateUserOauth,
+		arg.AccessToken,
+		arg.RefreshToken,
+		arg.TokenExpiresAt,
+		arg.UserOauthID,
 	)
 	return err
 }

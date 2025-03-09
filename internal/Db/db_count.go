@@ -149,3 +149,20 @@ func (d Database) CountUsers() (*int64, error) {
 	}
 	return &c, nil
 }
+func (d Database) CountSessions() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountSessions(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+func (d Database) CountUserOauths() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountUserOauths(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+

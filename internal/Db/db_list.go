@@ -305,3 +305,29 @@ func (d Database) ListAdminDatatypeChildren(parentId int64) (*[]AdminDatatypes, 
 	return &res, nil
 
 }
+func (d Database) ListUserOauths() (*[]UserOauth, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListUserOauth(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Users: %v\n", err)
+	}
+	res := []UserOauth{}
+	for _, v := range rows {
+		m := d.MapUserOauth(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListSessions() (*[]Sessions, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListSessions(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Users: %v\n", err)
+	}
+	res := []Sessions{}
+	for _, v := range rows {
+		m := d.MapSession(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}

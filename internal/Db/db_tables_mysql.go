@@ -15,6 +15,12 @@ func (d MysqlDatabase) CreateAllTables() error {
 	if err := d.CreateRouteTable(); err != nil {
 		return err
 	}
+	if err := d.CreateUserOauthTable(); err != nil {
+		return err
+	}
+	if err := d.CreateSessionTable(); err != nil {
+		return err
+	}
 	if err := d.CreateAdminDatatypeTable(); err != nil {
 		return err
 	}
@@ -146,5 +152,15 @@ func (d MysqlDatabase) CreateTokenTable() error {
 func (d MysqlDatabase) CreateUserTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateUserTable(d.Context)
+	return err
+}
+func (d MysqlDatabase) CreateSessionTable() error {
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateSessionTable(d.Context)
+	return err
+}
+func (d MysqlDatabase) CreateUserOauthTable() error {
+	queries := mdbm.New(d.Connection)
+	err := queries.CreateUserOauthTable(d.Context)
 	return err
 }

@@ -24,9 +24,11 @@ type DbDriver interface {
 	CountMediaDimensions() (*int64, error)
 	CountRoles() (*int64, error)
 	CountRoutes() (*int64, error)
+	CountSessions() (*int64, error)
 	CountTables() (*int64, error)
 	CountTokens() (*int64, error)
 	CountUsers() (*int64, error)
+	CountUserOauths() (*int64, error)
 
 	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
 	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
@@ -41,9 +43,11 @@ type DbDriver interface {
 	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
 	CreateRole(CreateRoleParams) Roles
 	CreateRoute(CreateRouteParams) Routes
+	CreateSession(CreateSessionParams) (*Sessions, error)
 	CreateTable(string) Tables
 	CreateToken(CreateTokenParams) Tokens
 	CreateUser(CreateUserParams) (*Users, error)
+	CreateUserOauth(CreateUserOauthParams) (*UserOauth, error)
 
 	CreateAdminContentDataTable() error
 	CreateAdminContentFieldTable() error
@@ -58,9 +62,11 @@ type DbDriver interface {
 	CreateMediaDimensionTable() error
 	CreateRoleTable() error
 	CreateRouteTable() error
+	CreateSessionTable() error
 	CreateTableTable() error
 	CreateTokenTable() error
 	CreateUserTable() error
+	CreateUserOauthTable() error
 
 	DeleteAdminContentData(int64) error
 	DeleteAdminContentField(int64) error
@@ -75,9 +81,11 @@ type DbDriver interface {
 	DeleteMediaDimension(int64) error
 	DeleteRole(int64) error
 	DeleteRoute(string) error
+	DeleteSession(int64) error
 	DeleteTable(int64) error
 	DeleteToken(int64) error
 	DeleteUser(int64) error
+	DeleteUserOauth(int64) error
 
 	GetAdminContentData(int64) (*AdminContentData, error)
 	GetAdminContentField(int64) (*AdminContentFields, error)
@@ -92,10 +100,14 @@ type DbDriver interface {
 	GetMediaDimension(int64) (*MediaDimensions, error)
 	GetRole(int64) (*Roles, error)
 	GetRoute(string) (*Routes, error)
+	GetSession(int64) (*Sessions, error)
+	GetSessionsByUserId(int64) (*[]Sessions, error)
 	GetTable(int64) (*Tables, error)
 	GetToken(int64) (*Tokens, error)
 	GetTokenByUserId(int64) (*[]Tokens, error)
 	GetUser(int64) (*Users, error)
+	GetUserOauth(int64) (*UserOauth, error)
+	GetUserByEmail(string) (*Users, error)
 
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
@@ -110,9 +122,11 @@ type DbDriver interface {
 	ListMediaDimensions() (*[]MediaDimensions, error)
 	ListRoles() (*[]Roles, error)
 	ListRoutes() (*[]Routes, error)
+	ListSessions() (*[]Sessions, error)
 	ListTables() (*[]Tables, error)
 	ListTokens() (*[]Tokens, error)
 	ListUsers() (*[]Users, error)
+	ListUserOauths() (*[]UserOauth, error)
 
 	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
 	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
@@ -127,7 +141,9 @@ type DbDriver interface {
 	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
 	UpdateRole(UpdateRoleParams) (*string, error)
 	UpdateRoute(UpdateRouteParams) (*string, error)
+	UpdateSession(UpdateSessionParams) (*string, error)
 	UpdateTable(UpdateTableParams) (*string, error)
 	UpdateToken(UpdateTokenParams) (*string, error)
 	UpdateUser(UpdateUserParams) (*string, error)
+	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
 }
