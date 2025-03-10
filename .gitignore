@@ -39,6 +39,8 @@ ui
 *.db
 
 #binary
+modulacms-amd
+modulacms-x86
 modulacms
 modula
 
@@ -62,5 +64,3 @@ bookmark.md
 test.png
 test-*.png
 testSite/
-modulacms-amd
-modulacms-x86
