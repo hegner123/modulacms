@@ -57,6 +57,7 @@ testing-config.json
 certs/
 *.pem
 config.json
+*config.json
 bookmark.md
 test.png
 test-*.png
