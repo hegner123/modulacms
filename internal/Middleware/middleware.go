@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -16,13 +15,6 @@ func Serve(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		Cors(w, r)
 
-		segments := GetURLSegments(r.URL.Path)
-		if segments[3] == "auth" {
-			fmt.Println(segments)
-			fmt.Println("auth route pass middleware auth")
-			next.ServeHTTP(w, r)
-
-		}
 		u, user := AuthRequest(w, r)
 		if u != nil {
 			// Inject authenticated user information into the request context for downstream handlers

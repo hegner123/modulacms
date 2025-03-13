@@ -12,32 +12,66 @@ import (
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 )
 
 func HandleAuthForm(conf config.Config, form *multipart.Form) (bool, *db.Users, error) {
+	// Check form values exist
+	if len(form.Value["email"]) == 0 || len(form.Value["password"]) == 0 {
+		return false, nil, fmt.Errorf("authentication form missing required fields")
+	}
+
 	ue := form.Value["email"][0]
 	up := form.Value["password"][0]
+	
+	// Validate inputs
 	if ue == "" || up == "" {
-		err := fmt.Errorf("email: %s, password: %s\n", ue, up)
-		return false, nil, err
+		return false, nil, fmt.Errorf("authentication failed: empty credentials provided")
 	}
+	
+	// Configure database connection
 	dbc := db.ConfigDB(conf)
 
+	// Get user by email
 	user, err := dbc.GetUserByEmail(ue)
 	if err != nil {
-		utility.LogError("failed to : ", err)
-        return false, nil, err
+		utility.LogError("failed to get user by email", err, "email", ue)
+        return false, nil, fmt.Errorf("authentication failed: user lookup error: %w", err)
 	}
-	requestHash := AuthMakeHash(up, config.Env.Auth_Salt)
-	hashMatch := compareHashes(user.Hash, requestHash)
-	return hashMatch, user, nil
+	
+	// Check if hash is bcrypt (starts with $2a$, $2b$, or $2y$)
+	if len(user.Hash) > 4 && (user.Hash[0:4] == "$2a$" || user.Hash[0:4] == "$2b$" || user.Hash[0:4] == "$2y$") {
+		// Bcrypt hash verification
+		err = bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(up))
+		if err != nil {
+			return false, nil, fmt.Errorf("authentication failed: invalid password")
+		}
+		return true, user, nil
+	} else {
+		// Legacy SHA-256 hash verification - for backward compatibility
+		requestHash := AuthMakeHash(up, config.Env.Auth_Salt)
+		hashMatch := compareHashes(user.Hash, requestHash)
+		if !hashMatch {
+			return false, nil, fmt.Errorf("authentication failed: invalid password")
+		}
+		return true, user, nil
+	}
 }
 
+// HashPassword creates a bcrypt hash of the password
+func HashPassword(password string) (string, error) {
+	// Use cost of 12 (which is a good balance of security and performance)
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 12)
+	return string(bytes), err
+}
+
+// Legacy SHA-256 hash function - kept for backward compatibility
 func AuthMakeHash(data, salt string) string {
+	// This is the legacy hash function, kept for backward compatibility
 	input := data + salt
 	hash := sha256.Sum256([]byte(input))
-
+	
 	return hex.EncodeToString(hash[:])
 }
 

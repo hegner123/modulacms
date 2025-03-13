@@ -4,6 +4,11 @@ import (
 	"context"
 	"database/sql"
 )
+type Historied interface {
+	GetHistory() string
+    MapHistoryEntry() string
+    UpdateHistory([]byte) error
+}
 
 type DbDriver interface {
 	CreateAllTables() error

@@ -33,7 +33,7 @@ func TestMain(m *testing.M) {
 }
 
 func TestInit(t *testing.T) {
-	s := InitFileCheck()
+	s := initFileCheck()
 
 	if !s.UseSSL || !s.DbFileExists {
 		t.FailNow()

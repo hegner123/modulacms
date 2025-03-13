@@ -13,7 +13,6 @@ import (
 	db "github.com/hegner123/modulacms/internal/Db"
 	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	router "github.com/hegner123/modulacms/internal/Router"
-	api_v1 "github.com/hegner123/modulacms/internal/Server"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
@@ -29,7 +28,7 @@ var InitStatus ModulaInit
 var Env = config.Config{}
 
 func main() {
-	InitStatus := InitFileCheck()
+	InitStatus := initFileCheck()
 	authFlag := flag.Bool("auth", false, "Run oauth tests")
 	updateFlag := flag.Bool("update", false, "Update binaries and plugins.")
 	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
@@ -37,30 +36,26 @@ func main() {
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
 	verbose := flag.Bool("V", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
+	install := flag.Bool("i", false, "Create tables in db driver")
 	flag.Parse()
 
+	Env = config.LoadConfig(verbose, "")
+
+	if *versionFlag {
+		proccessPrintVersion()
+	}
 	if *updateFlag {
-		fmt.Printf("TODO: update flag")
+		proccessUpdateFlag()
+	}
+	if *authFlag {
+		proccessAuthCheck()
+	}
+	if *cliFlag {
+		proccessRunCli()
 	}
 
 	if *alphaFlag {
-		_, err := os.Open("test.txt")
-		if err != nil {
-			log.Panic("failed to create database dump in archive: ", err)
-		}
-	}
-
-	if *versionFlag {
-		message, err := utility.GetVersion()
-		if err != nil {
-			return
-		}
-		log.Fatal(message)
-	}
-	Env = config.LoadConfig(verbose, "")
-	if *authFlag {
-		auth.OauthSettings(Env)
-		os.Exit(0)
+		proccessAlphaFlag()
 	}
 
 	if *reset {
@@ -71,37 +66,137 @@ func main() {
 		}
 	}
 
-	/*if config.ClientSite != "" {
-		clientDB, err := initClientDatabase(config.ClientSite, *reset)
-		if err != nil {
-			fmt.Printf("\nFailed to initialize database: %s", err)
-			return
-		}
-		defer clientDB.Close()
-	}*/
+	if *install {
+		// check if installed, ask if you want to reinstall and lose content
+		proccessRunInstall()
+	}
+
 	if !InitStatus.DbFileExists || *reset {
 		dbc, _, _ := db.ConfigDB(Env).GetConnection()
 		defer dbc.Close()
 	}
 
-	if *cliFlag {
-		r := cli.CliRun()
-		if !r {
-			os.Exit(0)
-		}
-	}
-
 	mux := http.NewServeMux()
-	api := api_v1.ApiServerV1{
-		Config:        Env,
-		DeleteHandler: router.ApiDeleteHandler,
-		GetHandler:    router.ApiGetHandler,
-		PutHandler:    router.ApiPutHandler,
-		PostHandler:   router.ApiPostHandler,
-	}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		router.Router(w, r, &api)
+	mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
+		router.LoginHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/auth/register", func(w http.ResponseWriter, r *http.Request) {
+		router.RegisterHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/auth/reset", func(w http.ResponseWriter, r *http.Request) {
+		router.ResetPasswordHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/auth/oauth", func(w http.ResponseWriter, r *http.Request) {
+		router.OauthCallbackHandler(Env,"")
+	})
+	mux.HandleFunc("/api/v1/admincontentdatas", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminContentDatasHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/admincontentdatas/", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminContentDataHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/admincontentfields", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminContentFieldsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/admincontentfields/", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminContentFieldHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/admindatatypes", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminDatatypesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/admindatatypes/", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminDatatypeHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/adminfields", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminFieldsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/adminfields/", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminFieldHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/adminroutes", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminRoutesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/adminroutes/", func(w http.ResponseWriter, r *http.Request) {
+		router.AdminRouteHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/contentdata", func(w http.ResponseWriter, r *http.Request) {
+		router.ContentDatasHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/contentdata/", func(w http.ResponseWriter, r *http.Request) {
+		router.ContentDataHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/contentfields", func(w http.ResponseWriter, r *http.Request) {
+		router.ContentFieldsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/contentfields/", func(w http.ResponseWriter, r *http.Request) {
+		router.ContentFieldHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/datatype", func(w http.ResponseWriter, r *http.Request) {
+		router.DatatypesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/datatype/", func(w http.ResponseWriter, r *http.Request) {
+		router.DatatypeHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/fields", func(w http.ResponseWriter, r *http.Request) {
+		router.FieldsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/fields/", func(w http.ResponseWriter, r *http.Request) {
+		router.FieldHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/media", func(w http.ResponseWriter, r *http.Request) {
+		router.MediasHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/media/", func(w http.ResponseWriter, r *http.Request) {
+		router.MediaHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/mediadimensions", func(w http.ResponseWriter, r *http.Request) {
+		router.MediaDimensionsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/mediadimensions/", func(w http.ResponseWriter, r *http.Request) {
+		router.MediaDimensionHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/routes", func(w http.ResponseWriter, r *http.Request) {
+		router.RoutesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/routes/", func(w http.ResponseWriter, r *http.Request) {
+		router.RoutesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/roles", func(w http.ResponseWriter, r *http.Request) {
+		router.RolesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/roles/", func(w http.ResponseWriter, r *http.Request) {
+		router.RoleHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/sessions", func(w http.ResponseWriter, r *http.Request) {
+		router.SessionsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/sessions/", func(w http.ResponseWriter, r *http.Request) {
+		router.SessionHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/tables", func(w http.ResponseWriter, r *http.Request) {
+		router.TablesHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/tables/", func(w http.ResponseWriter, r *http.Request) {
+		router.TableHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/tokens", func(w http.ResponseWriter, r *http.Request) {
+		router.TokensHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/tokens/", func(w http.ResponseWriter, r *http.Request) {
+		router.TokenHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/usersoauth", func(w http.ResponseWriter, r *http.Request) {
+		router.UserOauthsHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/usersoauth/", func(w http.ResponseWriter, r *http.Request) {
+		router.UserOauthHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/users", func(w http.ResponseWriter, r *http.Request) {
+		router.UsersHandler(w, r, Env)
+	})
+	mux.HandleFunc("/api/v1/users/", func(w http.ResponseWriter, r *http.Request) {
+		router.UserHandler(w, r, Env)
 	})
 
 	middlewareHandler := middleware.Serve(mux)
@@ -121,13 +216,15 @@ func main() {
 	}
 }
 
-func InitFileCheck() ModulaInit {
+func initFileCheck() ModulaInit {
 	Status := ModulaInit{}
+	//Check DB
 	_, err := os.Open("modula.db")
 	if err != nil {
 		Status.DbFileExists = false
 	}
 
+	//Check for ssl certs
 	_, err = os.Open("./certs/localhost.crt")
 	Status.Certificates = true
 	if err != nil {
@@ -143,10 +240,49 @@ func InitFileCheck() ModulaInit {
 	if !Status.Certificates || !Status.Key {
 		Status.UseSSL = false
 	}
+
+	//check for content version
 	_, err = os.Stat("./content.version")
 	if err != nil {
 		Status.ContentVersion = false
 
 	}
+
 	return Status
+}
+
+func proccessAuthCheck() {
+
+	auth.OauthSettings(Env)
+	os.Exit(0)
+}
+
+func proccessAlphaFlag() {
+	_, err := os.Open("test.txt")
+	if err != nil {
+		log.Panic("failed to create database dump in archive: ", err)
+	}
+}
+func proccessPrintVersion() {
+	message, err := utility.GetVersion()
+	if err != nil {
+		return
+	}
+	log.Fatal(message)
+
+}
+
+func proccessRunCli() {
+	r := cli.CliRun()
+	if !r {
+		os.Exit(0)
+	}
+}
+
+func proccessUpdateFlag() {
+	fmt.Printf("TODO: update flag")
+}
+
+func proccessRunInstall() {
+	fmt.Println("Run Install")
 }

@@ -4,9 +4,16 @@ import (
 	"os"
 
 	config "github.com/hegner123/modulacms/internal/Config"
+	db "github.com/hegner123/modulacms/internal/Db"
 )
 
 func CreateDb(path string) error {
+	c := config.Env
+	d := db.ConfigDB(c)
+	err := d.CreateAllTables()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

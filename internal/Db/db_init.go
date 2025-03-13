@@ -14,6 +14,7 @@ import (
 
 	_ "github.com/go-sql-driver/mysql"
 	config "github.com/hegner123/modulacms/internal/Config"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -22,66 +23,106 @@ import (
 var SqlFiles embed.FS
 
 func (d Database) GetDb() DbDriver {
-	fmt.Printf("Connecting to sqlite3 Db.......")
+	utility.LogHeader("Connecting to SQLite database...")
 	ctx := context.Background()
 
+	// Use default path if not specified
 	if d.Src == "" {
 		d.Src = "./modula.db"
+		utility.DefaultLogger.Info("Using default database path", "path", d.Src)
 	}
 
+	// Open database connection
 	db, err := sql.Open("sqlite3", d.Src)
 	if err != nil {
-		fmt.Printf("ERROR\ndb exec err db_init 007 : %s\n", err)
-		d.Err = err
+		errWithContext := fmt.Errorf("failed to open SQLite database: %w", err)
+		utility.DefaultLogger.Error("Database connection error", errWithContext, "path", d.Src)
+		d.Err = errWithContext
 		return d
 	}
 
-	fmt.Printf("OK\n")
-
+	// Enable foreign keys
 	_, err = db.Exec("PRAGMA foreign_keys = ON;")
 	if err != nil {
-		fmt.Printf("db exec err db_init 008 : %s\n", err)
-		d.Err = err
+		errWithContext := fmt.Errorf("failed to enable foreign keys: %w", err)
+		utility.DefaultLogger.Error("Database configuration error", errWithContext)
+		d.Err = errWithContext
 		return d
 	}
 
+	utility.DefaultLogger.Info("SQLite database connected successfully", "path", d.Src)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil
 	return d
 }
 func (d MysqlDatabase) GetDb() DbDriver {
-	fmt.Printf("Connecting to mysql Db......")
+	utility.LogHeader("Connecting to MySQL database...")
 	ctx := context.Background()
 
+	// Create connection string
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	
+	// Hide password in logs
+	sanitizedDsn := fmt.Sprintf("%s:****@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
+	utility.DefaultLogger.Info("Preparing MySQL connection", "dsn", sanitizedDsn)
 
+	// Open database connection
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatalf("ERROR\nError opening database: %v", err)
+		errWithContext := fmt.Errorf("failed to open MySQL database: %w", err)
+		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
+		d.Err = errWithContext
+		return d
+	}
+	
+	// Test the connection
+	err = db.Ping()
+	if err != nil {
+		errWithContext := fmt.Errorf("failed to connect to MySQL database: %w", err)
+		utility.DefaultLogger.Error("Database ping error", errWithContext, "host", d.Config.Db_URL)
+		d.Err = errWithContext
+		return d
 	}
 
-	fmt.Printf("OK\n")
-
-	fmt.Printf("Connection:%v\n", dsn)
+	utility.DefaultLogger.Info("MySQL database connected successfully", "database", d.Config.Db_Name)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil
 	return d
 }
 func (d PsqlDatabase) GetDb() DbDriver {
-	fmt.Printf("Connecting to postgres Db.......")
+	utility.LogHeader("Connecting to PostgreSQL database...")
 	ctx := context.Background()
 
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	// Create connection string
+	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", 
+		d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	
+	// Hide password in logs
+	sanitizedConnStr := fmt.Sprintf("postgres://%s:****@%s/%s?sslmode=disable", 
+		d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
+	utility.DefaultLogger.Info("Preparing PostgreSQL connection", "connection", sanitizedConnStr)
 
+	// Open database connection
 	db, err := sql.Open("postgres", connStr)
 	if err != nil {
-		log.Fatalf("ERROR\nError opening database: %v", err)
+		errWithContext := fmt.Errorf("failed to open PostgreSQL database: %w", err)
+		utility.DefaultLogger.Error("Database connection error", errWithContext, "host", d.Config.Db_URL)
+		d.Err = errWithContext
+		return d
 	}
-	fmt.Printf("OK\n")
+	
+	// Test the connection
+	err = db.Ping()
+	if err != nil {
+		errWithContext := fmt.Errorf("failed to connect to PostgreSQL database: %w", err)
+		utility.DefaultLogger.Error("Database ping error", errWithContext, "host", d.Config.Db_URL)
+		d.Err = errWithContext
+		return d
+	}
 
-	fmt.Printf("Connection: %v\n", connStr)
+	utility.DefaultLogger.Info("PostgreSQL database connected successfully", "database", d.Config.Db_Name)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil

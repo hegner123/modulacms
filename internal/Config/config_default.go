@@ -14,6 +14,13 @@ func DefaultConfig() Config {
 	c.Db_Password = ""
 	c.Backup_Option = ""
 	c.Backup_Paths = []string{""}
+	
+	// Default CORS settings
+	c.Cors_Origins = []string{"http://localhost:3000"}
+	c.Cors_Methods = []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"}
+	c.Cors_Headers = []string{"Content-Type", "Authorization"}
+	c.Cors_Credentials = true
+	
 	return c
 }
 

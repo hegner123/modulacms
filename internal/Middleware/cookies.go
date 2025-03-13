@@ -8,18 +8,6 @@ import (
 )
 
 func SetCookieHandler(w http.ResponseWriter, c *http.Cookie) {
-	/*
-				expiration := time.Now().Add(24 * time.Hour)
-		        // Create a new cookie
-		        cookie := http.Cookie{
-		                Name:     "myCookie",
-		                Value:    "cookieValue",
-		                Expires:  expiration,
-		                Path:     "/",       // Cookie is accessible on all paths
-		                HttpOnly: true,      // Not accessible via JavaScript
-		                Secure:   false,     // Set true if using HTTPS
-		            }
-	*/
 
 	basic := []byte("Test")
 	// Set the cookie in the response header

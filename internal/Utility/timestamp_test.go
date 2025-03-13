@@ -1,12 +1,25 @@
 package utility
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+	"time"
+)
 
-func TestTimestampLessThan(t *testing.T) {
-	aStamp := "1738340471"
-	res := TimestampLessThan(aStamp)
-	if !res {
-		t.FailNow()
-	}
+func TestTimestampInt(t *testing.T) {
+	fmt.Println(time.Now().String())
+	ti := TimestampI()
+	fmt.Println(ti)
+}
 
+func TestTimestampString(t *testing.T) {
+	fmt.Println(time.Now().String())
+	ti := TimestampS()
+	fmt.Println(ti)
+}
+
+func TestTimestampReadable(t *testing.T) {
+	fmt.Println(time.Now().String())
+	ti := TimestampReadable()
+	fmt.Println(ti)
 }

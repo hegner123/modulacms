@@ -41,6 +41,10 @@ type Config struct {
 	Oauth_Client_Secret string              `json:"oauth_client_secret"`
 	Oauth_Scopes        []string            `json:"oauth_scopes"`
 	Oauth_Endpoint      map[Endpoint]string `json:"oauth_endpoint"`
+	Cors_Origins        []string            `json:"cors_origins"`
+	Cors_Methods        []string            `json:"cors_methods"`
+	Cors_Headers        []string            `json:"cors_headers"`
+	Cors_Credentials    bool                `json:"cors_credentials"`
 }
 
 var DisableSystemTables ConfigOption = "disableSystemTables"

@@ -198,7 +198,7 @@ type Routes struct {
 }
 
 type Sessions struct {
-	SessionID   int64         `json:"session_id"`
+	SessionID   int64          `json:"session_id"`
 	UserID      int64          `json:"user_id"`
 	CreatedAt   sql.NullString `json:"created_at"`
 	ExpiresAt   sql.NullString `json:"expires_at"`
@@ -722,4 +722,111 @@ type UtilityGetUsersRow struct {
 type UtilityRecordCountRow struct {
 	TableName string `json:"table_name"`
 	RowCount  int64  `json:"row_count"`
+}
+type AdminContentDataHistoryEntry struct {
+	AdminContentDataID int64          `json:"admin_content_data_id"`
+	AdminRouteID       int64          `json:"admin_route_id"`
+	AdminDatatypeID    int64          `json:"admin_datatype_id"`
+	DateCreated        sql.NullString `json:"date_created"`
+	DateModified       sql.NullString `json:"date_modified"`
+}
+
+type AdminContentFieldsHistoryEntry struct {
+	AdminContentFieldID int64          `json:"admin_content_field_id"`
+	AdminRouteID        int64          `json:"admin_route_id"`
+	AdminContentDataID  int64          `json:"admin_content_data_id"`
+	AdminFieldID        int64          `json:"admin_field_id"`
+	AdminFieldValue     string         `json:"admin_field_value"`
+	DateCreated         sql.NullString `json:"date_created"`
+	DateModified        sql.NullString `json:"date_modified"`
+}
+
+type AdminDatatypesHistoryEntry struct {
+	AdminDatatypeID int64          `json:"admin_datatype_id"`
+	AdminRouteID    sql.NullInt64  `json:"admin_route_id"`
+	ParentID        sql.NullInt64  `json:"parent_id"`
+	Label           string         `json:"label"`
+	Type            string         `json:"type"`
+	Author          string         `json:"author"`
+	AuthorID        int64          `json:"author_id"`
+	DateCreated     sql.NullString `json:"date_created"`
+	DateModified    sql.NullString `json:"date_modified"`
+}
+
+type AdminFieldsHistoryEntry struct {
+	AdminFieldID int64          `json:"admin_field_id"`
+	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        any            `json:"label"`
+	Data         any            `json:"data"`
+	Type         any            `json:"type"`
+	Author       any            `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+
+type AdminRoutesHistoryEntry struct {
+	AdminRouteID int64          `json:"admin_route_id"`
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	Author       any            `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+
+type ContentDataHistoryEntry struct {
+	ContentDataID int64          `json:"content_data_id"`
+	RouteID       int64          `json:"route_id"`
+	DatatypeID    int64          `json:"datatype_id"`
+	DateCreated   sql.NullString `json:"date_created"`
+	DateModified  sql.NullString `json:"date_modified"`
+}
+
+type ContentFieldsHistoryEntry struct {
+	ContentFieldID int64          `json:"content_field_id"`
+	RouteID        int64          `json:"route_id"`
+	ContentDataID  int64          `json:"content_data_id"`
+	FieldID        int64          `json:"field_id"`
+	FieldValue     string         `json:"field_value"`
+	DateCreated    sql.NullString `json:"date_created"`
+	DateModified   sql.NullString `json:"date_modified"`
+}
+
+type DatatypesHistoryEntry struct {
+	DatatypeID   int64          `json:"datatype_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	Author       any            `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+
+type FieldsHistoryEntry struct {
+	FieldID      int64          `json:"field_id"`
+	RouteID      sql.NullInt64  `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        any            `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
+	Author       any            `json:"author"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+}
+
+type RoutesHistoryEntry struct {
+	RouteID      any          `json:"route_id"`
+	Author       string       `json:"author"`
+	AuthorID     int64        `json:"author_id"`
+	Slug         string       `json:"slug"`
+	Title        string       `json:"title"`
+	Status       int64        `json:"status"`
+	DateCreated  sql.NullTime `json:"date_created"`
+	DateModified sql.NullTime `json:"date_modified"`
 }
