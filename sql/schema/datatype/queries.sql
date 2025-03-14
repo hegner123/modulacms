@@ -3,9 +3,6 @@ CREATE TABLE IF NOT EXISTS datatypes
 (
     datatype_id   INTEGER
         primary key,
-    route_id      INTEGER default NULL
-        references routes
-            on update cascade on delete set default,
     parent_id     INTEGER default NULL
         references datatypes
             on update cascade on delete set default,
@@ -37,7 +34,6 @@ ORDER BY datatype_id;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (
-    route_id,
     parent_id,
     label,
     type,
@@ -47,14 +43,13 @@ INSERT INTO datatypes (
     date_created,
     date_modified
     ) VALUES (
-  ?,?,?,?,?,?,?,?,?
+  ?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
-set route_id = ?,
-    parent_id = ?,
+set parent_id = ?,
     label = ?,
     type = ?,
     author = ?,
@@ -71,7 +66,3 @@ WHERE datatype_id = ?;
 
 
 
--- name: ListDatatypeByRouteId :many
-SELECT datatype_id, route_id, parent_id, label, type
-FROM datatypes
-WHERE route_id = ?;

@@ -76,7 +76,7 @@ func formatLogMessage(level LogLevel, message string, err error, args ...any) st
 	_, file, line, ok := runtime.Caller(2)
 	fileInfo := "unknown:0"
 	if ok {
-		fileInfo = fmt.Sprintf("\n%s:%d\n", filepath.Base(file), line)
+		fileInfo = fmt.Sprintf("%s:%d", filepath.Base(file), line)
 	}
 
 	// Format timestamp

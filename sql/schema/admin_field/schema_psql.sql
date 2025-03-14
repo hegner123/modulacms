@@ -1,8 +1,5 @@
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id SERIAL PRIMARY KEY,
-    admin_route_id INTEGER DEFAULT 1
-        REFERENCES admin_routes(admin_route_id)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
     parent_id INTEGER DEFAULT NULL
         REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET DEFAULT,

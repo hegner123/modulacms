@@ -1,7 +1,7 @@
 -- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
+    
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -10,9 +10,6 @@ CREATE TABLE IF NOT EXISTS datatypes (
     history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_dt_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_dt_datatypes_parent FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -39,8 +36,7 @@ ORDER BY datatype_id;
 
 
 -- name: CreateDatatype :exec
-INSERT INTO datatypes (
-    route_id,
+INSERT INTO datatypes (    
     parent_id,
     label,
     type,
@@ -50,7 +46,7 @@ INSERT INTO datatypes (
     date_created,
     date_modified
     ) VALUES (
-  ?,?,?,?,?,?,?,?,?
+  ?,?,?,?,?,?,?,?
     );
 -- name: GetLastDatatype :one
 SELECT * FROM datatypes WHERE datatype_id = LAST_INSERT_ID();
@@ -58,7 +54,7 @@ SELECT * FROM datatypes WHERE datatype_id = LAST_INSERT_ID();
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
-set route_id = ?,
+set 
     parent_id = ?,
     label = ?,
     type = ?,
@@ -75,7 +71,3 @@ WHERE datatype_id = ?;
 
 
 
--- name: ListDatatypeByRouteId :many
-SELECT datatype_id, route_id, parent_id, label, type
-FROM datatypes
-WHERE route_id = ?;

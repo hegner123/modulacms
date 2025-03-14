@@ -30,7 +30,6 @@ type AdminContentFields struct {
 
 type AdminDatatypes struct {
 	AdminDatatypeID int64          `json:"admin_datatype_id"`
-	AdminRouteID    sql.NullInt64  `json:"admin_route_id"`
 	ParentID        sql.NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
@@ -43,7 +42,6 @@ type AdminDatatypes struct {
 
 type AdminFields struct {
 	AdminFieldID int64          `json:"admin_field_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
 	Data         interface{}    `json:"data"`
@@ -89,7 +87,6 @@ type ContentFields struct {
 
 type Datatypes struct {
 	DatatypeID   int64          `json:"datatype_id"`
-	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
@@ -102,7 +99,6 @@ type Datatypes struct {
 
 type Fields struct {
 	FieldID      int64          `json:"field_id"`
-	RouteID      sql.NullInt64  `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        interface{}    `json:"label"`
 	Data         string         `json:"data"`
@@ -150,19 +146,19 @@ type Roles struct {
 }
 
 type Routes struct {
-	RouteID      interface{}    `json:"route_id"`
+	RouteID      int64          `json:"route_id"`
 	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
 }
 
 type Sessions struct {
-	SessionID   interface{}    `json:"session_id"`
+	SessionID   int64          `json:"session_id"`
 	UserID      int64          `json:"user_id"`
 	CreatedAt   sql.NullString `json:"created_at"`
 	ExpiresAt   sql.NullString `json:"expires_at"`

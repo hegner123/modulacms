@@ -1,3 +1,11 @@
+# Page
+
+## Datatype: Page
+Label: Page
+
+## Schema
+
+```sql
 CREATE TABLE IF NOT EXISTS datatypes
 (
     datatype_id   INTEGER
@@ -17,3 +25,4 @@ CREATE TABLE IF NOT EXISTS datatypes
     date_created  TEXT    default CURRENT_TIMESTAMP,
     date_modified TEXT    default CURRENT_TIMESTAMP
 );
+```

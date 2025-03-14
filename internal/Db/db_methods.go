@@ -120,7 +120,6 @@ func (a AdminContentFields) MapHistoryEntry() string {
 func (a AdminDatatypes) MapHistoryEntry() string {
 	entry := AdminDatatypesHistoryEntry{
 		AdminDatatypeID: a.AdminDatatypeID,
-		AdminRouteID:    a.AdminRouteID,
 		ParentID:        a.ParentID,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -139,7 +138,6 @@ func (a AdminDatatypes) MapHistoryEntry() string {
 func (a AdminFields) MapHistoryEntry() string {
 	entry := AdminFieldsHistoryEntry{
 		AdminFieldID: a.AdminFieldID,
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -209,7 +207,6 @@ func (c ContentFields) MapHistoryEntry() string {
 func (d Datatypes) MapHistoryEntry() string {
 	entry := DatatypesHistoryEntry{
 		DatatypeID:   d.DatatypeID,
-		RouteID:      d.RouteID,
 		ParentID:     d.ParentID,
 		Label:        d.Label,
 		Type:         d.Type,
@@ -228,7 +225,6 @@ func (d Datatypes) MapHistoryEntry() string {
 func (f Fields) MapHistoryEntry() string {
 	entry := FieldsHistoryEntry{
 		FieldID:      f.FieldID,
-		RouteID:      f.RouteID,
 		ParentID:     f.ParentID,
 		Label:        f.Label,
 		Data:         f.Data,

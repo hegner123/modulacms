@@ -76,6 +76,14 @@ func sTime(dateStr string) sql.NullTime {
 	return st
 }
 
+func NSt(s sql.NullString) time.Time {
+	t, err := time.Parse(time.RFC3339, s.String)
+	if err != nil {
+		return time.Now()
+	}
+	return t
+}
+
 func Si(s string) int64 {
 	res, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {

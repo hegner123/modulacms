@@ -1,7 +1,6 @@
 -- name: CreateAdminDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id INT NOT NULL AUTO_INCREMENT,
-    admin_route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -11,10 +10,6 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
     PRIMARY KEY (admin_datatype_id),
-    CONSTRAINT fk_admin_datatypes_admin_route_id FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION,
     CONSTRAINT fk_admin_datatypes_parent_id FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE
@@ -69,7 +64,6 @@ WHERE parent_id = ?;
 
 -- name: CreateAdminDatatype :exec
 INSERT INTO admin_datatypes (
-    admin_route_id,
     parent_id,
     label,
     type,
@@ -79,7 +73,7 @@ INSERT INTO admin_datatypes (
     date_modified,
     history
 ) VALUES (
-    ?,?,?,?,?,?,?,?,?
+    ?,?,?,?,?,?,?,?
 );
 -- To retrieve the inserted row, consider using LAST_INSERT_ID() in a subsequent SELECT.
 -- name: GetLastAdminDatatype :one
@@ -87,8 +81,7 @@ SELECT * FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID();
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
-SET admin_route_id = ?,
-    parent_id = ?,
+SET parent_id = ?,
     label = ?,
     type = ?,
     author = ?,
@@ -103,13 +96,4 @@ WHERE admin_datatype_id = ?;
 DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?;
 
--- name: ListAdminDatatypeByRouteId :many
-SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
-FROM admin_datatypes
-WHERE admin_route_id = ?;
 
--- name: GetRootAdminDtByAdminRtId :one
-SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
-FROM admin_datatypes
-WHERE admin_route_id = ?
-ORDER BY admin_datatype_id;

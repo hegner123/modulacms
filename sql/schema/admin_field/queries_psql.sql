@@ -1,9 +1,6 @@
 -- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id SERIAL PRIMARY KEY,
-    admin_route_id INTEGER DEFAULT 1
-        REFERENCES admin_routes(admin_route_id)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
     parent_id INTEGER DEFAULT NULL
         REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
@@ -43,8 +40,7 @@ FROM admin_fields
 ORDER BY admin_field_id;
 
 -- name: CreateAdminField :one
-INSERT INTO admin_fields (
-    admin_route_id,
+INSERT INTO admin_fields (    
     parent_id,
     label,
     data,
@@ -56,42 +52,30 @@ INSERT INTO admin_fields (
     history
 )
 VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
 RETURNING *;
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
-SET admin_route_id = $1,
-    parent_id    = $2,
-    label        = $3,
-    data         = $4,
-    type         = $5,
-    author       = $6,
-    author_id    = $7,
-    date_created = $8,
-    date_modified= $9,
-    history      = $10
-WHERE admin_field_id = $11;
+SET parent_id    = $1,
+    label        = $2,
+    data         = $3,
+    type         = $4,
+    author       = $5,
+    author_id    = $6,
+    date_created = $7,
+    date_modified= $8,
+    history      = $9
+WHERE admin_field_id = $10;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields
 WHERE admin_field_id = $1;
 
--- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id,
-       admin_route_id,
-       parent_id,
-       label,
-       data,
-       type,
-       history
-FROM admin_fields
-WHERE admin_route_id = $1;
 
 -- name: ListAdminFieldsByDatatypeID :many
-SELECT admin_field_id,
-       admin_route_id,
+SELECT admin_field_id, 
        parent_id,
        label,
        data,

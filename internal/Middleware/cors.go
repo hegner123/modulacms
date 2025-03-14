@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"slices"
 	"strings"
 
 	config "github.com/hegner123/modulacms/internal/Config"
@@ -16,23 +17,23 @@ func Cors(w http.ResponseWriter, r *http.Request) {
 func CorsWithConfig(w http.ResponseWriter, r *http.Request, conf config.Config) {
 	// Get origin from request
 	origin := r.Header.Get("Origin")
-	
+
 	// Check if the origin is allowed
 	allowedOrigin := getAllowedOrigin(origin, conf.Cors_Origins)
 	if allowedOrigin != "" {
 		w.Header().Set("Access-Control-Allow-Origin", allowedOrigin)
 	}
-	
+
 	// Set allowed methods
 	if len(conf.Cors_Methods) > 0 {
 		w.Header().Set("Access-Control-Allow-Methods", strings.Join(conf.Cors_Methods, ", "))
 	}
-	
+
 	// Set allowed headers
 	if len(conf.Cors_Headers) > 0 {
 		w.Header().Set("Access-Control-Allow-Headers", strings.Join(conf.Cors_Headers, ", "))
 	}
-	
+
 	// Set credentials allowed if configured
 	if conf.Cors_Credentials {
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
@@ -52,21 +53,17 @@ func getAllowedOrigin(requestOrigin string, allowedOrigins []string) string {
 	if len(allowedOrigins) == 0 {
 		return ""
 	}
-	
+
 	// Check for wildcard
-	for _, allowed := range allowedOrigins {
-		if allowed == "*" {
-			return "*" // Allow any origin
-		}
+	if slices.Contains(allowedOrigins, "*") {
+		return "*"
 	}
-	
+
 	// Check if the request origin matches any of the allowed origins
-	for _, allowed := range allowedOrigins {
-		if allowed == requestOrigin {
-			return requestOrigin // Return the actual origin that matched
-		}
+	if slices.Contains(allowedOrigins, requestOrigin) {
+		return requestOrigin
 	}
-	
+
 	// Origin not allowed
 	return ""
 }

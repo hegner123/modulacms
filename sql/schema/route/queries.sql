@@ -1,6 +1,6 @@
 -- name: CreateRouteTable :exec
 CREATE TABLE IF NOT EXISTS routes (
-    route_id SERIAL PRIMARY KEY,
+    route_id INTEGER PRIMARY KEY,
     author TEXT DEFAULT 'system' NOT NULL
         REFERENCES users(username)
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS routes (
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
     history TEXT,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: GetRoute :one
@@ -23,7 +23,7 @@ WHERE slug = ? LIMIT 1;
 SELECT COUNT(*)
 FROM routes;
 
--- name: GetRouteId :one
+-- name: GetRouteID :one
 SELECT route_id FROM routes
 WHERE slug = ? LIMIT 1;
 

@@ -1,7 +1,7 @@
 -- name: CreateFieldTable :exec
 CREATE TABLE IF NOT EXISTS fields (
     field_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
+    
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL,
@@ -11,9 +11,6 @@ CREATE TABLE IF NOT EXISTS fields (
     history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_fields_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_fields_datatypes FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
@@ -38,8 +35,7 @@ SELECT * FROM fields
 ORDER BY field_id;
 
 -- name: CreateField :exec
-INSERT INTO fields  (
-    route_id,
+INSERT INTO fields  (    
     parent_id,
     label,
     data,
@@ -50,7 +46,7 @@ INSERT INTO fields  (
     date_created,
     date_modified
     ) VALUES (
-?,?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?,?
     );
 -- name: GetLastField :one
 SELECT * FROM fields WHERE field_id = LAST_INSERT_ID();
@@ -58,7 +54,7 @@ SELECT * FROM fields WHERE field_id = LAST_INSERT_ID();
 
 -- name: UpdateField :exec
 UPDATE fields 
-set route_id = ?,
+set 
     parent_id = ?,
     label = ?,
     data = ?,
@@ -74,7 +70,3 @@ set route_id = ?,
 DELETE FROM fields 
 WHERE field_id = ?;
 
--- name: ListFieldByRouteId :many
-SELECT field_id, route_id, parent_id, label, data, type
-FROM fields 
-WHERE route_id = ?;

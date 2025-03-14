@@ -28,7 +28,6 @@ func (d Database) MapAdminContentField(a mdb.AdminContentFields) AdminContentFie
 func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID,
-		AdminRouteID:    a.AdminRouteID,
 		ParentID:        a.ParentID,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -43,7 +42,6 @@ func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -95,7 +93,6 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   a.DatatypeID,
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -110,7 +107,6 @@ func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 func (d Database) MapField(a mdb.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -166,19 +162,16 @@ func (d Database) MapRoles(a mdb.Roles) Roles {
 }
 
 func (d Database) MapRoute(a mdb.Routes) Routes {
-	routeId, ok := a.RouteID.(int64)
-	if !ok {
-		return Routes{}
-
-	}
 	return Routes{
-		RouteID:  routeId,
-		Slug:     a.Slug,
-		Title:    a.Title,
-		Status:   a.Status,
-		Author:   a.Author,
-		AuthorID: a.AuthorID,
-		History:  a.History,
+		RouteID:      a.RouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		Author:       a.Author,
+		AuthorID:     a.AuthorID,
+		History:      a.History,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
 	}
 }
 
@@ -240,27 +233,6 @@ func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
 	}
 }
 
-func (d Database) MapListDatatypeByRouteIdRow(a mdb.ListDatatypeByRouteIdRow) ListDatatypeByRouteIdRow {
-	return ListDatatypeByRouteIdRow{
-		DatatypeID: a.DatatypeID,
-		RouteID:    a.RouteID,
-		ParentID:   a.ParentID,
-		Label:      a.Label,
-		Type:       a.Type,
-	}
-}
-
-func (d Database) MapListFieldByRouteIdRow(a mdb.ListFieldByRouteIdRow) ListFieldByRouteIdRow {
-	return ListFieldByRouteIdRow{
-		FieldID:  a.FieldID,
-		RouteID:  a.RouteID,
-		ParentID: a.ParentID,
-		Label:    a.Label,
-		Data:     a.Data,
-		Type:     a.Type,
-	}
-}
-
 func (d Database) MapListAdminDatatypeTreeRow(a mdb.ListAdminDatatypeTreeRow) ListAdminDatatypeTreeRow {
 	return ListAdminDatatypeTreeRow{
 		ChildID:     a.ChildID,
@@ -273,23 +245,11 @@ func (d Database) MapListAdminDatatypeTreeRow(a mdb.ListAdminDatatypeTreeRow) Li
 func (d Database) MapListAdminFieldsByDatatypeIDRow(a mdb.ListAdminFieldsByDatatypeIDRow) ListAdminFieldsByDatatypeIDRow {
 	return ListAdminFieldsByDatatypeIDRow{
 		AdminFieldID: a.AdminFieldID,
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		History:      a.History,
-	}
-}
-
-func (d Database) MapListAdminDatatypeByRouteIdRow(a mdb.ListAdminDatatypeByRouteIdRow) ListAdminDatatypeByRouteIdRow {
-	return ListAdminDatatypeByRouteIdRow{
-		AdminDatatypeID: a.AdminDatatypeID,
-		AdminRouteID:    a.AdminRouteID,
-		ParentID:        a.ParentID,
-		Label:           a.Label,
-		Type:            a.Type,
-		History:         a.History,
 	}
 }
 
@@ -318,7 +278,6 @@ func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldPara
 
 func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.CreateAdminDatatypeParams {
 	return mdb.CreateAdminDatatypeParams{
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -332,7 +291,6 @@ func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.
 
 func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.CreateAdminFieldParams {
 	return mdb.CreateAdminFieldParams{
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -383,7 +341,6 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 
 func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateDatatypeParams {
 	return mdb.CreateDatatypeParams{
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -397,7 +354,6 @@ func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateData
 
 func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParams {
 	return mdb.CreateFieldParams{
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -534,7 +490,6 @@ func (d Database) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldPara
 
 func (d Database) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdb.UpdateAdminDatatypeParams {
 	return mdb.UpdateAdminDatatypeParams{
-		AdminRouteID:    a.AdminRouteID,
 		ParentID:        a.ParentID,
 		Label:           a.Label,
 		Type:            a.Type,
@@ -549,7 +504,6 @@ func (d Database) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdb.
 
 func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.UpdateAdminFieldParams {
 	return mdb.UpdateAdminFieldParams{
-		AdminRouteID: a.AdminRouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -604,7 +558,6 @@ func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.Up
 
 func (d Database) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdb.UpdateDatatypeParams {
 	return mdb.UpdateDatatypeParams{
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -619,7 +572,6 @@ func (d Database) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdb.UpdateData
 
 func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParams {
 	return mdb.UpdateFieldParams{
-		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -697,7 +649,7 @@ func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessio
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   a.SessionID,
+		SessionID:   Si(a.SessionID),
 	}
 }
 

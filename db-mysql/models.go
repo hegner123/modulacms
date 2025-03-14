@@ -32,7 +32,6 @@ type AdminContentFields struct {
 
 type AdminDatatypes struct {
 	AdminDatatypeID int32          `json:"admin_datatype_id"`
-	AdminRouteID    sql.NullInt32  `json:"admin_route_id"`
 	ParentID        sql.NullInt32  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
@@ -45,7 +44,6 @@ type AdminDatatypes struct {
 
 type AdminFields struct {
 	AdminFieldID int32          `json:"admin_field_id"`
-	AdminRouteID int32          `json:"admin_route_id"`
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
@@ -91,7 +89,6 @@ type ContentFields struct {
 
 type Datatypes struct {
 	DatatypeID   int32          `json:"datatype_id"`
-	RouteID      sql.NullInt32  `json:"route_id"`
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
@@ -104,7 +101,6 @@ type Datatypes struct {
 
 type Fields struct {
 	FieldID      int32          `json:"field_id"`
-	RouteID      sql.NullInt32  `json:"route_id"`
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`

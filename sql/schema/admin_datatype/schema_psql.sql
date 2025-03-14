@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id SERIAL PRIMARY KEY,
-    admin_route_id INT DEFAULT NULL,
+    
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -9,10 +9,6 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
-    CONSTRAINT fk_admin_route_id FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE
-        ON DELETE SET DEFAULT,
     CONSTRAINT fk_parent_id FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_dt_id)
         ON UPDATE CASCADE

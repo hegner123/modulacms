@@ -1,12 +1,11 @@
 package db
 
 import (
-	"database/sql"
 	_ "embed"
-	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/db-mysql"
 )
+
 func (d MysqlDatabase) GetAdminContentData(id int64) (*AdminContentData, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetAdminContentData(d.Context, int32(id))
@@ -44,17 +43,6 @@ func (d MysqlDatabase) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 		return nil, err
 	}
 	res := d.MapAdminDatatype(row)
-	return &res, nil
-}
-
-func (d MysqlDatabase) GetRootAdIdByAdRtId(adminRtId int32) (*int64, error) {
-	queries := mdbm.New(d.Connection)
-	row, err := queries.GetRootAdminDtByAdminRtId(d.Context, sql.NullInt32{Int32: adminRtId, Valid: true})
-	if err != nil {
-		fmt.Printf("adminRtId %d\n", adminRtId)
-		return nil, err
-	}
-    res := int64(row.AdminDatatypeID)
 	return &res, nil
 }
 
@@ -157,6 +145,16 @@ func (d MysqlDatabase) GetRoute(slug string) (*Routes, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) GetRouteID(slug string) (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	id, err := queries.GetRouteID(d.Context, slug)
+	if err != nil {
+		return nil, err
+	}
+	id64 := int64(id)
+	return &id64, nil
+}
+
 func (d MysqlDatabase) GetTable(id int64) (*Tables, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetTable(d.Context, int32(id))
@@ -185,7 +183,7 @@ func (d MysqlDatabase) GetTokenByUserId(userId int64) (*[]Tokens, error) {
 	}
 	res := []Tokens{}
 	for _, v := range row {
-        m := d.MapToken(v)
+		m := d.MapToken(v)
 		res = append(res, m)
 	}
 	return &res, nil

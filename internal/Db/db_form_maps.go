@@ -26,7 +26,6 @@ func MapCreateAdminContentFieldParams(a CreateAdminContentFieldFormParams) Creat
 
 func MapCreateAdminDatatypeParams(a CreateAdminDatatypeFormParams) CreateAdminDatatypeParams {
 	return CreateAdminDatatypeParams{
-		AdminRouteID: Nsi(a.AdminRouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -41,7 +40,6 @@ func MapCreateAdminDatatypeParams(a CreateAdminDatatypeFormParams) CreateAdminDa
 func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldParams {
 
 	return CreateAdminFieldParams{
-		AdminRouteID: Nsi(a.AdminRouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -88,7 +86,6 @@ func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFi
 }
 func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 	return CreateDatatypeParams{
-		RouteID:      Nsi(a.RouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -102,7 +99,6 @@ func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 
 func MapCreateFieldParams(a CreateFieldFormParams) CreateFieldParams {
 	return CreateFieldParams{
-		RouteID:      Nsi(a.RouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -154,8 +150,8 @@ func MapCreateRouteParams(a CreateRouteFormParams) CreateRouteParams {
 		Title:        a.Title,
 		Status:       Si(a.Status),
 		History:      Ns(a.History),
-		DateCreated:  sTime(a.DateCreated),
-		DateModified: sTime(a.DateModified),
+		DateCreated:  Ns(a.DateCreated),
+		DateModified: Ns(a.DateModified),
 	}
 }
 
@@ -228,7 +224,6 @@ func MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldFormParams) Updat
 }
 func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDatatypeParams {
 	return UpdateAdminDatatypeParams{
-		AdminRouteID:    Nsi(a.AdminRouteID),
 		ParentID:        Nsi(a.ParentID),
 		Label:           a.Label,
 		Type:            a.Type,
@@ -242,7 +237,6 @@ func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDa
 }
 func MapUpdateAdminFieldParams(a UpdateAdminFieldFormParams) UpdateAdminFieldParams {
 	return UpdateAdminFieldParams{
-		AdminRouteID: Nsi(a.AdminRouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -293,7 +287,6 @@ func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFi
 }
 func MapUpdateDatatypeParams(a UpdateDatatypeFormParams) UpdateDatatypeParams {
 	return UpdateDatatypeParams{
-		RouteID:      Nsi(a.RouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -307,7 +300,6 @@ func MapUpdateDatatypeParams(a UpdateDatatypeFormParams) UpdateDatatypeParams {
 }
 func MapUpdateFieldParams(a UpdateFieldFormParams) UpdateFieldParams {
 	return UpdateFieldParams{
-		RouteID:      Nsi(a.RouteID),
 		ParentID:     Nsi(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -366,8 +358,8 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 		Title:        a.Title,
 		Status:       Si(a.Status),
 		History:      Ns(a.History),
-		DateCreated:  sTime(a.DateCreated),
-		DateModified: sTime(a.DateModified),
+		DateCreated:  Ns(a.DateCreated),
+		DateModified: Ns(a.DateModified),
 		Slug_2:       a.Slug_2,
 	}
 }

@@ -2,9 +2,6 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes(
     admin_datatype_id    INTEGER
         primary key,
-    admin_route_id INTEGER default NULL
-        references admin_routes
-            on update cascade on delete set default,
     parent_id      INTEGER default NULL
         references admin_datatypes
             on update cascade on delete set default,
@@ -57,7 +54,6 @@ WHERE parent_id = ?;
 
 -- name: CreateAdminDatatype :one
 INSERT INTO admin_datatypes (
-    admin_route_id,
     parent_id,
     label,
     type,
@@ -67,14 +63,13 @@ INSERT INTO admin_datatypes (
     date_modified,
     history
     ) VALUES (
-?,?,?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
-set admin_route_id = ?,
-    parent_id = ?,
+set parent_id = ?,
     label = ?,
     type = ?,
     author = ?,
@@ -90,14 +85,12 @@ DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?;
 
 -- name: ListAdminDatatypeByRouteId :many
-SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
-FROM admin_datatypes
-WHERE admin_route_id = ?;
+SELECT admin_datatype_id, parent_id, label, type, history
+FROM admin_datatypes;
 
 -- name: GetRootAdminDtByAdminRtId :one
-SELECT admin_datatype_id, admin_route_id, parent_id, label, type, history
+SELECT admin_datatype_id, parent_id, label, type, history
 FROM admin_datatypes
-WHERE admin_route_id = ?
 ORDER BY admin_datatype_id;
 
 

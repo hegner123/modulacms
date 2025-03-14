@@ -30,7 +30,7 @@ LIMIT 1;
 SELECT COUNT(*) 
 FROM routes;
 
--- name: GetRouteId :one
+-- name: GetRouteID :one
 SELECT route_id 
 FROM routes
 WHERE slug = ? 

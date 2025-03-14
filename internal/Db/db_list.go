@@ -22,9 +22,37 @@ func (d Database) ListAdminContentData() (*[]AdminContentData, error) {
 	return &res, nil
 }
 
+func (d Database) ListAdminContentDataByRoute(id int64) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) ListAdminContentFields() (*[]AdminContentFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminContentFields(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListAdminContentFieldsByRoute(id int64) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}
@@ -91,10 +119,36 @@ func (d Database) ListContentData() (*[]ContentData, error) {
 	}
 	return &res, nil
 }
+func (d Database) ListContentDataByRoute(id int64) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataByRoute(d.Context, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
 
 func (d Database) ListContentFields() (*[]ContentFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentFields(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListContentFieldsByRoute(id int64) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRoute(d.Context, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v\n", err)
 	}
@@ -235,34 +289,6 @@ func (d Database) ListTokenDependencies(id int64) {
 	// TODO implement dependency checking for delete candidate
 }
 
-func (d Database) ListDatatypeById(routeId int64) (*[]ListDatatypeByRouteIdRow, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListDatatypeByRouteId(d.Context, ni64(routeId))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Users: %v\n", err)
-	}
-	res := []ListDatatypeByRouteIdRow{}
-	for _, v := range rows {
-		m := d.MapListDatatypeByRouteIdRow(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-func (d Database) ListFieldByRouteId(routeId int64) (*[]ListFieldByRouteIdRow, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListFieldByRouteId(d.Context, ni64(routeId))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get fields with route %d: %v\n", routeId, err)
-	}
-	res := []ListFieldByRouteIdRow{}
-	for _, v := range rows {
-		m := d.MapListFieldByRouteIdRow(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 func (d Database) ListAdminFieldsByDatatypeID(admin_datatype_id int64) (*[]ListAdminFieldsByDatatypeIDRow, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminFieldsByDatatypeID(d.Context, ni64(admin_datatype_id))
@@ -272,20 +298,6 @@ func (d Database) ListAdminFieldsByDatatypeID(admin_datatype_id int64) (*[]ListA
 	res := []ListAdminFieldsByDatatypeIDRow{}
 	for _, v := range rows {
 		m := d.MapListAdminFieldsByDatatypeIDRow(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-func (d Database) ListAdminDatatypeByAdminRouteId(adminRouteId int64) (*[]ListAdminDatatypeByRouteIdRow, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeByRouteId(d.Context, ni64(adminRouteId))
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypes by AdminRouteId %v\n", err)
-	}
-	res := []ListAdminDatatypeByRouteIdRow{}
-	for _, v := range rows {
-		m := d.MapListAdminDatatypeByRouteIdRow(v)
 		res = append(res, m)
 	}
 	return &res, nil

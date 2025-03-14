@@ -2,9 +2,6 @@ CREATE TABLE IF NOT EXISTS admin_fields
 (
     admin_field_id INTEGER
         primary key,
-    admin_route_id INTEGER default 1
-        references admin_routes
-            on update cascade on delete set default,
     parent_id      INTEGER default NULL
         references admin_datatypes
             on update cascade on delete set default,

@@ -22,8 +22,10 @@ import (
 //go:embed sql/*
 var SqlFiles embed.FS
 
-func (d Database) GetDb() DbDriver {
-	utility.LogHeader("Connecting to SQLite database...")
+func (d Database) GetDb(verbose *bool) DbDriver {
+	if *verbose {
+		utility.LogHeader("Connecting to SQLite database...")
+	}
 	ctx := context.Background()
 
 	// Use default path if not specified
@@ -50,19 +52,20 @@ func (d Database) GetDb() DbDriver {
 		return d
 	}
 
-	utility.DefaultLogger.Info("SQLite database connected successfully", "path", d.Src)
 	d.Connection = db
 	d.Context = ctx
 	d.Err = nil
 	return d
 }
-func (d MysqlDatabase) GetDb() DbDriver {
-	utility.LogHeader("Connecting to MySQL database...")
+func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
+	if *verbose {
+		utility.LogHeader("Connecting to MySQL database...")
+	}
 	ctx := context.Background()
 
 	// Create connection string
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
-	
+
 	// Hide password in logs
 	sanitizedDsn := fmt.Sprintf("%s:****@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
 	utility.DefaultLogger.Info("Preparing MySQL connection", "dsn", sanitizedDsn)
@@ -75,7 +78,7 @@ func (d MysqlDatabase) GetDb() DbDriver {
 		d.Err = errWithContext
 		return d
 	}
-	
+
 	// Test the connection
 	err = db.Ping()
 	if err != nil {
@@ -91,16 +94,18 @@ func (d MysqlDatabase) GetDb() DbDriver {
 	d.Err = nil
 	return d
 }
-func (d PsqlDatabase) GetDb() DbDriver {
-	utility.LogHeader("Connecting to PostgreSQL database...")
+func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
+	if *verbose {
+		utility.LogHeader("Connecting to PostgreSQL database...")
+	}
 	ctx := context.Background()
 
 	// Create connection string
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable", 
+	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
 		d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
-	
+
 	// Hide password in logs
-	sanitizedConnStr := fmt.Sprintf("postgres://%s:****@%s/%s?sslmode=disable", 
+	sanitizedConnStr := fmt.Sprintf("postgres://%s:****@%s/%s?sslmode=disable",
 		d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
 	utility.DefaultLogger.Info("Preparing PostgreSQL connection", "connection", sanitizedConnStr)
 
@@ -112,7 +117,7 @@ func (d PsqlDatabase) GetDb() DbDriver {
 		d.Err = errWithContext
 		return d
 	}
-	
+
 	// Test the connection
 	err = db.Ping()
 	if err != nil {
@@ -130,18 +135,19 @@ func (d PsqlDatabase) GetDb() DbDriver {
 }
 
 func ConfigDB(env config.Config) DbDriver {
+	verbose := false
 	switch env.Db_Driver {
 	case config.Sqlite:
 		d := Database{Src: env.Db_Name, Config: env}
-		dbc := d.GetDb()
+		dbc := d.GetDb(&verbose)
 		return dbc
 	case config.Mysql:
 		d := MysqlDatabase{Src: env.Db_Name, Config: env}
-		dbc := d.GetDb()
+		dbc := d.GetDb(&verbose)
 		return dbc
 	case config.Psql:
 		d := PsqlDatabase{Src: env.Db_Name, Config: env}
-		dbc := d.GetDb()
+		dbc := d.GetDb(&verbose)
 		return dbc
 	}
 	return nil

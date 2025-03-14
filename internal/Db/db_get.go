@@ -2,7 +2,6 @@ package db
 
 import (
 	_ "embed"
-	"fmt"
 
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
@@ -45,17 +44,6 @@ func (d Database) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 		return nil, err
 	}
 	res := d.MapAdminDatatype(row)
-	return &res, nil
-}
-
-func (d Database) GetRootAdIdByAdRtId(adminRtId int64) (*int64, error) {
-	queries := mdb.New(d.Connection)
-	row, err := queries.GetRootAdminDtByAdminRtId(d.Context, ni64(adminRtId))
-	if err != nil {
-		fmt.Printf("adminRtId %d\n", adminRtId)
-		return nil, err
-	}
-	res := row.AdminDatatypeID
 	return &res, nil
 }
 
@@ -156,6 +144,15 @@ func (d Database) GetRoute(slug string) (*Routes, error) {
 	}
 	res := d.MapRoute(row)
 	return &res, nil
+}
+
+func (d Database) GetRouteID(slug string) (*int64, error) {
+	queries := mdb.New(d.Connection)
+	id, err := queries.GetRouteID(d.Context, slug)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
 }
 
 func (d Database) GetTable(id int64) (*Tables, error) {

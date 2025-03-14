@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS fields (
     field_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL,
@@ -10,9 +9,6 @@ CREATE TABLE IF NOT EXISTS fields (
     history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_fields_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_fields_datatypes FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,

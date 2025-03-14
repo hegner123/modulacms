@@ -20,7 +20,6 @@ type CreateAdminContentFieldFormParams struct {
 }
 
 type CreateAdminDatatypeFormParams struct {
-	AdminRouteID string `json:"admin_route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
@@ -32,7 +31,6 @@ type CreateAdminDatatypeFormParams struct {
 }
 
 type CreateAdminFieldFormParams struct {
-	AdminRouteID string `json:"admin_route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
@@ -75,7 +73,6 @@ type CreateContentFieldFormParams struct {
 }
 
 type CreateDatatypeFormParams struct {
-	RouteID      string `json:"route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
@@ -87,7 +84,6 @@ type CreateDatatypeFormParams struct {
 }
 
 type CreateFieldFormParams struct {
-	RouteID      string `json:"route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
@@ -203,7 +199,6 @@ type UpdateAdminContentFieldFormParams struct {
 }
 
 type UpdateAdminDatatypeFormParams struct {
-	AdminRouteID    string `json:"admin_route_id"`
 	ParentID        string `json:"parent_id"`
 	Label           string `json:"label"`
 	Type            string `json:"type"`
@@ -216,7 +211,6 @@ type UpdateAdminDatatypeFormParams struct {
 }
 
 type UpdateAdminFieldFormParams struct {
-	AdminRouteID string `json:"admin_route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
@@ -263,7 +257,6 @@ type UpdateContentFieldFormParams struct {
 }
 
 type UpdateDatatypeFormParams struct {
-	RouteID      string `json:"route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
@@ -276,7 +269,6 @@ type UpdateDatatypeFormParams struct {
 }
 
 type UpdateFieldFormParams struct {
-	RouteID      string `json:"route_id"`
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`

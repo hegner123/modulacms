@@ -6,6 +6,29 @@ import (
 	config "github.com/hegner123/modulacms/internal/Config"
 )
 
+func CheckInstall() error {
+	v := false
+	err := CheckConfigExists("")
+	if err != nil {
+		return err
+	}
+	c := config.LoadConfig(&v, "")
+	err = CheckDb(c)
+	if err != nil {
+		return err
+	}
+	err = CheckBucket()
+	if err != nil {
+		return err
+	}
+	err = CheckOauth()
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
+
 func InstallMain(configPath string, v *bool) error {
 	var (
 		installConfig bool
@@ -15,7 +38,7 @@ func InstallMain(configPath string, v *bool) error {
 	)
 	err := CheckConfigExists(configPath)
 	if err != nil {
-        installConfig = true
+		installConfig = true
 	}
 	c := config.LoadConfig(v, configPath)
 	err = CheckDb(c)
@@ -42,11 +65,11 @@ func InstallDependencies(config bool, db bool, bucket bool, oauth bool) error {
 			return err
 		}
 	}
-    if bucket {
-        fmt.Printf("Bucket is not setup placeholder\n")
-    }
-    if oauth {
-        fmt.Printf("oAuth is not setup placeholder\n")
-    }
+	if bucket {
+		fmt.Printf("Bucket is not setup placeholder\n")
+	}
+	if oauth {
+		fmt.Printf("oAuth is not setup placeholder\n")
+	}
 	return nil
 }

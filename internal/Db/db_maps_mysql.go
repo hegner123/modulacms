@@ -34,7 +34,6 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: int64(a.AdminDatatypeID),
-		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
 		ParentID:        Ni64(int64(a.ParentID.Int32)),
 		Label:           a.Label,
 		Type:            a.Type,
@@ -49,7 +48,6 @@ func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: int64(a.AdminFieldID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID)),
 		ParentID:     Ni64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -103,7 +101,6 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   int64(a.DatatypeID),
-		RouteID:      Ni64(int64(a.RouteID.Int32)),
 		ParentID:     Ni64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -118,7 +115,6 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      int64(a.FieldID),
-		RouteID:      Ni64(int64(a.RouteID.Int32)),
 		ParentID:     Ni64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
@@ -242,47 +238,14 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 	}
 }
 
-func (d MysqlDatabase) MapListDatatypeByRouteIdRow(a mdbm.ListDatatypeByRouteIdRow) ListDatatypeByRouteIdRow {
-	return ListDatatypeByRouteIdRow{
-		DatatypeID: int64(a.DatatypeID),
-		RouteID:    Ni64(int64(a.RouteID.Int32)),
-		ParentID:   Ni64(int64(a.ParentID.Int32)),
-		Label:      a.Label,
-		Type:       a.Type,
-	}
-}
-
-func (d MysqlDatabase) MapListFieldByRouteIdRow(a mdbm.ListFieldByRouteIdRow) ListFieldByRouteIdRow {
-	return ListFieldByRouteIdRow{
-		FieldID:  int64(a.FieldID),
-		RouteID:  ni64(int64(a.RouteID.Int32)),
-		ParentID: Ni64(int64(a.ParentID.Int32)),
-		Label:    a.Label,
-		Data:     a.Data,
-		Type:     a.Type,
-	}
-}
-
 func (d MysqlDatabase) MapListAdminFieldsByDatatypeIDRow(a mdbm.ListAdminFieldsByDatatypeIDRow) ListAdminFieldsByDatatypeIDRow {
 	return ListAdminFieldsByDatatypeIDRow{
 		AdminFieldID: int64(a.AdminFieldID),
-		AdminRouteID: Ni64(int64(a.AdminRouteID)),
 		ParentID:     Ni64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		History:      a.History,
-	}
-}
-
-func (d MysqlDatabase) MapListAdminDatatypeByRouteIdRow(a mdbm.ListAdminDatatypeByRouteIdRow) ListAdminDatatypeByRouteIdRow {
-	return ListAdminDatatypeByRouteIdRow{
-		AdminDatatypeID: int64(a.AdminDatatypeID),
-		AdminRouteID:    Ni64(int64(a.AdminRouteID.Int32)),
-		ParentID:        Ni64(int64(a.ParentID.Int32)),
-		Label:           a.Label,
-		Type:            a.Type,
-		History:         a.History,
 	}
 }
 
@@ -311,7 +274,6 @@ func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFiel
 
 func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdbm.CreateAdminDatatypeParams {
 	return mdbm.CreateAdminDatatypeParams{
-		AdminRouteID: Ni32(a.AdminRouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -325,7 +287,6 @@ func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams)
 
 func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.CreateAdminFieldParams {
 	return mdbm.CreateAdminFieldParams{
-		AdminRouteID: int32(a.AdminRouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
@@ -376,7 +337,6 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
 	return mdbm.CreateDatatypeParams{
-		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -390,7 +350,6 @@ func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.Crea
 
 func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFieldParams {
 	return mdbm.CreateFieldParams{
-		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
@@ -449,8 +408,8 @@ func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRout
 		Title:        a.Title,
 		Status:       int32(a.Status),
 		History:      a.History,
-		DateCreated:  a.DateCreated.Time,
-		DateModified: a.DateModified.Time,
+		DateCreated:  NSt(a.DateCreated),
+		DateModified: NSt(a.DateModified),
 	}
 }
 func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
@@ -526,7 +485,6 @@ func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFiel
 
 func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdbm.UpdateAdminDatatypeParams {
 	return mdbm.UpdateAdminDatatypeParams{
-		AdminRouteID:    Ni32(a.AdminRouteID.Int64),
 		ParentID:        Ni32(a.ParentID.Int64),
 		Label:           a.Label,
 		Type:            a.Type,
@@ -541,7 +499,6 @@ func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams)
 
 func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.UpdateAdminFieldParams {
 	return mdbm.UpdateAdminFieldParams{
-		AdminRouteID: int32(a.AdminRouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
@@ -596,7 +553,6 @@ func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) m
 
 func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.UpdateDatatypeParams {
 	return mdbm.UpdateDatatypeParams{
-		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
@@ -611,7 +567,6 @@ func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.Upda
 
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
-		RouteID:      Ni32(a.RouteID.Int64),
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
@@ -674,8 +629,8 @@ func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRout
 		History:      a.History,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  a.DateCreated.Time,
-		DateModified: a.DateModified.Time,
+		DateCreated:  NSt(a.DateCreated),
+		DateModified: NSt(a.DateModified),
 		Slug_2:       a.Slug_2,
 	}
 }

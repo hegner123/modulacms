@@ -15,7 +15,7 @@ import (
 
 type Metadata map[string]string
 
-func (cs S3Credintials) getBucket() *s3.S3 {
+func (cs S3Credintials) GetBucket() (*s3.S3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials:      credentials.NewStaticCredentials(cs.AccessKey, cs.SecretKey, ""),
 		Endpoint:         aws.String(cs.URL),
@@ -23,10 +23,11 @@ func (cs S3Credintials) getBucket() *s3.S3 {
 		S3ForcePathStyle: aws.Bool(true),               // Required for Linode Object Storage
 	})
 	if err != nil {
-		log.Fatalf("Failed to create session: %v", err)
+		utility.LogError("Failed to create session: %v", err)
+		return nil, err
 	}
 
-	return s3.New(sess)
+	return s3.New(sess), nil
 }
 
 func UploadPrep(uploadPath string, bucketName string, data *os.File) (*s3.PutObjectInput, error) {

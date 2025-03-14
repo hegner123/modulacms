@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -9,9 +8,6 @@ CREATE TABLE IF NOT EXISTS datatypes (
     history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_dt_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_dt_datatypes_parent FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,

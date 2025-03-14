@@ -11,6 +11,7 @@ import (
 	cli "github.com/hegner123/modulacms/internal/Cli"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
+	install "github.com/hegner123/modulacms/internal/Install"
 	middleware "github.com/hegner123/modulacms/internal/Middleware"
 	router "github.com/hegner123/modulacms/internal/Router"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -36,8 +37,14 @@ func main() {
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
 	verbose := flag.Bool("V", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
-	install := flag.Bool("i", false, "Create tables in db driver")
+	installFlag := flag.Bool("i", false, "Create tables in db driver")
 	flag.Parse()
+
+	err := install.CheckInstall()
+	if err != nil {
+		utility.LogError("", err)
+		os.Exit(1)
+	}
 
 	Env = config.LoadConfig(verbose, "")
 
@@ -66,7 +73,7 @@ func main() {
 		}
 	}
 
-	if *install {
+	if *installFlag {
 		// check if installed, ask if you want to reinstall and lose content
 		proccessRunInstall()
 	}
@@ -88,7 +95,7 @@ func main() {
 		router.ResetPasswordHandler(w, r, Env)
 	})
 	mux.HandleFunc("/api/v1/auth/oauth", func(w http.ResponseWriter, r *http.Request) {
-		router.OauthCallbackHandler(Env,"")
+		router.OauthCallbackHandler(Env, "")
 	})
 	mux.HandleFunc("/api/v1/admincontentdatas", func(w http.ResponseWriter, r *http.Request) {
 		router.AdminContentDatasHandler(w, r, Env)
@@ -198,6 +205,9 @@ func main() {
 	mux.HandleFunc("/api/v1/users/", func(w http.ResponseWriter, r *http.Request) {
 		router.UserHandler(w, r, Env)
 	})
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		router.SlugHandler(w, r, Env)
+	})
 
 	middlewareHandler := middleware.Serve(mux)
 
@@ -210,7 +220,7 @@ func main() {
 		}
 	}
 	log.Printf("\n\nServer is running at http://localhost:%s\n", Env.Port)
-	err := http.ListenAndServe(":"+Env.Port, middlewareHandler)
+	err = http.ListenAndServe(":"+Env.Port, middlewareHandler)
 	if err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}

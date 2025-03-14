@@ -1,7 +1,7 @@
 -- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_route_id INT NOT NULL DEFAULT 1,
+    
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL, -- MySQL does not allow a default value for TEXT
@@ -11,9 +11,6 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     history TEXT,
-    CONSTRAINT fk_admin_fields_admin_routes FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
     CONSTRAINT fk_admin_fields_admin_datatypes FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
@@ -41,8 +38,7 @@ SELECT * FROM admin_fields
 ORDER BY admin_field_id;
 
 -- name: CreateAdminField :exec
-INSERT INTO admin_fields (
-    admin_route_id,
+INSERT INTO admin_fields (    
     parent_id,
     label,
     data,
@@ -53,14 +49,14 @@ INSERT INTO admin_fields (
     date_modified,
     history
 ) VALUES (
-    ?,?,?,?,?,?,?,?,?,?
+    ?,?,?,?,?,?,?,?,?
 );
 -- name: GetLastAdminField :one
 SELECT * FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID();
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
-SET admin_route_id = ?,
+SET 
     parent_id = ?,
     label = ?,
     data = ?,
@@ -77,13 +73,9 @@ WHERE admin_field_id = ?;
 DELETE FROM admin_fields
 WHERE admin_field_id = ?;
 
--- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
-FROM admin_fields
-WHERE admin_route_id = ?;
 
 -- name: ListAdminFieldsByDatatypeID :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, history
+SELECT admin_field_id,  parent_id, label, data, type, history
 FROM admin_fields
 WHERE parent_id = ?;
 
