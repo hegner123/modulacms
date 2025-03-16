@@ -43,7 +43,10 @@ func TestObjectStorage(t *testing.T) {
 		SecretKey: config.Bucket_Secret_Key,
 		URL:       config.Bucket_Url,
 	}
-	bucket := S3Access.GetBucket()
+	bucket, err := S3Access.GetBucket()
+    if err!=nil {
+        return
+    }
 	if bucket == nil {
 		t.FailNow()
 
@@ -88,7 +91,10 @@ func TestUpload(t *testing.T) {
 		SecretKey: config.Bucket_Secret_Key,
 		URL:       config.Bucket_Url,
 	}
-	bucket := S3Access.GetBucket()
+	bucket, err := S3Access.GetBucket()
+    if err!=nil {
+        return
+    }
 	payload, err := UploadPrep("media/test1.png", "backups", file)
 	if err != nil {
 		utility.LogError("failed to : ", err)

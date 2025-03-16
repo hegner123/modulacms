@@ -18,7 +18,7 @@ func TimestampBackupName(output string, timestamp string) string {
 	return fmt.Sprintf("%s_%s.zip", output, timestamp)
 }
 
-func createBackup(dbFile, mediaDir, pluginDir, output string, bname backupName, c config.Config) error {
+func CreateBackup(dbFile, mediaDir, pluginDir, output string, bname backupName, c config.Config) error {
 	dbF := utility.FileExists(dbFile)
 	mediaD := utility.DirExists(mediaDir)
 	pluginD := utility.DirExists(pluginDir)

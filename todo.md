@@ -5,10 +5,8 @@
 
 ## ToDo
 - [x] Server: GO
-- [ ] Endpoints:
-    - **api/vX/admin/** JSON endpoints to serve admin
-    - **api/vX/client/** JSON endpoints to serve Clients
-- [x] DB: SQLite 
+- [x] Endpoints: **api/vX/** JSON endpoints to serve admin
+- [x] DB: SQLite & Mysql & Postgres 
 - [x] Bucket: Deployment require cloud storage endpoint
 - [ ] Reverse Proxy Bucket endpoints
 
@@ -27,12 +25,13 @@
 - [x] Go Server
 - [x] Go DB connection
 - [x] DB CRUD functions
-- [ ] Handle routes for Admin api
-- [ ] Handle routes for Client api
+- [x] Handle routes for Admin api
+- [x] Handle routes for Client api
 - [x] Load and confirm bucket connection
 - [ ] Admin authentication - oAuth?
 - [ ] Local authentication
 - [ ] Middleware
+- [ ] Cli
 - [x] Connect to Bucket Storage
 - [x] Media upload
 - [x] Media Optimize

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
@@ -41,6 +42,35 @@ func (d PsqlDatabase) Ping() error {
 	}
 	return nil
 
+}
+
+func (d Database) ExecuteQuery(query string, args DBTable) (*sql.Rows, error) {
+	t := DBTableString(args)
+	q := "SELECT * FROM " + t + ";"
+	rows, err := d.Connection.Query(q)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+func (d MysqlDatabase) ExecuteQuery(query string, args DBTable) (*sql.Rows, error) {
+	q := strings.Replace(query, "!", "?", 1)
+	rows, err := d.Connection.Query(q, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
+}
+func (d PsqlDatabase) ExecuteQuery(query string, args DBTable) (*sql.Rows, error) {
+	q := strings.Replace(query, "!", "$1", 1)
+	rows, err := d.Connection.Query(q, args)
+	if err != nil {
+		return nil, err
+	}
+
+	return rows, nil
 }
 
 //Struct Methods

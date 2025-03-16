@@ -2,44 +2,68 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	"github.com/charmbracelet/lipgloss"
 )
 
-func (m model) StatusTable() string {
-	headerColor := utility.BLUEB
-	r := utility.RESET
+func (m model) RenderStatusTable() string {
+	doc := strings.Builder{}
 	var selected string
-	page := fmt.Sprintf("%vPage%v\nPage: %s\nPage Index %d\n", headerColor, r, m.page.Label, m.page.Index)
-	i := fmt.Sprintf("%vInterface%v\nCursor: %d\n", headerColor, r, m.cursor)
-	menu := fmt.Sprintf("%vMenu%v\nMenu Length: %d\nMenu:\n%v\n", headerColor, r, len(m.menu), getMenuLabels(m.menu))
+	page := fmt.Sprintf("Page\n%s\nIndex %d\n", m.page.Label, m.page.Index)
+	i := fmt.Sprintf("Interface\nCursor: %d\n", m.cursor)
+	menu := fmt.Sprintf("Menu\nMenu Length: %d\nMenu: %v\n", len(m.menu), getMenuLabels(m.menu))
 	if len(m.menu) > 0 {
-		selected = fmt.Sprintf("%vSelected%v\nSelected: %v\n", headerColor, r, m.menu[m.cursor].Label)
+		selected = fmt.Sprintf("Selected\nSelected: %v\n", m.menu[m.cursor].Label)
 	} else {
-		selected = fmt.Sprintf("%vSelected%v\nSelected: nil\n", headerColor, r)
+		selected = "Selected\nSelected: nil\n"
 	}
-	controller := fmt.Sprintf("%vController%v\n%v\n", headerColor, r, m.controller)
-	tables := fmt.Sprintf("%vTables%v\n%v\n", headerColor, r, m.tables)
-	table := fmt.Sprintf("%vTable%v\n%s\n", headerColor, r, m.table)
+	controller := fmt.Sprintf("Controller\n%v\n", m.controller)
+	tables := fmt.Sprintf("Tables\n%v\n", m.tables)
+	table := fmt.Sprintf("Table\n%s\n", m.table)
 	var history string
 	h, haspage := m.Peek()
 	if haspage {
-		history = fmt.Sprintf("%vHistory%v\nPrev:\n %v", headerColor, r, h.Label)
+		history = fmt.Sprintf("History\nPrev:\n %v", h.Label)
 	} else {
-		history = fmt.Sprintf("%vHistory%v\nPrev: No History", headerColor, r)
+		history = "History\nPrev: No History\n"
 	}
-	return page + i + menu + selected + controller + tables + table + history + "\n\n"
+	doc.WriteString(lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		RenderBlock(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				page,
+				i,
+				menu,
+				selected,
+			)),
+		RenderBlock(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				controller,
+			)),
+		RenderBlock(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				tables,
+				table,
+				history,
+			)),
+	))
+
+	return doc.String()
 }
 
 func getMenuLabels(m []*CliPage) string {
 	var labels string
 	if m != nil {
 		for _, item := range m {
-			labels = labels + fmt.Sprintf("%v %v\n", item.Index, item.Label)
+			labels = labels + fmt.Sprintf("\n%v %v\n", item.Index, item.Label)
 
 		}
 	} else {
-		labels = "Menu is nil"
+		labels = "\nMenu is nil\n"
 	}
 	return labels
 

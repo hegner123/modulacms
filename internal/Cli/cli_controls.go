@@ -1,6 +1,9 @@
 package cli
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
+)
 
 /*
 Key Pressed
@@ -74,6 +77,17 @@ func (m model) TableControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 		m.menu = m.page.Children
 	}
 	return m, nil
+}
+
+
+
+func (m model) FormInputControl(msg tea.Msg) (tea.Model, tea.Cmd) {
+	form, cmd := m.form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+	}
+
+	return m, cmd
 }
 
 // Update handles messages (key presses, etc.).

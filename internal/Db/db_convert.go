@@ -10,6 +10,14 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+func DBTableString(t DBTable) string {
+	return string(t)
+}
+
+func StringDBTable(t string) DBTable {
+	return DBTable(t)
+}
+
 func nt(t sql.NullTime) string {
 	v, err := t.Value()
 	if err != nil {

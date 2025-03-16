@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
 )
 
@@ -35,11 +36,13 @@ type model struct {
 	menu         []*CliPage
 	pages        []CliPage
 	tables       []string
+	form         *huh.Form
 	textInputs   []textinput.Model
 	textAreas    []textarea.Model
 	filePicker   []filepicker.Model
 	Options      []OptionList
 	selected     map[int]struct{}
+	title        string
 	header       string
 	body         string
 	footer       string
@@ -86,6 +89,7 @@ func initialModel() model {
 			*updatePage,
 			*deletePage,
 			*tablePage,
+			*formPage,
 		},
 		selected:   make(map[int]struct{}),
 		controller: pageInterface,

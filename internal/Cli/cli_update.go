@@ -4,7 +4,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-
 var (
 	createInterface CliInterface = "CreateInterface"
 	readInterface   CliInterface = "ReadInterface"
@@ -13,12 +12,14 @@ var (
 	tableInterface  CliInterface = "TableInterface"
 	pageInterface   CliInterface = "PageInterface"
 	inputInterface  CliInterface = "InputInterface"
+	formInterface   CliInterface = "FormInterface"
 )
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch m.controller {
 	case createInterface:
+		return m.FormInterface(message)
 	case readInterface:
 	case updateInterface:
 	case deleteInterface:
@@ -46,6 +47,15 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, nil
 }
+func (m model) FormInterface(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.FormInputControl(msg)
+	}
+	return m, nil
+
+}
+
 func (m model) UpdateTextInput(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var cmd tea.Cmd

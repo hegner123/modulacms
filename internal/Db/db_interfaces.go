@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 )
+
 type Historied interface {
 	GetHistory() string
-    MapHistoryEntry() string
-    UpdateHistory([]byte) error
+	MapHistoryEntry() string
+	UpdateHistory([]byte) error
 }
 
 type DbDriver interface {
@@ -15,6 +16,7 @@ type DbDriver interface {
 	InitDb(v *bool) error
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
+	ExecuteQuery(string, DBTable) (*sql.Rows, error)
 
 	CountAdminContentData() (*int64, error)
 	CountAdminContentFields() (*int64, error)
@@ -105,7 +107,7 @@ type DbDriver interface {
 	GetMediaDimension(int64) (*MediaDimensions, error)
 	GetRole(int64) (*Roles, error)
 	GetRoute(string) (*Routes, error)
-    GetRouteID(string) (*int64, error)
+	GetRouteID(string) (*int64, error)
 	GetSession(int64) (*Sessions, error)
 	GetSessionsByUserId(int64) (*[]Sessions, error)
 	GetTable(int64) (*Tables, error)

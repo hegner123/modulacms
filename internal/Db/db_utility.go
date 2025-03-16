@@ -15,7 +15,6 @@ type ColumnNameType map[string]string
 type ColumnIndexName map[int]string
 
 
-
 func CopyDb(dbName string, useDefault bool) (string, error) {
 	times := utility.TimestampS()
 	backup := "../../testdb/backups/"

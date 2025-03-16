@@ -15,7 +15,7 @@ func makeTestBackup(output string, timestamp string) string {
 func TestMakeBackup(t *testing.T) {
     verbose := false
     c := config.LoadConfig(&verbose,"")
-	err := createBackup("../../modula.db", "../../public/media", "../../plugins/", "../../backups/", makeTestBackup, c)
+	err := CreateBackup("../../modula.db", "../../public/media", "../../plugins/", "../../backups/", makeTestBackup, c)
 	if err != nil {
 		t.Errorf("%s\n", err)
 	}

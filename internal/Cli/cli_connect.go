@@ -10,11 +10,6 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-type Column struct {
-	index     int
-	label     string
-	inputType string
-}
 
 // ForeignKeyReference holds the referenced table and column information.
 type ForeignKeyReference struct {
@@ -58,13 +53,12 @@ func GetTables(dbName string) []string {
 		utility.LogError("ERROR: ", err)
 	}
 	return labels
-
 }
 
 func GetFieldsString(table string, dbName string) string {
 	var r string
 	var (
-		d      db.DbDriver
+		d db.DbDriver
 	)
 
 	if dbName == "" {
@@ -97,8 +91,32 @@ func GetFieldsString(table string, dbName string) string {
 
 }
 
-func GetFields(table string, dbName string) []Column {
+func GetColumns(t string) (*[]string, *[]*sql.ColumnType, error) {
+	dbt := db.StringDBTable(t)
+	verbose := false
+	query := "SELECT * FROM"
+	c := config.LoadConfig(&verbose, "")
+	d := db.ConfigDB(c)
+	rows, err := d.ExecuteQuery(query, dbt)
+	if err != nil {
+		return nil, nil, err
+	}
+	clm, err := rows.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+	ct, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, nil, err
+
+	}
+	return &clm, &ct, nil
+}
+
+/*
+func GetColumns(table string, dbName string) ([]Column, []string) {
 	var columns []Column
+	var headers []string
 	var d db.DbDriver
 	if dbName == "" {
 		d = db.ConfigDB(config.Env)
@@ -125,11 +143,13 @@ func GetFields(table string, dbName string) []Column {
 	for _, k := range keys {
 		c := Column{index: k, label: m[k], inputType: t[m[k]]}
 		columns = append(columns, c)
+		headers = append(headers, m[k])
 	}
 
-	return columns
+	return columns, headers
 
 }
+*/
 
 func GetRelationships(tableName string, dbc db.Database) []ForeignKeyReference {
 	if tableName == "" {
@@ -182,6 +202,32 @@ func GetRelationships(tableName string, dbc db.Database) []ForeignKeyReference {
 	return references
 }
 
+func GetColumnsRows(t string) (*[]string, *[][]string, error) {
+	dbt := db.StringDBTable(t)
+	verbose := false
+	query := "SELECT * FROM"
+	c := config.LoadConfig(&verbose, "")
+	d := db.ConfigDB(c)
+	rows, err := d.ExecuteQuery(query, dbt)
+	if err != nil {
+		return nil, nil, err
+	}
+	clm, err := rows.Columns()
+	if err != nil {
+		return nil, nil, err
+	}
+	collection, err := db.GenericList(dbt, d)
+	if err != nil {
+		return nil, nil, err
+	}
+	return &clm, collection, nil
+
+}
+
+func ScanRows(rows *sql.Rows) {
+
+}
+
 func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	var fields []any
 	var s []any
@@ -196,8 +242,8 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	sort.Strings(keys)
 
 	// Use a classic for loop with an index over the slice of keys.
-    for i := range len(keys) {
-		key := keys[i]
+	for i, v := range keys {
+		key := v
 		k := MatchFk(key, fk)
 		if k != nil {
 			s = GetSuggestions(dbc, k.Table, k.Column)
