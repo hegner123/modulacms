@@ -1,15 +1,13 @@
 package cli
 
 import (
-
 	tea "github.com/charmbracelet/bubbletea"
 )
-
 
 func CliRun() bool {
 	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
-		ErrLog.Fatal("",err)
+		ErrLog.Fatal("", err)
 	}
 	return CliContinue
 }

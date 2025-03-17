@@ -13,6 +13,7 @@ var (
 	pageInterface       CliInterface = "PageInterface"
 	inputInterface      CliInterface = "InputInterface"
 	updateFormInterface CliInterface = "UpdateFormInterface"
+	readSingleInterface CliInterface = "ReadSingleInterface"
 )
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -20,6 +21,8 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 	case createInterface:
 		return m.UpdateDatabaseCreate(message)
 	case readInterface:
+		return m.UpdateDatabaseRead(message)
+	case readSingleInterface:
 		return m.UpdateDatabaseRead(message)
 	case updateInterface:
 		return m.UpdateDatabaseUpdate(message)
@@ -71,6 +74,13 @@ func (m model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		return m.DatabaseReadControls(msg, len(*m.rows))
+	}
+	return m, nil
+}
+func (m model) UpdateDatabaseReadSingle(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.DatabaseReadSingleControls(msg, len(*m.rows))
 	}
 	return m, nil
 }

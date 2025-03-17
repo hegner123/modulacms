@@ -136,7 +136,37 @@ func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 	//Action
 	case "enter", "l":
 		m.PushHistory(m.page)
-		m.table = m.tables[m.cursor]
+		m.cursor = 0
+		m.page = m.pages[ReadSingle]
+		m.controller = m.page.Controller
+	}
+	return m, nil
+}
+
+func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	//Exit
+	case "q", "esc", "ctrl+c":
+		return m, tea.Quit
+
+	//Navigation
+	case "up", "k":
+		if m.cursor > 0 {
+			m.cursor--
+		}
+	case "down", "j":
+		if m.cursor < option-1 {
+			m.cursor++
+		}
+	case "h", "shift+tab", "backspace":
+		m.cursor = 0
+		m.page = *m.PopHistory()
+		m.controller = m.page.Controller
+		m.menu = m.page.Children
+
+	//Action
+	case "enter", "l":
+		m.PushHistory(m.page)
 		m.cursor = 0
 		m.page = *m.page.Next
 		m.controller = m.page.Controller
@@ -144,6 +174,7 @@ func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 	}
 	return m, nil
 }
+
 func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	var rows [][]string
 	switch msg.String() {
@@ -202,7 +233,7 @@ func (m model) DatabaseUpdateFormControls(msg tea.KeyMsg, option int) (tea.Model
 			m.page = *m.PopHistory()
 			m.controller = m.page.Controller
 			m.menu = m.page.Children
-		case "enter","l", "right":
+		case "enter", "l", "right":
 			switch m.formActions[m.cursor] {
 			case edit:
 				m.focus = FORMFOCUS
@@ -232,10 +263,9 @@ func (m model) DatabaseUpdateFormControls(msg tea.KeyMsg, option int) (tea.Model
 			return m, tea.Quit
 		case "enter", "tab", "right", "down":
 			m.form.NextField()
-        case "shift+tab","left","up":
-            m.form.PrevField()
+		case "shift+tab", "left", "up":
+			m.form.PrevField()
 		}
-        
 
 		// Process the form
 		form, cmd := m.form.Update(msg)

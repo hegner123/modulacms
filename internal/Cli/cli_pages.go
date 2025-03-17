@@ -25,6 +25,7 @@ const (
 	Update
 	Delete
 	UpdateForm
+    ReadSingle
 	Content
 	Media
 	Users
@@ -52,6 +53,7 @@ var (
 	updatePage     *CliPage = &CliPage{Index: Update, Controller: updateInterface, Label: "Update", Parent: nil, Children: nil}
 	deletePage     *CliPage = &CliPage{Index: Delete, Controller: deleteInterface, Label: "Delete", Parent: nil, Children: nil}
 	updateFormPage *CliPage = &CliPage{Index: UpdateForm, Controller: updateFormInterface, Label: "UpdateForm", Parent: nil, Children: nil}
+	readSinglePage *CliPage = &CliPage{Index: ReadSingle, Controller: readSingleInterface, Label: "ReadSingle", Parent: nil, Children: nil}
 	contentPage    *CliPage = &CliPage{Index: Content, Controller: pageInterface, Label: "Content", Parent: nil, Children: nil}
 	mediaPage      *CliPage = &CliPage{Index: Media, Controller: pageInterface, Label: "Media", Parent: nil, Children: nil}
 	usersPage      *CliPage = &CliPage{Index: Users, Controller: pageInterface, Label: "Users", Parent: nil, Children: nil}
@@ -67,7 +69,7 @@ func (m model) PageHome() string {
 			cursor = "->"
 		}
 
-		m.body += fmt.Sprintf("%s%s\n", cursor, choice.Label)
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
 	m.body += "\n"
 	m.body = RenderBorder(m.body)
@@ -82,12 +84,12 @@ func (m model) PageDatabase() string {
 
 	for i, choice := range m.tables {
 
-		cursor := "  "
+		cursor := "   "
 		if m.cursor == i {
-			cursor = "->"
+			cursor = " ->"
 		}
 
-		fs := fmt.Sprintf("%s%s %d %d\n", cursor, choice, i, len(m.tables))
+		fs := fmt.Sprintf("%s%s   ", cursor, choice)
 		column = append(column, fs)
 		if (i+1)%6 == 0 || i == len(m.tables)-1 {
 			c := NewVerticalGroup(lipgloss.Left, column)
@@ -109,7 +111,7 @@ func (m model) PageCMS() string {
 			cursor = "->"
 		}
 
-		m.body += fmt.Sprintf("%s%s\n", cursor, choice.Label)
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
 	m.body = RenderBorder(m.body)
 	return m.RenderUI()
@@ -124,7 +126,7 @@ func (m model) PageTable() string {
 			cursor = "->"
 		}
 
-		m.body += fmt.Sprintf("%s%s\n", cursor, choice.Label)
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
 	m.body = RenderBorder(m.body)
 	return m.RenderUI()
@@ -137,6 +139,19 @@ func (m model) PageCreate() string {
 }
 
 func (m model) PageRead() string {
+	m.header = m.header + fmt.Sprintf("\n\nRead %s\n", m.table)
+	hdrs, collection, err := GetColumnsRows(m.table)
+	if err != nil {
+		fmt.Println("err", err)
+	}
+
+	t := StyledTable(*hdrs, *collection, m.cursor)
+
+	m.body = t.Render()
+	return m.RenderUI()
+}
+
+func (m model) PageReadSingle() string {
 	m.header = m.header + fmt.Sprintf("\n\nRead %s\n", m.table)
 	hdrs, collection, err := GetColumnsRows(m.table)
 	if err != nil {
@@ -165,7 +180,7 @@ func (m model) PageUpdateForm() string {
 	m.header = m.header + fmt.Sprintf("\n\nUpdate %s\n", m.table)
 	doc := strings.Builder{}
 	buttons := []string{}
-	fStyle := lipgloss.NewStyle().Height(30)
+	fStyle := lipgloss.NewStyle().Height(10)
 	if m.form == nil {
 		m.body = "Form == nil"
 	}

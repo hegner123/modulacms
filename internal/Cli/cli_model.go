@@ -27,7 +27,7 @@ type FocusKey int
 const (
 	PAGEFOCUS FocusKey = iota
 	FORMFOCUS
-    DIALOGFOCUS
+	DIALOGFOCUS
 )
 
 type CliInterface string
@@ -95,14 +95,15 @@ func initialModel() model {
 			*deletePage,
 			*tablePage,
 			*updateFormPage,
+            *readSinglePage,
 		},
-		selected:   make(map[int]struct{}),
-		controller: pageInterface,
-		focus:      PAGEFOCUS,
-        formActions: []formAction{edit,submit,reset,cancel},
-		textInputs: make([]textinput.Model, 0),
-		textAreas:  make([]textarea.Model, 0),
-		filePicker: make([]filepicker.Model, 0),
-		history:    []CliPage{},
+		selected:    make(map[int]struct{}),
+		controller:  pageInterface,
+		focus:       PAGEFOCUS,
+		formActions: []formAction{edit, submit, reset, cancel},
+		textInputs:  make([]textinput.Model, 0),
+		textAreas:   make([]textarea.Model, 0),
+		filePicker:  make([]filepicker.Model, 0),
+		history:     []CliPage{},
 	}
 }

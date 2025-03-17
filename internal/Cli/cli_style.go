@@ -10,8 +10,8 @@ import (
 var (
 	width     = 96
 	white     = lipgloss.Color("#ffffff")
-	lightGray = lipgloss.Color("#7d7d7d")
-	gray      = lipgloss.Color("#3d3d3d")
+	lightGray = lipgloss.Color("#a3a3a3")
+	gray      = lipgloss.Color("#939393")
 	black     = lipgloss.Color("#000000")
 
 	purple  = lipgloss.Color("#6612e3")
@@ -154,17 +154,18 @@ func RenderBorderBlock(s string) string {
 
 func RenderButton(s string) string {
 	style := lipgloss.NewStyle().
-        Foreground(white).
-        Background(purple).
-        Padding(2, 1).
-        Margin(0, 1)
+		Foreground(white).
+		Background(purple).
+		Padding(1, 1).
+		Margin(0, 1)
 	return style.Render(s)
 }
+
 func RenderActiveButton(s string) string {
 	style := lipgloss.NewStyle().
-        Foreground(white).
-        Background(rose).
-        Padding(2, 1).
-        Margin(0, 1)
+		Foreground(white).
+		Background(rose).
+		Padding(1, 1).
+		Margin(0, 1)
 	return style.Render(s)
 }
