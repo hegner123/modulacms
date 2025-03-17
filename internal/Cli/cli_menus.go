@@ -1,5 +1,7 @@
 package cli
 
+type formAction string
+
 var homepageMenu []*CliPage = []*CliPage{
 	cmsPage,
 	databasePage,
@@ -19,3 +21,10 @@ var tableMenu []*CliPage = []*CliPage{
 	updatePage,
 	deletePage,
 }
+
+const (
+	edit   formAction = "Edit"
+	submit formAction = "Submit"
+	reset  formAction = "Reset"
+	cancel formAction = "Cancel"
+)

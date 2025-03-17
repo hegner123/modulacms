@@ -10,13 +10,13 @@ import (
 func (m model) RenderStatusTable() string {
 	doc := strings.Builder{}
 	var selected string
-	page := fmt.Sprintf("Page\n%s\nIndex %d\n", m.page.Label, m.page.Index)
-	i := fmt.Sprintf("Interface\nCursor: %d\n", m.cursor)
-	menu := fmt.Sprintf("Menu\nMenu Length: %d\nMenu: %v\n", len(m.menu), getMenuLabels(m.menu))
+	page := fmt.Sprintf("Page: %s  Index %d\n", m.page.Label, m.page.Index)
+	cursor := fmt.Sprintf("Cursor: %d\n", m.cursor)
+	menu := fmt.Sprintf("Menu: %v\nMenu Len:%d\n", getMenuLabels(m.menu), len(m.menu))
 	if len(m.menu) > 0 {
-		selected = fmt.Sprintf("Selected\nSelected: %v\n", m.menu[m.cursor].Label)
+		selected = fmt.Sprintf("Selected: %v\n", m.menu[m.cursor].Label)
 	} else {
-		selected = "Selected\nSelected: nil\n"
+		selected = "Selected: nil\n"
 	}
 	controller := fmt.Sprintf("Controller\n%v\n", m.controller)
 	tables := fmt.Sprintf("Tables\n%v\n", m.tables)
@@ -30,20 +30,16 @@ func (m model) RenderStatusTable() string {
 	}
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
-		RenderBlock(
+		RenderBorderBlock(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
 				page,
-				i,
+				cursor,
 				menu,
 				selected,
+                controller,
 			)),
-		RenderBlock(
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				controller,
-			)),
-		RenderBlock(
+		RenderBorderBlock(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
 				tables,
@@ -59,7 +55,7 @@ func getMenuLabels(m []*CliPage) string {
 	var labels string
 	if m != nil {
 		for _, item := range m {
-			labels = labels + fmt.Sprintf("\n%v %v\n", item.Index, item.Label)
+			labels = labels + fmt.Sprintf("%v %v\n", item.Index, item.Label)
 
 		}
 	} else {

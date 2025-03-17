@@ -5,24 +5,28 @@ import (
 )
 
 var (
-	createInterface CliInterface = "CreateInterface"
-	readInterface   CliInterface = "ReadInterface"
-	updateInterface CliInterface = "UpdateInterface"
-	deleteInterface CliInterface = "DeleteInterface"
-	tableInterface  CliInterface = "TableInterface"
-	pageInterface   CliInterface = "PageInterface"
-	inputInterface  CliInterface = "InputInterface"
-	formInterface   CliInterface = "FormInterface"
+	createInterface     CliInterface = "CreateInterface"
+	readInterface       CliInterface = "ReadInterface"
+	updateInterface     CliInterface = "UpdateInterface"
+	deleteInterface     CliInterface = "DeleteInterface"
+	tableInterface      CliInterface = "TableInterface"
+	pageInterface       CliInterface = "PageInterface"
+	inputInterface      CliInterface = "InputInterface"
+	updateFormInterface CliInterface = "UpdateFormInterface"
 )
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-
 	switch m.controller {
 	case createInterface:
-		return m.FormInterface(message)
+		return m.UpdateDatabaseCreate(message)
 	case readInterface:
+		return m.UpdateDatabaseRead(message)
 	case updateInterface:
+		return m.UpdateDatabaseUpdate(message)
+	case updateFormInterface:
+		return m.UpdateDatabaseFormUpdate(message)
 	case deleteInterface:
+		return m.UpdateDatabaseDelete(message)
 	case pageInterface:
 		return m.UpdatePageSelect(message)
 	case tableInterface:
@@ -34,7 +38,7 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.TableControls(msg, len(m.tables))
+		return m.TableSelectControls(msg, len(m.tables))
 	}
 	return m, nil
 }
@@ -55,57 +59,39 @@ func (m model) FormInterface(message tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 
 }
-
-func (m model) UpdateTextInput(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEsc:
-			if m.textarea.Focused() {
-				m.textarea.Blur()
-			}
-		case tea.KeyCtrlC:
-			return m, tea.Quit
-		default:
-			if !m.textarea.Focused() {
-				cmd = m.textarea.Focus()
-				cmds = append(cmds, cmd)
-			}
-		}
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textarea, cmd = m.textarea.Update(msg)
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
-}
-
-func (m model) UpdateCreateInterface(message tea.Msg) (tea.Model, tea.Cmd) {
+func (m model) UpdateDatabaseCreate(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.menu)-1 {
-				m.cursor++
-			}
-		case "enter":
-			m.cursor = 0
-		}
+		return m.DatabaseCreateControls(msg, len(m.tables))
 	}
 	return m, nil
+}
 
+func (m model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.DatabaseReadControls(msg, len(*m.rows))
+	}
+	return m, nil
+}
+func (m model) UpdateDatabaseUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.DatabaseUpdateControls(msg, len(*m.rows))
+	}
+	return m, nil
+}
+func (m model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.DatabaseUpdateFormControls(msg, len(*m.rows))
+	}
+	return m, nil
+}
+func (m model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		return m.DatabaseDeleteControls(msg, len(*m.rows))
+	}
+	return m, nil
 }

@@ -2,12 +2,10 @@ package cli
 
 import (
 	"database/sql"
-	"log"
 
 	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
 )
@@ -24,6 +22,14 @@ type Option struct {
 	Value     string
 }
 
+type FocusKey int
+
+const (
+	PAGEFOCUS FocusKey = iota
+	FORMFOCUS
+    DIALOGFOCUS
+)
+
 type CliInterface string
 type InputType string
 type errMsg error
@@ -36,12 +42,19 @@ type model struct {
 	menu         []*CliPage
 	pages        []CliPage
 	tables       []string
-	form         *huh.Form
 	textInputs   []textinput.Model
 	textAreas    []textarea.Model
 	filePicker   []filepicker.Model
 	Options      []OptionList
 	selected     map[int]struct{}
+	headers      *[]string
+	rows         *[][]string
+	row          *[]string
+	form         *huh.Form
+	formLen      int
+	formMap      map[string]string
+	formActions  []formAction
+	focus        FocusKey
 	title        string
 	header       string
 	body         string
@@ -55,14 +68,6 @@ type model struct {
 }
 
 var CliContinue bool = false
-
-func CliRun() bool {
-	p := tea.NewProgram(initialModel(), tea.WithAltScreen())
-	if _, err := p.Run(); err != nil {
-		log.Fatal(err)
-	}
-	return CliContinue
-}
 
 func initialModel() model {
 	return model{
@@ -89,10 +94,12 @@ func initialModel() model {
 			*updatePage,
 			*deletePage,
 			*tablePage,
-			*formPage,
+			*updateFormPage,
 		},
 		selected:   make(map[int]struct{}),
 		controller: pageInterface,
+		focus:      PAGEFOCUS,
+        formActions: []formAction{edit,submit,reset,cancel},
 		textInputs: make([]textinput.Model, 0),
 		textAreas:  make([]textarea.Model, 0),
 		filePicker: make([]filepicker.Model, 0),

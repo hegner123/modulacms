@@ -12,7 +12,7 @@ const (
 	Content_fields       DBTable = "content_fields"
 	Datatype             DBTable = "datatypes"
 	Field                DBTable = "fields"
-	MediaT                DBTable = "media"
+	MediaT               DBTable = "media"
 	Media_dimension      DBTable = "media_dimensions"
 	Role                 DBTable = "roles"
 	Route                DBTable = "routes"
