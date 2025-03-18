@@ -9,24 +9,24 @@ import (
 )
 
 func (m model) RenderUI() string {
-    doc := strings.Builder{}
+	doc := strings.Builder{}
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	physicalWidth, physicalHeight, _ := term.GetSize(os.Stdout.Fd())
-    docStyle = docStyle.Width(physicalWidth).Height(physicalHeight)
-    m.title = "ModulaCMS\n"
+	docStyle = docStyle.Width(physicalWidth).Height(physicalHeight)
+	m.title = "ModulaCMS\n"
 	m.footer += "\n\nPress q to quit.\n"
 	header := RenderHeading(m.header)
 
 	doc.WriteString(lipgloss.JoinVertical(
 		lipgloss.Left,
-        m.title,
+		m.title,
 		header,
-        m.body,
-		m.RenderStatusTable(),
-        RenderStatusBar(),
-	    ),
+		m.body,
+		m.footer,
+		//m.RenderStatusTable(),
+		//m.RenderStatusBar(),
+	),
 	)
-    
 
 	return docStyle.Render(doc.String())
 }

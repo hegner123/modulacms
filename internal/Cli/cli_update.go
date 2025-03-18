@@ -5,18 +5,31 @@ import (
 )
 
 var (
+    pageInterface       CliInterface = "PageInterface"
+    tableInterface      CliInterface = "TableInterface"
 	createInterface     CliInterface = "CreateInterface"
 	readInterface       CliInterface = "ReadInterface"
 	updateInterface     CliInterface = "UpdateInterface"
 	deleteInterface     CliInterface = "DeleteInterface"
-	tableInterface      CliInterface = "TableInterface"
-	pageInterface       CliInterface = "PageInterface"
-	inputInterface      CliInterface = "InputInterface"
 	updateFormInterface CliInterface = "UpdateFormInterface"
 	readSingleInterface CliInterface = "ReadSingleInterface"
 )
 
 func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
+	// First handle any form-specific messages
+	switch message.(type) {
+	case formCompletedMsg:
+		// Process form data here (save to database, etc.)
+		m.focus = PAGEFOCUS
+		m.page = m.pages[Update]
+		m.controller = m.page.Controller
+		return m, nil
+	case formCancelledMsg:
+		m.focus = PAGEFOCUS
+		m.page = m.pages[Update]
+		m.controller = m.page.Controller
+		return m, nil
+	}
 	switch m.controller {
 	case createInterface:
 		return m.UpdateDatabaseCreate(message)
@@ -34,7 +47,6 @@ func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdatePageSelect(message)
 	case tableInterface:
 		return m.UpdateTableSelect(message)
-	case inputInterface:
 	}
 	return m, nil
 }
@@ -54,20 +66,8 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, nil
 }
-func (m model) FormInterface(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		return m.FormInputControl(msg)
-	}
-	return m, nil
-
-}
 func (m model) UpdateDatabaseCreate(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		return m.DatabaseCreateControls(msg, len(m.tables))
-	}
-	return m, nil
+	return m.DatabaseCreateControls(message)
 }
 
 func (m model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -92,11 +92,11 @@ func (m model) UpdateDatabaseUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 func (m model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
+	return m.DatabaseUpdateFormControls(message, len(*m.rows))
+	/*switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseUpdateFormControls(msg, len(*m.rows))
 	}
-	return m, nil
+	return m, nil*/
 }
 func (m model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {

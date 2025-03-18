@@ -43,6 +43,7 @@ endif
 
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
+	echo "" > debug.log
 	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
 	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o $(AMD_BINARY_NAME) ./cmd	
 

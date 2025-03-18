@@ -29,15 +29,15 @@ func Active(s string) string {
 func StyledTable(hdrs []string, rows [][]string, index int) *table.Table {
 	var (
 		headerStyle  = lipgloss.NewStyle().Foreground(purple).Bold(true).Align(lipgloss.Center)
-		cellStyle    = lipgloss.NewStyle().Padding(0, 1).Width(8)
-		activeStyle  = cellStyle.Background(white).Foreground(black).Bold(true)
+		cellStyle    = lipgloss.NewStyle()
+		activeStyle  = cellStyle.Background(lightGray).Foreground(black).Bold(true)
 		oddRowStyle  = cellStyle.Foreground(gray)
 		evenRowStyle = cellStyle.Foreground(lightGray)
 	)
 
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(yellow)).
+		BorderStyle(lipgloss.NewStyle().Foreground(purple)).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch {
 			case row == index:
@@ -69,8 +69,7 @@ func RenderTitle(s string) string {
 func RenderHeading(s string) string {
 	headingStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(purple).
-		MaxWidth(20)
+		Foreground(purple)
 	return headingStyle.Render(s)
 }
 
@@ -92,15 +91,16 @@ func RenderBlock(s string) string {
 
 }
 
-func RenderStatusBar() string {
+func (m model) RenderStatusBar() string {
 	doc := strings.Builder{}
+	status := []string{"Page", "Form", "Dialog"}
 	statusNugget := lipgloss.NewStyle().
 		Foreground(lightGray).
 		Padding(0, 1)
 
 	statusBarStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.AdaptiveColor{Light: "#343433", Dark: "#C1C6B2"}).
-		Background(lipgloss.AdaptiveColor{Light: "#D9DCCF", Dark: "#353533"})
+		Foreground(lightGray).
+		Background(rose)
 
 	statusStyle := lipgloss.NewStyle().
 		Inherit(statusBarStyle).
@@ -117,13 +117,19 @@ func RenderStatusBar() string {
 
 	fishCakeStyle := statusNugget.Background(lipgloss.Color("#6124DF"))
 	w := lipgloss.Width
+	var v string
+
+	v = m.page.Label
+	if m.table != "" {
+		v = m.table
+	}
 
 	statusKey := statusStyle.Render("STATUS")
 	encoding := encodingStyle.Render("UTF-8")
-	fishCake := fishCakeStyle.Render("🍥 Fish Cake")
+	fishCake := fishCakeStyle.Render(v)
 	statusVal := statusText.
 		Width(width - w(statusKey) - w(encoding) - w(fishCake)).
-		Render("Ravishing")
+		Render(status[m.focus])
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top,
 		statusKey,

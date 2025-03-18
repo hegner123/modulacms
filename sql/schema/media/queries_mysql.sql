@@ -7,10 +7,6 @@ CREATE TABLE IF NOT EXISTS media (
     caption TEXT,
     description TEXT,
     class TEXT,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     mimetype TEXT,
     dimensions TEXT,
     url VARCHAR(255) UNIQUE,
@@ -18,6 +14,10 @@ CREATE TABLE IF NOT EXISTS media (
     optimized_tablet TEXT,
     optimized_desktop TEXT,
     optimized_ultra_wide TEXT,
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_media_users_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE ON DELETE RESTRICT,
@@ -46,17 +46,17 @@ INSERT INTO media (
     caption,
     description,
     class,
-    author,
-    author_id,
-    date_created,
-    date_modified,
     url,
     mimetype,
     dimensions,
     optimized_mobile,
     optimized_tablet,
     optimized_desktop,
-    optimized_ultra_wide
+    optimized_ultra_wide,
+    author,
+    author_id,
+    date_created,
+    date_modified
 ) VALUES (
 ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
 );

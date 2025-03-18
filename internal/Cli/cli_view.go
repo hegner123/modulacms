@@ -14,18 +14,17 @@ func (m model) View() string {
 	case tablePage.Index:
 		ui = m.PageTable()
 	case createPage.Index:
-        
-		ui = m.FormView()
+		ui = m.PageCreate()
 	case readPage.Index:
 		ui = m.PageRead()
 	case updatePage.Index:
 		ui = m.PageUpdate()
-    case updateFormPage.Index:
+	case updateFormPage.Index:
 		ui = m.PageUpdateForm()
 	case deletePage.Index:
 		ui = m.PageDelete()
-    default:
-        ui = m.Page404()
+	default:
+		ui = m.Page404()
 	}
 	return ui
 }

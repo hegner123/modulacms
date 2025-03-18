@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id INT NOT NULL,
     admin_field_id INT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
     CONSTRAINT fk_admin_content_field_admin_content_data FOREIGN KEY (admin_content_data_id)
         REFERENCES admin_content_data(admin_content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,

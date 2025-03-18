@@ -2,13 +2,16 @@ package cli
 
 import (
 	"database/sql"
+	"fmt"
+	"strconv"
 
-	"github.com/charmbracelet/bubbles/filepicker"
-	"github.com/charmbracelet/bubbles/textarea"
-	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
 )
+
+type formCompletedMsg struct{}
+type formCancelledMsg struct{}
 
 type OptionList struct {
 	Key  string
@@ -32,7 +35,6 @@ const (
 
 type CliInterface string
 type InputType string
-type errMsg error
 
 type model struct {
 	cursor       int
@@ -42,9 +44,6 @@ type model struct {
 	menu         []*CliPage
 	pages        []CliPage
 	tables       []string
-	textInputs   []textinput.Model
-	textAreas    []textarea.Model
-	filePicker   []filepicker.Model
 	Options      []OptionList
 	selected     map[int]struct{}
 	headers      *[]string
@@ -53,18 +52,20 @@ type model struct {
 	form         *huh.Form
 	formLen      int
 	formMap      map[string]string
+	formValues   []*string
 	formActions  []formAction
+	formSubmit   bool
+	formGroups   []huh.Group
+	formFields   []huh.Field
 	focus        FocusKey
 	title        string
 	header       string
 	body         string
 	footer       string
-	textarea     textarea.Model
 	controller   CliInterface
 	history      []CliPage
 	Query        db.SQLQuery
 	QueryResults []sql.Row
-	err          error
 }
 
 var CliContinue bool = false
@@ -89,21 +90,34 @@ func initialModel() model {
 			*bucketPage,
 			*oauthPage,
 			*configPage,
+			*tablePage,
 			*createPage,
 			*readPage,
 			*updatePage,
 			*deletePage,
-			*tablePage,
 			*updateFormPage,
-            *readSinglePage,
+			*readSinglePage,
 		},
 		selected:    make(map[int]struct{}),
+		formMap:     make(map[string]string),
 		controller:  pageInterface,
 		focus:       PAGEFOCUS,
 		formActions: []formAction{edit, submit, reset, cancel},
-		textInputs:  make([]textinput.Model, 0),
-		textAreas:   make([]textarea.Model, 0),
-		filePicker:  make([]filepicker.Model, 0),
 		history:     []CliPage{},
 	}
+}
+
+func (m model) GetIDRow() int64 {
+	logFile, _ := tea.LogToFile("debug.log", "debug")
+	defer logFile.Close()
+	rows := *m.rows
+	row := rows[m.cursor]
+	rowCol := row[0]
+	fmt.Fprintln(logFile, "RowCol", rowCol)
+	id, err := strconv.ParseInt(rowCol, 10, 64)
+	if err != nil {
+		fmt.Fprintln(logFile, err)
+	}
+	return id
+
 }

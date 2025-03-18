@@ -3,9 +3,7 @@ package cli
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
-	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	config "github.com/hegner123/modulacms/internal/Config"
 )
@@ -25,7 +23,7 @@ const (
 	Update
 	Delete
 	UpdateForm
-    ReadSingle
+	ReadSingle
 	Content
 	Media
 	Users
@@ -61,7 +59,6 @@ var (
 
 func (m model) PageHome() string {
 	m.header = "MAIN MENU"
-	m.body = "\n"
 	for i, choice := range m.menu {
 
 		cursor := "  "
@@ -71,7 +68,6 @@ func (m model) PageHome() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
-	m.body += "\n"
 	m.body = RenderBorder(m.body)
 	return m.RenderUI()
 }
@@ -103,7 +99,7 @@ func (m model) PageDatabase() string {
 }
 
 func (m model) PageCMS() string {
-	m.header = "Edit Your Content \n"
+	m.header = "Edit Your Content"
 	for i, choice := range m.menu {
 
 		cursor := "  "
@@ -118,7 +114,7 @@ func (m model) PageCMS() string {
 }
 
 func (m model) PageTable() string {
-	m.header = "\nDatabase Method\n"
+	m.header = "Database Method"
 	for i, choice := range m.menu {
 
 		cursor := "  "
@@ -133,13 +129,17 @@ func (m model) PageTable() string {
 }
 
 func (m model) PageCreate() string {
-	m.header = m.header + fmt.Sprintf("\nCreate %s\n", m.table)
-	m.body = m.form.View()
+	m.header = m.header + fmt.Sprintf("Create %s", m.table)
+	m.body = "\n"
+	if m.form == nil {
+		m.body += "Form == nil"
+	}
+	m.body += m.form.View()
 	return m.RenderUI()
 }
 
 func (m model) PageRead() string {
-	m.header = m.header + fmt.Sprintf("\n\nRead %s\n", m.table)
+	m.header = m.header + fmt.Sprintf("Read %s", m.table)
 	hdrs, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
@@ -152,7 +152,7 @@ func (m model) PageRead() string {
 }
 
 func (m model) PageReadSingle() string {
-	m.header = m.header + fmt.Sprintf("\n\nRead %s\n", m.table)
+	m.header = m.header + fmt.Sprintf("Read %s", m.table)
 	hdrs, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
@@ -165,7 +165,7 @@ func (m model) PageReadSingle() string {
 }
 
 func (m model) PageUpdate() string {
-	m.header = m.header + fmt.Sprintf("\n\nUpdate %s\n", m.table)
+	m.header = m.header + fmt.Sprintf("Update %s", m.table)
 	hdrs, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
@@ -176,38 +176,18 @@ func (m model) PageUpdate() string {
 	m.body = t.Render()
 	return m.RenderUI()
 }
-func (m model) PageUpdateForm() string {
-	m.header = m.header + fmt.Sprintf("\n\nUpdate %s\n", m.table)
-	doc := strings.Builder{}
-	buttons := []string{}
-	fStyle := lipgloss.NewStyle().Height(10)
+func (m *model) PageUpdateForm() string {
+	m.header = m.header + fmt.Sprintf("Update %s", m.table)
+	m.body = "\n"
 	if m.form == nil {
-		m.body = "Form == nil"
+		m.body += "Form == nil"
 	}
-	for _, action := range m.formActions {
-		if m.formActions[m.cursor] == action {
-			buttons = append(buttons, RenderActiveButton(string(action)))
-		} else {
-			buttons = append(buttons, RenderButton(string(action)))
-		}
-	}
-    m.footer = " tab|right|down Next Field .. shift+tab|left|up = Previous Field"
-
-	doc.WriteString(
-		lipgloss.JoinVertical(lipgloss.Top,
-			fStyle.Render(m.form.View()),
-			lipgloss.JoinHorizontal(
-				lipgloss.Center,
-				buttons...,
-			)),
-	)
-	m.body = doc.String()
-
+	m.body += m.form.View()
 	return m.RenderUI()
 }
 
 func (m model) PageDelete() string {
-	m.header = m.header + fmt.Sprintf("\n\nDelete%s\n", m.table)
+	m.header = m.header + fmt.Sprintf("Delete %s", m.table)
 	hdrs, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
@@ -219,32 +199,8 @@ func (m model) PageDelete() string {
 	return m.RenderUI()
 }
 
-// View renders the UI.
-func (m model) InputsView() string {
-	m.body = "Dynamic Bubble Tea Inputs Example\n\n"
-	for i, input := range m.textInputs {
-		m.body += input.View() + "\n"
-		if i < len(m.textInputs)-1 {
-			m.body += "\n"
-		}
-	}
-	m.footer = "\nPress tab/shift+tab or up/down to switch focus. Press esc or ctrl+c to quit."
-	return m.RenderUI()
-}
-
-func (m model) FormView() string {
-	m.header = m.header + "\n\nCreate\n"
-	if m.form.State == huh.StateCompleted {
-		class := m.form.GetString("class")
-		level := m.form.GetInt("level")
-		return fmt.Sprintf("You selected: %s, Lvl. %d", class, level)
-	}
-	m.body = m.form.View()
-	return m.RenderUI()
-}
-
 func (m model) PageBucket() string {
-	m.header = "\nBucket Settings\n"
+	m.header = "Bucket Settings"
 	b1 := config.Env.Bucket_Url
 	b2 := config.Env.Bucket_Endpoint
 	b3 := config.Env.Bucket_Access_Key
@@ -258,7 +214,7 @@ func (m model) PageBucket() string {
 }
 
 func (m model) PageConfig() string {
-	m.header = "\nConfiguration\n"
+	m.header = "Configuration"
 	s, _ := json.Marshal(config.Env)
 	m.body += "\n" + string(s)
 
@@ -266,7 +222,7 @@ func (m model) PageConfig() string {
 }
 
 func (m model) Page404() string {
-	m.header = "\nPAGE NOT FOUND\n"
+	m.header = "PAGE NOT FOUND"
 
 	return m.RenderUI()
 }

@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS datatypes (
     type TEXT NOT NULL,
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    history TEXT,
     CONSTRAINT fk_dt_datatypes_parent FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE RESTRICT,

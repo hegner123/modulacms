@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id INTEGER NOT NULL,
     admin_field_id INTEGER NOT NULL,
     admin_field_value TEXT NOT NULL,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    history TEXT,
     CONSTRAINT fk_admin_route_id FOREIGN KEY (admin_route_id)
         REFERENCES admin_routes(admin_route_id)
         ON UPDATE CASCADE ON DELETE SET NULL,

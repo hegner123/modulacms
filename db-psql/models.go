@@ -15,9 +15,9 @@ type AdminContentData struct {
 	AdminContentDataID int32          `json:"admin_content_data_id"`
 	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
 	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
-	History            sql.NullString `json:"history"`
 	DateCreated        sql.NullTime   `json:"date_created"`
 	DateModified       sql.NullTime   `json:"date_modified"`
+	History            sql.NullString `json:"history"`
 }
 
 type AdminContentFields struct {
@@ -26,9 +26,9 @@ type AdminContentFields struct {
 	AdminContentDataID  int32          `json:"admin_content_data_id"`
 	AdminFieldID        int32          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
-	History             sql.NullString `json:"history"`
 	DateCreated         sql.NullTime   `json:"date_created"`
 	DateModified        sql.NullTime   `json:"date_modified"`
+	History             sql.NullString `json:"history"`
 }
 
 type AdminDatatypes struct {
@@ -72,9 +72,9 @@ type ContentData struct {
 	ContentDataID int32          `json:"content_data_id"`
 	RouteID       sql.NullInt32  `json:"route_id"`
 	DatatypeID    sql.NullInt32  `json:"datatype_id"`
-	History       sql.NullString `json:"history"`
 	DateCreated   sql.NullTime   `json:"date_created"`
 	DateModified  sql.NullTime   `json:"date_modified"`
+	History       sql.NullString `json:"history"`
 }
 
 type ContentFields struct {
@@ -83,9 +83,9 @@ type ContentFields struct {
 	ContentDataID  int32          `json:"content_data_id"`
 	FieldID        int32          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
-	History        sql.NullString `json:"history"`
 	DateCreated    sql.NullTime   `json:"date_created"`
 	DateModified   sql.NullTime   `json:"date_modified"`
+	History        sql.NullString `json:"history"`
 }
 
 type Datatypes struct {
@@ -95,9 +95,9 @@ type Datatypes struct {
 	Type         string         `json:"type"`
 	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullTime   `json:"date_created"`
 	DateModified sql.NullTime   `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 }
 
 type Fields struct {
@@ -108,9 +108,9 @@ type Fields struct {
 	Type         string         `json:"type"`
 	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullTime   `json:"date_created"`
 	DateModified sql.NullTime   `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 }
 
 type Media struct {
@@ -121,10 +121,6 @@ type Media struct {
 	Caption            sql.NullString `json:"caption"`
 	Description        sql.NullString `json:"description"`
 	Class              sql.NullString `json:"class"`
-	Author             string         `json:"author"`
-	AuthorID           int32          `json:"author_id"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
 	Mimetype           sql.NullString `json:"mimetype"`
 	Dimensions         sql.NullString `json:"dimensions"`
 	Url                sql.NullString `json:"url"`
@@ -132,6 +128,10 @@ type Media struct {
 	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
 	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
 	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
+	Author             string         `json:"author"`
+	AuthorID           int32          `json:"author_id"`
+	DateCreated        sql.NullTime   `json:"date_created"`
+	DateModified       sql.NullTime   `json:"date_modified"`
 }
 
 type MediaDimensions struct {
@@ -150,14 +150,14 @@ type Roles struct {
 
 type Routes struct {
 	RouteID      int32          `json:"route_id"`
-	Author       string         `json:"author"`
-	AuthorID     int32          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	History      sql.NullString `json:"history"`
+	Author       string         `json:"author"`
+	AuthorID     int32          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 }
 
 type Sessions struct {

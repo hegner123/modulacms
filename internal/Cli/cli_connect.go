@@ -10,7 +10,6 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-
 // ForeignKeyReference holds the referenced table and column information.
 type ForeignKeyReference struct {
 	From   string
@@ -212,22 +211,34 @@ func GetColumnsRows(t string) (*[]string, *[][]string, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	clm, err := rows.Columns()
+	columns, err := rows.Columns()
 	if err != nil {
 		return nil, nil, err
 	}
-	collection, err := db.GenericList(dbt, d)
+	listRows, err := db.GenericList(dbt, d)
 	if err != nil {
 		return nil, nil, err
 	}
-	return &clm, collection, nil
+	return &columns, listRows, nil
+
+}
+func (m model) GetSuggestionsString(column string) []string {
+	d := db.ConfigDB(config.Env)
+	con, ctx, _ := d.GetConnection()
+	if column == "NIll" {
+		return nil
+	} else {
+		r, err := db.GetColumnRowsString(con, ctx, m.table, column)
+		if err != nil {
+			utility.LogError("ERROR", err)
+		}
+		return r
+	}
 
 }
 
-func ScanRows(rows *sql.Rows) {
 
-}
-
+/*
 func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	var fields []any
 	var s []any
@@ -257,26 +268,6 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	}
 	fmt.Print(s)
 }
+*/
 
-func MatchFk(name string, references []ForeignKeyReference) *ForeignKeyReference {
-	for _, r := range references {
-		if r.From == name {
-			return &r
-		}
-	}
-	return nil
-}
 
-func GetSuggestions(dbc db.Database, table string, column string) []any {
-	if column == "NIll" {
-		return nil
-	} else {
-		r, err := db.GetColumnRows(dbc, table, column)
-		if err != nil {
-			utility.LogError("ERROR", err)
-		}
-		fmt.Println(r)
-		return r
-	}
-
-}

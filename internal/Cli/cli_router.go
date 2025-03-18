@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	db "github.com/hegner123/modulacms/internal/Db"
 )
 
@@ -13,7 +11,13 @@ func (m *model) PageRouter() {
 		switch m.menu[m.cursor] {
 		case createPage:
 			m.form, m.formLen = m.BuildForm(db.StringDBTable(m.table))
-			m.page = *m.menu[m.cursor]
+			m.headers, m.rows, err = GetColumnsRows(m.table)
+			if err != nil {
+				m.body = err.Error()
+			}
+			m.form.Init()
+			m.focus = FORMFOCUS
+			m.page = m.pages[Create]
 			m.controller = m.page.Controller
 		case updatePage:
 			m.headers, m.rows, err = GetColumnsRows(m.table)
@@ -38,10 +42,11 @@ func (m *model) PageRouter() {
 			m.controller = m.page.Controller
 		}
 	case Update:
-		fmt.Println("updateform")
-		m.form, m.formLen = m.BuildForm(db.StringDBTable(m.table))
+		m.form, m.formLen = m.BuildUpdateForm(db.StringDBTable(m.table))
 		m.form.Init()
-        
+		m.focus = FORMFOCUS
+		m.formFields[0].Focus()
+
 		m.headers, m.rows, err = GetColumnsRows(m.table)
 		if err != nil {
 			m.body = err.Error()

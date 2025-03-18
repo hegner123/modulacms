@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -13,7 +14,6 @@ import (
 
 type ColumnNameType map[string]string
 type ColumnIndexName map[int]string
-
 
 func CopyDb(dbName string, useDefault bool) (string, error) {
 	times := utility.TimestampS()
@@ -96,7 +96,7 @@ func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (ColumnN
 	return columnsNT, columnsIN, nil
 }
 
-func GetColumnRows(dbc Database, tableName string, columnName string) ([]any, error) {
+func GetColumnRowsString(dbc *sql.DB, ctx context.Context, tableName string, columnName string) ([]string, error) {
 	// Optionally: validate tableName here to avoid SQL injection.
 	if tableName == "" {
 		return nil, fmt.Errorf("table name cannot be empty")
@@ -109,25 +109,35 @@ func GetColumnRows(dbc Database, tableName string, columnName string) ([]any, er
 	query := fmt.Sprintf("SELECT %s FROM %s;", columnName, tableName)
 
 	// Execute the query using the provided context.
-	rows, err := dbc.Connection.QueryContext(dbc.Context, query)
+	rows, err := dbc.QueryContext(ctx, query)
 	if err != nil {
 		return nil, fmt.Errorf("query failed: %w", err)
 	}
 	defer rows.Close()
 
 	// Prepare a map to hold the column names and their types.
-	rowValues := make([]any, 0)
+	rowValues := make([]string, 0)
 
 	for rows.Next() {
 		var value any
+		var ap string
 
 		// Scan the row into local variables.
 		if err := rows.Scan(&value); err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
 
+		s, ok := value.(string)
+		ap = s
+		if !ok {
+			i, ok := value.(int64)
+			if !ok {
+				return nil, nil
+			}
+			ap = strconv.FormatInt(i, 10)
+		}
 		// Map the column name to its type.
-		rowValues = append(rowValues, value)
+		rowValues = append(rowValues, ap)
 	}
 
 	// Check for any errors encountered during iteration.
@@ -137,6 +147,7 @@ func GetColumnRows(dbc Database, tableName string, columnName string) ([]any, er
 
 	return rowValues, nil
 }
+
 
 func ReadNullString(ns sql.NullString) string {
 	if ns.Valid {

@@ -1,14 +1,14 @@
 -- name: CreateRouteTable :exec
 CREATE TABLE IF NOT EXISTS routes (
     route_id INT NOT NULL AUTO_INCREMENT,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    history TEXT,
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
     PRIMARY KEY (route_id),
     UNIQUE KEY unique_slug (slug),
     CONSTRAINT fk_routes_routes_author FOREIGN KEY (author)
@@ -45,14 +45,14 @@ ORDER BY slug;
 
 -- name: CreateRoute :exec
 INSERT INTO routes (
-    author,
-    author_id,
     slug,
     title,
     status,
-    history,
+    author,
+    author_id,
     date_created,
-    date_modified
+    date_modified,
+    history
 ) VALUES (?,?,?,?,?,?,?,?);
 
 -- name: UpdateRoute :exec

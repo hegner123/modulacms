@@ -14,9 +14,6 @@ CREATE TABLE IF NOT EXISTS tokens (
 CREATE TABLE IF NOT EXISTS admin_datatypes(
     admin_datatype_id    INTEGER
         primary key,
-    admin_route_id INTEGER default NULL
-        references admin_routes
-            on update cascade on delete set default,
     parent_id      INTEGER default NULL
         references admin_datatypes
             on update cascade on delete set default,
@@ -36,9 +33,6 @@ CREATE TABLE IF NOT EXISTS admin_fields
 (
     admin_field_id INTEGER
         primary key,
-    admin_route_id INTEGER default 1
-        references admin_routes
-            on update cascade on delete set default,
     parent_id      INTEGER default NULL
         references admin_datatypes
             on update cascade on delete set default,
@@ -61,19 +55,19 @@ CREATE TABLE IF NOT EXISTS roles (
     permissions TEXT NOT NULL unique
 );
 CREATE TABLE IF NOT EXISTS routes (
-    route_id SERIAL PRIMARY KEY,
-    author TEXT DEFAULT 'system' NOT NULL
-        REFERENCES users(username)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
-    author_id INTEGER DEFAULT 1 NOT NULL
-        REFERENCES users(user_id)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    route_id INTEGER PRIMARY KEY,
     slug TEXT NOT NULL UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    history TEXT,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    author TEXT DEFAULT 'system' NOT NULL
+    REFERENCES users(username)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    author_id INTEGER DEFAULT 1 NOT NULL
+    REFERENCES users(user_id)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
 );
 
 CREATE TABLE IF NOT EXISTS media_dimensions
@@ -92,9 +86,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     datatype_id   INTEGER NOT NULL
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
-    history TEXT  DEFAULT NULL,
     date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT  DEFAULT NULL
 );
 
 CREATE TABLE IF NOT EXISTS user_oauth (
@@ -139,18 +133,15 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES admin_fields(admin_field_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     field_value         TEXT NOT NULL,
-    history             TEXT,
     date_created        TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP
+    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP,
+    history             TEXT
 );
 
 CREATE TABLE IF NOT EXISTS datatypes
 (
     datatype_id   INTEGER
         primary key,
-    route_id      INTEGER default NULL
-        references routes
-            on update cascade on delete set default,
     parent_id     INTEGER default NULL
         references datatypes
             on update cascade on delete set default,
@@ -162,9 +153,9 @@ CREATE TABLE IF NOT EXISTS datatypes
     author_id     INTEGER default 1        not null
         references users (user_id)
             on update cascade on delete set default,
-    history TEXT,
     date_created  TEXT    default CURRENT_TIMESTAMP,
-    date_modified TEXT    default CURRENT_TIMESTAMP
+    date_modified TEXT    default CURRENT_TIMESTAMP,
+    history TEXT
 );
 CREATE TABLE IF NOT EXISTS users (
     user_id INTEGER PRIMARY KEY,
@@ -182,9 +173,6 @@ CREATE TABLE IF NOT EXISTS fields
 (
     field_id      INTEGER
         primary key,
-    route_id      INTEGER default NULL
-        references routes
-            on update cascade on delete set default,
     parent_id     INTEGER default NULL
         references datatypes
             on update cascade on delete set default,
@@ -197,9 +185,9 @@ CREATE TABLE IF NOT EXISTS fields
     author_id     INTEGER default 1           not null
         references users (user_id)
             on update cascade on delete set default,
-    history TEXT,
     date_created  TEXT    default CURRENT_TIMESTAMP,
-    date_modified TEXT    default CURRENT_TIMESTAMP
+    date_modified TEXT    default CURRENT_TIMESTAMP,
+    history TEXT
 );
 CREATE TABLE IF NOT EXISTS tables (
     id INTEGER PRIMARY KEY,
@@ -216,9 +204,9 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_datatype_id   INTEGER NOT NULL
         REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
-    history TEXT  DEFAULT NULL,
     date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT  DEFAULT NULL
 );
 -- name: CreateAdminContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_fields (
@@ -233,9 +221,9 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
         REFERENCES admin_fields(admin_field_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
     admin_field_value         TEXT NOT NULL,
-    history             TEXT,
     date_created        TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP
+    date_modified       TEXT DEFAULT CURRENT_TIMESTAMP,
+    history             TEXT
 );
 CREATE TABLE IF NOT EXISTS media
 (
@@ -247,14 +235,6 @@ CREATE TABLE IF NOT EXISTS media
     caption              TEXT,
     description          TEXT,
     class                TEXT,
-    author               TEXT    default "system" not null
-        references users (username)
-            on update cascade on delete set default,
-    author_id            INTEGER default 1        not null
-        references users (user_id)
-            on update cascade on delete set default,
-    date_created         TEXT    default CURRENT_TIMESTAMP,
-    date_modified        TEXT    default CURRENT_TIMESTAMP,
     mimetype             TEXT,
     dimensions           TEXT,
     url                  TEXT
@@ -262,7 +242,15 @@ CREATE TABLE IF NOT EXISTS media
     optimized_mobile     TEXT,
     optimized_tablet     TEXT,
     optimized_desktop    TEXT,
-    optimized_ultra_wide TEXT
+    optimized_ultra_wide TEXT,
+    author               TEXT    default "system" not null
+    references users (username)
+    on update cascade on delete set default,
+    author_id            INTEGER default 1        not null
+    references users (user_id)
+    on update cascade on delete set default,
+    date_created         TEXT    default CURRENT_TIMESTAMP,
+    date_modified        TEXT    default CURRENT_TIMESTAMP
 );
 CREATE TABLE sessions (
     session_id   INTEGER PRIMARY KEY,

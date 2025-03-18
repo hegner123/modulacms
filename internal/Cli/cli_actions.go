@@ -2,19 +2,36 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
+	"os"
 
+	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 func (m model) CLICreate(table db.DBTable) error {
-	ErrLog := utility.NewLogger(utility.ERROR)
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
+	fmt.Fprintln(logFile, m.formValues)
+	for i, v := range m.formValues {
+		if v == nil {
+			continue
+		}
+		headers := *m.headers
+		header := headers[i]
+		m.formMap[header] = *v
+	}
+	fmt.Fprintln(logFile, m.formMap)
 	defer con.Close()
 	jsonData, err := json.Marshal(m.formMap)
 	if err != nil {
@@ -161,12 +178,27 @@ func (m model) CLICreate(table db.DBTable) error {
 }
 
 func (m model) CLIUpdate(table db.DBTable) error {
-	ErrLog := utility.NewLogger(utility.ERROR)
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	defer logFile.Close()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
+	fmt.Fprintln(logFile, m.formValues)
+	for i, v := range m.formValues {
+		if v == nil {
+			continue
+		}
+		headers := *m.headers
+		header := headers[i]
+		m.formMap[header] = *v
+	}
+	fmt.Fprintln(logFile, m.formMap)
 	defer con.Close()
 	jsonData, err := json.Marshal(m.formMap)
 	if err != nil {
@@ -358,7 +390,6 @@ func (m model) CLIUpdate(table db.DBTable) error {
 	return nil
 }
 
-
 func (m model) CLIDelete(table db.DBTable) error {
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
@@ -373,6 +404,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 	switch table {
 	case db.Admin_content_data:
 		var result struct{ ID int64 }
+        result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -382,6 +414,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Admin_content_fields:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -391,6 +424,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Admin_datatype:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -400,6 +434,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Admin_field:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -418,6 +453,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Content_data:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -427,6 +463,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Content_fields:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -436,6 +473,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Datatype:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -445,6 +483,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Field:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -454,6 +493,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.MediaT:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -463,6 +503,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Media_dimension:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -472,6 +513,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Role:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -490,6 +532,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Session:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -499,6 +542,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Table:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -508,6 +552,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.Token:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -517,6 +562,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.User:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -526,6 +572,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	case db.User_oauth:
 		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}
@@ -538,4 +585,3 @@ func (m model) CLIDelete(table db.DBTable) error {
 	return nil
 
 }
-

@@ -5,9 +5,9 @@ CREATE TABLE IF NOT EXISTS content_fields (
     content_data_id INTEGER NOT NULL,
     field_id INTEGER NOT NULL,
     field_value TEXT NOT NULL,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    history TEXT,
     CONSTRAINT fk_route_id FOREIGN KEY (route_id)
         REFERENCES routes(route_id)
         ON UPDATE CASCADE ON DELETE SET NULL,

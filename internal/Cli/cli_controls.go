@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"fmt"
+	"os"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
@@ -76,41 +79,45 @@ func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.C
 	}
 	return m, nil
 }
-func (m model) DatabaseCreateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	//Exit
-	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	m.focus = FORMFOCUS
 
-	//Navigation
-	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
-		}
-	case "down", "j":
-		if m.cursor < m.formLen-1 {
-			m.cursor++
-		}
-	case "h", "shift+tab", "backspace":
-		m.cursor = 0
-		m.page = *m.PopHistory()
-		m.controller = m.page.Controller
-		m.menu = m.page.Children
-
-	//Action
-	case "enter", "l":
-		m.PushHistory(m.page)
-		m.table = m.tables[m.cursor]
-		err := m.CLICreate(db.StringDBTable(m.table))
-		if err != nil {
-			return m, nil
-		}
-		m.cursor = 0
-		m.page = *m.page.Next
-		m.controller = m.page.Controller
-		m.menu = m.page.Children
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	return m, nil
+	defer logFile.Close()
+
+	// Update form with the message
+	form, cmd := m.form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+		cmds = append(cmds, cmd)
+	}
+
+	// Handle form state changes
+	if m.form.State == huh.StateAborted {
+		_ = tea.ClearScreen()
+		m.focus = PAGEFOCUS
+		m.page = m.pages[Read]
+		m.controller = m.page.Controller
+	}
+
+	if m.form.State == huh.StateCompleted {
+		_ = tea.ClearScreen()
+		m.focus = PAGEFOCUS
+		err := m.CLICreate(db.DBTable(m.table))
+		if err != nil {
+			fmt.Fprintln(logFile, err.Error())
+		}
+		m.page = m.pages[Read]
+		m.controller = m.page.Controller
+		m.headers, m.rows, _ = GetColumnsRows(m.table)
+	}
+
+	return m, tea.Batch(cmds...)
 }
 func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
@@ -210,86 +217,41 @@ func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, te
 	}
 	return m, nil
 }
-
-func (m model) DatabaseUpdateFormControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	if m.focus == PAGEFOCUS {
-		switch msg.String() {
-		//Exit
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+	m.focus = FORMFOCUS
 
-		//Navigation
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.formActions)-1 {
-				m.cursor++
-			}
-		case "h", "shift+tab", "backspace":
-			m.cursor = 0
-			m.page = *m.PopHistory()
-			m.controller = m.page.Controller
-			m.menu = m.page.Children
-		case "enter", "l", "right":
-			switch m.formActions[m.cursor] {
-			case edit:
-				m.focus = FORMFOCUS
-			case cancel:
-				m.cursor = 0
-				m.page = *m.PopHistory()
-				m.controller = m.page.Controller
-				m.menu = m.page.Children
-			case reset:
-			case submit:
-				err := m.CLIUpdate(db.StringDBTable(m.table))
-				if err != nil {
-					return m, nil
-				}
-				m.focus = DIALOGFOCUS
-
-			}
-
-		}
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	if m.focus == FORMFOCUS {
-		switch msg.String() {
-		case "ctrl+c":
+	defer logFile.Close()
 
-			return m, tea.Quit
-		case "esc", "q":
-			return m, tea.Quit
-		case "enter", "tab", "right", "down":
-			m.form.NextField()
-		case "shift+tab", "left", "up":
-			m.form.PrevField()
-		}
-
-		// Process the form
-		form, cmd := m.form.Update(msg)
-		if f, ok := form.(*huh.Form); ok {
-			m.form = f
-			cmds = append(cmds, cmd)
-		}
-
-		if m.form.State == huh.StateCompleted {
-			// Quit when the form is done.
-			cmds = append(cmds, tea.Quit)
-		}
+	// Update form with the message
+	form, cmd := m.form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.form = f
+		cmds = append(cmds, cmd)
 	}
-	if m.focus == DIALOGFOCUS {
-		switch msg.String() {
-		case "ctrl+c":
 
-			return m, tea.Quit
-		case "esc", "q":
-			return m, tea.Quit
-		case "enter":
-			m.PageRouter()
+	// Handle form state changes
+	if m.form.State == huh.StateAborted {
+		_ = tea.ClearScreen()
+		m.focus = PAGEFOCUS
+		m.page = m.pages[Update]
+		m.controller = m.page.Controller
+	}
+
+	if m.form.State == huh.StateCompleted {
+		_ = tea.ClearScreen()
+		m.focus = PAGEFOCUS
+		m.page = m.pages[Update]
+		m.controller = m.page.Controller
+		err := m.CLIUpdate(db.DBTable(m.table))
+		if err != nil {
+			fmt.Fprintln(logFile, err.Error())
 		}
-
 	}
 
 	return m, tea.Batch(cmds...)
@@ -325,116 +287,11 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 			return m, nil
 		}
 		m.cursor = 0
-		m.page = m.pages[Database]
+		m.page = m.pages[Read]
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
+		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
 	return m, nil
 }
 
-func (m model) FormInputControl(msg tea.Msg) (tea.Model, tea.Cmd) {
-	form, cmd := m.form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.form = f
-	}
-
-	return m, cmd
-}
-
-// Update handles messages (key presses, etc.).
-func (m model) InputControls(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		// Quit on ctrl+c or esc.
-		case "ctrl+c", "esc":
-			return m, tea.Quit
-
-		// Cycle focus on tab, shift+tab, enter, up, or down.
-		case "tab", "shift+tab", "enter", "up", "down":
-			if msg.String() == "up" || msg.String() == "shift+tab" {
-				m.focusIndex--
-			} else {
-				m.focusIndex++
-			}
-			// Wrap the focus index.
-			if m.focusIndex >= len(m.textInputs) {
-				m.focusIndex = 0
-			} else if m.focusIndex < 0 {
-				m.focusIndex = len(m.textInputs) - 1
-			}
-
-			// Update focus for each input.
-			for i := 0; i < len(m.textInputs); i++ {
-				if i == m.focusIndex {
-					m.textInputs[i].Focus()
-				} else {
-					m.textInputs[i].Blur()
-				}
-			}
-			return m, nil
-		}
-	}
-
-	// Let each text input handle the message.
-	var cmd tea.Cmd
-	for i := range m.textInputs {
-		m.textInputs[i], cmd = m.textInputs[i].Update(msg)
-	}
-
-	return m, cmd
-}
-
-func (m model) UpdateTextInput(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var cmd tea.Cmd
-
-	switch msg := msg.(type) {
-
-	case tea.KeyMsg:
-		switch msg.Type {
-		case tea.KeyEsc:
-			if m.textarea.Focused() {
-				m.textarea.Blur()
-			}
-		case tea.KeyCtrlC:
-			return m, tea.Quit
-		default:
-			if !m.textarea.Focused() {
-				cmd = m.textarea.Focus()
-				cmds = append(cmds, cmd)
-			}
-		}
-
-	// We handle errors just like any other message
-	case errMsg:
-		m.err = msg
-		return m, nil
-	}
-
-	m.textarea, cmd = m.textarea.Update(msg)
-	cmds = append(cmds, cmd)
-	return m, tea.Batch(cmds...)
-}
-
-func (m model) UpdateCreateInterface(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
-			}
-		case "down", "j":
-			if m.cursor < len(m.menu)-1 {
-				m.cursor++
-			}
-		case "enter":
-			m.cursor = 0
-		}
-	}
-	return m, nil
-
-}

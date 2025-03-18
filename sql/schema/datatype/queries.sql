@@ -14,9 +14,9 @@ CREATE TABLE IF NOT EXISTS datatypes
     author_id     INTEGER default 1        not null
         references users (user_id)
             on update cascade on delete set default,
-    history TEXT,
     date_created  TEXT    default CURRENT_TIMESTAMP,
-    date_modified TEXT    default CURRENT_TIMESTAMP
+    date_modified TEXT    default CURRENT_TIMESTAMP,
+    history TEXT
 );
 -- name: GetDatatype :one
 SELECT * FROM datatypes
