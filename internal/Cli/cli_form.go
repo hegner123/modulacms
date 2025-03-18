@@ -9,7 +9,7 @@ import (
 
 var ErrLog utility.Logger = *utility.NewLogger(utility.ERROR)
 
-func (m *model) BuildForm(table db.DBTable) (*huh.Form, int) {
+func (m *model) BuildCreateDBForm(table db.DBTable) (*huh.Form, int) {
 	columns, colType, err := GetColumns(string(table))
 	if err != nil {
 		return nil, 0
@@ -53,7 +53,8 @@ func (m *model) BuildForm(table db.DBTable) (*huh.Form, int) {
 	return form, len(*columns)
 
 }
-func (m *model) BuildUpdateForm(table db.DBTable) (*huh.Form, int) {
+
+func (m *model) BuildUpdateDBForm(table db.DBTable) (*huh.Form, int) {
 	row := *m.row
 	columns, colType, err := GetColumns(string(table))
 	if err != nil {
@@ -99,3 +100,50 @@ func (m *model) BuildUpdateForm(table db.DBTable) (*huh.Form, int) {
 	}
 	return form, len(*columns)
 }
+
+
+func (m *model) BuildCMSForm(table db.DBTable) (*huh.Form, int) {
+	columns, colType, err := GetColumns(string(table))
+	if err != nil {
+		return nil, 0
+	}
+	var fields []huh.Field
+	for i, c := range *columns {
+        if i == 0 {
+            continue
+        }
+		var value string
+		t := *colType
+		f, err := m.NewFieldFromType(c, t[i], &value)
+		if err != nil {
+			return nil, 0
+		}
+		if f == nil {
+			continue
+		}
+		fields = append(fields, f)
+		m.formValues = append(m.formValues, &value)
+
+	}
+	group := huh.NewGroup(fields...)
+	// Create form with both groups
+	form := huh.NewForm(
+		group,
+	)
+
+	// Add submit handler with proper focus management
+	form.SubmitCmd = func() tea.Msg {
+		if m.formSubmit {
+			m.focus = PAGEFOCUS
+			return formCompletedMsg{}
+		}
+		return formCancelledMsg{}
+	}
+	form.SubmitCmd = func() tea.Msg {
+		m.focus = PAGEFOCUS
+		return tea.ResumeMsg{}
+	}
+	return form, len(*columns)
+
+}
+

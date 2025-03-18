@@ -10,7 +10,7 @@ func (m *model) PageRouter() {
 	case Table:
 		switch m.menu[m.cursor] {
 		case createPage:
-			m.form, m.formLen = m.BuildForm(db.StringDBTable(m.table))
+			m.form, m.formLen = m.BuildCreateDBForm(db.StringDBTable(m.table))
 			m.headers, m.rows, err = GetColumnsRows(m.table)
 			if err != nil {
 				m.body = err.Error()
@@ -42,7 +42,7 @@ func (m *model) PageRouter() {
 			m.controller = m.page.Controller
 		}
 	case Update:
-		m.form, m.formLen = m.BuildUpdateForm(db.StringDBTable(m.table))
+		m.form, m.formLen = m.BuildUpdateDBForm(db.StringDBTable(m.table))
 		m.form.Init()
 		m.focus = FORMFOCUS
 		m.formFields[0].Focus()

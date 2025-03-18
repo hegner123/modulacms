@@ -128,6 +128,22 @@ func (m model) PageTable() string {
 	return m.RenderUI()
 }
 
+
+func (m model) PageContent() string {
+	m.header = "Content"
+	for i, choice := range m.menu {
+
+		cursor := "  "
+		if m.cursor == i {
+			cursor = "->"
+		}
+
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
+	}
+	m.body = RenderBorder(m.body)
+	return m.RenderUI()
+}
+
 func (m model) PageCreate() string {
 	m.header = m.header + fmt.Sprintf("Create %s", m.table)
 	m.body = "\n"
@@ -220,6 +236,7 @@ func (m model) PageConfig() string {
 
 	return m.RenderUI()
 }
+
 
 func (m model) Page404() string {
 	m.header = "PAGE NOT FOUND"

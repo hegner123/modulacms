@@ -4,50 +4,40 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-var (
-    pageInterface       CliInterface = "PageInterface"
-    tableInterface      CliInterface = "TableInterface"
+const (
+	pageInterface       CliInterface = "PageInterface"
+	tableInterface      CliInterface = "TableInterface"
 	createInterface     CliInterface = "CreateInterface"
 	readInterface       CliInterface = "ReadInterface"
 	updateInterface     CliInterface = "UpdateInterface"
 	deleteInterface     CliInterface = "DeleteInterface"
 	updateFormInterface CliInterface = "UpdateFormInterface"
 	readSingleInterface CliInterface = "ReadSingleInterface"
+	contentInterface    CliInterface = "ContentInterface"
 )
 
-func (m model) Update(message tea.Msg) (tea.Model, tea.Cmd) {
-	// First handle any form-specific messages
-	switch message.(type) {
-	case formCompletedMsg:
-		// Process form data here (save to database, etc.)
-		m.focus = PAGEFOCUS
-		m.page = m.pages[Update]
-		m.controller = m.page.Controller
-		return m, nil
-	case formCancelledMsg:
-		m.focus = PAGEFOCUS
-		m.page = m.pages[Update]
-		m.controller = m.page.Controller
-		return m, nil
-	}
+func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.controller {
 	case createInterface:
-		return m.UpdateDatabaseCreate(message)
+		return m.UpdateDatabaseCreate(msg)
 	case readInterface:
-		return m.UpdateDatabaseRead(message)
+		return m.UpdateDatabaseRead(msg)
 	case readSingleInterface:
-		return m.UpdateDatabaseRead(message)
+		return m.UpdateDatabaseRead(msg)
 	case updateInterface:
-		return m.UpdateDatabaseUpdate(message)
+		return m.UpdateDatabaseUpdate(msg)
 	case updateFormInterface:
-		return m.UpdateDatabaseFormUpdate(message)
+		return m.UpdateDatabaseFormUpdate(msg)
 	case deleteInterface:
-		return m.UpdateDatabaseDelete(message)
+		return m.UpdateDatabaseDelete(msg)
 	case pageInterface:
-		return m.UpdatePageSelect(message)
+		return m.UpdatePageSelect(msg)
 	case tableInterface:
-		return m.UpdateTableSelect(message)
+		return m.UpdateTableSelect(msg)
+	case contentInterface:
+		return m.UpdateContent(msg)
 	}
+
 	return m, nil
 }
 func (m model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -104,4 +94,9 @@ func (m model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
 		return m.DatabaseDeleteControls(msg, len(*m.rows))
 	}
 	return m, nil
+}
+
+func (m model) UpdateContent(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m.ContentControls(msg)
+
 }

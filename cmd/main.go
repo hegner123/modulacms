@@ -163,6 +163,9 @@ func main() {
 	mux.HandleFunc("/api/v1/mediadimensions/", func(w http.ResponseWriter, r *http.Request) {
 		router.MediaDimensionHandler(w, r, Env)
 	})
+	mux.HandleFunc("/api/v1/mediaupload/", func(w http.ResponseWriter, r *http.Request) {
+		router.MediaUploadHandler(w, r, Env)
+	})
 	mux.HandleFunc("/api/v1/routes", func(w http.ResponseWriter, r *http.Request) {
 		router.RoutesHandler(w, r, Env)
 	})

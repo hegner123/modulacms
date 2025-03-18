@@ -13,17 +13,6 @@ import (
 type formCompletedMsg struct{}
 type formCancelledMsg struct{}
 
-type OptionList struct {
-	Key  string
-	List []Option
-}
-
-type Option struct {
-	Index     int
-	InputType InputType
-	Key       string
-	Value     string
-}
 
 type FocusKey int
 
@@ -44,7 +33,6 @@ type model struct {
 	menu         []*CliPage
 	pages        []CliPage
 	tables       []string
-	Options      []OptionList
 	selected     map[int]struct{}
 	headers      *[]string
 	rows         *[][]string

@@ -17,9 +17,10 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
                 s.AdminContentDataID, 
                 s.AdminRouteID, 
                 s.AdminDatatypeID, 
-                s.History, 
                 s.DateCreated, 
-                s.DateModified}
+                s.DateModified,
+                s.History, 
+            }
 			collection = append(collection, r)
 		}
 		return &collection, nil
@@ -39,9 +40,9 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.AdminContentDataID,
 				s.AdminFieldID,
 				s.AdminFieldValue,
-				s.History,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}
@@ -133,9 +134,9 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.ContentDataID,
 				s.RouteID,
 				s.DatatypeID,
-				s.History,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}
@@ -156,9 +157,9 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.ContentDataID,
 				s.FieldID,
 				s.FieldValue,
-				s.History,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}
@@ -180,9 +181,9 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Type,
 				s.Author,
 				s.AuthorID,
-				s.History,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}
@@ -205,9 +206,9 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Type,
 				s.Author,
 				s.AuthorID,
-				s.History,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}
@@ -230,10 +231,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Caption,
 				s.Description,
 				s.Class,
-				s.Author,
-				s.AuthorID,
-				s.DateCreated,
-				s.DateModified,
 				s.Mimetype,
 				s.Dimensions,
 				s.Url,
@@ -241,6 +238,10 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.OptimizedTablet,
 				s.OptimizedDesktop,
 				s.OptimizedUltraWide,
+                s.Author,
+                s.AuthorID,
+                s.DateCreated,
+                s.DateModified,
 			}
 			collection = append(collection, r)
 		}
@@ -295,14 +296,14 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			s := MapStringRoute(row)
 			r := []string{
 				s.RouteID,
-				s.Author,
-				s.AuthorID,
 				s.Slug,
 				s.Title,
 				s.Status,
-				s.History,
+                s.Author,
+                s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
+                s.History,
 			}
 			collection = append(collection, r)
 		}

@@ -14,11 +14,12 @@ var (
 	gray      = lipgloss.Color("#939393")
 	black     = lipgloss.Color("#000000")
 
-	purple  = lipgloss.Color("#6612e3")
-	emerald = lipgloss.Color("#00CC66")
-	rose    = lipgloss.Color("#D90368")
-	yellow  = lipgloss.Color("#F1C40F")
-	orange  = lipgloss.Color("#F75C03")
+	purple      = lipgloss.Color("#6612e3")
+	lightPurple = lipgloss.Color("#8347de")
+	emerald     = lipgloss.Color("#00CC66")
+	rose        = lipgloss.Color("#D90368")
+	yellow      = lipgloss.Color("#F1C40F")
+	orange      = lipgloss.Color("#F75C03")
 )
 
 func Active(s string) string {
@@ -29,7 +30,7 @@ func Active(s string) string {
 func StyledTable(hdrs []string, rows [][]string, index int) *table.Table {
 	var (
 		headerStyle  = lipgloss.NewStyle().Foreground(purple).Bold(true).Align(lipgloss.Center)
-		cellStyle    = lipgloss.NewStyle()
+		cellStyle    = lipgloss.NewStyle().MaxWidth(10)
 		activeStyle  = cellStyle.Background(lightGray).Foreground(black).Bold(true)
 		oddRowStyle  = cellStyle.Foreground(gray)
 		evenRowStyle = cellStyle.Foreground(lightGray)
@@ -69,7 +70,7 @@ func RenderTitle(s string) string {
 func RenderHeading(s string) string {
 	headingStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(purple)
+		Foreground(lightPurple)
 	return headingStyle.Render(s)
 }
 

@@ -23,6 +23,8 @@ func (m model) View() string {
 		ui = m.PageUpdateForm()
 	case deletePage.Index:
 		ui = m.PageDelete()
+    case contentPage.Index:
+        ui = m.PageContent()
 	default:
 		ui = m.Page404()
 	}

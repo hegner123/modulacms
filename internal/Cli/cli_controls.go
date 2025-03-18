@@ -295,3 +295,35 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 	return m, nil
 }
 
+func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+
+		//Exit
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+
+		//Navigation
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.menu) {
+				m.cursor++
+			}
+		case "h", "shift+tab", "backspace":
+			m.cursor = 0
+			m.page = *m.PopHistory()
+			m.controller = m.page.Controller
+			m.menu = m.page.Children
+
+		//Action
+		case "enter", "l":
+			m.PushHistory(m.page)
+			m.PageRouter()
+		}
+	}
+	return m, nil
+}
