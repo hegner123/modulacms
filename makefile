@@ -56,6 +56,10 @@ build: ## Build your project and put the output binary in out/bin/
 	rsync -av --delete config.json out/
 	rsync -av --delete version.json out/
 
+## Dump:
+dump: ## Dump sqlite db to sql
+	sqlite3 modula.db .dump > modula_db.sql
+
 
 ## Deploy:
 deploy:

@@ -12,8 +12,7 @@ CREATE TABLE IF NOT EXISTS tokens (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_dt_id INT NOT NULL AUTO_INCREMENT,
-    admin_route_id INT DEFAULT NULL,
+    admin_datatype_id INT NOT NULL AUTO_INCREMENT,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
@@ -23,19 +22,15 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
     PRIMARY KEY (admin_dt_id),
-    CONSTRAINT fk_admin_route_id FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION,
-    CONSTRAINT fk_parent_id FOREIGN KEY (parent_id)
+    CONSTRAINT fk_admin_datatypes_parent_id FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_dt_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
-    CONSTRAINT fk_author FOREIGN KEY (author)
+    CONSTRAINT fk_admin_datatypes_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
-    CONSTRAINT fk_author_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_admin_datatypes_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION
@@ -43,7 +38,6 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
 
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_route_id INT NOT NULL DEFAULT 1,
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL, -- MySQL does not allow a default value for TEXT
@@ -53,16 +47,13 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     history TEXT,
-    CONSTRAINT fk_admin_routes FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_admin_datatypes FOREIGN KEY (parent_id)
+    CONSTRAINT fk_admin_fields_admin_datatypes FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_users_username FOREIGN KEY (author)
+    CONSTRAINT fk_admin_fields_users_username FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_users_user_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_admin_fields_users_user_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -75,21 +66,21 @@ CREATE TABLE IF NOT EXISTS roles (
 
 CREATE TABLE IF NOT EXISTS routes (
     route_id INT NOT NULL AUTO_INCREMENT,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    history TEXT,
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
     PRIMARY KEY (route_id),
     UNIQUE KEY unique_slug (slug),
-    CONSTRAINT fk_routes_author FOREIGN KEY (author)
+    CONSTRAINT fk_routes_routes_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE
         ON DELETE NO ACTION,
-    CONSTRAINT fk_routes_author_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_routes_routes_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE
         ON DELETE NO ACTION
@@ -105,13 +96,30 @@ CREATE TABLE IF NOT EXISTS media_dimensions (
 
 CREATE TABLE IF NOT EXISTS content_data (
     content_data_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_dt_id INT DEFAULT NULL,
-    history TEXT DEFAULT NULL,
+    route_id    INT DEFAULT NULL,
+    datatype_id INT DEFAULT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_admin_datatypes FOREIGN KEY (admin_dt_id)
-        REFERENCES admin_datatypes(admin_dt_id)
+    history TEXT DEFAULT NULL,
+    CONSTRAINT fk_content_data_route_id FOREIGN KEY (route_id)
+        REFERENCES routes(route_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_datatypes FOREIGN KEY (datatype_id)
+        REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS user_oauth (
+    user_oauth_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    oauth_provider VARCHAR(255) NOT NULL,        -- e.g., 'google', 'facebook'
+    oauth_provider_user_id VARCHAR(255) NOT NULL,  -- Unique identifier provided by the OAuth provider
+    access_token TEXT,                             -- Optional: for making API calls on behalf of the user
+    refresh_token TEXT,                            -- Optional: if token refresh is required
+    token_expires_at TIMESTAMP NULL,               -- Optional: expiry time for the access token
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS admin_routes (
@@ -124,12 +132,12 @@ CREATE TABLE IF NOT EXISTS admin_routes (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     history TEXT,
-    CONSTRAINT fk_users_username FOREIGN KEY (author)
+    CONSTRAINT fk_admin_routes_users_username FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE 
         -- ON DELETE SET DEFAULT is not supported in MySQL; consider using RESTRICT or SET NULL instead.
         ON DELETE RESTRICT,
-    CONSTRAINT fk_users_user_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_admin_routes_users_user_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE 
         -- ON DELETE SET DEFAULT is not supported in MySQL; consider using RESTRICT instead.
@@ -138,43 +146,42 @@ CREATE TABLE IF NOT EXISTS admin_routes (
 
 CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id INT AUTO_INCREMENT PRIMARY KEY,
+    route_id INT,
     content_data_id INT NOT NULL,
-    admin_field_id INT NOT NULL,
+    field_id INT NOT NULL,
     field_value TEXT NOT NULL,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_content_data FOREIGN KEY (content_data_id)
+    history TEXT,
+    CONSTRAINT fk_content_field_content_data FOREIGN KEY (content_data_id)
         REFERENCES content_data(content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_admin_fields FOREIGN KEY (admin_field_id)
-        REFERENCES admin_fields(admin_field_id)
+    CONSTRAINT fk_content_field_route_id FOREIGN KEY (route_id)
+        REFERENCES routes(route_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_field_fields FOREIGN KEY (field_id)
+        REFERENCES fields(field_id)
         ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_datatypes_parent FOREIGN KEY (parent_id)
+    history TEXT,
+    CONSTRAINT fk_dt_datatypes_parent FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_users_author FOREIGN KEY (author)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_dt_users_author FOREIGN KEY (author)
         REFERENCES users(username)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_users_author_id FOREIGN KEY (author_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_dt_users_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+        ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS users (
@@ -193,26 +200,22 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS fields (
     field_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT DEFAULT NULL,
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL,
     type TEXT NOT NULL,
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
-    history TEXT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_routes FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_datatypes FOREIGN KEY (parent_id)
+    history TEXT,
+    CONSTRAINT fk_fields_datatypes FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_users_author FOREIGN KEY (author)
+    CONSTRAINT fk_fields_users_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_users_author_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_fields_users_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -228,6 +231,39 @@ CREATE TABLE IF NOT EXISTS tables (
         ON DELETE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS admin_content_data (
+    admin_content_data_id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_route_id    INT DEFAULT NULL,
+    admin_datatype_id INT DEFAULT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT DEFAULT NULL,
+    CONSTRAINT fk_admin_content_data_admin_route_id FOREIGN KEY (admin_route_id)
+        REFERENCES admin_routes(admin_route_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_admin_datatypes FOREIGN KEY (admin_datatype_id)
+        REFERENCES admin_datatypes(admin_datatype_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS admin_content_fields (
+    admin_content_field_id INT AUTO_INCREMENT PRIMARY KEY,
+    admin_route_id INT,
+    admin_content_data_id INT NOT NULL,
+    admin_field_id INT NOT NULL,
+    admin_field_value TEXT NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
+    CONSTRAINT fk_admin_content_field_admin_content_data FOREIGN KEY (admin_content_data_id)
+        REFERENCES admin_content_data(admin_content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_field_admin_route_id FOREIGN KEY (admin_route_id)
+        REFERENCES admin_routes(admin_route_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_admin_content_field_fields FOREIGN KEY (field_id)
+        REFERENCES admin_fields(field_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS media (
     media_id INT AUTO_INCREMENT PRIMARY KEY,
     name TEXT,
@@ -236,10 +272,6 @@ CREATE TABLE IF NOT EXISTS media (
     caption TEXT,
     description TEXT,
     class TEXT,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     mimetype TEXT,
     dimensions TEXT,
     url VARCHAR(255) UNIQUE,
@@ -247,11 +279,31 @@ CREATE TABLE IF NOT EXISTS media (
     optimized_tablet TEXT,
     optimized_desktop TEXT,
     optimized_ultra_wide TEXT,
-    CONSTRAINT fk_users_author FOREIGN KEY (author)
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_media_users_author FOREIGN KEY (author)
         REFERENCES users(username)
         ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_users_author_id FOREIGN KEY (author_id)
+    CONSTRAINT fk_media_users_author_id FOREIGN KEY (author_id)
         REFERENCES users(user_id)
         ON UPDATE CASCADE ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE sessions (
+    session_id   INTEGER NOT NULL AUTO_INCREMENT,
+    user_id      INTEGER NOT NULL, 
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at   TIMESTAMP,
+    last_access  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    ip_address   VARCHAR(45),
+    user_agent   TEXT,
+    session_data TEXT,
+    CONSTRAINT fk_sessions_user_id FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 
