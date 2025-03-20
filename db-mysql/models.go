@@ -138,6 +138,13 @@ type MediaDimensions struct {
 	AspectRatio sql.NullString `json:"aspect_ratio"`
 }
 
+type Permissions struct {
+	PermissionID int32  `json:"permission_id"`
+	TableID      int32  `json:"table_id"`
+	Mode         int32  `json:"mode"`
+	Label        string `json:"label"`
+}
+
 type Roles struct {
 	RoleID      int32           `json:"role_id"`
 	Label       string          `json:"label"`

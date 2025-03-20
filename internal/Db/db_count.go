@@ -105,6 +105,15 @@ func (d Database) CountMediaDimensions() (*int64, error) {
 	return &c, nil
 }
 
+func (d Database) CountPermissions() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountPermission(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
 func (d Database) CountRoles() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountRole(d.Context)

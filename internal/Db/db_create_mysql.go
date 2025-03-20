@@ -161,6 +161,21 @@ func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaD
 	return d.MapMediaDimension(row)
 }
 
+func (d MysqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
+	params := d.MapCreatePermissionParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.CreatePermission(d.Context, params)
+	if err != nil {
+		fmt.Printf("Failed to CreatePermission.\n %v\n", err)
+	}
+	row, err := queries.GetLastPermission(d.Context)
+	if err != nil {
+		fmt.Printf("Failed to get last inserted Permissions: %v\n", err)
+	}
+
+	return d.MapPermissions(row)
+}
+
 func (d MysqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	params := d.MapCreateRoleParams(s)
 	queries := mdbm.New(d.Connection)
@@ -235,7 +250,7 @@ func (d MysqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
 func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
 	params := d.MapCreateUserOauthParams(s)
 	queries := mdbm.New(d.Connection)
-	 err := queries.CreateUserOauth(d.Context, params)
+	err := queries.CreateUserOauth(d.Context, params)
 	if err != nil {
 		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
 		return nil, e
@@ -251,7 +266,7 @@ func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, err
 func (d MysqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
 	params := d.MapCreateSessionParams(s)
 	queries := mdbm.New(d.Connection)
-	 err := queries.CreateSession(d.Context, params)
+	err := queries.CreateSession(d.Context, params)
 	if err != nil {
 		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
 		return nil, e

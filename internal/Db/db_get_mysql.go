@@ -145,6 +145,17 @@ func (d MysqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	res := d.MapMediaDimension(row)
 	return &res, nil
 }
+
+func (d MysqlDatabase) GetPermission(id int64) (*Permissions, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetPermission(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapPermissions(row)
+	return &res, nil
+}
+
 func (d MysqlDatabase) GetRole(id int64) (*Roles, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetRole(d.Context, int32(id))

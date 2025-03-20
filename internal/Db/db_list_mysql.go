@@ -212,11 +212,24 @@ func (d MysqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 	}
 	return &res, nil
 }
+func (d MysqlDatabase) ListPermissions() (*[]Permissions, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListPermission(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Permission: %v\n", err)
+	}
+	res := []Permissions{}
+	for _, v := range rows {
+		m := d.MapPermissions(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
 func (d MysqlDatabase) ListRoles() (*[]Roles, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Routes: %v\n", err)
+		return nil, fmt.Errorf("failed to get Roles: %v\n", err)
 	}
 	res := []Roles{}
 	for _, v := range rows {

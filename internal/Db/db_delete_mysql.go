@@ -116,6 +116,16 @@ func (d MysqlDatabase) DeleteMediaDimension(id int64) error {
 	return nil
 }
 
+func (d MysqlDatabase) DeletePermission(id int64) error {
+	queries := mdbm.New(d.Connection)
+	err := queries.DeletePermission(d.Context, int32(id))
+	if err != nil {
+		return fmt.Errorf("Failed to Delete Permission: %v ", id)
+	}
+
+	return nil
+}
+
 func (d MysqlDatabase) DeleteRole(id int64) error {
 	queries := mdbm.New(d.Connection)
 	err := queries.DeleteRole(d.Context, int32(id))

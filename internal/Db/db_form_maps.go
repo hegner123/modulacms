@@ -136,6 +136,13 @@ func MapCreateMediaDimensionParams(a CreateMediaDimensionFormParams) CreateMedia
 		AspectRatio: Ns(a.AspectRatio),
 	}
 }
+func MapCreatePermissionParams(a CreatePermissionFormParams) CreatePermissionParams {
+	return CreatePermissionParams{
+		TableID: Si(a.TableID),
+		Label:   a.Label,
+		Mode:    Si(a.Mode),
+	}
+}
 func MapCreateRoleParams(a CreateRoleFormParams) CreateRoleParams {
 	return CreateRoleParams(a)
 }
@@ -335,6 +342,13 @@ func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMedia
 		Height:      Nsi(a.Height),
 		AspectRatio: Ns(a.AspectRatio),
 		MdID:        Si(a.MdID),
+	}
+}
+func MapUpdatePermissionParams(a UpdatePermissionFormParams) UpdatePermissionParams {
+	return UpdatePermissionParams{
+		TableID: Si(a.TableID),
+		Label:   a.Label,
+		Mode:    Si(a.Mode),
 	}
 }
 func MapUpdateRoleParams(a UpdateRoleFormParams) UpdateRoleParams {

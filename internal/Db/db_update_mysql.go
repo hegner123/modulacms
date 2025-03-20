@@ -124,6 +124,17 @@ func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*stri
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
 }
+
+func (d MysqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, error) {
+	params := d.MapUpdatePermissionParams(s)
+	queries := mdbm.New(d.Connection)
+	err := queries.UpdatePermission(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update permision, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated permision %v\n", s.Label)
+	return &u, nil
+}
 func (d MysqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
 	params := d.MapUpdateRoleParams(s)
 	queries := mdbm.New(d.Connection)

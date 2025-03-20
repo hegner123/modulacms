@@ -146,6 +146,17 @@ func (d Database) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	res := d.MapMediaDimension(row)
 	return &res, nil
 }
+
+func (d Database) GetPermission(id int64) (*Permissions, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetPermission(d.Context, id)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapPermission(row)
+	return &res, nil
+}
+
 func (d Database) GetRole(id int64) (*Roles, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetRole(d.Context, id)

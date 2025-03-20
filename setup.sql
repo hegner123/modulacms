@@ -215,17 +215,14 @@ CREATE TABLE IF NOT EXISTS media (
     caption TEXT,
     description TEXT,
     class TEXT,
-    author TEXT DEFAULT 'system' NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
     mimetype TEXT,
     dimensions TEXT,
     url TEXT,
-    optimized_mobile TEXT,
-    optimized_tablet TEXT,
-    optimized_desktop TEXT,
-    optimized_ultra_wide TEXT
+    srcset TEXT,
+    author TEXT DEFAULT 'system' NOT NULL,
+    author_id INTEGER DEFAULT 1 NOT NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- ==================
@@ -253,18 +250,28 @@ INSERT INTO roles (role_id, label, permissions) VALUES
 INSERT INTO users (user_id, username, name, email, hash, role, date_created, date_modified) VALUES 
 (1, 'admin', 'System Administrator', 'admin@example.com', '$2a$12$kZJ9.UG8cZ5oM4XB5IFk0uHGFCrL7dR.Cg9VeJDYQ/HU/V07yvVLq', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Demo user with bcrypt hashed password 'demo123'
-INSERT INTO users (user_id, username, name, email, hash, role, date_created, date_modified) VALUES 
-(2, 'demo', 'Demo User', 'demo@example.com', '$2a$12$ZxJZLrfE7UGVlnHPrJsOR.k94Z0QG6TFnGXYSdwVcRtE8wE2NbL2y', 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default tables
 INSERT INTO tables (id, label, author_id) VALUES 
-(1, 'users', 1),
-(2, 'roles', 1),
-(3, 'routes', 1),
-(4, 'content', 1);
+(1,'admin_content_data', 1)
+(2,'admin_content_fields',1)
+(3,'admin_datatypes',1)
+(4,'admin_fields',1)
+(5,'admin_routes',1)
+(6,'content_data',1)
+(7,'datatypes',1)
+(8,'fields',1)
+(9,'media',1)
+(10,'media_dimensions',1)
+(11,'roles',1)
+(12,'routes',1)
+(13,'sessions',1)
+(14,'tables',1)
+(15,'tokens',1)
+(16,'user_oauth',1)
+(17,'users',1)
 
--- Media dimensions
+--Media dimensions
 INSERT INTO media_dimensions (md_id, label, width, height, aspect_ratio) VALUES 
 (1, 'Mobile', 480, 320, '3:2'),
 (2, 'Tablet', 800, 600, '4:3'),
@@ -273,51 +280,52 @@ INSERT INTO media_dimensions (md_id, label, width, height, aspect_ratio) VALUES
 
 -- Default routes
 INSERT INTO routes (route_id, author, author_id, slug, title, status, date_created, date_modified) VALUES 
-(1, 'admin', 1, 'home', 'Home', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'admin', 1, 'about', 'About Us', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'admin', 1, 'contact', 'Contact Us', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 'admin', 1, 'blog', 'Blog', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, 'admin', 1, '/', 'Home', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 'admin', 1, '/about', 'About Us', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 'admin', 1, '/contact', 'Contact Us', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 'admin', 1, '/blog', 'Blog', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default admin routes
 INSERT INTO admin_routes (admin_route_id, slug, title, status, author, author_id, date_created, date_modified) VALUES 
-(1, 'dashboard', 'Dashboard', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 'users', 'User Management', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 'content', 'Content Management', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 'settings', 'System Settings', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, '/', 'Home', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, '/users', 'User Management', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, '/content', 'Content Management', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, '/settings', 'System Settings', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, '/dashboard', 'Dashboard', 1, 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default datatypes
-INSERT INTO datatypes (datatype_id, route_id, parent_id, label, type, author, author_id, date_created, date_modified) VALUES 
-(1, 1, NULL, 'Page', 'page', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 4, NULL, 'Post', 'post', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, NULL, NULL, 'Media', 'media', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, NULL, NULL, 'Widget', 'widget', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO datatypes (datatype_id,  parent_id, label, type, author, author_id, date_created, date_modified) VALUES 
+(1,  NULL, 'Page', 'page', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2,  NULL, 'Post', 'post', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3,  1, 'Content', 'Content', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default admin datatypes
-INSERT INTO admin_datatypes (admin_datatype_id, admin_route_id, parent_id, label, type, author, author_id, date_created, date_modified) VALUES 
-(1, 3, NULL, 'Page Editor', 'page-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 3, NULL, 'Post Editor', 'post-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 2, NULL, 'User Editor', 'user-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 4, NULL, 'Settings Editor', 'settings-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO admin_datatypes (admin_datatype_id,  parent_id, label, type, author, author_id, date_created, date_modified) VALUES 
+(1, NULL, 'Page Editor', 'page-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2,  NULL, 'Post Editor', 'post-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3,  NULL, 'User Editor', 'user-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4,  NULL, 'Settings Editor', 'settings-editor', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default fields
-INSERT INTO fields (field_id, route_id, parent_id, label, data, type, author, author_id, date_created, date_modified) VALUES 
-(1, NULL, NULL, 'Title', '{"required":true,"default":""}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, NULL, NULL, 'Content', '{"required":true,"default":""}', 'richtext', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, NULL, NULL, 'Featured Image', '{"required":false,"default":""}', 'image', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, NULL, NULL, 'Tags', '{"required":false,"default":"","multiple":true}', 'tag', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, NULL, NULL, 'Publish Date', '{"required":true,"default":"now"}', 'datetime', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO fields (field_id, parent_id, label, data, type, author, author_id, date_created, date_modified) VALUES 
+(1, 1, 'Title', '{"required":true,"default":""}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 1, 'Content', '{"required":true,"default":""}', 'richtext', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3, 1, 'Featured Image', '{"required":false,"default":""}', 'image', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4, 1, 'Tags', '{"required":false,"default":"","multiple":true}', 'tag', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5, 1, 'Publish Date', '{"required":true,"default":"now"}', 'datetime', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Default admin fields
-INSERT INTO admin_fields (admin_field_id, admin_route_id, parent_id, label, data, type, author, author_id, date_created, date_modified) VALUES 
-(1, 3, NULL, 'Username', '{"required":true,"minLength":3,"maxLength":50}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(2, 3, NULL, 'Email', '{"required":true,"format":"email"}', 'email', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(3, 3, NULL, 'Password', '{"required":true,"minLength":8}', 'password', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(4, 3, NULL, 'Role', '{"required":true,"options":"roles"}', 'select', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-(5, 4, NULL, 'Site Title', '{"required":true}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+INSERT INTO admin_fields (admin_field_id, parent_id, label, data, type, author, author_id, date_created, date_modified) VALUES 
+(1,  NULL, 'Username', '{"required":true,"minLength":3,"maxLength":50}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2,  NULL, 'Email', '{"required":true,"format":"email"}', 'email', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(3,  NULL, 'Password', '{"required":true,"minLength":8}', 'password', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(4,  NULL, 'Role', '{"required":true,"options":"roles"}', 'select', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(5,  NULL, 'Site Title', '{"required":true}', 'text', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Sample content data for Home page
 INSERT INTO content_data (content_data_id, route_id, datatype_id, date_created, date_modified) VALUES 
-(1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+(1, 1, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
+(2, 1, 4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Sample content fields for Home page
 INSERT INTO content_fields (content_field_id, route_id, content_data_id, field_id, field_value, date_created, date_modified) VALUES 
@@ -352,6 +360,3 @@ INSERT INTO admin_content_data (admin_content_data_id, admin_route_id, admin_dat
 INSERT INTO admin_content_fields (admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, date_created, date_modified) VALUES 
 (1, 1, 1, 5, 'ModulaCMS Dashboard', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
--- Sample media entry
-INSERT INTO media (media_id, name, display_name, alt, caption, description, mimetype, url, author, author_id, date_created, date_modified) VALUES 
-(1, 'sample-image.jpg', 'Sample Image', 'A sample image', 'Sample image caption', 'This is a sample image for demonstration purposes', 'image/jpeg', '/media/sample-image.jpg', 'admin', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

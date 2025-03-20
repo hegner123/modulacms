@@ -105,6 +105,15 @@ func (d MysqlDatabase) CountMediaDimensions() (*int64, error) {
 	return &c, nil
 }
 
+func (d MysqlDatabase) CountPermissions() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountPermission(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("%v", err)
+	}
+	return &c, nil
+}
+
 func (d MysqlDatabase) CountRoles() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountRole(d.Context)

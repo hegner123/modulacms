@@ -211,6 +211,18 @@ func (q *Queries) CountMediaDimension(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countPermission = `-- name: CountPermission :one
+SELECT COUNT(*)
+FROM permissions
+`
+
+func (q *Queries) CountPermission(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPermission)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countRole = `-- name: CountRole :one
 SELECT COUNT(*)
 FROM roles
@@ -1145,6 +1157,49 @@ func (q *Queries) CreateMediaTable(ctx context.Context) error {
 	return err
 }
 
+const createPermission = `-- name: CreatePermission :one
+INSERT INTO permissions(
+    table_id,
+    mode,
+    label
+) VALUES (
+  $1,$2,$3
+)
+RETURNING permission_id, table_id, mode, label
+`
+
+type CreatePermissionParams struct {
+	TableID int32  `json:"table_id"`
+	Mode    int32  `json:"mode"`
+	Label   string `json:"label"`
+}
+
+func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permissions, error) {
+	row := q.db.QueryRowContext(ctx, createPermission, arg.TableID, arg.Mode, arg.Label)
+	var i Permissions
+	err := row.Scan(
+		&i.PermissionID,
+		&i.TableID,
+		&i.Mode,
+		&i.Label,
+	)
+	return i, err
+}
+
+const createPermissionTable = `-- name: CreatePermissionTable :exec
+CREATE TABLE IF NOT EXISTS permissions (
+    permission_id SERIAL PRIMARY KEY,
+    table_id INTEGER NOT NULL,
+    mode INTEGER NOT NULL,
+    label TEXT NOT NULL
+)
+`
+
+func (q *Queries) CreatePermissionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPermissionTable)
+	return err
+}
+
 const createRole = `-- name: CreateRole :one
 INSERT INTO roles (
     label,
@@ -1672,6 +1727,16 @@ func (q *Queries) DeleteMediaDimension(ctx context.Context, mdID int32) error {
 	return err
 }
 
+const deletePermission = `-- name: DeletePermission :exec
+DELETE FROM permissions 
+WHERE permission_id = $1
+`
+
+func (q *Queries) DeletePermission(ctx context.Context, permissionID int32) error {
+	_, err := q.db.ExecContext(ctx, deletePermission, permissionID)
+	return err
+}
+
 const deleteRole = `-- name: DeleteRole :exec
 DELETE FROM roles
 WHERE role_id = $1
@@ -2119,6 +2184,23 @@ func (q *Queries) GetMediaDimension(ctx context.Context, mdID int32) (MediaDimen
 		&i.Width,
 		&i.Height,
 		&i.AspectRatio,
+	)
+	return i, err
+}
+
+const getPermission = `-- name: GetPermission :one
+SELECT permission_id, table_id, mode, label FROM permissions 
+WHERE permission_id = $1 LIMIT 1
+`
+
+func (q *Queries) GetPermission(ctx context.Context, permissionID int32) (Permissions, error) {
+	row := q.db.QueryRowContext(ctx, getPermission, permissionID)
+	var i Permissions
+	err := row.Scan(
+		&i.PermissionID,
+		&i.TableID,
+		&i.Mode,
+		&i.Label,
 	)
 	return i, err
 }
@@ -3119,6 +3201,39 @@ func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimensions, er
 	return items, nil
 }
 
+const listPermission = `-- name: ListPermission :many
+SELECT permission_id, table_id, mode, label FROM permissions 
+ORDER BY table_id
+`
+
+func (q *Queries) ListPermission(ctx context.Context) ([]Permissions, error) {
+	rows, err := q.db.QueryContext(ctx, listPermission)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Permissions
+	for rows.Next() {
+		var i Permissions
+		if err := rows.Scan(
+			&i.PermissionID,
+			&i.TableID,
+			&i.Mode,
+			&i.Label,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRole = `-- name: ListRole :many
 SELECT role_id, label, permissions FROM roles 
 ORDER BY role_id
@@ -3797,6 +3912,31 @@ func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimen
 		arg.Height,
 		arg.AspectRatio,
 		arg.MdID,
+	)
+	return err
+}
+
+const updatePermission = `-- name: UpdatePermission :exec
+UPDATE permissions
+set table_id=$1,
+    mode=$2,
+    label=$3
+WHERE permission_id = $4
+`
+
+type UpdatePermissionParams struct {
+	TableID      int32  `json:"table_id"`
+	Mode         int32  `json:"mode"`
+	Label        string `json:"label"`
+	PermissionID int32  `json:"permission_id"`
+}
+
+func (q *Queries) UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, updatePermission,
+		arg.TableID,
+		arg.Mode,
+		arg.Label,
+		arg.PermissionID,
 	)
 	return err
 }

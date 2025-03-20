@@ -3,6 +3,9 @@ package db
 import mdbm "github.com/hegner123/modulacms/db-mysql"
 
 func (d MysqlDatabase) CreateAllTables() error {
+	if err := d.CreatePermissionTable(); err != nil {
+		return err
+	}
 	if err := d.CreateRoleTable(); err != nil {
 		return err
 	}
@@ -122,6 +125,11 @@ func (d MysqlDatabase) CreateMediaTable() error {
 func (d MysqlDatabase) CreateMediaDimensionTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateMediaDimensionTable(d.Context)
+	return err
+}
+func (d MysqlDatabase) CreatePermissionTable() error {
+	queries := mdbm.New(d.Connection)
+	err := queries.CreatePermissionTable(d.Context)
 	return err
 }
 

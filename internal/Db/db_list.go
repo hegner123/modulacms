@@ -215,11 +215,26 @@ func (d Database) ListMediaDimensions() (*[]MediaDimensions, error) {
 	}
 	return &res, nil
 }
+
+func (d Database) ListPermissions() (*[]Permissions, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListPermission(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Permissions: %v\n", err)
+	}
+	res := []Permissions{}
+	for _, v := range rows {
+		m := d.MapPermission(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) ListRoles() (*[]Roles, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Routes: %v\n", err)
+		return nil, fmt.Errorf("failed to get Roles: %v\n", err)
 	}
 	res := []Roles{}
 	for _, v := range rows {

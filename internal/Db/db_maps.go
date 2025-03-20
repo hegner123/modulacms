@@ -149,6 +149,14 @@ func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
 	}
 
 }
+func (d Database) MapPermission(a mdb.Permissions) Permissions {
+	return Permissions{
+		PermissionID: a.PermissionID,
+		TableID:      a.TableID,
+		Mode:         a.Mode,
+		Label:        a.Label,
+	}
+}
 
 func (d Database) MapRoles(a mdb.Roles) Roles {
 	return Roles{
@@ -390,6 +398,13 @@ func (d Database) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) md
 		AspectRatio: a.AspectRatio,
 	}
 }
+func (d Database) MapCreatePermissionParams(a CreatePermissionParams) mdb.CreatePermissionParams {
+	return mdb.CreatePermissionParams{
+		TableID: a.TableID,
+		Label:   a.Label,
+		Mode:    a.Mode,
+	}
+}
 
 func (d Database) MapCreateRoleParams(a CreateRoleParams) mdb.CreateRoleParams {
 	return mdb.CreateRoleParams{
@@ -606,6 +621,14 @@ func (d Database) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) md
 		Height:      a.Height,
 		AspectRatio: a.AspectRatio,
 		MdID:        a.MdID,
+	}
+}
+
+func (d Database) MapUpdatePermissionParams(a UpdatePermissionParams) mdb.UpdatePermissionParams {
+	return mdb.UpdatePermissionParams{
+		TableID: a.TableID,
+		Label:   a.Label,
+		Mode:    a.Mode,
 	}
 }
 

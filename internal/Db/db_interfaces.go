@@ -29,6 +29,7 @@ type DbDriver interface {
 	CountFields() (*int64, error)
 	CountMedia() (*int64, error)
 	CountMediaDimensions() (*int64, error)
+	CountPermissions() (*int64, error)
 	CountRoles() (*int64, error)
 	CountRoutes() (*int64, error)
 	CountSessions() (*int64, error)
@@ -48,6 +49,7 @@ type DbDriver interface {
 	CreateField(CreateFieldParams) Fields
 	CreateMedia(CreateMediaParams) Media
 	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
+	CreatePermission(CreatePermissionParams) Permissions
 	CreateRole(CreateRoleParams) Roles
 	CreateRoute(CreateRouteParams) Routes
 	CreateSession(CreateSessionParams) (*Sessions, error)
@@ -67,6 +69,7 @@ type DbDriver interface {
 	CreateFieldTable() error
 	CreateMediaTable() error
 	CreateMediaDimensionTable() error
+    CreatePermissionTable()error
 	CreateRoleTable() error
 	CreateRouteTable() error
 	CreateSessionTable() error
@@ -86,6 +89,7 @@ type DbDriver interface {
 	DeleteField(int64) error
 	DeleteMedia(int64) error
 	DeleteMediaDimension(int64) error
+	DeletePermission(int64) error
 	DeleteRole(int64) error
 	DeleteRoute(string) error
 	DeleteSession(int64) error
@@ -107,6 +111,7 @@ type DbDriver interface {
 	GetMediaByName(string) (*Media, error)
 	GetMediaByURL(string) (*Media, error)
 	GetMediaDimension(int64) (*MediaDimensions, error)
+	GetPermission(int64) (*Permissions, error)
 	GetRole(int64) (*Roles, error)
 	GetRoute(string) (*Routes, error)
 	GetRouteID(string) (*int64, error)
@@ -134,6 +139,7 @@ type DbDriver interface {
 	ListFields() (*[]Fields, error)
 	ListMedia() (*[]Media, error)
 	ListMediaDimensions() (*[]MediaDimensions, error)
+	ListPermissions() (*[]Permissions, error)
 	ListRoles() (*[]Roles, error)
 	ListRoutes() (*[]Routes, error)
 	ListSessions() (*[]Sessions, error)
@@ -153,6 +159,7 @@ type DbDriver interface {
 	UpdateField(UpdateFieldParams) (*string, error)
 	UpdateMedia(UpdateMediaParams) (*string, error)
 	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
+	UpdatePermission(UpdatePermissionParams) (*string, error)
 	UpdateRole(UpdateRoleParams) (*string, error)
 	UpdateRoute(UpdateRouteParams) (*string, error)
 	UpdateSession(UpdateSessionParams) (*string, error)

@@ -125,6 +125,16 @@ func (d PsqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*strin
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
 }
+func (d PsqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, error) {
+	params := d.MapUpdatePermissionParams(s)
+	queries := mdbp.New(d.Connection)
+	err := queries.UpdatePermission(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update permision, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated permision %v\n", s.Label)
+	return &u, nil
+}
 func (d PsqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
 	params := d.MapUpdateRoleParams(s)
 	queries := mdbp.New(d.Connection)

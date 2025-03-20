@@ -157,6 +157,14 @@ func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions
 	}
 
 }
+func (d MysqlDatabase) MapPermissions(a mdbm.Permissions) Permissions {
+	return Permissions{
+		PermissionID: int64(a.PermissionID),
+		TableID:      int64(a.TableID),
+		Label:        a.Label,
+		Mode:         int64(a.Mode),
+	}
+}
 
 func (d MysqlDatabase) MapRoles(a mdbm.Roles) Roles {
 	return Roles{
@@ -371,10 +379,10 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		Mimetype:     a.Mimetype,
 		Dimensions:   a.Dimensions,
 		Srcset:       a.Srcset,
-        Author:       AssertString(a.Author),
-        AuthorID:     int32(a.AuthorID),
-        DateCreated:  sTime(a.DateCreated.String),
-        DateModified: sTime(a.DateModified.String),
+		Author:       AssertString(a.Author),
+		AuthorID:     int32(a.AuthorID),
+		DateCreated:  sTime(a.DateCreated.String),
+		DateModified: sTime(a.DateModified.String),
 	}
 }
 
@@ -384,6 +392,13 @@ func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParam
 		Width:       Ni32(a.Width.Int64),
 		Height:      Ni32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
+	}
+}
+func (d MysqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbm.CreatePermissionParams {
+	return mdbm.CreatePermissionParams{
+		TableID: int32(a.TableID),
+		Label:   a.Label,
+		Mode:    int32(a.Mode),
 	}
 }
 
@@ -586,10 +601,10 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		Mimetype:     a.Mimetype,
 		Dimensions:   a.Dimensions,
 		Srcset:       a.Srcset,
-        Author:       AssertString(a.Author),
-        AuthorID:     int32(a.AuthorID),
-        DateCreated:  sTime(a.DateCreated.String),
-        DateModified: sTime(a.DateModified.String),
+		Author:       AssertString(a.Author),
+		AuthorID:     int32(a.AuthorID),
+		DateCreated:  sTime(a.DateCreated.String),
+		DateModified: sTime(a.DateModified.String),
 		MediaID:      int32(a.MediaID),
 	}
 }
@@ -601,6 +616,14 @@ func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParam
 		Height:      Ni32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
 		MdID:        int32(a.MdID),
+	}
+}
+
+func (d MysqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbm.UpdatePermissionParams {
+	return mdbm.UpdatePermissionParams{
+		TableID: int32(a.TableID),
+		Label:   a.Label,
+		Mode:    int32(a.Mode),
 	}
 }
 

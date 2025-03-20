@@ -154,6 +154,14 @@ func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions 
 	}
 
 }
+func (d PsqlDatabase) MapPermissions(a mdbp.Permissions) Permissions {
+	return Permissions{
+		PermissionID: int64(a.PermissionID),
+		TableID:      int64(a.TableID),
+		Label:        a.Label,
+		Mode:         int64(a.Mode),
+	}
+}
 
 func (d PsqlDatabase) MapRoles(a mdbp.Roles) Roles {
 	return Roles{
@@ -379,6 +387,15 @@ func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams
 		AspectRatio: a.AspectRatio,
 	}
 }
+
+func (d PsqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbp.CreatePermissionParams {
+	return mdbp.CreatePermissionParams{
+		TableID: int32(a.TableID),
+		Label:   a.Label,
+		Mode:    int32(a.Mode),
+	}
+}
+
 func (d PsqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbp.CreateRoleParams {
 	return mdbp.CreateRoleParams{
 		Label:       a.Label,
@@ -585,6 +602,15 @@ func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams
 		MdID:        int32(a.MdID),
 	}
 }
+
+func (d PsqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbp.UpdatePermissionParams {
+	return mdbp.UpdatePermissionParams{
+		TableID: int32(a.TableID),
+		Label:   a.Label,
+		Mode:    int32(a.Mode),
+	}
+}
+
 func (d PsqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbp.UpdateRoleParams {
 	return mdbp.UpdateRoleParams{
 		Label:       a.Label,

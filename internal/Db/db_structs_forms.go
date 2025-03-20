@@ -119,6 +119,12 @@ type CreateMediaDimensionFormParams struct {
 	AspectRatio string `json:"aspect_ratio"`
 }
 
+type CreatePermissionFormParams struct {
+	TableID string  `json:"table_id"`
+	Mode    string  `json:"mode"`
+	Label   string `json:"label"`
+}
+
 type CreateRoleFormParams struct {
 	Label       string `json:"label"`
 	Permissions string `json:"permissions"`
@@ -302,6 +308,13 @@ type UpdateMediaDimensionFormParams struct {
 	Height      string `json:"height"`
 	AspectRatio string `json:"aspect_ratio"`
 	MdID        string `json:"md_id"`
+}
+
+type UpdatePermissionFormParams struct {
+	TableID      string  `json:"table_id"`
+	Mode         string  `json:"mode"`
+	Label        string `json:"label"`
+	PermissionID string  `json:"permission_id"`
 }
 
 type UpdateRoleFormParams struct {

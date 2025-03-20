@@ -3,6 +3,9 @@ package db
 import mdbp "github.com/hegner123/modulacms/db-psql"
 
 func (d PsqlDatabase) CreateAllTables() error {
+	if err := d.CreatePermissionTable(); err != nil {
+		return err
+	}
 	if err := d.CreateRoleTable(); err != nil {
 		return err
 	}
@@ -116,6 +119,12 @@ func (d PsqlDatabase) CreateMediaTable() error {
 func (d PsqlDatabase) CreateMediaDimensionTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateMediaDimensionTable(d.Context)
+	return err
+}
+
+func (d PsqlDatabase) CreatePermissionTable() error {
+	queries := mdbp.New(d.Connection)
+	err := queries.CreatePermissionTable(d.Context)
 	return err
 }
 

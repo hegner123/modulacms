@@ -213,6 +213,20 @@ func (d PsqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 	}
 	return &res, nil
 }
+
+func (d PsqlDatabase) ListPermissions() (*[]Permissions, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListPermission(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Permissions: %v\n", err)
+	}
+	res := []Permissions{}
+	for _, v := range rows {
+		m := d.MapPermissions(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
 func (d PsqlDatabase) ListRoles() (*[]Roles, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)

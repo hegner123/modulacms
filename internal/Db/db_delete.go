@@ -117,6 +117,16 @@ func (d Database) DeleteMediaDimension(id int64) error {
 	return nil
 }
 
+func (d Database) DeletePermission(id int64) error {
+	queries := mdb.New(d.Connection)
+	err := queries.DeletePermission(d.Context, id)
+	if err != nil {
+		return fmt.Errorf("Failed to Delete Permission: %v ", id)
+	}
+
+	return nil
+}
+
 func (d Database) DeleteRole(id int64) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteRole(d.Context, id)

@@ -125,6 +125,18 @@ func (d PsqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaDi
 
 	return d.MapMediaDimension(row)
 }
+
+func (d PsqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
+	params := d.MapCreatePermissionParams(s)
+	queries := mdbp.New(d.Connection)
+	row, err := queries.CreatePermission(d.Context, params)
+	if err != nil {
+		fmt.Printf("Failed to CreatePermission.\n %v\n", err)
+	}
+
+	return d.MapPermissions(row)
+}
+
 func (d PsqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	params := d.MapCreateRoleParams(s)
 	queries := mdbp.New(d.Connection)

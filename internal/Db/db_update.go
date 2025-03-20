@@ -125,12 +125,24 @@ func (d Database) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, e
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
 }
+
+func (d Database) UpdatePermission(s UpdatePermissionParams) (*string, error) {
+	params := d.MapUpdatePermissionParams(s)
+	queries := mdb.New(d.Connection)
+	err := queries.UpdatePermission(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update permision, %v", err)
+	}
+	u := fmt.Sprintf("Successfully updated permision %v\n", s.Label)
+	return &u, nil
+}
+
 func (d Database) UpdateRole(s UpdateRoleParams) (*string, error) {
 	params := d.MapUpdateRoleParams(s)
 	queries := mdb.New(d.Connection)
 	err := queries.UpdateRole(d.Context, params)
 	if err != nil {
-		return nil, fmt.Errorf("failed to update route, %v", err)
+		return nil, fmt.Errorf("failed to update role, %v", err)
 	}
 	u := fmt.Sprintf("Successfully updated role %v\n", s.Label)
 	return &u, nil

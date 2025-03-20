@@ -1,43 +1,35 @@
-# syntax=docker/dockerfile:1
-FROM scratch
+# Use the official Go image to build the binary.
+FROM golang:1.20-alpine AS builder
+WORKDIR /app
 
-# Arguments (can be passed during build)
-# Database Driver
-ARG database="sqlite3"
-# Database Name
-ARG databaseName="modula.db"
-# Database User
-ARG databaseUserName
-# Database Password
-ARG databasePassword
-# Database ConnectionString
-ARG databaseConnectionString
-# Bucket Storage
-ARG bucket="local"
-# Bucket Access Key
-ARG bucketAccess=""
-# Server port
-ARG port=3055
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
 
 # Metadata
 LABEL project="ModulaCMS"
 
-# Environment variables
-ENV env="production"
+# Copy the source code.
+COPY . .
 
-# Set working directory
+# Build the Go binary statically for Linux.
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o modulacms .
+
+# Use a minimal base image.
+FROM alpine:latest
+RUN apk --no-cache add ca-certificates
+
+# Copy the binary from the builder stage.
 WORKDIR /
-
-# Copy the executable binary (ensure `modula` exists and is executable)
-COPY modulacms /
-
-
-# Run the executable
-CMD ["./modulacms"]
+COPY --from=builder /app/modulacms .
 
 # Expose port
-EXPOSE ${port}
+EXPOSE 4000
+
+# Run the Go binary.
+ENTRYPOINT ["./modulacms"]
 
 # Stop signal
 STOPSIGNAL SIGTERM
+
 

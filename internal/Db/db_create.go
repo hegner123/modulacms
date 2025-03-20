@@ -126,6 +126,18 @@ func (d Database) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimens
 
 	return d.MapMediaDimension(row)
 }
+
+func (d Database) CreatePermission(s CreatePermissionParams) Permissions {
+	params := d.MapCreatePermissionParams(s)
+	queries := mdb.New(d.Connection)
+	row, err := queries.CreatePermission(d.Context, params)
+	if err != nil {
+		fmt.Printf("Failed to CreatePermission.\n %v\n", err)
+	}
+
+	return d.MapPermission(row)
+}
+
 func (d Database) CreateRole(s CreateRoleParams) Roles {
 	params := d.MapCreateRoleParams(s)
 	queries := mdb.New(d.Connection)
