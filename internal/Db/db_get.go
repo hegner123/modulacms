@@ -117,6 +117,26 @@ func (d Database) GetMedia(id int64) (*Media, error) {
 	return &res, nil
 }
 
+func (d Database) GetMediaByName(name string) (*Media, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
+func (d Database) GetMediaByURL(url string) (*Media, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
 func (d Database) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetMediaDimension(d.Context, id)

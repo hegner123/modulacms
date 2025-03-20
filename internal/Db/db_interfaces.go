@@ -104,6 +104,8 @@ type DbDriver interface {
 	GetDatatype(int64) (*Datatypes, error)
 	GetField(int64) (*Fields, error)
 	GetMedia(int64) (*Media, error)
+	GetMediaByName(string) (*Media, error)
+	GetMediaByURL(string) (*Media, error)
 	GetMediaDimension(int64) (*MediaDimensions, error)
 	GetRole(int64) (*Roles, error)
 	GetRoute(string) (*Routes, error)

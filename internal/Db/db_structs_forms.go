@@ -96,23 +96,20 @@ type CreateFieldFormParams struct {
 }
 
 type CreateMediaFormParams struct {
-	Name               string `json:"name"`
-	DisplayName        string `json:"display_name"`
-	Alt                string `json:"alt"`
-	Caption            string `json:"caption"`
-	Description        string `json:"description"`
-	Class              string `json:"class"`
-	Author             string `json:"author"`
-	AuthorID           string `json:"author_id"`
-	DateCreated        string `json:"date_created"`
-	DateModified       string `json:"date_modified"`
-	Url                string `json:"url"`
-	Mimetype           string `json:"mimetype"`
-	Dimensions         string `json:"dimensions"`
-	OptimizedMobile    string `json:"optimized_mobile"`
-	OptimizedTablet    string `json:"optimized_tablet"`
-	OptimizedDesktop   string `json:"optimized_desktop"`
-	OptimizedUltraWide string `json:"optimized_ultra_wide"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Alt          string `json:"alt"`
+	Caption      string `json:"caption"`
+	Description  string `json:"description"`
+	Class        string `json:"class"`
+	Author       string `json:"author"`
+	AuthorID     string `json:"author_id"`
+	DateCreated  string `json:"date_created"`
+	DateModified string `json:"date_modified"`
+	Url          string `json:"url"`
+	Mimetype     string `json:"mimetype"`
+	Dimensions   string `json:"dimensions"`
+	Srcset       string `json:"srcset"`
 }
 
 type CreateMediaDimensionFormParams struct {
@@ -282,24 +279,21 @@ type UpdateFieldFormParams struct {
 }
 
 type UpdateMediaFormParams struct {
-	Name               string `json:"name"`
-	DisplayName        string `json:"display_name"`
-	Alt                string `json:"alt"`
-	Caption            string `json:"caption"`
-	Description        string `json:"description"`
-	Class              string `json:"class"`
-	Author             string `json:"author"`
-	AuthorID           string `json:"author_id"`
-	DateCreated        string `json:"date_created"`
-	DateModified       string `json:"date_modified"`
-	Url                string `json:"url"`
-	Mimetype           string `json:"mimetype"`
-	Dimensions         string `json:"dimensions"`
-	OptimizedMobile    string `json:"optimized_mobile"`
-	OptimizedTablet    string `json:"optimized_tablet"`
-	OptimizedDesktop   string `json:"optimized_desktop"`
-	OptimizedUltraWide string `json:"optimized_ultra_wide"`
-	MediaID            string `json:"media_id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Alt          string `json:"alt"`
+	Caption      string `json:"caption"`
+	Description  string `json:"description"`
+	Class        string `json:"class"`
+	Author       string `json:"author"`
+	AuthorID     string `json:"author_id"`
+	DateCreated  string `json:"date_created"`
+	DateModified string `json:"date_modified"`
+	Url          string `json:"url"`
+	Mimetype     string `json:"mimetype"`
+	Dimensions   string `json:"dimensions"`
+	Srcset       string `json:"srcset"`
+	MediaID      string `json:"media_id"`
 }
 
 type UpdateMediaDimensionFormParams struct {

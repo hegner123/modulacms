@@ -996,38 +996,32 @@ INSERT INTO media (
     url,
     mimetype,
     dimensions,
-    optimized_mobile,
-    optimized_tablet,
-    optimized_desktop,
-    optimized_ultra_wide,
+    srcset,
     author,
     author_id,
     date_created,
     date_modified
 ) VALUES (
- $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
+ $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14
 )
-RETURNING media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide, author, author_id, date_created, date_modified
+RETURNING media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified
 `
 
 type CreateMediaParams struct {
-	Name               sql.NullString `json:"name"`
-	DisplayName        sql.NullString `json:"display_name"`
-	Alt                sql.NullString `json:"alt"`
-	Caption            sql.NullString `json:"caption"`
-	Description        sql.NullString `json:"description"`
-	Class              sql.NullString `json:"class"`
-	Url                sql.NullString `json:"url"`
-	Mimetype           sql.NullString `json:"mimetype"`
-	Dimensions         sql.NullString `json:"dimensions"`
-	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
-	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
-	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
-	Author             string         `json:"author"`
-	AuthorID           int32          `json:"author_id"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
+	Name         sql.NullString `json:"name"`
+	DisplayName  sql.NullString `json:"display_name"`
+	Alt          sql.NullString `json:"alt"`
+	Caption      sql.NullString `json:"caption"`
+	Description  sql.NullString `json:"description"`
+	Class        sql.NullString `json:"class"`
+	Url          sql.NullString `json:"url"`
+	Mimetype     sql.NullString `json:"mimetype"`
+	Dimensions   sql.NullString `json:"dimensions"`
+	Srcset       sql.NullString `json:"srcset"`
+	Author       string         `json:"author"`
+	AuthorID     int32          `json:"author_id"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media, error) {
@@ -1041,10 +1035,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		arg.Url,
 		arg.Mimetype,
 		arg.Dimensions,
-		arg.OptimizedMobile,
-		arg.OptimizedTablet,
-		arg.OptimizedDesktop,
-		arg.OptimizedUltraWide,
+		arg.Srcset,
 		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
@@ -1062,10 +1053,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		&i.Mimetype,
 		&i.Dimensions,
 		&i.Url,
-		&i.OptimizedMobile,
-		&i.OptimizedTablet,
-		&i.OptimizedDesktop,
-		&i.OptimizedUltraWide,
+		&i.Srcset,
 		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -1138,10 +1126,7 @@ CREATE TABLE IF NOT EXISTS media (
     mimetype TEXT,
     dimensions TEXT,
     url TEXT UNIQUE,
-    optimized_mobile TEXT,
-    optimized_tablet TEXT,
-    optimized_desktop TEXT,
-    optimized_ultra_wide TEXT,
+    srcset TEXT, 
     author TEXT NOT NULL DEFAULT 'system',
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -2037,7 +2022,7 @@ func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes,
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
 WHERE media_id = $1 LIMIT 1
 `
 
@@ -2055,10 +2040,63 @@ func (q *Queries) GetMedia(ctx context.Context, mediaID int32) (Media, error) {
 		&i.Mimetype,
 		&i.Dimensions,
 		&i.Url,
-		&i.OptimizedMobile,
-		&i.OptimizedTablet,
-		&i.OptimizedDesktop,
-		&i.OptimizedUltraWide,
+		&i.Srcset,
+		&i.Author,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getMediaByName = `-- name: GetMediaByName :one
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+WHERE name = $1 LIMIT 1
+`
+
+func (q *Queries) GetMediaByName(ctx context.Context, name sql.NullString) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMediaByName, name)
+	var i Media
+	err := row.Scan(
+		&i.MediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.Url,
+		&i.Srcset,
+		&i.Author,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getMediaByUrl = `-- name: GetMediaByUrl :one
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+WHERE url = $1 LIMIT 1
+`
+
+func (q *Queries) GetMediaByUrl(ctx context.Context, url sql.NullString) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMediaByUrl, url)
+	var i Media
+	err := row.Scan(
+		&i.MediaID,
+		&i.Name,
+		&i.DisplayName,
+		&i.Alt,
+		&i.Caption,
+		&i.Description,
+		&i.Class,
+		&i.Mimetype,
+		&i.Dimensions,
+		&i.Url,
+		&i.Srcset,
 		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -3004,7 +3042,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 }
 
 const listMedia = `-- name: ListMedia :many
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, optimized_mobile, optimized_tablet, optimized_desktop, optimized_ultra_wide, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
 ORDER BY name
 `
 
@@ -3028,10 +3066,7 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 			&i.Mimetype,
 			&i.Dimensions,
 			&i.Url,
-			&i.OptimizedMobile,
-			&i.OptimizedTablet,
-			&i.OptimizedDesktop,
-			&i.OptimizedUltraWide,
+			&i.Srcset,
 			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -3688,39 +3723,33 @@ UPDATE media
         caption = $4,
         description = $5,
         class = $6,
-        author = $7,
-        author_id = $8,
-        date_created = $9,
-        date_modified = $10,
-        url = $11,
-        mimetype = $12,
-        dimensions = $13,
-        optimized_mobile = $14,
-        optimized_tablet = $15,
-        optimized_desktop = $16,
-        optimized_ultra_wide = $17
-        WHERE media_id = $18
+        url = $7,
+        mimetype = $8,
+        dimensions = $9,
+        srcset = $10,
+        author = $11,
+        author_id = $12,
+        date_created = $13,
+        date_modified = $14
+        WHERE media_id = $15
 `
 
 type UpdateMediaParams struct {
-	Name               sql.NullString `json:"name"`
-	DisplayName        sql.NullString `json:"display_name"`
-	Alt                sql.NullString `json:"alt"`
-	Caption            sql.NullString `json:"caption"`
-	Description        sql.NullString `json:"description"`
-	Class              sql.NullString `json:"class"`
-	Author             string         `json:"author"`
-	AuthorID           int32          `json:"author_id"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
-	Url                sql.NullString `json:"url"`
-	Mimetype           sql.NullString `json:"mimetype"`
-	Dimensions         sql.NullString `json:"dimensions"`
-	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
-	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
-	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
-	MediaID            int32          `json:"media_id"`
+	Name         sql.NullString `json:"name"`
+	DisplayName  sql.NullString `json:"display_name"`
+	Alt          sql.NullString `json:"alt"`
+	Caption      sql.NullString `json:"caption"`
+	Description  sql.NullString `json:"description"`
+	Class        sql.NullString `json:"class"`
+	Url          sql.NullString `json:"url"`
+	Mimetype     sql.NullString `json:"mimetype"`
+	Dimensions   sql.NullString `json:"dimensions"`
+	Srcset       sql.NullString `json:"srcset"`
+	Author       string         `json:"author"`
+	AuthorID     int32          `json:"author_id"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
+	MediaID      int32          `json:"media_id"`
 }
 
 func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error {
@@ -3731,17 +3760,14 @@ func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error 
 		arg.Caption,
 		arg.Description,
 		arg.Class,
+		arg.Url,
+		arg.Mimetype,
+		arg.Dimensions,
+		arg.Srcset,
 		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
-		arg.Url,
-		arg.Mimetype,
-		arg.Dimensions,
-		arg.OptimizedMobile,
-		arg.OptimizedTablet,
-		arg.OptimizedDesktop,
-		arg.OptimizedUltraWide,
 		arg.MediaID,
 	)
 	return err

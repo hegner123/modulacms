@@ -12,6 +12,11 @@ func TestOptimize(t *testing.T) {
 		Db_Name:   "modula.db",
 		Db_URL:    "./modula.db",
 	}
-	 OptimizeUpload("./test.png", "test.png", c)
+	_, err := OptimizeUpload("./test.png", "test.png", c)
+	if err != nil {
+        t.Fatal(err)
+	}
 
 }
+
+

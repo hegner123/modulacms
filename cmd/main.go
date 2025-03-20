@@ -299,3 +299,4 @@ func proccessUpdateFlag() {
 func proccessRunInstall() {
 	fmt.Println("Run Install")
 }
+

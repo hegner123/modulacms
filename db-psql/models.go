@@ -114,24 +114,21 @@ type Fields struct {
 }
 
 type Media struct {
-	MediaID            int32          `json:"media_id"`
-	Name               sql.NullString `json:"name"`
-	DisplayName        sql.NullString `json:"display_name"`
-	Alt                sql.NullString `json:"alt"`
-	Caption            sql.NullString `json:"caption"`
-	Description        sql.NullString `json:"description"`
-	Class              sql.NullString `json:"class"`
-	Mimetype           sql.NullString `json:"mimetype"`
-	Dimensions         sql.NullString `json:"dimensions"`
-	Url                sql.NullString `json:"url"`
-	OptimizedMobile    sql.NullString `json:"optimized_mobile"`
-	OptimizedTablet    sql.NullString `json:"optimized_tablet"`
-	OptimizedDesktop   sql.NullString `json:"optimized_desktop"`
-	OptimizedUltraWide sql.NullString `json:"optimized_ultra_wide"`
-	Author             string         `json:"author"`
-	AuthorID           int32          `json:"author_id"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
+	MediaID      int32          `json:"media_id"`
+	Name         sql.NullString `json:"name"`
+	DisplayName  sql.NullString `json:"display_name"`
+	Alt          sql.NullString `json:"alt"`
+	Caption      sql.NullString `json:"caption"`
+	Description  sql.NullString `json:"description"`
+	Class        sql.NullString `json:"class"`
+	Mimetype     sql.NullString `json:"mimetype"`
+	Dimensions   sql.NullString `json:"dimensions"`
+	Url          sql.NullString `json:"url"`
+	Srcset       sql.NullString `json:"srcset"`
+	Author       string         `json:"author"`
+	AuthorID     int32          `json:"author_id"`
+	DateCreated  sql.NullTime   `json:"date_created"`
+	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 type MediaDimensions struct {

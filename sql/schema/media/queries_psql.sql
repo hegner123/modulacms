@@ -10,10 +10,7 @@ CREATE TABLE IF NOT EXISTS media (
     mimetype TEXT,
     dimensions TEXT,
     url TEXT UNIQUE,
-    optimized_mobile TEXT,
-    optimized_tablet TEXT,
-    optimized_desktop TEXT,
-    optimized_ultra_wide TEXT,
+    srcset TEXT, 
     author TEXT NOT NULL DEFAULT 'system',
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -29,6 +26,14 @@ CREATE TABLE IF NOT EXISTS media (
 -- name: GetMedia :one
 SELECT * FROM media
 WHERE media_id = $1 LIMIT 1;
+
+-- name: GetMediaByName :one
+SELECT * FROM media
+WHERE name = $1 LIMIT 1;
+
+-- name: GetMediaByUrl :one
+SELECT * FROM media
+WHERE url = $1 LIMIT 1;
 
 -- name: CountMedia :one
 SELECT COUNT(*)
@@ -49,16 +54,13 @@ INSERT INTO media (
     url,
     mimetype,
     dimensions,
-    optimized_mobile,
-    optimized_tablet,
-    optimized_desktop,
-    optimized_ultra_wide,
+    srcset,
     author,
     author_id,
     date_created,
     date_modified
 ) VALUES (
- $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17
+ $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14
 )
 RETURNING *;
 
@@ -70,18 +72,15 @@ UPDATE media
         caption = $4,
         description = $5,
         class = $6,
-        author = $7,
-        author_id = $8,
-        date_created = $9,
-        date_modified = $10,
-        url = $11,
-        mimetype = $12,
-        dimensions = $13,
-        optimized_mobile = $14,
-        optimized_tablet = $15,
-        optimized_desktop = $16,
-        optimized_ultra_wide = $17
-        WHERE media_id = $18;
+        url = $7,
+        mimetype = $8,
+        dimensions = $9,
+        srcset = $10,
+        author = $11,
+        author_id = $12,
+        date_created = $13,
+        date_modified = $14
+        WHERE media_id = $15;
 
 -- name: DeleteMedia :exec
 DELETE FROM media

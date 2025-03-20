@@ -8,6 +8,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	config "github.com/hegner123/modulacms/internal/Config"
@@ -15,27 +16,35 @@ import (
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
-func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
+
+//fsrc is the source file
+//dstPath is the location of optimized files
+func OptimizeUpload(fSrc string, dstPath string, c config.Config) (*[]string, error) {
 	d := db.ConfigDB(c)
 
 	// Open the source file.
 	file, err := os.Open(fSrc)
 	if err != nil {
-		return fmt.Errorf("couldn't find tmp file: %w", err)
+		return nil, fmt.Errorf("couldn't find tmp file: %w", err)
 	}
 	defer file.Close()
 
-	// Get the dimensions.
-	dimensions, err := d.ListMediaDimensions()
+	// Get the dimensionsPTR.
+	dimensionsPTR, err := d.ListMediaDimensions()
 	if err != nil {
-		return fmt.Errorf("failed to list media dimensions: %w", err)
+		return nil, fmt.Errorf("failed to list media dimensions: %w", err)
 	}
-	if dimensions == nil {
-		return fmt.Errorf("dimensions list is nil")
+	if dimensionsPTR == nil {
+		return nil, fmt.Errorf("dimensions list is nil")
 	}
 
-	baseName := strings.TrimSuffix(fPath, filepath.Ext(fPath))
+    trimmedPrefix := strings.Split(fSrc, "/")
+    last := len(trimmedPrefix)
+	baseName := strings.TrimSuffix(trimmedPrefix[last-1], filepath.Ext(trimmedPrefix[last-1]))
 	ext := filepath.Ext(fSrc)
+    fmt.Println("last",last)
+    fmt.Println("trimmedprefix",trimmedPrefix)
+    fmt.Println("baseName",baseName)
 
 	// Decode the image.
 	var dImg image.Image
@@ -49,13 +58,13 @@ func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
 	case ".gif":
 		dImg, err = gif.Decode(file)
 	default:
-		return fmt.Errorf("unsupported file extension: %s", ext)
+		return nil, fmt.Errorf("unsupported file extension: %s", ext)
 	}
 	if err != nil {
-		return fmt.Errorf("error decoding image: %w", err)
+		return nil, fmt.Errorf("error decoding image: %w", err)
 	}
 	if dImg == nil {
-		return fmt.Errorf("decoded image is nil")
+		return nil, fmt.Errorf("decoded image is nil")
 	}
 
 	// Initialize scaler.
@@ -66,7 +75,8 @@ func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
 	centerY := (bounds.Min.Y + bounds.Max.Y) / 2
 
 	// Crop and scale images.
-	for _, dx := range *dimensions {
+	dimensions := *dimensionsPTR
+	for _, dx := range dimensions {
 		cropWidth := int(dx.Width.Int64)
 		cropHeight := int(dx.Height.Int64)
 		x0 := centerX - cropWidth/2
@@ -80,12 +90,17 @@ func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
 		images = append(images, img)
 	}
 
+	files := []string{}
 	// Encode and save images.
 	for i, im := range images {
-		filename := fmt.Sprintf("%s-%v%s", baseName, i, ext)
+		widthString := strconv.FormatInt(dimensions[i].Width.Int64, 10)
+		heightString := strconv.FormatInt(dimensions[i].Height.Int64, 10)
+		size := widthString + "x" + heightString
+		filename := fmt.Sprintf("%s-%v%s", baseName, size, ext)
+		files = append(files, filename)
 		f, err := os.Create(filename)
 		if err != nil {
-			return fmt.Errorf("error creating file %s: %w", filename, err)
+			return nil, fmt.Errorf("error creating file %s: %w", filename, err)
 		}
 		// Ensure the file is closed after encoding.
 		defer f.Close()
@@ -102,9 +117,8 @@ func OptimizeUpload(fSrc string, fPath string, c config.Config) error {
 			err = fmt.Errorf("unsupported encoding for extension: %s", ext)
 		}
 		if err != nil {
-			return fmt.Errorf("error encoding image %s: %w", filename, err)
+			return nil, fmt.Errorf("error encoding image %s: %w", filename, err)
 		}
 	}
-	return nil
+	return &files, nil
 }
-

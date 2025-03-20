@@ -116,6 +116,26 @@ func (d PsqlDatabase) GetMedia(id int64) (*Media, error) {
 	return &res, nil
 }
 
+func (d PsqlDatabase) GetMediaByName(name string) (*Media, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
+func (d PsqlDatabase) GetMediaByURL(url string) (*Media, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
 func (d PsqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetMediaDimension(d.Context, int32(id))

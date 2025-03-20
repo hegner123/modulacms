@@ -12,10 +12,7 @@ CREATE TABLE IF NOT EXISTS media
     dimensions           TEXT,
     url                  TEXT
         unique,
-    optimized_mobile     TEXT,
-    optimized_tablet     TEXT,
-    optimized_desktop    TEXT,
-    optimized_ultra_wide TEXT,
+    srcset               TEXT,
     author               TEXT    default "system" not null
     references users (username)
     on update cascade on delete set default,

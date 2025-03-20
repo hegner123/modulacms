@@ -2,7 +2,6 @@ package db
 
 import "strconv"
 
-
 func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 	return StringAdminContentData{
 		AdminContentDataID: strconv.FormatInt(a.AdminContentDataID, 10),
@@ -122,24 +121,21 @@ func MapStringField(a Fields) StringFields {
 
 func MapStringMedia(a Media) StringMedia {
 	return StringMedia{
-		MediaID:            strconv.FormatInt(a.MediaID, 10),
-		Name:               a.Name.String,
-		DisplayName:        a.DisplayName.String,
-		Alt:                a.Alt.String,
-		Caption:            a.Caption.String,
-		Description:        a.Description.String,
-		Class:              a.Class.String,
-		Author:             AssertString(a.Author),
-		AuthorID:           strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:        a.DateCreated.String,
-		DateModified:       a.DateModified.String,
-		Mimetype:           a.Mimetype.String,
-		Dimensions:         a.Dimensions.String,
-		Url:                a.Url.String,
-		OptimizedMobile:    a.OptimizedMobile.String,
-		OptimizedTablet:    a.OptimizedTablet.String,
-		OptimizedDesktop:   a.OptimizedTablet.String,
-		OptimizedUltraWide: a.OptimizedUltraWide.String,
+		MediaID:      strconv.FormatInt(a.MediaID, 10),
+		Name:         a.Name.String,
+		DisplayName:  a.DisplayName.String,
+		Alt:          a.Alt.String,
+		Caption:      a.Caption.String,
+		Description:  a.Description.String,
+		Class:        a.Class.String,
+		Mimetype:     a.Mimetype.String,
+		Dimensions:   a.Dimensions.String,
+		Url:          a.Url.String,
+		Srcset:       a.Srcset.String,
+        Author:       AssertString(a.Author),
+        AuthorID:     strconv.FormatInt(a.AuthorID, 10),
+        DateCreated:  a.DateCreated.String,
+        DateModified: a.DateModified.String,
 	}
 }
 
@@ -337,24 +333,21 @@ type StringFields struct {
 }
 
 type StringMedia struct {
-	MediaID            string `json:"media_id"`
-	Name               string `json:"name"`
-	DisplayName        string `json:"display_name"`
-	Alt                string `json:"alt"`
-	Caption            string `json:"caption"`
-	Description        string `json:"description"`
-	Class              string `json:"class"`
-	Author             string `json:"author"`
-	AuthorID           string `json:"author_id"`
-	DateCreated        string `json:"date_created"`
-	DateModified       string `json:"date_modified"`
-	Mimetype           string `json:"mimetype"`
-	Dimensions         string `json:"dimensions"`
-	Url                string `json:"url"`
-	OptimizedMobile    string `json:"optimized_mobile"`
-	OptimizedTablet    string `json:"optimized_tablet"`
-	OptimizedDesktop   string `json:"optimized_desktop"`
-	OptimizedUltraWide string `json:"optimized_ultra_wide"`
+	MediaID      string `json:"media_id"`
+	Name         string `json:"name"`
+	DisplayName  string `json:"display_name"`
+	Alt          string `json:"alt"`
+	Caption      string `json:"caption"`
+	Description  string `json:"description"`
+	Class        string `json:"class"`
+	Author       string `json:"author"`
+	AuthorID     string `json:"author_id"`
+	DateCreated  string `json:"date_created"`
+	DateModified string `json:"date_modified"`
+	Mimetype     string `json:"mimetype"`
+	Dimensions   string `json:"dimensions"`
+	Url          string `json:"url"`
+	Srcset       string `json:"srcset"`
 }
 
 type StringMediaDimensions struct {

@@ -32,6 +32,9 @@ type Config struct {
 	Db_User             string              `json:"db_username"`
 	Db_Password         string              `json:"db_password"`
 	Bucket_Url          string              `json:"bucket_url"`
+	Bucket_Region       string              `json:"bucket_region"`
+	Bucket_Media        string              `json:"bucket_media"`
+	Bucket_Backup       string              `json:"bucket_backup"`
 	Bucket_Endpoint     string              `json:"bucket_endpoint"`
 	Bucket_Access_Key   string              `json:"bucket_access_key"`
 	Bucket_Secret_Key   string              `json:"bucket_secret_key"`

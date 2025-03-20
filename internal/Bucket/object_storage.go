@@ -15,6 +15,8 @@ import (
 
 type Metadata map[string]string
 
+
+
 func (cs S3Credintials) GetBucket() (*s3.S3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials:      credentials.NewStaticCredentials(cs.AccessKey, cs.SecretKey, ""),
@@ -55,6 +57,8 @@ func PrintBuckets(s3 *s3.S3) {
 	}
 }
 
+//Must use output of GetBucket as s3 argument
+//Must use output of bucket.UploadPrep frunction as payload
 func ObjectUpload(s3 *s3.S3, payload *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	upload, err := s3.PutObject(payload)
 	if err != nil {

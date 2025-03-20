@@ -116,6 +116,26 @@ func (d MysqlDatabase) GetMedia(id int64) (*Media, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) GetMediaByName(name string) (*Media, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
+func (d MysqlDatabase) GetMediaByURL(url string) (*Media, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapMedia(row)
+	return &res, nil
+}
+
 func (d MysqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetMediaDimension(d.Context, int32(id))
