@@ -1,3 +1,20 @@
+-- name: CreateRouteTable :exec
+CREATE TABLE IF NOT EXISTS routes (
+    route_id INTEGER PRIMARY KEY,
+    slug TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    author TEXT DEFAULT 'system' NOT NULL
+    REFERENCES users(username)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    author_id INTEGER DEFAULT 1 NOT NULL
+    REFERENCES users(user_id)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
+);
+
 -- name: GetRoute :one
 SELECT * FROM routes
 WHERE slug = ? LIMIT 1;
@@ -6,7 +23,7 @@ WHERE slug = ? LIMIT 1;
 SELECT COUNT(*)
 FROM routes;
 
--- name: GetRouteId :one
+-- name: GetRouteID :one
 SELECT route_id FROM routes
 WHERE slug = ? LIMIT 1;
 
@@ -16,15 +33,16 @@ ORDER BY slug;
 
 -- name: CreateRoute :one
 INSERT INTO routes (
-author,
-author_id,
 slug,
 title,
 status,
+author,
+author_id,
 date_created,
-date_modified
+date_modified,
+history
 ) VALUES (
-?,?,?,?,?,?,?
+?,?,?,?,?,?,?,?
 ) RETURNING *;
 
 -- name: UpdateRoute :exec
@@ -32,6 +50,7 @@ UPDATE routes
 set slug = ?,
     title = ?,
     status = ?,
+    history= ?,
     author = ?,
     author_id = ?,
     date_created = ?,

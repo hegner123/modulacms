@@ -1,5 +1,4 @@
-
-CREATE TABLE tables (
+CREATE TABLE IF NOT EXISTS tables (
     id INTEGER PRIMARY KEY,
     label TEXT UNIQUE,
     author_id INTEGER DEFAULT 1 NOT NULL

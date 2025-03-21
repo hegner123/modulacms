@@ -27,7 +27,7 @@ func (m model) CLICreate(table db.DBTable) error {
 		if v == nil {
 			continue
 		}
-		headers := *m.headers
+		headers := m.headers
 		header := headers[i]
 		m.formMap[header] = *v
 	}
@@ -194,7 +194,7 @@ func (m model) CLIUpdate(table db.DBTable) error {
 		if v == nil {
 			continue
 		}
-		headers := *m.headers
+		headers := m.headers
 		header := headers[i]
 		m.formMap[header] = *v
 	}

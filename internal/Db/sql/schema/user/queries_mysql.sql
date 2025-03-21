@@ -1,41 +1,63 @@
-
+-- name: CreateUserTable :exec
+CREATE TABLE IF NOT EXISTS users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL,
+    hash TEXT NOT NULL,
+    role INT DEFAULT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT fk_users_role FOREIGN KEY (role)
+        REFERENCES roles(role_id)
+        ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 -- name: GetUser :one
-SELECT * FROM user
-WHERE id = ? LIMIT 1;
+SELECT * FROM users
+WHERE user_id = ? LIMIT 1;
+
+-- name: CountUser :one
+SELECT COUNT(*)
+FROM users;
+
+-- name: GetUserByEmail :one
+SELECT * FROM users
+WHERE email = ? LIMIT 1;
 
 -- name: GetUserId :one
-SELECT id FROM user
-WHERE id = ? LIMIT 1;
+SELECT user_id FROM users
+WHERE email = ? LIMIT 1;
 
 -- name: ListUser :many
-SELECT * FROM user 
-ORDER BY id ;
+SELECT * FROM users 
+ORDER BY user_id ;
 
--- name: CreateUser :one
-INSERT INTO user (
-    datecreated,
-    datemodified,
+-- name: CreateUser :exec
+INSERT INTO users (
+    date_created,
+    date_modified,
     username,
     name,
-    email ,
+    email,
     hash,
     role
 ) VALUES (
 ?,?,?,?,?,?,?
-)
-RETURNING *;
+);
+-- name: GetLastUser :one
+ SELECT * FROM users WHERE user_id = LAST_INSERT_ID();
 
 -- name: UpdateUser :exec
-UPDATE user
-set datecreated = ?,
-    datemodified = ?,
+UPDATE users
+set date_created = ?,
+    date_modified = ?,
     username = ?,
     name = ?,
     email = ?,
     hash = ?,
     role = ?
-WHERE id = ?;
+WHERE user_id = ?;
 
 -- name: DeleteUser :exec
-DELETE FROM user
-WHERE id = ?;
+DELETE FROM users
+WHERE user_id = ?;

@@ -1,3 +1,24 @@
+-- name: CreateAdminFieldTable :exec
+CREATE TABLE IF NOT EXISTS admin_fields
+(
+    admin_field_id INTEGER
+        primary key,
+    parent_id      INTEGER default NULL
+        references admin_datatypes
+            on update cascade on delete set default,
+    label          TEXT    default "unlabeled" not null,
+    data           TEXT    default ""          not null,
+    type           TEXT    default "text"      not null,
+    author         TEXT    default "system"    not null
+        references users (username)
+            on update cascade on delete set default,
+    author_id      INTEGER default 1           not null
+        references users (user_id)
+            on update cascade on delete set default,
+    date_created   TEXT    default CURRENT_TIMESTAMP,
+    date_modified  TEXT    default CURRENT_TIMESTAMP,
+    history        TEXT
+);
 -- name: GetAdminField :one
 SELECT * FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1;
@@ -16,7 +37,6 @@ ORDER BY admin_field_id;
 
 -- name: CreateAdminField :one
 INSERT INTO admin_fields (
-    admin_route_id,
     parent_id,
     label,
     data,
@@ -25,16 +45,15 @@ INSERT INTO admin_fields (
     author_id,
     date_created,
     date_modified,
-    template
+    history
     ) VALUES (
-    ?,?,?,?,?,?,?,?,?,?
+    ?,?,?,?,?,?,?,?,?
     ) RETURNING *;
 
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
-set admin_route_id = ?,
-    parent_id = ?,
+set parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
@@ -42,7 +61,7 @@ set admin_route_id = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
-    template = ?
+    history =?
     WHERE admin_field_id = ?
     RETURNING *;
 
@@ -50,14 +69,10 @@ set admin_route_id = ?,
 DELETE FROM admin_fields
 WHERE admin_field_id = ?;
 
--- name: ListAdminFieldByRouteId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
-FROM admin_fields
-WHERE admin_route_id = ?;
 
 
--- name: ListAdminFieldByAdminDtId :many
-SELECT admin_field_id, admin_route_id, parent_id, label, data, type, template
+-- name: ListAdminFieldsByDatatypeID :many
+SELECT admin_field_id, parent_id, label, data, type, history
 FROM admin_fields
 WHERE parent_id = ?;
 

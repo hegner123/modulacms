@@ -22,7 +22,7 @@ func (m model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -44,14 +44,14 @@ func (m model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 		m.PushHistory(m.page)
 		m.PageRouter()
 	}
-	return m, nil
+	return &m, nil
 }
 
 func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -77,7 +77,7 @@ func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.C
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return m, nil
+	return &m, nil
 }
 func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -117,13 +117,13 @@ func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
 
-	return m, tea.Batch(cmds...)
+	return &m, tea.Batch(cmds...)
 }
 func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -147,14 +147,14 @@ func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 		m.page = m.pages[ReadSingle]
 		m.controller = m.page.Controller
 	}
-	return m, nil
+	return &m, nil
 }
 
 func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -179,7 +179,7 @@ func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return m, nil
+	return &m, nil
 }
 
 func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
@@ -187,7 +187,7 @@ func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, te
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -215,7 +215,7 @@ func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, te
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return m, nil
+	return &m, nil
 }
 func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -261,7 +261,7 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return m, tea.Quit
+		return &m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -284,7 +284,7 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 		m.table = m.tables[m.cursor]
 		err := m.CLIDelete(db.StringDBTable(m.table))
 		if err != nil {
-			return m, nil
+			return &m, nil
 		}
 		m.cursor = 0
 		m.page = m.pages[Read]
@@ -292,7 +292,7 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 		m.menu = m.page.Children
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
-	return m, nil
+	return &m, nil
 }
 
 func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -302,7 +302,7 @@ func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 
 		//Exit
 		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+			return &m, tea.Quit
 
 		//Navigation
 		case "up", "k":
@@ -325,5 +325,5 @@ func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.PageRouter()
 		}
 	}
-	return m, nil
+	return &m, nil
 }

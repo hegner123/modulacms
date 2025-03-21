@@ -1,8 +1,21 @@
+-- name: CreateUserTable :exec
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    role INTEGER NOT NULL,
+        references role
+            on update cascade on delete set NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
 -- name: GetUser :one
 SELECT * FROM users
 WHERE user_id = ? LIMIT 1;
 
--- name: CountUsers :one
+-- name: CountUser :one
 SELECT COUNT(*)
 FROM users;
 

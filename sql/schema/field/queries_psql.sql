@@ -34,6 +34,11 @@ FROM fields ;
 SELECT * FROM fields 
 ORDER BY field_id;
 
+-- name: ListFieldByDatatypeID :many
+SELECT * FROM fields 
+WHERE parent_id = $1
+ORDER BY field_id;
+
 -- name: CreateField :one
 INSERT INTO fields  (    
     parent_id,

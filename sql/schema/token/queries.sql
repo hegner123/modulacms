@@ -16,15 +16,15 @@ CREATE TABLE IF NOT EXISTS tokens (
 SELECT * FROM tokens
 WHERE id = ? LIMIT 1;
 
--- name: CountTokens :one
+-- name: CountToken :one
 SELECT COUNT(*)
 FROM tokens;
 
--- name: GetTokensByUserId :many
+-- name: GetTokenByUserId :many
 SELECT * FROM tokens
 WHERE user_id = ?;
 
--- name: ListTokens :many
+-- name: ListToken :many
 SELECT * FROM tokens;
 
 -- name: CreateToken :one

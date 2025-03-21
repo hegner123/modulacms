@@ -244,13 +244,13 @@ func (q *Queries) CountRoute(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countSessions = `-- name: CountSessions :one
+const countSession = `-- name: CountSession :one
 SELECT COUNT(*)
 FROM sessions
 `
 
-func (q *Queries) CountSessions(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countSessions)
+func (q *Queries) CountSession(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countSession)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -268,13 +268,25 @@ func (q *Queries) CountTables(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countTokens = `-- name: CountTokens :one
+const countToken = `-- name: CountToken :one
 SELECT COUNT(*)
 FROM tokens
 `
 
-func (q *Queries) CountTokens(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countTokens)
+func (q *Queries) CountToken(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countToken)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countUser = `-- name: CountUser :one
+SELECT COUNT(*)
+FROM users
+`
+
+func (q *Queries) CountUser(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countUser)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -287,18 +299,6 @@ FROM user_oauth
 
 func (q *Queries) CountUserOauths(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countUserOauths)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
-}
-
-const countUsers = `-- name: CountUsers :one
-SELECT COUNT(*)
-FROM users
-`
-
-func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countUsers)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -2274,13 +2274,13 @@ func (q *Queries) GetSession(ctx context.Context, sessionID int64) (Sessions, er
 	return i, err
 }
 
-const getSessionsByUserId = `-- name: GetSessionsByUserId :many
+const getSessionByUserId = `-- name: GetSessionByUserId :many
 SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 WHERE user_id = ?
 `
 
-func (q *Queries) GetSessionsByUserId(ctx context.Context, userID int64) ([]Sessions, error) {
-	rows, err := q.db.QueryContext(ctx, getSessionsByUserId, userID)
+func (q *Queries) GetSessionByUserId(ctx context.Context, userID int64) ([]Sessions, error) {
+	rows, err := q.db.QueryContext(ctx, getSessionByUserId, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -2354,13 +2354,13 @@ func (q *Queries) GetToken(ctx context.Context, id int64) (Tokens, error) {
 	return i, err
 }
 
-const getTokensByUserId = `-- name: GetTokensByUserId :many
+const getTokenByUserId = `-- name: GetTokenByUserId :many
 SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
 WHERE user_id = ?
 `
 
-func (q *Queries) GetTokensByUserId(ctx context.Context, userID int64) ([]Tokens, error) {
-	rows, err := q.db.QueryContext(ctx, getTokensByUserId, userID)
+func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) ([]Tokens, error) {
+	rows, err := q.db.QueryContext(ctx, getTokenByUserId, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -3163,6 +3163,46 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 	return items, nil
 }
 
+const listFieldByDatatypeID = `-- name: ListFieldByDatatypeID :many
+SELECT field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM fields 
+WHERE parent_id = ?
+ORDER BY field_id
+`
+
+func (q *Queries) ListFieldByDatatypeID(ctx context.Context, parentID sql.NullInt64) ([]Fields, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldByDatatypeID, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Fields
+	for rows.Next() {
+		var i Fields
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.ParentID,
+			&i.Label,
+			&i.Data,
+			&i.Type,
+			&i.Author,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMedia = `-- name: ListMedia :many
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
 ORDER BY name
@@ -3340,12 +3380,12 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 	return items, nil
 }
 
-const listSessions = `-- name: ListSessions :many
+const listSession = `-- name: ListSession :many
 SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 `
 
-func (q *Queries) ListSessions(ctx context.Context) ([]Sessions, error) {
-	rows, err := q.db.QueryContext(ctx, listSessions)
+func (q *Queries) ListSession(ctx context.Context) ([]Sessions, error) {
+	rows, err := q.db.QueryContext(ctx, listSession)
 	if err != nil {
 		return nil, err
 	}
@@ -3404,12 +3444,12 @@ func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
 	return items, nil
 }
 
-const listTokens = `-- name: ListTokens :many
+const listToken = `-- name: ListToken :many
 SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
 `
 
-func (q *Queries) ListTokens(ctx context.Context) ([]Tokens, error) {
-	rows, err := q.db.QueryContext(ctx, listTokens)
+func (q *Queries) ListToken(ctx context.Context) ([]Tokens, error) {
+	rows, err := q.db.QueryContext(ctx, listToken)
 	if err != nil {
 		return nil, err
 	}

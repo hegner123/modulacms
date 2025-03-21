@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    container_name: modula_postgres
+    environment:
+      POSTGRES_USER: modula_u
+      POSTGRES_PASSWORD: modula_pass
+      POSTGRES_DB: modula_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/Users/home/Documents/Code/Go/modulacms/volumes
+
+  mysql:
+    build:
+      context: ./mysql
+      dockerfile: Dockerfile
+    container_name: modula_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_root
+      MYSQL_DATABASE: modula_db
+      MYSQL_USER: modula_u
+      MYSQL_PASSWORD: modula_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysqldata:/Users/home/Documents/Code/Go/modulacms/volumes
+
+volumes:
+  pgdata:
+  mysqldata:
+

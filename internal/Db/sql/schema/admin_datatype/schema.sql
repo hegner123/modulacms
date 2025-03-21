@@ -1,10 +1,6 @@
-CREATE TABLE IF NOT EXISTS admin_datatypes
-(
-    admin_dt_id    INTEGER
+CREATE TABLE IF NOT EXISTS admin_datatypes(
+    admin_datatype_id    INTEGER
         primary key,
-    admin_route_id INTEGER default NULL
-        references admin_routes
-            on update cascade on delete set default,
     parent_id      INTEGER default NULL
         references admin_datatypes
             on update cascade on delete set default,
@@ -18,5 +14,5 @@ CREATE TABLE IF NOT EXISTS admin_datatypes
             on update cascade on delete set default,
     date_created   TEXT    default CURRENT_TIMESTAMP,
     date_modified  TEXT    default CURRENT_TIMESTAMP,
-    template       TEXT     
+    history        TEXT
 );

@@ -1,46 +1,73 @@
+-- name: CreateRouteTable :exec
+CREATE TABLE IF NOT EXISTS routes (
+    route_id INT NOT NULL AUTO_INCREMENT,
+    slug VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    status INT NOT NULL,
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
+    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
+    PRIMARY KEY (route_id),
+    UNIQUE KEY unique_slug (slug),
+    CONSTRAINT fk_routes_routes_author FOREIGN KEY (author)
+        REFERENCES users(username)
+        ON UPDATE CASCADE
+        ON DELETE NO ACTION,
+    CONSTRAINT fk_routes_routes_author_id FOREIGN KEY (author_id)
+        REFERENCES users(user_id)
+        ON UPDATE CASCADE
+        ON DELETE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- name: GetRoute :one
-SELECT * FROM route
-WHERE slug = ? LIMIT 1;
+SELECT * FROM routes
+WHERE slug = ? 
+LIMIT 1;
 
--- name: GetRouteId :one
-SELECT id FROM route
-WHERE slug = ? LIMIT 1;
+-- name: CountRoute :one
+SELECT COUNT(*) 
+FROM routes;
+
+-- name: GetRouteID :one
+SELECT route_id 
+FROM routes
+WHERE slug = ? 
+LIMIT 1;
+
+-- name: GetLastRoute :one
+SELECT * FROM routes WHERE route_id = LAST_INSERT_ID();
 
 -- name: ListRoute :many
-SELECT * FROM route
+SELECT * FROM routes
 ORDER BY slug;
 
--- name: CreateRoute :one
-INSERT INTO route (
-author,
-authorid,
-slug,
-title,
-status,
-datecreated,
-datemodified, 
-content, 
-template
-) VALUES (
-?,?,?,?,?,?,?,?,?
-) RETURNING *;
-
+-- name: CreateRoute :exec
+INSERT INTO routes (
+    slug,
+    title,
+    status,
+    author,
+    author_id,
+    date_created,
+    date_modified,
+    history
+) VALUES (?,?,?,?,?,?,?,?);
 
 -- name: UpdateRoute :exec
-UPDATE route
-set slug = ?,
+UPDATE routes
+SET slug = ?,
     title = ?,
     status = ?,
-    content = ?, 
-    template = ?,
+    history = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
-    WHERE slug = ?
-    RETURNING *;
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE slug = ?;
 
 -- name: DeleteRoute :exec
-DELETE FROM route
+DELETE FROM routes
 WHERE slug = ?;
+

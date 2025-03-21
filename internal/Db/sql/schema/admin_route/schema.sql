@@ -1,10 +1,11 @@
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id INTEGER
         PRIMARY KEY,
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
+    
     author TEXT DEFAULT "system" NOT NULL
         REFERENCES users (username)
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
@@ -13,5 +14,5 @@ CREATE TABLE admin_routes (
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    template TEXT DEFAULT "modula_base.html" NOT NULL
+    history TEXT
 );

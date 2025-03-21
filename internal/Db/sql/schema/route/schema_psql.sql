@@ -1,12 +1,17 @@
-CREATE TABLE route (
-    id INTEGER PRIMARY KEY,
-    author TEXT, 
-    authorid TEXT, 
-    slug TEXT UNIQUE, 
-    title TEXT, 
-    status INTEGER, 
-    datecreated TEXT, 
-    datemodified TEXT, 
-    content TEXT, 
-    template TEXT
+CREATE TABLE IF NOT EXISTS routes (
+    route_id INTEGER
+        PRIMARY KEY,
+    slug TEXT NOT NULL
+        UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    author TEXT DEFAULT "system" NOT NULL
+    REFERENCES users (username)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    author_id INTEGER DEFAULT 1 NOT NULL
+    REFERENCES users (user_id)
+    ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
 );

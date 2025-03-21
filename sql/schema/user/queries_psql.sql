@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS users (
 SELECT * FROM users
 WHERE user_id = $1 LIMIT 1;
 
--- name: CountUsers :one
+-- name: CountUser :one
 SELECT COUNT(*)
 FROM users;
 

@@ -2,9 +2,6 @@ CREATE TABLE IF NOT EXISTS fields
 (
     field_id      INTEGER
         primary key,
-    route_id      INTEGER default NULL
-        references routes
-            on update cascade on delete set default,
     parent_id     INTEGER default NULL
         references datatypes
             on update cascade on delete set default,
@@ -19,5 +16,5 @@ CREATE TABLE IF NOT EXISTS fields
             on update cascade on delete set default,
     date_created  TEXT    default CURRENT_TIMESTAMP,
     date_modified TEXT    default CURRENT_TIMESTAMP,
-    template      TEXT
+    history TEXT
 );

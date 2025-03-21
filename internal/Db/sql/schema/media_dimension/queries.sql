@@ -1,9 +1,17 @@
-
+-- name: CreateMediaDimensionTable :exec
+CREATE TABLE IF NOT EXISTS media_dimensions
+(
+    md_id         INTEGER primary key,
+    label         TEXT unique,
+    width         INTEGER,
+    height        INTEGER,
+    aspect_ratio  TEXT
+);
 -- name: GetMediaDimension :one
 SELECT * FROM media_dimensions
 WHERE md_id = ? LIMIT 1;
 
--- name: CountMD :one
+-- name: CountMediaDimension :one
 SELECT COUNT(*)
 FROM media_dimensions;
 

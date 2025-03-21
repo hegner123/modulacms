@@ -1,29 +1,45 @@
+-- name: CreateMediaDimensionTable :exec
+CREATE TABLE IF NOT EXISTS media_dimensions (
+    md_id INT AUTO_INCREMENT PRIMARY KEY,
+    label VARCHAR(255) UNIQUE,
+    width INT,
+    height INT,
+    aspect_ratio TEXT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- name: GetMediaDimension :one
-SELECT * FROM media_dimension
-WHERE id = ? LIMIT 1;
+SELECT * FROM media_dimensions
+WHERE md_id = ? LIMIT 1;
+
+-- name: CountMediaDimension :one
+SELECT COUNT(*)
+FROM media_dimensions;
 
 -- name: ListMediaDimension :many
-SELECT * FROM media_dimension 
+SELECT * FROM media_dimensions 
 ORDER BY label;
 
--- name: CreateMediaDimension :one
-INSERT INTO media_dimension(
+-- name: CreateMediaDimension :exec
+INSERT INTO media_dimensions(
     label,
     width,
-    height
+    height,
+    aspect_ratio
 ) VALUES (
-  ?, ?, ?
-)
-RETURNING *;
+  ?, ?, ?, ?
+);
+
+-- name: GetLastMediaDimension :one
+SELECT * FROM media_dimensions WHERE md_id = LAST_INSERT_ID();
 
 -- name: UpdateMediaDimension :exec
-UPDATE media_dimension
+UPDATE media_dimensions
 set label = ?,
     width = ?,
-    height = ? 
-WHERE id = ?;
+    height = ?,
+    aspect_ratio = ?
+WHERE md_id = ?;
 
 -- name: DeleteMediaDimension :exec
-DELETE FROM media_dimension
-WHERE id = ?;
+DELETE FROM media_dimensions
+WHERE md_id = ?;

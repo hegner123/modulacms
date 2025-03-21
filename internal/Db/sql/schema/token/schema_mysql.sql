@@ -1,0 +1,13 @@
+CREATE TABLE IF NOT EXISTS tokens (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_type VARCHAR(255) NOT NULL,
+    token VARCHAR(255) NOT NULL UNIQUE,
+    issued_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked TINYINT(1) DEFAULT 0,
+    CONSTRAINT fk_tokens_users FOREIGN KEY (user_id)
+        REFERENCES users(user_id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+

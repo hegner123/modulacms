@@ -1,61 +1,77 @@
--- name: GetField :one
-SELECT * FROM field
-WHERE id = ? LIMIT 1;
+-- name: CreateFieldTable :exec
+CREATE TABLE IF NOT EXISTS fields (
+    field_id INT AUTO_INCREMENT PRIMARY KEY,
+    
+    parent_id INT DEFAULT NULL,
+    label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
+    data TEXT NOT NULL,
+    type TEXT NOT NULL,
+    author VARCHAR(255) NOT NULL DEFAULT 'system',
+    author_id INT NOT NULL DEFAULT 1,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT,
+    CONSTRAINT fk_fields_datatypes FOREIGN KEY (parent_id)
+        REFERENCES datatypes(datatype_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_fields_users_author FOREIGN KEY (author)
+        REFERENCES users(username)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_fields_users_author_id FOREIGN KEY (author_id)
+        REFERENCES users(user_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- name: GetFieldId :one
-SELECT id FROM field
-WHERE id = ? LIMIT 1;
+-- name: GetField :one
+SELECT * FROM fields 
+WHERE field_id = ? LIMIT 1;
+
+-- name: CountField :one
+SELECT COUNT(*)
+FROM fields ;
 
 -- name: ListField :many
-SELECT * FROM field
-ORDER BY id;
+SELECT * FROM fields 
+ORDER BY field_id;
 
--- name: ListFieldJoin :many
-SELECT 
-    f1.*,
-    f2.*
-FROM 
-    field f1
-LEFT JOIN 
-    field f2
-ON 
-    f1.fieldid = f2.parentid
-WHERE 
-    f1.routeid = ?;
+-- name: ListFieldByDatatypeID :many
+SELECT * FROM fields 
+WHERE parent_id = ?
+ORDER BY field_id;
 
-
--- name: CreateField :one
-INSERT INTO field (
-    routeid,
-    parentid,
+-- name: CreateField :exec
+INSERT INTO fields  (    
+    parent_id,
     label,
     data,
     type,
-    struct,
     author,
-    authorid,
-    datecreated,
-    datemodified
+    author_id,
+    history,
+    date_created,
+    date_modified
     ) VALUES (
-    ?,?,?, ?,?,?, ?,?,?,?
-    ) RETURNING *;
+?,?,?,?,?,?,?,?,?
+    );
+-- name: GetLastField :one
+SELECT * FROM fields WHERE field_id = LAST_INSERT_ID();
 
 
 -- name: UpdateField :exec
-UPDATE field
-set routeid = ?,
-    parentid = ?,
+UPDATE fields 
+set 
+    parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
-    struct = ?,
     author = ?,
-    authorid = ?,
-    datecreated = ?,
-    datemodified = ?
-    WHERE id = ?
-    RETURNING *;
+    author_id = ?,
+    history =?,
+    date_created = ?,
+    date_modified = ?
+    WHERE field_id = ?;
 
 -- name: DeleteField :exec
-DELETE FROM field
-WHERE id = ?;
+DELETE FROM fields 
+WHERE field_id = ?;
+

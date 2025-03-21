@@ -1,4 +1,11 @@
-
+-- name: CreateTablesTable :exec
+CREATE TABLE IF NOT EXISTS tables (
+    id INTEGER PRIMARY KEY,
+    label TEXT UNIQUE,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT
+);
 -- name: GetTable :one
 SELECT * FROM tables
 WHERE id = ? LIMIT 1;

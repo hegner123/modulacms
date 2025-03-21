@@ -1,11 +1,21 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"flag"
 	"fmt"
-	"log"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/charmbracelet/log"
+	"github.com/charmbracelet/ssh"
+	"github.com/charmbracelet/wish"
+	"github.com/charmbracelet/wish/logging"
 
 	auth "github.com/hegner123/modulacms/internal/Auth"
 	cli "github.com/hegner123/modulacms/internal/Cli"
@@ -27,6 +37,7 @@ type ModulaInit struct {
 
 var InitStatus ModulaInit
 var Env = config.Config{}
+var sshPort = "23234"
 
 func main() {
 	InitStatus := initFileCheck()
@@ -42,11 +53,12 @@ func main() {
 
 	err := install.CheckInstall()
 	if err != nil {
-		utility.LogError("", err)
+		utility.LogError("CheckInstall", err)
 		os.Exit(1)
 	}
 
 	Env = config.LoadConfig(verbose, "")
+	var host = Env.SSH_Site
 
 	if *versionFlag {
 		proccessPrintVersion()
@@ -82,6 +94,43 @@ func main() {
 		dbc, _, _ := db.ConfigDB(Env).GetConnection()
 		defer dbc.Close()
 	}
+
+	// Create the wish SSH server.
+	sshServer, err := wish.NewServer(
+		wish.WithAddress(net.JoinHostPort(host, sshPort)),
+		wish.WithHostKeyPath(".ssh/id_ed25519"),
+		wish.WithMiddleware(
+			cli.CliMiddleware(),
+			logging.Middleware(),
+		),
+	)
+	if err != nil {
+		log.Error("Could not start SSH server", "error", err)
+		return
+	}
+
+	// Run the SSH server concurrently.
+	go func() {
+
+		done := make(chan os.Signal, 1)
+		signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+		log.Info("Starting SSH server", "host", host, "port", sshPort)
+		go func() {
+			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+				log.Error("Could not start server", "error", err)
+				done <- nil
+			}
+		}()
+
+		<-done
+		log.Info("Stopping SSH server")
+        os.Exit(1)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() { cancel() }()
+		if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			log.Error("Could not stop server", "error", err)
+		}
+	}()
 
 	mux := http.NewServeMux()
 
@@ -265,7 +314,6 @@ func initFileCheck() ModulaInit {
 }
 
 func proccessAuthCheck() {
-
 	auth.OauthSettings(Env)
 	os.Exit(0)
 }
@@ -273,7 +321,7 @@ func proccessAuthCheck() {
 func proccessAlphaFlag() {
 	_, err := os.Open("test.txt")
 	if err != nil {
-		log.Panic("failed to create database dump in archive: ", err)
+		log.Fatal("failed to create database dump in archive: ", err)
 	}
 }
 func proccessPrintVersion() {
@@ -282,14 +330,11 @@ func proccessPrintVersion() {
 		return
 	}
 	log.Fatal(message)
-
 }
 
 func proccessRunCli() {
-	r := cli.CliRun()
-	if !r {
-		os.Exit(0)
-	}
+	m := cli.InitialModel()
+	cli.CliRun(&m)
 }
 
 func proccessUpdateFlag() {
@@ -299,4 +344,3 @@ func proccessUpdateFlag() {
 func proccessRunInstall() {
 	fmt.Println("Run Install")
 }
-

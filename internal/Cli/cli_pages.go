@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	config "github.com/hegner123/modulacms/internal/Config"
 )
@@ -156,12 +157,15 @@ func (m model) PageCreate() string {
 
 func (m model) PageRead() string {
 	m.header = m.header + fmt.Sprintf("Read %s", m.table)
-	hdrs, collection, err := GetColumnsRows(m.table)
+    f,_ := tea.LogToFile("debug.log","debug")
+    fmt.Fprintln(f, "Help")
+	h, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
 	}
+    c:= *collection
 
-	t := StyledTable(*hdrs, *collection, m.cursor)
+	t := StyledTable(h, c, m.cursor)
 
 	m.body = t.Render()
 	return m.RenderUI()
@@ -169,12 +173,12 @@ func (m model) PageRead() string {
 
 func (m model) PageReadSingle() string {
 	m.header = m.header + fmt.Sprintf("Read %s", m.table)
-	hdrs, collection, err := GetColumnsRows(m.table)
+	h, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
 	}
 
-	t := StyledTable(*hdrs, *collection, m.cursor)
+	t := StyledTable(h, *collection, m.cursor)
 
 	m.body = t.Render()
 	return m.RenderUI()
@@ -182,12 +186,12 @@ func (m model) PageReadSingle() string {
 
 func (m model) PageUpdate() string {
 	m.header = m.header + fmt.Sprintf("Update %s", m.table)
-	hdrs, collection, err := GetColumnsRows(m.table)
+	h, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
 	}
 
-	t := StyledTable(*hdrs, *collection, m.cursor)
+	t := StyledTable(h, *collection, m.cursor)
 
 	m.body = t.Render()
 	return m.RenderUI()
@@ -204,12 +208,12 @@ func (m *model) PageUpdateForm() string {
 
 func (m model) PageDelete() string {
 	m.header = m.header + fmt.Sprintf("Delete %s", m.table)
-	hdrs, collection, err := GetColumnsRows(m.table)
+	h, collection, err := GetColumnsRows(m.table)
 	if err != nil {
 		fmt.Println("err", err)
 	}
 
-	t := StyledTable(*hdrs, *collection, m.cursor)
+	t := StyledTable(h, *collection, m.cursor)
 
 	m.body = t.Render()
 	return m.RenderUI()

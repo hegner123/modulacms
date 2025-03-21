@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -201,25 +202,34 @@ func GetRelationships(tableName string, dbc db.Database) []ForeignKeyReference {
 	return references
 }
 
-func GetColumnsRows(t string) (*[]string, *[][]string, error) {
+func GetColumnsRows(t string) ([]string, *[][]string, error) {
+	f, _ := tea.LogToFile("debug.log", "debug")
 	dbt := db.StringDBTable(t)
 	verbose := false
 	query := "SELECT * FROM"
+    
 	c := config.LoadConfig(&verbose, "")
+	fmt.Fprintln(f, "Config Loaded")
 	d := db.ConfigDB(c)
+	fmt.Fprintln(f, "db configured")
 	rows, err := d.ExecuteQuery(query, dbt)
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Fprintln(f, "query executed")
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, nil, err
 	}
+	fmt.Fprintln(f, "columns parsed")
 	listRows, err := db.GenericList(dbt, d)
+	fmt.Fprintln(f, "Rows from GenericList")
 	if err != nil {
+		fmt.Fprintln(f, err)
 		return nil, nil, err
 	}
-	return &columns, listRows, nil
+	fmt.Fprintln(f, listRows)
+	return columns, listRows, nil
 
 }
 func (m model) GetSuggestionsString(column string) []string {
@@ -236,7 +246,6 @@ func (m model) GetSuggestionsString(column string) []string {
 	}
 
 }
-
 
 /*
 func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
@@ -269,5 +278,3 @@ func MapFields(m map[string]string, fk []ForeignKeyReference, dbc db.Database) {
 	fmt.Print(s)
 }
 */
-
-

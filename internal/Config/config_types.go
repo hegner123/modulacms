@@ -21,6 +21,7 @@ type Config struct {
 	SSL_Port            string              `json:"ssl_port"`
 	Client_Site         string              `json:"client_site"`
 	Admin_Site          string              `json:"admin_site"`
+	SSH_Site            string              `json:"ssh_site"`
 	Options             map[string][]any    `json:"options"`
 	Auth_Salt           string              `json:"auth_salt"`
 	Cookie_Name         string              `json:"cookie_name"`

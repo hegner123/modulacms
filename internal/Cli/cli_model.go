@@ -4,15 +4,16 @@ import (
 	"database/sql"
 	"fmt"
 	"strconv"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/charmbracelet/lipgloss"
 	db "github.com/hegner123/modulacms/internal/Db"
 )
 
 type formCompletedMsg struct{}
 type formCancelledMsg struct{}
-
 
 type FocusKey int
 
@@ -26,6 +27,13 @@ type CliInterface string
 type InputType string
 
 type model struct {
+	term         string
+	profile      string
+	width        int
+	height       int
+	bg           string
+	txtStyle     lipgloss.Style
+	quitStyle    lipgloss.Style
 	cursor       int
 	focusIndex   int
 	page         CliPage
@@ -34,7 +42,7 @@ type model struct {
 	pages        []CliPage
 	tables       []string
 	selected     map[int]struct{}
-	headers      *[]string
+	headers      []string
 	rows         *[][]string
 	row          *[]string
 	form         *huh.Form
@@ -54,11 +62,12 @@ type model struct {
 	history      []CliPage
 	Query        db.SQLQuery
 	QueryResults []sql.Row
+	time         time.Time
 }
 
 var CliContinue bool = false
 
-func initialModel() model {
+func InitialModel() model {
 	return model{
 		focusIndex: 0,
 		page:       *homePage,
