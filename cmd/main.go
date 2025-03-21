@@ -40,6 +40,11 @@ var Env = config.Config{}
 var sshPort = "23234"
 
 func main() {
+	// Create a channel to listen for OS signals.
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	LogInfo := utility.NewLogger(utility.INFO)
+	LogError := utility.NewLogger(utility.ERROR)
 	InitStatus := initFileCheck()
 	authFlag := flag.Bool("auth", false, "Run oauth tests")
 	updateFlag := flag.Bool("update", false, "Update binaries and plugins.")
@@ -53,12 +58,9 @@ func main() {
 
 	err := install.CheckInstall()
 	if err != nil {
-		utility.LogError("CheckInstall", err)
+		LogError.Error("CheckInstall", err)
 		os.Exit(1)
 	}
-
-	Env = config.LoadConfig(verbose, "")
-	var host = Env.SSH_Site
 
 	if *versionFlag {
 		proccessPrintVersion()
@@ -89,13 +91,14 @@ func main() {
 		// check if installed, ask if you want to reinstall and lose content
 		proccessRunInstall()
 	}
+	Env = config.LoadConfig(verbose, "")
 
 	if !InitStatus.DbFileExists || *reset {
 		dbc, _, _ := db.ConfigDB(Env).GetConnection()
 		defer dbc.Close()
 	}
 
-	// Create the wish SSH server.
+	var host = Env.SSH_Site
 	sshServer, err := wish.NewServer(
 		wish.WithAddress(net.JoinHostPort(host, sshPort)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
@@ -104,34 +107,6 @@ func main() {
 			logging.Middleware(),
 		),
 	)
-	if err != nil {
-		log.Error("Could not start SSH server", "error", err)
-		return
-	}
-
-	// Run the SSH server concurrently.
-	go func() {
-
-		done := make(chan os.Signal, 1)
-		signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-		log.Info("Starting SSH server", "host", host, "port", sshPort)
-		go func() {
-			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-				log.Error("Could not start server", "error", err)
-				done <- nil
-			}
-		}()
-
-		<-done
-		log.Info("Stopping SSH server")
-        os.Exit(1)
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-		defer func() { cancel() }()
-		if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-			log.Error("Could not stop server", "error", err)
-		}
-	}()
-
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
@@ -262,23 +237,84 @@ func main() {
 	})
 
 	middlewareHandler := middleware.Serve(mux)
-
-	if !InitStatus.UseSSL {
-
-		log.Printf("\n\nServer is running at https://localhost:%s\n", Env.SSL_Port)
-		err := http.ListenAndServeTLS(":"+Env.SSL_Port, "./certs/localhost.crt", "./certs/localhost.key", middlewareHandler)
-		if err != nil {
-			log.Fatalf("Failed to start server: %v", err)
+	var (
+		// Define your HTTP server instance.
+		httpServer = &http.Server{
+			Addr:    Env.Port,
+			Handler: middlewareHandler,
 		}
+		// Define your HTTPS server instance.
+		httpsServer = &http.Server{
+			Addr: "localhost:" + Env.SSL_Port,
+
+			Handler: middlewareHandler,
+		}
+	)
+
+	// Run the SSH server concurrently.
+	go func() {
+
+		LogInfo.Info("Starting SSH server", "host", host, "port", sshPort)
+		go func() {
+			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+				LogError.Error("Could not start server", err)
+				done <- nil
+			}
+		}()
+
+		<-done
+		LogInfo.Info("Stopping SSH Server")
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() { cancel() }()
+		if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+			LogError.Error("Could not stop server", err)
+		}
+	}()
+
+	go func() {
+
+		if !InitStatus.UseSSL {
+			LogInfo.Info("Server is running at https://localhost:", Env.SSL_Port)
+			err = httpsServer.ListenAndServeTLS("./certs/localhost.crt", "./certs/localhost.key")
+			if err != nil {
+				LogInfo.Info("Shutting Down Server", err)
+				done <- syscall.SIGTERM
+			}
+		}
+		LogInfo.Info("Server is running at http://localhost:", Env.Port)
+		err = httpServer.ListenAndServe()
+		if err != nil {
+				LogInfo.Info("Shutting Down Server", err)
+			done <- syscall.SIGTERM
+		}
+	}()
+	// Wait for an OS signal (e.g., Ctrl-C)
+	<-done
+	LogInfo.Info("Shutting down servers...")
+
+	// Create a context with a timeout for graceful shutdown.
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// Shutdown HTTP server.
+	if err := httpServer.Shutdown(ctx); err != nil {
+		log.Printf("HTTP server shutdown error: %v", err)
 	}
-	log.Printf("\n\nServer is running at http://localhost:%s\n", Env.Port)
-	err = http.ListenAndServe(":"+Env.Port, middlewareHandler)
-	if err != nil {
-		log.Fatalf("Failed to start server: %v", err)
+
+	if err := httpsServer.Shutdown(ctx); err != nil {
+		log.Printf("HTTPS server shutdown error: %v", err)
 	}
+
+	// Shutdown SSH server.
+	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		log.Printf("SSH server shutdown error: %v", err)
+	}
+
+	LogInfo.Info("Servers gracefully stopped.")
 }
 
 func initFileCheck() ModulaInit {
+	LogDebug := utility.NewLogger(utility.DEBUG)
 	Status := ModulaInit{}
 	//Check DB
 	_, err := os.Open("modula.db")
@@ -290,13 +326,13 @@ func initFileCheck() ModulaInit {
 	_, err = os.Open("./certs/localhost.crt")
 	Status.Certificates = true
 	if err != nil {
-		fmt.Printf("Error opening localhost.crt %s\n", err)
+		LogDebug.Debug("Error opening localhost.crt %s\n", err)
 		Status.Certificates = false
 	}
 	_, err = os.Open("./certs/localhost.key")
 	Status.Key = true
 	if err != nil {
-		fmt.Printf("Error opening localhost.key %s\n", err)
+		LogDebug.Debug("Error opening localhost.key %s\n", err)
 		Status.Key = false
 	}
 	if !Status.Certificates || !Status.Key {
@@ -306,6 +342,7 @@ func initFileCheck() ModulaInit {
 	//check for content version
 	_, err = os.Stat("./content.version")
 	if err != nil {
+		LogDebug.Debug("", err)
 		Status.ContentVersion = false
 
 	}
@@ -334,7 +371,10 @@ func proccessPrintVersion() {
 
 func proccessRunCli() {
 	m := cli.InitialModel()
-	cli.CliRun(&m)
+	if _, e := cli.CliRun(&m); e {
+		os.Exit(0)
+		os.Exit(0)
+	}
 }
 
 func proccessUpdateFlag() {

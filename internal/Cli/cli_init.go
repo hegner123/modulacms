@@ -4,12 +4,12 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-func CliRun(m tea.Model) *tea.Program {
+func CliRun(m *model) (*tea.Program,bool) {
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		ErrLog.Fatal("", err)
 	}
-	return p
+	return nil,CliContinue
 }
 
 func (m *model) Init() tea.Cmd {

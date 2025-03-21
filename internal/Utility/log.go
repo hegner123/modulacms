@@ -88,7 +88,7 @@ func formatLogMessage(level LogLevel, message string, err error, args ...any) st
 	switch level {
 	case DEBUG:
 		levelStr = "DEBUG"
-		levelColor = BLUEF
+		levelColor = MAGENTAF
 	case INFO:
 		levelStr = "INFO"
 		levelColor = GREENF
