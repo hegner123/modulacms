@@ -3,13 +3,16 @@ package cli
 import (
 	"database/sql"
 	"fmt"
+	"io/fs"
 	"strconv"
+	"strings"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type formCompletedMsg struct{}
@@ -27,6 +30,8 @@ type CliInterface string
 type InputType string
 
 type model struct {
+	titleFont    int
+	titles       []string
 	term         string
 	profile      string
 	width        int
@@ -58,6 +63,7 @@ type model struct {
 	header       string
 	body         string
 	footer       string
+	verbose      bool
 	controller   CliInterface
 	history      []CliPage
 	Query        db.SQLQuery
@@ -67,8 +73,19 @@ type model struct {
 
 var CliContinue bool = false
 
-func InitialModel() model {
+func InitialModel(v *bool) model {
+	verbose := false
+	if v != nil {
+		verbose = *v
+	}
+	fs, err := TitleFile.ReadDir("titles")
+	if err != nil {
+		utility.DefaultLogger.Fatal("", err)
+	}
+	fonts := ParseTitleFonts(fs)
 	return model{
+		titleFont:  0,
+		titles:     LoadTitles(fonts),
 		focusIndex: 0,
 		page:       *homePage,
 		tables:     GetTables(),
@@ -94,6 +111,7 @@ func InitialModel() model {
 			*deletePage,
 			*updateFormPage,
 			*readSinglePage,
+			*dynamicPage,
 		},
 		selected:    make(map[int]struct{}),
 		formMap:     make(map[string]string),
@@ -101,6 +119,7 @@ func InitialModel() model {
 		focus:       PAGEFOCUS,
 		formActions: []formAction{edit, submit, reset, cancel},
 		history:     []CliPage{},
+		verbose:     verbose,
 	}
 }
 
@@ -117,4 +136,33 @@ func (m model) GetIDRow() int64 {
 	}
 	return id
 
+}
+
+func ParseTitleFonts(f []fs.DirEntry) []string {
+	var fonts []string
+
+	for _, file := range f {
+		rmExt := strings.TrimSuffix(file.Name(), ".txt")
+		name := strings.Split(rmExt, "_")
+		if len(name) < 1 {
+			err := fmt.Errorf("font name not correctly formated %v", file.Name())
+			utility.DefaultLogger.Fatal("", err)
+		}
+		fonts = append(fonts, name[1])
+	}
+	return fonts
+}
+
+func LoadTitles(f []string) []string {
+	var titles []string
+	for _, font := range f {
+		aTitle, err := TitleFile.ReadFile("titles/title_" + font + ".txt")
+		if err != nil {
+			aTitle = []byte("ModulaCMS")
+		}
+		t := string(aTitle)
+		titles = append(titles, t)
+	}
+
+	return titles
 }

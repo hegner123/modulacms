@@ -42,15 +42,15 @@ func (m *model) PageRouter() {
 			m.controller = m.page.Controller
 		}
 	case UPDATEPAGE:
+        m.formMap = make(map[string]string)
 		m.form, m.formLen = m.BuildUpdateDBForm(db.StringDBTable(m.table))
 		m.form.Init()
 		m.focus = FORMFOCUS
-		m.formFields[0].Focus()
 
-		m.headers, m.rows, err = GetColumnsRows(m.table)
-		if err != nil {
-			m.body = err.Error()
-		}
+        m.headers, m.rows, err = GetColumnsRows(m.table)
+        if err != nil {
+            m.body = err.Error()
+        }
 		m.page = m.pages[UPDATEFORMPAGE]
 		m.controller = m.page.Controller
 	default:

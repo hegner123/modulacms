@@ -48,12 +48,8 @@ dev: ## Prepare binaries and templates in src dir for faster iteration
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
+	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd
 	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(AMD_BINARY_NAME) ./cmd	
-	rsync -av --delete plugins/ out/plugins/
-	rsync -av --delete certs/ out/certs/
-	rsync -av --delete config.json out/
-	rsync -av --delete version.json out/
-	rsync -av --delete setup.sql out/
 
 ## Dump:
 dump: ## Dump sqlite db to sql

@@ -7,13 +7,23 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-func (m model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
+
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -35,14 +45,22 @@ func (m model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 		m.PushHistory(m.page)
 		m.PageRouter()
 	}
-	return &m, nil
+	return m, nil
 }
 
-func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -53,7 +71,7 @@ func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.C
 		if m.cursor < len(m.tables)-1 {
 			m.cursor++
 		}
-	case "h", "shift+tab", "backspace":
+	case "h", "left", "shift+tab", "backspace":
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
@@ -68,10 +86,10 @@ func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.C
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return &m, nil
+	return m, nil
 }
 
-func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.focus = FORMFOCUS
 
@@ -109,7 +127,7 @@ func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
 
-	return &m, tea.Batch(cmds...)
+	return m, tea.Batch(cmds...)
 }
 
 func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
@@ -117,6 +135,14 @@ func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea
 	//Exit
 	case "q", "esc", "ctrl+c":
 		return m, tea.Quit
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -127,7 +153,7 @@ func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea
 		if m.cursor < option-1 {
 			m.cursor++
 		}
-	case "h", "shift+tab", "backspace":
+	case "h", "left", "shift+tab", "backspace":
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
@@ -136,18 +162,25 @@ func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea
 	//Action
 	case "enter", "l":
 		m.PushHistory(m.page)
-		m.cursor = 0
 		m.page = m.pages[READSINGLEPAGE]
 		m.controller = m.page.Controller
 	}
 	return m, nil
 }
 
-func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -172,15 +205,23 @@ func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return &m, nil
+	return m, nil
 }
 
-func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	var rows [][]string
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -208,7 +249,7 @@ func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, te
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
-	return &m, nil
+	return m, nil
 }
 
 func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, tea.Cmd) {
@@ -244,18 +285,26 @@ func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, 
 		m.controller = m.page.Controller
 		err := m.CLIUpdate(db.DBTable(m.table))
 		if err != nil {
-			fmt.Fprintln(logFile, err.Error())
+			utility.DefaultLogger.Ferror(logFile, "", err)
 		}
 	}
 
 	return m, tea.Batch(cmds...)
 }
 
-func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+func (m *model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
+	case "shift+left":
+		if m.titleFont > 0 {
+			m.titleFont--
+		}
+	case "shift+right":
+		if m.titleFont < len(m.titles)-1 {
+			m.titleFont++
+		}
 
 	//Navigation
 	case "up", "k":
@@ -263,10 +312,10 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 			m.cursor--
 		}
 	case "down", "j":
-		if m.cursor < len(m.tables)-1 {
+		if m.cursor < len(m.rows)-1 {
 			m.cursor++
 		}
-	case "h", "shift+tab", "backspace":
+	case "h", "left", "shift+tab", "backspace":
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
@@ -275,28 +324,33 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 	//Action
 	case "enter", "l":
 		m.PushHistory(m.page)
-		m.table = m.tables[m.cursor]
 		err := m.CLIDelete(db.StringDBTable(m.table))
 		if err != nil {
-			return &m, nil
+			return m, nil
 		}
-		m.cursor = 0
-		m.page = m.pages[READPAGE]
+		m.page = m.pages[DELETEPAGE]
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
-	return &m, nil
+	return m, nil
 }
 
-func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 
 		//Exit
 		case "q", "esc", "ctrl+c":
-			return &m, tea.Quit
+			return m, tea.Quit
+		case "shift+left":
+			if m.titleFont > 0 {
+				m.titleFont--
+			}
+		case "shift+right":
+			if m.titleFont < len(m.titles)-1 {
+				m.titleFont++
+			}
 
 		//Navigation
 		case "up", "k":
@@ -307,7 +361,7 @@ func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 			if m.cursor < len(m.menu) {
 				m.cursor++
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			m.cursor = 0
 			m.page = *m.PopHistory()
 			m.controller = m.page.Controller
@@ -319,5 +373,5 @@ func (m model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 			m.PageRouter()
 		}
 	}
-	return &m, nil
+	return m, nil
 }

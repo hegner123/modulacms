@@ -2,9 +2,7 @@ package cli
 
 import (
 	"database/sql"
-	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -49,7 +47,6 @@ func GetTables() []string {
 	return labels
 }
 
-
 func GetColumns(t string) (*[]string, *[]*sql.ColumnType, error) {
 	dbt := db.StringDBTable(t)
 	verbose := false
@@ -72,34 +69,24 @@ func GetColumns(t string) (*[]string, *[]*sql.ColumnType, error) {
 	return &clm, &ct, nil
 }
 
-
-
 func GetColumnsRows(t string) ([]string, [][]string, error) {
-	f, _ := tea.LogToFile("debug.log", "debug")
 	dbt := db.StringDBTable(t)
 	verbose := false
 	query := "SELECT * FROM"
 	c := config.LoadConfig(&verbose, "")
-	fmt.Fprintln(f, "Config Loaded")
 	d := db.ConfigDB(c)
-	fmt.Fprintln(f, "db configured")
 	rows, err := d.ExecuteQuery(query, dbt)
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Fprintln(f, "query executed")
 	columns, err := rows.Columns()
 	if err != nil {
 		return nil, nil, err
 	}
-	fmt.Fprintln(f, "columns parsed")
 	listRows, err := db.GenericList(dbt, d)
-	fmt.Fprintln(f, "Rows from GenericList")
 	if err != nil {
-		fmt.Fprintln(f, err)
 		return nil, nil, err
 	}
-	fmt.Fprintln(f, listRows)
 	return columns, *listRows, nil
 
 }
@@ -118,4 +105,3 @@ func (m model) GetSuggestionsString(column string) []string {
 	}
 
 }
-

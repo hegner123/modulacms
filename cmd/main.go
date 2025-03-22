@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
+	"golang.org/x/crypto/acme/autocert"
 
 	auth "github.com/hegner123/modulacms/internal/Auth"
 	cli "github.com/hegner123/modulacms/internal/Cli"
@@ -27,44 +28,37 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-type ModulaInit struct {
-	UseSSL         bool
-	DbFileExists   bool
-	ContentVersion bool
-	Certificates   bool
-	Key            bool
-}
-
-var InitStatus ModulaInit
+var InitStatus install.ModulaInit
 var Env = config.Config{}
-var sshPort = "23234"
+var certDir string
 
 func main() {
 	// Create a channel to listen for OS signals.
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	LogInfo := utility.NewLogger(utility.INFO)
-	LogError := utility.NewLogger(utility.ERROR)
 	InitStatus := initFileCheck()
 	authFlag := flag.Bool("auth", false, "Run oauth tests")
 	updateFlag := flag.Bool("update", false, "Update binaries and plugins.")
 	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
-	versionFlag := flag.Bool("v", false, "Print version and exit")
+	versionFlag := flag.Bool("version", false, "Print version and exit")
 	alphaFlag := flag.Bool("a", false, "including code for build purposes")
-	verbose := flag.Bool("V", false, "Enable verbose mode")
+	verbose := flag.Bool("v", false, "Enable verbose mode")
 	reset := flag.Bool("reset", false, "Delete Database and reinitialize")
-	installFlag := flag.Bool("i", false, "Create tables in db driver")
+	installFlag := flag.Bool("i", false, "Run Installation UI")
 	flag.Parse()
-
-	err := install.CheckInstall()
-	if err != nil {
-		LogError.Error("CheckInstall", err)
-		os.Exit(1)
-	}
-
 	if *versionFlag {
 		proccessPrintVersion()
 	}
+
+	InstallStatus, err := install.CheckInstall(InitStatus)
+	if err != nil {
+		utility.DefaultLogger.Error("CheckInstall", err)
+		ok := install.InstallUI(InstallStatus)
+		if !ok {
+			os.Exit(1)
+		}
+	}
+
 	if *updateFlag {
 		proccessUpdateFlag()
 	}
@@ -72,7 +66,7 @@ func main() {
 		proccessAuthCheck()
 	}
 	if *cliFlag {
-		proccessRunCli()
+		proccessRunCli(verbose)
 	}
 
 	if *alphaFlag {
@@ -98,12 +92,12 @@ func main() {
 		defer dbc.Close()
 	}
 
-	var host = Env.SSH_Site
+	var host = Env.SSH_Host
 	sshServer, err := wish.NewServer(
-		wish.WithAddress(net.JoinHostPort(host, sshPort)),
+		wish.WithAddress(net.JoinHostPort(host, Env.SSH_Port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			cli.CliMiddleware(),
+			cli.CliMiddleware(verbose),
 			logging.Middleware(),
 		),
 	)
@@ -236,6 +230,12 @@ func main() {
 		router.SlugHandler(w, r, Env)
 	})
 
+	manager := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		Cache:      autocert.DirCache(Env.Cert_Dir),                         // Folder to store certificates
+		HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
+	}
+
 	middlewareHandler := middleware.Serve(mux)
 	var (
 		// Define your HTTP server instance.
@@ -245,52 +245,60 @@ func main() {
 		}
 		// Define your HTTPS server instance.
 		httpsServer = &http.Server{
-			Addr: "localhost:" + Env.SSL_Port,
-
-			Handler: middlewareHandler,
+			Addr:      "localhost:" + Env.SSL_Port,
+			TLSConfig: manager.TLSConfig(),
+			Handler:   middlewareHandler,
 		}
 	)
+
+	l := len(Env.Cert_Dir)
+	c := Env.Cert_Dir[l-1]
+	if string(c) != "/" {
+		certDir = Env.Cert_Dir + "/"
+	} else {
+		certDir = Env.Cert_Dir
+	}
 
 	// Run the SSH server concurrently.
 	go func() {
 
-		LogInfo.Info("Starting SSH server", "ssh "+host+" -p "+sshPort)
+		utility.DefaultLogger.Info("Starting SSH server", "ssh "+Env.SSH_Host+" -p "+Env.SSH_Port)
 		go func() {
 			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-				LogError.Error("Could not start server", err)
+				utility.DefaultLogger.Error("Could not start server", err)
 				done <- nil
 			}
 		}()
 
 		<-done
-		LogInfo.Info("Stopping SSH Server")
+		utility.DefaultLogger.Info("Stopping SSH Server")
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer func() { cancel() }()
 		if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-			LogError.Error("Could not stop server", err)
+			utility.DefaultLogger.Error("Could not stop server", err)
 		}
 	}()
 
 	go func() {
 
 		if !InitStatus.UseSSL {
-			LogInfo.Info("Server is running at https://localhost:", Env.SSL_Port)
-			err = httpsServer.ListenAndServeTLS("./certs/localhost.crt", "./certs/localhost.key")
+			utility.DefaultLogger.Info("Server is running at https://localhost:", Env.SSL_Port)
+			err = httpsServer.ListenAndServeTLS(certDir+"localhost.crt", certDir+"localhost.key")
 			if err != nil {
-				LogInfo.Info("Shutting Down Server", err)
+				utility.DefaultLogger.Info("Shutting Down Server", err)
 				done <- syscall.SIGTERM
 			}
 		}
-		LogInfo.Info("Server is running at http://localhost:", Env.Port)
+		utility.DefaultLogger.Info("Server is running at http://localhost:", Env.Port)
 		err = httpServer.ListenAndServe()
 		if err != nil {
-			LogInfo.Info("Shutting Down Server", err)
+			utility.DefaultLogger.Info("Shutting Down Server", err)
 			done <- syscall.SIGTERM
 		}
 	}()
 	// Wait for an OS signal (e.g., Ctrl-C)
 	<-done
-	LogInfo.Info("Shutting down servers...")
+	utility.DefaultLogger.Info("Shutting down servers...")
 
 	// Create a context with a timeout for graceful shutdown.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -310,12 +318,11 @@ func main() {
 		log.Printf("SSH server shutdown error: %v", err)
 	}
 
-	LogInfo.Info("Servers gracefully stopped.")
+	utility.DefaultLogger.Info("Servers gracefully stopped.")
 }
 
-func initFileCheck() ModulaInit {
-	LogDebug := utility.NewLogger(utility.DEBUG)
-	Status := ModulaInit{}
+func initFileCheck() install.ModulaInit {
+	Status := install.ModulaInit{}
 	//Check DB
 	_, err := os.Open("modula.db")
 	if err != nil {
@@ -326,23 +333,23 @@ func initFileCheck() ModulaInit {
 	_, err = os.Open("./certs/localhost.crt")
 	Status.Certificates = true
 	if err != nil {
-		LogDebug.Debug("Error opening localhost.crt %s\n", err)
 		Status.Certificates = false
 	}
 	_, err = os.Open("./certs/localhost.key")
 	Status.Key = true
 	if err != nil {
-		LogDebug.Debug("Error opening localhost.key %s\n", err)
 		Status.Key = false
 	}
+
 	if !Status.Certificates || !Status.Key {
+		// HUH form
 		Status.UseSSL = false
 	}
 
 	//check for content version
 	_, err = os.Stat("./content.version")
 	if err != nil {
-		LogDebug.Debug("", err)
+		utility.DefaultLogger.Debug("", err)
 		Status.ContentVersion = false
 
 	}
@@ -364,16 +371,26 @@ func proccessAlphaFlag() {
 func proccessPrintVersion() {
 	message, err := utility.GetVersion()
 	if err != nil {
-		return
+		utility.DefaultLogger.Fatal(*message, err)
 	}
-	log.Fatal(message)
+	utility.DefaultLogger.Info(*message)
+	os.Exit(0)
 }
 
-func proccessRunCli() {
-	m := cli.InitialModel()
-	if _, e := cli.CliRun(&m); e {
-		os.Exit(0)
-		os.Exit(0)
+func proccessRunCli(v *bool) {
+	m := cli.InitialModel(v)
+	if _, e := cli.CliRun(&m); !e {
+		//os.Exit(0)
+		p, err := os.FindProcess(os.Getpid())
+		if err != nil {
+			fmt.Println("Error finding process:", err)
+			return
+		}
+
+		// Send a SIGTERM to the process.
+		if err := p.Signal(syscall.SIGTERM); err != nil {
+			fmt.Println("Error sending signal:", err)
+		}
 	}
 }
 

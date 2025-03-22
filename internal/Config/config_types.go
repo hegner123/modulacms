@@ -19,9 +19,11 @@ const (
 type Config struct {
 	Port                string              `json:"port"`
 	SSL_Port            string              `json:"ssl_port"`
+	Cert_Dir            string              `json:"cert_dir"`
 	Client_Site         string              `json:"client_site"`
 	Admin_Site          string              `json:"admin_site"`
-	SSH_Site            string              `json:"ssh_site"`
+	SSH_Host            string              `json:"ssh_host"`
+	SSH_Port            string              `json:"ssh_port"`
 	Options             map[string][]any    `json:"options"`
 	Auth_Salt           string              `json:"auth_salt"`
 	Cookie_Name         string              `json:"cookie_name"`

@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	config "github.com/hegner123/modulacms/internal/Config"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type PageIndex int
@@ -159,10 +160,9 @@ func (m model) PageCreate() string {
 func (m model) PageRead() string {
 	m.header = m.header + fmt.Sprintf("Read %s", m.table)
 	f, _ := tea.LogToFile("debug.log", "debug")
-	fmt.Fprintln(f, "Help")
 	h, c, err := GetColumnsRows(m.table)
 	if err != nil {
-		fmt.Println("err", err)
+		utility.DefaultLogger.Finfo(f, "", err)
 	}
 
 	t := StyledTable(h, c, m.cursor)
@@ -178,9 +178,7 @@ func (m model) PageReadSingle() string {
 		fmt.Println("err", err)
 	}
 
-	t := StyledTable(h, c, m.cursor)
-
-	m.body = t.Render()
+	m.body = RenderEntry(h, c[m.cursor])
 	return m.RenderUI()
 }
 
@@ -242,13 +240,13 @@ func (m model) PageConfig() string {
 }
 
 func (m model) PageDynamic() string {
-    m.header = "Content Editor"
+	m.header = "Content Editor"
 	m.body = "\n"
 	if m.form == nil {
 		m.body += "Form == nil"
 	}
 	m.body += m.form.View()
-    return m.RenderUI()
+	return m.RenderUI()
 }
 
 func (m model) Page404() string {

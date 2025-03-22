@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 func (m model) CLICreate(table db.DBTable) error {
@@ -189,8 +190,14 @@ func (m model) CLIUpdate(table db.DBTable) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(logFile, m.formValues)
+	if len(m.formValues) != len(m.headers) {
+
+		utility.DefaultLogger.Ferror(logFile, "form values do not match headers", err)
+	}
 	for i, v := range m.formValues {
+        if i > len(m.headers)-1{
+            break
+        }
 		if v == nil {
 			continue
 		}
@@ -202,7 +209,7 @@ func (m model) CLIUpdate(table db.DBTable) error {
 	defer con.Close()
 	jsonData, err := json.Marshal(m.formMap)
 	if err != nil {
-		ErrLog.Fatal("", err)
+		utility.DefaultLogger.Ferror(logFile, "", err)
 	}
 	switch table {
 	case db.Admin_content_data:
@@ -230,6 +237,7 @@ func (m model) CLIUpdate(table db.DBTable) error {
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
+		utility.DefaultLogger.Fdebug(logFile, "", result)
 		params := db.MapUpdateAdminDatatypeParams(result)
 		_, err := d.UpdateAdminDatatype(params)
 		if err != nil {
@@ -391,12 +399,17 @@ func (m model) CLIUpdate(table db.DBTable) error {
 }
 
 func (m model) CLIDelete(table db.DBTable) error {
+	f, _ := tea.LogToFile("debug.log", "debug")
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
 	defer con.Close()
+	utility.DefaultLogger.Fdebug(f, "cursor", m.cursor)
+	utility.DefaultLogger.Fdebug(f, "rowLengt", len(m.rows))
+	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor])
+	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor][0])
 	jsonData, err := json.Marshal(m.formMap)
 	if err != nil {
 		return err
@@ -404,7 +417,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 	switch table {
 	case db.Admin_content_data:
 		var result struct{ ID int64 }
-        result.ID = m.GetIDRow()
+		result.ID = m.GetIDRow()
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			return err
 		}

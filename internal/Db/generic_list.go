@@ -1,13 +1,7 @@
 package db
 
-import (
-	"fmt"
-
-	tea "github.com/charmbracelet/bubbletea"
-)
 
 func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
-	f, _ := tea.LogToFile("debug.log", "debug")
 	switch t {
 	case Admin_content_data:
 		a, err := d.ListAdminContentData()
@@ -59,7 +53,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 		if err != nil {
 			return nil, err
 		}
-        fmt.Println(f,"help")
 		var collection [][]string
 		for i := range len(*a) {
 			rows := *a

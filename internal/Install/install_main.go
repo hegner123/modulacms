@@ -6,26 +6,47 @@ import (
 	config "github.com/hegner123/modulacms/internal/Config"
 )
 
-func CheckInstall() error {
+type ModulaInit struct {
+	UseSSL          bool
+	DbFileExists    bool
+	ContentVersion  bool
+	Certificates    bool
+	Key             bool
+	ConfigExists    bool
+	DBConnected     bool
+	BucketConnected bool
+	OauthConnected  bool
+}
+
+func CheckInstall(init ModulaInit) (ModulaInit,error) {
 	v := false
 	err := CheckConfigExists("")
 	if err != nil {
-		return err
+		init.ConfigExists = false
+		init.DBConnected = false
+		init.BucketConnected = false
+		init.OauthConnected = false
+        return init,err
+	} else {
+		init.ConfigExists = true
 	}
 	c := config.LoadConfig(&v, "")
 	err = CheckDb(c)
 	if err != nil {
-		return err
+		init.DBConnected = false
+        return init, err
 	}
 	err = CheckBucket()
 	if err != nil {
-		return err
+		init.BucketConnected = false
+        return init, err
 	}
 	err = CheckOauth()
 	if err != nil {
-		return err
+		init.OauthConnected = false
+        return init, err
 	}
-	return nil
+	return init, nil
 
 }
 

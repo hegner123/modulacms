@@ -4,6 +4,7 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,7 +29,7 @@ type Logger struct {
 	prefix string
 }
 
-var DefaultLogger = NewLogger(INFO)
+var DefaultLogger = NewLogger(DEBUG)
 
 // NewLogger creates a new logger with the specified minimum level
 func NewLogger(level LogLevel) *Logger {
@@ -170,6 +171,41 @@ func (l *Logger) Fatal(message string, err error, args ...any) {
 	}
 }
 
+// Debug logs a debug message
+func (l *Logger) Fdebug(w io.Writer, message string, args ...any) {
+	if l.level <= DEBUG {
+		fmt.Fprintln(w, formatLogMessage(DEBUG, message, nil, args...))
+	}
+}
+
+// Info logs an informational message
+func (l *Logger) Finfo(w io.Writer, message string, args ...any) {
+	if l.level <= INFO {
+		fmt.Fprintln(w, formatLogMessage(INFO, message, nil, args...))
+	}
+}
+
+// Warn logs a warning message
+func (l *Logger) Fwarn(w io.Writer, message string, err error, args ...any) {
+	if l.level <= WARN {
+		fmt.Fprintln(w, formatLogMessage(WARN, message, err, args...))
+	}
+}
+
+// Error logs an error message
+func (l *Logger) Ferror(w io.Writer, message string, err error, args ...any) {
+	if l.level <= ERROR {
+		fmt.Fprintln(w, formatLogMessage(ERROR, message, err, args...))
+	}
+}
+
+// Fatal logs an error message and exits the program
+func (l *Logger) Ffatal(w io.Writer, message string, err error, args ...any) {
+	if l.level <= FATAL {
+		fmt.Fprintln(w, formatLogMessage(FATAL, message, err, args...))
+		os.Exit(1)
+	}
+}
 
 // LogHeader prints arguments in bright blue. Legacy, consider using Logger.Info with prefix.
 func LogHeader(args ...any) {
@@ -181,4 +217,3 @@ func LogHeader(args ...any) {
 func LogBody(args ...any) {
 	DefaultLogger.Info(fmt.Sprint(args...))
 }
-

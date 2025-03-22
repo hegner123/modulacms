@@ -3,9 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	config "github.com/hegner123/modulacms/internal/Config"
 )
+
 type Historied interface {
 	GetHistory() string
 	MapHistoryEntry() string
@@ -57,7 +59,7 @@ const (
 // DbDriver is the interface for all database drivers
 type DbDriver interface {
 	// Database Connection
-    CreateAllTables()error
+	CreateAllTables() error
 	InitDB(v *bool) error
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
@@ -222,8 +224,6 @@ type DbDriver interface {
 	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
 }
 
-
-
 // GetConnection returns the database connection and context
 func (d Database) GetConnection() (*sql.DB, context.Context, error) {
 	return d.Connection, d.Context, nil
@@ -256,17 +256,20 @@ func (d PsqlDatabase) Ping() error {
 
 // ExecuteQuery executes a raw SQL query on the database
 func (d Database) ExecuteQuery(query string, table DBTable) (*sql.Rows, error) {
-	return d.Connection.Query(query)
+	q := fmt.Sprintf("%s %s;", query, DBTableString(table))
+	return d.Connection.Query(q)
 }
 
 // ExecuteQuery executes a raw SQL query on the MySQL database
 func (d MysqlDatabase) ExecuteQuery(query string, table DBTable) (*sql.Rows, error) {
-	return d.Connection.Query(query)
+	q := fmt.Sprintf("%s %s;", query, DBTableString(table))
+	return d.Connection.Query(q)
 }
 
 // ExecuteQuery executes a raw SQL query on the PostgreSQL database
 func (d PsqlDatabase) ExecuteQuery(query string, table DBTable) (*sql.Rows, error) {
-	return d.Connection.Query(query)
+	q := fmt.Sprintf("%s %s;", query, DBTableString(table))
+	return d.Connection.Query(q)
 }
 
 // CreateAllTables creates all database tables
@@ -276,97 +279,97 @@ func (d Database) CreateAllTables() error {
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateSessionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRoleTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTableTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateUserOauthTable()
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -377,97 +380,97 @@ func (d MysqlDatabase) CreateAllTables() error {
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateSessionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRoleTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTableTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateUserOauthTable()
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 
@@ -478,99 +481,100 @@ func (d PsqlDatabase) CreateAllTables() error {
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateSessionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateRoleTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminRouteTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminDatatypeTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentDataTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateAdminContentFieldTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateTableTable()
 	if err != nil {
 		return err
 	}
-	
+
 	err = d.CreateUserOauthTable()
 	if err != nil {
 		return err
 	}
-	
+
 	return nil
 }
+
 /*
 // InitDb initializes the database
 func (d Database) InitDb(v *bool) error {
