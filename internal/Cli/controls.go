@@ -9,15 +9,6 @@ import (
 	db "github.com/hegner123/modulacms/internal/Db"
 )
 
-/*
-Key Pressed
-backspace
-Key Pressed
-shift+tab
-Key Pressed
-delete
-*/
-
 func (m model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
@@ -79,6 +70,7 @@ func (m model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.C
 	}
 	return &m, nil
 }
+
 func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.focus = FORMFOCUS
@@ -101,7 +93,7 @@ func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m.form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
 		m.focus = PAGEFOCUS
-		m.page = m.pages[Read]
+		m.page = m.pages[READPAGE]
 		m.controller = m.page.Controller
 	}
 
@@ -112,18 +104,19 @@ func (m model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if err != nil {
 			fmt.Fprintln(logFile, err.Error())
 		}
-		m.page = m.pages[Read]
+		m.page = m.pages[READPAGE]
 		m.controller = m.page.Controller
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
 
 	return &m, tea.Batch(cmds...)
 }
-func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+
+func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
-		return &m, tea.Quit
+		return m, tea.Quit
 
 	//Navigation
 	case "up", "k":
@@ -144,10 +137,10 @@ func (m model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 	case "enter", "l":
 		m.PushHistory(m.page)
 		m.cursor = 0
-		m.page = m.pages[ReadSingle]
+		m.page = m.pages[READSINGLEPAGE]
 		m.controller = m.page.Controller
 	}
-	return &m, nil
+	return m, nil
 }
 
 func (m model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
@@ -206,17 +199,18 @@ func (m model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, te
 
 	//Action
 	case "enter", "l":
-		rows = *m.rows
+		rows = m.rows
 		m.PushHistory(m.page)
 		m.row = &rows[m.cursor]
 		m.PageRouter()
 		m.cursor = 0
-		m.page = m.pages[UpdateForm]
+		m.page = m.pages[UPDATEFORMPAGE]
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 	}
 	return &m, nil
 }
+
 func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.focus = FORMFOCUS
@@ -239,14 +233,14 @@ func (m *model) DatabaseUpdateFormControls(msg tea.Msg, option int) (tea.Model, 
 	if m.form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
 		m.focus = PAGEFOCUS
-		m.page = m.pages[Update]
+		m.page = m.pages[UPDATEPAGE]
 		m.controller = m.page.Controller
 	}
 
 	if m.form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
 		m.focus = PAGEFOCUS
-		m.page = m.pages[Update]
+		m.page = m.pages[UPDATEPAGE]
 		m.controller = m.page.Controller
 		err := m.CLIUpdate(db.DBTable(m.table))
 		if err != nil {
@@ -287,7 +281,7 @@ func (m model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, te
 			return &m, nil
 		}
 		m.cursor = 0
-		m.page = m.pages[Read]
+		m.page = m.pages[READPAGE]
 		m.controller = m.page.Controller
 		m.menu = m.page.Children
 		m.headers, m.rows, _ = GetColumnsRows(m.table)

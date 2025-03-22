@@ -154,7 +154,7 @@ func ConfigDB(env config.Config) DbDriver {
 }
 
 
-func (d Database) InitDb(v *bool) error {
+func (d Database) InitDB(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
@@ -165,7 +165,7 @@ func (d Database) InitDb(v *bool) error {
 
 	return nil
 }
-func (d MysqlDatabase) InitDb(v *bool) error {
+func (d MysqlDatabase) InitDB(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err
@@ -176,7 +176,7 @@ func (d MysqlDatabase) InitDb(v *bool) error {
 
 	return nil
 }
-func (d PsqlDatabase) InitDb(v *bool) error {
+func (d PsqlDatabase) InitDB(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
 	if err != nil {
 		return err

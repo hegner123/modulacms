@@ -43,7 +43,7 @@ type model struct {
 	tables       []string
 	selected     map[int]struct{}
 	headers      []string
-	rows         *[][]string
+	rows         [][]string
 	row          *[]string
 	form         *huh.Form
 	formLen      int
@@ -71,7 +71,7 @@ func InitialModel() model {
 	return model{
 		focusIndex: 0,
 		page:       *homePage,
-		tables:     GetTables(""),
+		tables:     GetTables(),
 		table:      "",
 		menu: []*CliPage{
 			cmsPage,
@@ -107,7 +107,7 @@ func InitialModel() model {
 func (m model) GetIDRow() int64 {
 	logFile, _ := tea.LogToFile("debug.log", "debug")
 	defer logFile.Close()
-	rows := *m.rows
+	rows := m.rows
 	row := rows[m.cursor]
 	rowCol := row[0]
 	fmt.Fprintln(logFile, "RowCol", rowCol)

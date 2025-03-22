@@ -58,7 +58,7 @@ const (
 type DbDriver interface {
 	// Database Connection
     CreateAllTables()error
-	InitDb(v *bool) error
+	InitDB(v *bool) error
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)

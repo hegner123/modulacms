@@ -7,7 +7,7 @@ import (
 func (m *model) PageRouter() {
 	var err error
 	switch m.page.Index {
-	case Table:
+	case TABLEPAGE:
 		switch m.menu[m.cursor] {
 		case createPage:
 			m.form, m.formLen = m.BuildCreateDBForm(db.StringDBTable(m.table))
@@ -17,7 +17,7 @@ func (m *model) PageRouter() {
 			}
 			m.form.Init()
 			m.focus = FORMFOCUS
-			m.page = m.pages[Create]
+			m.page = m.pages[CREATEPAGE]
 			m.controller = m.page.Controller
 		case updatePage:
 			m.headers, m.rows, err = GetColumnsRows(m.table)
@@ -41,7 +41,7 @@ func (m *model) PageRouter() {
 			m.page = *m.menu[m.cursor]
 			m.controller = m.page.Controller
 		}
-	case Update:
+	case UPDATEPAGE:
 		m.form, m.formLen = m.BuildUpdateDBForm(db.StringDBTable(m.table))
 		m.form.Init()
 		m.focus = FORMFOCUS
@@ -51,7 +51,7 @@ func (m *model) PageRouter() {
 		if err != nil {
 			m.body = err.Error()
 		}
-		m.page = m.pages[UpdateForm]
+		m.page = m.pages[UPDATEFORMPAGE]
 		m.controller = m.page.Controller
 	default:
 		m.page = *m.menu[m.cursor]

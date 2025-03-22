@@ -63,26 +63,26 @@ func (m model) UpdateDatabaseCreate(message tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseReadControls(msg, len(*m.rows))
+		return m.DatabaseReadControls(msg, len(m.rows))
 	}
 	return &m, nil
 }
 func (m model) UpdateDatabaseReadSingle(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseReadSingleControls(msg, len(*m.rows))
+		return m.DatabaseReadSingleControls(msg, len(m.rows))
 	}
 	return &m, nil
 }
 func (m model) UpdateDatabaseUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseUpdateControls(msg, len(*m.rows))
+		return m.DatabaseUpdateControls(msg, len(m.rows))
 	}
 	return &m, nil
 }
 func (m model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
-	return m.DatabaseUpdateFormControls(message, len(*m.rows))
+	return m.DatabaseUpdateFormControls(message, len(m.rows))
 	/*switch msg := message.(type) {
 	case tea.KeyMsg:
 	}
@@ -91,7 +91,7 @@ func (m model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseDeleteControls(msg, len(*m.rows))
+		return m.DatabaseDeleteControls(msg, len(m.rows))
 	}
 	return &m, nil
 }

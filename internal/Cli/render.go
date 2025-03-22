@@ -23,7 +23,7 @@ func (m model) RenderUI() string {
 		header,
 		m.body,
 		m.footer,
-		//m.RenderStatusTable(),
+		m.RenderStatusTable(),
 		//m.RenderStatusBar(),
 	),
 	)

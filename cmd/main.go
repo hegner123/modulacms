@@ -254,7 +254,7 @@ func main() {
 	// Run the SSH server concurrently.
 	go func() {
 
-		LogInfo.Info("Starting SSH server", "host", host, "port", sshPort)
+		LogInfo.Info("Starting SSH server", "ssh "+host+" -p "+sshPort)
 		go func() {
 			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 				LogError.Error("Could not start server", err)
@@ -284,7 +284,7 @@ func main() {
 		LogInfo.Info("Server is running at http://localhost:", Env.Port)
 		err = httpServer.ListenAndServe()
 		if err != nil {
-				LogInfo.Info("Shutting Down Server", err)
+			LogInfo.Info("Shutting Down Server", err)
 			done <- syscall.SIGTERM
 		}
 	}()

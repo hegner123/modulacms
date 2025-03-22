@@ -55,6 +55,7 @@ func (m model) NewFieldFromType(column string, colType *sql.ColumnType, value *s
 	}
 	return field, nil
 }
+
 func (m model) NewUpdateFieldFromType(column string, colType *sql.ColumnType, value *string, prevValue string) (huh.Field, error) {
 	if strings.Contains(column, "date_created") || strings.Contains(column, "date_modified") || strings.Contains(column, "history") {
 		switch column {

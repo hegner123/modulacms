@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"strings"
 	"time"
@@ -171,10 +170,6 @@ func (l *Logger) Fatal(message string, err error, args ...any) {
 	}
 }
 
-// Plog prints arguments in blue. Legacy, consider using Logger.Info instead.
-func Plog(args ...any) {
-	DefaultLogger.Info(fmt.Sprint(args...))
-}
 
 // LogHeader prints arguments in bright blue. Legacy, consider using Logger.Info with prefix.
 func LogHeader(args ...any) {
@@ -187,26 +182,3 @@ func LogBody(args ...any) {
 	DefaultLogger.Info(fmt.Sprint(args...))
 }
 
-// PrintStringFields prints struct fields. Maintained for backward compatibility.
-func PrintStringFields(v any) {
-	val := reflect.ValueOf(v)
-
-	// Ensure we're working with a struct or pointer to a struct
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	if val.Kind() != reflect.Struct {
-		DefaultLogger.Error("Input must be a struct or a pointer to a struct", nil)
-		return
-	}
-
-	typ := val.Type()
-    for i := range val.NumField() {
-		field := typ.Field(i)
-		fieldValue := val.Field(i)
-
-		if field.Name == "AdminDtID" {
-			fmt.Printf("\n%s : %d\n", field.Name, fieldValue.Int())
-		}
-	}
-}
