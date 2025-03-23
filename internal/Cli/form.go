@@ -16,11 +16,11 @@ func (m *model) BuildCreateDBForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
-        blank := ""
-        if i == 0 {
-            m.formValues = append(m.formValues, &blank)
-            continue
-        }
+		blank := ""
+		if i == 0 {
+			m.formValues = append(m.formValues, &blank)
+			continue
+		}
 		var value string
 		t := *colType
 		f, err := m.NewFieldFromType(c, t[i], &value)
@@ -64,7 +64,7 @@ func (m *model) BuildUpdateDBForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
-        value := row[i]
+		value := row[i]
 		t := *colType
 		f, err := m.NewUpdateFieldFromType(c, t[i], &value, row[i])
 		if err != nil {
@@ -103,7 +103,6 @@ func (m *model) BuildUpdateDBForm(table db.DBTable) (*huh.Form, int) {
 	return form, len(*columns)
 }
 
-
 func (m *model) BuildCMSForm(table db.DBTable) (*huh.Form, int) {
 	columns, colType, err := GetColumns(string(table))
 	if err != nil {
@@ -111,9 +110,9 @@ func (m *model) BuildCMSForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
-        if i == 0 {
-            continue
-        }
+		if i == 0 {
+			continue
+		}
 		var value string
 		t := *colType
 		f, err := m.NewFieldFromType(c, t[i], &value)
@@ -148,4 +147,3 @@ func (m *model) BuildCMSForm(table db.DBTable) (*huh.Form, int) {
 	return form, len(*columns)
 
 }
-
