@@ -11,7 +11,7 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-func (m model) CLICreate(table db.DBTable) error {
+func (m *model) CLICreate(table db.DBTable) error {
 	logFile, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
 		fmt.Println(err)
@@ -23,21 +23,17 @@ func (m model) CLICreate(table db.DBTable) error {
 	if err != nil {
 		return err
 	}
-	fmt.Fprintln(logFile, m.formValues)
+	formValues := make(map[string]string)
 	for i, v := range m.formValues {
-		if v == nil {
-			continue
-		}
-		headers := m.headers
-		header := headers[i]
-		m.formMap[header] = *v
+		formValues[m.headers[i]] = *v
 	}
-	fmt.Fprintln(logFile, m.formMap)
+
 	defer con.Close()
-	jsonData, err := json.Marshal(m.formMap)
+	jsonData, err := json.Marshal(formValues)
 	if err != nil {
 		ErrLog.Fatal("", err)
 	}
+	m.formValues = make([]*string, 0)
 	switch table {
 	case db.Admin_content_data:
 		var result db.CreateAdminContentDataFormParams
@@ -178,7 +174,7 @@ func (m model) CLICreate(table db.DBTable) error {
 	return nil
 }
 
-func (m model) CLIUpdate(table db.DBTable) error {
+func (m *model) CLIUpdate(table db.DBTable) error {
 	logFile, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
 		fmt.Println(err)
@@ -190,27 +186,19 @@ func (m model) CLIUpdate(table db.DBTable) error {
 	if err != nil {
 		return err
 	}
-	if len(m.formValues) != len(m.headers) {
-
-		utility.DefaultLogger.Ferror(logFile, "form values do not match headers", err)
-	}
+	formValues := make(map[string]string)
 	for i, v := range m.formValues {
-        if i > len(m.headers)-1{
-            break
-        }
-		if v == nil {
-			continue
-		}
-		headers := m.headers
-		header := headers[i]
-		m.formMap[header] = *v
+		formValues[m.headers[i]] = *v
 	}
-	fmt.Fprintln(logFile, m.formMap)
+
 	defer con.Close()
-	jsonData, err := json.Marshal(m.formMap)
+	jsonData, err := json.Marshal(formValues)
+	m.formValues = make([]*string, 0)
+	utility.DefaultLogger.Finfo(logFile, string(jsonData))
 	if err != nil {
 		utility.DefaultLogger.Ferror(logFile, "", err)
 	}
+
 	switch table {
 	case db.Admin_content_data:
 		var result db.UpdateAdminContentDataFormParams
@@ -237,7 +225,7 @@ func (m model) CLIUpdate(table db.DBTable) error {
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
-		utility.DefaultLogger.Fdebug(logFile, "", result)
+		utility.DefaultLogger.Finfo(logFile, "", result)
 		params := db.MapUpdateAdminDatatypeParams(result)
 		_, err := d.UpdateAdminDatatype(params)
 		if err != nil {
@@ -406,21 +394,20 @@ func (m model) CLIDelete(table db.DBTable) error {
 		return err
 	}
 	defer con.Close()
-	utility.DefaultLogger.Fdebug(f, "cursor", m.cursor)
-	utility.DefaultLogger.Fdebug(f, "rowLengt", len(m.rows))
-	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor])
+	s := make(map[string]string, 0)
 	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor][0])
-	jsonData, err := json.Marshal(m.formMap)
+	s["ID"] = m.rows[m.cursor][0]
+
+	jsonData, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
+	utility.DefaultLogger.Finfo(f, "json ID", string(jsonData))
+	utility.DefaultLogger.Finfo(f, "table", table)
 	switch table {
 	case db.Admin_content_data:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteAdminContentData(result.ID)
 		if err != nil {
 			return err
@@ -428,9 +415,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Admin_content_fields:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteAdminContentField(result.ID)
 		if err != nil {
 			return err
@@ -438,9 +422,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Admin_datatype:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteAdminDatatype(result.ID)
 		if err != nil {
 			return err
@@ -448,18 +429,12 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Admin_field:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteAdminField(result.ID)
 		if err != nil {
 			return err
 		}
 	case db.Admin_route:
 		var result struct{ ID string }
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteAdminRoute(result.ID)
 		if err != nil {
 			return err
@@ -467,9 +442,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Content_data:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteContentData(result.ID)
 		if err != nil {
 			return err
@@ -477,9 +449,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Content_fields:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteContentField(result.ID)
 		if err != nil {
 			return err
@@ -487,9 +456,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Datatype:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteDatatype(result.ID)
 		if err != nil {
 			return err
@@ -497,9 +463,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Field:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteField(result.ID)
 		if err != nil {
 			return err
@@ -507,9 +470,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.MediaT:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteMedia(result.ID)
 		if err != nil {
 			return err
@@ -517,9 +477,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Media_dimension:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteMediaDimension(result.ID)
 		if err != nil {
 			return err
@@ -527,18 +484,12 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Role:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteRole(result.ID)
 		if err != nil {
 			return err
 		}
 	case db.Route:
 		var result struct{ ID string }
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteRoute(result.ID)
 		if err != nil {
 			return err
@@ -546,9 +497,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Session:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteSession(result.ID)
 		if err != nil {
 			return err
@@ -556,9 +504,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Table:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteTable(result.ID)
 		if err != nil {
 			return err
@@ -566,9 +511,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.Token:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteToken(result.ID)
 		if err != nil {
 			return err
@@ -576,9 +518,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.User:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteUser(result.ID)
 		if err != nil {
 			return err
@@ -586,9 +525,6 @@ func (m model) CLIDelete(table db.DBTable) error {
 	case db.User_oauth:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			return err
-		}
 		err := d.DeleteUserOauth(result.ID)
 		if err != nil {
 			return err

@@ -323,13 +323,10 @@ func (m *model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, t
 
 	//Action
 	case "enter", "l":
-		m.PushHistory(m.page)
 		err := m.CLIDelete(db.StringDBTable(m.table))
 		if err != nil {
 			return m, nil
 		}
-		m.page = m.pages[DELETEPAGE]
-		m.controller = m.page.Controller
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
 	return m, nil

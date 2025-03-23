@@ -52,9 +52,8 @@ type model struct {
 	row          *[]string
 	form         *huh.Form
 	formLen      int
-	formMap      map[string]string
+	formMap      []string
 	formValues   []*string
-	formActions  []formAction
 	formSubmit   bool
 	formGroups   []huh.Group
 	formFields   []huh.Field
@@ -113,13 +112,12 @@ func InitialModel(v *bool) model {
 			*readSinglePage,
 			*dynamicPage,
 		},
-		selected:    make(map[int]struct{}),
-		formMap:     make(map[string]string),
-		controller:  pageInterface,
-		focus:       PAGEFOCUS,
-		formActions: []formAction{edit, submit, reset, cancel},
-		history:     []CliPage{},
-		verbose:     verbose,
+		selected:   make(map[int]struct{}),
+		formMap:    make([]string, 0),
+		controller: pageInterface,
+		focus:      PAGEFOCUS,
+		history:    []CliPage{},
+		verbose:    verbose,
 	}
 }
 
@@ -129,10 +127,10 @@ func (m model) GetIDRow() int64 {
 	rows := m.rows
 	row := rows[m.cursor]
 	rowCol := row[0]
-	fmt.Fprintln(logFile, "RowCol", rowCol)
+    utility.DefaultLogger.Finfo(logFile,"rowCOl", rowCol)
 	id, err := strconv.ParseInt(rowCol, 10, 64)
 	if err != nil {
-		fmt.Fprintln(logFile, err)
+		utility.DefaultLogger.Ferror(logFile, "", err)
 	}
 	return id
 

@@ -19,7 +19,7 @@ func (m model) RenderStatusTable() string {
 		selected = "Selected: nil\n"
 	}
 	controller := fmt.Sprintf("Controller\n%v\n", m.controller)
-	tables := fmt.Sprintf("Tables\n%v\n", m.tables)
+	//tables := fmt.Sprintf("Tables\n%v\n", m.tables)
 	table := fmt.Sprintf("Table\n%s\n", m.table)
 	var history string
 	h, haspage := m.Peek()
@@ -27,6 +27,12 @@ func (m model) RenderStatusTable() string {
 		history = fmt.Sprintf("History\nPrev:\n %v", h.Label)
 	} else {
 		history = "History\nPrev: No History\n"
+	}
+	var formMapStatus []string
+	for i, v := range m.formValues {
+		s := fmt.Sprintf("%s: %v\n", m.headers[i], *v)
+		formMapStatus = append(formMapStatus, s)
+
 	}
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -37,14 +43,18 @@ func (m model) RenderStatusTable() string {
 				cursor,
 				menu,
 				selected,
-                controller,
+				controller,
 			)),
 		RenderBorderBlock(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				tables,
 				table,
 				history,
+			)),
+		RenderBorderBlock(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				formMapStatus...,
 			)),
 	))
 

@@ -16,7 +16,9 @@ func (m *model) BuildCreateDBForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
+        blank := ""
         if i == 0 {
+            m.formValues = append(m.formValues, &blank)
             continue
         }
 		var value string
@@ -62,7 +64,7 @@ func (m *model) BuildUpdateDBForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
-		var value string
+        value := row[i]
 		t := *colType
 		f, err := m.NewUpdateFieldFromType(c, t[i], &value, row[i])
 		if err != nil {

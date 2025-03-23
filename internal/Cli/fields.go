@@ -12,11 +12,14 @@ func (m model) NewFieldFromType(column string, colType *sql.ColumnType, value *s
 	if strings.Contains(column, "date_created") || strings.Contains(column, "date_modified") || strings.Contains(column, "history") {
 		switch column {
 		case "date_created":
-			m.formMap[column] = utility.TimestampReadable()
+			ts := utility.TimestampReadable()
+			value = &ts
 		case "date_modified":
-			m.formMap[column] = utility.TimestampReadable()
+			ts := utility.TimestampReadable()
+			value = &ts
 		case "history":
-			m.formMap[column] = ""
+            h := ""
+			value = &h
 		}
 		return nil, nil
 	}
@@ -56,15 +59,18 @@ func (m model) NewFieldFromType(column string, colType *sql.ColumnType, value *s
 	return field, nil
 }
 
-func (m model) NewUpdateFieldFromType(column string, colType *sql.ColumnType, value *string, prevValue string) (huh.Field, error) {
+func (m *model) NewUpdateFieldFromType(column string, colType *sql.ColumnType, value *string, prevValue string) (huh.Field, error) {
 	if strings.Contains(column, "date_created") || strings.Contains(column, "date_modified") || strings.Contains(column, "history") {
 		switch column {
 		case "date_created":
-			m.formMap[column] = prevValue
+			pv := prevValue
+            m.formValues = append(m.formValues, &pv)
 		case "date_modified":
-			m.formMap[column] = utility.TimestampReadable()
+			ts := utility.TimestampReadable()
+            m.formValues = append(m.formValues, &ts)
 		case "history":
-			m.formMap[column] = prevValue
+			pv := prevValue
+            m.formValues = append(m.formValues, &pv)
 		}
 		return nil, nil
 	}
@@ -94,4 +100,3 @@ func (m model) NewUpdateFieldFromType(column string, colType *sql.ColumnType, va
 	}
 	return field, nil
 }
-
