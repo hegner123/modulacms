@@ -2,6 +2,7 @@
 
 <picture>
   <source  srcset="https://modulacms.com/examples/demo.gif">
+    <img  src="https://modulacms.com/examples/demo.gif">
 </picture>
 
 ## Overview
