@@ -279,8 +279,8 @@ func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRout
 		Title:        a.Title,
 		Status:       int32(a.Status),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String).Time,
-		DateModified: sTime(a.DateModified.String).Time,
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 	}
 }
 
@@ -292,8 +292,8 @@ func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRout
 		History:      a.History,
 		Author:       a.Author,
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String).Time,
-		DateModified: sTime(a.DateModified.String).Time,
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		Slug_2:       a.Slug_2,
 	}
 }

@@ -68,3 +68,5 @@ test.png
 test-*.png
 testSite/
 .ssh/
+demo.tape
+demo.gif

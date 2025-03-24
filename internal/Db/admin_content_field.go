@@ -248,8 +248,8 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 		AdminFieldID:        int64(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
 		History:             a.History,
-		DateCreated:         Ns(nt(a.DateCreated)),
-		DateModified:        ns(nt(a.DateModified)),
+		DateCreated:         Ns(Nt(a.DateCreated)),
+		DateModified:        Ns(Nt(a.DateModified)),
 	}
 }
 func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbm.CreateAdminContentFieldParams {
@@ -260,8 +260,8 @@ func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFiel
 		AdminFieldID:        int32(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
 		History:             a.History,
-		DateCreated:         sTime(a.DateCreated.String),
-		DateModified:        sTime(a.DateModified.String),
+		DateCreated:         StringToNTime(a.DateCreated.String),
+		DateModified:        StringToNTime(a.DateModified.String),
 	}
 }
 func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbm.UpdateAdminContentFieldParams {
@@ -272,8 +272,8 @@ func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFiel
 		AdminFieldID:          int32(a.AdminFieldID),
 		AdminFieldValue:       a.AdminFieldValue,
 		History:               a.History,
-		DateCreated:           sTime(a.DateCreated.String),
-		DateModified:          sTime(a.DateModified.String),
+		DateCreated:           StringToNTime(a.DateCreated.String),
+		DateModified:          StringToNTime(a.DateModified.String),
 		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
 	}
 }
@@ -372,8 +372,8 @@ func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminConte
 		AdminFieldID:        int64(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
 		History:             a.History,
-		DateCreated:         Ns(nt(a.DateCreated)),
-		DateModified:        Ns(nt(a.DateModified)),
+		DateCreated:         Ns(Nt(a.DateCreated)),
+		DateModified:        Ns(Nt(a.DateModified)),
 	}
 }
 func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbp.CreateAdminContentFieldParams {
@@ -384,8 +384,8 @@ func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentField
 		AdminFieldID:        int32(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
 		History:             a.History,
-		DateCreated:         sTime(a.DateCreated.String),
-		DateModified:        sTime(a.DateModified.String),
+		DateCreated:         StringToNTime(a.DateCreated.String),
+		DateModified:        StringToNTime(a.DateModified.String),
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbp.UpdateAdminContentFieldParams {
@@ -396,8 +396,8 @@ func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentField
 		AdminFieldID:          int32(a.AdminFieldID),
 		AdminFieldValue:       a.AdminFieldValue,
 		History:               a.History,
-		DateCreated:           sTime(a.DateCreated.String),
-		DateModified:          sTime(a.DateModified.String),
+		DateCreated:           StringToNTime(a.DateCreated.String),
+		DateModified:          StringToNTime(a.DateModified.String),
 		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
 	}
 }

@@ -111,7 +111,7 @@ type UpdateAdminFieldFormParams struct {
 //////////////////////////////
 func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldParams {
 	return CreateAdminFieldParams{
-		ParentID:     Nsi(a.ParentID),
+		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
@@ -124,7 +124,7 @@ func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldPar
 }
 func MapUpdateAdminFieldParams(a UpdateAdminFieldFormParams) UpdateAdminFieldParams {
 	return UpdateAdminFieldParams{
-		ParentID:     Nsi(a.ParentID),
+		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
@@ -282,8 +282,8 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 		Type:         a.Type,
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 		History:      a.History,
 	}
 }
@@ -295,8 +295,8 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		Type:         AssertString(a.Type),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 	}
 }
@@ -308,8 +308,8 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		Type:         AssertString(a.Type),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 		AdminFieldID: int32(a.AdminFieldID),
 	}
@@ -404,8 +404,8 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 		Type:         a.Type,
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 		History:      a.History,
 	}
 }
@@ -417,8 +417,8 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 		Type:         AssertString(a.Type),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 	}
 }
@@ -430,8 +430,8 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		Type:         AssertString(a.Type),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 		AdminFieldID: int32(a.AdminFieldID),
 	}

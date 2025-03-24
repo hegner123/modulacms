@@ -252,8 +252,8 @@ func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 		Status:       int64(a.Status),
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 		History:      a.History,
 	}
 }
@@ -264,8 +264,8 @@ func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.
 		Status:       int32(a.Status),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 	}
 }
@@ -276,8 +276,8 @@ func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.
 		Status:       int32(a.Status),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 		Slug_2:       a.Slug_2,
 	}
@@ -369,8 +369,8 @@ func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 		Status:       int64(a.Status),
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 		History:      a.History,
 	}
 }
@@ -381,8 +381,8 @@ func (d PsqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbp.C
 		Status:       int32(a.Status),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 	}
 }
@@ -393,8 +393,8 @@ func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.U
 		Status:       int32(a.Status),
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		History:      a.History,
 		Slug_2:       a.Slug_2,
 	}

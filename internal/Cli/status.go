@@ -12,9 +12,9 @@ func (m model) RenderStatusTable() string {
 	var selected string
 	page := fmt.Sprintf("Page: %s  Index %d\n", m.page.Label, m.page.Index)
 	cursor := fmt.Sprintf("Cursor: %d\n", m.cursor)
-	menu := fmt.Sprintf("Menu: %v\nMenu Len:%d\n", getMenuLabels(m.menu), len(m.menu))
-	if len(m.menu) > 0 {
-		selected = fmt.Sprintf("Selected: %v\n", m.menu[m.cursor].Label)
+	menu := fmt.Sprintf("Menu: %v\nMenu Len:%d\n", getMenuLabels(m.pageMenu), len(m.pageMenu))
+	if len(m.pageMenu) > 0 {
+		selected = fmt.Sprintf("Selected: %v\n", m.pageMenu[m.cursor].Label)
 	} else {
 		selected = "Selected: nil\n"
 	}
@@ -61,7 +61,7 @@ func (m model) RenderStatusTable() string {
 	return doc.String()
 }
 
-func getMenuLabels(m []*CliPage) string {
+func getMenuLabels(m []*Page) string {
 	var labels string
 	if m != nil {
 		for _, item := range m {

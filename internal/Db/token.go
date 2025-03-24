@@ -256,8 +256,8 @@ func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateToke
 		UserID:    int32(a.UserID),
 		TokenType: a.TokenType,
 		Token:     a.Token,
-		IssuedAt:  sTime(a.IssuedAt).Time,
-		ExpiresAt: sTime(a.ExpiresAt).Time,
+		IssuedAt:  StringToNTime(a.IssuedAt).Time,
+		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
 		Revoked:   a.Revoked,
 	}
 }
@@ -265,8 +265,8 @@ func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateToke
 func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateTokenParams {
 	return mdbm.UpdateTokenParams{
 		Token:     a.Token,
-		IssuedAt:  sTime(a.IssuedAt).Time,
-		ExpiresAt: sTime(a.ExpiresAt).Time,
+		IssuedAt:  StringToNTime(a.IssuedAt).Time,
+		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
 		Revoked:   a.Revoked,
 		ID:        int32(a.ID),
 	}
@@ -382,8 +382,8 @@ func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateToken
 		UserID:    int32(a.UserID),
 		TokenType: a.TokenType,
 		Token:     a.Token,
-		IssuedAt:  sTime(a.IssuedAt).Time,
-		ExpiresAt: sTime(a.ExpiresAt).Time,
+		IssuedAt:  StringToNTime(a.IssuedAt).Time,
+		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
 		Revoked:   a.Revoked,
 	}
 }
@@ -391,8 +391,8 @@ func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateToken
 func (d PsqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbp.UpdateTokenParams {
 	return mdbp.UpdateTokenParams{
 		Token:     a.Token,
-		IssuedAt:  sTime(a.IssuedAt).Time,
-		ExpiresAt: sTime(a.ExpiresAt).Time,
+		IssuedAt:  StringToNTime(a.IssuedAt).Time,
+		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
 		Revoked:   a.Revoked,
 		ID:        int32(a.ID),
 	}

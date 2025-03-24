@@ -12,58 +12,39 @@ import (
 
 type PageIndex int
 
-const (
-	HOMEPAGE PageIndex = iota
-	CMSPAGE
-	DATABASEPAGE
-	BUCKETPAGE
-	OAUTHPAGE
-	CONFIGPAGE
-	TABLEPAGE
-	CREATEPAGE
-	READPAGE
-	UPDATEPAGE
-	DELETEPAGE
-	UPDATEFORMPAGE
-	READSINGLEPAGE
-	CONTENTPAGE
-	MEDIAPAGE
-	USERSPAGE
-	DYNAMICPAGE
-)
 
-type CliPage struct {
+type Page struct {
 	Index      PageIndex
 	Controller CliInterface
 	Label      string
-	Parent     *CliPage
-	Children   []*CliPage
-	Next       *CliPage
+	Parent     *Page
+	Children   []*Page
+	Next       *Page
 }
 
 var (
-	homePage       *CliPage = &CliPage{Index: HOMEPAGE, Controller: pageInterface, Label: "Home", Parent: nil, Children: homepageMenu}
-	cmsPage        *CliPage = &CliPage{Index: CMSPAGE, Controller: pageInterface, Label: "CMS", Parent: nil, Children: cmsMenu}
-	databasePage   *CliPage = &CliPage{Index: DATABASEPAGE, Controller: tableInterface, Label: "Database", Parent: nil, Children: nil, Next: tablePage}
-	bucketPage     *CliPage = &CliPage{Index: BUCKETPAGE, Controller: pageInterface, Label: "Bucket", Parent: nil, Children: nil}
-	oauthPage      *CliPage = &CliPage{Index: OAUTHPAGE, Controller: pageInterface, Label: "oAuth", Parent: nil, Children: nil}
-	configPage     *CliPage = &CliPage{Index: CONFIGPAGE, Controller: pageInterface, Label: "Configuration", Parent: nil, Children: nil}
-	tablePage      *CliPage = &CliPage{Index: TABLEPAGE, Controller: pageInterface, Label: "Table", Parent: nil, Children: tableMenu}
-	createPage     *CliPage = &CliPage{Index: CREATEPAGE, Controller: createInterface, Label: "Create", Parent: nil, Children: nil}
-	readPage       *CliPage = &CliPage{Index: READPAGE, Controller: readInterface, Label: "Read", Parent: nil, Children: nil}
-	updatePage     *CliPage = &CliPage{Index: UPDATEPAGE, Controller: updateInterface, Label: "Update", Parent: nil, Children: nil}
-	deletePage     *CliPage = &CliPage{Index: DELETEPAGE, Controller: deleteInterface, Label: "Delete", Parent: nil, Children: nil}
-	updateFormPage *CliPage = &CliPage{Index: UPDATEFORMPAGE, Controller: updateFormInterface, Label: "UpdateForm", Parent: nil, Children: nil}
-	readSinglePage *CliPage = &CliPage{Index: READSINGLEPAGE, Controller: readSingleInterface, Label: "ReadSingle", Parent: nil, Children: nil}
-	contentPage    *CliPage = &CliPage{Index: CONTENTPAGE, Controller: pageInterface, Label: "Content", Parent: nil, Children: nil}
-	mediaPage      *CliPage = &CliPage{Index: MEDIAPAGE, Controller: pageInterface, Label: "Media", Parent: nil, Children: nil}
-	usersPage      *CliPage = &CliPage{Index: USERSPAGE, Controller: pageInterface, Label: "Users", Parent: nil, Children: nil}
-	dynamicPage    *CliPage = &CliPage{Index: DYNAMICPAGE, Controller: pageInterface, Label: "Dynamic", Parent: nil, Children: nil}
+	homePage       *Page = &Page{Index: HOMEPAGE, Controller: pageInterface, Label: "Home", Parent: nil, Children: homepageMenu}
+	cmsPage        *Page = &Page{Index: CMSPAGE, Controller: pageInterface, Label: "CMS", Parent: nil, Children: cmsMenu}
+	databasePage   *Page = &Page{Index: DATABASEPAGE, Controller: tableInterface, Label: "Database", Parent: nil, Children: nil, Next: tablePage}
+	bucketPage     *Page = &Page{Index: BUCKETPAGE, Controller: pageInterface, Label: "Bucket", Parent: nil, Children: nil}
+	oauthPage      *Page = &Page{Index: OAUTHPAGE, Controller: pageInterface, Label: "oAuth", Parent: nil, Children: nil}
+	configPage     *Page = &Page{Index: CONFIGPAGE, Controller: pageInterface, Label: "Configuration", Parent: nil, Children: nil}
+	tablePage      *Page = &Page{Index: TABLEPAGE, Controller: pageInterface, Label: "Table", Parent: nil, Children: tableMenu}
+	createPage     *Page = &Page{Index: CREATEPAGE, Controller: createInterface, Label: "Create", Parent: nil, Children: nil}
+	readPage       *Page = &Page{Index: READPAGE, Controller: readInterface, Label: "Read", Parent: nil, Children: nil}
+	updatePage     *Page = &Page{Index: UPDATEPAGE, Controller: updateInterface, Label: "Update", Parent: nil, Children: nil}
+	deletePage     *Page = &Page{Index: DELETEPAGE, Controller: deleteInterface, Label: "Delete", Parent: nil, Children: nil}
+	updateFormPage *Page = &Page{Index: UPDATEFORMPAGE, Controller: updateFormInterface, Label: "UpdateForm", Parent: nil, Children: nil}
+	readSinglePage *Page = &Page{Index: READSINGLEPAGE, Controller: readSingleInterface, Label: "ReadSingle", Parent: nil, Children: nil}
+	contentPage    *Page = &Page{Index: CONTENTPAGE, Controller: pageInterface, Label: "Content", Parent: nil, Children: nil}
+	mediaPage      *Page = &Page{Index: MEDIAPAGE, Controller: pageInterface, Label: "Media", Parent: nil, Children: nil}
+	usersPage      *Page = &Page{Index: USERSPAGE, Controller: pageInterface, Label: "Users", Parent: nil, Children: nil}
+	dynamicPage    *Page = &Page{Index: DYNAMICPAGE, Controller: pageInterface, Label: "Dynamic", Parent: nil, Children: nil}
 )
 
 func (m model) PageHome() string {
 	m.header = "MAIN MENU"
-	for i, choice := range m.menu {
+	for i, choice := range m.pageMenu {
 
 		cursor := "  "
 		if m.cursor == i {
@@ -104,7 +85,7 @@ func (m model) PageDatabase() string {
 
 func (m model) PageCMS() string {
 	m.header = "Edit Your Content"
-	for i, choice := range m.menu {
+	for i, choice := range m.pageMenu {
 
 		cursor := "  "
 		if m.cursor == i {
@@ -119,7 +100,7 @@ func (m model) PageCMS() string {
 
 func (m model) PageTable() string {
 	m.header = "Database Method"
-	for i, choice := range m.menu {
+	for i, choice := range m.pageMenu {
 
 		cursor := "  "
 		if m.cursor == i {
@@ -134,7 +115,7 @@ func (m model) PageTable() string {
 
 func (m model) PageContent() string {
 	m.header = "Content"
-	for i, choice := range m.menu {
+	for i, choice := range m.pageMenu {
 
 		cursor := "  "
 		if m.cursor == i {

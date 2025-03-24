@@ -266,8 +266,8 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:    Ns(nt(a.DateCreated)),
-		DateModified:   Ns(nt(a.DateModified)),
+		DateCreated:    Ns(Nt(a.DateCreated)),
+		DateModified:   Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -279,8 +279,8 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:    sTime(a.DateCreated.String),
-		DateModified:   sTime(a.DateModified.String),
+		DateCreated:    StringToNTime(a.DateCreated.String),
+		DateModified:   StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -292,8 +292,8 @@ func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) m
 		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
 		History:          a.History,
-		DateCreated:      sTime(a.DateCreated.String),
-		DateModified:     sTime(a.DateModified.String),
+		DateCreated:      StringToNTime(a.DateCreated.String),
+		DateModified:     StringToNTime(a.DateModified.String),
 		ContentFieldID_2: int32(a.ContentFieldID_2),
 	}
 }
@@ -399,8 +399,8 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:    Ns(nt(a.DateCreated)),
-		DateModified:   Ns(nt(a.DateModified)),
+		DateCreated:    Ns(Nt(a.DateCreated)),
+		DateModified:   Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -412,8 +412,8 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
 		History:        a.History,
-		DateCreated:    sTime(a.DateCreated.String),
-		DateModified:   sTime(a.DateModified.String),
+		DateCreated:    StringToNTime(a.DateCreated.String),
+		DateModified:   StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -425,8 +425,8 @@ func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) md
 		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
 		History:          a.History,
-		DateCreated:      sTime(a.DateCreated.String),
-		DateModified:     sTime(a.DateModified.String),
+		DateCreated:      StringToNTime(a.DateCreated.String),
+		DateModified:     StringToNTime(a.DateModified.String),
 		ContentFieldID_2: int32(a.ContentFieldID_2),
 	}
 }

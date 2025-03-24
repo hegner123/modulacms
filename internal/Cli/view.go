@@ -27,6 +27,8 @@ func (m model) View() string {
         ui = m.PageContent()
 	case readSinglePage.Index:
 		ui = m.PageReadSingle()
+    case defineDatatype.Index:
+        ui = m.PageDefineDatatype()
 	default:
 		ui = m.Page404()
 	}

@@ -259,15 +259,15 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         int64(a.Role.Int32),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
 func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserParams {
 	return mdbm.CreateUserParams{
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
@@ -278,8 +278,8 @@ func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserPa
 
 func (d MysqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbm.UpdateUserParams {
 	return mdbm.UpdateUserParams{
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
@@ -387,15 +387,15 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         int64(a.Role.Int32),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
 func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserParams {
 	return mdbp.CreateUserParams{
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
@@ -406,8 +406,8 @@ func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserPar
 
 func (d PsqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbp.UpdateUserParams {
 	return mdbp.UpdateUserParams{
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,

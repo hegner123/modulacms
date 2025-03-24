@@ -13,6 +13,7 @@ import (
 ///////////////////////////////
 //STRUCTS
 //////////////////////////////
+
 type Datatypes struct {
 	DatatypeID   int64          `json:"datatype_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
@@ -88,7 +89,7 @@ type UpdateDatatypeFormParams struct {
 
 func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 	return CreateDatatypeParams{
-		ParentID:     Nsi(a.ParentID),
+		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
 		Author:       a.Author,
@@ -101,7 +102,7 @@ func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 
 func MapUpdateDatatypeParams(a UpdateDatatypeFormParams) UpdateDatatypeParams {
 	return UpdateDatatypeParams{
-		ParentID:     Nsi(a.ParentID),
+		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
 		Author:       a.Author,
@@ -257,8 +258,8 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		History:      a.History,
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -270,8 +271,8 @@ func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.Crea
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -283,8 +284,8 @@ func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.Upda
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		DatatypeID:   int32(a.DatatypeID),
 	}
 }
@@ -377,8 +378,8 @@ func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		History:      a.History,
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -390,8 +391,8 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -403,8 +404,8 @@ func (d PsqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbp.Updat
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		DatatypeID:   int32(a.DatatypeID),
 	}
 }

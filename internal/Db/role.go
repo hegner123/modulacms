@@ -182,7 +182,7 @@ func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 	return Roles{
 		RoleID:      int64(a.RoleID),
 		Label:       a.Label,
-		Permissions: jrS(a.Permissions),
+		Permissions: JSONRawToString(a.Permissions),
 	}
 }
 

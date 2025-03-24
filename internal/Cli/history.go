@@ -1,10 +1,10 @@
 package cli
 
-func (m *model) PushHistory(entry CliPage) {
+func (m *model) PushHistory(entry Page) {
 	m.history = append(m.history, entry)
 }
 
-func (m *model) PopHistory() *CliPage {
+func (m *model) PopHistory() *Page {
 	if len(m.history) == 0 {
 		return nil
 	}
@@ -15,7 +15,7 @@ func (m *model) PopHistory() *CliPage {
 	return &page
 }
 
-func (m *model) Peek() (*CliPage, bool) {
+func (m *model) Peek() (*Page, bool) {
 	if len(m.history) == 0 {
 		return nil, false
 	}

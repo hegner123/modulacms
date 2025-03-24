@@ -52,7 +52,7 @@ func (m model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.PageControls(msg, len(m.menu))
+		return m.PageControls(msg, len(m.pageMenu))
 	}
 	return &m, nil
 }

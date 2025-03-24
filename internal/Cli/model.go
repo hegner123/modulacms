@@ -41,10 +41,11 @@ type model struct {
 	quitStyle    lipgloss.Style
 	cursor       int
 	focusIndex   int
-	page         CliPage
+	page         Page
 	table        string
-	menu         []*CliPage
-	pages        []CliPage
+	pageMenu     []*Page
+	pages        []Page
+    datatypeMenu []string
 	tables       []string
 	selected     map[int]struct{}
 	headers      []string
@@ -64,7 +65,7 @@ type model struct {
 	footer       string
 	verbose      bool
 	controller   CliInterface
-	history      []CliPage
+	history      []Page
 	Query        db.SQLQuery
 	QueryResults []sql.Row
 	time         time.Time
@@ -89,14 +90,14 @@ func InitialModel(v *bool) model {
 		page:       *homePage,
 		tables:     GetTables(),
 		table:      "",
-		menu: []*CliPage{
+		pageMenu: []*Page{
 			cmsPage,
 			databasePage,
 			bucketPage,
 			oauthPage,
 			configPage,
 		},
-		pages: []CliPage{
+		pages: []Page{
 			*homePage,
 			*cmsPage,
 			*databasePage,
@@ -111,12 +112,13 @@ func InitialModel(v *bool) model {
 			*updateFormPage,
 			*readSinglePage,
 			*dynamicPage,
+			*defineDatatype,
 		},
 		selected:   make(map[int]struct{}),
 		formMap:    make([]string, 0),
 		controller: pageInterface,
 		focus:      PAGEFOCUS,
-		history:    []CliPage{},
+		history:    []Page{},
 		verbose:    verbose,
 	}
 }
@@ -127,7 +129,7 @@ func (m model) GetIDRow() int64 {
 	rows := m.rows
 	row := rows[m.cursor]
 	rowCol := row[0]
-    utility.DefaultLogger.Finfo(logFile,"rowCOl", rowCol)
+	utility.DefaultLogger.Finfo(logFile, "rowCOl", rowCol)
 	id, err := strconv.ParseInt(rowCol, 10, 64)
 	if err != nil {
 		utility.DefaultLogger.Ferror(logFile, "", err)

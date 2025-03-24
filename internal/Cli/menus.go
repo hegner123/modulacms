@@ -1,7 +1,7 @@
 package cli
 
 
-var homepageMenu []*CliPage = []*CliPage{
+var homepageMenu []*Page = []*Page{
 	cmsPage,
 	databasePage,
 	bucketPage,
@@ -9,12 +9,13 @@ var homepageMenu []*CliPage = []*CliPage{
 	configPage,
 }
 
-var cmsMenu []*CliPage = []*CliPage{
+var cmsMenu []*Page = []*Page{
+    defineDatatype,
 	contentPage,
 	mediaPage,
 	usersPage,
 }
-var tableMenu []*CliPage = []*CliPage{
+var tableMenu []*Page = []*Page{
 	createPage,
 	readPage,
 	updatePage,

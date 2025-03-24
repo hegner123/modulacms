@@ -38,7 +38,7 @@ func (m *model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -75,7 +75,7 @@ func (m *model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -84,7 +84,7 @@ func (m *model) TableSelectControls(msg tea.KeyMsg, option int) (tea.Model, tea.
 		m.cursor = 0
 		m.page = *m.page.Next
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 	}
 	return m, nil
 }
@@ -157,7 +157,7 @@ func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -195,7 +195,7 @@ func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Mode
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -203,7 +203,7 @@ func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Mode
 		m.cursor = 0
 		m.page = *m.page.Next
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 	}
 	return m, nil
 }
@@ -236,7 +236,7 @@ func (m *model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, t
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -247,7 +247,7 @@ func (m *model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, t
 		m.cursor = 0
 		m.page = m.pages[UPDATEFORMPAGE]
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 	}
 	return m, nil
 }
@@ -319,7 +319,7 @@ func (m *model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, t
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
-		m.menu = m.page.Children
+		m.pageMenu = m.page.Children
 
 	//Action
 	case "enter", "l":
@@ -355,14 +355,14 @@ func (m *model) ContentControls(message tea.Msg) (tea.Model, tea.Cmd) {
 				m.cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.menu) {
+			if m.cursor < len(m.pageMenu) {
 				m.cursor++
 			}
 		case "h", "left", "shift+tab", "backspace":
 			m.cursor = 0
 			m.page = *m.PopHistory()
 			m.controller = m.page.Controller
-			m.menu = m.page.Children
+			m.pageMenu = m.page.Children
 
 		//Action
 		case "enter", "l":

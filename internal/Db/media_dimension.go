@@ -66,8 +66,8 @@ type UpdateMediaDimensionFormParams struct {
 func MapCreateMediaDimensionParams(a CreateMediaDimensionFormParams) CreateMediaDimensionParams {
 	return CreateMediaDimensionParams{
 		Label:       Ns(a.Label),
-		Width:       Nsi(a.Width),
-		Height:      Nsi(a.Height),
+		Width:       SNi64(a.Width),
+		Height:      SNi64(a.Height),
 		AspectRatio: Ns(a.AspectRatio),
 	}
 }
@@ -75,8 +75,8 @@ func MapCreateMediaDimensionParams(a CreateMediaDimensionFormParams) CreateMedia
 func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMediaDimensionParams {
 	return UpdateMediaDimensionParams{
 		Label:       Ns(a.Label),
-		Width:       Nsi(a.Width),
-		Height:      Nsi(a.Height),
+		Width:       SNi64(a.Width),
+		Height:      SNi64(a.Height),
 		AspectRatio: Ns(a.AspectRatio),
 		MdID:        Si(a.MdID),
 	}

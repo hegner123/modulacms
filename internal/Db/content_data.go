@@ -232,8 +232,8 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 		RouteID:       int64(a.RouteID.Int32),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
-		DateCreated:   Ns(nt(a.DateCreated)),
-		DateModified:  Ns(nt(a.DateModified)),
+		DateCreated:   Ns(Nt(a.DateCreated)),
+		DateModified:  Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -242,8 +242,8 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 		RouteID:      Ni32(a.RouteID),
 		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -252,8 +252,8 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 		RouteID:       Ni32(a.RouteID),
 		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
-		DateCreated:   sTime(a.DateCreated.String),
-		DateModified:  sTime(a.DateModified.String),
+		DateCreated:   StringToNTime(a.DateCreated.String),
+		DateModified:  StringToNTime(a.DateModified.String),
 		ContentDataID: int32(a.ContentDataID),
 	}
 }
@@ -357,8 +357,8 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 		RouteID:       int64(a.RouteID.Int32),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
-		DateCreated:   Ns(nt(a.DateCreated)),
-		DateModified:  Ns(nt(a.DateModified)),
+		DateCreated:   Ns(Nt(a.DateCreated)),
+		DateModified:  Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -367,8 +367,8 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 		RouteID:      Ni32(a.RouteID),
 		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -377,8 +377,8 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 		RouteID:       Ni32(a.RouteID),
 		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
-		DateCreated:   sTime(a.DateCreated.String),
-		DateModified:  sTime(a.DateModified.String),
+		DateCreated:   StringToNTime(a.DateCreated.String),
+		DateModified:  StringToNTime(a.DateModified.String),
 		ContentDataID: int32(a.ContentDataID),
 	}
 }

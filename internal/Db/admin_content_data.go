@@ -66,6 +66,7 @@ type UpdateAdminContentDataFormParams struct {
 // /////////////////////////////
 // GENERIC
 // ////////////////////////////
+
 func MapCreateAdminContentDataParams(a CreateAdminContentDataFormParams) CreateAdminContentDataParams {
 	return CreateAdminContentDataParams{
 		AdminRouteID:    Si(a.AdminRouteID),
@@ -101,6 +102,7 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 //////////////////////////////
 
 // MAPS
+
 func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 	return AdminContentData{
 		AdminContentDataID: a.AdminContentDataID,
@@ -111,6 +113,7 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 		DateModified:       a.DateModified,
 	}
 }
+
 func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdb.CreateAdminContentDataParams {
 	return mdb.CreateAdminContentDataParams{
 		AdminRouteID:    a.AdminRouteID,
@@ -120,6 +123,7 @@ func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams
 		DateModified:    a.DateModified,
 	}
 }
+
 func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdb.UpdateAdminContentDataParams {
 	return mdb.UpdateAdminContentDataParams{
 		AdminRouteID:       a.AdminRouteID,
@@ -132,6 +136,7 @@ func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams
 }
 
 // QUERIES
+
 func (d Database) CountAdminContentData() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminContentData(d.Context)
@@ -215,14 +220,15 @@ func (d Database) UpdateAdminContentData(s UpdateAdminContentDataParams) (*strin
 //////////////////////////////
 
 // MAPS
+
 func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContentData {
 	return AdminContentData{
 		AdminContentDataID: int64(a.AdminContentDataID),
 		AdminRouteID:       int64(a.AdminRouteID.Int32),
 		AdminDatatypeID:    int64(a.AdminDatatypeID.Int32),
 		History:            a.History,
-		DateCreated:        Ns(nt(a.DateCreated)),
-		DateModified:       ns(nt(a.DateModified)),
+		DateCreated:        Ns(Nt(a.DateCreated)),
+		DateModified:       Ns(Nt(a.DateModified)),
 	}
 }
 func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbm.CreateAdminContentDataParams {
@@ -230,8 +236,8 @@ func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataP
 		AdminRouteID:    Ni32(a.AdminRouteID),
 		AdminDatatypeID: Ni32(a.AdminDatatypeID),
 		History:         a.History,
-		DateCreated:     sTime(a.DateCreated.String),
-		DateModified:    sTime(a.DateModified.String),
+		DateCreated:     StringToNTime(a.DateCreated.String),
+		DateModified:    StringToNTime(a.DateModified.String),
 	}
 }
 func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbm.UpdateAdminContentDataParams {
@@ -239,13 +245,14 @@ func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataP
 		AdminRouteID:       Ni32(a.AdminRouteID),
 		AdminDatatypeID:    Ni32(a.AdminDatatypeID),
 		History:            a.History,
-		DateCreated:        sTime(a.DateCreated.String),
-		DateModified:       sTime(a.DateModified.String),
+		DateCreated:        StringToNTime(a.DateCreated.String),
+		DateModified:       StringToNTime(a.DateModified.String),
 		AdminContentDataID: int32(a.AdminContentDataID),
 	}
 }
 
 // QUERIES
+
 func (d MysqlDatabase) CountAdminContentData() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminContentData(d.Context)
@@ -332,14 +339,15 @@ func (d MysqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*
 //////////////////////////////
 
 // /MAPS
+
 func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentData {
 	return AdminContentData{
 		AdminContentDataID: int64(a.AdminContentDataID),
 		AdminRouteID:       int64(a.AdminRouteID.Int32),
 		AdminDatatypeID:    int64(a.AdminDatatypeID.Int32),
 		History:            a.History,
-		DateCreated:        Ns(nt(a.DateCreated)),
-		DateModified:       Ns(nt(a.DateModified)),
+		DateCreated:        Ns(Nt(a.DateCreated)),
+		DateModified:       Ns(Nt(a.DateModified)),
 	}
 }
 func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbp.CreateAdminContentDataParams {
@@ -347,8 +355,8 @@ func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataPa
 		AdminRouteID:    Ni32(a.AdminRouteID),
 		AdminDatatypeID: Ni32(a.AdminDatatypeID),
 		History:         a.History,
-		DateCreated:     sTime(a.DateCreated.String),
-		DateModified:    sTime(a.DateModified.String),
+		DateCreated:     StringToNTime(a.DateCreated.String),
+		DateModified:    StringToNTime(a.DateModified.String),
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbp.UpdateAdminContentDataParams {
@@ -356,13 +364,14 @@ func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataPa
 		AdminRouteID:       Ni32(a.AdminRouteID),
 		AdminDatatypeID:    Ni32(a.AdminDatatypeID),
 		History:            a.History,
-		DateCreated:        sTime(a.DateCreated.String),
-		DateModified:       sTime(a.DateModified.String),
+		DateCreated:        StringToNTime(a.DateCreated.String),
+		DateModified:       StringToNTime(a.DateModified.String),
 		AdminContentDataID: int32(a.AdminContentDataID),
 	}
 }
 
 // /QUERIES
+
 func (d PsqlDatabase) CountAdminContentData() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountAdminContentData(d.Context)

@@ -232,7 +232,7 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
-		DateCreated:         Ns(nt(a.DateCreated)),
+		DateCreated:         Ns(Nt(a.DateCreated)),
 	}
 }
 
@@ -243,8 +243,8 @@ func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.Cr
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      sTime(a.TokenExpiresAt.String),
-		DateCreated:         sTime(a.DateCreated.String),
+		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
+		DateCreated:         StringToNTime(a.DateCreated.String),
 	}
 }
 
@@ -252,7 +252,7 @@ func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.Up
 	return mdbm.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
-		TokenExpiresAt: sTime(a.TokenExpiresAt.String),
+		TokenExpiresAt: StringToNTime(a.TokenExpiresAt.String),
 		UserOauthID:    int32(a.UserOauthID),
 	}
 }
@@ -347,7 +347,7 @@ func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
-		DateCreated:         Ns(nt(a.DateCreated)),
+		DateCreated:         Ns(Nt(a.DateCreated)),
 	}
 }
 
@@ -358,8 +358,8 @@ func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.Cre
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      sTime(a.TokenExpiresAt.String),
-		DateCreated:         sTime(a.DateCreated.String),
+		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
+		DateCreated:         StringToNTime(a.DateCreated.String),
 	}
 }
 
@@ -367,7 +367,7 @@ func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.Upd
 	return mdbp.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
-		TokenExpiresAt:      sTime(a.TokenExpiresAt.String),
+		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
 		UserOauthID:    int32(a.UserOauthID),
 	}
 }

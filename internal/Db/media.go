@@ -356,8 +356,8 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 		Srcset:       a.Srcset,
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -375,8 +375,8 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		Srcset:       a.Srcset,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -394,8 +394,8 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		Srcset:       a.Srcset,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		MediaID:      int32(a.MediaID),
 	}
 }
@@ -514,8 +514,8 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 		Srcset:       a.Srcset,
 		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(nt(a.DateCreated)),
-		DateModified: Ns(nt(a.DateModified)),
+		DateCreated:  Ns(Nt(a.DateCreated)),
+		DateModified: Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -533,8 +533,8 @@ func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMedia
 		Srcset:       a.Srcset,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -552,8 +552,8 @@ func (d PsqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbp.UpdateMedia
 		Srcset:       a.Srcset,
 		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  sTime(a.DateCreated.String),
-		DateModified: sTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String),
+		DateModified: StringToNTime(a.DateModified.String),
 		MediaID:      int32(a.MediaID),
 	}
 }
