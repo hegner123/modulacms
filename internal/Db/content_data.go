@@ -10,20 +10,23 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
+
 type ContentData struct {
 	ContentDataID int64          `json:"content_data_id"`
 	RouteID       int64          `json:"route_id"`
+	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
-	History       sql.NullString `json:"history"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
+	History       sql.NullString `json:"history"`
 }
 
 type CreateContentDataParams struct {
 	RouteID      int64          `json:"route_id"`
+	ParentID     sql.NullInt64  `json:"parent_id"`
 	DatatypeID   int64          `json:"datatype_id"`
 	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
@@ -32,6 +35,7 @@ type CreateContentDataParams struct {
 
 type UpdateContentDataParams struct {
 	RouteID       int64          `json:"route_id"`
+	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
 	History       sql.NullString `json:"history"`
 	DateCreated   sql.NullString `json:"date_created"`
@@ -42,6 +46,7 @@ type UpdateContentDataParams struct {
 type ContentDataHistoryEntry struct {
 	ContentDataID int64          `json:"content_data_id"`
 	RouteID       int64          `json:"route_id"`
+	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
@@ -49,6 +54,7 @@ type ContentDataHistoryEntry struct {
 
 type CreateContentDataFormParams struct {
 	RouteID      string `json:"route_id"`
+	ParentID     string `json:"parent_id"`
 	DatatypeID   string `json:"datatype_id"`
 	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
@@ -57,6 +63,7 @@ type CreateContentDataFormParams struct {
 
 type UpdateContentDataFormParams struct {
 	RouteID       string `json:"route_id"`
+	ParentID      string `json:"parent_id"`
 	DatatypeID    string `json:"datatype_id"`
 	History       string `json:"history"`
 	DateCreated   string `json:"date_created"`
@@ -71,6 +78,7 @@ type UpdateContentDataFormParams struct {
 func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentDataParams {
 	return CreateContentDataParams{
 		RouteID:      Si(a.RouteID),
+		ParentID:     SNi64(a.ParentID),
 		DatatypeID:   Si(a.DatatypeID),
 		History:      Ns(a.History),
 		DateCreated:  Ns(a.DateCreated),
@@ -81,6 +89,7 @@ func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentData
 func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentDataParams {
 	return UpdateContentDataParams{
 		RouteID:       Si(a.RouteID),
+		ParentID:      SNi64(a.ParentID),
 		DatatypeID:    Si(a.DatatypeID),
 		History:       Ns(a.History),
 		DateCreated:   Ns(a.DateCreated),
@@ -93,6 +102,7 @@ func MapStringContentData(a ContentData) StringContentData {
 	return StringContentData{
 		ContentDataID: strconv.FormatInt(a.ContentDataID, 10),
 		RouteID:       strconv.FormatInt(a.RouteID, 10),
+		ParentID:      strconv.FormatInt(a.ParentID.Int64, 10),
 		DatatypeID:    strconv.FormatInt(a.DatatypeID, 10),
 		History:       a.History.String,
 		DateCreated:   a.DateCreated.String,
@@ -104,11 +114,12 @@ func MapStringContentData(a ContentData) StringContentData {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapContentData(a mdb.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
 		RouteID:       a.RouteID,
+		ParentID:      a.ParentID,
 		DatatypeID:    a.DatatypeID,
 		History:       a.History,
 		DateCreated:   a.DateCreated,
@@ -119,6 +130,7 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.CreateContentDataParams {
 	return mdb.CreateContentDataParams{
 		RouteID:      a.RouteID,
+		ParentID:     a.ParentID,
 		DatatypeID:   a.DatatypeID,
 		History:      a.History,
 		DateCreated:  a.DateCreated,
@@ -129,6 +141,7 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.UpdateContentDataParams {
 	return mdb.UpdateContentDataParams{
 		RouteID:       a.RouteID,
+		ParentID:      a.ParentID,
 		DatatypeID:    a.DatatypeID,
 		History:       a.History,
 		DateCreated:   a.DateCreated,
@@ -137,7 +150,7 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountContentData() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -225,11 +238,12 @@ func (d Database) UpdateContentData(s UpdateContentDataParams) (*string, error) 
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: int64(a.ContentDataID),
 		RouteID:       int64(a.RouteID.Int32),
+		ParentID:      Ni64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
 		DateCreated:   Ns(Nt(a.DateCreated)),
@@ -240,6 +254,7 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
 		RouteID:      Ni32(a.RouteID),
+		ParentID:     Ni32(a.ParentID.Int64),
 		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
 		DateCreated:  StringToNTime(a.DateCreated.String),
@@ -250,6 +265,7 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbm.UpdateContentDataParams {
 	return mdbm.UpdateContentDataParams{
 		RouteID:       Ni32(a.RouteID),
+		ParentID:      Ni32(a.ParentID.Int64),
 		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
 		DateCreated:   StringToNTime(a.DateCreated.String),
@@ -258,7 +274,7 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -350,11 +366,12 @@ func (d MysqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, er
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: int64(a.ContentDataID),
 		RouteID:       int64(a.RouteID.Int32),
+		ParentID:      Ni64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		History:       a.History,
 		DateCreated:   Ns(Nt(a.DateCreated)),
@@ -365,6 +382,7 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
 		RouteID:      Ni32(a.RouteID),
+		ParentID:     Ni32(a.ParentID.Int64),
 		DatatypeID:   Ni32(a.DatatypeID),
 		History:      a.History,
 		DateCreated:  StringToNTime(a.DateCreated.String),
@@ -375,6 +393,7 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp.UpdateContentDataParams {
 	return mdbp.UpdateContentDataParams{
 		RouteID:       Ni32(a.RouteID),
+		ParentID:      Ni32(a.ParentID.Int64),
 		DatatypeID:    Ni32(a.DatatypeID),
 		History:       a.History,
 		DateCreated:   StringToNTime(a.DateCreated.String),
@@ -383,7 +402,7 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)

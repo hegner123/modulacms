@@ -4,6 +4,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id      INTEGER NOT NULL
         REFERENCES routes(route_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
+    parent_id     INTEGER
+        REFERENCES content_data(content_data_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
     datatype_id   INTEGER NOT NULL
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,
@@ -28,18 +31,20 @@ ORDER BY content_data_id;
 -- name: CreateContentData :one
 INSERT INTO content_data (
     route_id,
+    parent_id,
     datatype_id,
     history,
     date_created,
     date_modified
     ) VALUES (
-?,?,?,?,?
+?,?,?,?,?,?
     ) RETURNING *;
 
 
 -- name: UpdateContentData :exec
 UPDATE content_data
 set route_id = ?,
+    parent_id=?,
     datatype_id = ?,
     history = ?,
     date_created = ?,

@@ -33,10 +33,8 @@ var Env = config.Config{}
 var certDir string
 
 func main() {
-	// Create a channel to listen for OS signals.
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	InitStatus := initFileCheck()
 	authFlag := flag.Bool("auth", false, "Run oauth tests")
 	updateFlag := flag.Bool("update", false, "Update binaries and plugins.")
 	cliFlag := flag.Bool("cli", false, "Launch the Cli without the server.")
@@ -50,10 +48,10 @@ func main() {
 		proccessPrintVersion()
 	}
 
-	InstallStatus, err := install.CheckInstall(InitStatus)
+	InstallStatus, err := install.CheckInstall()
 	if err != nil {
 		utility.DefaultLogger.Error("CheckInstall", err)
-		ok := install.InstallUI(InstallStatus)
+		ok := install.InstallUI(&InstallStatus)
 		if !ok {
 			os.Exit(1)
 		}
@@ -101,6 +99,9 @@ func main() {
 			logging.Middleware(),
 		),
 	)
+
+    // Mux Routes
+
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
@@ -230,6 +231,10 @@ func main() {
 		router.SlugHandler(w, r, Env)
 	})
 
+
+
+    // Certificates
+
 	manager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		Cache:      autocert.DirCache(Env.Cert_Dir),                         // Folder to store certificates
@@ -296,6 +301,8 @@ func main() {
 			done <- syscall.SIGTERM
 		}
 	}()
+
+
 	// Wait for an OS signal (e.g., Ctrl-C)
 	<-done
 	utility.DefaultLogger.Info("Shutting down servers...")
@@ -321,41 +328,6 @@ func main() {
 	utility.DefaultLogger.Info("Servers gracefully stopped.")
 }
 
-func initFileCheck() install.ModulaInit {
-	Status := install.ModulaInit{}
-	//Check DB
-	_, err := os.Open("modula.db")
-	if err != nil {
-		Status.DbFileExists = false
-	}
-
-	//Check for ssl certs
-	_, err = os.Open("./certs/localhost.crt")
-	Status.Certificates = true
-	if err != nil {
-		Status.Certificates = false
-	}
-	_, err = os.Open("./certs/localhost.key")
-	Status.Key = true
-	if err != nil {
-		Status.Key = false
-	}
-
-	if !Status.Certificates || !Status.Key {
-		// HUH form
-		Status.UseSSL = false
-	}
-
-	//check for content version
-	_, err = os.Stat("./content.version")
-	if err != nil {
-		utility.DefaultLogger.Debug("", err)
-		Status.ContentVersion = false
-
-	}
-
-	return Status
-}
 
 func proccessAuthCheck() {
 	auth.OauthSettings(Env)

@@ -3,6 +3,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id      INTEGER NOT NULL
         REFERENCES routes(route_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
+    parent_id     INTEGER
+        REFERENCES content_data(content_data_id)
+        ON UPDATE CASCADE ON DELETE SET NULL,
     datatype_id   INTEGER NOT NULL
         REFERENCES datatypes(datatype_id)
         ON UPDATE CASCADE ON DELETE SET NULL,

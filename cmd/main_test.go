@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"testing"
+
+	install "github.com/hegner123/modulacms/internal/Install"
 )
 
 type GlobalTestingState struct {
@@ -33,7 +35,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestInit(t *testing.T) {
-	s := initFileCheck()
+	s,err := install.CheckInstall()
+    if err!=nil {
+		t.FailNow()
+    }
 
 	if !s.UseSSL || !s.DbFileExists {
 		t.FailNow()

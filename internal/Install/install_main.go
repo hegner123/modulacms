@@ -2,8 +2,10 @@ package install
 
 import (
 	"fmt"
+	"os"
 
 	config "github.com/hegner123/modulacms/internal/Config"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type ModulaInit struct {
@@ -18,35 +20,62 @@ type ModulaInit struct {
 	OauthConnected  bool
 }
 
-func CheckInstall(init ModulaInit) (ModulaInit,error) {
+
+func CheckInstall() (ModulaInit, error) {
+	Status := ModulaInit{}
 	v := false
 	err := CheckConfigExists("")
 	if err != nil {
-		init.ConfigExists = false
-		init.DBConnected = false
-		init.BucketConnected = false
-		init.OauthConnected = false
-        return init,err
+		Status.ConfigExists = false
+		Status.DBConnected = false
+		Status.BucketConnected = false
+		Status.OauthConnected = false
+		return Status, err
 	} else {
-		init.ConfigExists = true
+		Status.ConfigExists = true
 	}
 	c := config.LoadConfig(&v, "")
 	err = CheckDb(c)
 	if err != nil {
-		init.DBConnected = false
-        return init, err
+		Status.DBConnected = false
+		return Status, err
 	}
 	err = CheckBucket()
 	if err != nil {
-		init.BucketConnected = false
-        return init, err
+		Status.BucketConnected = false
+		return Status, err
 	}
 	err = CheckOauth()
 	if err != nil {
-		init.OauthConnected = false
-        return init, err
+		Status.OauthConnected = false
+		return Status, err
 	}
-	return init, nil
+	//Check for ssl certs
+	_, err = os.Open("localhost.crt")
+	Status.Certificates = true
+	if err != nil {
+		Status.Certificates = false
+	}
+	_, err = os.Open("localhost.key")
+	Status.Key = true
+	if err != nil {
+		Status.Key = false
+	}
+
+	if !Status.Certificates || !Status.Key {
+		// HUH form
+		Status.UseSSL = false
+	}
+
+	//check for content version
+	_, err = os.Stat("./content.version")
+	if err != nil {
+		utility.DefaultLogger.Debug("", err)
+		Status.ContentVersion = false
+
+	}
+
+	return Status, nil
 
 }
 

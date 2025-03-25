@@ -134,6 +134,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			r := []string{
 				s.ContentDataID,
 				s.RouteID,
+                s.ParentID,
 				s.DatatypeID,
 				s.DateCreated,
 				s.DateModified,

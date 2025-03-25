@@ -114,6 +114,7 @@ type StringPermissions struct {
 type StringContentData struct {
 	ContentDataID string `json:"content_data_id"`
 	RouteID       string `json:"route_id"`
+	ParentID      string `json:"parent_id"`
 	DatatypeID    string `json:"datatype_id"`
 	History       string `json:"history"`
 	DateCreated   string `json:"date_created"`
@@ -204,3 +205,4 @@ type StringUserOauth struct {
 	TokenExpiresAt      string `json:"token_expires_at"`
 	DateCreated         string `json:"date_created"`
 }
+

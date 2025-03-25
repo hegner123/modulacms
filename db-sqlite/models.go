@@ -11,6 +11,7 @@ import (
 type AdminContentData struct {
 	AdminContentDataID int64          `json:"admin_content_data_id"`
 	AdminRouteID       int64          `json:"admin_route_id"`
+	ParentID           sql.NullInt64  `json:"parent_id"`
 	AdminDatatypeID    int64          `json:"admin_datatype_id"`
 	DateCreated        sql.NullString `json:"date_created"`
 	DateModified       sql.NullString `json:"date_modified"`
@@ -68,6 +69,7 @@ type AdminRoutes struct {
 type ContentData struct {
 	ContentDataID int64          `json:"content_data_id"`
 	RouteID       int64          `json:"route_id"`
+	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`

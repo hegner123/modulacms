@@ -1,5 +1,9 @@
 # Modula CMS
 
+
+## Notes
+add content data relationships table to allow datatypes to be placed under multiple parent types
+
 ## scripts
 - make
 
