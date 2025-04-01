@@ -94,7 +94,6 @@ func MapMediaParams(a db.Media) db.UpdateMediaParams {
 		Mimetype:     a.Mimetype,
 		Dimensions:   a.Dimensions,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: db.Ns(utility.TimestampReadable()),

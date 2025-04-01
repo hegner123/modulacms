@@ -16,9 +16,10 @@ import (
 
 type ContentData struct {
 	ContentDataID int64          `json:"content_data_id"`
-	RouteID       int64          `json:"route_id"`
 	ParentID      sql.NullInt64  `json:"parent_id"`
+	RouteID       int64          `json:"route_id"`
 	DatatypeID    int64          `json:"datatype_id"`
+	AuthorID      int64          `json:"author_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
 	History       sql.NullString `json:"history"`
@@ -28,18 +29,20 @@ type CreateContentDataParams struct {
 	RouteID      int64          `json:"route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	DatatypeID   int64          `json:"datatype_id"`
-	History      sql.NullString `json:"history"`
+	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
 }
 
 type UpdateContentDataParams struct {
 	RouteID       int64          `json:"route_id"`
 	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
-	History       sql.NullString `json:"history"`
+	AuthorID      int64          `json:"author_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
+	History       sql.NullString `json:"history"`
 	ContentDataID int64          `json:"content_data_id"`
 }
 
@@ -48,6 +51,7 @@ type ContentDataHistoryEntry struct {
 	RouteID       int64          `json:"route_id"`
 	ParentID      sql.NullInt64  `json:"parent_id"`
 	DatatypeID    int64          `json:"datatype_id"`
+	AuthorID      int64          `json:"author_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
 }
@@ -56,18 +60,20 @@ type CreateContentDataFormParams struct {
 	RouteID      string `json:"route_id"`
 	ParentID     string `json:"parent_id"`
 	DatatypeID   string `json:"datatype_id"`
-	History      string `json:"history"`
+	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+	History      string `json:"history"`
 }
 
 type UpdateContentDataFormParams struct {
 	RouteID       string `json:"route_id"`
 	ParentID      string `json:"parent_id"`
 	DatatypeID    string `json:"datatype_id"`
-	History       string `json:"history"`
+	AuthorID      string `json:"author_id"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
+	History       string `json:"history"`
 	ContentDataID string `json:"content_data_id"`
 }
 
@@ -80,9 +86,10 @@ func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentData
 		RouteID:      Si(a.RouteID),
 		ParentID:     SNi64(a.ParentID),
 		DatatypeID:   Si(a.DatatypeID),
-		History:      Ns(a.History),
+		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
+		History:      Ns(a.History),
 	}
 }
 
@@ -91,9 +98,10 @@ func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentData
 		RouteID:       Si(a.RouteID),
 		ParentID:      SNi64(a.ParentID),
 		DatatypeID:    Si(a.DatatypeID),
-		History:       Ns(a.History),
+		AuthorID:      Si(a.AuthorID),
 		DateCreated:   Ns(a.DateCreated),
 		DateModified:  Ns(a.DateModified),
+		History:       Ns(a.History),
 		ContentDataID: Si(a.ContentDataID),
 	}
 }
@@ -104,9 +112,10 @@ func MapStringContentData(a ContentData) StringContentData {
 		RouteID:       strconv.FormatInt(a.RouteID, 10),
 		ParentID:      strconv.FormatInt(a.ParentID.Int64, 10),
 		DatatypeID:    strconv.FormatInt(a.DatatypeID, 10),
-		History:       a.History.String,
+		AuthorID:      strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:   a.DateCreated.String,
 		DateModified:  a.DateModified.String,
+		History:       a.History.String,
 	}
 }
 
@@ -121,9 +130,10 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
 		DatatypeID:    a.DatatypeID,
-		History:       a.History,
+		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
+		History:       a.History,
 	}
 }
 
@@ -132,9 +142,9 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 		RouteID:      a.RouteID,
 		ParentID:     a.ParentID,
 		DatatypeID:   a.DatatypeID,
-		History:      a.History,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+		History:      a.History,
 	}
 }
 
@@ -143,9 +153,10 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
 		DatatypeID:    a.DatatypeID,
-		History:       a.History,
+		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
+		History:       a.History,
 		ContentDataID: a.ContentDataID,
 	}
 }
@@ -245,9 +256,10 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 		RouteID:       int64(a.RouteID.Int32),
 		ParentID:      Ni64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
+		AuthorID:      int64(a.AuthorID),
+		DateCreated:   Ns(a.DateCreated.String()),
+		DateModified:  Ns(a.DateModified.String()),
 		History:       a.History,
-		DateCreated:   Ns(Nt(a.DateCreated)),
-		DateModified:  Ns(Nt(a.DateModified)),
 	}
 }
 
@@ -256,9 +268,10 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 		RouteID:      Ni32(a.RouteID),
 		ParentID:     Ni32(a.ParentID.Int64),
 		DatatypeID:   Ni32(a.DatatypeID),
+		AuthorID:     int32(a.AuthorID),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
@@ -267,9 +280,10 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 		RouteID:       Ni32(a.RouteID),
 		ParentID:      Ni32(a.ParentID.Int64),
 		DatatypeID:    Ni32(a.DatatypeID),
+		AuthorID:      int32(a.AuthorID),
+		DateCreated:   StringToNTime(a.DateCreated.String).Time,
+		DateModified:  StringToNTime(a.DateModified.String).Time,
 		History:       a.History,
-		DateCreated:   StringToNTime(a.DateCreated.String),
-		DateModified:  StringToNTime(a.DateModified.String),
 		ContentDataID: int32(a.ContentDataID),
 	}
 }
@@ -373,9 +387,10 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 		RouteID:       int64(a.RouteID.Int32),
 		ParentID:      Ni64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
-		History:       a.History,
+		AuthorID:      int64(a.AuthorID),
 		DateCreated:   Ns(Nt(a.DateCreated)),
 		DateModified:  Ns(Nt(a.DateModified)),
+		History:       a.History,
 	}
 }
 
@@ -384,9 +399,10 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 		RouteID:      Ni32(a.RouteID),
 		ParentID:     Ni32(a.ParentID.Int64),
 		DatatypeID:   Ni32(a.DatatypeID),
-		History:      a.History,
+		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
+		History:      a.History,
 	}
 }
 
@@ -395,9 +411,10 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 		RouteID:       Ni32(a.RouteID),
 		ParentID:      Ni32(a.ParentID.Int64),
 		DatatypeID:    Ni32(a.DatatypeID),
-		History:       a.History,
+		AuthorID:      int32(a.AuthorID),
 		DateCreated:   StringToNTime(a.DateCreated.String),
 		DateModified:  StringToNTime(a.DateModified.String),
+		History:       a.History,
 		ContentDataID: int32(a.ContentDataID),
 	}
 }

@@ -17,7 +17,7 @@ func CreateDatatypeDefinition(dt db.CreateDatatypeParams, f []db.CreateFieldPara
 		result = append(result, r)
 	}
 	if len(result) < len(f) {
-		err := fmt.Errorf("Result length less than passed fields")
+		err := fmt.Errorf("RESULT LENGTH LESS THAN PASSED FIELDS")
 		return err
 	}
 	return nil
@@ -33,7 +33,7 @@ func CreateDatatypeInstance(cd db.CreateContentDataParams, cf []db.CreateContent
 		result = append(result, r)
 	}
 	if len(result) < len(cf) {
-		err := fmt.Errorf("Result length less than passed content fields")
+		err := fmt.Errorf("RESULT LENGTH LESS THAN PASSED CONTENT FIELDS")
 		return err
 	}
 	return nil

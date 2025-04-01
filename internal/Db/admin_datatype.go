@@ -10,15 +10,14 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type AdminDatatypes struct {
 	AdminDatatypeID int64          `json:"admin_datatype_id"`
 	ParentID        sql.NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
-	Author          string         `json:"author"`
 	AuthorID        int64          `json:"author_id"`
 	DateCreated     sql.NullString `json:"date_created"`
 	DateModified    sql.NullString `json:"date_modified"`
@@ -28,7 +27,6 @@ type CreateAdminDatatypeParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -46,7 +44,6 @@ type UpdateAdminDatatypeParams struct {
 	ParentID        sql.NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
-	Author          string         `json:"author"`
 	AuthorID        int64          `json:"author_id"`
 	DateCreated     sql.NullString `json:"date_created"`
 	DateModified    sql.NullString `json:"date_modified"`
@@ -62,7 +59,6 @@ type AdminDatatypesHistoryEntry struct {
 	ParentID        sql.NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
-	Author          string         `json:"author"`
 	AuthorID        int64          `json:"author_id"`
 	DateCreated     sql.NullString `json:"date_created"`
 	DateModified    sql.NullString `json:"date_modified"`
@@ -77,7 +73,6 @@ type CreateAdminDatatypeFormParams struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -87,7 +82,6 @@ type UpdateAdminDatatypeFormParams struct {
 	ParentID        string `json:"parent_id"`
 	Label           string `json:"label"`
 	Type            string `json:"type"`
-	Author          string `json:"author"`
 	AuthorID        string `json:"author_id"`
 	DateCreated     string `json:"date_created"`
 	DateModified    string `json:"date_modified"`
@@ -104,7 +98,6 @@ func MapCreateAdminDatatypeParams(a CreateAdminDatatypeFormParams) CreateAdminDa
 		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     Si(a.ParentID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -116,7 +109,6 @@ func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDa
 		ParentID:        SNi64(a.ParentID),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        Si(a.AuthorID),
 		DateCreated:     Ns(a.DateCreated),
 		DateModified:    Ns(a.DateModified),
@@ -130,7 +122,6 @@ func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 		ParentID:        strconv.FormatInt(a.ParentID.Int64, 10),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:     a.DateCreated.String,
 		DateModified:    a.DateModified.String,
@@ -142,14 +133,13 @@ func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: a.AdminDatatypeID,
 		ParentID:        a.ParentID,
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        a.AuthorID,
 		DateCreated:     a.DateCreated,
 		DateModified:    a.DateModified,
@@ -157,23 +147,21 @@ func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 	}
 }
 func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.CreateAdminDatatypeParams {
-    return mdb.CreateAdminDatatypeParams{
-        ParentID:     a.ParentID,
-        Label:        a.Label,
-        Type:         a.Type,
-        Author:       a.Author,
-        AuthorID:     a.AuthorID,
-        DateCreated:  a.DateCreated,
-        DateModified: a.DateModified,
-        History:      a.History,
-    }
+	return mdb.CreateAdminDatatypeParams{
+		ParentID:     a.ParentID,
+		Label:        a.Label,
+		Type:         a.Type,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		History:      a.History,
+	}
 }
 func (d Database) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdb.UpdateAdminDatatypeParams {
-	return mdb.UpdateAdminDatatypeParams{ 
+	return mdb.UpdateAdminDatatypeParams{
 		ParentID:        a.ParentID,
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        a.AuthorID,
 		DateCreated:     a.DateCreated,
 		DateModified:    a.DateModified,
@@ -181,7 +169,8 @@ func (d Database) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) mdb.
 		AdminDatatypeID: a.AdminDatatypeID,
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d Database) CountAdminDatatypes() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminDatatype(d.Context)
@@ -216,15 +205,6 @@ func (d Database) DeleteAdminDatatype(id int64) error {
 
 	return nil
 }
-func (d Database) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
-	queries := mdb.New(d.Connection)
-	row, err := queries.GetGlobalAdminDatatypeId(d.Context)
-	if err != nil {
-		return nil, err
-	}
-	res := d.MapAdminDatatype(row)
-	return &res, nil
-}
 
 func (d Database) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 	queries := mdb.New(d.Connection)
@@ -233,6 +213,20 @@ func (d Database) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 		return nil, err
 	}
 	res := d.MapAdminDatatype(row)
+	return &res, nil
+}
+
+func (d Database) ListAdminDatatypeGlobalId() (*[]AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeGlobal(d.Context)
+	if err != nil {
+		return nil, err
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
 	return &res, nil
 }
 
@@ -265,17 +259,16 @@ func (d Database) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, err
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: int64(a.AdminDatatypeID),
 		ParentID:        Ni64(int64(a.ParentID.Int32)),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        int64(a.AuthorID),
-		DateCreated:     Ns(Nt(a.DateCreated)),
-		DateModified:    Ns(Nt(a.DateModified)),
+		DateCreated:     Ns(a.DateCreated.String()),
+		DateModified:    Ns(a.DateModified.String()),
 		History:         a.History,
 	}
 }
@@ -284,10 +277,9 @@ func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams)
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 	}
 }
@@ -296,15 +288,15 @@ func (d MysqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams)
 		ParentID:        Ni32(a.ParentID.Int64),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        int32(a.AuthorID),
-		DateCreated:     StringToNTime(a.DateCreated.String),
-		DateModified:    StringToNTime(a.DateModified.String),
+		DateCreated:     StringToNTime(a.DateCreated.String).Time,
+		DateModified:    StringToNTime(a.DateModified.String).Time,
 		History:         a.History,
 		AdminDatatypeID: int32(a.AdminDatatypeID),
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d MysqlDatabase) CountAdminDatatypes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminDatatype(d.Context)
@@ -344,15 +336,6 @@ func (d MysqlDatabase) DeleteAdminDatatype(id int64) error {
 	return nil
 }
 
-func (d MysqlDatabase) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
-	queries := mdbm.New(d.Connection)
-	row, err := queries.GetGlobalAdminDatatypeId(d.Context)
-	if err != nil {
-		return nil, err
-	}
-	res := d.MapAdminDatatype(row)
-	return &res, nil
-}
 
 func (d MysqlDatabase) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 	queries := mdbm.New(d.Connection)
@@ -391,14 +374,13 @@ func (d MysqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapAdminDatatype(a mdbp.AdminDatatypes) AdminDatatypes {
 	return AdminDatatypes{
 		AdminDatatypeID: int64(a.AdminDatatypeID),
 		ParentID:        Ni64(int64(a.ParentID.Int32)),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        int64(a.AuthorID),
 		DateCreated:     Ns(Nt(a.DateCreated)),
 		DateModified:    Ns(Nt(a.DateModified)),
@@ -410,7 +392,6 @@ func (d PsqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) 
 		ParentID:     Ni32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -422,7 +403,6 @@ func (d PsqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) 
 		ParentID:        Ni32(a.ParentID.Int64),
 		Label:           a.Label,
 		Type:            a.Type,
-		Author:          a.Author,
 		AuthorID:        int32(a.AuthorID),
 		DateCreated:     StringToNTime(a.DateCreated.String),
 		DateModified:    StringToNTime(a.DateModified.String),
@@ -430,7 +410,8 @@ func (d PsqlDatabase) MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeParams) 
 		AdminDatatypeID: int32(a.AdminDatatypeID),
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d PsqlDatabase) CountAdminDatatypes() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountAdminDatatype(d.Context)
@@ -466,7 +447,7 @@ func (d PsqlDatabase) DeleteAdminDatatype(id int64) error {
 
 	return nil
 }
-
+/*
 func (d PsqlDatabase) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetGlobalAdminDatatypeId(d.Context)
@@ -476,6 +457,7 @@ func (d PsqlDatabase) GetAdminDatatypeGlobalId() (*AdminDatatypes, error) {
 	res := d.MapAdminDatatype(row)
 	return &res, nil
 }
+*/
 
 func (d PsqlDatabase) GetAdminDatatypeById(id int64) (*AdminDatatypes, error) {
 	queries := mdbp.New(d.Connection)

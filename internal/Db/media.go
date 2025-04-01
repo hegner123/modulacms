@@ -25,7 +25,6 @@ type Media struct {
 	Dimensions   sql.NullString `json:"dimensions"`
 	Url          sql.NullString `json:"url"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -42,7 +41,6 @@ type CreateMediaParams struct {
 	Mimetype     sql.NullString `json:"mimetype"`
 	Dimensions   sql.NullString `json:"dimensions"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -59,7 +57,6 @@ type UpdateMediaParams struct {
 	Mimetype     sql.NullString `json:"mimetype"`
 	Dimensions   sql.NullString `json:"dimensions"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -78,7 +75,6 @@ type MediaHistoryEntry struct {
 	Dimensions   sql.NullString `json:"dimensions"`
 	Url          sql.NullString `json:"url"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -95,7 +91,6 @@ type CreateMediaFormParams struct {
 	Mimetype     string `json:"mimetype"`
 	Dimensions   string `json:"dimensions"`
 	Srcset       string `json:"srcset"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -112,7 +107,6 @@ type UpdateMediaFormParams struct {
 	Mimetype     string `json:"mimetype"`
 	Dimensions   string `json:"dimensions"`
 	Srcset       string `json:"srcset"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -135,7 +129,6 @@ func MapCreateMediaParams(a CreateMediaFormParams) CreateMediaParams {
 		Mimetype:     Ns(a.Mimetype),
 		Dimensions:   Ns(a.Dimensions),
 		Srcset:       Ns(a.Srcset),
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -154,7 +147,6 @@ func MapUpdateMediaParams(a UpdateMediaFormParams) UpdateMediaParams {
 		Mimetype:     Ns(a.Mimetype),
 		Dimensions:   Ns(a.Dimensions),
 		Srcset:       Ns(a.Srcset),
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -175,7 +167,6 @@ func MapStringMedia(a Media) StringMedia {
 		Dimensions:   a.Dimensions.String,
 		Url:          a.Url.String,
 		Srcset:       a.Srcset.String,
-		Author:       AssertString(a.Author),
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
@@ -200,7 +191,6 @@ func (d Database) MapMedia(a mdb.Media) Media {
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -219,7 +209,6 @@ func (d Database) MapCreateMediaParams(a CreateMediaParams) mdb.CreateMediaParam
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -238,7 +227,6 @@ func (d Database) MapUpdateMediaParams(a UpdateMediaParams) mdb.UpdateMediaParam
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -354,10 +342,9 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  Ns(a.DateCreated.String()),
+		DateModified: Ns(a.DateModified.String()),
 	}
 }
 
@@ -373,10 +360,9 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 	}
 }
 
@@ -392,10 +378,9 @@ func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMedi
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		MediaID:      int32(a.MediaID),
 	}
 }
@@ -512,7 +497,6 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
@@ -531,7 +515,6 @@ func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMedia
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -550,7 +533,6 @@ func (d PsqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbp.UpdateMedia
 		Dimensions:   a.Dimensions,
 		Url:          a.Url,
 		Srcset:       a.Srcset,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),

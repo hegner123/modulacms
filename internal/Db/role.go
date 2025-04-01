@@ -182,21 +182,21 @@ func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 	return Roles{
 		RoleID:      int64(a.RoleID),
 		Label:       a.Label,
-		Permissions: JSONRawToString(a.Permissions),
+		Permissions: a.Permissions.String,
 	}
 }
 
 func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
 	return mdbm.CreateRoleParams{
 		Label:       a.Label,
-		Permissions: json.RawMessage(a.Permissions),
+		Permissions: Ns(a.Permissions),
 	}
 }
 
 func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
 	return mdbm.UpdateRoleParams{
 		Label:       a.Label,
-		Permissions: json.RawMessage(a.Permissions),
+		Permissions: Ns(a.Permissions),
 		RoleID:      int32(a.RoleID),
 	}
 }

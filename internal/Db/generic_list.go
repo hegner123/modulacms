@@ -1,7 +1,7 @@
 package db
 
 
-func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
+func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 	switch t {
 	case Admin_content_data:
 		a, err := d.ListAdminContentData()
@@ -24,7 +24,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Admin_content_fields:
 		a, err := d.ListAdminContentFields()
 		if err != nil {
@@ -47,7 +47,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Admin_datatype:
 		a, err := d.ListAdminDatatypes()
 		if err != nil {
@@ -63,7 +63,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.ParentID,
 				s.Label,
 				s.Type,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -71,7 +70,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Admin_field:
 		a, err := d.ListAdminFields()
 		if err != nil {
@@ -88,7 +87,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Label,
 				s.Data,
 				s.Type,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -96,7 +94,25 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
+	case Admin_datatype_fields:
+		a, err := d.ListAdminDatatypeField()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringAdminDatatypeField(row)
+			r := []string{
+                s.ID,
+				s.AdminDatatypeID,
+                s.AdminFieldID,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
 	case Admin_route:
 		a, err := d.ListAdminRoutes()
 		if err != nil {
@@ -112,7 +128,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Slug,
 				s.Title,
 				s.Status,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -120,7 +135,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Content_data:
 		a, err := d.ListContentData()
 		if err != nil {
@@ -142,7 +157,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Content_fields:
 		a, err := d.ListContentFields()
 		if err != nil {
@@ -165,7 +180,25 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
+	case Datatype_fields:
+		a, err := d.ListDatatypeField()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringDatatypeField(row)
+			r := []string{
+                s.ID,
+				s.DatatypeID,
+                s.FieldID,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
 	case Datatype:
 		a, err := d.ListDatatypes()
 		if err != nil {
@@ -181,7 +214,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.ParentID,
 				s.Label,
 				s.Type,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -189,7 +221,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Field:
 		a, err := d.ListFields()
 		if err != nil {
@@ -206,7 +238,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Label,
 				s.Data,
 				s.Type,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -214,7 +245,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case MediaT:
 		a, err := d.ListMedia()
 		if err != nil {
@@ -237,14 +268,13 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Dimensions,
 				s.Url,
 				s.Srcset,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Media_dimension:
 		a, err := d.ListMediaDimensions()
 		if err != nil {
@@ -264,7 +294,26 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
+	case Permission:
+		a, err := d.ListPermissions()
+		if err != nil {
+			return nil, err
+		}
+		var collection [][]string
+		for i := range len(*a) {
+			rows := *a
+			row := rows[i]
+			s := MapStringPermission(row)
+			r := []string{
+				s.PermissionID,
+				s.TableID,
+				s.Mode,
+                s.Label,
+			}
+			collection = append(collection, r)
+		}
+		return collection, nil
 	case Role:
 		a, err := d.ListRoles()
 		if err != nil {
@@ -282,7 +331,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Route:
 		a, err := d.ListRoutes()
 		if err != nil {
@@ -298,7 +347,6 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 				s.Slug,
 				s.Title,
 				s.Status,
-				s.Author,
 				s.AuthorID,
 				s.DateCreated,
 				s.DateModified,
@@ -306,7 +354,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Session:
 		a, err := d.ListSessions()
 		if err != nil {
@@ -329,7 +377,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Table:
 		a, err := d.ListTables()
 		if err != nil {
@@ -347,7 +395,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case Token:
 		a, err := d.ListTokens()
 		if err != nil {
@@ -369,7 +417,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case User:
 		a, err := d.ListUsers()
 		if err != nil {
@@ -392,7 +440,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	case User_oauth:
 		a, err := d.ListUserOauths()
 		if err != nil {
@@ -415,7 +463,7 @@ func GenericList(t DBTable, d DbDriver) (*[][]string, error) {
 			}
 			collection = append(collection, r)
 		}
-		return &collection, nil
+		return collection, nil
 	}
 	return nil, nil
 }

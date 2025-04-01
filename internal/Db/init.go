@@ -44,7 +44,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	}
 
 	// Enable foreign keys
-	_, err = db.Exec("PRAGMA foreign_keys = ON;")
+	_, err = db.Exec("PRAGMA foreign_keys=1;")
 	if err != nil {
 		errWithContext := fmt.Errorf("failed to enable foreign keys: %w", err)
 		utility.DefaultLogger.Error("Database configuration error", errWithContext)

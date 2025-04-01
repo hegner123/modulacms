@@ -17,18 +17,26 @@ func (m *model) CLICreate(table db.DBTable) error {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer logFile.Close()
+	defer func() {
+		if closeErr := logFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
-	formValues := make(map[string]string)
+	formValues := make(map[string]string, 0)
 	for i, v := range m.formValues {
 		formValues[m.headers[i]] = *v
 	}
 
-	defer con.Close()
+	defer func() {
+		if closeErr := con.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	jsonData, err := json.Marshal(formValues)
 	if err != nil {
 		ErrLog.Fatal("", err)
@@ -56,6 +64,13 @@ func (m *model) CLICreate(table db.DBTable) error {
 		}
 		params := db.MapCreateAdminDatatypeParams(result)
 		d.CreateAdminDatatype(params)
+	case db.Admin_datatype_fields:
+		var result db.CreateAdminDatatypeFieldFormParams
+		if err := json.Unmarshal(jsonData, &result); err != nil {
+			ErrLog.Fatal("", err)
+		}
+		params := db.MapCreateAdminDatatypeFieldParams(result)
+		d.CreateAdminDatatypeField(params)
 	case db.Admin_field:
 		var result db.CreateAdminFieldFormParams
 		if err := json.Unmarshal(jsonData, &result); err != nil {
@@ -78,19 +93,26 @@ func (m *model) CLICreate(table db.DBTable) error {
 		params := db.MapCreateContentDataParams(result)
 		d.CreateContentData(params)
 	case db.Content_fields:
-		var result db.CreateContentDataFormParams
-		if err := json.Unmarshal(jsonData, &result); err != nil {
-			ErrLog.Fatal("", err)
-		}
-		params := db.MapCreateContentDataParams(result)
-		d.CreateContentData(params)
-	case db.Datatype:
 		var result db.CreateContentFieldFormParams
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
 		params := db.MapCreateContentFieldParams(result)
 		d.CreateContentField(params)
+	case db.Datatype:
+		var result db.CreateDatatypeFormParams
+		if err := json.Unmarshal(jsonData, &result); err != nil {
+			ErrLog.Fatal("", err)
+		}
+		params := db.MapCreateDatatypeParams(result)
+		d.CreateDatatype(params)
+	case db.Datatype_fields:
+		var result db.CreateDatatypeFieldFormParams
+		if err := json.Unmarshal(jsonData, &result); err != nil {
+			ErrLog.Fatal("", err)
+		}
+		params := db.MapCreateDatatypeFieldParams(result)
+		d.CreateDatatypeField(params)
 	case db.Field:
 		var result db.CreateFieldFormParams
 		if err := json.Unmarshal(jsonData, &result); err != nil {
@@ -180,7 +202,11 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer logFile.Close()
+	defer func() {
+		if closeErr := logFile.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
@@ -191,7 +217,11 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		formValues[m.headers[i]] = *v
 	}
 
-	defer con.Close()
+	defer func() {
+		if closeErr := con.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	jsonData, err := json.Marshal(formValues)
 	m.formValues = make([]*string, 0)
 	utility.DefaultLogger.Finfo(logFile, string(jsonData))
@@ -228,6 +258,17 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		utility.DefaultLogger.Finfo(logFile, "", result)
 		params := db.MapUpdateAdminDatatypeParams(result)
 		_, err := d.UpdateAdminDatatype(params)
+		if err != nil {
+			return err
+		}
+	case db.Admin_datatype_fields:
+		var result db.UpdateAdminDatatypeFieldFormParams
+		if err := json.Unmarshal(jsonData, &result); err != nil {
+			ErrLog.Fatal("", err)
+		}
+		utility.DefaultLogger.Finfo(logFile, "", result)
+		params := db.MapUpdateAdminDatatypeFieldParams(result)
+		_, err := d.UpdateAdminDatatypeField(params)
 		if err != nil {
 			return err
 		}
@@ -272,12 +313,22 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 			return err
 		}
 	case db.Datatype:
-		var result db.UpdateContentFieldFormParams
+		var result db.UpdateDatatypeFormParams
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
-		params := db.MapUpdateContentFieldParams(result)
-		_, err := d.UpdateContentField(params)
+		params := db.MapUpdateDatatypeParams(result)
+		_, err := d.UpdateDatatype(params)
+		if err != nil {
+			return err
+		}
+	case db.Datatype_fields:
+		var result db.UpdateDatatypeFieldFormParams
+		if err := json.Unmarshal(jsonData, &result); err != nil {
+			ErrLog.Fatal("", err)
+		}
+		params := db.MapUpdateDatatypeFieldParams(result)
+		_, err := d.UpdateDatatypeField(params)
 		if err != nil {
 			return err
 		}
@@ -387,13 +438,22 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 }
 
 func (m model) CLIDelete(table db.DBTable) error {
-	f, _ := tea.LogToFile("debug.log", "debug")
+	f, err := tea.LogToFile("debug.log", "debug")
 	d := db.ConfigDB(config.Env)
+	defer func() {
+		if closeErr := f.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
-	defer con.Close()
+	defer func() {
+		if closeErr := con.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	s := make(map[string]string, 0)
 	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor][0])
 	s["ID"] = m.rows[m.cursor][0]
@@ -426,6 +486,13 @@ func (m model) CLIDelete(table db.DBTable) error {
 		if err != nil {
 			return err
 		}
+	case db.Admin_datatype_fields:
+		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
+		err := d.DeleteAdminDatatypeField(result.ID)
+		if err != nil {
+			return err
+		}
 	case db.Admin_field:
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
@@ -434,7 +501,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 			return err
 		}
 	case db.Admin_route:
-		var result struct{ ID string }
+		var result struct{ ID int64 }
 		err := d.DeleteAdminRoute(result.ID)
 		if err != nil {
 			return err
@@ -457,6 +524,13 @@ func (m model) CLIDelete(table db.DBTable) error {
 		var result struct{ ID int64 }
 		result.ID = m.GetIDRow()
 		err := d.DeleteDatatype(result.ID)
+		if err != nil {
+			return err
+		}
+	case db.Datatype_fields:
+		var result struct{ ID int64 }
+		result.ID = m.GetIDRow()
+		err := d.DeleteDatatypeField(result.ID)
 		if err != nil {
 			return err
 		}
@@ -489,7 +563,7 @@ func (m model) CLIDelete(table db.DBTable) error {
 			return err
 		}
 	case db.Route:
-		var result struct{ ID string }
+		var result struct{ ID int64 }
 		err := d.DeleteRoute(result.ID)
 		if err != nil {
 			return err

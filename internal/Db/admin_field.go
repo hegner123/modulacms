@@ -16,10 +16,9 @@ import (
 type AdminFields struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
-	Author       any            `json:"author"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -28,10 +27,9 @@ type AdminFields struct {
 
 type CreateAdminFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
-	Author       any            `json:"author"`
+	Label        string            `json:"label"`
+	Data         string            `json:"data"`
+	Type         string            `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -41,27 +39,26 @@ type ListAdminFieldByRouteIdRow struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
+	Label        string            `json:"label"`
+	Data         string            `json:"data"`
+	Type         string            `json:"type"`
 	History      sql.NullString `json:"history"`
 }
 type ListAdminFieldsByDatatypeIDRow struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
+	Label        string            `json:"label"`
+	Data         string            `json:"data"`
+	Type         string            `json:"type"`
 	History      sql.NullString `json:"history"`
 }
 
 type UpdateAdminFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
-	Author       any            `json:"author"`
+	Label        string            `json:"label"`
+	Data         string            `json:"data"`
+	Type         string            `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -70,15 +67,14 @@ type UpdateAdminFieldParams struct {
 }
 type UtilityGetAdminfieldsRow struct {
 	AdminFieldID int64 `json:"admin_field_id"`
-	Label        any   `json:"label"`
+	Label        string   `json:"label"`
 }
 type AdminFieldsHistoryEntry struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
-	Data         any            `json:"data"`
-	Type         any            `json:"type"`
-	Author       any            `json:"author"`
+	Label        string            `json:"label"`
+	Data         string            `json:"data"`
+	Type         string            `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -88,7 +84,6 @@ type CreateAdminFieldFormParams struct {
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -99,7 +94,6 @@ type UpdateAdminFieldFormParams struct {
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -115,7 +109,6 @@ func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldPar
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -128,7 +121,6 @@ func MapUpdateAdminFieldParams(a UpdateAdminFieldFormParams) UpdateAdminFieldPar
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -143,7 +135,6 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
-		Author:       AssertString(a.Author),
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
@@ -163,7 +154,6 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -176,7 +166,6 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -189,7 +178,6 @@ func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.Update
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -280,10 +268,9 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  Ns(a.DateCreated.String()),
+		DateModified: Ns(a.DateModified.String()),
 		History:      a.History,
 	}
 }
@@ -293,10 +280,9 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 	}
 }
@@ -306,10 +292,9 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 		AdminFieldID: int32(a.AdminFieldID),
 	}
@@ -402,7 +387,6 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
@@ -415,7 +399,6 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -428,7 +411,6 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),

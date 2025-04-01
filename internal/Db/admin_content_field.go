@@ -19,9 +19,10 @@ type AdminContentFields struct {
 	AdminContentDataID  int64          `json:"admin_content_data_id"`
 	AdminFieldID        int64          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
-	History             sql.NullString `json:"history"`
+	AuthorID            int64          `json:"author_id"`
 	DateCreated         sql.NullString `json:"date_created"`
 	DateModified        sql.NullString `json:"date_modified"`
+	History             sql.NullString `json:"history"`
 }
 type CreateAdminContentFieldParams struct {
 	AdminContentFieldID int64          `json:"admin_content_field_id"`
@@ -29,20 +30,13 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID  int64          `json:"admin_content_data_id"`
 	AdminFieldID        int64          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
-	History             sql.NullString `json:"history"`
-	DateCreated         sql.NullString `json:"date_created"`
-	DateModified        sql.NullString `json:"date_modified"`
 }
 type UpdateAdminContentFieldParams struct {
-	AdminContentFieldID   int64          `json:"admin_content_field_id"`
 	AdminRouteID          int64          `json:"admin_route_id"`
 	AdminContentDataID    int64          `json:"admin_content_data_id"`
 	AdminFieldID          int64          `json:"admin_field_id"`
 	AdminFieldValue       string         `json:"admin_field_value"`
-	History               sql.NullString `json:"history"`
-	DateCreated           sql.NullString `json:"date_created"`
-	DateModified          sql.NullString `json:"date_modified"`
-	AdminContentFieldID_2 int64          `json:"admin_content_field_id_2"`
+    AdminContentFieldID   int64          `json:"admin_content_field_id"`
 }
 type AdminContentFieldsHistoryEntry struct {
 	AdminContentFieldID int64          `json:"admin_content_field_id"`
@@ -85,22 +79,15 @@ func MapCreateAdminContentFieldParams(a CreateAdminContentFieldFormParams) Creat
 		AdminContentDataID:  Si(a.AdminContentDataID),
 		AdminFieldID:        Si(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
-		History:             Ns(a.History),
-		DateCreated:         Ns(a.DateCreated),
-		DateModified:        Ns(a.DateModified),
 	}
 }
 func MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldFormParams) UpdateAdminContentFieldParams {
 	return UpdateAdminContentFieldParams{
 		AdminRouteID:          Si(a.AdminRouteID),
-		AdminContentFieldID:   Si(a.AdminContentFieldID),
 		AdminContentDataID:    Si(a.AdminContentDataID),
 		AdminFieldID:          Si(a.AdminFieldID),
 		AdminFieldValue:       a.AdminFieldValue,
-		History:               Ns(a.History),
-		DateCreated:           Ns(a.DateCreated),
-		DateModified:          Ns(a.DateModified),
-		AdminContentFieldID_2: Si(a.AdminContentFieldID_2),
+        AdminContentFieldID:   Si(a.AdminContentFieldID),
 	}
 }
 func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
@@ -138,9 +125,6 @@ func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldPara
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
-		History:             a.History,
-		DateCreated:         a.DateCreated,
-		DateModified:        a.DateModified,
 	}
 }
 func (d Database) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdb.UpdateAdminContentFieldParams {
@@ -150,10 +134,6 @@ func (d Database) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldPara
 		AdminContentDataID:    a.AdminContentDataID,
 		AdminFieldID:          a.AdminFieldID,
 		AdminFieldValue:       a.AdminFieldValue,
-		History:               a.History,
-		DateCreated:           a.DateCreated,
-		DateModified:          a.DateModified,
-		AdminContentFieldID_2: a.AdminContentFieldID_2,
 	}
 }
 ///QUERIES
@@ -248,33 +228,25 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 		AdminFieldID:        int64(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
 		History:             a.History,
-		DateCreated:         Ns(Nt(a.DateCreated)),
-		DateModified:        Ns(Nt(a.DateModified)),
+		DateCreated:         Ns(a.DateCreated.String()),
+		DateModified:        Ns(a.DateModified.String()),
 	}
 }
 func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbm.CreateAdminContentFieldParams {
 	return mdbm.CreateAdminContentFieldParams{
 		AdminRouteID:        Ni32(a.AdminRouteID),
-		AdminContentFieldID: int32(a.AdminContentFieldID),
 		AdminContentDataID:  int32(a.AdminContentDataID),
 		AdminFieldID:        int32(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
-		History:             a.History,
-		DateCreated:         StringToNTime(a.DateCreated.String),
-		DateModified:        StringToNTime(a.DateModified.String),
 	}
 }
 func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbm.UpdateAdminContentFieldParams {
 	return mdbm.UpdateAdminContentFieldParams{
 		AdminRouteID:          Ni32(a.AdminRouteID),
-		AdminContentFieldID:   int32(a.AdminContentFieldID),
 		AdminContentDataID:    int32(a.AdminContentDataID),
 		AdminFieldID:          int32(a.AdminFieldID),
 		AdminFieldValue:       a.AdminFieldValue,
-		History:               a.History,
-		DateCreated:           StringToNTime(a.DateCreated.String),
-		DateModified:          StringToNTime(a.DateModified.String),
-		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
+        AdminContentFieldID:   int32(a.AdminContentFieldID),
 	}
 }
 ///QUERIES
@@ -383,22 +355,15 @@ func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentField
 		AdminContentDataID:  int32(a.AdminContentDataID),
 		AdminFieldID:        int32(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
-		History:             a.History,
-		DateCreated:         StringToNTime(a.DateCreated.String),
-		DateModified:        StringToNTime(a.DateModified.String),
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbp.UpdateAdminContentFieldParams {
 	return mdbp.UpdateAdminContentFieldParams{
 		AdminRouteID:          Ni32(a.AdminRouteID),
-		AdminContentFieldID:   int32(a.AdminContentFieldID),
 		AdminContentDataID:    int32(a.AdminContentDataID),
 		AdminFieldID:          int32(a.AdminFieldID),
 		AdminFieldValue:       a.AdminFieldValue,
-		History:               a.History,
-		DateCreated:           StringToNTime(a.DateCreated.String),
-		DateModified:          StringToNTime(a.DateModified.String),
-		AdminContentFieldID_2: int32(a.AdminContentFieldID_2),
+        AdminContentFieldID:   int32(a.AdminContentFieldID),
 	}
 }
 

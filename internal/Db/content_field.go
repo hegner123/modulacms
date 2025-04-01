@@ -10,18 +10,19 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type ContentFields struct {
 	ContentFieldID int64          `json:"content_field_id"`
 	RouteID        int64          `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
-	History        sql.NullString `json:"history"`
+	AuthorID       int64          `json:"author_id"`
 	DateCreated    sql.NullString `json:"date_created"`
 	DateModified   sql.NullString `json:"date_modified"`
+	History        sql.NullString `json:"history"`
 }
 
 type CreateContentFieldParams struct {
@@ -30,9 +31,10 @@ type CreateContentFieldParams struct {
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
-	History        sql.NullString `json:"history"`
+	AuthorID       int64          `json:"author_id"`
 	DateCreated    sql.NullString `json:"date_created"`
 	DateModified   sql.NullString `json:"date_modified"`
+	History        sql.NullString `json:"history"`
 }
 
 type UpdateContentFieldParams struct {
@@ -41,9 +43,10 @@ type UpdateContentFieldParams struct {
 	ContentDataID    int64          `json:"content_data_id"`
 	FieldID          int64          `json:"field_id"`
 	FieldValue       string         `json:"field_value"`
-	History          sql.NullString `json:"history"`
+	AuthorID         int64          `json:"author_id"`
 	DateCreated      sql.NullString `json:"date_created"`
 	DateModified     sql.NullString `json:"date_modified"`
+	History          sql.NullString `json:"history"`
 	ContentFieldID_2 int64          `json:"content_field_id_2"`
 }
 
@@ -53,6 +56,7 @@ type ContentFieldsHistoryEntry struct {
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
+	AuthorID       int64          `json:"author_id"`
 	DateCreated    sql.NullString `json:"date_created"`
 	DateModified   sql.NullString `json:"date_modified"`
 }
@@ -63,9 +67,10 @@ type CreateContentFieldFormParams struct {
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
-	History        string `json:"history"`
+	AuthorID       string `json:"author_id"`
 	DateCreated    string `json:"date_created"`
 	DateModified   string `json:"date_modified"`
+	History        string `json:"history"`
 }
 
 type UpdateContentFieldFormParams struct {
@@ -74,9 +79,10 @@ type UpdateContentFieldFormParams struct {
 	ContentDataID    string `json:"content_data_id"`
 	FieldID          string `json:"field_id"`
 	FieldValue       string `json:"field_value"`
-	History          string `json:"history"`
+	AuthorID         string `json:"author_id"`
 	DateCreated      string `json:"date_created"`
 	DateModified     string `json:"date_modified"`
+	History          string `json:"history"`
 	ContentFieldID_2 string `json:"content_field_id_2"`
 }
 
@@ -91,9 +97,10 @@ func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFi
 		ContentDataID:  Si(a.ContentDataID),
 		FieldID:        Si(a.FieldID),
 		FieldValue:     a.FieldValue,
-		History:        Ns(a.History),
+		AuthorID:       Si(a.AuthorID),
 		DateCreated:    Ns(a.DateCreated),
 		DateModified:   Ns(a.DateModified),
+		History:        Ns(a.History),
 	}
 }
 
@@ -104,9 +111,10 @@ func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFi
 		ContentDataID:    Si(a.ContentDataID),
 		FieldID:          Si(a.FieldID),
 		FieldValue:       a.FieldValue,
-		History:          Ns(a.History),
+		AuthorID:         Si(a.AuthorID),
 		DateCreated:      Ns(a.DateCreated),
 		DateModified:     Ns(a.DateModified),
+		History:          Ns(a.History),
 		ContentFieldID_2: Si(a.ContentFieldID_2),
 	}
 }
@@ -118,9 +126,10 @@ func MapStringContentField(a ContentFields) StringContentFields {
 		ContentDataID:  strconv.FormatInt(a.ContentDataID, 10),
 		FieldID:        strconv.FormatInt(a.FieldID, 10),
 		FieldValue:     a.FieldValue,
-		History:        a.History.String,
+		AuthorID:       strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:    a.DateCreated.String,
 		DateModified:   a.DateModified.String,
+		History:        a.History.String,
 	}
 }
 
@@ -128,7 +137,7 @@ func MapStringContentField(a ContentFields) StringContentFields {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: a.ContentFieldID,
@@ -136,9 +145,10 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
-		History:        a.History,
+		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
+		History:        a.History,
 	}
 }
 
@@ -149,9 +159,10 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
-		History:        a.History,
+		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
+		History:        a.History,
 	}
 }
 
@@ -162,14 +173,15 @@ func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.Up
 		ContentDataID:    a.ContentDataID,
 		FieldID:          a.FieldID,
 		FieldValue:       a.FieldValue,
-		History:          a.History,
+		AuthorID:         a.AuthorID,
 		DateCreated:      a.DateCreated,
 		DateModified:     a.DateModified,
+		History:          a.History,
 		ContentFieldID_2: a.ContentFieldID_2,
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountContentFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -257,7 +269,7 @@ func (d Database) UpdateContentField(s UpdateContentFieldParams) (*string, error
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
@@ -265,40 +277,37 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
+		AuthorID:       int64(a.AuthorID),
+		DateCreated:    Ns(a.DateCreated.String()),
+		DateModified:   Ns(a.DateModified.String()),
 		History:        a.History,
-		DateCreated:    Ns(Nt(a.DateCreated)),
-		DateModified:   Ns(Nt(a.DateModified)),
 	}
 }
 
 func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbm.CreateContentFieldParams {
 	return mdbm.CreateContentFieldParams{
-		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:        Ni32(a.RouteID),
-		ContentDataID:  int32(a.ContentDataID),
-		FieldID:        int32(a.FieldID),
-		FieldValue:     a.FieldValue,
-		History:        a.History,
-		DateCreated:    StringToNTime(a.DateCreated.String),
-		DateModified:   StringToNTime(a.DateModified.String),
+		RouteID:       Ni32(a.RouteID),
+		ContentDataID: int32(a.ContentDataID),
+		FieldID:       int32(a.FieldID),
+		FieldValue:    a.FieldValue,
+		AuthorID:      int32(a.AuthorID),
+		History:       a.History,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbm.UpdateContentFieldParams {
 	return mdbm.UpdateContentFieldParams{
-		ContentFieldID:   int32(a.ContentFieldID),
-		RouteID:          Ni32(a.RouteID),
-		ContentDataID:    int32(a.ContentDataID),
-		FieldID:          int32(a.FieldID),
-		FieldValue:       a.FieldValue,
-		History:          a.History,
-		DateCreated:      StringToNTime(a.DateCreated.String),
-		DateModified:     StringToNTime(a.DateModified.String),
-		ContentFieldID_2: int32(a.ContentFieldID_2),
+		ContentFieldID: int32(a.ContentFieldID),
+		RouteID:        Ni32(a.RouteID),
+		ContentDataID:  int32(a.ContentDataID),
+		FieldID:        int32(a.FieldID),
+		FieldValue:     a.FieldValue,
+		AuthorID:       int32(a.AuthorID),
+		History:        a.History,
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountContentFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -390,7 +399,7 @@ func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, 
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
@@ -398,22 +407,24 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
-		History:        a.History,
+		AuthorID:       int64(a.AuthorID),
 		DateCreated:    Ns(Nt(a.DateCreated)),
 		DateModified:   Ns(Nt(a.DateModified)),
+		History:        a.History,
 	}
 }
 
 func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbp.CreateContentFieldParams {
 	return mdbp.CreateContentFieldParams{
 		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:       Ni32(a.RouteID) ,
+		RouteID:        Ni32(a.RouteID),
 		ContentDataID:  int32(a.ContentDataID),
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
-		History:        a.History,
+		AuthorID:       int32(a.AuthorID),
 		DateCreated:    StringToNTime(a.DateCreated.String),
 		DateModified:   StringToNTime(a.DateModified.String),
+		History:        a.History,
 	}
 }
 
@@ -424,14 +435,15 @@ func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) md
 		ContentDataID:    int32(a.ContentDataID),
 		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
-		History:          a.History,
+		AuthorID:         int32(a.AuthorID),
 		DateCreated:      StringToNTime(a.DateCreated.String),
 		DateModified:     StringToNTime(a.DateModified.String),
+		History:          a.History,
 		ContentFieldID_2: int32(a.ContentFieldID_2),
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountContentFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)

@@ -8,7 +8,6 @@ package mdbm
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"time"
 )
 
@@ -114,6 +113,18 @@ func (q *Queries) CountAdminDatatype(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countAdminDatatypeField = `-- name: CountAdminDatatypeField :one
+SELECT COUNT(*)
+FROM admin_datatypes_fields
+`
+
+func (q *Queries) CountAdminDatatypeField(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminDatatypeField)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countAdminField = `-- name: CountAdminField :one
 SELECT COUNT(*) FROM admin_fields
 `
@@ -167,6 +178,18 @@ FROM datatypes
 
 func (q *Queries) CountDatatype(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countDatatype)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countDatatypeField = `-- name: CountDatatypeField :one
+SELECT COUNT(*)
+FROM datatypes_fields
+`
+
+func (q *Queries) CountDatatypeField(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countDatatypeField)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -258,7 +281,7 @@ func (q *Queries) CountSession(ctx context.Context) (int64, error) {
 
 const countTables = `-- name: CountTables :one
 SELECT COUNT(*)
-FROM ` + "`" + `tables` + "`" + `
+FROM tables
 `
 
 func (q *Queries) CountTables(ctx context.Context) (int64, error) {
@@ -309,21 +332,26 @@ INSERT INTO admin_content_data (
     admin_route_id,
     parent_id,
     admin_datatype_id,
-    history,
     date_created,
-    date_modified
-    ) VALUES (
-?,?,?,?,?,?
-    )
+    date_modified,
+    history
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateAdminContentDataParams struct {
 	AdminRouteID    sql.NullInt32  `json:"admin_route_id"`
 	ParentID        sql.NullInt32  `json:"parent_id"`
 	AdminDatatypeID sql.NullInt32  `json:"admin_datatype_id"`
+	DateCreated     time.Time      `json:"date_created"`
+	DateModified    time.Time      `json:"date_modified"`
 	History         sql.NullString `json:"history"`
-	DateCreated     sql.NullTime   `json:"date_created"`
-	DateModified    sql.NullTime   `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminContentDataParams) error {
@@ -331,32 +359,37 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 		arg.AdminRouteID,
 		arg.ParentID,
 		arg.AdminDatatypeID,
-		arg.History,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 	)
 	return err
 }
 
 const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
-CREATE TABLE IF NOT EXISTS admin_content_data (
-    admin_content_data_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_route_id    INT DEFAULT NULL,
-    parent_id    INT DEFAULT NULL,
-    admin_datatype_id INT DEFAULT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
-    CONSTRAINT fk_admin_content_data_admin_route_id FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_admin_content_data_parent_id FOREIGN KEY (parent_id)
-        REFERENCES admin_content_data(admin_content_data_id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_admin_content_data_admin_datatypes FOREIGN KEY (admin_datatype_id)
-        REFERENCES admin_datatypes(admin_datatype_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+CREATE TABLE admin_content_data (
+    admin_content_data_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    admin_route_id INT NULL,
+    parent_id INT NULL,
+    admin_datatype_id INT NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_admin_content_data_admin_datatypes
+        FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_admin_route_id
+        FOREIGN KEY (admin_route_id) REFERENCES admin_routes (admin_route_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_parent_id
+        FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_author_users_user_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateAdminContentDataTable(ctx context.Context) error {
@@ -366,64 +399,64 @@ func (q *Queries) CreateAdminContentDataTable(ctx context.Context) error {
 
 const createAdminContentField = `-- name: CreateAdminContentField :exec
 INSERT INTO admin_content_fields (
-    admin_content_field_id,
     admin_route_id,
     admin_content_data_id,
     admin_field_id,
     admin_field_value, 
-    history,
-    date_created, 
-    date_modified
-    ) VALUES (
-  ?,?,?,?,?,?,?,?
-    )
+    history
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminContentFieldID int32          `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt32  `json:"admin_route_id"`
-	AdminContentDataID  int32          `json:"admin_content_data_id"`
-	AdminFieldID        int32          `json:"admin_field_id"`
-	AdminFieldValue     string         `json:"admin_field_value"`
-	History             sql.NullString `json:"history"`
-	DateCreated         sql.NullTime   `json:"date_created"`
-	DateModified        sql.NullTime   `json:"date_modified"`
+	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
+	AdminContentDataID int32          `json:"admin_content_data_id"`
+	AdminFieldID       int32          `json:"admin_field_id"`
+	AdminFieldValue    string         `json:"admin_field_value"`
+	History            sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminContentField,
-		arg.AdminContentFieldID,
 		arg.AdminRouteID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
 	)
 	return err
 }
 
 const createAdminContentFieldTable = `-- name: CreateAdminContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_fields (
-    admin_content_field_id INT AUTO_INCREMENT PRIMARY KEY,
-    admin_route_id INT,
+    admin_content_field_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    admin_route_id INT NULL,
     admin_content_data_id INT NOT NULL,
     admin_field_id INT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_admin_content_field_admin_content_data FOREIGN KEY (admin_content_data_id)
-        REFERENCES admin_content_data(admin_content_data_id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_admin_content_field_admin_route_id FOREIGN KEY (admin_route_id)
-        REFERENCES admin_routes(admin_route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_admin_content_field_fields FOREIGN KEY (field_id)
-        REFERENCES admin_fields(field_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_admin_content_field_admin_content_data
+        FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data (admin_content_data_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_field_admin_route_id
+        FOREIGN KEY (admin_route_id) REFERENCES admin_routes (admin_route_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_admin_content_field_fields
+        FOREIGN KEY (admin_field_id) REFERENCES admin_fields (admin_field_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_field_author_users_user_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateAdminContentFieldTable(ctx context.Context) error {
@@ -436,13 +469,18 @@ INSERT INTO admin_datatypes (
     parent_id,
     label,
     type,
-    author,
     author_id,
     date_created,
     date_modified,
     history
 ) VALUES (
-    ?,?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -450,10 +488,9 @@ type CreateAdminDatatypeParams struct {
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
@@ -462,7 +499,6 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -471,35 +507,68 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	return err
 }
 
+const createAdminDatatypeField = `-- name: CreateAdminDatatypeField :exec
+INSERT INTO admin_datatypes_fields (
+    admin_datatype_id,
+    admin_field_id
+) VALUES (
+    ?,
+    ?
+)
+`
+
+type CreateAdminDatatypeFieldParams struct {
+	AdminDatatypeID int32 `json:"admin_datatype_id"`
+	AdminFieldID    int32 `json:"admin_field_id"`
+}
+
+func (q *Queries) CreateAdminDatatypeField(ctx context.Context, arg CreateAdminDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, createAdminDatatypeField, arg.AdminDatatypeID, arg.AdminFieldID)
+	return err
+}
+
 const createAdminDatatypeTable = `-- name: CreateAdminDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_datatype_id INT NOT NULL AUTO_INCREMENT,
-    parent_id INT DEFAULT NULL,
+    admin_datatype_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
-    PRIMARY KEY (admin_datatype_id),
-    CONSTRAINT fk_admin_datatypes_parent_id FOREIGN KEY (parent_id)
-        REFERENCES admin_datatypes(admin_datatype_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION,
-    CONSTRAINT fk_admin_datatypes_author FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION,
-    CONSTRAINT fk_admin_datatypes_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    history TEXT NULL,
+    CONSTRAINT fk_admin_datatypes_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_admin_datatypes_parent_id
+        FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateAdminDatatypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminDatatypeTable)
+	return err
+}
+
+const createAdminDatatypesFieldsTable = `-- name: CreateAdminDatatypesFieldsTable :exec
+CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
+    id INT NOT NULL
+        PRIMARY KEY,
+    admin_datatype_id INT NOT NULL,
+    admin_field_id INT NOT NULL,
+    CONSTRAINT fk_df_admin_datatype
+        FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_df_admin_field
+        FOREIGN KEY (admin_field_id) REFERENCES admin_fields (admin_field_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+)
+`
+
+func (q *Queries) CreateAdminDatatypesFieldsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminDatatypesFieldsTable)
 	return err
 }
 
@@ -509,13 +578,19 @@ INSERT INTO admin_fields (
     label,
     data,
     type,
-    author,
     author_id,
     date_created,
     date_modified,
     history
 ) VALUES (
-    ?,?,?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -524,10 +599,9 @@ type CreateAdminFieldParams struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
@@ -537,7 +611,6 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -548,27 +621,23 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 
 const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
-    admin_field_id INT AUTO_INCREMENT PRIMARY KEY,
-    
-    parent_id INT DEFAULT NULL,
-    label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
-    data TEXT NOT NULL, -- MySQL does not allow a default value for TEXT
-    type VARCHAR(255) NOT NULL DEFAULT 'text',
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_admin_fields_admin_datatypes FOREIGN KEY (parent_id)
-        REFERENCES admin_datatypes(admin_datatype_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_admin_fields_users_username FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_admin_fields_users_user_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    admin_field_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
+    label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
+    data TEXT NOT NULL,
+    type VARCHAR(255) DEFAULT 'text' NOT NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_admin_fields_admin_datatypes
+        FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_admin_fields_users_user_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateAdminFieldTable(ctx context.Context) error {
@@ -578,37 +647,40 @@ func (q *Queries) CreateAdminFieldTable(ctx context.Context) error {
 
 const createAdminRoute = `-- name: CreateAdminRoute :exec
 INSERT INTO admin_routes (
-    author,
-    author_id,
     slug,
     title,
     status,
+    author_id,
     date_created,
     date_modified,
     history
 ) VALUES (
-    ?,?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
 type CreateAdminRouteParams struct {
-	Author       string         `json:"author"`
-	AuthorID     int32          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	AuthorID     int32          `json:"author_id"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminRoute,
-		arg.Author,
-		arg.AuthorID,
 		arg.Slug,
 		arg.Title,
 		arg.Status,
+		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
@@ -617,27 +689,22 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 }
 
 const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
-CREATE TABLE IF NOT EXISTS admin_routes (
-    admin_route_id INT AUTO_INCREMENT PRIMARY KEY,
-    slug VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE admin_routes (
+    admin_route_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_admin_routes_users_username FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE 
-        -- ON DELETE SET DEFAULT is not supported in MySQL; consider using RESTRICT or SET NULL instead.
-        ON DELETE RESTRICT,
-    CONSTRAINT fk_admin_routes_users_user_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE 
-        -- ON DELETE SET DEFAULT is not supported in MySQL; consider using RESTRICT instead.
-        ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
+    history TEXT NULL,
+    CONSTRAINT slug
+        UNIQUE (slug),
+    CONSTRAINT fk_admin_routes_users_user_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateAdminRouteTable(ctx context.Context) error {
@@ -650,21 +717,29 @@ INSERT INTO content_data (
     route_id,
     parent_id,
     datatype_id,
-    history,
+    author_id,
     date_created,
-    date_modified
-    ) VALUES (
-?,?,?,?,?,?
-    )
+    date_modified,
+    history
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateContentDataParams struct {
 	RouteID      sql.NullInt32  `json:"route_id"`
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	DatatypeID   sql.NullInt32  `json:"datatype_id"`
+	AuthorID     int32          `json:"author_id"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataParams) error {
@@ -672,32 +747,38 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 		arg.RouteID,
 		arg.ParentID,
 		arg.DatatypeID,
-		arg.History,
+		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 	)
 	return err
 }
 
 const createContentDataTable = `-- name: CreateContentDataTable :exec
-CREATE TABLE IF NOT EXISTS content_data (
-    content_data_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id    INT DEFAULT NULL,
-    parent_id    INT DEFAULT NULL,
-    datatype_id INT DEFAULT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
-    CONSTRAINT fk_content_data_route_id FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_content_data_parent_id FOREIGN KEY (parent_id)
-        REFERENCES content_data(content_data_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_content_data_datatypes FOREIGN KEY (datatype_id)
-        REFERENCES datatypes(datatype_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+CREATE TABLE content_data (
+    content_data_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
+    route_id INT NULL,
+    datatype_id INT NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_content_data_datatypes
+        FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_parent_id
+        FOREIGN KEY (parent_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_route_id
+        FOREIGN KEY (route_id) REFERENCES routes (route_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateContentDataTable(ctx context.Context) error {
@@ -707,64 +788,68 @@ func (q *Queries) CreateContentDataTable(ctx context.Context) error {
 
 const createContentField = `-- name: CreateContentField :exec
 INSERT INTO content_fields (
-    content_field_id,
     route_id,
     content_data_id,
     field_id,
     field_value, 
-    history,
-    date_created, 
-    date_modified
-    ) VALUES (
-  ?,?,?,?,?,?,?,?
-    )
+    author_id,
+    history
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateContentFieldParams struct {
-	ContentFieldID int32          `json:"content_field_id"`
-	RouteID        sql.NullInt32  `json:"route_id"`
-	ContentDataID  int32          `json:"content_data_id"`
-	FieldID        int32          `json:"field_id"`
-	FieldValue     string         `json:"field_value"`
-	History        sql.NullString `json:"history"`
-	DateCreated    sql.NullTime   `json:"date_created"`
-	DateModified   sql.NullTime   `json:"date_modified"`
+	RouteID       sql.NullInt32  `json:"route_id"`
+	ContentDataID int32          `json:"content_data_id"`
+	FieldID       int32          `json:"field_id"`
+	FieldValue    string         `json:"field_value"`
+	AuthorID      int32          `json:"author_id"`
+	History       sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createContentField,
-		arg.ContentFieldID,
 		arg.RouteID,
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,
+		arg.AuthorID,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
 	)
 	return err
 }
 
 const createContentFieldTable = `-- name: CreateContentFieldTable :exec
-CREATE TABLE IF NOT EXISTS content_fields (
-    content_field_id INT AUTO_INCREMENT PRIMARY KEY,
-    route_id INT,
+CREATE TABLE content_fields (
+    content_field_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    route_id INT NULL,
     content_data_id INT NOT NULL,
     field_id INT NOT NULL,
     field_value TEXT NOT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_content_field_content_data FOREIGN KEY (content_data_id)
-        REFERENCES content_data(content_data_id)
-        ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_content_field_route_id FOREIGN KEY (route_id)
-        REFERENCES routes(route_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_content_field_fields FOREIGN KEY (field_id)
-        REFERENCES fields(field_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_content_field_content_data
+        FOREIGN KEY (content_data_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_content_field_fields
+        FOREIGN KEY (field_id) REFERENCES fields (field_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_content_field_route_id
+        FOREIGN KEY (route_id) REFERENCES routes (route_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_field_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateContentFieldTable(ctx context.Context) error {
@@ -777,25 +862,23 @@ INSERT INTO datatypes (
     parent_id,
     label,
     type,
-    author,
     author_id,
-    history,
-    date_created,
-    date_modified
+    history
     ) VALUES (
-  ?,?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
     )
 `
 
 type CreateDatatypeParams struct {
-	ParentID     sql.NullInt32  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       string         `json:"author"`
-	AuthorID     int32          `json:"author_id"`
-	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	ParentID sql.NullInt32  `json:"parent_id"`
+	Label    string         `json:"label"`
+	Type     string         `json:"type"`
+	AuthorID int32          `json:"author_id"`
+	History  sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) error {
@@ -803,41 +886,74 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
 	)
+	return err
+}
+
+const createDatatypeField = `-- name: CreateDatatypeField :exec
+INSERT INTO datatypes_fields (
+    datatype_id,
+    field_id
+) VALUES (
+    ?,
+    ?
+)
+`
+
+type CreateDatatypeFieldParams struct {
+	DatatypeID int32 `json:"datatype_id"`
+	FieldID    int32 `json:"field_id"`
+}
+
+func (q *Queries) CreateDatatypeField(ctx context.Context, arg CreateDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, createDatatypeField, arg.DatatypeID, arg.FieldID)
 	return err
 }
 
 const createDatatypeTable = `-- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes (
-    datatype_id INT AUTO_INCREMENT PRIMARY KEY,
-    
-    parent_id INT DEFAULT NULL,
+    datatype_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_dt_datatypes_parent FOREIGN KEY (parent_id)
-        REFERENCES datatypes(datatype_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_dt_users_author FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_dt_users_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    history TEXT NULL,
+    CONSTRAINT fk_dt_datatypes_parent
+        FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
+            ON UPDATE CASCADE,
+    CONSTRAINT fk_dt_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateDatatypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createDatatypeTable)
+	return err
+}
+
+const createDatatypesFieldsTable = `-- name: CreateDatatypesFieldsTable :exec
+CREATE TABLE IF NOT EXISTS datatypes_fields (
+    id INT NOT NULL
+        PRIMARY KEY,
+    datatype_id INT NOT NULL,
+    field_id INT NOT NULL,
+    CONSTRAINT fk_df_datatype
+        FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_df_field
+        FOREIGN KEY (field_id) REFERENCES fields (field_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+)
+`
+
+func (q *Queries) CreateDatatypesFieldsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createDatatypesFieldsTable)
 	return err
 }
 
@@ -847,14 +963,20 @@ INSERT INTO fields  (
     label,
     data,
     type,
-    author,
     author_id,
-    history,
     date_created,
-    date_modified
+    date_modified,
+    history
     ) VALUES (
-?,?,?,?,?,?,?,?,?
-    )
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateFieldParams struct {
@@ -862,11 +984,10 @@ type CreateFieldParams struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
 }
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) error {
@@ -875,38 +996,33 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) error 
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
-		arg.History,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 	)
 	return err
 }
 
 const createFieldTable = `-- name: CreateFieldTable :exec
 CREATE TABLE IF NOT EXISTS fields (
-    field_id INT AUTO_INCREMENT PRIMARY KEY,
-    
-    parent_id INT DEFAULT NULL,
-    label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
+    field_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
+    label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     type TEXT NOT NULL,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    CONSTRAINT fk_fields_datatypes FOREIGN KEY (parent_id)
-        REFERENCES datatypes(datatype_id)
-        ON UPDATE CASCADE ON DELETE SET NULL,
-    CONSTRAINT fk_fields_users_author FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_fields_users_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_fields_datatypes
+        FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_fields_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateFieldTable(ctx context.Context) error {
@@ -926,12 +1042,23 @@ INSERT INTO media (
     mimetype,
     dimensions,
     srcset,
-    author,
     author_id,
     date_created,
     date_modified
 ) VALUES (
-?,?,?,?,?,?,?,?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -946,10 +1073,9 @@ type CreateMediaParams struct {
 	Mimetype     sql.NullString `json:"mimetype"`
 	Dimensions   sql.NullString `json:"dimensions"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) error {
@@ -964,7 +1090,6 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) error 
 		arg.Mimetype,
 		arg.Dimensions,
 		arg.Srcset,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -979,7 +1104,10 @@ INSERT INTO media_dimensions(
     height,
     aspect_ratio
 ) VALUES (
-  ?, ?, ?, ?
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -1002,12 +1130,15 @@ func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimen
 
 const createMediaDimensionTable = `-- name: CreateMediaDimensionTable :exec
 CREATE TABLE IF NOT EXISTS media_dimensions (
-    md_id INT AUTO_INCREMENT PRIMARY KEY,
-    label VARCHAR(255) UNIQUE,
-    width INT,
-    height INT,
-    aspect_ratio TEXT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    md_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    label VARCHAR(255) NULL,
+    width INT NULL,
+    height INT NULL,
+    aspect_ratio TEXT NULL,
+    CONSTRAINT label
+        UNIQUE (label)
+    )
 `
 
 func (q *Queries) CreateMediaDimensionTable(ctx context.Context) error {
@@ -1017,28 +1148,27 @@ func (q *Queries) CreateMediaDimensionTable(ctx context.Context) error {
 
 const createMediaTable = `-- name: CreateMediaTable :exec
 CREATE TABLE IF NOT EXISTS media (
-    media_id INT AUTO_INCREMENT PRIMARY KEY,
-    name TEXT,
-    display_name TEXT,
-    alt TEXT,
-    caption TEXT,
-    description TEXT,
-    class TEXT,
-    mimetype TEXT,
-    dimensions TEXT,
-    url VARCHAR(255) UNIQUE,
-    srcset TEXT,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_media_users_author FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE ON DELETE RESTRICT,
-    CONSTRAINT fk_media_users_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    media_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    name TEXT NULL,
+    display_name TEXT NULL,
+    alt TEXT NULL,
+    caption TEXT NULL,
+    description TEXT NULL,
+    class TEXT NULL,
+    mimetype TEXT NULL,
+    dimensions TEXT NULL,
+    url VARCHAR(255) NULL,
+    srcset TEXT NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT url
+        UNIQUE (url),
+    CONSTRAINT fk_media_users_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateMediaTable(ctx context.Context) error {
@@ -1052,7 +1182,9 @@ INSERT INTO permissions(
     mode,
     label
 ) VALUES (
-  ?,?,?
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -1069,11 +1201,12 @@ func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionPara
 
 const createPermissionTable = `-- name: CreatePermissionTable :exec
 CREATE TABLE IF NOT EXISTS permissions (
-    permission_id INT AUTO_INCREMENT PRIMARY KEY,
+    permission_id INT AUTO_INCREMENT
+        PRIMARY KEY,
     table_id INT NOT NULL,
     mode INT NOT NULL,
     label VARCHAR(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+)
 `
 
 func (q *Queries) CreatePermissionTable(ctx context.Context) error {
@@ -1086,8 +1219,8 @@ INSERT INTO roles (label, permissions) VALUES (?,?)
 `
 
 type CreateRoleParams struct {
-	Label       string          `json:"label"`
-	Permissions json.RawMessage `json:"permissions"`
+	Label       string         `json:"label"`
+	Permissions sql.NullString `json:"permissions"`
 }
 
 func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) error {
@@ -1097,10 +1230,14 @@ func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) error {
 
 const createRoleTable = `-- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
-    role_id INT AUTO_INCREMENT PRIMARY KEY,
-    label VARCHAR(255) NOT NULL UNIQUE,
-    permissions JSON 
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    role_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    permissions LONGTEXT COLLATE utf8mb4_bin NULL
+        CHECK (JSON_VALID(` + "`" + `permissions` + "`" + `)),
+    CONSTRAINT label
+        UNIQUE (label)
+)
 `
 
 func (q *Queries) CreateRoleTable(ctx context.Context) error {
@@ -1113,19 +1250,25 @@ INSERT INTO routes (
     slug,
     title,
     status,
-    author,
     author_id,
     date_created,
     date_modified,
     history
-) VALUES (?,?,?,?,?,?,?,?)
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+ )
 `
 
 type CreateRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
 	DateCreated  time.Time      `json:"date_created"`
 	DateModified time.Time      `json:"date_modified"`
@@ -1137,7 +1280,6 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) error 
 		arg.Slug,
 		arg.Title,
 		arg.Status,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -1148,26 +1290,21 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) error 
 
 const createRouteTable = `-- name: CreateRouteTable :exec
 CREATE TABLE IF NOT EXISTS routes (
-    route_id INT NOT NULL AUTO_INCREMENT,
+    route_id INT AUTO_INCREMENT
+        PRIMARY KEY,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author VARCHAR(255) NOT NULL DEFAULT 'system',
-    author_id INT NOT NULL DEFAULT 1,
-    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT,
-    PRIMARY KEY (route_id),
-    UNIQUE KEY unique_slug (slug),
-    CONSTRAINT fk_routes_routes_author FOREIGN KEY (author)
-        REFERENCES users(username)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION,
-    CONSTRAINT fk_routes_routes_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT unique_slug
+        UNIQUE (slug),
+    CONSTRAINT fk_routes_routes_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateRouteTable(ctx context.Context) error {
@@ -1184,16 +1321,22 @@ INSERT INTO sessions (
     ip_address,
     user_agent,
     session_data
-    ) VALUES( 
-    ?,?,?,?,?,?,?
-    )
+) VALUES( 
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateSessionParams struct {
 	UserID      int32          `json:"user_id"`
-	CreatedAt   sql.NullTime   `json:"created_at"`
-	ExpiresAt   sql.NullTime   `json:"expires_at"`
-	LastAccess  sql.NullTime   `json:"last_access"`
+	CreatedAt   time.Time      `json:"created_at"`
+	ExpiresAt   time.Time      `json:"expires_at"`
+	LastAccess  time.Time      `json:"last_access"`
 	IpAddress   sql.NullString `json:"ip_address"`
 	UserAgent   sql.NullString `json:"user_agent"`
 	SessionData sql.NullString `json:"session_data"`
@@ -1214,19 +1357,19 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 
 const createSessionTable = `-- name: CreateSessionTable :exec
 CREATE TABLE sessions (
-    session_id   INTEGER NOT NULL AUTO_INCREMENT,
-    user_id      INTEGER NOT NULL, 
-    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at   TIMESTAMP,
-    last_access  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    ip_address   VARCHAR(45),
-    user_agent   TEXT,
-    session_data TEXT,
-    CONSTRAINT fk_sessions_user_id FOREIGN KEY (user_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    session_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    user_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    ip_address VARCHAR(45) NULL,
+    user_agent TEXT NULL,
+    session_data TEXT NULL,
+    CONSTRAINT fk_sessions_user_id
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+)
 `
 
 func (q *Queries) CreateSessionTable(ctx context.Context) error {
@@ -1235,7 +1378,7 @@ func (q *Queries) CreateSessionTable(ctx context.Context) error {
 }
 
 const createTable = `-- name: CreateTable :exec
-INSERT INTO ` + "`" + `tables` + "`" + ` (
+INSERT INTO tables (
     label
 ) VALUES (
     ?
@@ -1249,15 +1392,16 @@ func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) error {
 
 const createTablesTable = `-- name: CreateTablesTable :exec
 CREATE TABLE IF NOT EXISTS tables (
-    id INT NOT NULL AUTO_INCREMENT,
-    label VARCHAR(255) UNIQUE,
-    author_id INT NOT NULL DEFAULT 1,
-    PRIMARY KEY (id),
-    CONSTRAINT fk_tables_author_id FOREIGN KEY (author_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE
-        ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    label VARCHAR(255) NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    CONSTRAINT label
+        UNIQUE (label),
+    CONSTRAINT fk_tables_author_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+)
 `
 
 func (q *Queries) CreateTablesTable(ctx context.Context) error {
@@ -1273,9 +1417,14 @@ INSERT INTO tokens (
     issued_at,
     expires_at,
     revoked
-    ) VALUES( 
-    ?,?,?,?,?,?
-    )
+) VALUES( 
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+)
 `
 
 type CreateTokenParams struct {
@@ -1301,17 +1450,20 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error 
 
 const createTokenTable = `-- name: CreateTokenTable :exec
 CREATE TABLE IF NOT EXISTS tokens (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT AUTO_INCREMENT
+        PRIMARY KEY,
     user_id INT NOT NULL,
     token_type VARCHAR(255) NOT NULL,
-    token VARCHAR(255) NOT NULL UNIQUE,
-    issued_at TIMESTAMP NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
-    revoked TINYINT(1) DEFAULT 0,
-    CONSTRAINT fk_tokens_users FOREIGN KEY (user_id)
-        REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    token VARCHAR(255) NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    revoked TINYINT(1) DEFAULT 0 NULL,
+    CONSTRAINT token
+        UNIQUE (token),
+    CONSTRAINT fk_tokens_users
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+)
 `
 
 func (q *Queries) CreateTokenTable(ctx context.Context) error {
@@ -1321,37 +1473,43 @@ func (q *Queries) CreateTokenTable(ctx context.Context) error {
 
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users (
-    date_created,
-    date_modified,
     username,
     name,
     email,
     hash,
-    role
+    role,
+    date_created,
+    date_modified
 ) VALUES (
-?,?,?,?,?,?,?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
 type CreateUserParams struct {
-	DateCreated  sql.NullTime  `json:"date_created"`
-	DateModified sql.NullTime  `json:"date_modified"`
-	Username     string        `json:"username"`
-	Name         string        `json:"name"`
-	Email        string        `json:"email"`
-	Hash         string        `json:"hash"`
-	Role         sql.NullInt32 `json:"role"`
+	Username     string    `json:"username"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Hash         string    `json:"hash"`
+	Role         int32     `json:"role"`
+	DateCreated  time.Time `json:"date_created"`
+	DateModified time.Time `json:"date_modified"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.ExecContext(ctx, createUser,
-		arg.DateCreated,
-		arg.DateModified,
 		arg.Username,
 		arg.Name,
 		arg.Email,
 		arg.Hash,
 		arg.Role,
+		arg.DateCreated,
+		arg.DateModified,
 	)
 	return err
 }
@@ -1366,7 +1524,13 @@ INSERT INTO user_oauth (
     token_expires_at,
     date_created
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
 )
 `
 
@@ -1377,7 +1541,7 @@ type CreateUserOauthParams struct {
 	AccessToken         sql.NullString `json:"access_token"`
 	RefreshToken        sql.NullString `json:"refresh_token"`
 	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
-	DateCreated         sql.NullTime   `json:"date_created"`
+	DateCreated         time.Time      `json:"date_created"`
 }
 
 func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) error {
@@ -1395,16 +1559,18 @@ func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams
 
 const createUserOauthTable = `-- name: CreateUserOauthTable :exec
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_oauth_id INT AUTO_INCREMENT
+        PRIMARY KEY,
     user_id INT NOT NULL,
-    oauth_provider VARCHAR(255) NOT NULL,        -- e.g., 'google', 'facebook'
-    oauth_provider_user_id VARCHAR(255) NOT NULL,  -- Unique identifier provided by the OAuth provider
-    access_token TEXT,                             -- Optional: for making API calls on behalf of the user
-    refresh_token TEXT,                            -- Optional: if token refresh is required
-    token_expires_at TIMESTAMP NULL,               -- Optional: expiry time for the access token
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(user_id)
-        ON UPDATE CASCADE ON DELETE CASCADE
+    oauth_provider VARCHAR(255) NOT NULL,
+    oauth_provider_user_id VARCHAR(255) NOT NULL,
+    access_token TEXT NULL,
+    refresh_token TEXT NULL,
+    token_expires_at TIMESTAMP NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
+    CONSTRAINT user_oauth_ibfk_1
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
 )
 `
 
@@ -1415,18 +1581,21 @@ func (q *Queries) CreateUserOauthTable(ctx context.Context) error {
 
 const createUserTable = `-- name: CreateUserTable :exec
 CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(255) NOT NULL UNIQUE,
+    user_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     hash TEXT NOT NULL,
-    role INT DEFAULT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    CONSTRAINT fk_users_role FOREIGN KEY (role)
-        REFERENCES roles(role_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+    role INT NOT NULL DEFAULT 4,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
+    CONSTRAINT username
+        UNIQUE (username),
+    CONSTRAINT fk_users_role
+        FOREIGN KEY (role) REFERENCES roles (role_id)
+            ON UPDATE CASCADE ON DELETE SET DEFAULT
+)
 `
 
 func (q *Queries) CreateUserTable(ctx context.Context) error {
@@ -1455,38 +1624,42 @@ func (q *Queries) DeleteAdminContentField(ctx context.Context, adminContentField
 }
 
 const deleteAdminDatatype = `-- name: DeleteAdminDatatype :exec
-
 DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?
 `
 
-// To retrieve the updated row, execute a subsequent SELECT.
 func (q *Queries) DeleteAdminDatatype(ctx context.Context, adminDatatypeID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteAdminDatatype, adminDatatypeID)
 	return err
 }
 
-const deleteAdminField = `-- name: DeleteAdminField :exec
+const deleteAdminDatatypeField = `-- name: DeleteAdminDatatypeField :exec
+DELETE FROM admin_datatypes_fields
+WHERE id = ?
+`
 
+func (q *Queries) DeleteAdminDatatypeField(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminDatatypeField, id)
+	return err
+}
+
+const deleteAdminField = `-- name: DeleteAdminField :exec
 DELETE FROM admin_fields
 WHERE admin_field_id = ?
 `
 
-// Note: MySQL does not support RETURNING *; execute a SELECT query afterward if needed.
 func (q *Queries) DeleteAdminField(ctx context.Context, adminFieldID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteAdminField, adminFieldID)
 	return err
 }
 
 const deleteAdminRoute = `-- name: DeleteAdminRoute :exec
-
 DELETE FROM admin_routes
-WHERE slug = ?
+WHERE admin_route_id = ?
 `
 
-// Note: MySQL does not support RETURNING *; execute a SELECT query afterward if needed.
-func (q *Queries) DeleteAdminRoute(ctx context.Context, slug string) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminRoute, slug)
+func (q *Queries) DeleteAdminRoute(ctx context.Context, adminRouteID int32) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminRoute, adminRouteID)
 	return err
 }
 
@@ -1517,6 +1690,16 @@ WHERE datatype_id = ?
 
 func (q *Queries) DeleteDatatype(ctx context.Context, datatypeID int32) error {
 	_, err := q.db.ExecContext(ctx, deleteDatatype, datatypeID)
+	return err
+}
+
+const deleteDatatypeField = `-- name: DeleteDatatypeField :exec
+DELETE FROM datatypes_fields
+WHERE id = ?
+`
+
+func (q *Queries) DeleteDatatypeField(ctx context.Context, id int32) error {
+	_, err := q.db.ExecContext(ctx, deleteDatatypeField, id)
 	return err
 }
 
@@ -1572,11 +1755,11 @@ func (q *Queries) DeleteRole(ctx context.Context, roleID int32) error {
 
 const deleteRoute = `-- name: DeleteRoute :exec
 DELETE FROM routes
-WHERE slug = ?
+WHERE route_id = ?
 `
 
-func (q *Queries) DeleteRoute(ctx context.Context, slug string) error {
-	_, err := q.db.ExecContext(ctx, deleteRoute, slug)
+func (q *Queries) DeleteRoute(ctx context.Context, routeID int32) error {
+	_, err := q.db.ExecContext(ctx, deleteRoute, routeID)
 	return err
 }
 
@@ -1592,7 +1775,7 @@ func (q *Queries) DeleteSession(ctx context.Context, sessionID int32) error {
 
 const deleteTable = `-- name: DeleteTable :exec
 
-DELETE FROM ` + "`" + `tables` + "`" + `
+DELETE FROM tables
 WHERE id = ?
 `
 
@@ -1632,8 +1815,197 @@ func (q *Queries) DeleteUserOauth(ctx context.Context, userOauthID int32) error 
 	return err
 }
 
+const dropAdminContentData = `-- name: DropAdminContentData :exec
+DROP TABLE admin_content_data
+`
+
+func (q *Queries) DropAdminContentData(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentData)
+	return err
+}
+
+const dropAdminContentFieldTable = `-- name: DropAdminContentFieldTable :exec
+DROP TABLE admin_content_fields
+`
+
+func (q *Queries) DropAdminContentFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentFieldTable)
+	return err
+}
+
+const dropAdminDatatypeTable = `-- name: DropAdminDatatypeTable :exec
+DROP TABLE admin_datatypes
+`
+
+func (q *Queries) DropAdminDatatypeTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminDatatypeTable)
+	return err
+}
+
+const dropAdminDatatypesFieldsTable = `-- name: DropAdminDatatypesFieldsTable :exec
+DROP TABLE admin_datatypes_fields
+`
+
+func (q *Queries) DropAdminDatatypesFieldsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminDatatypesFieldsTable)
+	return err
+}
+
+const dropAdminFieldTable = `-- name: DropAdminFieldTable :exec
+DROP TABLE admin_fields
+`
+
+func (q *Queries) DropAdminFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminFieldTable)
+	return err
+}
+
+const dropAdminRouteTable = `-- name: DropAdminRouteTable :exec
+DROP TABLE admin_routes
+`
+
+func (q *Queries) DropAdminRouteTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminRouteTable)
+	return err
+}
+
+const dropContentDataTable = `-- name: DropContentDataTable :exec
+DROP TABLE content_data
+`
+
+func (q *Queries) DropContentDataTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropContentDataTable)
+	return err
+}
+
+const dropContentFieldTable = `-- name: DropContentFieldTable :exec
+DROP TABLE content_fields
+`
+
+func (q *Queries) DropContentFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropContentFieldTable)
+	return err
+}
+
+const dropDatatypeTable = `-- name: DropDatatypeTable :exec
+DROP TABLE datatypes
+`
+
+func (q *Queries) DropDatatypeTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropDatatypeTable)
+	return err
+}
+
+const dropDatatypesFieldsTable = `-- name: DropDatatypesFieldsTable :exec
+DROP TABLE datatypes_fields
+`
+
+func (q *Queries) DropDatatypesFieldsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropDatatypesFieldsTable)
+	return err
+}
+
+const dropFieldTable = `-- name: DropFieldTable :exec
+DROP TABLE fields
+`
+
+func (q *Queries) DropFieldTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropFieldTable)
+	return err
+}
+
+const dropMediaDimensionTable = `-- name: DropMediaDimensionTable :exec
+DROP TABLE media_dimensions
+`
+
+func (q *Queries) DropMediaDimensionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropMediaDimensionTable)
+	return err
+}
+
+const dropMediaTable = `-- name: DropMediaTable :exec
+DROP TABLE media
+`
+
+func (q *Queries) DropMediaTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropMediaTable)
+	return err
+}
+
+const dropPermissionTable = `-- name: DropPermissionTable :exec
+DROP TABLE permissions
+`
+
+func (q *Queries) DropPermissionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropPermissionTable)
+	return err
+}
+
+const dropRoleTable = `-- name: DropRoleTable :exec
+DROP TABLE roles
+`
+
+func (q *Queries) DropRoleTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropRoleTable)
+	return err
+}
+
+const dropRouteTable = `-- name: DropRouteTable :exec
+DROP TABLE routes
+`
+
+func (q *Queries) DropRouteTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropRouteTable)
+	return err
+}
+
+const dropSessionTable = `-- name: DropSessionTable :exec
+DROP TABLE sessions
+`
+
+func (q *Queries) DropSessionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropSessionTable)
+	return err
+}
+
+const dropTableTable = `-- name: DropTableTable :exec
+DROP TABLE tables
+`
+
+func (q *Queries) DropTableTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropTableTable)
+	return err
+}
+
+const dropTokenTable = `-- name: DropTokenTable :exec
+DROP TABLE tokens
+`
+
+func (q *Queries) DropTokenTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropTokenTable)
+	return err
+}
+
+const dropUserOauthTable = `-- name: DropUserOauthTable :exec
+DROP TABLE user_oauth
+`
+
+func (q *Queries) DropUserOauthTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropUserOauthTable)
+	return err
+}
+
+const dropUserTable = `-- name: DropUserTable :exec
+DROP TABLE users
+`
+
+func (q *Queries) DropUserTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropUserTable)
+	return err
+}
+
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -1645,6 +2017,7 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 		&i.AdminRouteID,
 		&i.ParentID,
 		&i.AdminDatatypeID,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -1653,7 +2026,7 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 }
 
 const getAdminContentField = `-- name: GetAdminContentField :one
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, date_created, date_modified, history FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified, history FROM admin_content_fields
 WHERE admin_content_field_id = ? LIMIT 1
 `
 
@@ -1666,6 +2039,7 @@ func (q *Queries) GetAdminContentField(ctx context.Context, adminContentFieldID 
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -1674,7 +2048,7 @@ func (q *Queries) GetAdminContentField(ctx context.Context, adminContentFieldID 
 }
 
 const getAdminDatatype = `-- name: GetAdminDatatype :one
-SELECT admin_datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
 WHERE admin_datatype_id = ? 
 LIMIT 1
 `
@@ -1687,7 +2061,6 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, adminDatatypeID int32) (
 		&i.ParentID,
 		&i.Label,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1696,21 +2069,8 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, adminDatatypeID int32) (
 	return i, err
 }
 
-const getAdminDatatypeId = `-- name: GetAdminDatatypeId :one
-SELECT admin_datatype_id FROM admin_datatypes
-WHERE admin_datatype_id = ? 
-LIMIT 1
-`
-
-func (q *Queries) GetAdminDatatypeId(ctx context.Context, adminDatatypeID int32) (int32, error) {
-	row := q.db.QueryRowContext(ctx, getAdminDatatypeId, adminDatatypeID)
-	var admin_datatype_id int32
-	err := row.Scan(&admin_datatype_id)
-	return admin_datatype_id, err
-}
-
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM admin_fields
+SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
 `
 
@@ -1723,7 +2083,6 @@ func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int32) (AdminF
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1732,20 +2091,8 @@ func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int32) (AdminF
 	return i, err
 }
 
-const getAdminFieldId = `-- name: GetAdminFieldId :one
-SELECT admin_field_id FROM admin_fields
-WHERE admin_field_id = ? LIMIT 1
-`
-
-func (q *Queries) GetAdminFieldId(ctx context.Context, adminFieldID int32) (int32, error) {
-	row := q.db.QueryRowContext(ctx, getAdminFieldId, adminFieldID)
-	var admin_field_id int32
-	err := row.Scan(&admin_field_id)
-	return admin_field_id, err
-}
-
 const getAdminRouteById = `-- name: GetAdminRouteById :one
-SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified, history FROM admin_routes
 WHERE admin_route_id = ? LIMIT 1
 `
 
@@ -1757,7 +2104,6 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int32) (Ad
 		&i.Slug,
 		&i.Title,
 		&i.Status,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1767,7 +2113,7 @@ func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int32) (Ad
 }
 
 const getAdminRouteBySlug = `-- name: GetAdminRouteBySlug :one
-SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified, history FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
@@ -1779,7 +2125,6 @@ func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRo
 		&i.Slug,
 		&i.Title,
 		&i.Status,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1788,20 +2133,20 @@ func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRo
 	return i, err
 }
 
-const getAdminRouteId = `-- name: GetAdminRouteId :one
+const getAdminRouteIdBySlug = `-- name: GetAdminRouteIdBySlug :one
 SELECT admin_route_id FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteId(ctx context.Context, slug string) (int32, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRouteId, slug)
+func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, slug string) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteIdBySlug, slug)
 	var admin_route_id int32
 	err := row.Scan(&admin_route_id)
 	return admin_route_id, err
 }
 
 const getContentData = `-- name: GetContentData :one
-SELECT content_data_id, route_id, parent_id, datatype_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 WHERE content_data_id = ? LIMIT 1
 `
 
@@ -1810,9 +2155,10 @@ func (q *Queries) GetContentData(ctx context.Context, contentDataID int32) (Cont
 	var i ContentData
 	err := row.Scan(
 		&i.ContentDataID,
-		&i.RouteID,
 		&i.ParentID,
+		&i.RouteID,
 		&i.DatatypeID,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -1821,7 +2167,7 @@ func (q *Queries) GetContentData(ctx context.Context, contentDataID int32) (Cont
 }
 
 const getContentField = `-- name: GetContentField :one
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, date_created, date_modified, history FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields
 WHERE content_field_id = ? LIMIT 1
 `
 
@@ -1834,6 +2180,7 @@ func (q *Queries) GetContentField(ctx context.Context, contentFieldID int32) (Co
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -1842,7 +2189,7 @@ func (q *Queries) GetContentField(ctx context.Context, contentFieldID int32) (Co
 }
 
 const getDatatype = `-- name: GetDatatype :one
-SELECT datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM datatypes
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes
 WHERE datatype_id = ? LIMIT 1
 `
 
@@ -1854,7 +2201,6 @@ func (q *Queries) GetDatatype(ctx context.Context, datatypeID int32) (Datatypes,
 		&i.ParentID,
 		&i.Label,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1864,7 +2210,7 @@ func (q *Queries) GetDatatype(ctx context.Context, datatypeID int32) (Datatypes,
 }
 
 const getField = `-- name: GetField :one
-SELECT field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM fields 
+SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM fields 
 WHERE field_id = ? LIMIT 1
 `
 
@@ -1877,30 +2223,6 @@ func (q *Queries) GetField(ctx context.Context, fieldID int32) (Fields, error) {
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Author,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-		&i.History,
-	)
-	return i, err
-}
-
-const getGlobalAdminDatatypeId = `-- name: GetGlobalAdminDatatypeId :one
-SELECT admin_datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
-WHERE type = 'GLOBALS' 
-LIMIT 1
-`
-
-func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes, error) {
-	row := q.db.QueryRowContext(ctx, getGlobalAdminDatatypeId)
-	var i AdminDatatypes
-	err := row.Scan(
-		&i.AdminDatatypeID,
-		&i.ParentID,
-		&i.Label,
-		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1910,7 +2232,7 @@ func (q *Queries) GetGlobalAdminDatatypeId(ctx context.Context) (AdminDatatypes,
 }
 
 const getLastAdminContentData = `-- name: GetLastAdminContentData :one
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData, error) {
@@ -1921,6 +2243,7 @@ func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData
 		&i.AdminRouteID,
 		&i.ParentID,
 		&i.AdminDatatypeID,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -1929,7 +2252,7 @@ func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData
 }
 
 const getLastAdminContentField = `-- name: GetLastAdminContentField :one
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, date_created, date_modified, history FROM admin_content_fields WHERE admin_content_fields_id = LAST_INSERT_ID()
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified, history FROM admin_content_fields WHERE admin_content_field_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminContentField(ctx context.Context) (AdminContentFields, error) {
@@ -1941,27 +2264,6 @@ func (q *Queries) GetLastAdminContentField(ctx context.Context) (AdminContentFie
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
-		&i.DateCreated,
-		&i.DateModified,
-		&i.History,
-	)
-	return i, err
-}
-
-const getLastAdminDatatype = `-- name: GetLastAdminDatatype :one
-SELECT admin_datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID()
-`
-
-// To retrieve the inserted row, consider using LAST_INSERT_ID() in a subsequent SELECT.
-func (q *Queries) GetLastAdminDatatype(ctx context.Context) (AdminDatatypes, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminDatatype)
-	var i AdminDatatypes
-	err := row.Scan(
-		&i.AdminDatatypeID,
-		&i.ParentID,
-		&i.Label,
-		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1970,8 +2272,39 @@ func (q *Queries) GetLastAdminDatatype(ctx context.Context) (AdminDatatypes, err
 	return i, err
 }
 
+const getLastAdminDatatype = `-- name: GetLastAdminDatatype :one
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID()
+`
+
+func (q *Queries) GetLastAdminDatatype(ctx context.Context) (AdminDatatypes, error) {
+	row := q.db.QueryRowContext(ctx, getLastAdminDatatype)
+	var i AdminDatatypes
+	err := row.Scan(
+		&i.AdminDatatypeID,
+		&i.ParentID,
+		&i.Label,
+		&i.Type,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+		&i.History,
+	)
+	return i, err
+}
+
+const getLastAdminDatatypeField = `-- name: GetLastAdminDatatypeField :one
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields WHERE id = LAST_INSERT_ID()
+`
+
+func (q *Queries) GetLastAdminDatatypeField(ctx context.Context) (AdminDatatypesFields, error) {
+	row := q.db.QueryRowContext(ctx, getLastAdminDatatypeField)
+	var i AdminDatatypesFields
+	err := row.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID)
+	return i, err
+}
+
 const getLastAdminField = `-- name: GetLastAdminField :one
-SELECT admin_field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID()
+SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminField(ctx context.Context) (AdminFields, error) {
@@ -1983,7 +2316,6 @@ func (q *Queries) GetLastAdminField(ctx context.Context) (AdminFields, error) {
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1993,10 +2325,9 @@ func (q *Queries) GetLastAdminField(ctx context.Context) (AdminFields, error) {
 }
 
 const getLastAdminRoute = `-- name: GetLastAdminRoute :one
-SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes WHERE admin_route_id = LAST_INSERT_ID()
+SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified, history FROM admin_routes WHERE admin_route_id = LAST_INSERT_ID()
 `
 
-// Note: MySQL does not support RETURNING *; execute a SELECT query afterward if needed.
 func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
 	row := q.db.QueryRowContext(ctx, getLastAdminRoute)
 	var i AdminRoutes
@@ -2005,7 +2336,6 @@ func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
 		&i.Slug,
 		&i.Title,
 		&i.Status,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2015,7 +2345,7 @@ func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
 }
 
 const getLastContentData = `-- name: GetLastContentData :one
-SELECT content_data_id, route_id, parent_id, datatype_id, date_created, date_modified, history FROM content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
@@ -2023,9 +2353,10 @@ func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
 	var i ContentData
 	err := row.Scan(
 		&i.ContentDataID,
-		&i.RouteID,
 		&i.ParentID,
+		&i.RouteID,
 		&i.DatatypeID,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -2034,7 +2365,7 @@ func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
 }
 
 const getLastContentField = `-- name: GetLastContentField :one
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, date_created, date_modified, history FROM content_fields WHERE content_fields_id = LAST_INSERT_ID()
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields WHERE content_field_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastContentField(ctx context.Context) (ContentFields, error) {
@@ -2046,6 +2377,7 @@ func (q *Queries) GetLastContentField(ctx context.Context) (ContentFields, error
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
+		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
 		&i.History,
@@ -2054,7 +2386,7 @@ func (q *Queries) GetLastContentField(ctx context.Context) (ContentFields, error
 }
 
 const getLastDatatype = `-- name: GetLastDatatype :one
-SELECT datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM datatypes WHERE datatype_id = LAST_INSERT_ID()
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes WHERE datatype_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastDatatype(ctx context.Context) (Datatypes, error) {
@@ -2065,7 +2397,6 @@ func (q *Queries) GetLastDatatype(ctx context.Context) (Datatypes, error) {
 		&i.ParentID,
 		&i.Label,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2074,8 +2405,19 @@ func (q *Queries) GetLastDatatype(ctx context.Context) (Datatypes, error) {
 	return i, err
 }
 
+const getLastDatatypeField = `-- name: GetLastDatatypeField :one
+SELECT id, datatype_id, field_id FROM datatypes_fields WHERE id = LAST_INSERT_ID()
+`
+
+func (q *Queries) GetLastDatatypeField(ctx context.Context) (DatatypesFields, error) {
+	row := q.db.QueryRowContext(ctx, getLastDatatypeField)
+	var i DatatypesFields
+	err := row.Scan(&i.ID, &i.DatatypeID, &i.FieldID)
+	return i, err
+}
+
 const getLastField = `-- name: GetLastField :one
-SELECT field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM fields WHERE field_id = LAST_INSERT_ID()
+SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM fields WHERE field_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastField(ctx context.Context) (Fields, error) {
@@ -2087,7 +2429,6 @@ func (q *Queries) GetLastField(ctx context.Context) (Fields, error) {
 		&i.Label,
 		&i.Data,
 		&i.Type,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2097,7 +2438,7 @@ func (q *Queries) GetLastField(ctx context.Context) (Fields, error) {
 }
 
 const getLastMedia = `-- name: GetLastMedia :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media WHERE media_id = LAST_INSERT_ID()
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media WHERE media_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastMedia(ctx context.Context) (Media, error) {
@@ -2115,7 +2456,6 @@ func (q *Queries) GetLastMedia(ctx context.Context) (Media, error) {
 		&i.Dimensions,
 		&i.Url,
 		&i.Srcset,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2168,7 +2508,7 @@ func (q *Queries) GetLastRole(ctx context.Context) (Roles, error) {
 }
 
 const getLastRoute = `-- name: GetLastRoute :one
-SELECT route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM routes WHERE route_id = LAST_INSERT_ID()
+SELECT route_id, slug, title, status, author_id, date_created, date_modified, history FROM routes WHERE route_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastRoute(ctx context.Context) (Routes, error) {
@@ -2179,7 +2519,6 @@ func (q *Queries) GetLastRoute(ctx context.Context) (Routes, error) {
 		&i.Slug,
 		&i.Title,
 		&i.Status,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2209,10 +2548,9 @@ func (q *Queries) GetLastSession(ctx context.Context) (Sessions, error) {
 }
 
 const getLastTable = `-- name: GetLastTable :one
- SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + ` WHERE id = LAST_INSERT_ID()
+ SELECT id, label, author_id FROM tables WHERE id = LAST_INSERT_ID()
 `
 
-// To retrieve the newly inserted row, you can run:
 func (q *Queries) GetLastTable(ctx context.Context) (Tables, error) {
 	row := q.db.QueryRowContext(ctx, getLastTable)
 	var i Tables
@@ -2282,7 +2620,7 @@ func (q *Queries) GetLastUserOauth(ctx context.Context) (UserOauth, error) {
 }
 
 const getMedia = `-- name: GetMedia :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 WHERE media_id = ? LIMIT 1
 `
 
@@ -2301,7 +2639,6 @@ func (q *Queries) GetMedia(ctx context.Context, mediaID int32) (Media, error) {
 		&i.Dimensions,
 		&i.Url,
 		&i.Srcset,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2310,7 +2647,7 @@ func (q *Queries) GetMedia(ctx context.Context, mediaID int32) (Media, error) {
 }
 
 const getMediaByName = `-- name: GetMediaByName :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 WHERE name = ? LIMIT 1
 `
 
@@ -2329,7 +2666,6 @@ func (q *Queries) GetMediaByName(ctx context.Context, name sql.NullString) (Medi
 		&i.Dimensions,
 		&i.Url,
 		&i.Srcset,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2338,7 +2674,7 @@ func (q *Queries) GetMediaByName(ctx context.Context, name sql.NullString) (Medi
 }
 
 const getMediaByUrl = `-- name: GetMediaByUrl :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 WHERE url = ? LIMIT 1
 `
 
@@ -2357,7 +2693,6 @@ func (q *Queries) GetMediaByUrl(ctx context.Context, url sql.NullString) (Media,
 		&i.Dimensions,
 		&i.Url,
 		&i.Srcset,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2413,20 +2748,19 @@ func (q *Queries) GetRole(ctx context.Context, roleID int32) (Roles, error) {
 }
 
 const getRoute = `-- name: GetRoute :one
-SELECT route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM routes
-WHERE slug = ? 
+SELECT route_id, slug, title, status, author_id, date_created, date_modified, history FROM routes
+WHERE route_id = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetRoute(ctx context.Context, slug string) (Routes, error) {
-	row := q.db.QueryRowContext(ctx, getRoute, slug)
+func (q *Queries) GetRoute(ctx context.Context, routeID int32) (Routes, error) {
+	row := q.db.QueryRowContext(ctx, getRoute, routeID)
 	var i Routes
 	err := row.Scan(
 		&i.RouteID,
 		&i.Slug,
 		&i.Title,
 		&i.Status,
-		&i.Author,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2435,15 +2769,15 @@ func (q *Queries) GetRoute(ctx context.Context, slug string) (Routes, error) {
 	return i, err
 }
 
-const getRouteID = `-- name: GetRouteID :one
+const getRouteIDBySlug = `-- name: GetRouteIDBySlug :one
 SELECT route_id 
 FROM routes
 WHERE slug = ? 
 LIMIT 1
 `
 
-func (q *Queries) GetRouteID(ctx context.Context, slug string) (int32, error) {
-	row := q.db.QueryRowContext(ctx, getRouteID, slug)
+func (q *Queries) GetRouteIDBySlug(ctx context.Context, slug string) (int32, error) {
+	row := q.db.QueryRowContext(ctx, getRouteIDBySlug, slug)
 	var route_id int32
 	err := row.Scan(&route_id)
 	return route_id, err
@@ -2508,7 +2842,7 @@ func (q *Queries) GetSessionByUserId(ctx context.Context, sessionID int32) ([]Se
 }
 
 const getTable = `-- name: GetTable :one
-SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + `
+SELECT id, label, author_id FROM tables
 WHERE id = ?
 LIMIT 1
 `
@@ -2521,7 +2855,7 @@ func (q *Queries) GetTable(ctx context.Context, id int32) (Tables, error) {
 }
 
 const getTableId = `-- name: GetTableId :one
-SELECT id FROM ` + "`" + `tables` + "`" + `
+SELECT id FROM tables
 WHERE id = ?
 LIMIT 1
 `
@@ -2705,7 +3039,7 @@ func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int32, erro
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -2723,6 +3057,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 			&i.AdminRouteID,
 			&i.ParentID,
 			&i.AdminDatatypeID,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -2741,8 +3076,9 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_route_id = ?
+ORDER BY admin_content_data_id
 `
 
 func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID sql.NullInt32) ([]AdminContentData, error) {
@@ -2759,6 +3095,7 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 			&i.AdminRouteID,
 			&i.ParentID,
 			&i.AdminDatatypeID,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -2777,8 +3114,8 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 }
 
 const listAdminContentFields = `-- name: ListAdminContentFields :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, date_created, date_modified, history FROM admin_content_fields
-ORDER BY admin_content_fields_id
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified, history FROM admin_content_fields
+ORDER BY admin_content_field_id
 `
 
 func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFields, error) {
@@ -2796,6 +3133,7 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -2814,8 +3152,9 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 }
 
 const listAdminContentFieldsByRoute = `-- name: ListAdminContentFieldsByRoute :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, date_created, date_modified, history FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified, history FROM admin_content_fields
 WHERE admin_route_id = ?
+ORDER BY admin_content_field_id
 `
 
 func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteID sql.NullInt32) ([]AdminContentFields, error) {
@@ -2833,6 +3172,7 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteI
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -2851,7 +3191,7 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteI
 }
 
 const listAdminDatatype = `-- name: ListAdminDatatype :many
-SELECT admin_datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
 ORDER BY admin_datatype_id
 `
 
@@ -2869,7 +3209,6 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 			&i.ParentID,
 			&i.Label,
 			&i.Type,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -2889,7 +3228,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 }
 
 const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
-SELECT admin_datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
 WHERE parent_id = ?
 `
 
@@ -2907,7 +3246,6 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.Nu
 			&i.ParentID,
 			&i.Label,
 			&i.Type,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -2926,38 +3264,152 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.Nu
 	return items, nil
 }
 
-const listAdminDatatypeTree = `-- name: ListAdminDatatypeTree :many
-SELECT 
-    child.admin_datatype_id AS child_id,
-    child.label AS child_label,
-    parent.admin_datatype_id AS parent_id,
-    parent.label AS parent_label
-FROM admin_datatypes AS child
-LEFT JOIN admin_datatypes AS parent 
-    ON child.parent_id = parent.admin_datatype_id
+const listAdminDatatypeField = `-- name: ListAdminDatatypeField :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+ORDER BY id
 `
 
-type ListAdminDatatypeTreeRow struct {
-	ChildID     int32          `json:"child_id"`
-	ChildLabel  string         `json:"child_label"`
-	ParentID    sql.NullInt32  `json:"parent_id"`
-	ParentLabel sql.NullString `json:"parent_label"`
-}
-
-func (q *Queries) ListAdminDatatypeTree(ctx context.Context) ([]ListAdminDatatypeTreeRow, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminDatatypeTree)
+func (q *Queries) ListAdminDatatypeField(ctx context.Context) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeField)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListAdminDatatypeTreeRow
+	var items []AdminDatatypesFields
 	for rows.Next() {
-		var i ListAdminDatatypeTreeRow
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeFieldByDatatypeID = `-- name: ListAdminDatatypeFieldByDatatypeID :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+WHERE admin_datatype_id = ?
+ORDER BY id
+`
+
+func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, adminDatatypeID int32) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByDatatypeID, adminDatatypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatypesFields
+	for rows.Next() {
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeFieldByFieldID = `-- name: ListAdminDatatypeFieldByFieldID :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+WHERE admin_field_id = ?
+ORDER BY id
+`
+
+func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, adminFieldID int32) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByFieldID, adminFieldID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatypesFields
+	for rows.Next() {
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeGlobal = `-- name: ListAdminDatatypeGlobal :many
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
+WHERE type = 'GLOBAL' LIMIT 1
+`
+
+func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeGlobal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatypes
+	for rows.Next() {
+		var i AdminDatatypes
 		if err := rows.Scan(
-			&i.ChildID,
-			&i.ChildLabel,
+			&i.AdminDatatypeID,
 			&i.ParentID,
-			&i.ParentLabel,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeRoot = `-- name: ListAdminDatatypeRoot :many
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
+WHERE type = 'ROOT' LIMIT 1
+`
+
+func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatypes
+	for rows.Next() {
+		var i AdminDatatypes
+		if err := rows.Scan(
+			&i.AdminDatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
 		); err != nil {
 			return nil, err
 		}
@@ -2973,7 +3425,7 @@ func (q *Queries) ListAdminDatatypeTree(ctx context.Context) ([]ListAdminDatatyp
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM admin_fields
+SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM admin_fields
 ORDER BY admin_field_id
 `
 
@@ -2992,7 +3444,6 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3011,36 +3462,30 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 	return items, nil
 }
 
-const listAdminFieldsByDatatypeID = `-- name: ListAdminFieldsByDatatypeID :many
-SELECT admin_field_id,  parent_id, label, data, type, history
-FROM admin_fields
+const listAdminFieldByParentID = `-- name: ListAdminFieldByParentID :many
+SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM admin_fields
 WHERE parent_id = ?
+ORDER BY admin_field_id
 `
 
-type ListAdminFieldsByDatatypeIDRow struct {
-	AdminFieldID int32          `json:"admin_field_id"`
-	ParentID     sql.NullInt32  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	History      sql.NullString `json:"history"`
-}
-
-func (q *Queries) ListAdminFieldsByDatatypeID(ctx context.Context, parentID sql.NullInt32) ([]ListAdminFieldsByDatatypeIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminFieldsByDatatypeID, parentID)
+func (q *Queries) ListAdminFieldByParentID(ctx context.Context, parentID sql.NullInt32) ([]AdminFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldByParentID, parentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListAdminFieldsByDatatypeIDRow
+	var items []AdminFields
 	for rows.Next() {
-		var i ListAdminFieldsByDatatypeIDRow
+		var i AdminFields
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.ParentID,
 			&i.Label,
 			&i.Data,
 			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
 			&i.History,
 		); err != nil {
 			return nil, err
@@ -3057,7 +3502,7 @@ func (q *Queries) ListAdminFieldsByDatatypeID(ctx context.Context, parentID sql.
 }
 
 const listAdminRoute = `-- name: ListAdminRoute :many
-SELECT admin_route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM admin_routes
+SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified, history FROM admin_routes
 ORDER BY slug
 `
 
@@ -3075,7 +3520,6 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 			&i.Slug,
 			&i.Title,
 			&i.Status,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3095,7 +3539,7 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 }
 
 const listContentData = `-- name: ListContentData :many
-SELECT content_data_id, route_id, parent_id, datatype_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 ORDER BY content_data_id
 `
 
@@ -3110,9 +3554,10 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 		var i ContentData
 		if err := rows.Scan(
 			&i.ContentDataID,
-			&i.RouteID,
 			&i.ParentID,
+			&i.RouteID,
 			&i.DatatypeID,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -3131,8 +3576,9 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 }
 
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
-SELECT content_data_id, route_id, parent_id, datatype_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 WHERE route_id = ?
+ORDER BY content_data_id
 `
 
 func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID sql.NullInt32) ([]ContentData, error) {
@@ -3146,9 +3592,10 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID sql.NullIn
 		var i ContentData
 		if err := rows.Scan(
 			&i.ContentDataID,
-			&i.RouteID,
 			&i.ParentID,
+			&i.RouteID,
 			&i.DatatypeID,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -3167,8 +3614,8 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID sql.NullIn
 }
 
 const listContentFields = `-- name: ListContentFields :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, date_created, date_modified, history FROM content_fields
-ORDER BY content_fields_id
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields
+ORDER BY content_field_id
 `
 
 func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error) {
@@ -3186,6 +3633,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -3204,8 +3652,9 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 }
 
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, date_created, date_modified, history FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields
 WHERE route_id = ?
+ORDER BY content_field_id
 `
 
 func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.NullInt32) ([]ContentFields, error) {
@@ -3223,6 +3672,7 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.Null
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
@@ -3241,7 +3691,7 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.Null
 }
 
 const listDatatype = `-- name: ListDatatype :many
-SELECT datatype_id, parent_id, label, type, author, author_id, date_created, date_modified, history FROM datatypes
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes
 ORDER BY datatype_id
 `
 
@@ -3259,7 +3709,206 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 			&i.ParentID,
 			&i.Label,
 			&i.Type,
-			&i.Author,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeChildren = `-- name: ListDatatypeChildren :many
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM admin_datatypes
+WHERE parent_id = ?
+ORDER BY datatype_id
+`
+
+func (q *Queries) ListDatatypeChildren(ctx context.Context, parentID sql.NullInt32) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeChildren, parentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AdminDatatypes
+	for rows.Next() {
+		var i AdminDatatypes
+		if err := rows.Scan(
+			&i.AdminDatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeField = `-- name: ListDatatypeField :many
+SELECT id, datatype_id, field_id FROM datatypes_fields
+ORDER BY id
+`
+
+func (q *Queries) ListDatatypeField(ctx context.Context) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeField)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DatatypesFields
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeFieldByDatatypeID = `-- name: ListDatatypeFieldByDatatypeID :many
+SELECT id, datatype_id, field_id FROM datatypes_fields
+WHERE datatype_id = ?
+ORDER BY id
+`
+
+func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, datatypeID int32) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByDatatypeID, datatypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DatatypesFields
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeFieldByFieldID = `-- name: ListDatatypeFieldByFieldID :many
+SELECT id, datatype_id, field_id FROM datatypes_fields
+WHERE field_id = ?
+ORDER BY id
+`
+
+func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, fieldID int32) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByFieldID, fieldID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DatatypesFields
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeGlobal = `-- name: ListDatatypeGlobal :many
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes
+WHERE type = 'GLOBAL'
+ORDER BY datatype_id
+`
+
+func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeGlobal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Datatypes
+	for rows.Next() {
+		var i Datatypes
+		if err := rows.Scan(
+			&i.DatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeRoot = `-- name: ListDatatypeRoot :many
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes
+WHERE type = 'ROOT'
+ORDER BY datatype_id
+`
+
+func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeRoot)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Datatypes
+	for rows.Next() {
+		var i Datatypes
+		if err := rows.Scan(
+			&i.DatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3279,7 +3928,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 }
 
 const listField = `-- name: ListField :many
-SELECT field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM fields 
+SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM fields 
 ORDER BY field_id
 `
 
@@ -3298,7 +3947,6 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3318,7 +3966,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 }
 
 const listFieldByDatatypeID = `-- name: ListFieldByDatatypeID :many
-SELECT field_id, parent_id, label, data, type, author, author_id, date_created, date_modified, history FROM fields 
+SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified, history FROM fields 
 WHERE parent_id = ?
 ORDER BY field_id
 `
@@ -3338,7 +3986,6 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, parentID sql.NullIn
 			&i.Label,
 			&i.Data,
 			&i.Type,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3358,7 +4005,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, parentID sql.NullIn
 }
 
 const listMedia = `-- name: ListMedia :many
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author, author_id, date_created, date_modified FROM media
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 ORDER BY name
 `
 
@@ -3383,7 +4030,6 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 			&i.Dimensions,
 			&i.Url,
 			&i.Srcset,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3496,7 +4142,7 @@ func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
 }
 
 const listRoute = `-- name: ListRoute :many
-SELECT route_id, slug, title, status, author, author_id, date_created, date_modified, history FROM routes
+SELECT route_id, slug, title, status, author_id, date_created, date_modified, history FROM routes
 ORDER BY slug
 `
 
@@ -3514,7 +4160,6 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 			&i.Slug,
 			&i.Title,
 			&i.Status,
-			&i.Author,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -3570,7 +4215,7 @@ func (q *Queries) ListSession(ctx context.Context) ([]Sessions, error) {
 }
 
 const listTable = `-- name: ListTable :many
-SELECT id, label, author_id FROM ` + "`" + `tables` + "`" + `
+SELECT id, label, author_id FROM tables
 ORDER BY label
 `
 
@@ -3709,22 +4354,22 @@ func (q *Queries) ListUserOauth(ctx context.Context) ([]UserOauth, error) {
 
 const updateAdminContentData = `-- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
-set admin_route_id = ?,
+SET admin_route_id = ?,
     parent_id = ?,
     admin_datatype_id = ?,
-    history = ?,
     date_created = ?,
-    date_modified = ?
-    WHERE admin_content_data_id = ?
+    date_modified = ?,
+    history = ?
+WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
 	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
 	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
+	DateCreated        time.Time      `json:"date_created"`
+	DateModified       time.Time      `json:"date_modified"`
 	History            sql.NullString `json:"history"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
 	AdminContentDataID int32          `json:"admin_content_data_id"`
 }
 
@@ -3733,9 +4378,9 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 		arg.AdminRouteID,
 		arg.ParentID,
 		arg.AdminDatatypeID,
-		arg.History,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 		arg.AdminContentDataID,
 	)
 	return err
@@ -3743,40 +4388,31 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 
 const updateAdminContentField = `-- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-set  admin_content_field_id=?,
-    admin_route_id=?,
+SET  admin_route_id=?,
     admin_content_data_id=?,
     admin_field_id=?,
     admin_field_value=?, 
-    history=?,
-    date_created=?, 
-    date_modified=?
-    WHERE admin_content_field_id = ?
+    history=?
+WHERE admin_content_field_id = ?
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminContentFieldID   int32          `json:"admin_content_field_id"`
-	AdminRouteID          sql.NullInt32  `json:"admin_route_id"`
-	AdminContentDataID    int32          `json:"admin_content_data_id"`
-	AdminFieldID          int32          `json:"admin_field_id"`
-	AdminFieldValue       string         `json:"admin_field_value"`
-	History               sql.NullString `json:"history"`
-	DateCreated           sql.NullTime   `json:"date_created"`
-	DateModified          sql.NullTime   `json:"date_modified"`
-	AdminContentFieldID_2 int32          `json:"admin_content_field_id_2"`
+	AdminRouteID        sql.NullInt32  `json:"admin_route_id"`
+	AdminContentDataID  int32          `json:"admin_content_data_id"`
+	AdminFieldID        int32          `json:"admin_field_id"`
+	AdminFieldValue     string         `json:"admin_field_value"`
+	History             sql.NullString `json:"history"`
+	AdminContentFieldID int32          `json:"admin_content_field_id"`
 }
 
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentField,
-		arg.AdminContentFieldID,
 		arg.AdminRouteID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
-		arg.AdminContentFieldID_2,
+		arg.AdminContentFieldID,
 	)
 	return err
 }
@@ -3786,7 +4422,6 @@ UPDATE admin_datatypes
 SET parent_id = ?,
     label = ?,
     type = ?,
-    author = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
@@ -3798,10 +4433,9 @@ type UpdateAdminDatatypeParams struct {
 	ParentID        sql.NullInt32  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
-	Author          string         `json:"author"`
 	AuthorID        int32          `json:"author_id"`
-	DateCreated     sql.NullTime   `json:"date_created"`
-	DateModified    sql.NullTime   `json:"date_modified"`
+	DateCreated     time.Time      `json:"date_created"`
+	DateModified    time.Time      `json:"date_modified"`
 	History         sql.NullString `json:"history"`
 	AdminDatatypeID int32          `json:"admin_datatype_id"`
 }
@@ -3811,7 +4445,6 @@ func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDataty
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -3821,14 +4454,30 @@ func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDataty
 	return err
 }
 
+const updateAdminDatatypeField = `-- name: UpdateAdminDatatypeField :exec
+UPDATE admin_datatypes_fields SET
+    admin_datatype_id = ?,
+    admin_field_id = ?
+WHERE id = ?
+`
+
+type UpdateAdminDatatypeFieldParams struct {
+	AdminDatatypeID int32 `json:"admin_datatype_id"`
+	AdminFieldID    int32 `json:"admin_field_id"`
+	ID              int32 `json:"id"`
+}
+
+func (q *Queries) UpdateAdminDatatypeField(ctx context.Context, arg UpdateAdminDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminDatatypeField, arg.AdminDatatypeID, arg.AdminFieldID, arg.ID)
+	return err
+}
+
 const updateAdminField = `-- name: UpdateAdminField :exec
 UPDATE admin_fields
-SET 
-    parent_id = ?,
+SET  parent_id = ?,
     label = ?,
     data = ?,
     type = ?,
-    author = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
@@ -3841,10 +4490,9 @@ type UpdateAdminFieldParams struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 	AdminFieldID int32          `json:"admin_field_id"`
 }
@@ -3855,7 +4503,6 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -3870,7 +4517,6 @@ UPDATE admin_routes
 SET slug = ?,
     title = ?,
     status = ?,
-    author = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?,
@@ -3882,10 +4528,9 @@ type UpdateAdminRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 	Slug_2       string         `json:"slug_2"`
 }
@@ -3895,7 +4540,6 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 		arg.Slug,
 		arg.Title,
 		arg.Status,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -3910,19 +4554,21 @@ UPDATE content_data
 set route_id = ?,
     parent_id = ?,
     datatype_id = ?,
-    history = ?,
+    author_id = ?,
     date_created = ?,
-    date_modified = ?
-    WHERE content_data_id = ?
+    date_modified = ?,
+    history = ?
+WHERE content_data_id = ?
 `
 
 type UpdateContentDataParams struct {
 	RouteID       sql.NullInt32  `json:"route_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`
 	DatatypeID    sql.NullInt32  `json:"datatype_id"`
+	AuthorID      int32          `json:"author_id"`
+	DateCreated   time.Time      `json:"date_created"`
+	DateModified  time.Time      `json:"date_modified"`
 	History       sql.NullString `json:"history"`
-	DateCreated   sql.NullTime   `json:"date_created"`
-	DateModified  sql.NullTime   `json:"date_modified"`
 	ContentDataID int32          `json:"content_data_id"`
 }
 
@@ -3931,9 +4577,10 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 		arg.RouteID,
 		arg.ParentID,
 		arg.DatatypeID,
-		arg.History,
+		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 		arg.ContentDataID,
 	)
 	return err
@@ -3941,40 +4588,34 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 
 const updateContentField = `-- name: UpdateContentField :exec
 UPDATE content_fields
-set  content_field_id=?,
-    route_id=?,
-    content_data_id=?,
-    field_id=?,
-    field_value=?, 
-    history=?,
-    date_created=?, 
-    date_modified=?
-    WHERE content_field_id = ?
+set  route_id = ?,
+    content_data_id = ?,
+    field_id = ?,
+    field_value = ?, 
+    author_id = ?,
+    history = ?
+WHERE content_field_id = ?
 `
 
 type UpdateContentFieldParams struct {
-	ContentFieldID   int32          `json:"content_field_id"`
-	RouteID          sql.NullInt32  `json:"route_id"`
-	ContentDataID    int32          `json:"content_data_id"`
-	FieldID          int32          `json:"field_id"`
-	FieldValue       string         `json:"field_value"`
-	History          sql.NullString `json:"history"`
-	DateCreated      sql.NullTime   `json:"date_created"`
-	DateModified     sql.NullTime   `json:"date_modified"`
-	ContentFieldID_2 int32          `json:"content_field_id_2"`
+	RouteID        sql.NullInt32  `json:"route_id"`
+	ContentDataID  int32          `json:"content_data_id"`
+	FieldID        int32          `json:"field_id"`
+	FieldValue     string         `json:"field_value"`
+	AuthorID       int32          `json:"author_id"`
+	History        sql.NullString `json:"history"`
+	ContentFieldID int32          `json:"content_field_id"`
 }
 
 func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateContentField,
-		arg.ContentFieldID,
 		arg.RouteID,
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,
+		arg.AuthorID,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
-		arg.ContentFieldID_2,
+		arg.ContentFieldID,
 	)
 	return err
 }
@@ -3985,24 +4626,18 @@ set
     parent_id = ?,
     label = ?,
     type = ?,
-    author = ?,
     author_id = ?,
-    history = ?,
-    date_created = ?,
-    date_modified = ?
+    history = ?
     WHERE datatype_id = ?
 `
 
 type UpdateDatatypeParams struct {
-	ParentID     sql.NullInt32  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	Author       string         `json:"author"`
-	AuthorID     int32          `json:"author_id"`
-	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
-	DatatypeID   int32          `json:"datatype_id"`
+	ParentID   sql.NullInt32  `json:"parent_id"`
+	Label      string         `json:"label"`
+	Type       string         `json:"type"`
+	AuthorID   int32          `json:"author_id"`
+	History    sql.NullString `json:"history"`
+	DatatypeID int32          `json:"datatype_id"`
 }
 
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
@@ -4010,13 +4645,28 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
 		arg.History,
-		arg.DateCreated,
-		arg.DateModified,
 		arg.DatatypeID,
 	)
+	return err
+}
+
+const updateDatatypeField = `-- name: UpdateDatatypeField :exec
+UPDATE datatypes_fields SET
+    datatype_id = ?,
+    field_id = ?
+WHERE id = ?
+`
+
+type UpdateDatatypeFieldParams struct {
+	DatatypeID int32 `json:"datatype_id"`
+	FieldID    int32 `json:"field_id"`
+	ID         int32 `json:"id"`
+}
+
+func (q *Queries) UpdateDatatypeField(ctx context.Context, arg UpdateDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, updateDatatypeField, arg.DatatypeID, arg.FieldID, arg.ID)
 	return err
 }
 
@@ -4027,11 +4677,10 @@ set
     label = ?,
     data = ?,
     type = ?,
-    author = ?,
     author_id = ?,
-    history =?,
     date_created = ?,
-    date_modified = ?
+    date_modified = ?,
+    history =?
     WHERE field_id = ?
 `
 
@@ -4040,11 +4689,10 @@ type UpdateFieldParams struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
 	FieldID      int32          `json:"field_id"`
 }
 
@@ -4054,11 +4702,10 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.Label,
 		arg.Data,
 		arg.Type,
-		arg.Author,
 		arg.AuthorID,
-		arg.History,
 		arg.DateCreated,
 		arg.DateModified,
+		arg.History,
 		arg.FieldID,
 	)
 	return err
@@ -4066,21 +4713,20 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 
 const updateMedia = `-- name: UpdateMedia :exec
 UPDATE media
-  set   name = ?,
-        display_name = ?,
-        alt = ?,
-        caption = ?,
-        description = ?,
-        class = ?,
-        url = ?,
-        mimetype = ?,
-        dimensions = ?,
-        srcset = ?,
-        author = ?,
-        author_id = ?,
-        date_created = ?,
-        date_modified = ?
-        WHERE media_id = ?
+SET name = ?,
+    display_name = ?,
+    alt = ?,
+    caption = ?,
+    description = ?,
+    class = ?,
+    url = ?,
+    mimetype = ?,
+    dimensions = ?,
+    srcset = ?,
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE media_id = ?
 `
 
 type UpdateMediaParams struct {
@@ -4094,10 +4740,9 @@ type UpdateMediaParams struct {
 	Mimetype     sql.NullString `json:"mimetype"`
 	Dimensions   sql.NullString `json:"dimensions"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	MediaID      int32          `json:"media_id"`
 }
 
@@ -4113,7 +4758,6 @@ func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error 
 		arg.Mimetype,
 		arg.Dimensions,
 		arg.Srcset,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -4183,9 +4827,9 @@ WHERE role_id = ?
 `
 
 type UpdateRoleParams struct {
-	Label       string          `json:"label"`
-	Permissions json.RawMessage `json:"permissions"`
-	RoleID      int32           `json:"role_id"`
+	Label       string         `json:"label"`
+	Permissions sql.NullString `json:"permissions"`
+	RoleID      int32          `json:"role_id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
@@ -4199,7 +4843,6 @@ SET slug = ?,
     title = ?,
     status = ?,
     history = ?,
-    author = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
@@ -4211,7 +4854,6 @@ type UpdateRouteParams struct {
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
 	History      sql.NullString `json:"history"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
 	DateCreated  time.Time      `json:"date_created"`
 	DateModified time.Time      `json:"date_modified"`
@@ -4224,7 +4866,6 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 		arg.Title,
 		arg.Status,
 		arg.History,
-		arg.Author,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -4247,9 +4888,9 @@ WHERE session_id = ?
 
 type UpdateSessionParams struct {
 	UserID      int32          `json:"user_id"`
-	CreatedAt   sql.NullTime   `json:"created_at"`
-	ExpiresAt   sql.NullTime   `json:"expires_at"`
-	LastAccess  sql.NullTime   `json:"last_access"`
+	CreatedAt   time.Time      `json:"created_at"`
+	ExpiresAt   time.Time      `json:"expires_at"`
+	LastAccess  time.Time      `json:"last_access"`
 	IpAddress   sql.NullString `json:"ip_address"`
 	UserAgent   sql.NullString `json:"user_agent"`
 	SessionData sql.NullString `json:"session_data"`
@@ -4271,7 +4912,7 @@ func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) er
 }
 
 const updateTable = `-- name: UpdateTable :exec
-UPDATE ` + "`" + `tables` + "`" + `
+UPDATE tables
 SET label = ?
 WHERE id = ?
 `
@@ -4289,9 +4930,9 @@ func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error 
 const updateToken = `-- name: UpdateToken :exec
 UPDATE tokens
 set token = ?,
-issued_at = ?,
-expires_at = ?,
-revoked = ?
+    issued_at = ?,
+    expires_at = ?,
+    revoked = ?
 WHERE id = ?
 `
 
@@ -4316,36 +4957,36 @@ func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error 
 
 const updateUser = `-- name: UpdateUser :exec
 UPDATE users
-set date_created = ?,
-    date_modified = ?,
-    username = ?,
-    name = ?,
-    email = ?,
-    hash = ?,
-    role = ?
+    SET username = ?,
+        name = ?,
+        email = ?,
+        hash = ?,
+        role = ?,
+        date_created = ?,
+        date_modified = ?
 WHERE user_id = ?
 `
 
 type UpdateUserParams struct {
-	DateCreated  sql.NullTime  `json:"date_created"`
-	DateModified sql.NullTime  `json:"date_modified"`
-	Username     string        `json:"username"`
-	Name         string        `json:"name"`
-	Email        string        `json:"email"`
-	Hash         string        `json:"hash"`
-	Role         sql.NullInt32 `json:"role"`
-	UserID       int32         `json:"user_id"`
+	Username     string    `json:"username"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Hash         string    `json:"hash"`
+	Role         int32     `json:"role"`
+	DateCreated  time.Time `json:"date_created"`
+	DateModified time.Time `json:"date_modified"`
+	UserID       int32     `json:"user_id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 	_, err := q.db.ExecContext(ctx, updateUser,
-		arg.DateCreated,
-		arg.DateModified,
 		arg.Username,
 		arg.Name,
 		arg.Email,
 		arg.Hash,
 		arg.Role,
+		arg.DateCreated,
+		arg.DateModified,
 		arg.UserID,
 	)
 	return err

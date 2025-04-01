@@ -18,18 +18,16 @@ type AdminRoutes struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 type CreateAdminRouteParams struct {
-	Author       any            `json:"author"`
-	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
+    AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
@@ -38,7 +36,6 @@ type UpdateAdminRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -54,17 +51,15 @@ type AdminRoutesHistoryEntry struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 type CreateAdminRouteFormParams struct {
-	Author       string `json:"author"`
-	AuthorID     string `json:"author_id"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
+    AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 	History      string `json:"history"`
@@ -73,7 +68,6 @@ type UpdateAdminRouteFormParams struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -86,7 +80,6 @@ type UpdateAdminRouteFormParams struct {
 //////////////////////////////
 func MapCreateAdminRouteParams(a CreateAdminRouteFormParams) CreateAdminRouteParams {
 	return CreateAdminRouteParams{
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
@@ -101,7 +94,6 @@ func MapUpdateAdminRouteParams(a UpdateAdminRouteFormParams) UpdateAdminRoutePar
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       Si(a.Status),
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -115,7 +107,6 @@ func MapStringAdminRoute(a AdminRoutes) StringAdminRoutes {
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       strconv.FormatInt(a.Status, 10),
-		Author:       AssertString(a.Author),
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
@@ -134,7 +125,6 @@ func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -144,11 +134,10 @@ func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
 
 func (d Database) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdb.CreateAdminRouteParams {
 	return mdb.CreateAdminRouteParams{
-		Author:       a.Author,
-		AuthorID:     a.AuthorID,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
+        AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		History:      a.History,
@@ -159,7 +148,6 @@ func (d Database) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdb.Update
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -170,7 +158,7 @@ func (d Database) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdb.Update
 ///QUERIES
 func (d Database) CountAdminRoutes() (*int64, error) {
 	queries := mdb.New(d.Connection)
-	c, err := queries.CountAdminroute(d.Context)
+	c, err := queries.CountAdminRoute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -194,11 +182,11 @@ func (d Database) CreateAdminRouteTable() error {
 	return err
 }
 
-func (d Database) DeleteAdminRoute(slug string) error {
+func (d Database) DeleteAdminRoute(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, slug)
+	err := queries.DeleteAdminRoute(d.Context, id)
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Admin Route: %v ", id)
 	}
 
 	return nil
@@ -250,10 +238,9 @@ func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int64(a.Status),
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  Ns(a.DateCreated.String()),
+		DateModified: Ns(a.DateModified.String()),
 		History:      a.History,
 	}
 }
@@ -262,10 +249,9 @@ func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 	}
 }
@@ -274,10 +260,9 @@ func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 		Slug_2:       a.Slug_2,
 	}
@@ -312,11 +297,11 @@ func (d MysqlDatabase) CreateAdminRouteTable() error {
 	return err
 }
 
-func (d MysqlDatabase) DeleteAdminRoute(slug string) error {
+func (d MysqlDatabase) DeleteAdminRoute(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, slug)
+	err := queries.DeleteAdminRoute(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Admin Route: %v ", id)
 	}
 
 	return nil
@@ -367,7 +352,6 @@ func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int64(a.Status),
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
@@ -379,7 +363,6 @@ func (d PsqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbp.C
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -391,7 +374,6 @@ func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.U
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -425,11 +407,11 @@ func (d PsqlDatabase) CreateAdminRouteTable() error {
 	err := queries.CreateAdminRouteTable(d.Context)
 	return err
 }
-func (d PsqlDatabase) DeleteAdminRoute(slug string) error {
+func (d PsqlDatabase) DeleteAdminRoute(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, slug)
+	err := queries.DeleteAdminRoute(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Admin Route: %v ", id)
 	}
 
 	return nil

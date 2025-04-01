@@ -20,33 +20,30 @@ type Fields struct {
 	Label        any            `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
-	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 }
 type CreateFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
+	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
-	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 }
 type UpdateFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
+	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
-	History      sql.NullString `json:"history"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 	FieldID      int64          `json:"field_id"`
 }
 type FieldsHistoryEntry struct {
@@ -55,7 +52,6 @@ type FieldsHistoryEntry struct {
 	Label        any            `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       any            `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -65,22 +61,20 @@ type CreateFieldFormParams struct {
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
-	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+    History      string `json:"history"`
 }
 type UpdateFieldFormParams struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
-	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+    History      string `json:"history"`
 	FieldID      string `json:"field_id"`
 }
 
@@ -89,17 +83,16 @@ type UpdateFieldFormParams struct {
 //////////////////////////////
 
 func MapCreateFieldParams(a CreateFieldFormParams) CreateFieldParams {
-    return CreateFieldParams{
-        ParentID:     SNi64(a.ParentID),
-        Label:        a.Label,
-        Data:         a.Data,
-        Type:         a.Type,
-        Author:       a.Author,
-        AuthorID:     Si(a.AuthorID),
+	return CreateFieldParams{
+		ParentID:     SNi64(a.ParentID),
+		Label:        a.Label,
+		Data:         a.Data,
+		Type:         a.Type,
+		AuthorID:     Si(a.AuthorID),
+		DateCreated:  Ns(a.DateCreated),
+		DateModified: Ns(a.DateModified),
         History:      Ns(a.History),
-        DateCreated:  Ns(a.DateCreated),
-        DateModified: Ns(a.DateModified),
-    }
+	}
 }
 
 func MapUpdateFieldParams(a UpdateFieldFormParams) UpdateFieldParams {
@@ -108,7 +101,6 @@ func MapUpdateFieldParams(a UpdateFieldFormParams) UpdateFieldParams {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -123,7 +115,6 @@ func MapStringField(a Fields) StringFields {
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       AssertString(a.Author),
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
@@ -135,7 +126,7 @@ func MapStringField(a Fields) StringFields {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapField(a mdb.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
@@ -143,7 +134,6 @@ func (d Database) MapField(a mdb.Fields) Fields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -156,11 +146,10 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
-		History:      a.History,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 	}
 }
 func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParams {
@@ -169,7 +158,6 @@ func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParam
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -224,7 +212,6 @@ func (d Database) GetField(id int64) (*Fields, error) {
 	return &res, nil
 }
 
-
 func (d Database) ListFields() (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListField(d.Context)
@@ -268,7 +255,7 @@ func (d Database) UpdateField(s UpdateFieldParams) (*string, error) {
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      int64(a.FieldID),
@@ -276,10 +263,9 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  Ns(a.DateCreated.String()),
+		DateModified: Ns(a.DateModified.String()),
 		History:      a.History,
 	}
 }
@@ -289,11 +275,10 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
-		History:      a.History,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
+        History:      a.History,
 	}
 }
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
@@ -302,17 +287,15 @@ func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFiel
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
+		DateCreated:  StringToNTime(a.DateCreated.String).Time,
+		DateModified: StringToNTime(a.DateModified.String).Time,
 		History:      a.History,
 		FieldID:      int32(a.FieldID),
 	}
 }
 
 ///QUERIES
-
 
 func (d MysqlDatabase) CountFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
@@ -395,12 +378,11 @@ func (d MysqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
 	return &u, nil
 }
 
-
 ///////////////////////////////
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	return Fields{
 		FieldID:      int64(a.FieldID),
@@ -408,7 +390,6 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       a.Author,
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
@@ -421,11 +402,10 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
-		History:      a.History,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
+        History:      a.History,
 	}
 }
 func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateFieldParams {
@@ -434,7 +414,6 @@ func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateField
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
-		Author:       AssertString(a.Author),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -443,7 +422,7 @@ func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateField
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountField(d.Context)

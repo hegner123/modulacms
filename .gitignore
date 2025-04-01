@@ -70,3 +70,6 @@ testSite/
 .ssh/
 demo.tape
 demo.gif
+
+#macOS
+.DS_Store

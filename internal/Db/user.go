@@ -20,29 +20,28 @@ type Users struct {
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
 	Role         int64          `json:"role"`
-	References   any            `json:"references"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 
 type CreateUserParams struct {
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
 	Username     string         `json:"username"`
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
 	Role         int64          `json:"role"`
+    DateCreated  sql.NullString `json:"date_created"`
+    DateModified sql.NullString `json:"date_modified"`
 }
 
 type UpdateUserParams struct {
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
 	Username     string         `json:"username"`
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
 	Role         int64          `json:"role"`
+    DateCreated  sql.NullString `json:"date_created"`
+    DateModified sql.NullString `json:"date_modified"`
 	UserID       int64          `json:"user_id"`
 }
 
@@ -53,29 +52,28 @@ type UsersHistoryEntry struct {
 	Email        string         `json:"email"`
 	Hash         string         `json:"hash"`
 	Role         int64          `json:"role"`
-	References   any            `json:"references"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 
 type CreateUserFormParams struct {
-	DateCreated  string `json:"date_created"`
-	DateModified string `json:"date_modified"`
 	Username     string `json:"username"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Hash         string `json:"hash"`
 	Role         string `json:"role"`
+    DateCreated  string `json:"date_created"`
+    DateModified string `json:"date_modified"`
 }
 
 type UpdateUserFormParams struct {
-	DateCreated  string `json:"date_created"`
-	DateModified string `json:"date_modified"`
 	Username     string `json:"username"`
 	Name         string `json:"name"`
 	Email        string `json:"email"`
 	Hash         string `json:"hash"`
 	Role         string `json:"role"`
+    DateCreated  string `json:"date_created"`
+    DateModified string `json:"date_modified"`
 	UserID       string `json:"user_id"`
 }
 
@@ -85,25 +83,25 @@ type UpdateUserFormParams struct {
 
 func MapCreateUserParams(a CreateUserFormParams) CreateUserParams {
 	return CreateUserParams{
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         Si(a.Role),
+        DateCreated:  Ns(a.DateCreated),
+        DateModified: Ns(a.DateModified),
 	}
 }
 
 func MapUpdateUserParams(a UpdateUserFormParams) UpdateUserParams {
 	return UpdateUserParams{
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         Si(a.Role),
+        DateCreated:  Ns(a.DateCreated),
+        DateModified: Ns(a.DateModified),
 		UserID:       Si(a.UserID),
 	}
 }
@@ -134,7 +132,6 @@ func (d Database) MapUser(a mdb.Users) Users {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         a.Role,
-		References:   a.References,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -142,25 +139,25 @@ func (d Database) MapUser(a mdb.Users) Users {
 
 func (d Database) MapCreateUserParams(a CreateUserParams) mdb.CreateUserParams {
 	return mdb.CreateUserParams{
-		DateCreated:  a.DateCreated,
-		DateModified: a.DateModified,
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         a.Role,
+        DateCreated:  a.DateCreated,
+        DateModified: a.DateModified,
 	}
 }
 
 func (d Database) MapUpdateUserParams(a UpdateUserParams) mdb.UpdateUserParams {
 	return mdb.UpdateUserParams{
-		DateCreated:  a.DateCreated,
-		DateModified: a.DateModified,
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         a.Role,
+        DateCreated:  a.DateCreated,
+        DateModified: a.DateModified,
 		UserID:       a.UserID,
 	}
 }
@@ -258,34 +255,34 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         int64(a.Role.Int32),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		Role:         int64(a.Role),
+		DateCreated:  Ns(a.DateCreated.String()),
+		DateModified: Ns(a.DateModified.String()),
 	}
 }
 
 func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserParams {
 	return mdbm.CreateUserParams{
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Ni32(a.Role),
+		Role:         int32(a.Role),
+        DateCreated:  StringToNTime(a.DateCreated.String).Time,
+        DateModified: StringToNTime(a.DateModified.String).Time,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbm.UpdateUserParams {
 	return mdbm.UpdateUserParams{
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Ni32(a.Role),
-		UserID:       int32(a.UserID),
+		Role:         int32(a.Role),
+        DateCreated:  StringToNTime(a.DateCreated.String).Time,
+        DateModified: StringToNTime(a.DateModified.String).Time,
+        UserID:       int32(a.UserID),
 	}
 }
 
@@ -386,7 +383,7 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         int64(a.Role.Int32),
+		Role:         int64(a.Role),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
 	}
@@ -394,25 +391,25 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 
 func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserParams {
 	return mdbp.CreateUserParams{
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Ni32(a.Role),
+		Role:         int32(a.Role),
+        DateCreated:  StringToNTime(a.DateCreated.String),
+        DateModified: StringToNTime(a.DateModified.String),
 	}
 }
 
 func (d PsqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbp.UpdateUserParams {
 	return mdbp.UpdateUserParams{
-		DateCreated:  StringToNTime(a.DateCreated.String),
-		DateModified: StringToNTime(a.DateModified.String),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Ni32(a.Role),
+		Role:         int32(a.Role),
+        DateCreated:  StringToNTime(a.DateCreated.String),
+        DateModified: StringToNTime(a.DateModified.String),
 		UserID:       int32(a.UserID),
 	}
 }

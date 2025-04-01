@@ -1,0 +1,18 @@
+CREATE TABLE admin_routes (
+    admin_route_id SERIAL
+        PRIMARY KEY,
+    slug TEXT NOT NULL
+        UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    author_id INTEGER DEFAULT 1 NOT NULL
+        REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
+);
+
+ALTER TABLE admin_routes
+    OWNER TO modula_u;
+

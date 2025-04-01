@@ -232,7 +232,7 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
-		DateCreated:         Ns(Nt(a.DateCreated)),
+		DateCreated:         Ns(a.DateCreated.String()),
 	}
 }
 
@@ -244,7 +244,7 @@ func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.Cr
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
-		DateCreated:         StringToNTime(a.DateCreated.String),
+		DateCreated:         StringToNTime(a.DateCreated.String).Time,
 	}
 }
 

@@ -1,0 +1,95 @@
+CREATE TABLE permissions (
+    permission_id SERIAL
+        PRIMARY KEY,
+    table_id INTEGER NOT NULL,
+    mode INTEGER NOT NULL,
+    label TEXT NOT NULL
+);
+
+ALTER TABLE permissions
+    OWNER TO modula_u;
+
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (1, 1, 1, 'create_permission');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (2, 1, 2, 'read_permission');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (3, 1, 3, 'update_permission');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (4, 1, 4, 'delete_permission');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (5, 2, 1, 'create_role');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (6, 2, 2, 'read_role');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (7, 2, 3, 'update_role');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (8, 2, 4, 'delete_role');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (9, 3, 1, 'create_media_dimension');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (10, 3, 2, 'read_media_dimension');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (11, 3, 3, 'update_media_dimension');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (12, 3, 4, 'delete_media_dimension');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (13, 4, 1, 'create_user');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (14, 4, 2, 'read_user');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (15, 4, 3, 'update_user');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (16, 4, 4, 'delete_user');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (17, 5, 1, 'create_admin_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (18, 5, 2, 'read_admin_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (19, 5, 3, 'update_admin_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (20, 5, 4, 'delete_admin_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (21, 6, 1, 'create_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (22, 6, 2, 'read_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (23, 6, 3, 'update_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (24, 6, 4, 'delete_route');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (25, 7, 1, 'create_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (26, 7, 2, 'read_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (27, 7, 3, 'update_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (28, 7, 4, 'delete_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (29, 8, 1, 'create_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (30, 8, 2, 'read_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (31, 8, 3, 'update_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (32, 8, 4, 'delete_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (33, 9, 1, 'create_admin_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (34, 9, 2, 'read_admin_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (35, 9, 3, 'update_admin_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (36, 9, 4, 'delete_admin_datatype');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (37, 10, 1, 'create_admin_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (38, 10, 2, 'read_admin_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (39, 10, 3, 'update_admin_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (40, 10, 4, 'delete_admin_field');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (41, 11, 1, 'create_token');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (42, 11, 2, 'read_token');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (43, 11, 3, 'update_token');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (44, 11, 4, 'delete_token');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (45, 12, 1, 'create_user_oauth');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (46, 12, 2, 'read_user_oauth');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (47, 12, 3, 'update_user_oauth');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (48, 12, 4, 'delete_user_oauth');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (49, 13, 1, 'create_table');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (50, 13, 2, 'read_table');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (51, 13, 3, 'update_table');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (52, 13, 4, 'delete_table');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (53, 14, 1, 'create_media');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (54, 14, 2, 'read_media');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (55, 14, 3, 'update_media');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (56, 14, 4, 'delete_media');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (57, 15, 1, 'create_session');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (58, 15, 2, 'read_session');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (59, 15, 3, 'update_session');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (60, 15, 4, 'delete_session');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (61, 16, 1, 'create_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (62, 16, 2, 'read_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (63, 16, 3, 'update_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (64, 16, 4, 'delete_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (65, 17, 1, 'create_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (66, 17, 2, 'read_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (67, 17, 3, 'update_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (68, 17, 4, 'delete_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (69, 18, 1, 'create_admin_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (70, 18, 2, 'read_admin_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (71, 18, 3, 'update_admin_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (72, 18, 4, 'delete_admin_content_data');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (73, 19, 1, 'create_admin_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (74, 19, 2, 'read_admin_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (75, 19, 3, 'update_admin_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (76, 19, 4, 'delete_admin_content_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (77, 20, 1, 'create_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (78, 20, 2, 'read_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (79, 20, 3, 'update_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (80, 20, 4, 'delete_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (81, 21, 1, 'create_admin_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (82, 21, 2, 'read_admin_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (83, 21, 3, 'update_admin_datatypes_fields');
+INSERT INTO public.permissions (permission_id, table_id, mode, label) VALUES (84, 21, 4, 'delete_admin_datatypes_fields');

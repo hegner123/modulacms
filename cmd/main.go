@@ -87,7 +87,13 @@ func main() {
 
 	if !InitStatus.DbFileExists || *reset {
 		dbc, _, _ := db.ConfigDB(Env).GetConnection()
-		defer dbc.Close()
+
+		defer func() {
+			if closeErr := dbc.Close(); closeErr != nil && err == nil {
+				err = closeErr
+			}
+		}()
+
 	}
 
 	var host = Env.SSH_Host
@@ -100,7 +106,7 @@ func main() {
 		),
 	)
 
-    // Mux Routes
+	// Mux Routes
 
 	mux := http.NewServeMux()
 
@@ -231,9 +237,7 @@ func main() {
 		router.SlugHandler(w, r, Env)
 	})
 
-
-
-    // Certificates
+	// Certificates
 
 	manager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
@@ -302,7 +306,6 @@ func main() {
 		}
 	}()
 
-
 	// Wait for an OS signal (e.g., Ctrl-C)
 	<-done
 	utility.DefaultLogger.Info("Shutting down servers...")
@@ -327,7 +330,6 @@ func main() {
 
 	utility.DefaultLogger.Info("Servers gracefully stopped.")
 }
-
 
 func proccessAuthCheck() {
 	auth.OauthSettings(Env)

@@ -6,7 +6,6 @@ package mdbm
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 )
 
@@ -15,8 +14,9 @@ type AdminContentData struct {
 	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
 	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
-	DateCreated        sql.NullTime   `json:"date_created"`
-	DateModified       sql.NullTime   `json:"date_modified"`
+	AuthorID           int32          `json:"author_id"`
+	DateCreated        time.Time      `json:"date_created"`
+	DateModified       time.Time      `json:"date_modified"`
 	History            sql.NullString `json:"history"`
 }
 
@@ -26,8 +26,9 @@ type AdminContentFields struct {
 	AdminContentDataID  int32          `json:"admin_content_data_id"`
 	AdminFieldID        int32          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
-	DateCreated         sql.NullTime   `json:"date_created"`
-	DateModified        sql.NullTime   `json:"date_modified"`
+	AuthorID            int32          `json:"author_id"`
+	DateCreated         time.Time      `json:"date_created"`
+	DateModified        time.Time      `json:"date_modified"`
 	History             sql.NullString `json:"history"`
 }
 
@@ -36,11 +37,16 @@ type AdminDatatypes struct {
 	ParentID        sql.NullInt32  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
-	Author          string         `json:"author"`
 	AuthorID        int32          `json:"author_id"`
-	DateCreated     sql.NullTime   `json:"date_created"`
-	DateModified    sql.NullTime   `json:"date_modified"`
+	DateCreated     time.Time      `json:"date_created"`
+	DateModified    time.Time      `json:"date_modified"`
 	History         sql.NullString `json:"history"`
+}
+
+type AdminDatatypesFields struct {
+	ID              int32 `json:"id"`
+	AdminDatatypeID int32 `json:"admin_datatype_id"`
+	AdminFieldID    int32 `json:"admin_field_id"`
 }
 
 type AdminFields struct {
@@ -49,10 +55,9 @@ type AdminFields struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
@@ -61,20 +66,20 @@ type AdminRoutes struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
 type ContentData struct {
 	ContentDataID int32          `json:"content_data_id"`
-	RouteID       sql.NullInt32  `json:"route_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`
+	RouteID       sql.NullInt32  `json:"route_id"`
 	DatatypeID    sql.NullInt32  `json:"datatype_id"`
-	DateCreated   sql.NullTime   `json:"date_created"`
-	DateModified  sql.NullTime   `json:"date_modified"`
+	AuthorID      int32          `json:"author_id"`
+	DateCreated   time.Time      `json:"date_created"`
+	DateModified  time.Time      `json:"date_modified"`
 	History       sql.NullString `json:"history"`
 }
 
@@ -84,8 +89,9 @@ type ContentFields struct {
 	ContentDataID  int32          `json:"content_data_id"`
 	FieldID        int32          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
-	DateCreated    sql.NullTime   `json:"date_created"`
-	DateModified   sql.NullTime   `json:"date_modified"`
+	AuthorID       int32          `json:"author_id"`
+	DateCreated    time.Time      `json:"date_created"`
+	DateModified   time.Time      `json:"date_modified"`
 	History        sql.NullString `json:"history"`
 }
 
@@ -94,11 +100,16 @@ type Datatypes struct {
 	ParentID     sql.NullInt32  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
+}
+
+type DatatypesFields struct {
+	ID         int32 `json:"id"`
+	DatatypeID int32 `json:"datatype_id"`
+	FieldID    int32 `json:"field_id"`
 }
 
 type Fields struct {
@@ -107,10 +118,9 @@ type Fields struct {
 	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
 }
 
@@ -126,10 +136,9 @@ type Media struct {
 	Dimensions   sql.NullString `json:"dimensions"`
 	Url          sql.NullString `json:"url"`
 	Srcset       sql.NullString `json:"srcset"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
-	DateCreated  sql.NullTime   `json:"date_created"`
-	DateModified sql.NullTime   `json:"date_modified"`
+	DateCreated  time.Time      `json:"date_created"`
+	DateModified time.Time      `json:"date_modified"`
 }
 
 type MediaDimensions struct {
@@ -148,9 +157,9 @@ type Permissions struct {
 }
 
 type Roles struct {
-	RoleID      int32           `json:"role_id"`
-	Label       string          `json:"label"`
-	Permissions json.RawMessage `json:"permissions"`
+	RoleID      int32          `json:"role_id"`
+	Label       string         `json:"label"`
+	Permissions sql.NullString `json:"permissions"`
 }
 
 type Routes struct {
@@ -158,7 +167,6 @@ type Routes struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int32          `json:"status"`
-	Author       string         `json:"author"`
 	AuthorID     int32          `json:"author_id"`
 	DateCreated  time.Time      `json:"date_created"`
 	DateModified time.Time      `json:"date_modified"`
@@ -168,9 +176,9 @@ type Routes struct {
 type Sessions struct {
 	SessionID   int32          `json:"session_id"`
 	UserID      int32          `json:"user_id"`
-	CreatedAt   sql.NullTime   `json:"created_at"`
-	ExpiresAt   sql.NullTime   `json:"expires_at"`
-	LastAccess  sql.NullTime   `json:"last_access"`
+	CreatedAt   time.Time      `json:"created_at"`
+	ExpiresAt   time.Time      `json:"expires_at"`
+	LastAccess  time.Time      `json:"last_access"`
 	IpAddress   sql.NullString `json:"ip_address"`
 	UserAgent   sql.NullString `json:"user_agent"`
 	SessionData sql.NullString `json:"session_data"`
@@ -200,16 +208,16 @@ type UserOauth struct {
 	AccessToken         sql.NullString `json:"access_token"`
 	RefreshToken        sql.NullString `json:"refresh_token"`
 	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
-	DateCreated         sql.NullTime   `json:"date_created"`
+	DateCreated         time.Time      `json:"date_created"`
 }
 
 type Users struct {
-	UserID       int32         `json:"user_id"`
-	Username     string        `json:"username"`
-	Name         string        `json:"name"`
-	Email        string        `json:"email"`
-	Hash         string        `json:"hash"`
-	Role         sql.NullInt32 `json:"role"`
-	DateCreated  sql.NullTime  `json:"date_created"`
-	DateModified sql.NullTime  `json:"date_modified"`
+	UserID       int32     `json:"user_id"`
+	Username     string    `json:"username"`
+	Name         string    `json:"name"`
+	Email        string    `json:"email"`
+	Hash         string    `json:"hash"`
+	Role         int32     `json:"role"`
+	DateCreated  time.Time `json:"date_created"`
+	DateModified time.Time `json:"date_modified"`
 }

@@ -1,0 +1,75 @@
+-- name: DropAdminContentDataTable :exec
+DROP TABLE admin_content_data;
+
+-- name: CreateAdminContentDataTable :exec
+CREATE TABLE IF NOT EXISTS admin_content_data (
+    admin_content_data_id SERIAL
+        PRIMARY KEY,
+    admin_route_id INTEGER
+        CONSTRAINT fk_admin_routes
+            REFERENCES admin_routes
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    parent_id INTEGER
+        CONSTRAINT fk_parent_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    admin_datatype_id INTEGER
+        CONSTRAINT fk_admin_datatypes
+            REFERENCES admin_datatypes
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    author_id INTEGER NOT NULL
+        CONSTRAINT fk_author_id
+            REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    history TEXT
+);
+
+-- name: CountAdminContentData :one
+SELECT COUNT(*)
+FROM admin_content_data;
+
+-- name: GetAdminContentData :one
+SELECT * FROM admin_content_data
+WHERE admin_content_data_id = $1 LIMIT 1;
+
+-- name: ListAdminContentData :many
+SELECT * FROM admin_content_data
+ORDER BY admin_content_data_id;
+
+-- name: ListAdminContentDataByRoute :many
+SELECT * FROM admin_content_data
+WHERE admin_route_id = $1
+ORDER BY admin_content_data_id;
+
+-- name: CreateAdminContentData :one
+INSERT INTO admin_content_data (
+    admin_route_id,
+    parent_id,
+    admin_datatype_id,
+    date_created,
+    date_modified,
+    history
+) VALUES (    
+    $1,
+    $2,
+    $3,
+    $4,
+    $5,
+    $6
+) RETURNING *;
+
+-- name: UpdateAdminContentData :exec
+UPDATE admin_content_data
+SET admin_route_id = $1,
+    parent_id = $2,
+    admin_datatype_id =$3,
+    date_created = $5,
+    date_modified = $6,
+    history = $4
+WHERE admin_content_data_id = $7;
+
+-- name: DeleteAdminContentData :exec
+DELETE FROM admin_content_data
+WHERE admin_content_data_id = $1;

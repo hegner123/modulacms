@@ -3,6 +3,7 @@ package cli
 import (
 	"database/sql"
 
+	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
 	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -27,7 +28,6 @@ func GetTables() []string {
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 	}
-	defer rows.Close()
 
 	for rows.Next() {
 		var (
@@ -70,6 +70,10 @@ func GetColumns(t string) (*[]string, *[]*sql.ColumnType, error) {
 }
 
 func GetColumnsRows(t string) ([]string, [][]string, error) {
+	f, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		return nil, nil, err
+	}
 	dbt := db.StringDBTable(t)
 	verbose := false
 	query := "SELECT * FROM"
@@ -77,17 +81,20 @@ func GetColumnsRows(t string) ([]string, [][]string, error) {
 	d := db.ConfigDB(c)
 	rows, err := d.ExecuteQuery(query, dbt)
 	if err != nil {
+		utility.DefaultLogger.Ferror(f, "", err)
 		return nil, nil, err
 	}
 	columns, err := rows.Columns()
 	if err != nil {
+		utility.DefaultLogger.Ferror(f, "", err)
 		return nil, nil, err
 	}
 	listRows, err := db.GenericList(dbt, d)
 	if err != nil {
+		utility.DefaultLogger.Ferror(f, "", err)
 		return nil, nil, err
 	}
-	return columns, *listRows, nil
+	return columns, listRows, nil
 
 }
 

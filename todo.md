@@ -1,11 +1,10 @@
-# Modula CMS
+# ModulaCMS
 
 
-## Notes
-add content data relationships table to allow datatypes to be placed under multiple parent types
 
 ## scripts
 - make
+- create_setup_sql
 
 ## ToDo
 - [x] Server: GO
@@ -26,16 +25,17 @@ add content data relationships table to allow datatypes to be placed under multi
 - [x] DB Sqlite Functions
 
 ## Proof of concept requires
+- [ ] Install Process
 - [x] Go Server
 - [x] Go DB connection
 - [x] DB CRUD functions
-- [x] Handle routes for Admin api
-- [x] Handle routes for Client api
+- [x] Handle routes for Admin API
+- [x] Handle routes for Client API
 - [x] Load and confirm bucket connection
 - [ ] Admin authentication - oAuth?
 - [ ] Local authentication
-- [ ] Middleware
-- [ ] Cli
+- [x] Middleware
+- [x] CLI
 - [x] Connect to Bucket Storage
 - [x] Media upload
 - [x] Media Optimize

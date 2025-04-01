@@ -10,9 +10,9 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type Tables struct {
 	ID       int64          `json:"id"`
 	Label    sql.NullString `json:"label"`
@@ -75,7 +75,7 @@ func MapStringTable(a Tables) StringTables {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapTable(a mdb.Tables) Tables {
 	return Tables{
 		ID:       a.ID,
@@ -84,7 +84,6 @@ func (d Database) MapTable(a mdb.Tables) Tables {
 	}
 }
 
-
 func (d Database) MapUpdateTableParams(a UpdateTableParams) mdb.UpdateTableParams {
 	return mdb.UpdateTableParams{
 		Label: a.Label,
@@ -92,7 +91,7 @@ func (d Database) MapUpdateTableParams(a UpdateTableParams) mdb.UpdateTableParam
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountTables() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -105,7 +104,10 @@ func (d Database) CountTables() (*int64, error) {
 func (d Database) CreateTableTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateTablesTable(d.Context)
-	return err
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (d Database) CreateTable(label string) Tables {
@@ -113,6 +115,10 @@ func (d Database) CreateTable(label string) Tables {
 	row, err := queries.CreateTable(d.Context, Ns(label))
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
+	}
+	err = d.SortTables()
+	if err != nil {
+		fmt.Println("SORTING FAILED")
 	}
 	return d.MapTable(row)
 }
@@ -165,7 +171,7 @@ func (d Database) UpdateTable(s UpdateTableParams) (*string, error) {
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapTable(a mdbm.Tables) Tables {
 	return Tables{
 		ID:       int64(a.ID),
@@ -174,7 +180,6 @@ func (d MysqlDatabase) MapTable(a mdbm.Tables) Tables {
 	}
 }
 
-
 func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTableParams {
 	return mdbm.UpdateTableParams{
 		Label: a.Label,
@@ -182,7 +187,7 @@ func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTabl
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountTables() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -207,6 +212,10 @@ func (d MysqlDatabase) CreateTable(label string) Tables {
 	row, err := queries.GetLastTable(d.Context)
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Table: %v\n", err)
+	}
+	err = d.SortTables()
+	if err != nil {
+		fmt.Println("SORTING FAILED")
 	}
 	return d.MapTable(row)
 }
@@ -259,7 +268,7 @@ func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapTable(a mdbp.Tables) Tables {
 	return Tables{
 		ID:       int64(a.ID),
@@ -268,7 +277,6 @@ func (d PsqlDatabase) MapTable(a mdbp.Tables) Tables {
 	}
 }
 
-
 func (d PsqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbp.UpdateTableParams {
 	return mdbp.UpdateTableParams{
 		Label: a.Label,
@@ -276,7 +284,7 @@ func (d PsqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbp.UpdateTable
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountTables() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -297,6 +305,10 @@ func (d PsqlDatabase) CreateTable(label string) Tables {
 	row, err := queries.CreateTable(d.Context, Ns(label))
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
+	}
+	err = d.SortTables()
+	if err != nil {
+		fmt.Println("SORTING FAILED")
 	}
 	return d.MapTable(row)
 }

@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS tokens (
+    id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    user_id INT NOT NULL,
+    token_type VARCHAR(255) NOT NULL,
+    token VARCHAR(255) NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    revoked TINYINT(1) DEFAULT 0 NULL,
+    CONSTRAINT token
+        UNIQUE (token),
+    CONSTRAINT fk_tokens_users
+        FOREIGN KEY (user_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE CASCADE
+);

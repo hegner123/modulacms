@@ -17,3 +17,5 @@ content_fields
 fields
 admin_content_data
 admin_content_fields
+datatypes_fields
+admin_datatypes_fields

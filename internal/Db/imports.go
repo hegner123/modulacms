@@ -3,6 +3,12 @@ package db
 // This file imports all resources
 
 // Resource types
+
+type StringAdminDatatypeFields struct {
+	ID              string `json:"id"`
+	AdminDatatypeID string `json:"admin_datatype_id"`
+	AdminFieldID    string `json:"admin_field_id"`
+}
 type StringUsers struct {
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
@@ -16,14 +22,13 @@ type StringUsers struct {
 
 type StringRoutes struct {
 	RouteID      string `json:"route_id"`
-	Author       string `json:"author"`
-	AuthorID     string `json:"author_id"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-	History      string `json:"history"`
+    AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+	History      string `json:"history"`
 }
 
 type StringFields struct {
@@ -32,7 +37,6 @@ type StringFields struct {
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -51,7 +55,6 @@ type StringMedia struct {
 	Dimensions   string `json:"dimensions"`
 	Url          string `json:"url"`
 	Srcset       string `json:"srcset"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -80,11 +83,16 @@ type StringDatatypes struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
-	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+	History      string `json:"history"`
+}
+
+type StringDatatypeFields struct {
+	ID         string `json:"id"`
+	DatatypeID string `json:"datatype_id"`
+	FieldID    string `json:"field_id"`
 }
 
 type StringSessions struct {
@@ -116,9 +124,10 @@ type StringContentData struct {
 	RouteID       string `json:"route_id"`
 	ParentID      string `json:"parent_id"`
 	DatatypeID    string `json:"datatype_id"`
-	History       string `json:"history"`
+	AuthorID      string `json:"author_id"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
+	History       string `json:"history"`
 }
 
 type StringContentFields struct {
@@ -127,9 +136,10 @@ type StringContentFields struct {
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
-	History        string `json:"history"`
+	AuthorID       string `json:"author_id"`
 	DateCreated    string `json:"date_created"`
 	DateModified   string `json:"date_modified"`
+	History        string `json:"history"`
 }
 
 type StringAdminRoutes struct {
@@ -137,7 +147,6 @@ type StringAdminRoutes struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -150,7 +159,6 @@ type StringAdminFields struct {
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Type         string `json:"type"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -162,7 +170,6 @@ type StringAdminDatatypes struct {
 	ParentID        string `json:"parent_id"`
 	Label           string `json:"label"`
 	Type            string `json:"type"`
-	Author          string `json:"author"`
 	AuthorID        string `json:"author_id"`
 	DateCreated     string `json:"date_created"`
 	DateModified    string `json:"date_modified"`
@@ -171,11 +178,13 @@ type StringAdminDatatypes struct {
 
 type StringAdminContentData struct {
 	AdminContentDataID string `json:"admin_content_data_id"`
+	ParentID           string `json:"parent_id"`
 	AdminRouteID       string `json:"admin_route_id"`
 	AdminDatatypeID    string `json:"admin_datatype_id"`
-	History            string `json:"history"`
+	AuthorID           string `json:"author_id"`
 	DateCreated        string `json:"date_created"`
 	DateModified       string `json:"date_modified"`
+	History            string `json:"history"`
 }
 
 type StringAdminContentFields struct {
@@ -184,9 +193,9 @@ type StringAdminContentFields struct {
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`
-	History             string `json:"history"`
 	DateCreated         string `json:"date_created"`
 	DateModified        string `json:"date_modified"`
+	History             string `json:"history"`
 }
 
 type StringTables struct {
@@ -205,4 +214,3 @@ type StringUserOauth struct {
 	TokenExpiresAt      string `json:"token_expires_at"`
 	DateCreated         string `json:"date_created"`
 }
-

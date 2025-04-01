@@ -15,70 +15,64 @@ import (
 //////////////////////////////
 type Routes struct {
 	RouteID      int64          `json:"route_id"`
-	Author       string         `json:"author"`
-	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	History      sql.NullString `json:"history"`
+    AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 }
 
 type CreateRouteParams struct {
-	Author       string         `json:"author"`
-	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	History      sql.NullString `json:"history"`
+    AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 }
 
 type UpdateRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-	History      sql.NullString `json:"history"`
-	Author       string         `json:"author"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
+    History      sql.NullString `json:"history"`
 	Slug_2       string         `json:"slug_2"`
 }
 
 type RoutesHistoryEntry struct {
 	RouteID      any            `json:"route_id"`
-	Author       string         `json:"author"`
-	AuthorID     int64          `json:"author_id"`
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
+    AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 }
 
 type CreateRouteFormParams struct {
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-	History      string `json:"history"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+    History      string `json:"history"`
 }
 
 type UpdateRouteFormParams struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-	History      string `json:"history"`
-	Author       string `json:"author"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
+    History      string `json:"history"`
 	Slug_2       string `json:"slug_2"`
 }
 
@@ -88,7 +82,6 @@ type UpdateRouteFormParams struct {
 
 func MapCreateRouteParams(a CreateRouteFormParams) CreateRouteParams {
 	return CreateRouteParams{
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
@@ -105,7 +98,6 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 		Title:        a.Title,
 		Status:       Si(a.Status),
 		History:      Ns(a.History),
-		Author:       a.Author,
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
@@ -116,7 +108,6 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 func MapStringRoute(a Routes) StringRoutes {
 	return StringRoutes{
 		RouteID:      strconv.FormatInt(a.RouteID, 10),
-		Author:       a.Author,
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		Slug:         a.Slug,
 		Title:        a.Title,
@@ -135,27 +126,25 @@ func MapStringRoute(a Routes) StringRoutes {
 func (d Database) MapRoute(a mdb.Routes) Routes {
 	return Routes{
 		RouteID:      a.RouteID,
-		Author:       a.Author,
-		AuthorID:     a.AuthorID,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-		History:      a.History,
+        AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 	}
 }
 
 func (d Database) MapCreateRouteParams(a CreateRouteParams) mdb.CreateRouteParams {
 	return mdb.CreateRouteParams{
-		Author:       a.Author,
-		AuthorID:     a.AuthorID,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-		History:      a.History,
+        AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 	}
 }
 
@@ -164,11 +153,10 @@ func (d Database) MapUpdateRouteParams(a UpdateRouteParams) mdb.UpdateRouteParam
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-		History:      a.History,
-		Author:       a.Author,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 		Slug_2:       a.Slug_2,
 	}
 }
@@ -199,18 +187,18 @@ func (d Database) CreateRoute(s CreateRouteParams) Routes {
 	return d.MapRoute(row)
 }
 
-func (d Database) DeleteRoute(slug string) error {
+func (d Database) DeleteRoute(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteRoute(d.Context, slug)
+	err := queries.DeleteRoute(d.Context, id)
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Route: %v ", id)
 	}
 	return nil
 }
 
-func (d Database) GetRoute(slug string) (*Routes, error) {
+func (d Database) GetRoute(id int64) (*Routes, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetRoute(d.Context, slug)
+	row, err := queries.GetRoute(d.Context, id)
 	if err != nil {
 		return nil, err
 	}
@@ -220,7 +208,7 @@ func (d Database) GetRoute(slug string) (*Routes, error) {
 
 func (d Database) GetRouteID(slug string) (*int64, error) {
 	queries := mdb.New(d.Connection)
-	id, err := queries.GetRouteID(d.Context, slug)
+	id, err := queries.GetRouteIDBySlug(d.Context, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -260,27 +248,25 @@ func (d Database) UpdateRoute(s UpdateRouteParams) (*string, error) {
 func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
 	return Routes{
 		RouteID:      int64(a.RouteID),
-		Author:       a.Author,
-		AuthorID:     int64(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int64(a.Status),
-		History:      a.History,
+        AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated.String()),
 		DateModified: Ns(a.DateModified.String()),
+        History:      a.History,
 	}
 }
 
 func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRouteParams {
 	return mdbm.CreateRouteParams{
-		Author:       a.Author,
-		AuthorID:     int32(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		History:      a.History,
+        AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String).Time,
 		DateModified: StringToNTime(a.DateModified.String).Time,
+        History:      a.History,
 	}
 }
 
@@ -290,7 +276,6 @@ func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRout
 		Title:        a.Title,
 		Status:       int32(a.Status),
 		History:      a.History,
-		Author:       a.Author,
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String).Time,
 		DateModified: StringToNTime(a.DateModified.String).Time,
@@ -328,18 +313,18 @@ func (d MysqlDatabase) CreateRoute(s CreateRouteParams) Routes {
 	return d.MapRoute(row)
 }
 
-func (d MysqlDatabase) DeleteRoute(slug string) error {
+func (d MysqlDatabase) DeleteRoute(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteRoute(d.Context, slug)
+	err := queries.DeleteRoute(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Route: %v ", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetRoute(slug string) (*Routes, error) {
+func (d MysqlDatabase) GetRoute(id int64) (*Routes, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetRoute(d.Context, slug)
+	row, err := queries.GetRoute(d.Context, int32(id))
 	if err != nil {
 		return nil, err
 	}
@@ -349,7 +334,7 @@ func (d MysqlDatabase) GetRoute(slug string) (*Routes, error) {
 
 func (d MysqlDatabase) GetRouteID(slug string) (*int64, error) {
 	queries := mdbm.New(d.Connection)
-	id, err := queries.GetRouteID(d.Context, slug)
+	id, err := queries.GetRouteIDBySlug(d.Context, slug)
 	if err != nil {
 		return nil, err
 	}
@@ -390,27 +375,25 @@ func (d MysqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
 func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
 	return Routes{
 		RouteID:      int64(a.RouteID),
-		Author:       a.Author,
-		AuthorID:     int64(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int64(a.Status),
-		History:      a.History,
+        AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated.String),
 		DateModified: Ns(a.DateModified.String),
+        History:      a.History,
 	}
 }
 
 func (d PsqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbp.CreateRouteParams {
 	return mdbp.CreateRouteParams{
-		Author:       a.Author,
-		AuthorID:     int32(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		History:      a.History,
+        AuthorID:     int32(a.AuthorID),
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 	}
 }
 
@@ -419,11 +402,10 @@ func (d PsqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbp.UpdateRoute
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
-		History:      a.History,
-		Author:       a.Author,
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
+        History:      a.History,
 		Slug_2:       a.Slug_2,
 	}
 }
@@ -454,18 +436,18 @@ func (d PsqlDatabase) CreateRoute(s CreateRouteParams) Routes {
 	return d.MapRoute(row)
 }
 
-func (d PsqlDatabase) DeleteRoute(slug string) error {
+func (d PsqlDatabase) DeleteRoute(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteRoute(d.Context, slug)
+	err := queries.DeleteRoute(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Route: %v ", slug)
+		return fmt.Errorf("Failed to Delete Route: %v ", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetRoute(slug string) (*Routes, error) {
+func (d PsqlDatabase) GetRoute(id int64) (*Routes, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetRoute(d.Context, slug)
+	row, err := queries.GetRoute(d.Context, int32(id))
 	if err != nil {
 		return nil, err
 	}
@@ -473,9 +455,10 @@ func (d PsqlDatabase) GetRoute(slug string) (*Routes, error) {
 	return &res, nil
 }
 
+
 func (d PsqlDatabase) GetRouteID(slug string) (*int64, error) {
 	queries := mdbp.New(d.Connection)
-	id, err := queries.GetRouteID(d.Context, slug)
+	id, err := queries.GetRouteIDBySlug(d.Context, slug)
 	if err != nil {
 		return nil, err
 	}

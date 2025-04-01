@@ -257,9 +257,9 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	return Sessions{
 		SessionID:   int64(a.SessionID),
 		UserID:      int64(a.UserID),
-		CreatedAt:   Ns(Nt(a.CreatedAt)),
-		ExpiresAt:   Ns(Nt(a.ExpiresAt)),
-		LastAccess:  Ns(Nt(a.LastAccess)),
+		CreatedAt:   Ns(a.CreatedAt.String()),
+		ExpiresAt:   Ns(a.ExpiresAt.String()),
+		LastAccess:  Ns(a.LastAccess.String()),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
@@ -269,9 +269,9 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
 	return mdbm.CreateSessionParams{
 		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String),
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String),
-		LastAccess:  StringToNTime(a.LastAccess.String),
+		CreatedAt:   StringToNTime(a.CreatedAt.String).Time,
+		ExpiresAt:   StringToNTime(a.ExpiresAt.String).Time,
+		LastAccess:  StringToNTime(a.LastAccess.String).Time,
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
@@ -281,9 +281,9 @@ func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.Create
 func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.UpdateSessionParams {
 	return mdbm.UpdateSessionParams{
 		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String),
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String),
-		LastAccess:  StringToNTime(a.LastAccess.String),
+		CreatedAt:   StringToNTime(a.CreatedAt.String).Time,
+		ExpiresAt:   StringToNTime(a.ExpiresAt.String).Time,
+		LastAccess:  StringToNTime(a.LastAccess.String).Time,
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,

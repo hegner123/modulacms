@@ -15,6 +15,7 @@ import (
 type ColumnNameType map[string]string
 type ColumnIndexName map[int]string
 
+
 func CopyDb(dbName string, useDefault bool) (string, error) {
 	times := utility.TimestampS()
 	backup := "../../testdb/backups/"
@@ -147,7 +148,6 @@ func GetColumnRowsString(dbc *sql.DB, ctx context.Context, tableName string, col
 
 	return rowValues, nil
 }
-
 
 func ReadNullString(ns sql.NullString) string {
 	if ns.Valid {

@@ -3,10 +3,18 @@ package db
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"fmt"
+	"os"
+	"os/exec"
+	"sort"
 
 	config "github.com/hegner123/modulacms/internal/Config"
+	utility "github.com/hegner123/modulacms/internal/Utility"
 )
+
+//go:embed sql
+var sqlFiles embed.FS
 
 type Historied interface {
 	GetHistory() string
@@ -64,16 +72,21 @@ type DbDriver interface {
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)
+	SortTables() error
+	DumpSql(config.Config) error
+	//RestoreDB() error
 
 	// Count operations
 	CountAdminContentData() (*int64, error)
 	CountAdminContentFields() (*int64, error)
 	CountAdminDatatypes() (*int64, error)
+	CountAdminDatatypeFields() (*int64, error)
 	CountAdminFields() (*int64, error)
 	CountAdminRoutes() (*int64, error)
 	CountContentData() (*int64, error)
 	CountContentFields() (*int64, error)
 	CountDatatypes() (*int64, error)
+	CountDatatypeFields() (*int64, error)
 	CountFields() (*int64, error)
 	CountMedia() (*int64, error)
 	CountMediaDimensions() (*int64, error)
@@ -90,11 +103,13 @@ type DbDriver interface {
 	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
 	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
 	CreateAdminDatatype(CreateAdminDatatypeParams) AdminDatatypes
+	CreateAdminDatatypeField(CreateAdminDatatypeFieldParams) AdminDatatypeFields
 	CreateAdminField(CreateAdminFieldParams) AdminFields
 	CreateAdminRoute(CreateAdminRouteParams) AdminRoutes
 	CreateContentData(CreateContentDataParams) ContentData
 	CreateContentField(CreateContentFieldParams) ContentFields
 	CreateDatatype(CreateDatatypeParams) Datatypes
+	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
 	CreateField(CreateFieldParams) Fields
 	CreateMedia(CreateMediaParams) Media
 	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
@@ -111,11 +126,13 @@ type DbDriver interface {
 	CreateAdminContentDataTable() error
 	CreateAdminContentFieldTable() error
 	CreateAdminDatatypeTable() error
+	CreateAdminDatatypeFieldTable() error
 	CreateAdminFieldTable() error
 	CreateAdminRouteTable() error
 	CreateContentDataTable() error
 	CreateContentFieldTable() error
 	CreateDatatypeTable() error
+	CreateDatatypeFieldTable() error
 	CreateFieldTable() error
 	CreateMediaTable() error
 	CreateMediaDimensionTable() error
@@ -132,17 +149,19 @@ type DbDriver interface {
 	DeleteAdminContentData(int64) error
 	DeleteAdminContentField(int64) error
 	DeleteAdminDatatype(int64) error
+	DeleteAdminDatatypeField(int64) error
 	DeleteAdminField(int64) error
-	DeleteAdminRoute(string) error
+	DeleteAdminRoute(int64) error
 	DeleteContentData(int64) error
 	DeleteContentField(int64) error
 	DeleteDatatype(int64) error
+	DeleteDatatypeField(int64) error
 	DeleteField(int64) error
 	DeleteMedia(int64) error
 	DeleteMediaDimension(int64) error
 	DeletePermission(int64) error
 	DeleteRole(int64) error
-	DeleteRoute(string) error
+	DeleteRoute(int64) error
 	DeleteSession(int64) error
 	DeleteTable(int64) error
 	DeleteToken(int64) error
@@ -165,7 +184,7 @@ type DbDriver interface {
 	GetMediaDimension(int64) (*MediaDimensions, error)
 	GetPermission(int64) (*Permissions, error)
 	GetRole(int64) (*Roles, error)
-	GetRoute(string) (*Routes, error)
+	GetRoute(int64) (*Routes, error)
 	GetRouteID(string) (*int64, error)
 	GetSession(int64) (*Sessions, error)
 	GetSessionsByUserId(int64) (*[]Sessions, error)
@@ -182,6 +201,9 @@ type DbDriver interface {
 	ListAdminContentFields() (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoute(int64) (*[]AdminContentFields, error)
 	ListAdminDatatypes() (*[]AdminDatatypes, error)
+	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByDatatypeID(int64) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByFieldID(int64) (*[]AdminDatatypeFields, error)
 	ListAdminFields() (*[]AdminFields, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
 	ListContentData() (*[]ContentData, error)
@@ -189,6 +211,9 @@ type DbDriver interface {
 	ListContentFields() (*[]ContentFields, error)
 	ListContentFieldsByRoute(int64) (*[]ContentFields, error)
 	ListDatatypes() (*[]Datatypes, error)
+	ListDatatypeField() (*[]DatatypeFields, error)
+	ListDatatypeFieldByDatatypeID(int64) (*[]DatatypeFields, error)
+	ListDatatypeFieldByFieldID(int64) (*[]DatatypeFields, error)
 	ListFields() (*[]Fields, error)
 	ListFieldsByDatatypeID(int64) (*[]Fields, error)
 	ListMedia() (*[]Media, error)
@@ -206,11 +231,13 @@ type DbDriver interface {
 	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
 	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
 	UpdateAdminDatatype(UpdateAdminDatatypeParams) (*string, error)
+	UpdateAdminDatatypeField(UpdateAdminDatatypeFieldParams) (*string, error)
 	UpdateAdminField(UpdateAdminFieldParams) (*string, error)
 	UpdateAdminRoute(UpdateAdminRouteParams) (*string, error)
 	UpdateContentData(UpdateContentDataParams) (*string, error)
 	UpdateContentField(UpdateContentFieldParams) (*string, error)
 	UpdateDatatype(UpdateDatatypeParams) (*string, error)
+	UpdateDatatypeField(UpdateDatatypeFieldParams) (*string, error)
 	UpdateField(UpdateFieldParams) (*string, error)
 	UpdateMedia(UpdateMediaParams) (*string, error)
 	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
@@ -281,6 +308,11 @@ func (d Database) CreateAllTables() error {
 	}
 
 	err = d.CreateRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateDatatypeFieldTable()
 	if err != nil {
 		return err
 	}
@@ -386,6 +418,11 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
 	err = d.CreateFieldTable()
 	if err != nil {
 		return err
@@ -483,6 +520,11 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 
 	err = d.CreateRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateDatatypeFieldTable()
 	if err != nil {
 		return err
 	}
@@ -603,3 +645,236 @@ func (d PsqlDatabase) InitDb(v *bool) error {
 	return nil
 }
 */
+
+func (d Database) SortTables() error {
+	clearTables := "DELETE FROM tables;"
+	con, _, err := d.GetConnection()
+	if err != nil {
+		return err
+	}
+
+	tb, err := d.ListTables()
+	if err != nil {
+		return err
+	}
+	_, err = con.Exec(clearTables)
+	if err != nil {
+		return err
+	}
+	tables := *tb
+	st := []string{}
+	for _, t := range tables {
+		st = append(st, t.Label.String)
+	}
+	sort.Strings(st)
+	for _, tt := range st {
+		d.CreateTable(tt)
+	}
+
+	return nil
+}
+func (d MysqlDatabase) SortTables() error {
+	clearTables := "DELETE FROM tables;"
+	con, _, err := d.GetConnection()
+	if err != nil {
+		return err
+	}
+
+	tb, err := d.ListTables()
+	if err != nil {
+		return err
+	}
+	_, err = con.Exec(clearTables)
+	if err != nil {
+		return err
+	}
+	tables := *tb
+	st := []string{}
+	for _, t := range tables {
+		st = append(st, t.Label.String)
+	}
+	sort.Strings(st)
+	for _, tt := range st {
+		d.CreateTable(tt)
+	}
+
+	return nil
+}
+func (d PsqlDatabase) SortTables() error {
+	clearTables := "DELETE FROM tables;"
+	con, _, err := d.GetConnection()
+	if err != nil {
+		return err
+	}
+
+	tb, err := d.ListTables()
+	if err != nil {
+		return err
+	}
+	_, err = con.Exec(clearTables)
+	if err != nil {
+		return err
+	}
+	tables := *tb
+	st := []string{}
+	for _, t := range tables {
+		st = append(st, t.Label.String)
+	}
+	sort.Strings(st)
+	for _, tt := range st {
+		d.CreateTable(tt)
+	}
+
+	return nil
+}
+
+func (d Database) DumpSql(c config.Config) error {
+
+	// Read the embedded Bash script.
+	script, err := sqlFiles.ReadFile("sql/dump_sql.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		return err
+	}
+
+	// Create a temporary file for the script.
+	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		return err
+	}
+	// Ensure the file is removed after execution.
+	defer func() {
+		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	// Write the embedded script contents to the temporary file.
+	if _, err := tmpFile.Write(script); err != nil {
+		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		return err
+	}
+	// Close the file so that it can be executed.
+    err=tmpFile.Close()
+    if err!=nil {
+        return err
+    }
+
+	// Make the temporary file executable.
+	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
+		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		return err
+	}
+
+	// Execute the Bash script using /bin/bash.
+	t := utility.TimestampReadable()
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, output)
+		return err
+	}
+	return nil
+
+}
+func (d MysqlDatabase) DumpSql(c config.Config) error {
+
+	// Read the embedded Bash script.
+	script, err := sqlFiles.ReadFile("sql/dump_mysql.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		return err
+	}
+
+	// Create a temporary file for the script.
+	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		return err
+	}
+	// Ensure the file is removed after execution.
+	defer func() {
+		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	// Write the embedded script contents to the temporary file.
+	if _, err := tmpFile.Write(script); err != nil {
+		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		return err
+	}
+	// Close the file so that it can be executed.
+    err=tmpFile.Close()
+    if err!=nil {
+        return err
+    }
+
+	// Make the temporary file executable.
+	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
+		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		return err
+	}
+
+	// Execute the Bash script using /bin/bash.
+	t := utility.TimestampReadable()
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_User, c.Db_Password, c.Db_Name, "mysql"+t+".sql")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, string(output))
+		return err
+	}
+	return nil
+
+}
+func (d PsqlDatabase) DumpSql(c config.Config) error {
+
+	// Read the embedded Bash script.
+	script, err := sqlFiles.ReadFile("sql/dump_psql.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to read embedded script: %v", err)
+		return err
+	}
+
+	// Create a temporary file for the script.
+	tmpFile, err := os.CreateTemp("", "embedded_script_*.sh")
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to create temporary file: %v", err)
+		return err
+	}
+	// Ensure the file is removed after execution.
+	defer func() {
+		if closeErr := os.Remove(tmpFile.Name()); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
+
+	// Write the embedded script contents to the temporary file.
+	if _, err := tmpFile.Write(script); err != nil {
+		utility.DefaultLogger.Fatal("failed to write script to file: %v", err)
+		return err
+	}
+	// Close the file so that it can be executed.
+    err=tmpFile.Close()
+    if err!=nil {
+        return err
+    }
+
+	// Make the temporary file executable.
+	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
+		utility.DefaultLogger.Fatal("failed to chmod the temporary file: %v", err)
+		return err
+	}
+
+	// Execute the Bash script using /bin/bash.
+	t := utility.TimestampReadable()
+	cmd := exec.Command("/bin/bash", tmpFile.Name(), c.Db_Name, "sqlite"+t+".sql")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		utility.DefaultLogger.Fatal("failed to execute script: %v, output: %s", err, output)
+		return err
+	}
+	return nil
+
+}

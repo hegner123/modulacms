@@ -1,0 +1,18 @@
+CREATE TABLE tokens (
+    id SERIAL
+        PRIMARY KEY,
+    user_id INTEGER NOT NULL
+        CONSTRAINT fk_tokens_users
+            REFERENCES users
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    token_type TEXT NOT NULL,
+    token TEXT NOT NULL
+        UNIQUE,
+    issued_at TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked BOOLEAN DEFAULT FALSE
+);
+
+ALTER TABLE tokens
+    OWNER TO modula_u;
+

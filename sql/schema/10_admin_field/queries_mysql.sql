@@ -1,0 +1,78 @@
+-- name: DropAdminFieldTable :exec
+DROP TABLE admin_fields;
+
+-- name: CreateAdminFieldTable :exec
+CREATE TABLE IF NOT EXISTS admin_fields (
+    admin_field_id INT AUTO_INCREMENT
+        PRIMARY KEY,
+    parent_id INT NULL,
+    label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
+    data TEXT NOT NULL,
+    type VARCHAR(255) DEFAULT 'text' NOT NULL,
+    author_id INT DEFAULT 1 NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    history TEXT NULL,
+    CONSTRAINT fk_admin_fields_admin_datatypes
+        FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_admin_fields_users_user_id
+        FOREIGN KEY (author_id) REFERENCES users (user_id)
+            ON UPDATE CASCADE
+);
+
+-- name: CountAdminField :one
+SELECT COUNT(*) FROM admin_fields;
+
+-- name: GetAdminField :one
+SELECT * FROM admin_fields
+WHERE admin_field_id = ? LIMIT 1;
+
+-- name: ListAdminField :many
+SELECT * FROM admin_fields
+ORDER BY admin_field_id;
+
+-- name: ListAdminFieldByParentID :many
+SELECT * FROM admin_fields
+WHERE parent_id = ?
+ORDER BY admin_field_id;
+
+-- name: CreateAdminField :exec
+INSERT INTO admin_fields (    
+    parent_id,
+    label,
+    data,
+    type,
+    author_id,
+    date_created,
+    date_modified,
+    history
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+);
+
+-- name: GetLastAdminField :one
+SELECT * FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID();
+
+-- name: UpdateAdminField :exec
+UPDATE admin_fields
+SET  parent_id = ?,
+    label = ?,
+    data = ?,
+    type = ?,
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?,
+    history = ?
+WHERE admin_field_id = ?;
+
+-- name: DeleteAdminField :exec
+DELETE FROM admin_fields
+WHERE admin_field_id = ?;
