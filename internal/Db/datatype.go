@@ -22,7 +22,7 @@ type Datatypes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-    History      sql.NullString `json:"history"`
+	History      sql.NullString `json:"history"`
 }
 
 type CreateDatatypeParams struct {
@@ -32,7 +32,7 @@ type CreateDatatypeParams struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-    History      sql.NullString `json:"history"`
+	History      sql.NullString `json:"history"`
 }
 
 type UpdateDatatypeParams struct {
@@ -42,7 +42,7 @@ type UpdateDatatypeParams struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-    History      sql.NullString `json:"history"`
+	History      sql.NullString `json:"history"`
 	DatatypeID   int64          `json:"datatype_id"`
 }
 
@@ -63,7 +63,7 @@ type CreateDatatypeFormParams struct {
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
-    History      string `json:"history"`
+	History      string `json:"history"`
 }
 
 type UpdateDatatypeFormParams struct {
@@ -73,13 +73,46 @@ type UpdateDatatypeFormParams struct {
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
-    History      string `json:"history"`
+	History      string `json:"history"`
 	DatatypeID   string `json:"datatype_id"`
+}
+
+type DatatypeJSON struct {
+	DatatypeID   int64      `json:"datatype_id"`
+	ParentID     NullInt64  `json:"parent_id"`
+	Label        string     `json:"label"`
+	Type         string     `json:"type"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+}
+
+type CreateDatatypeParamsJSON struct {
+	ParentID     NullInt64  `json:"parent_id"`
+	Label        string     `json:"label"`
+	Type         string     `json:"type"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+}
+
+type UpdateDatatypeParamsJSON struct {
+	ParentID     NullInt64  `json:"parent_id"`
+	Label        string     `json:"label"`
+	Type         string     `json:"type"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+	DatatypeID   int64      `json:"datatype_id"`
 }
 
 ///////////////////////////////
 //GENERIC
 //////////////////////////////
+
 
 func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 	return CreateDatatypeParams{
@@ -89,7 +122,7 @@ func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
-        History:      Ns(a.History),
+		History:      Ns(a.History),
 	}
 }
 
@@ -101,7 +134,7 @@ func MapUpdateDatatypeParams(a UpdateDatatypeFormParams) UpdateDatatypeParams {
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
-        History:      Ns(a.History),
+		History:      Ns(a.History),
 		DatatypeID:   Si(a.DatatypeID),
 	}
 }
@@ -115,15 +148,74 @@ func MapStringDatatype(a Datatypes) StringDatatypes {
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
-        History:      a.History.String,
+		History:      a.History.String,
 	}
+}
+
+func MapJSONDatatypes(a DatatypeJSON)Datatypes{
+    return Datatypes{
+        DatatypeID: a.DatatypeID,
+        ParentID: a.ParentID.NullInt64,
+        Label: a.Label,
+        Type: a.Type,
+        AuthorID: a.AuthorID,
+        DateCreated: a.DateCreated.NullString,
+        DateModified: a.DateModified.NullString,
+        History: a.History.NullString,
+    }
+}
+
+func MapDatatypeJSON(a Datatypes) DatatypeJSON {
+	return DatatypeJSON{
+		DatatypeID: a.DatatypeID,
+		ParentID: NullInt64{
+			NullInt64: a.ParentID,
+		},
+        Label: a.Label,
+        Type: a.Type,
+        AuthorID: a.AuthorID,
+        DateCreated: NullString{
+            NullString: a.DateCreated,
+        },
+        DateModified: NullString{
+            NullString: a.DateModified,
+        },
+        History: NullString{
+            NullString: a.History,
+        },
+	}
+
+}
+func MapJSONCreateDatatypeParams(a CreateDatatypeParamsJSON)CreateDatatypeParams{
+    return CreateDatatypeParams{
+        ParentID: a.ParentID.NullInt64,
+        Label: a.Label,
+        Type: a.Type,
+        AuthorID: a.AuthorID,
+        DateCreated: a.DateCreated.NullString,
+        DateModified: a.DateModified.NullString,
+        History: a.History.NullString,
+    }
+}
+
+func MapJSONUpdateDatatypeParams(a UpdateDatatypeParamsJSON)UpdateDatatypeParams{
+    return UpdateDatatypeParams{
+        ParentID: a.ParentID.NullInt64,
+        Label: a.Label,
+        Type: a.Type,
+        AuthorID: a.AuthorID,
+        DateCreated: a.DateCreated.NullString,
+        DateModified: a.DateModified.NullString,
+        History: a.History.NullString,
+        DatatypeID: a.DatatypeID,
+    }
 }
 
 ///////////////////////////////
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   a.DatatypeID,
@@ -133,7 +225,7 @@ func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
-        History:      a.History,
+		History:      a.History,
 	}
 }
 
@@ -145,7 +237,7 @@ func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateData
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
-        History:      a.History,
+		History:      a.History,
 	}
 }
 
@@ -157,12 +249,12 @@ func (d Database) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdb.UpdateData
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
-        History:      a.History,
+		History:      a.History,
 		DatatypeID:   a.DatatypeID,
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountDatatypes() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountDatatype(d.Context)
@@ -236,7 +328,7 @@ func (d Database) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   int64(a.DatatypeID),
@@ -246,32 +338,32 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated.String()),
 		DateModified: Ns(a.DateModified.String()),
-        History:      a.History,
+		History:      a.History,
 	}
 }
 
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
 	return mdbm.CreateDatatypeParams{
-		ParentID:     Ni32(a.ParentID.Int64),
-		Label:        a.Label,
-		Type:         a.Type,
-		AuthorID:     int32(a.AuthorID),
-		History:      a.History,
+		ParentID: Ni32(a.ParentID.Int64),
+		Label:    a.Label,
+		Type:     a.Type,
+		AuthorID: int32(a.AuthorID),
+		History:  a.History,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.UpdateDatatypeParams {
 	return mdbm.UpdateDatatypeParams{
-		ParentID:     Ni32(a.ParentID.Int64),
-		Label:        a.Label,
-		Type:         a.Type,
-		AuthorID:     int32(a.AuthorID),
-		History:      a.History,
-		DatatypeID:   int32(a.DatatypeID),
+		ParentID:   Ni32(a.ParentID.Int64),
+		Label:      a.Label,
+		Type:       a.Type,
+		AuthorID:   int32(a.AuthorID),
+		History:    a.History,
+		DatatypeID: int32(a.DatatypeID),
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountDatatypes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountDatatype(d.Context)
@@ -349,7 +441,7 @@ func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   int64(a.DatatypeID),
@@ -359,7 +451,7 @@ func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 		AuthorID:     int64(a.AuthorID),
 		DateCreated:  Ns(Nt(a.DateCreated)),
 		DateModified: Ns(Nt(a.DateModified)),
-        History:      a.History,
+		History:      a.History,
 	}
 }
 
@@ -371,7 +463,7 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
-        History:      a.History,
+		History:      a.History,
 	}
 }
 
@@ -383,12 +475,12 @@ func (d PsqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbp.Updat
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
-        History:      a.History,
+		History:      a.History,
 		DatatypeID:   int32(a.DatatypeID),
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountDatatypes() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountDatatype(d.Context)

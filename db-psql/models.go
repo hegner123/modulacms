@@ -13,9 +13,9 @@ import (
 
 type AdminContentData struct {
 	AdminContentDataID int32          `json:"admin_content_data_id"`
-	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
-	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
+	AdminRouteID       int32          `json:"admin_route_id"`
+	AdminDatatypeID    int32          `json:"admin_datatype_id"`
 	AuthorID           int32          `json:"author_id"`
 	DateCreated        sql.NullTime   `json:"date_created"`
 	DateModified       sql.NullTime   `json:"date_modified"`

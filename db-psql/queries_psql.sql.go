@@ -346,13 +346,13 @@ INSERT INTO admin_content_data (
     $4,
     $5,
     $6
-) RETURNING admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history
+) RETURNING admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history
 `
 
 type CreateAdminContentDataParams struct {
-	AdminRouteID    sql.NullInt32  `json:"admin_route_id"`
+	AdminRouteID    int32          `json:"admin_route_id"`
 	ParentID        sql.NullInt32  `json:"parent_id"`
-	AdminDatatypeID sql.NullInt32  `json:"admin_datatype_id"`
+	AdminDatatypeID int32          `json:"admin_datatype_id"`
 	DateCreated     sql.NullTime   `json:"date_created"`
 	DateModified    sql.NullTime   `json:"date_modified"`
 	History         sql.NullString `json:"history"`
@@ -370,8 +370,8 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 	var i AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
-		&i.AdminRouteID,
 		&i.ParentID,
+		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -385,13 +385,13 @@ const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id SERIAL
         PRIMARY KEY,
-    admin_route_id INTEGER
-        CONSTRAINT fk_admin_routes
-            REFERENCES admin_routes
-            ON UPDATE CASCADE ON DELETE SET NULL,
     parent_id INTEGER
         CONSTRAINT fk_parent_id
             REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    admin_route_id INTEGER NOT NULL
+        CONSTRAINT fk_admin_routes
+            REFERENCES admin_routes
             ON UPDATE CASCADE ON DELETE SET NULL,
     admin_datatype_id INTEGER
         CONSTRAINT fk_admin_datatypes
@@ -2274,7 +2274,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_content_data_id = $1 LIMIT 1
 `
 
@@ -2283,8 +2283,8 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 	var i AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
-		&i.AdminRouteID,
 		&i.ParentID,
+		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -2924,7 +2924,7 @@ func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int32, erro
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -2939,8 +2939,8 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 		var i AdminContentData
 		if err := rows.Scan(
 			&i.AdminContentDataID,
-			&i.AdminRouteID,
 			&i.ParentID,
+			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -2961,12 +2961,12 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_route_id = $1
 ORDER BY admin_content_data_id
 `
 
-func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID sql.NullInt32) ([]AdminContentData, error) {
+func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID int32) ([]AdminContentData, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoute, adminRouteID)
 	if err != nil {
 		return nil, err
@@ -2977,8 +2977,8 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 		var i AdminContentData
 		if err := rows.Scan(
 			&i.AdminContentDataID,
-			&i.AdminRouteID,
 			&i.ParentID,
+			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -4251,9 +4251,9 @@ WHERE admin_content_data_id = $7
 `
 
 type UpdateAdminContentDataParams struct {
-	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
+	AdminRouteID       int32          `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
-	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
+	AdminDatatypeID    int32          `json:"admin_datatype_id"`
 	History            sql.NullString `json:"history"`
 	DateCreated        sql.NullTime   `json:"date_created"`
 	DateModified       sql.NullTime   `json:"date_modified"`

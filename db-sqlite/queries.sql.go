@@ -350,7 +350,7 @@ INSERT INTO admin_content_data (
 
 type CreateAdminContentDataParams struct {
 	AdminRouteID    int64          `json:"admin_route_id"`
-	ParentID        int64          `json:"parent_id"`
+	ParentID        sql.NullInt64  `json:"parent_id"`
 	AdminDatatypeID int64          `json:"admin_datatype_id"`
 	AuthorID        int64          `json:"author_id"`
 	DateCreated     sql.NullString `json:"date_created"`
@@ -386,7 +386,7 @@ const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
 CREATE TABLE admin_content_data (
     admin_content_data_id INTEGER
         PRIMARY KEY,
-    parent_id INTEGER NOT NULL
+    parent_id INTEGER
         REFERENCES admin_content_data
             ON DELETE CASCADE,
     admin_route_id INTEGER NOT NULL
@@ -435,7 +435,7 @@ INSERT INTO admin_content_fields (
 
 type CreateAdminContentFieldParams struct {
 	AdminContentFieldID int64          `json:"admin_content_field_id"`
-	AdminRouteID        int64          `json:"admin_route_id"`
+	AdminRouteID        sql.NullInt64  `json:"admin_route_id"`
 	AdminContentDataID  int64          `json:"admin_content_data_id"`
 	AdminFieldID        int64          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
@@ -476,7 +476,7 @@ const createAdminContentFieldTable = `-- name: CreateAdminContentFieldTable :exe
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id INTEGER
         PRIMARY KEY,
-    admin_route_id INTEGER NOT NULL
+    admin_route_id INTEGER
         REFERENCES admin_routes
             ON DELETE SET NULL,
     admin_content_data_id INTEGER NOT NULL
@@ -885,7 +885,7 @@ INSERT INTO content_fields (
 
 type CreateContentFieldParams struct {
 	ContentFieldID int64          `json:"content_field_id"`
-	RouteID        int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
@@ -926,7 +926,7 @@ const createContentFieldTable = `-- name: CreateContentFieldTable :exec
 CREATE TABLE content_fields (
     content_field_id INTEGER
         PRIMARY KEY,
-    route_id INTEGER NOT NULL
+    route_id INTEGER
         REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id INTEGER NOT NULL
@@ -2987,7 +2987,7 @@ WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 `
 
-func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteID int64) ([]AdminContentFields, error) {
+func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteID sql.NullInt64) ([]AdminContentFields, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRoute, adminRouteID)
 	if err != nil {
 		return nil, err
@@ -3490,7 +3490,7 @@ WHERE route_id = ?
 ORDER BY content_fields_id
 `
 
-func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID int64) ([]ContentFields, error) {
+func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.NullInt64) ([]ContentFields, error) {
 	rows, err := q.db.QueryContext(ctx, listContentFieldsByRoute, routeID)
 	if err != nil {
 		return nil, err
@@ -4204,7 +4204,7 @@ WHERE admin_content_data_id = ?
 
 type UpdateAdminContentDataParams struct {
 	AdminRouteID       int64          `json:"admin_route_id"`
-	ParentID           int64          `json:"parent_id"`
+	ParentID           sql.NullInt64  `json:"parent_id"`
 	AdminDatatypeID    int64          `json:"admin_datatype_id"`
 	AuthorID           int64          `json:"author_id"`
 	DateCreated        sql.NullString `json:"date_created"`
@@ -4243,7 +4243,7 @@ WHERE admin_content_field_id = ?
 
 type UpdateAdminContentFieldParams struct {
 	AdminContentFieldID   int64          `json:"admin_content_field_id"`
-	AdminRouteID          int64          `json:"admin_route_id"`
+	AdminRouteID          sql.NullInt64  `json:"admin_route_id"`
 	AdminContentDataID    int64          `json:"admin_content_data_id"`
 	AdminFieldID          int64          `json:"admin_field_id"`
 	AdminFieldValue       string         `json:"admin_field_value"`
@@ -4458,7 +4458,7 @@ WHERE content_field_id = ?
 
 type UpdateContentFieldParams struct {
 	ContentFieldID   int64          `json:"content_field_id"`
-	RouteID          int64          `json:"route_id"`
+	RouteID          sql.NullInt64  `json:"route_id"`
 	ContentDataID    int64          `json:"content_data_id"`
 	FieldID          int64          `json:"field_id"`
 	FieldValue       string         `json:"field_value"`

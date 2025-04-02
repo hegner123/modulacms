@@ -1,9 +1,9 @@
 CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id INT AUTO_INCREMENT
         PRIMARY KEY,
-    admin_route_id INT NULL,
     parent_id INT NULL,
-    admin_datatype_id INT NULL,
+    admin_route_id INT NOT NULL,
+    admin_datatype_id INT NOT NULL,
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,

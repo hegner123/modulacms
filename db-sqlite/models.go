@@ -10,7 +10,7 @@ import (
 
 type AdminContentData struct {
 	AdminContentDataID int64          `json:"admin_content_data_id"`
-	ParentID           int64          `json:"parent_id"`
+	ParentID           sql.NullInt64  `json:"parent_id"`
 	AdminRouteID       int64          `json:"admin_route_id"`
 	AdminDatatypeID    int64          `json:"admin_datatype_id"`
 	AuthorID           int64          `json:"author_id"`
@@ -21,7 +21,7 @@ type AdminContentData struct {
 
 type AdminContentFields struct {
 	AdminContentFieldID int64          `json:"admin_content_field_id"`
-	AdminRouteID        int64          `json:"admin_route_id"`
+	AdminRouteID        sql.NullInt64  `json:"admin_route_id"`
 	AdminContentDataID  int64          `json:"admin_content_data_id"`
 	AdminFieldID        int64          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
@@ -84,7 +84,7 @@ type ContentData struct {
 
 type ContentFields struct {
 	ContentFieldID int64          `json:"content_field_id"`
-	RouteID        int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`

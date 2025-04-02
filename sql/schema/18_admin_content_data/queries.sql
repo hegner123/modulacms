@@ -5,7 +5,7 @@ DROP TABLE admin_content_data;
 CREATE TABLE admin_content_data (
     admin_content_data_id INTEGER
         PRIMARY KEY,
-    parent_id INTEGER NOT NULL
+    parent_id INTEGER
         REFERENCES admin_content_data
             ON DELETE CASCADE,
     admin_route_id INTEGER NOT NULL

@@ -10,9 +10,9 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type AdminFields struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
@@ -27,9 +27,9 @@ type AdminFields struct {
 
 type CreateAdminFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string            `json:"label"`
-	Data         string            `json:"data"`
-	Type         string            `json:"type"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -37,28 +37,26 @@ type CreateAdminFieldParams struct {
 }
 type ListAdminFieldByRouteIdRow struct {
 	AdminFieldID int64          `json:"admin_field_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string            `json:"label"`
-	Data         string            `json:"data"`
-	Type         string            `json:"type"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	History      sql.NullString `json:"history"`
 }
 type ListAdminFieldsByDatatypeIDRow struct {
 	AdminFieldID int64          `json:"admin_field_id"`
-	AdminRouteID sql.NullInt64  `json:"admin_route_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string            `json:"label"`
-	Data         string            `json:"data"`
-	Type         string            `json:"type"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	History      sql.NullString `json:"history"`
 }
 
 type UpdateAdminFieldParams struct {
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string            `json:"label"`
-	Data         string            `json:"data"`
-	Type         string            `json:"type"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -66,15 +64,15 @@ type UpdateAdminFieldParams struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 }
 type UtilityGetAdminfieldsRow struct {
-	AdminFieldID int64 `json:"admin_field_id"`
-	Label        string   `json:"label"`
+	AdminFieldID int64  `json:"admin_field_id"`
+	Label        string `json:"label"`
 }
 type AdminFieldsHistoryEntry struct {
 	AdminFieldID int64          `json:"admin_field_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string            `json:"label"`
-	Data         string            `json:"data"`
-	Type         string            `json:"type"`
+	Label        string         `json:"label"`
+	Data         string         `json:"data"`
+	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
@@ -100,9 +98,10 @@ type UpdateAdminFieldFormParams struct {
 	History      string `json:"history"`
 	AdminFieldID string `json:"admin_field_id"`
 }
-///////////////////////////////
-//GENERIC
-//////////////////////////////
+
+// /////////////////////////////
+// GENERIC
+// ////////////////////////////
 func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldParams {
 	return CreateAdminFieldParams{
 		ParentID:     SNi64(a.ParentID),
@@ -146,7 +145,7 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
@@ -185,6 +184,7 @@ func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.Update
 		AdminFieldID: a.AdminFieldID,
 	}
 }
+
 ///QUERIES
 
 func (d Database) CountAdminFields() (*int64, error) {
@@ -256,11 +256,12 @@ func (d Database) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
 }
+
 ///////////////////////////////
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: int64(a.AdminFieldID),
@@ -299,6 +300,7 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		AdminFieldID: int32(a.AdminFieldID),
 	}
 }
+
 ///QUERIES
 
 func (d MysqlDatabase) CountAdminFields() (*int64, error) {
@@ -379,7 +381,7 @@ func (d MysqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, erro
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: int64(a.AdminFieldID),
@@ -418,6 +420,7 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		AdminFieldID: int32(a.AdminFieldID),
 	}
 }
+
 ///QUERIES
 
 func (d PsqlDatabase) CountAdminFields() (*int64, error) {

@@ -149,10 +149,3 @@ func GetColumnRowsString(dbc *sql.DB, ctx context.Context, tableName string, col
 	return rowValues, nil
 }
 
-func ReadNullString(ns sql.NullString) string {
-	if ns.Valid {
-		return ns.String
-	} else {
-		return "nil"
-	}
-}

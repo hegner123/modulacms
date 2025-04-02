@@ -1,15 +1,15 @@
 CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id SERIAL
         PRIMARY KEY,
-    admin_route_id INTEGER
-        CONSTRAINT fk_admin_routes
-            REFERENCES admin_routes
-            ON UPDATE CASCADE ON DELETE SET NULL,
     parent_id INTEGER
         CONSTRAINT fk_parent_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    admin_datatype_id INTEGER
+    admin_route_id INTEGER NOT NULL
+        CONSTRAINT fk_admin_routes
+            REFERENCES admin_routes
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    admin_datatype_id INTEGER NOT NULL
         CONSTRAINT fk_admin_datatypes
             REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,

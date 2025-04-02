@@ -16,7 +16,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
-	"golang.org/x/crypto/acme/autocert"
+	//"golang.org/x/crypto/acme/autocert"
 
 	auth "github.com/hegner123/modulacms/internal/Auth"
 	cli "github.com/hegner123/modulacms/internal/Cli"
@@ -238,12 +238,13 @@ func main() {
 	})
 
 	// Certificates
-
+/*
 	manager := autocert.Manager{
 		Prompt:     autocert.AcceptTOS,
 		Cache:      autocert.DirCache(Env.Cert_Dir),                         // Folder to store certificates
 		HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
 	}
+    */
 
 	middlewareHandler := middleware.Serve(mux)
 	var (
@@ -255,7 +256,7 @@ func main() {
 		// Define your HTTPS server instance.
 		httpsServer = &http.Server{
 			Addr:      "localhost:" + Env.SSL_Port,
-			TLSConfig: manager.TLSConfig(),
+			//TLSConfig: manager.TLSConfig(),
 			Handler:   middlewareHandler,
 		}
 	)

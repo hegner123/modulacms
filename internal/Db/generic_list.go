@@ -1,6 +1,5 @@
 package db
 
-
 func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 	switch t {
 	case Admin_content_data:
@@ -106,9 +105,9 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			row := rows[i]
 			s := MapStringAdminDatatypeField(row)
 			r := []string{
-                s.ID,
+				s.ID,
 				s.AdminDatatypeID,
-                s.AdminFieldID,
+				s.AdminFieldID,
 			}
 			collection = append(collection, r)
 		}
@@ -149,7 +148,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.ContentDataID,
 				s.RouteID,
-                s.ParentID,
+				s.ParentID,
 				s.DatatypeID,
 				s.DateCreated,
 				s.DateModified,
@@ -192,9 +191,9 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			row := rows[i]
 			s := MapStringDatatypeField(row)
 			r := []string{
-                s.ID,
+				s.ID,
 				s.DatatypeID,
-                s.FieldID,
+				s.FieldID,
 			}
 			collection = append(collection, r)
 		}
@@ -309,7 +308,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.PermissionID,
 				s.TableID,
 				s.Mode,
-                s.Label,
+				s.Label,
 			}
 			collection = append(collection, r)
 		}

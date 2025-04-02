@@ -34,6 +34,33 @@ func Ni32(i int64) sql.NullInt32 {
 	return sql.NullInt32{Int32: int32(i), Valid: true}
 }
 
+func Ni32Ni64(i sql.NullInt32) sql.NullInt64 {
+	if i.Valid {
+		return sql.NullInt64{
+			Int64: int64(i.Int32),
+			Valid: true,
+		}
+	} else {
+		return sql.NullInt64{
+			Int64: 0,
+			Valid: false,
+		}
+	}
+}
+func Ni64Ni32(i sql.NullInt64) sql.NullInt32 {
+	if i.Valid {
+		return sql.NullInt32{
+			Int32: int32(i.Int64),
+			Valid: true,
+		}
+	} else {
+		return sql.NullInt32{
+			Int32: 0,
+			Valid: false,
+		}
+	}
+}
+
 func Nb(b bool) sql.NullBool {
 	return sql.NullBool{Bool: b, Valid: true}
 }
@@ -138,7 +165,7 @@ func SNi64(s string) sql.NullInt64 {
 	var res sql.NullInt64
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-        res.Int64 = 0
+		res.Int64 = 0
 		res.Valid = false
 		return res
 	} else {
@@ -148,4 +175,53 @@ func SNi64(s string) sql.NullInt64 {
 	}
 
 }
+func SNi32(s string) sql.NullInt32 {
+	var res sql.NullInt32
+	i, err := strconv.ParseInt(s, 10, 64)
+	if err != nil {
+		res.Int32 = 0
+		res.Valid = false
+		return res
+	} else {
+		res.Int32 = int32(i)
+		res.Valid = true
+		return res
+	}
 
+}
+
+func ReadNullString(ns sql.NullString) string {
+	if ns.Valid {
+		return ns.String
+	} else {
+		return "null"
+	}
+}
+func ReadNullInt64(ns sql.NullInt64) string {
+	if ns.Valid {
+		return strconv.FormatInt(ns.Int64, 10)
+	} else {
+		return "null"
+	}
+}
+func ReadNullInt32(ns sql.NullInt32) string {
+	if ns.Valid {
+		return strconv.FormatInt(int64(ns.Int32), 10)
+	} else {
+		return "null"
+	}
+}
+func ReadNullTime(ns sql.NullTime) string {
+	if ns.Valid {
+		return ns.Time.String()
+	} else {
+		return "null"
+	}
+}
+func ReadNullBool(ns sql.NullBool) string {
+	if ns.Valid {
+		return strconv.FormatBool(ns.Bool)
+	} else {
+		return "null"
+	}
+}

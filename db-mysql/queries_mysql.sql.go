@@ -346,9 +346,9 @@ INSERT INTO admin_content_data (
 `
 
 type CreateAdminContentDataParams struct {
-	AdminRouteID    sql.NullInt32  `json:"admin_route_id"`
+	AdminRouteID    int32          `json:"admin_route_id"`
 	ParentID        sql.NullInt32  `json:"parent_id"`
-	AdminDatatypeID sql.NullInt32  `json:"admin_datatype_id"`
+	AdminDatatypeID int32          `json:"admin_datatype_id"`
 	DateCreated     time.Time      `json:"date_created"`
 	DateModified    time.Time      `json:"date_modified"`
 	History         sql.NullString `json:"history"`
@@ -370,9 +370,9 @@ const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
 CREATE TABLE admin_content_data (
     admin_content_data_id INT AUTO_INCREMENT
         PRIMARY KEY,
-    admin_route_id INT NULL,
     parent_id INT NULL,
-    admin_datatype_id INT NULL,
+    admin_route_id INT NOT NULL,
+    admin_datatype_id INT NOT NULL,
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -2005,7 +2005,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -2014,8 +2014,8 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 	var i AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
-		&i.AdminRouteID,
 		&i.ParentID,
+		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -2232,7 +2232,7 @@ func (q *Queries) GetField(ctx context.Context, fieldID int32) (Fields, error) {
 }
 
 const getLastAdminContentData = `-- name: GetLastAdminContentData :one
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData, error) {
@@ -2240,8 +2240,8 @@ func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData
 	var i AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
-		&i.AdminRouteID,
 		&i.ParentID,
+		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -3039,7 +3039,7 @@ func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int32, erro
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -3054,8 +3054,8 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 		var i AdminContentData
 		if err := rows.Scan(
 			&i.AdminContentDataID,
-			&i.AdminRouteID,
 			&i.ParentID,
+			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -3076,12 +3076,12 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, admin_route_id, parent_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
 
-func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID sql.NullInt32) ([]AdminContentData, error) {
+func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID int32) ([]AdminContentData, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoute, adminRouteID)
 	if err != nil {
 		return nil, err
@@ -3092,8 +3092,8 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 		var i AdminContentData
 		if err := rows.Scan(
 			&i.AdminContentDataID,
-			&i.AdminRouteID,
 			&i.ParentID,
+			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -4364,9 +4364,9 @@ WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
-	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
+	AdminRouteID       int32          `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
-	AdminDatatypeID    sql.NullInt32  `json:"admin_datatype_id"`
+	AdminDatatypeID    int32          `json:"admin_datatype_id"`
 	DateCreated        time.Time      `json:"date_created"`
 	DateModified       time.Time      `json:"date_modified"`
 	History            sql.NullString `json:"history"`

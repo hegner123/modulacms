@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_field_id INTEGER
         PRIMARY KEY,
-    admin_route_id INTEGER NOT NULL
+    admin_route_id INTEGER
         REFERENCES admin_routes
             ON DELETE SET NULL,
     admin_content_data_id INTEGER NOT NULL

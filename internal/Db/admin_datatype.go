@@ -63,12 +63,6 @@ type AdminDatatypesHistoryEntry struct {
 	DateCreated     sql.NullString `json:"date_created"`
 	DateModified    sql.NullString `json:"date_modified"`
 }
-type ListAdminDatatypeTreeRow struct {
-	ChildID     int64          `json:"child_id"`
-	ChildLabel  string         `json:"child_label"`
-	ParentID    sql.NullInt64  `json:"parent_id"`
-	ParentLabel sql.NullString `json:"parent_label"`
-}
 type CreateAdminDatatypeFormParams struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
@@ -87,6 +81,35 @@ type UpdateAdminDatatypeFormParams struct {
 	DateModified    string `json:"date_modified"`
 	History         string `json:"history"`
 	AdminDatatypeID string `json:"admin_datatype_id"`
+}
+type AdminDatatypesJSON struct {
+	AdminDatatypeID int64          `json:"admin_datatype_id"`
+	ParentID        sql.NullInt64  `json:"parent_id"`
+	Label           string         `json:"label"`
+	Type            string         `json:"type"`
+	AuthorID        int64          `json:"author_id"`
+	DateCreated     sql.NullString `json:"date_created"`
+	DateModified    sql.NullString `json:"date_modified"`
+	History         sql.NullString `json:"history"`
+}
+type CreateAdminDatatypeParamsJSON struct {
+	ParentID     sql.NullInt64  `json:"parent_id"`
+	Label        string         `json:"label"`
+	Type         string         `json:"type"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  sql.NullString `json:"date_created"`
+	DateModified sql.NullString `json:"date_modified"`
+	History      sql.NullString `json:"history"`
+}
+type UpdateAdminDatatypeParamsJSON struct {
+	ParentID        sql.NullInt64  `json:"parent_id"`
+	Label           string         `json:"label"`
+	Type            string         `json:"type"`
+	AuthorID        int64          `json:"author_id"`
+	DateCreated     sql.NullString `json:"date_created"`
+	DateModified    sql.NullString `json:"date_modified"`
+	History         sql.NullString `json:"history"`
+	AdminDatatypeID int64          `json:"admin_datatype_id"`
 }
 
 ///////////////////////////////
@@ -119,13 +142,13 @@ func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDa
 func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 	return StringAdminDatatypes{
 		AdminDatatypeID: strconv.FormatInt(a.AdminDatatypeID, 10),
-		ParentID:        strconv.FormatInt(a.ParentID.Int64, 10),
+		ParentID:        ReadNullInt64(a.ParentID),
 		Label:           a.Label,
 		Type:            a.Type,
 		AuthorID:        strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:     a.DateCreated.String,
-		DateModified:    a.DateModified.String,
-		History:         a.History.String,
+		DateCreated:     ReadNullString(a.DateCreated),
+		DateModified:    ReadNullString(a.DateModified),
+		History:         ReadNullString(a.History),
 	}
 }
 

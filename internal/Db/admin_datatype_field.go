@@ -76,7 +76,7 @@ func MapStringAdminDatatypeField(a AdminDatatypeFields) StringAdminDatatypeField
 //SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d Database) MapAdminDatatypeField(a mdb.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              a.ID,
@@ -100,7 +100,7 @@ func (d Database) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFieldPa
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d Database) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)
@@ -191,7 +191,7 @@ func (d Database) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams) (*s
 //MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d MysqlDatabase) MapAdminDatatypeField(a mdbm.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              int64(a.ID),
@@ -216,7 +216,7 @@ func (d MysqlDatabase) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFi
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d MysqlDatabase) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)
@@ -312,7 +312,7 @@ func (d MysqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams
 //POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d PsqlDatabase) MapAdminDatatypeField(a mdbp.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              int64(a.ID),
@@ -337,7 +337,7 @@ func (d PsqlDatabase) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFie
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d PsqlDatabase) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)

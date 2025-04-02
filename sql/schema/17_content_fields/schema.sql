@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id INTEGER
         PRIMARY KEY,
-    route_id INTEGER NOT NULL
+    route_id INTEGER
         REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
     content_data_id INTEGER NOT NULL

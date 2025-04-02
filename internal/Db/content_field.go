@@ -15,7 +15,7 @@ import (
 // ////////////////////////////
 type ContentFields struct {
 	ContentFieldID int64          `json:"content_field_id"`
-	RouteID        int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
@@ -27,7 +27,7 @@ type ContentFields struct {
 
 type CreateContentFieldParams struct {
 	ContentFieldID int64          `json:"content_field_id"`
-	RouteID        int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
@@ -39,7 +39,7 @@ type CreateContentFieldParams struct {
 
 type UpdateContentFieldParams struct {
 	ContentFieldID   int64          `json:"content_field_id"`
-	RouteID          int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID    int64          `json:"content_data_id"`
 	FieldID          int64          `json:"field_id"`
 	FieldValue       string         `json:"field_value"`
@@ -52,7 +52,7 @@ type UpdateContentFieldParams struct {
 
 type ContentFieldsHistoryEntry struct {
 	ContentFieldID int64          `json:"content_field_id"`
-	RouteID        int64          `json:"route_id"`
+	RouteID        sql.NullInt64  `json:"route_id"`
 	ContentDataID  int64          `json:"content_data_id"`
 	FieldID        int64          `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
@@ -93,7 +93,7 @@ type UpdateContentFieldFormParams struct {
 func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFieldParams {
 	return CreateContentFieldParams{
 		ContentFieldID: Si(a.ContentFieldID),
-		RouteID:        Si(a.RouteID),
+		RouteID:        Ni64(Si(a.RouteID)),
 		ContentDataID:  Si(a.ContentDataID),
 		FieldID:        Si(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -107,7 +107,7 @@ func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFi
 func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFieldParams {
 	return UpdateContentFieldParams{
 		ContentFieldID:   Si(a.ContentFieldID),
-		RouteID:          Si(a.RouteID),
+		RouteID:          Ni64(Si(a.RouteID)),
 		ContentDataID:    Si(a.ContentDataID),
 		FieldID:          Si(a.FieldID),
 		FieldValue:       a.FieldValue,
@@ -122,7 +122,7 @@ func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFi
 func MapStringContentField(a ContentFields) StringContentFields {
 	return StringContentFields{
 		ContentFieldID: strconv.FormatInt(a.ContentFieldID, 10),
-		RouteID:        strconv.FormatInt(a.RouteID, 10),
+		RouteID:        strconv.FormatInt(a.RouteID.Int64, 10),
 		ContentDataID:  strconv.FormatInt(a.ContentDataID, 10),
 		FieldID:        strconv.FormatInt(a.FieldID, 10),
 		FieldValue:     a.FieldValue,
@@ -137,7 +137,7 @@ func MapStringContentField(a ContentFields) StringContentFields {
 //SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: a.ContentFieldID,
@@ -181,7 +181,7 @@ func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.Up
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d Database) CountContentFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -242,7 +242,7 @@ func (d Database) ListContentFields() (*[]ContentFields, error) {
 
 func (d Database) ListContentFieldsByRoute(routeID int64) (*[]ContentFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRoute(d.Context, routeID)
+	rows, err := queries.ListContentFieldsByRoute(d.Context, Ni64(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v\n", err)
 	}
@@ -269,11 +269,11 @@ func (d Database) UpdateContentField(s UpdateContentFieldParams) (*string, error
 //MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
-		RouteID:        int64(a.RouteID.Int32),
+		RouteID:        Ni64(int64(a.RouteID.Int32)),
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -286,7 +286,7 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 
 func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbm.CreateContentFieldParams {
 	return mdbm.CreateContentFieldParams{
-		RouteID:       Ni32(a.RouteID),
+		RouteID:       Ni32(a.RouteID.Int64),
 		ContentDataID: int32(a.ContentDataID),
 		FieldID:       int32(a.FieldID),
 		FieldValue:    a.FieldValue,
@@ -298,7 +298,7 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbm.UpdateContentFieldParams {
 	return mdbm.UpdateContentFieldParams{
 		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:        Ni32(a.RouteID),
+		RouteID:        Ni32(a.RouteID.Int64),
 		ContentDataID:  int32(a.ContentDataID),
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -307,7 +307,7 @@ func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) m
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d MysqlDatabase) CountContentFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)
@@ -399,11 +399,11 @@ func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, 
 //POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
 func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
-		RouteID:        int64(a.RouteID.Int32),
+		RouteID:        Ni64(int64(a.RouteID.Int32)),
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -417,7 +417,7 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbp.CreateContentFieldParams {
 	return mdbp.CreateContentFieldParams{
 		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:        Ni32(a.RouteID),
+		RouteID:        Ni32(a.RouteID.Int64),
 		ContentDataID:  int32(a.ContentDataID),
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -431,7 +431,7 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbp.UpdateContentFieldParams {
 	return mdbp.UpdateContentFieldParams{
 		ContentFieldID:   int32(a.ContentFieldID),
-		RouteID:          Ni32(a.RouteID),
+		RouteID:          Ni32(a.RouteID.Int64),
 		ContentDataID:    int32(a.ContentDataID),
 		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
@@ -443,7 +443,7 @@ func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) md
 	}
 }
 
-// /QUERIES
+// QUERIES
 func (d PsqlDatabase) CountContentFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountContentField(d.Context)

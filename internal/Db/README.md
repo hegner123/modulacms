@@ -41,25 +41,27 @@ Each resource file follows this structure:
 
 The following resources are included in this organization:
 
-1. User
-2. Route
-3. Field
-4. Media
-5. MediaDimension
-6. Token
-7. Session
-8. Role
-9. Permission
-10. Datatype
-11. ContentData
-12. ContentField
-13. AdminRoute
-14. AdminField
-15. AdminDatatype
-16. AdminContentData
-17. AdminContentField
-18. Table
-19. UserOauth
+1. Permission
+2. Role
+3. User
+4. UserOauth
+5. Table
+6. Route
+7. AdminRoute
+8. Datatype
+9. Field
+10. AdminDatatype
+11. AdminField
+12. Media
+13. MediaDimension
+14. Token
+15. Session
+16. ContentData
+17. ContentField
+18. AdminContentData
+19. AdminContentField
+20. DatatypesFields
+20. AdminDatatypesFields
 
 ## Usage
 
