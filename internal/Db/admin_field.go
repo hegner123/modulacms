@@ -98,6 +98,27 @@ type UpdateAdminFieldFormParams struct {
 	History      string `json:"history"`
 	AdminFieldID string `json:"admin_field_id"`
 }
+type CreateAdminFieldParamsJSON struct {
+	ParentID     NullInt64  `json:"parent_id"`
+	Label        string     `json:"label"`
+	Data         string     `json:"data"`
+	Type         string     `json:"type"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+}
+type UpdateAdminFieldParamsJSON struct {
+	ParentID     NullInt64  `json:"parent_id"`
+	Label        string     `json:"label"`
+	Data         string     `json:"data"`
+	Type         string     `json:"type"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+	AdminFieldID int64      `json:"admin_field_id"`
+}
 
 // /////////////////////////////
 // GENERIC
@@ -138,6 +159,31 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
 		History:      a.History.String,
+	}
+}
+func MapCreateAdminFieldJSONParams(a CreateAdminFieldParamsJSON) CreateAdminFieldParams {
+	return CreateAdminFieldParams{
+		ParentID:     a.ParentID.NullInt64,
+		Label:        a.Label,
+		Data:         a.Data,
+		Type:         a.Type,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+	}
+}
+func MapUpdateAdminFieldJSONParams(a UpdateAdminFieldParamsJSON) UpdateAdminFieldParams {
+	return UpdateAdminFieldParams{
+		ParentID:     a.ParentID.NullInt64,
+		Label:        a.Label,
+		Data:         a.Data,
+		Type:         a.Type,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+		AdminFieldID: a.AdminFieldID,
 	}
 }
 

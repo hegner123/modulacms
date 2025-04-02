@@ -84,31 +84,31 @@ type UpdateAdminDatatypeFormParams struct {
 }
 type AdminDatatypesJSON struct {
 	AdminDatatypeID int64          `json:"admin_datatype_id"`
-	ParentID        sql.NullInt64  `json:"parent_id"`
+	ParentID        NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
 	AuthorID        int64          `json:"author_id"`
-	DateCreated     sql.NullString `json:"date_created"`
-	DateModified    sql.NullString `json:"date_modified"`
-	History         sql.NullString `json:"history"`
+	DateCreated     NullString `json:"date_created"`
+	DateModified    NullString `json:"date_modified"`
+	History         NullString `json:"history"`
 }
 type CreateAdminDatatypeParamsJSON struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
+	ParentID     NullInt64  `json:"parent_id"`
 	Label        string         `json:"label"`
 	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
 }
 type UpdateAdminDatatypeParamsJSON struct {
-	ParentID        sql.NullInt64  `json:"parent_id"`
+	ParentID        NullInt64  `json:"parent_id"`
 	Label           string         `json:"label"`
 	Type            string         `json:"type"`
 	AuthorID        int64          `json:"author_id"`
-	DateCreated     sql.NullString `json:"date_created"`
-	DateModified    sql.NullString `json:"date_modified"`
-	History         sql.NullString `json:"history"`
+	DateCreated     NullString `json:"date_created"`
+	DateModified    NullString `json:"date_modified"`
+	History         NullString `json:"history"`
 	AdminDatatypeID int64          `json:"admin_datatype_id"`
 }
 
@@ -121,7 +121,7 @@ func MapCreateAdminDatatypeParams(a CreateAdminDatatypeFormParams) CreateAdminDa
 		ParentID:     SNi64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
-		AuthorID:     Si(a.ParentID),
+		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
 		History:      Ns(a.History),
@@ -149,6 +149,29 @@ func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 		DateCreated:     ReadNullString(a.DateCreated),
 		DateModified:    ReadNullString(a.DateModified),
 		History:         ReadNullString(a.History),
+	}
+}
+func MapCreateAdminDatatypeJSONParams(a CreateAdminDatatypeParamsJSON) CreateAdminDatatypeParams {
+	return CreateAdminDatatypeParams{
+		ParentID:     a.ParentID.NullInt64,
+		Label:        a.Label,
+		Type:         a.Type,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+	}
+}
+func MapUpdateAdminDatatypeJSONParams(a UpdateAdminDatatypeParamsJSON) UpdateAdminDatatypeParams {
+	return UpdateAdminDatatypeParams{
+		ParentID:        a.ParentID.NullInt64,
+		Label:           a.Label,
+		Type:            a.Type,
+		AuthorID:        a.AuthorID,
+		DateCreated:     a.DateCreated.NullString,
+		DateModified:    a.DateModified.NullString,
+		History:         a.History.NullString,
+		AdminDatatypeID: a.AdminDatatypeID,
 	}
 }
 
@@ -223,7 +246,7 @@ func (d Database) DeleteAdminDatatype(id int64) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteAdminDatatype(d.Context, id)
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Datatype: %v ", id)
+		return fmt.Errorf("failed to delete admin datatype: %v ", id)
 	}
 
 	return nil
@@ -257,7 +280,7 @@ func (d Database) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminDatatype(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Datatypes: %v\n", err)
+		return nil, fmt.Errorf("failed to get admin datatypes: %v", err)
 	}
 	res := []AdminDatatypes{}
 	for _, v := range rows {
@@ -353,7 +376,7 @@ func (d MysqlDatabase) DeleteAdminDatatype(id int64) error {
 	queries := mdbm.New(d.Connection)
 	err := queries.DeleteAdminDatatype(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Datatype: %v ", id)
+		return fmt.Errorf("failed to delete admin datatype: %v ", id)
 	}
 
 	return nil
@@ -373,7 +396,7 @@ func (d MysqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminDatatype(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Datatypes: %v\n", err)
+		return nil, fmt.Errorf("failed to get admin datatypes: %v", err)
 	}
 	res := []AdminDatatypes{}
 	for _, v := range rows {
@@ -465,7 +488,7 @@ func (d PsqlDatabase) DeleteAdminDatatype(id int64) error {
 	queries := mdbp.New(d.Connection)
 	err := queries.DeleteAdminDatatype(d.Context, int32(id))
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Admin Datatype: %v ", id)
+		return fmt.Errorf("failed to delete admin datatype: %v ", id)
 	}
 
 	return nil
@@ -497,7 +520,7 @@ func (d PsqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminDatatype(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Datatypes: %v\n", err)
+		return nil, fmt.Errorf("failed to get admin datatypes: %v", err)
 	}
 	res := []AdminDatatypes{}
 	for _, v := range rows {
