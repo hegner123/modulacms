@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS tables (
     id INT AUTO_INCREMENT
         PRIMARY KEY,
-    label VARCHAR(255) NULL,
+    label VARCHAR(255) NOT NULL,
     author_id INT DEFAULT 1 NOT NULL,
     CONSTRAINT label
         UNIQUE (label),

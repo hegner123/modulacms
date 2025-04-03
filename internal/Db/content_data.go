@@ -76,6 +76,26 @@ type UpdateContentDataFormParams struct {
 	History       string `json:"history"`
 	ContentDataID string `json:"content_data_id"`
 }
+type CreateContentDataParamsJSON struct {
+	RouteID      int64      `json:"route_id"`
+	ParentID     NullInt64  `json:"parent_id"`
+	DatatypeID   int64      `json:"datatype_id"`
+	AuthorID     int64      `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+}
+
+type UpdateContentDataParamsJSON struct {
+	RouteID       int64      `json:"route_id"`
+	ParentID      NullInt64  `json:"parent_id"`
+	DatatypeID    int64      `json:"datatype_id"`
+	AuthorID      int64      `json:"author_id"`
+	DateCreated   NullString `json:"date_created"`
+	DateModified  NullString `json:"date_modified"`
+	History       NullString `json:"history"`
+	ContentDataID int64      `json:"content_data_id"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -103,6 +123,31 @@ func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentData
 		DateModified:  Ns(a.DateModified),
 		History:       Ns(a.History),
 		ContentDataID: Si(a.ContentDataID),
+	}
+}
+
+func MapCreateContentDataJSONParams(a CreateContentDataParamsJSON) CreateContentDataParams {
+	return CreateContentDataParams{
+		RouteID:      a.RouteID,
+		ParentID:     a.ParentID.NullInt64,
+		DatatypeID:   a.DatatypeID,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+	}
+}
+
+func MapUpdateContentDataPara(a UpdateContentDataParamsJSON) UpdateContentDataParams {
+	return UpdateContentDataParams{
+		RouteID:       a.RouteID,
+		ParentID:      a.ParentID.NullInt64,
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated.NullString,
+		DateModified:  a.DateModified.NullString,
+		History:       a.History.NullString,
+		ContentDataID: a.ContentDataID,
 	}
 }
 

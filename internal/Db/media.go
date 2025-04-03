@@ -112,6 +112,55 @@ type UpdateMediaFormParams struct {
 	DateModified string `json:"date_modified"`
 	MediaID      string `json:"media_id"`
 }
+type MediaJSON struct {
+	MediaID      int64          `json:"media_id"`
+	Name         NullString `json:"name"`
+	DisplayName  NullString `json:"display_name"`
+	Alt          NullString `json:"alt"`
+	Caption      NullString `json:"caption"`
+	Description  NullString `json:"description"`
+	Class        NullString `json:"class"`
+	Mimetype     NullString `json:"mimetype"`
+	Dimensions   NullString `json:"dimensions"`
+	Url          NullString `json:"url"`
+	Srcset       NullString `json:"srcset"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+}
+
+type CreateMediaParamsJSON struct {
+	Name         NullString `json:"name"`
+	DisplayName  NullString `json:"display_name"`
+	Alt          NullString `json:"alt"`
+	Caption      NullString `json:"caption"`
+	Description  NullString `json:"description"`
+	Class        NullString `json:"class"`
+	Url          NullString `json:"url"`
+	Mimetype     NullString `json:"mimetype"`
+	Dimensions   NullString `json:"dimensions"`
+	Srcset       NullString `json:"srcset"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+}
+
+type UpdateMediaParamsJSON struct {
+	Name         NullString `json:"name"`
+	DisplayName  NullString `json:"display_name"`
+	Alt          NullString `json:"alt"`
+	Caption      NullString `json:"caption"`
+	Description  NullString `json:"description"`
+	Class        NullString `json:"class"`
+	Url          NullString `json:"url"`
+	Mimetype     NullString `json:"mimetype"`
+	Dimensions   NullString `json:"dimensions"`
+	Srcset       NullString `json:"srcset"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	MediaID      int64          `json:"media_id"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -170,6 +219,42 @@ func MapStringMedia(a Media) StringMedia {
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
+	}
+}
+func MapCreateMediaJSONParams(a CreateMediaParamsJSON) CreateMediaParams {
+	return CreateMediaParams{
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Url:          a.Url.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
+		Srcset:       a.Srcset.NullString,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+	}
+}
+
+func MapUpdateMediaJSONParams(a UpdateMediaParamsJSON) UpdateMediaParams {
+	return UpdateMediaParams{
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Url:          a.Url.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
+		Srcset:       a.Srcset.NullString,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		MediaID:      a.MediaID,
 	}
 }
 

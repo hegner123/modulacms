@@ -42,7 +42,6 @@ ORDER BY content_fields_id;
 
 -- name: CreateContentField :one
 INSERT INTO content_fields (
-    content_field_id,
     route_id,
     content_data_id,
     field_id,
@@ -59,15 +58,13 @@ INSERT INTO content_fields (
     ?,
     ?,
     ?,
-    ?,
     ?
 ) RETURNING *;
 
 
 -- name: UpdateContentField :exec
 UPDATE content_fields
-SET  content_field_id = ?,
-    route_id = ?,
+SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,

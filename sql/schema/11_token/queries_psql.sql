@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS tokens (
     token TEXT NOT NULL UNIQUE,
     issued_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    revoked BOOLEAN DEFAULT false,
+    revoked BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT fk_tokens_users FOREIGN KEY (user_id)
         REFERENCES users(user_id)
         ON DELETE CASCADE

@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS tables (
     id SERIAL
         PRIMARY KEY,
-    label TEXT
+    label TEXT NOT NULL
         UNIQUE,
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users

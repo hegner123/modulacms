@@ -414,7 +414,6 @@ func (q *Queries) CreateAdminContentDataTable(ctx context.Context) error {
 
 const createAdminContentField = `-- name: CreateAdminContentField :one
 INSERT INTO admin_content_fields (
-    admin_content_field_id,
     admin_route_id,
     admin_content_data_id,
     admin_field_id,
@@ -429,25 +428,22 @@ INSERT INTO admin_content_fields (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 ) RETURNING admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified, history
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminContentFieldID int32          `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt32  `json:"admin_route_id"`
-	AdminContentDataID  int32          `json:"admin_content_data_id"`
-	AdminFieldID        int32          `json:"admin_field_id"`
-	AdminFieldValue     string         `json:"admin_field_value"`
-	DateCreated         sql.NullTime   `json:"date_created"`
-	DateModified        sql.NullTime   `json:"date_modified"`
-	History             sql.NullString `json:"history"`
+	AdminRouteID       sql.NullInt32  `json:"admin_route_id"`
+	AdminContentDataID int32          `json:"admin_content_data_id"`
+	AdminFieldID       int32          `json:"admin_field_id"`
+	AdminFieldValue    string         `json:"admin_field_value"`
+	DateCreated        sql.NullTime   `json:"date_created"`
+	DateModified       sql.NullTime   `json:"date_modified"`
+	History            sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) (AdminContentFields, error) {
 	row := q.db.QueryRowContext(ctx, createAdminContentField,
-		arg.AdminContentFieldID,
 		arg.AdminRouteID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
@@ -1617,7 +1613,7 @@ INSERT INTO tables (
 RETURNING id, label, author_id
 `
 
-func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) (Tables, error) {
+func (q *Queries) CreateTable(ctx context.Context, label string) (Tables, error) {
 	row := q.db.QueryRowContext(ctx, createTable, label)
 	var i Tables
 	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
@@ -1628,7 +1624,7 @@ const createTablesTable = `-- name: CreateTablesTable :exec
 CREATE TABLE IF NOT EXISTS tables (
     id SERIAL
         PRIMARY KEY,
-    label TEXT
+    label TEXT NOT NULL
         UNIQUE,
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users
@@ -1660,12 +1656,12 @@ INSERT INTO tokens (
 `
 
 type CreateTokenParams struct {
-	UserID    int32        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  time.Time    `json:"issued_at"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	UserID    int32     `json:"user_id"`
+	TokenType string    `json:"token_type"`
+	Token     string    `json:"token"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
 }
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Tokens, error) {
@@ -1698,7 +1694,7 @@ CREATE TABLE IF NOT EXISTS tokens (
     token TEXT NOT NULL UNIQUE,
     issued_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    revoked BOOLEAN DEFAULT false,
+    revoked BOOLEAN NOT NULL DEFAULT false,
     CONSTRAINT fk_tokens_users FOREIGN KEY (user_id)
         REFERENCES users(user_id)
         ON DELETE CASCADE
@@ -1787,13 +1783,13 @@ RETURNING user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access
 `
 
 type CreateUserOauthParams struct {
-	UserID              int32          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
-	DateCreated         sql.NullTime   `json:"date_created"`
+	UserID              int32     `json:"user_id"`
+	OauthProvider       string    `json:"oauth_provider"`
+	OauthProviderUserID string    `json:"oauth_provider_user_id"`
+	AccessToken         string    `json:"access_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	TokenExpiresAt      time.Time `json:"token_expires_at"`
+	DateCreated         time.Time `json:"date_created"`
 }
 
 func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) (UserOauth, error) {
@@ -1829,10 +1825,10 @@ CREATE TABLE IF NOT EXISTS user_oauth (
             ON UPDATE CASCADE ON DELETE CASCADE,
     oauth_provider VARCHAR(255) NOT NULL,
     oauth_provider_user_id VARCHAR(255) NOT NULL,
-    access_token TEXT,
-    refresh_token TEXT,
-    token_expires_at TIMESTAMP,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    access_token  TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    token_expires_at TIMESTAMP NOT NULL,
+    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 )
 `
 
@@ -4275,32 +4271,29 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 
 const updateAdminContentField = `-- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_content_field_id=$1,
-    admin_route_id=$2,
-    admin_content_data_id=$3,
-    admin_field_id=$4,
-    admin_field_value=$5,
-    history=$6,
-    date_created=$7,
-    date_modified=$8
-WHERE admin_content_field_id = $9
+SET  admin_route_id=$1,
+    admin_content_data_id=$2,
+    admin_field_id=$3,
+    admin_field_value=$4,
+    history=$5,
+    date_created=$6,
+    date_modified=$7
+WHERE admin_content_field_id = $8
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminContentFieldID   int32          `json:"admin_content_field_id"`
-	AdminRouteID          sql.NullInt32  `json:"admin_route_id"`
-	AdminContentDataID    int32          `json:"admin_content_data_id"`
-	AdminFieldID          int32          `json:"admin_field_id"`
-	AdminFieldValue       string         `json:"admin_field_value"`
-	History               sql.NullString `json:"history"`
-	DateCreated           sql.NullTime   `json:"date_created"`
-	DateModified          sql.NullTime   `json:"date_modified"`
-	AdminContentFieldID_2 int32          `json:"admin_content_field_id_2"`
+	AdminRouteID        sql.NullInt32  `json:"admin_route_id"`
+	AdminContentDataID  int32          `json:"admin_content_data_id"`
+	AdminFieldID        int32          `json:"admin_field_id"`
+	AdminFieldValue     string         `json:"admin_field_value"`
+	History             sql.NullString `json:"history"`
+	DateCreated         sql.NullTime   `json:"date_created"`
+	DateModified        sql.NullTime   `json:"date_modified"`
+	AdminContentFieldID int32          `json:"admin_content_field_id"`
 }
 
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentField,
-		arg.AdminContentFieldID,
 		arg.AdminRouteID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
@@ -4308,7 +4301,7 @@ func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminCo
 		arg.History,
 		arg.DateCreated,
 		arg.DateModified,
-		arg.AdminContentFieldID_2,
+		arg.AdminContentFieldID,
 	)
 	return err
 }
@@ -4832,8 +4825,8 @@ WHERE id = $2
 `
 
 type UpdateTableParams struct {
-	Label sql.NullString `json:"label"`
-	ID    int32          `json:"id"`
+	Label string `json:"label"`
+	ID    int32  `json:"id"`
 }
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
@@ -4851,11 +4844,11 @@ WHERE id = $5
 `
 
 type UpdateTokenParams struct {
-	Token     string       `json:"token"`
-	IssuedAt  time.Time    `json:"issued_at"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
-	ID        int32        `json:"id"`
+	Token     string    `json:"token"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
+	ID        int32     `json:"id"`
 }
 
 func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
@@ -4915,10 +4908,10 @@ WHERE user_oauth_id = $4
 `
 
 type UpdateUserOauthParams struct {
-	AccessToken    sql.NullString `json:"access_token"`
-	RefreshToken   sql.NullString `json:"refresh_token"`
-	TokenExpiresAt sql.NullTime   `json:"token_expires_at"`
-	UserOauthID    int32          `json:"user_oauth_id"`
+	AccessToken    string    `json:"access_token"`
+	RefreshToken   string    `json:"refresh_token"`
+	TokenExpiresAt time.Time `json:"token_expires_at"`
+	UserOauthID    int32     `json:"user_oauth_id"`
 }
 
 func (q *Queries) UpdateUserOauth(ctx context.Context, arg UpdateUserOauthParams) error {

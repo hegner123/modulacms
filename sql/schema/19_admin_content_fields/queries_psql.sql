@@ -46,7 +46,6 @@ ORDER BY admin_content_field_id;
 
 -- name: CreateAdminContentField :one
 INSERT INTO admin_content_fields (
-    admin_content_field_id,
     admin_route_id,
     admin_content_data_id,
     admin_field_id,
@@ -61,21 +60,19 @@ INSERT INTO admin_content_fields (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_content_field_id=$1,
-    admin_route_id=$2,
-    admin_content_data_id=$3,
-    admin_field_id=$4,
-    admin_field_value=$5,
-    history=$6,
-    date_created=$7,
-    date_modified=$8
-WHERE admin_content_field_id = $9;
+SET  admin_route_id=$1,
+    admin_content_data_id=$2,
+    admin_field_id=$3,
+    admin_field_value=$4,
+    history=$5,
+    date_created=$6,
+    date_modified=$7
+WHERE admin_content_field_id = $8;
 
 -- name: DeleteAdminContentField :exec
 DELETE FROM admin_content_fields

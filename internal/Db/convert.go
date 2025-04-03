@@ -129,6 +129,24 @@ func Sb(s string) bool {
 	}
 }
 
+func ParseBool(s string) bool {
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		return false
+	}
+	return b
+
+}
+
+func ParseTime(s string) time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return time.Now()
+	}
+    return t
+
+}
+
 func AssertString(i any) string {
 	s, ok := i.(string)
 	if !ok {

@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -14,25 +13,25 @@ import (
 // STRUCTS
 // ////////////////////////////
 type Tables struct {
-	ID       int64          `json:"id"`
-	Label    sql.NullString `json:"label"`
-	AuthorID int64          `json:"author_id"`
+	ID       int64  `json:"id"`
+	Label    string `json:"label"`
+	AuthorID int64  `json:"author_id"`
 }
 
 type CreateTableParams struct {
-	Label    sql.NullString `json:"label"`
-	AuthorID int64          `json:"author_id"`
+	Label    string `json:"label"`
+	AuthorID int64  `json:"author_id"`
 }
 
 type UpdateTableParams struct {
-	Label sql.NullString `json:"label"`
-	ID    int64          `json:"id"`
+	Label string `json:"label"`
+	ID    int64  `json:"id"`
 }
 
 type TablesHistoryEntry struct {
-	ID       int64          `json:"id"`
-	Label    sql.NullString `json:"label"`
-	AuthorID int64          `json:"author_id"`
+	ID       int64  `json:"id"`
+	Label    string `json:"label"`
+	AuthorID int64  `json:"author_id"`
 }
 
 type CreateTableFormParams struct {
@@ -51,14 +50,14 @@ type UpdateTableFormParams struct {
 
 func MapCreateTableParams(a CreateTableFormParams) CreateTableParams {
 	return CreateTableParams{
-		Label:    Ns(a.Label),
+		Label:    a.Label,
 		AuthorID: Si(a.AuthorID),
 	}
 }
 
 func MapUpdateTableParams(a UpdateTableFormParams) UpdateTableParams {
 	return UpdateTableParams{
-		Label: Ns(a.Label),
+		Label: a.Label,
 		ID:    Si(a.ID),
 	}
 }
@@ -66,7 +65,7 @@ func MapUpdateTableParams(a UpdateTableFormParams) UpdateTableParams {
 func MapStringTable(a Tables) StringTables {
 	return StringTables{
 		ID:       strconv.FormatInt(a.ID, 10),
-		Label:    a.Label.String,
+		Label:    a.Label,
 		AuthorID: strconv.FormatInt(a.AuthorID, 10),
 	}
 }
@@ -112,7 +111,7 @@ func (d Database) CreateTableTable() error {
 
 func (d Database) CreateTable(label string) Tables {
 	queries := mdb.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, Ns(label))
+	row, err := queries.CreateTable(d.Context, label)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
@@ -205,7 +204,7 @@ func (d MysqlDatabase) CreateTableTable() error {
 
 func (d MysqlDatabase) CreateTable(label string) Tables {
 	queries := mdbm.New(d.Connection)
-	err := queries.CreateTable(d.Context, Ns(label))
+	err := queries.CreateTable(d.Context, label)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
@@ -302,7 +301,7 @@ func (d PsqlDatabase) CreateTableTable() error {
 
 func (d PsqlDatabase) CreateTable(label string) Tables {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, Ns(label))
+	row, err := queries.CreateTable(d.Context, label)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}

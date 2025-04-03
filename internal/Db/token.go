@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -10,44 +9,44 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type Tokens struct {
-	ID        int64        `json:"id"`
-	UserID    int64        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  string       `json:"issued_at"`
-	ExpiresAt string       `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	ID        int64  `json:"id"`
+	UserID    int64  `json:"user_id"`
+	TokenType string `json:"token_type"`
+	Token     string `json:"token"`
+	IssuedAt  string `json:"issued_at"`
+	ExpiresAt string `json:"expires_at"`
+	Revoked   bool   `json:"revoked"`
 }
 
 type CreateTokenParams struct {
-	UserID    int64        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  string       `json:"issued_at"`
-	ExpiresAt string       `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	UserID    int64  `json:"user_id"`
+	TokenType string `json:"token_type"`
+	Token     string `json:"token"`
+	IssuedAt  string `json:"issued_at"`
+	ExpiresAt string `json:"expires_at"`
+	Revoked   bool   `json:"revoked"`
 }
 
 type UpdateTokenParams struct {
-	Token     string       `json:"token"`
-	IssuedAt  string       `json:"issued_at"`
-	ExpiresAt string       `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
-	ID        int64        `json:"id"`
+	Token     string `json:"token"`
+	IssuedAt  string `json:"issued_at"`
+	ExpiresAt string `json:"expires_at"`
+	Revoked   bool   `json:"revoked"`
+	ID        int64  `json:"id"`
 }
 
 type TokensHistoryEntry struct {
-	ID        int64        `json:"id"`
-	UserID    int64        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  string       `json:"issued_at"`
-	ExpiresAt string       `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	ID        int64  `json:"id"`
+	UserID    int64  `json:"user_id"`
+	TokenType string `json:"token_type"`
+	Token     string `json:"token"`
+	IssuedAt  string `json:"issued_at"`
+	ExpiresAt string `json:"expires_at"`
+	Revoked   bool   `json:"revoked"`
 }
 
 type CreateTokenFormParams struct {
@@ -72,30 +71,22 @@ type UpdateTokenFormParams struct {
 //////////////////////////////
 
 func MapCreateTokenParams(a CreateTokenFormParams) CreateTokenParams {
-	revoked := false
-	if a.Revoked == "true" {
-		revoked = true
-	}
 	return CreateTokenParams{
 		UserID:    Si(a.UserID),
 		TokenType: a.TokenType,
 		Token:     a.Token,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
-		Revoked:   sql.NullBool{Bool: revoked, Valid: true},
+		Revoked:   ParseBool(a.Revoked),
 	}
 }
 
 func MapUpdateTokenParams(a UpdateTokenFormParams) UpdateTokenParams {
-	revoked := false
-	if a.Revoked == "true" {
-		revoked = true
-	}
 	return UpdateTokenParams{
 		Token:     a.Token,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
-		Revoked:   sql.NullBool{Bool: revoked, Valid: true},
+		Revoked:   ParseBool(a.Revoked),
 		ID:        Si(a.ID),
 	}
 }
@@ -108,7 +99,7 @@ func MapStringToken(a Tokens) StringTokens {
 		Token:     a.Token,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
-		Revoked:   strconv.FormatBool(a.Revoked.Bool),
+		Revoked:   strconv.FormatBool(a.Revoked),
 	}
 }
 
@@ -116,7 +107,7 @@ func MapStringToken(a Tokens) StringTokens {
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapToken(a mdb.Tokens) Tokens {
 	return Tokens{
 		ID:        a.ID,
@@ -150,7 +141,7 @@ func (d Database) MapUpdateTokenParams(a UpdateTokenParams) mdb.UpdateTokenParam
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountTokens() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountToken(d.Context)
@@ -238,7 +229,7 @@ func (d Database) UpdateToken(s UpdateTokenParams) (*string, error) {
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapToken(a mdbm.Tokens) Tokens {
 	return Tokens{
 		ID:        int64(a.ID),
@@ -272,7 +263,7 @@ func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateToke
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountTokens() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountToken(d.Context)
@@ -364,7 +355,7 @@ func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapToken(a mdbp.Tokens) Tokens {
 	return Tokens{
 		ID:        int64(a.ID),
@@ -398,7 +389,7 @@ func (d PsqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbp.UpdateToken
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountTokens() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountToken(d.Context)

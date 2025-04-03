@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 	"strconv"
 
@@ -14,42 +13,42 @@ import (
 // STRUCTS
 // ////////////////////////////
 type UserOauth struct {
-	UserOauthID         int64          `json:"user_oauth_id"`
-	UserID              int64          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullString `json:"token_expires_at"`
-	DateCreated         sql.NullString `json:"date_created"`
+	UserOauthID         int64  `json:"user_oauth_id"`
+	UserID              int64  `json:"user_id"`
+	OauthProvider       string `json:"oauth_provider"`
+	OauthProviderUserID string `json:"oauth_provider_user_id"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token"`
+	TokenExpiresAt      string `json:"token_expires_at"`
+	DateCreated         string `json:"date_created"`
 }
 
 type CreateUserOauthParams struct {
-	UserID              int64          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullString `json:"token_expires_at"`
-	DateCreated         sql.NullString `json:"date_created"`
+	UserID              int64  `json:"user_id"`
+	OauthProvider       string `json:"oauth_provider"`
+	OauthProviderUserID string `json:"oauth_provider_user_id"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token"`
+	TokenExpiresAt      string `json:"token_expires_at"`
+	DateCreated         string `json:"date_created"`
 }
 
 type UpdateUserOauthParams struct {
-	AccessToken    sql.NullString `json:"access_token"`
-	RefreshToken   sql.NullString `json:"refresh_token"`
-	TokenExpiresAt sql.NullString `json:"token_expires_at"`
-	UserOauthID    int64          `json:"user_oauth_id"`
+	AccessToken    string `json:"access_token"`
+	RefreshToken   string `json:"refresh_token"`
+	TokenExpiresAt string `json:"token_expires_at"`
+	UserOauthID    int64  `json:"user_oauth_id"`
 }
 
 type UserOauthHistoryEntry struct {
-	UserOauthID         int64          `json:"user_oauth_id"`
-	UserID              int64          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullString `json:"token_expires_at"`
-	DateCreated         sql.NullString `json:"date_created"`
+	UserOauthID         int64  `json:"user_oauth_id"`
+	UserID              int64  `json:"user_id"`
+	OauthProvider       string `json:"oauth_provider"`
+	OauthProviderUserID string `json:"oauth_provider_user_id"`
+	AccessToken         string `json:"access_token"`
+	RefreshToken        string `json:"refresh_token"`
+	TokenExpiresAt      string `json:"token_expires_at"`
+	DateCreated         string `json:"date_created"`
 }
 
 type CreateUserOauthFormParams struct {
@@ -78,18 +77,18 @@ func MapCreateUserOauthParams(a CreateUserOauthFormParams) CreateUserOauthParams
 		UserID:              Si(a.UserID),
 		OauthProvider:       a.OauthProvider,
 		OauthProviderUserID: a.OauthProviderUserID,
-		AccessToken:         Ns(a.AccessToken),
-		RefreshToken:        Ns(a.RefreshToken),
-		TokenExpiresAt:      Ns(a.TokenExpiresAt),
-		DateCreated:         Ns(a.DateCreated),
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      a.TokenExpiresAt,
+		DateCreated:         a.DateCreated,
 	}
 }
 
 func MapUpdateUserOauthParams(a UpdateUserOauthFormParams) UpdateUserOauthParams {
 	return UpdateUserOauthParams{
-		AccessToken:    Ns(a.AccessToken),
-		RefreshToken:   Ns(a.RefreshToken),
-		TokenExpiresAt: Ns(a.TokenExpiresAt),
+		AccessToken:    a.AccessToken,
+		RefreshToken:   a.RefreshToken,
+		TokenExpiresAt: a.TokenExpiresAt,
 		UserOauthID:    Si(a.UserOauthID),
 	}
 }
@@ -100,10 +99,10 @@ func MapStringUserOauth(a UserOauth) StringUserOauth {
 		UserID:              strconv.FormatInt(a.UserID, 10),
 		OauthProvider:       a.OauthProvider,
 		OauthProviderUserID: a.OauthProviderUserID,
-		AccessToken:         a.AccessToken.String,
-		RefreshToken:        a.RefreshToken.String,
-		TokenExpiresAt:      a.TokenExpiresAt.String,
-		DateCreated:         a.DateCreated.String,
+		AccessToken:         a.AccessToken,
+		RefreshToken:        a.RefreshToken,
+		TokenExpiresAt:      a.TokenExpiresAt,
+		DateCreated:         a.DateCreated,
 	}
 }
 
@@ -231,8 +230,8 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
-		DateCreated:         Ns(a.DateCreated.String()),
+		TokenExpiresAt:      a.TokenExpiresAt.String(),
+		DateCreated:         a.DateCreated.String(),
 	}
 }
 
@@ -243,8 +242,8 @@ func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.Cr
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
-		DateCreated:         StringToNTime(a.DateCreated.String).Time,
+		TokenExpiresAt:      ParseTime(a.TokenExpiresAt),
+		DateCreated:         ParseTime(a.DateCreated),
 	}
 }
 
@@ -252,7 +251,7 @@ func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.Up
 	return mdbm.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
-		TokenExpiresAt: StringToNTime(a.TokenExpiresAt.String),
+		TokenExpiresAt: ParseTime(a.TokenExpiresAt),
 		UserOauthID:    int32(a.UserOauthID),
 	}
 }
@@ -346,8 +345,8 @@ func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      Ns(a.TokenExpiresAt.Time.String()),
-		DateCreated:         Ns(Nt(a.DateCreated)),
+		TokenExpiresAt:      a.TokenExpiresAt.String(),
+		DateCreated:         a.DateCreated.String(),
 	}
 }
 
@@ -358,8 +357,8 @@ func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.Cre
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
-		DateCreated:         StringToNTime(a.DateCreated.String),
+		TokenExpiresAt:      ParseTime(a.TokenExpiresAt),
+		DateCreated:         ParseTime(a.DateCreated),
 	}
 }
 
@@ -367,7 +366,7 @@ func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.Upd
 	return mdbp.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
-		TokenExpiresAt:      StringToNTime(a.TokenExpiresAt.String),
+		TokenExpiresAt: ParseTime(a.TokenExpiresAt),
 		UserOauthID:    int32(a.UserOauthID),
 	}
 }

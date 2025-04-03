@@ -76,6 +76,37 @@ type UpdateUserFormParams struct {
     DateModified string `json:"date_modified"`
 	UserID       string `json:"user_id"`
 }
+type UsersJSON struct {
+	UserID       int64          `json:"user_id"`
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         int64          `json:"role"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+}
+
+type CreateUserParamsJSON struct {
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         int64          `json:"role"`
+    DateCreated  NullString `json:"date_created"`
+    DateModified NullString `json:"date_modified"`
+}
+
+type UpdateUserParamsJSON struct {
+	Username     string         `json:"username"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
+	Hash         string         `json:"hash"`
+	Role         int64          `json:"role"`
+    DateCreated  NullString `json:"date_created"`
+    DateModified NullString `json:"date_modified"`
+	UserID       int64          `json:"user_id"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -116,6 +147,30 @@ func MapStringUser(a Users) StringUsers {
 		Role:         strconv.FormatInt(a.Role, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
+	}
+}
+func MapCreateUserJSONParams(a CreateUserParamsJSON) CreateUserParams {
+	return CreateUserParams{
+		Username:     a.Username,
+		Name:         a.Name,
+		Email:        a.Email,
+		Hash:         a.Hash,
+		Role:         a.Role,
+        DateCreated:  a.DateCreated.NullString,
+        DateModified: a.DateModified.NullString,
+	}
+}
+
+func MapUpdateUserJSONParams(a UpdateUserParamsJSON) UpdateUserParams {
+	return UpdateUserParams{
+		Username:     a.Username,
+		Name:         a.Name,
+		Email:        a.Email,
+		Hash:         a.Hash,
+		Role:         a.Role,
+        DateCreated:  a.DateCreated.NullString,
+        DateModified: a.DateModified.NullString,
+		UserID:       a.UserID,
 	}
 }
 

@@ -185,30 +185,30 @@ type Sessions struct {
 }
 
 type Tables struct {
-	ID       int32          `json:"id"`
-	Label    sql.NullString `json:"label"`
-	AuthorID int32          `json:"author_id"`
+	ID       int32  `json:"id"`
+	Label    string `json:"label"`
+	AuthorID int32  `json:"author_id"`
 }
 
 type Tokens struct {
-	ID        int32        `json:"id"`
-	UserID    int32        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  time.Time    `json:"issued_at"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	ID        int32     `json:"id"`
+	UserID    int32     `json:"user_id"`
+	TokenType string    `json:"token_type"`
+	Token     string    `json:"token"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
 }
 
 type UserOauth struct {
-	UserOauthID         int32          `json:"user_oauth_id"`
-	UserID              int32          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
-	DateCreated         time.Time      `json:"date_created"`
+	UserOauthID         int32     `json:"user_oauth_id"`
+	UserID              int32     `json:"user_id"`
+	OauthProvider       string    `json:"oauth_provider"`
+	OauthProviderUserID string    `json:"oauth_provider_user_id"`
+	AccessToken         string    `json:"access_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	TokenExpiresAt      time.Time `json:"token_expires_at"`
+	DateCreated         time.Time `json:"date_created"`
 }
 
 type Users struct {

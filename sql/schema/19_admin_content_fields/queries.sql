@@ -42,7 +42,6 @@ ORDER BY admin_content_field_id;
 
 -- name: CreateAdminContentField :one
 INSERT INTO admin_content_fields (
-    admin_content_field_id,    
     admin_route_id, 
     admin_content_data_id, 
     admin_field_id,
@@ -59,14 +58,12 @@ INSERT INTO admin_content_fields (
     ?,
     ?,
     ?,
-    ?,
     ?
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_content_field_id = ?,
-    admin_route_id = ?,
+SET  admin_route_id = ?,
     admin_content_data_id = ?,
     admin_field_id = ?,
     admin_field_value = ?,

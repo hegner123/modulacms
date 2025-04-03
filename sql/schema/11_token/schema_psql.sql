@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS tokens (
         UNIQUE,
     issued_at TIMESTAMP NOT NULL,
     expires_at TIMESTAMP NOT NULL,
-    revoked BOOLEAN DEFAULT FALSE
+    revoked BOOLEAN NOT NULL DEFAULT FALSE
 );

@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS user_oauth (
             ON DELETE CASCADE,
     oauth_provider TEXT NOT NULL,
     oauth_provider_user_id TEXT NOT NULL,
-    access_token TEXT,
-    refresh_token TEXT,
-    token_expires_at TEXT,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP
+    access_token  TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    token_expires_at TEXT NOT NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountUserOauths :one

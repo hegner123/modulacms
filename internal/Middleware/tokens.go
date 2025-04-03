@@ -65,7 +65,7 @@ func UserIsAuth(r *http.Request, conf config.Config) (*db.Users, error) {
 	fmt.Println("Tokens  match")
 
 	// Check if token is revoked
-	if accessToken.Revoked.Bool {
+	if accessToken.Revoked {
 		fmt.Println("Token revoked")
 		return nil, err
 	}

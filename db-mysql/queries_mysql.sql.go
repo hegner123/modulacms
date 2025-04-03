@@ -1385,7 +1385,7 @@ INSERT INTO tables (
 )
 `
 
-func (q *Queries) CreateTable(ctx context.Context, label sql.NullString) error {
+func (q *Queries) CreateTable(ctx context.Context, label string) error {
 	_, err := q.db.ExecContext(ctx, createTable, label)
 	return err
 }
@@ -1394,7 +1394,7 @@ const createTablesTable = `-- name: CreateTablesTable :exec
 CREATE TABLE IF NOT EXISTS tables (
     id INT AUTO_INCREMENT
         PRIMARY KEY,
-    label VARCHAR(255) NULL,
+    label VARCHAR(255) NOT NULL,
     author_id INT DEFAULT 1 NOT NULL,
     CONSTRAINT label
         UNIQUE (label),
@@ -1428,12 +1428,12 @@ INSERT INTO tokens (
 `
 
 type CreateTokenParams struct {
-	UserID    int32        `json:"user_id"`
-	TokenType string       `json:"token_type"`
-	Token     string       `json:"token"`
-	IssuedAt  time.Time    `json:"issued_at"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
+	UserID    int32     `json:"user_id"`
+	TokenType string    `json:"token_type"`
+	Token     string    `json:"token"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
 }
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error {
@@ -1457,7 +1457,7 @@ CREATE TABLE IF NOT EXISTS tokens (
     token VARCHAR(255) NOT NULL,
     issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
-    revoked TINYINT(1) DEFAULT 0 NULL,
+    revoked TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT token
         UNIQUE (token),
     CONSTRAINT fk_tokens_users
@@ -1535,13 +1535,13 @@ INSERT INTO user_oauth (
 `
 
 type CreateUserOauthParams struct {
-	UserID              int32          `json:"user_id"`
-	OauthProvider       string         `json:"oauth_provider"`
-	OauthProviderUserID string         `json:"oauth_provider_user_id"`
-	AccessToken         sql.NullString `json:"access_token"`
-	RefreshToken        sql.NullString `json:"refresh_token"`
-	TokenExpiresAt      sql.NullTime   `json:"token_expires_at"`
-	DateCreated         time.Time      `json:"date_created"`
+	UserID              int32     `json:"user_id"`
+	OauthProvider       string    `json:"oauth_provider"`
+	OauthProviderUserID string    `json:"oauth_provider_user_id"`
+	AccessToken         string    `json:"access_token"`
+	RefreshToken        string    `json:"refresh_token"`
+	TokenExpiresAt      time.Time `json:"token_expires_at"`
+	DateCreated         time.Time `json:"date_created"`
 }
 
 func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) error {
@@ -1564,10 +1564,10 @@ CREATE TABLE IF NOT EXISTS user_oauth (
     user_id INT NOT NULL,
     oauth_provider VARCHAR(255) NOT NULL,
     oauth_provider_user_id VARCHAR(255) NOT NULL,
-    access_token TEXT NULL,
-    refresh_token TEXT NULL,
-    token_expires_at TIMESTAMP NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
+    access_token TEXT NOT NULL,
+    refresh_token TEXT NOT NULL,
+    token_expires_at TIMESTAMP NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT user_oauth_ibfk_1
         FOREIGN KEY (user_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE CASCADE
@@ -4918,8 +4918,8 @@ WHERE id = ?
 `
 
 type UpdateTableParams struct {
-	Label sql.NullString `json:"label"`
-	ID    int32          `json:"id"`
+	Label string `json:"label"`
+	ID    int32  `json:"id"`
 }
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
@@ -4937,11 +4937,11 @@ WHERE id = ?
 `
 
 type UpdateTokenParams struct {
-	Token     string       `json:"token"`
-	IssuedAt  time.Time    `json:"issued_at"`
-	ExpiresAt time.Time    `json:"expires_at"`
-	Revoked   sql.NullBool `json:"revoked"`
-	ID        int32        `json:"id"`
+	Token     string    `json:"token"`
+	IssuedAt  time.Time `json:"issued_at"`
+	ExpiresAt time.Time `json:"expires_at"`
+	Revoked   bool      `json:"revoked"`
+	ID        int32     `json:"id"`
 }
 
 func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
@@ -5001,10 +5001,10 @@ WHERE user_oauth_id = ?
 `
 
 type UpdateUserOauthParams struct {
-	AccessToken    sql.NullString `json:"access_token"`
-	RefreshToken   sql.NullString `json:"refresh_token"`
-	TokenExpiresAt sql.NullTime   `json:"token_expires_at"`
-	UserOauthID    int32          `json:"user_oauth_id"`
+	AccessToken    string    `json:"access_token"`
+	RefreshToken   string    `json:"refresh_token"`
+	TokenExpiresAt time.Time `json:"token_expires_at"`
+	UserOauthID    int32     `json:"user_oauth_id"`
 }
 
 func (q *Queries) UpdateUserOauth(ctx context.Context, arg UpdateUserOauthParams) error {

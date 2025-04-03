@@ -10,9 +10,9 @@ import (
 	mdb "github.com/hegner123/modulacms/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type MediaDimensions struct {
 	MdID        int64          `json:"md_id"`
 	Label       sql.NullString `json:"label"`
@@ -58,6 +58,28 @@ type UpdateMediaDimensionFormParams struct {
 	AspectRatio string `json:"aspect_ratio"`
 	MdID        string `json:"md_id"`
 }
+type MediaDimensionsJSON struct {
+	MdID        int64      `json:"md_id"`
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
+}
+
+type CreateMediaDimensionParamsJSON struct {
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
+}
+
+type UpdateMediaDimensionParamsJSON struct {
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
+	MdID        int64      `json:"md_id"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -91,12 +113,30 @@ func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 		AspectRatio: a.AspectRatio.String,
 	}
 }
+func MapCreateMediaDimensionJSONParams(a CreateMediaDimensionParamsJSON) CreateMediaDimensionParams {
+	return CreateMediaDimensionParams{
+		Label:       a.Label.NullString,
+		Width:       a.Width.NullInt64,
+		Height:      a.Height.NullInt64,
+		AspectRatio: a.AspectRatio.NullString,
+	}
+}
+
+func MapUpdateMediaDimensionJSONParams(a UpdateMediaDimensionParamsJSON) UpdateMediaDimensionParams {
+	return UpdateMediaDimensionParams{
+		Label:       a.Label.NullString,
+		Width:       a.Width.NullInt64,
+		Height:      a.Height.NullInt64,
+		AspectRatio: a.AspectRatio.NullString,
+		MdID:        a.MdID,
+	}
+}
 
 ///////////////////////////////
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        a.MdID,
@@ -126,7 +166,7 @@ func (d Database) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) md
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d Database) CountMediaDimensions() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountMediaDimension(d.Context)
@@ -200,7 +240,7 @@ func (d Database) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, e
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        int64(a.MdID),
@@ -230,7 +270,7 @@ func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParam
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d MysqlDatabase) CountMediaDimensions() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountMediaDimension(d.Context)
@@ -308,7 +348,7 @@ func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*stri
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        int64(a.MdID),
@@ -338,7 +378,7 @@ func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams
 	}
 }
 
-///QUERIES
+// /QUERIES
 func (d PsqlDatabase) CountMediaDimensions() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountMediaDimension(d.Context)

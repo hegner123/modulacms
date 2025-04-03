@@ -74,16 +74,35 @@ type UpdateAdminRouteFormParams struct {
 	History      string `json:"history"`
 	Slug_2       string `json:"slug_2"`
 }
+type CreateAdminRouteParamsJSON struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+    AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+}
+type UpdateAdminRouteParamsJSON struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+	History      NullString `json:"history"`
+	Slug_2       string         `json:"slug_2"`
+}
 
 ///////////////////////////////
 //GENERIC
 //////////////////////////////
 func MapCreateAdminRouteParams(a CreateAdminRouteFormParams) CreateAdminRouteParams {
 	return CreateAdminRouteParams{
-		AuthorID:     Si(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       Si(a.Status),
+        AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
 		History:      Ns(a.History),
@@ -111,6 +130,30 @@ func MapStringAdminRoute(a AdminRoutes) StringAdminRoutes {
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
 		History:      a.History.String,
+	}
+}
+
+func MapCreateAdminRouteJSONParams(a CreateAdminRouteParamsJSON) CreateAdminRouteParams {
+	return CreateAdminRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+        AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+	}
+}
+func MapUpdateAdminRouteJSONParams(a UpdateAdminRouteParamsJSON) UpdateAdminRouteParams {
+	return UpdateAdminRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+		History:      a.History.NullString,
+		Slug_2:       a.Slug_2,
 	}
 }
 

@@ -664,7 +664,7 @@ func (d Database) SortTables() error {
 	tables := *tb
 	st := []string{}
 	for _, t := range tables {
-		st = append(st, t.Label.String)
+		st = append(st, t.Label)
 	}
 	sort.Strings(st)
 	for _, tt := range st {
@@ -691,7 +691,7 @@ func (d MysqlDatabase) SortTables() error {
 	tables := *tb
 	st := []string{}
 	for _, t := range tables {
-		st = append(st, t.Label.String)
+		st = append(st, t.Label)
 	}
 	sort.Strings(st)
 	for _, tt := range st {
@@ -718,7 +718,7 @@ func (d PsqlDatabase) SortTables() error {
 	tables := *tb
 	st := []string{}
 	for _, t := range tables {
-		st = append(st, t.Label.String)
+		st = append(st, t.Label)
 	}
 	sort.Strings(st)
 	for _, tt := range st {

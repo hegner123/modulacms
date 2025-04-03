@@ -56,10 +56,10 @@ type RoutesHistoryEntry struct {
 }
 
 type CreateRouteFormParams struct {
-	AuthorID     string `json:"author_id"`
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
+    AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
     History      string `json:"history"`
@@ -75,6 +75,37 @@ type UpdateRouteFormParams struct {
     History      string `json:"history"`
 	Slug_2       string `json:"slug_2"`
 }
+type RoutesJSON struct {
+	RouteID      int64          `json:"route_id"`
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+    AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+    History      NullString `json:"history"`
+}
+
+type CreateRouteParamsJSON struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+    AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+    History      NullString `json:"history"`
+}
+
+type UpdateRouteParamsJSON struct {
+	Slug         string         `json:"slug"`
+	Title        string         `json:"title"`
+	Status       int64          `json:"status"`
+	AuthorID     int64          `json:"author_id"`
+	DateCreated  NullString `json:"date_created"`
+	DateModified NullString `json:"date_modified"`
+    History      NullString `json:"history"`
+	Slug_2       string         `json:"slug_2"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -82,13 +113,13 @@ type UpdateRouteFormParams struct {
 
 func MapCreateRouteParams(a CreateRouteFormParams) CreateRouteParams {
 	return CreateRouteParams{
-		AuthorID:     Si(a.AuthorID),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       Si(a.Status),
-		History:      Ns(a.History),
+        AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
+        History:      Ns(a.History),
 	}
 }
 
@@ -97,10 +128,10 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       Si(a.Status),
-		History:      Ns(a.History),
 		AuthorID:     Si(a.AuthorID),
 		DateCreated:  Ns(a.DateCreated),
 		DateModified: Ns(a.DateModified),
+        History:      Ns(a.History),
 		Slug_2:       a.Slug_2,
 	}
 }
@@ -108,13 +139,37 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 func MapStringRoute(a Routes) StringRoutes {
 	return StringRoutes{
 		RouteID:      strconv.FormatInt(a.RouteID, 10),
-		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       strconv.FormatInt(a.Status, 10),
-		History:      a.History.String,
+        AuthorID:     strconv.FormatInt(a.AuthorID, 10),
 		DateCreated:  a.DateCreated.String,
 		DateModified: a.DateModified.String,
+        History:      a.History.String,
+	}
+}
+func MapCreateRouteJSONParams(a CreateRouteParamsJSON) CreateRouteParams {
+	return CreateRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+        AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+        History:      a.History.NullString,
+	}
+}
+
+func MapUpdateRouteJSONParams(a UpdateRouteParamsJSON) UpdateRouteParams {
+	return UpdateRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated.NullString,
+		DateModified: a.DateModified.NullString,
+        History:      a.History.NullString,
+		Slug_2:       a.Slug_2,
 	}
 }
 

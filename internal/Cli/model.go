@@ -11,7 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	db "github.com/hegner123/modulacms/internal/Db"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
@@ -66,7 +65,6 @@ type model struct {
 	verbose      bool
 	controller   CliInterface
 	history      []Page
-	Query        db.SQLQuery
 	QueryResults []sql.Row
 	time         time.Time
 }

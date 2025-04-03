@@ -76,6 +76,37 @@ type UpdateSessionFormParams struct {
 	SessionData string `json:"session_data"`
 	SessionID   string `json:"session_id"`
 }
+type SessionsJSON struct {
+	SessionID   int64      `json:"session_id"`
+	UserID      int64      `json:"user_id"`
+	CreatedAt   NullString `json:"created_at"`
+	ExpiresAt   NullString `json:"expires_at"`
+	LastAccess  NullString `json:"last_access"`
+	IpAddress   NullString `json:"ip_address"`
+	UserAgent   NullString `json:"user_agent"`
+	SessionData NullString `json:"session_data"`
+}
+
+type CreateSessionParamsJSON struct {
+	UserID      int64      `json:"user_id"`
+	CreatedAt   NullString `json:"created_at"`
+	ExpiresAt   NullString `json:"expires_at"`
+	LastAccess  NullString `json:"last_access"`
+	IpAddress   NullString `json:"ip_address"`
+	UserAgent   NullString `json:"user_agent"`
+	SessionData NullString `json:"session_data"`
+}
+
+type UpdateSessionParamsJSON struct {
+	UserID      int64      `json:"user_id"`
+	CreatedAt   NullString `json:"created_at"`
+	ExpiresAt   NullString `json:"expires_at"`
+	LastAccess  NullString `json:"last_access"`
+	IpAddress   NullString `json:"ip_address"`
+	UserAgent   NullString `json:"user_agent"`
+	SessionData NullString `json:"session_data"`
+	SessionID   string     `json:"session_id"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -116,6 +147,30 @@ func MapStringSession(a Sessions) StringSessions {
 		IpAddress:   a.IpAddress.String,
 		UserAgent:   a.UserAgent.String,
 		SessionData: a.SessionData.String,
+	}
+}
+func MapCreateSessionJSONParams(a CreateSessionParamsJSON) CreateSessionParams {
+	return CreateSessionParams{
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt.NullString,
+		ExpiresAt:   a.ExpiresAt.NullString,
+		LastAccess:  a.LastAccess.NullString,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
+	}
+}
+
+func MapUpdateSessionJSONParams(a UpdateSessionParamsJSON) UpdateSessionParams {
+	return UpdateSessionParams{
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt.NullString,
+		ExpiresAt:   a.ExpiresAt.NullString,
+		LastAccess:  a.LastAccess.NullString,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
+		SessionID:   a.SessionID,
 	}
 }
 

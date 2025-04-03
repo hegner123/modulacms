@@ -176,7 +176,6 @@ func (d Database) MapAdminContentField(a mdb.AdminContentFields) AdminContentFie
 func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdb.CreateAdminContentFieldParams {
 	return mdb.CreateAdminContentFieldParams{
 		AdminRouteID:        a.AdminRouteID,
-		AdminContentFieldID: a.AdminContentFieldID,
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
@@ -406,7 +405,6 @@ func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminConte
 func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbp.CreateAdminContentFieldParams {
 	return mdbp.CreateAdminContentFieldParams{
 		AdminRouteID:        Ni32(a.AdminRouteID.Int64),
-		AdminContentFieldID: int32(a.AdminContentFieldID),
 		AdminContentDataID:  int32(a.AdminContentDataID),
 		AdminFieldID:        int32(a.AdminFieldID),
 		AdminFieldValue:     a.AdminFieldValue,
