@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS tokens (
         UNIQUE,
     issued_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
-    revoked BOOLEAN DEFAULT 0
+    revoked BOOLEAN NOT NULL DEFAULT 0
 );
 
 -- name: CountToken :one
