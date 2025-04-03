@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/paginator"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
@@ -41,10 +42,13 @@ type model struct {
 	cursor       int
 	focusIndex   int
 	page         Page
+	paginator    paginator.Model
+	pageMod      int
+	maxRows      int
 	table        string
 	pageMenu     []*Page
 	pages        []Page
-    datatypeMenu []string
+	datatypeMenu []string
 	tables       []string
 	selected     map[int]struct{}
 	headers      []string
@@ -81,11 +85,19 @@ func InitialModel(v *bool) model {
 		utility.DefaultLogger.Fatal("", err)
 	}
 	fonts := ParseTitleFonts(fs)
+	p := paginator.New()
+	p.Type = paginator.Dots
+
+	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
+	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
 	return model{
 		titleFont:  0,
 		titles:     LoadTitles(fonts),
 		focusIndex: 0,
 		page:       *homePage,
+		paginator:  p,
+		pageMod:    0,
+		maxRows:    10,
 		tables:     GetTables(),
 		table:      "",
 		pageMenu: []*Page{

@@ -23,7 +23,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case readInterface:
 		return m.UpdateDatabaseRead(msg)
 	case readSingleInterface:
-		return m.UpdateDatabaseRead(msg)
+		return m.UpdateDatabaseReadSingle(msg)
 	case updateInterface:
 		return m.UpdateDatabaseUpdate(msg)
 	case updateFormInterface:

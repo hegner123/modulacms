@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"embed"
-	_ "embed"
 	"fmt"
 	"io/fs"
 	"log"

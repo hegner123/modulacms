@@ -16,7 +16,7 @@ const (
 	Field                 DBTable = "fields"
 	MediaT                DBTable = "media"
 	Media_dimension       DBTable = "media_dimensions"
-	Permission            DBTable = "permission"
+	Permission            DBTable = "permissions"
 	Role                  DBTable = "roles"
 	Route                 DBTable = "routes"
 	Session               DBTable = "sessions"

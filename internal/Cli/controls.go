@@ -131,6 +131,7 @@ func (m *model) DatabaseCreateControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
@@ -150,22 +151,38 @@ func (m *model) DatabaseReadControls(msg tea.KeyMsg, option int) (tea.Model, tea
 			m.cursor--
 		}
 	case "down", "j":
-		if m.cursor < option-1 {
+		if m.cursor < m.maxRows-1 {
 			m.cursor++
 		}
-	case "h", "left", "shift+tab", "backspace":
+	case "h", "shift+tab", "backspace":
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
 		m.pageMenu = m.page.Children
+	case "left":
+		if m.pageMod > 0 {
+			m.pageMod--
+		}
+	case "right":
+		if m.pageMod < len(m.rows)/m.maxRows {
+			m.pageMod++
+		}
 
 	//Action
 	case "enter", "l":
 		m.PushHistory(m.page)
+		// Calculate the actual record index by taking the current page number (pageMod) and multiplying by maxRows
+		// Then add the cursor position to get the correct index in the rows array
+		recordIndex := (m.pageMod * m.maxRows) + m.cursor
+		// Only update if the calculated index is valid
+		if recordIndex < len(m.rows) {
+			m.cursor = recordIndex
+		}
 		m.page = m.pages[READSINGLEPAGE]
 		m.controller = m.page.Controller
 	}
-	return m, nil
+	m.paginator, cmd = m.paginator.Update(msg)
+	return m, cmd
 }
 
 func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
@@ -188,22 +205,15 @@ func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Mode
 			m.cursor--
 		}
 	case "down", "j":
-		if m.cursor < option-1 {
+		if m.cursor < len(m.rows)-1 {
 			m.cursor++
 		}
 	case "h", "shift+tab", "backspace":
-		m.cursor = 0
+		m.cursor = m.cursor - (m.maxRows * m.pageMod)
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
 		m.pageMenu = m.page.Children
 
-	//Action
-	case "enter", "l":
-		m.PushHistory(m.page)
-		m.cursor = 0
-		m.page = *m.page.Next
-		m.controller = m.page.Controller
-		m.pageMenu = m.page.Children
 	}
 	return m, nil
 }
@@ -249,6 +259,7 @@ func (m *model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, t
 		m.controller = m.page.Controller
 		m.pageMenu = m.page.Children
 	}
+	m.paginator.SetTotalPages(len(m.headers))
 	return m, nil
 }
 
@@ -315,7 +326,7 @@ func (m *model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, t
 		if m.cursor < len(m.rows)-1 {
 			m.cursor++
 		}
-	case "h", "left", "shift+tab", "backspace":
+	case "h", "shift+tab", "backspace":
 		m.cursor = 0
 		m.page = *m.PopHistory()
 		m.controller = m.page.Controller
@@ -329,6 +340,7 @@ func (m *model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (tea.Model, t
 		}
 		m.headers, m.rows, _ = GetColumnsRows(m.table)
 	}
+	m.paginator.SetTotalPages(len(m.headers))
 	return m, nil
 }
 

@@ -7,7 +7,19 @@
 
 ## Overview
 
-A fully modular CMS backend to facilitate a custom backend experience and a custom frontend experience. Designed to support oauth integration, s3-compatiable bucket usage, and SQL databases.  Features include fully customizable datatypes and fields for defining what inputs are available to the end user, dead simple syncing with Production, Staging, Development, and Local envrionments natively supported with end points for extension, and customizing how content cascades through environments.
+A fully modular CMS server featuring content management via ssh. ModulaCMS facilitates building custom admin experience and a custom client schema.  Designed to support Oauth integration, S3-compatiable bucket usage, and SQL databases. 
+
+
+## Features
+ * ssh access for content management via terminal
+ * supports external editors for text areas
+ * Oauth configuration for admin or client users
+ * S3 bucket support for image hosting
+ * Backups and restore
+ * SQL database support for sqlite, Mysql, and Postgres
+ * SQL backup and restore functions
+ * Easy sync between local, dev, and production environments
+ * Image upload
 
 
 

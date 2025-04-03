@@ -24,6 +24,8 @@ func (m *model) PageRouter() {
 			if err != nil {
 				m.body = err.Error()
 			}
+            m.paginator.PerPage = m.maxRows
+			m.paginator.SetTotalPages(len(m.rows))
 			m.page = *m.pageMenu[m.cursor]
 			m.controller = m.page.Controller
 		case readPage:
@@ -31,6 +33,8 @@ func (m *model) PageRouter() {
 			if err != nil {
 				m.body = err.Error()
 			}
+            m.paginator.PerPage = m.maxRows
+			m.paginator.SetTotalPages(len(m.rows))
 			m.page = *m.pageMenu[m.cursor]
 			m.controller = m.page.Controller
 		case deletePage:
@@ -38,6 +42,8 @@ func (m *model) PageRouter() {
 			if err != nil {
 				m.body = err.Error()
 			}
+            m.paginator.PerPage = m.maxRows
+			m.paginator.SetTotalPages(len(m.rows))
 			m.page = *m.pageMenu[m.cursor]
 			m.controller = m.page.Controller
 		}
@@ -51,6 +57,10 @@ func (m *model) PageRouter() {
 			m.body = err.Error()
 		}
 		m.page = m.pages[UPDATEFORMPAGE]
+		m.controller = m.page.Controller
+	case READPAGE:
+
+		m.page = m.pages[READSINGLEPAGE]
 		m.controller = m.page.Controller
 	default:
 		m.page = *m.pageMenu[m.cursor]

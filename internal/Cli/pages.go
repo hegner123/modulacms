@@ -12,7 +12,6 @@ import (
 
 type PageIndex int
 
-
 type Page struct {
 	Index      PageIndex
 	Controller CliInterface
@@ -141,14 +140,16 @@ func (m model) PageCreate() string {
 func (m model) PageRead() string {
 	m.header = m.header + fmt.Sprintf("Read %s", m.table)
 	f, _ := tea.LogToFile("debug.log", "debug")
-	h, c, err := GetColumnsRows(m.table)
+	h, r, err := GetColumnsRows(m.table)
 	if err != nil {
 		utility.DefaultLogger.Finfo(f, "", err)
 	}
+	start, end := m.paginator.GetSliceBounds(len(m.rows))
 
-	t := StyledTable(h, c, m.cursor)
+	t := StyledTable(h, r[start:end], m.cursor)
 
 	m.body = t.Render()
+	m.body += "\n\n" + m.paginator.View()
 	return m.RenderUI()
 }
 

@@ -30,6 +30,9 @@ func Active(s string) string {
 func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 	var headers []string
 	var rows [][]string
+
+    // if headers pass limit
+    // create new variables of slices up to limit
 	max := 10
 	if len(hdrs) > max {
 		headers = hdrs[:max]
@@ -42,8 +45,6 @@ func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 		rows = r
 	}
 
-	// if headers pass limit
-	// create new variables of slices up to limit
 	var (
 		headerStyle  = lipgloss.NewStyle().Foreground(Purple).Bold(true).Align(lipgloss.Center)
 		cellStyle    = lipgloss.NewStyle().MaxWidth(10)

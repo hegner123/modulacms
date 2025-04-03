@@ -28,6 +28,8 @@ func (m model) RenderStatusTable() string {
 	} else {
 		history = "History\nPrev: No History\n"
 	}
+    if &m.maxRows != nil {
+    }
 	var formMapStatus []string
 	for i, v := range m.formValues {
 		s := fmt.Sprintf("%s: %v\n", m.headers[i], *v)
