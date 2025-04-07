@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -58,18 +58,18 @@ type UpdatePermissionFormParams struct {
 
 func MapCreatePermissionParams(a CreatePermissionFormParams) CreatePermissionParams {
 	return CreatePermissionParams{
-		TableID: Si(a.TableID),
-		Mode:    Si(a.Mode),
+		TableID: StringToInt64(a.TableID),
+		Mode:    StringToInt64(a.Mode),
 		Label:   a.Label,
 	}
 }
 
 func MapUpdatePermissionParams(a UpdatePermissionFormParams) UpdatePermissionParams {
 	return UpdatePermissionParams{
-		TableID:      Si(a.TableID),
-		Mode:         Si(a.Mode),
+		TableID:      StringToInt64(a.TableID),
+		Mode:         StringToInt64(a.Mode),
 		Label:        a.Label,
-		PermissionID: Si(a.PermissionID),
+		PermissionID: StringToInt64(a.PermissionID),
 	}
 }
 

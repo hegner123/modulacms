@@ -18,7 +18,7 @@ func (m model) PageDefineDatatype() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }
 
@@ -33,6 +33,6 @@ func (m model) PageDatatypeMenu() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice)
 	}
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }

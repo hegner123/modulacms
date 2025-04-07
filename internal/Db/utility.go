@@ -68,7 +68,7 @@ func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (ColumnN
 	columnsNT := make(ColumnNameType)
 	columnsIN := make(ColumnIndexName)
 
-	// PRAGMA table_info returns the following columns:
+	// PRAGMA table_info returns the following columns
 	// cid, name, type, notnull, dflt_value, pk
 	index := 0
 	for rows.Next() {

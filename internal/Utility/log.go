@@ -2,14 +2,14 @@ package utility
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 // LogLevel defines the severity of a log message
@@ -23,19 +23,30 @@ const (
 	FATAL
 )
 
+func NewLogFile() *os.File {
+	logField, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		fmt.Println(err)
+	}
+	return logField
+}
+
 // Logger represents a simple structured logger with levels
 type Logger struct {
-	level  LogLevel
-	prefix string
+	level   LogLevel
+	prefix  string
+	logFile *os.File
 }
 
 var DefaultLogger = NewLogger(DEBUG)
 
 // NewLogger creates a new logger with the specified minimum level
 func NewLogger(level LogLevel) *Logger {
+	f := NewLogFile()
 	return &Logger{
-		level:  level,
-		prefix: "",
+		level:   level,
+		prefix:  "",
+		logFile: f,
 	}
 }
 
@@ -172,37 +183,37 @@ func (l *Logger) Fatal(message string, err error, args ...any) {
 }
 
 // Debug logs a debug message
-func (l *Logger) Fdebug(w io.Writer, message string, args ...any) {
+func (l *Logger) Fdebug(message string, args ...any) {
 	if l.level <= DEBUG {
-		fmt.Fprintln(w, formatLogMessage(DEBUG, message, nil, args...))
+		fmt.Fprintln(l.logFile, formatLogMessage(DEBUG, message, nil, args...))
 	}
 }
 
 // Info logs an informational message
-func (l *Logger) Finfo(w io.Writer, message string, args ...any) {
+func (l *Logger) Finfo(message string, args ...any) {
 	if l.level <= INFO {
-		fmt.Fprintln(w, formatLogMessage(INFO, message, nil, args...))
+		fmt.Fprintln(l.logFile, formatLogMessage(INFO, message, nil, args...))
 	}
 }
 
 // Warn logs a warning message
-func (l *Logger) Fwarn(w io.Writer, message string, err error, args ...any) {
+func (l *Logger) Fwarn(message string, err error, args ...any) {
 	if l.level <= WARN {
-		fmt.Fprintln(w, formatLogMessage(WARN, message, err, args...))
+		fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
 	}
 }
 
 // Error logs an error message
-func (l *Logger) Ferror(w io.Writer, message string, err error, args ...any) {
+func (l *Logger) Ferror(message string, err error, args ...any) {
 	if l.level <= ERROR {
-		fmt.Fprintln(w, formatLogMessage(ERROR, message, err, args...))
+		fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
 	}
 }
 
 // Fatal logs an error message and exits the program
-func (l *Logger) Ffatal(w io.Writer, message string, err error, args ...any) {
+func (l *Logger) Ffatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
-		fmt.Fprintln(w, formatLogMessage(FATAL, message, err, args...))
+		fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
 		os.Exit(1)
 	}
 }

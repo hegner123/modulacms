@@ -73,7 +73,7 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	row := *rowPtr
 
 	params := MapMediaParams(row)
-	params.Srcset = db.Ns(string(newSrcSet))
+	params.Srcset = db.StringToNullString(string(newSrcSet))
 	_, err = d.UpdateMedia(params)
 	if err != nil {
 		return err
@@ -96,7 +96,7 @@ func MapMediaParams(a db.Media) db.UpdateMediaParams {
 		Srcset:       a.Srcset,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
-		DateModified: db.Ns(utility.TimestampReadable()),
+		DateModified: db.StringToNullString(utility.TimestampReadable()),
 		MediaID:      a.MediaID,
 	}
 

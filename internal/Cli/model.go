@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/paginator"
-	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -67,8 +67,12 @@ type model struct {
 	body         string
 	footer       string
 	verbose      bool
+	content      string
+	ready        bool
+	err          string
+	viewport     viewport.Model
 	controller   CliInterface
-	history      []Page
+	history      []PageHistory
 	QueryResults []sql.Row
 	time         time.Time
 }
@@ -100,6 +104,7 @@ func InitialModel(v *bool) model {
 		maxRows:    10,
 		tables:     GetTables(),
 		table:      "",
+		viewport:   viewport.Model{},
 		pageMenu: []*Page{
 			cmsPage,
 			databasePage,
@@ -128,21 +133,19 @@ func InitialModel(v *bool) model {
 		formMap:    make([]string, 0),
 		controller: pageInterface,
 		focus:      PAGEFOCUS,
-		history:    []Page{},
+		history:    []PageHistory{},
 		verbose:    verbose,
 	}
 }
 
 func (m model) GetIDRow() int64 {
-	logFile, _ := tea.LogToFile("debug.log", "debug")
-	defer logFile.Close()
 	rows := m.rows
 	row := rows[m.cursor]
 	rowCol := row[0]
-	utility.DefaultLogger.Finfo(logFile, "rowCOl", rowCol)
+	utility.DefaultLogger.Finfo("rowCOl", rowCol)
 	id, err := strconv.ParseInt(rowCol, 10, 64)
 	if err != nil {
-		utility.DefaultLogger.Ferror(logFile, "", err)
+		utility.DefaultLogger.Ferror( "", err)
 	}
 	return id
 

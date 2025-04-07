@@ -8,18 +8,17 @@ import (
 )
 
 var (
-	width     = 96
-	White     = lipgloss.Color("#ffffff")
-	LightGray = lipgloss.Color("#a3a3a3")
-	Gray      = lipgloss.Color("#939393")
-	Black     = lipgloss.Color("#000000")
-
-	Purple      = lipgloss.Color("#6612e3")
-	LightPurple = lipgloss.Color("#8347de")
-	Emerald     = lipgloss.Color("#00CC66")
-	Rose        = lipgloss.Color("#D90368")
-	Yellow      = lipgloss.Color("#F1C40F")
-	Orange      = lipgloss.Color("#F75C03")
+	width       = 96
+	White       = lipgloss.CompleteColor{TrueColor: "#FFFFFF", ANSI256: "15", ANSI: "15"}
+	LightGray   = lipgloss.CompleteColor{TrueColor: "#a3a3a3", ANSI256: "254", ANSI: "7"}
+	Gray        = lipgloss.CompleteColor{TrueColor: "#939393", ANSI256: "250", ANSI: "8"}
+	Black       = lipgloss.CompleteColor{TrueColor: "#000000", ANSI256: "0", ANSI: "0"}
+	Purple      = lipgloss.CompleteColor{TrueColor: "#6612e3", ANSI256: "129", ANSI: "5"}
+	LightPurple = lipgloss.CompleteColor{TrueColor: "#8347de", ANSI256: "98", ANSI: "13"}
+	Emerald     = lipgloss.CompleteColor{TrueColor: "#00CC66", ANSI256: "41", ANSI: "2"}
+	Rose        = lipgloss.CompleteColor{TrueColor: "#D90368", ANSI256: "161", ANSI: "1"}
+	Yellow      = lipgloss.CompleteColor{TrueColor: "#F1C40F", ANSI256: "220", ANSI: "11"}
+	Orange      = lipgloss.CompleteColor{TrueColor: "#F75C03", ANSI256: "202", ANSI: "3"}
 )
 
 func Active(s string) string {
@@ -31,8 +30,8 @@ func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 	var headers []string
 	var rows [][]string
 
-    // if headers pass limit
-    // create new variables of slices up to limit
+	// if headers pass limit
+	// create new variables of slices up to limit
 	max := 10
 	if len(hdrs) > max {
 		headers = hdrs[:max]
@@ -76,7 +75,7 @@ func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 
 func RenderEntry(h []string, e []string) string {
 	var row []string
-	keyStyle := lipgloss.NewStyle().Width(20).Align(lipgloss.Left,lipgloss.Top).Foreground(LightGray)
+	keyStyle := lipgloss.NewStyle().Width(20).Align(lipgloss.Left, lipgloss.Top).Foreground(LightGray)
 	valueStyle := lipgloss.NewStyle().Foreground(LightGray).Width(50)
 
 	for i, en := range e {
@@ -109,26 +108,47 @@ func RenderFooter(s string) string {
 func RenderHeading(s string) string {
 	headingStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(LightPurple)
+		Foreground(Purple)
 	return headingStyle.Render(s)
 }
 
-func RenderBorder(s string) string {
+func RenderBorderFlex(s string) string {
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(Purple).
 		Padding(1)
 	return style.Render(s)
 }
-
-func RenderBlock(s string) string {
+func RenderBlockFlex(s string) string {
 	blockStyle := lipgloss.NewStyle().
-		Align(lipgloss.Left).
-		Foreground(lipgloss.Color("#FAFAFA")).
-		Background(Purple).
-		Width(24)
+		Align(lipgloss.Center).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(Purple).
+		Foreground(LightGray).
+		Background(Rose).
+        Padding(1)
 	return blockStyle.Render(s)
-
+}
+func RenderBorderFixed(s string) string {
+	style := lipgloss.NewStyle().
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(Purple).
+		Padding(1).
+        Width(75).
+        Height(20)
+	return style.Render(s)
+}
+func RenderBlockFixed(s string) string {
+	blockStyle := lipgloss.NewStyle().
+		Align(lipgloss.Center).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(Purple).
+		Foreground(LightGray).
+		Background(Rose).
+        Padding(1).
+        Width(75).
+        Height(20)
+	return blockStyle.Render(s)
 }
 
 func (m model) RenderStatusBar() string {
@@ -144,18 +164,18 @@ func (m model) RenderStatusBar() string {
 
 	statusStyle := lipgloss.NewStyle().
 		Inherit(statusBarStyle).
-		Foreground(lipgloss.Color("#FFFDF5")).
-		Background(lipgloss.Color("#FF5F87")).
+		Foreground(LightGray).
+		Background(Rose).
 		Padding(0, 1).
 		MarginRight(1)
 
 	encodingStyle := statusNugget.
-		Background(lipgloss.Color("#A550DF")).
+		Background(LightPurple).
 		Align(lipgloss.Right)
 
 	statusText := lipgloss.NewStyle().Inherit(statusBarStyle)
 
-	fishCakeStyle := statusNugget.Background(lipgloss.Color("#6124DF"))
+	fishCakeStyle := statusNugget.Background(Purple)
 	w := lipgloss.Width
 	var v string
 
@@ -178,7 +198,7 @@ func (m model) RenderStatusBar() string {
 		fishCake,
 	)
 
-	doc.WriteString(statusBarStyle.Width(width).Render(bar))
+	doc.WriteString(statusBarStyle.Width(m.width).Render(bar))
 	return statusBarStyle.Render(doc.String())
 
 }

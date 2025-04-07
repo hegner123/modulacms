@@ -2,24 +2,19 @@
 DROP TABLE admin_content_data;
 
 -- name: CreateAdminContentDataTable :exec
-CREATE TABLE admin_content_data (
-    admin_content_data_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER
-        REFERENCES admin_content_data
-            ON DELETE CASCADE,
-    admin_route_id INTEGER NOT NULL
-        REFERENCES admin_routes
-            ON DELETE CASCADE,
-    admin_datatype_id INTEGER NOT NULL
-        REFERENCES admin_datatypes
-            ON DELETE SET NULL,
-    author_id INTEGER NOT NULL
-        REFERENCES users
-            ON DELETE SET DEFAULT,
+CREATE TABLE IF NOT EXISTS admin_content_data (
+    admin_content_data_id INTEGER PRIMARY KEY,
+    parent_id INTEGER,
+    admin_route_id INTEGER NOT NULL,
+    admin_datatype_id INTEGER NOT NULL,
+    author_id INTEGER NOT NULL DEFAULT 1,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL
+    history TEXT,
+    FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
+    FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
 );
 
 -- name: CountAdminContentData :one
@@ -41,8 +36,8 @@ ORDER BY admin_content_data_id;
 
 -- name: CreateAdminContentData :one
 INSERT INTO admin_content_data (
-    admin_route_id,
     parent_id,
+    admin_route_id,
     admin_datatype_id,
     author_id,
     date_created,
@@ -60,8 +55,8 @@ INSERT INTO admin_content_data (
 
 -- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
-SET admin_route_id = ?,
-    parent_id = ?,
+SET parent_id = ?,
+    admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
     date_created = ?,

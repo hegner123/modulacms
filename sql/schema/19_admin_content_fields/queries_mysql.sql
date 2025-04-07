@@ -50,8 +50,14 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value, 
+    author_id,
+    date_created,
+    date_modified,
     history
 ) VALUES (
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -64,10 +70,13 @@ SELECT * FROM admin_content_fields WHERE admin_content_field_id = LAST_INSERT_ID
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_route_id=?,
+SET admin_route_id=?,
     admin_content_data_id=?,
     admin_field_id=?,
     admin_field_value=?, 
+    author_id=?,
+    date_created=?,
+    date_modified=?,
     history=?
 WHERE admin_content_field_id = ?;
 

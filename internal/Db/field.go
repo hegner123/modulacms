@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -116,28 +116,28 @@ type UpdateFieldParamsJSON struct {
 
 func MapCreateFieldParams(a CreateFieldFormParams) CreateFieldParams {
 	return CreateFieldParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 	}
 }
 
 func MapUpdateFieldParams(a UpdateFieldFormParams) UpdateFieldParams {
 	return UpdateFieldParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
-		FieldID:      Si(a.FieldID),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
+		FieldID:      StringToInt64(a.FieldID),
 	}
 }
 func MapCreateFieldJSONParams(a CreateFieldParamsJSON) CreateFieldParams {
@@ -286,7 +286,7 @@ func (d Database) ListFields() (*[]Fields, error) {
 
 func (d Database) ListFieldsByDatatypeID(id int64) (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListFieldByDatatypeID(d.Context, Ni64(id))
+	rows, err := queries.ListFieldByDatatypeID(d.Context, Int64ToNullInt64(id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Fields: %v\n", err)
 	}
@@ -317,19 +317,19 @@ func (d Database) UpdateField(s UpdateFieldParams) (*string, error) {
 func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      int64(a.FieldID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 		History:      a.History,
 	}
 }
 func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFieldParams {
 	return mdbm.CreateFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
@@ -341,7 +341,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 }
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
@@ -414,7 +414,7 @@ func (d MysqlDatabase) ListFields() (*[]Fields, error) {
 }
 func (d MysqlDatabase) ListFieldsByDatatypeID(id int64) (*[]Fields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListFieldByDatatypeID(d.Context, Ni32(id))
+	rows, err := queries.ListFieldByDatatypeID(d.Context, Int64ToNullInt32(id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Fields: %v\n", err)
 	}
@@ -444,19 +444,19 @@ func (d MysqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
 func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	return Fields{
 		FieldID:      int64(a.FieldID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 		History:      a.History,
 	}
 }
 func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateFieldParams {
 	return mdbp.CreateFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
@@ -468,7 +468,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 }
 func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateFieldParams {
 	return mdbp.UpdateFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         a.Data,
 		Type:         a.Type,
@@ -537,7 +537,7 @@ func (d PsqlDatabase) ListFields() (*[]Fields, error) {
 }
 func (d PsqlDatabase) ListFieldsByDatatypeID(id int64) (*[]Fields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListFieldByDatatypeID(d.Context, Ni32(id))
+	rows, err := queries.ListFieldByDatatypeID(d.Context, Int64ToNullInt32(id))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Fields: %v\n", err)
 	}

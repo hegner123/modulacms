@@ -12,7 +12,7 @@ func CreateDatatypeDefinition(dt db.CreateDatatypeParams, f []db.CreateFieldPara
 	datatype := d.CreateDatatype(dt)
 	result := []db.Fields{}
 	for _, v := range f {
-		v.ParentID = db.Ni64(datatype.DatatypeID)
+		v.ParentID = db.Int64ToNullInt64(datatype.DatatypeID)
 		r := d.CreateField(v)
 		result = append(result, r)
 	}

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	"github.com/sqlc-dev/pqtype"
 )
 
@@ -63,7 +63,7 @@ func MapUpdateRoleParams(a UpdateRoleFormParams) UpdateRoleParams {
 	return UpdateRoleParams{
 		Label:       a.Label,
 		Permissions: a.Permissions,
-		RoleID:      Si(a.RoleID),
+		RoleID:      StringToInt64(a.RoleID),
 	}
 }
 
@@ -189,14 +189,14 @@ func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
 	return mdbm.CreateRoleParams{
 		Label:       a.Label,
-		Permissions: Ns(a.Permissions),
+		Permissions: StringToNullString(a.Permissions),
 	}
 }
 
 func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
 	return mdbm.UpdateRoleParams{
 		Label:       a.Label,
-		Permissions: Ns(a.Permissions),
+		Permissions: StringToNullString(a.Permissions),
 		RoleID:      int32(a.RoleID),
 	}
 }

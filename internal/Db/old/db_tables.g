@@ -1,6 +1,6 @@
 package db
 
-import mdb "github.com/hegner123/modulacms/db-sqlite"
+import mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 
 func (d Database) CreateAllTables() error {
     if err := d.CreatePermissionTable(); err != nil {

@@ -7,7 +7,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	cli "github.com/hegner123/modulacms/internal/Cli"
 )
 
 type DBDriver int
@@ -163,7 +162,7 @@ func (m *installModel) FormView() string {
 }
 
 func (m *installModel) RenderStatus() string {
-	style := lipgloss.NewStyle().Padding(0, 4).Background(cli.LightGray).Foreground(cli.Black)
+	style := lipgloss.NewStyle().Padding(0, 4)
 	doc := lipgloss.JoinVertical(lipgloss.Top,
 		fmt.Sprintf("Customize Config %v", m.CustomConfig),
 		fmt.Sprintf("DB Driver %v", m.DbDriver),

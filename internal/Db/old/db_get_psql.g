@@ -3,7 +3,7 @@ package db
 import (
 	_ "embed"
 
-	mdbp "github.com/hegner123/modulacms/db-psql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 )
 
 

@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -52,15 +52,15 @@ type UpdateDatatypeFieldFormParams struct {
 
 func MapCreateDatatypeFieldParams(a CreateDatatypeFieldFormParams) CreateDatatypeFieldParams {
 	return CreateDatatypeFieldParams{
-		DatatypeID: Si(a.DatatypeID),
-		FieldID:    Si(a.FieldID),
+		DatatypeID: StringToInt64(a.DatatypeID),
+		FieldID:    StringToInt64(a.FieldID),
 	}
 }
 
 func MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldFormParams) UpdateDatatypeFieldParams {
 	return UpdateDatatypeFieldParams{
-		DatatypeID: Si(a.DatatypeID),
-		FieldID:    Si(a.FieldID),
+		DatatypeID: StringToInt64(a.DatatypeID),
+		FieldID:    StringToInt64(a.FieldID),
 	}
 }
 

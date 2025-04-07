@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -103,26 +103,26 @@ type UpdateContentDataParamsJSON struct {
 
 func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentDataParams {
 	return CreateContentDataParams{
-		RouteID:      Si(a.RouteID),
-		ParentID:     SNi64(a.ParentID),
-		DatatypeID:   Si(a.DatatypeID),
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		RouteID:      StringToInt64(a.RouteID),
+		ParentID:     StringToNullInt64(a.ParentID),
+		DatatypeID:   StringToInt64(a.DatatypeID),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 	}
 }
 
 func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentDataParams {
 	return UpdateContentDataParams{
-		RouteID:       Si(a.RouteID),
-		ParentID:      SNi64(a.ParentID),
-		DatatypeID:    Si(a.DatatypeID),
-		AuthorID:      Si(a.AuthorID),
-		DateCreated:   Ns(a.DateCreated),
-		DateModified:  Ns(a.DateModified),
-		History:       Ns(a.History),
-		ContentDataID: Si(a.ContentDataID),
+		RouteID:       StringToInt64(a.RouteID),
+		ParentID:      StringToNullInt64(a.ParentID),
+		DatatypeID:    StringToInt64(a.DatatypeID),
+		AuthorID:      StringToInt64(a.AuthorID),
+		DateCreated:   StringToNullString(a.DateCreated),
+		DateModified:  StringToNullString(a.DateModified),
+		History:       StringToNullString(a.History),
+		ContentDataID: StringToInt64(a.ContentDataID),
 	}
 }
 
@@ -138,7 +138,7 @@ func MapCreateContentDataJSONParams(a CreateContentDataParamsJSON) CreateContent
 	}
 }
 
-func MapUpdateContentDataPara(a UpdateContentDataParamsJSON) UpdateContentDataParams {
+func MapUpdateContentDataJSONParams(a UpdateContentDataParamsJSON) UpdateContentDataParams {
 	return UpdateContentDataParams{
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID.NullInt64,
@@ -299,20 +299,20 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: int64(a.ContentDataID),
 		RouteID:       int64(a.RouteID.Int32),
-		ParentID:      Ni64(int64(a.ParentID.Int32)),
+		ParentID:      Int64ToNullInt64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		AuthorID:      int64(a.AuthorID),
-		DateCreated:   Ns(a.DateCreated.String()),
-		DateModified:  Ns(a.DateModified.String()),
+		DateCreated:   StringToNullString(a.DateCreated.String()),
+		DateModified:  StringToNullString(a.DateModified.String()),
 		History:       a.History,
 	}
 }
 
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
-		RouteID:      Ni32(a.RouteID),
-		ParentID:     Ni32(a.ParentID.Int64),
-		DatatypeID:   Ni32(a.DatatypeID),
+		RouteID:      Int64ToNullInt32(a.RouteID),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
+		DatatypeID:   Int64ToNullInt32(a.DatatypeID),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String).Time,
 		DateModified: StringToNTime(a.DateModified.String).Time,
@@ -322,9 +322,9 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 
 func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbm.UpdateContentDataParams {
 	return mdbm.UpdateContentDataParams{
-		RouteID:       Ni32(a.RouteID),
-		ParentID:      Ni32(a.ParentID.Int64),
-		DatatypeID:    Ni32(a.DatatypeID),
+		RouteID:       Int64ToNullInt32(a.RouteID),
+		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
+		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
 		AuthorID:      int32(a.AuthorID),
 		DateCreated:   StringToNTime(a.DateCreated.String).Time,
 		DateModified:  StringToNTime(a.DateModified.String).Time,
@@ -398,7 +398,7 @@ func (d MysqlDatabase) ListContentData() (*[]ContentData, error) {
 
 func (d MysqlDatabase) ListContentDataByRoute(routeID int64) (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentDataByRoute(d.Context, Ni32(routeID))
+	rows, err := queries.ListContentDataByRoute(d.Context, Int64ToNullInt32(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
 	}
@@ -430,20 +430,20 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: int64(a.ContentDataID),
 		RouteID:       int64(a.RouteID.Int32),
-		ParentID:      Ni64(int64(a.ParentID.Int32)),
+		ParentID:      Int64ToNullInt64(int64(a.ParentID.Int32)),
 		DatatypeID:    int64(a.DatatypeID.Int32),
 		AuthorID:      int64(a.AuthorID),
-		DateCreated:   Ns(Nt(a.DateCreated)),
-		DateModified:  Ns(Nt(a.DateModified)),
+		DateCreated:   StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified:  StringToNullString(NullTimeToString(a.DateModified)),
 		History:       a.History,
 	}
 }
 
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
-		RouteID:      Ni32(a.RouteID),
-		ParentID:     Ni32(a.ParentID.Int64),
-		DatatypeID:   Ni32(a.DatatypeID),
+		RouteID:      Int64ToNullInt32(a.RouteID),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
+		DatatypeID:   Int64ToNullInt32(a.DatatypeID),
 		AuthorID:     int32(a.AuthorID),
 		DateCreated:  StringToNTime(a.DateCreated.String),
 		DateModified: StringToNTime(a.DateModified.String),
@@ -453,9 +453,9 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 
 func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp.UpdateContentDataParams {
 	return mdbp.UpdateContentDataParams{
-		RouteID:       Ni32(a.RouteID),
-		ParentID:      Ni32(a.ParentID.Int64),
-		DatatypeID:    Ni32(a.DatatypeID),
+		RouteID:       Int64ToNullInt32(a.RouteID),
+		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
+		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
 		AuthorID:      int32(a.AuthorID),
 		DateCreated:   StringToNTime(a.DateCreated.String),
 		DateModified:  StringToNTime(a.DateModified.String),
@@ -525,7 +525,7 @@ func (d PsqlDatabase) ListContentData() (*[]ContentData, error) {
 
 func (d PsqlDatabase) ListContentDataByRoute(routeID int64) (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentDataByRoute(d.Context, Ni32(routeID))
+	rows, err := queries.ListContentDataByRoute(d.Context, Int64ToNullInt32(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
 	}

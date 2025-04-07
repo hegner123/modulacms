@@ -1,6 +1,6 @@
 package db
 
-import mdb "github.com/hegner123/modulacms/db-sqlite"
+import mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 
 // Sqlite
 

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -114,25 +114,25 @@ type UpdateSessionParamsJSON struct {
 
 func MapCreateSessionParams(a CreateSessionFormParams) CreateSessionParams {
 	return CreateSessionParams{
-		UserID:      Si(a.UserID),
-		CreatedAt:   Ns(a.CreatedAt),
-		ExpiresAt:   Ns(a.ExpiresAt),
-		LastAccess:  Ns(a.LastAccess),
-		IpAddress:   Ns(a.IpAddress),
-		UserAgent:   Ns(a.UserAgent),
-		SessionData: Ns(a.SessionData),
+		UserID:      StringToInt64(a.UserID),
+		CreatedAt:   StringToNullString(a.CreatedAt),
+		ExpiresAt:   StringToNullString(a.ExpiresAt),
+		LastAccess:  StringToNullString(a.LastAccess),
+		IpAddress:   StringToNullString(a.IpAddress),
+		UserAgent:   StringToNullString(a.UserAgent),
+		SessionData: StringToNullString(a.SessionData),
 	}
 }
 
 func MapUpdateSessionParams(a UpdateSessionFormParams) UpdateSessionParams {
 	return UpdateSessionParams{
-		UserID:      Si(a.UserID),
-		CreatedAt:   Ns(a.CreatedAt),
-		ExpiresAt:   Ns(a.ExpiresAt),
-		LastAccess:  Ns(a.LastAccess),
-		IpAddress:   Ns(a.IpAddress),
-		UserAgent:   Ns(a.UserAgent),
-		SessionData: Ns(a.SessionData),
+		UserID:      StringToInt64(a.UserID),
+		CreatedAt:   StringToNullString(a.CreatedAt),
+		ExpiresAt:   StringToNullString(a.ExpiresAt),
+		LastAccess:  StringToNullString(a.LastAccess),
+		IpAddress:   StringToNullString(a.IpAddress),
+		UserAgent:   StringToNullString(a.UserAgent),
+		SessionData: StringToNullString(a.SessionData),
 		SessionID:   a.SessionID,
 	}
 }
@@ -213,7 +213,7 @@ func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessio
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   Si(a.SessionID),
+		SessionID:   StringToInt64(a.SessionID),
 	}
 }
 
@@ -312,9 +312,9 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	return Sessions{
 		SessionID:   int64(a.SessionID),
 		UserID:      int64(a.UserID),
-		CreatedAt:   Ns(a.CreatedAt.String()),
-		ExpiresAt:   Ns(a.ExpiresAt.String()),
-		LastAccess:  Ns(a.LastAccess.String()),
+		CreatedAt:   StringToNullString(a.CreatedAt.String()),
+		ExpiresAt:   StringToNullString(a.ExpiresAt.String()),
+		LastAccess:  StringToNullString(a.LastAccess.String()),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
@@ -342,7 +342,7 @@ func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.Update
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   int32(Si(a.SessionID)),
+		SessionID:   int32(StringToInt64(a.SessionID)),
 	}
 }
 
@@ -445,9 +445,9 @@ func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 	return Sessions{
 		SessionID:   int64(a.SessionID),
 		UserID:      int64(a.UserID),
-		CreatedAt:   Ns(Nt(a.CreatedAt)),
-		ExpiresAt:   Ns(Nt(a.ExpiresAt)),
-		LastAccess:  Ns(Nt(a.LastAccess)),
+		CreatedAt:   StringToNullString(NullTimeToString(a.CreatedAt)),
+		ExpiresAt:   StringToNullString(NullTimeToString(a.ExpiresAt)),
+		LastAccess:  StringToNullString(NullTimeToString(a.LastAccess)),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
@@ -475,7 +475,7 @@ func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateS
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   int32(Si(a.SessionID)),
+		SessionID:   int32(StringToInt64(a.SessionID)),
 	}
 }
 

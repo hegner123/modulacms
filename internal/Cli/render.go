@@ -2,11 +2,13 @@ package cli
 
 import (
 	"embed"
+	"encoding/json"
 	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
+	config "github.com/hegner123/modulacms/internal/Config"
 )
 
 //go:embed titles
@@ -40,4 +42,14 @@ func (m model) RenderUI() string {
 	)
 
 	return docStyle.Render(doc.String())
+}
+
+func formatJSON(b config.Config) (string, error) {
+	formatted, err := json.MarshalIndent(b, "", "    ")
+	if err != nil {
+		return "", err
+	}
+    nulled:= strings.ReplaceAll(string(formatted),"\"\",","null")
+	trimmed := strings.ReplaceAll(nulled, "\"", "")
+	return string(trimmed), nil
 }

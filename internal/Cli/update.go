@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 const (
@@ -14,9 +16,32 @@ const (
 	updateFormInterface CliInterface = "UpdateFormInterface"
 	readSingleInterface CliInterface = "ReadSingleInterface"
 	contentInterface    CliInterface = "ContentInterface"
+	configInterface     CliInterface = "ConfigInterface"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.titles[m.titleFont]) + RenderHeading(m.header))
+		footerHeight := lipgloss.Height(m.footerView() + RenderFooter(m.footer))
+		verticalMarginHeight := headerHeight + footerHeight
+
+		if !m.ready {
+			// Since this program is using the full size of the viewport we
+			// need to wait until we've received the window dimensions before
+			// we can initialize the viewport. The initial dimensions come in
+			// quickly, though asynchronously, which is why we wait for them
+			// here.
+			m.viewport = viewport.New(msg.Width-4, msg.Height-verticalMarginHeight)
+			m.viewport.YPosition = headerHeight
+			m.ready = true
+		} else {
+			m.viewport.YPosition = headerHeight
+			m.viewport.Width = msg.Width - 4
+			m.viewport.Height = msg.Height - verticalMarginHeight - 10
+		}
+	}
+
 	switch m.controller {
 	case createInterface:
 		return m.UpdateDatabaseCreate(msg)
@@ -36,6 +61,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.UpdateTableSelect(msg)
 	case contentInterface:
 		return m.UpdateContent(msg)
+	case configInterface:
+		return m.UpdateConfig(msg)
 	}
 
 	return &m, nil
@@ -98,5 +125,10 @@ func (m model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
 
 func (m model) UpdateContent(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.ContentControls(msg)
+
+}
+
+func (m model) UpdateConfig(msg tea.Msg) (tea.Model, tea.Cmd) {
+	return m.ConfigControls(msg)
 
 }

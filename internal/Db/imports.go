@@ -193,6 +193,7 @@ type StringAdminContentFields struct {
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`
+	AuthorID           string `json:"author_id"`
 	DateCreated         string `json:"date_created"`
 	DateModified        string `json:"date_modified"`
 	History             string `json:"history"`

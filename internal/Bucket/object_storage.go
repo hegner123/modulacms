@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 

@@ -14,11 +14,12 @@ func TestConfigPathCheck(t *testing.T) {
 
 }
 
-func TestDbExists(t *testing.T){
-    c := config.Config{
-        Db_Driver: "sqlite",
-    }
-    err := CheckDb(c)
+func TestDbExists(t *testing.T) {
+	v := false
+	c := config.Config{
+		Db_Driver: "sqlite",
+	}
+	_, err := CheckDb(&v, c)
 	if err != nil {
 		t.Fatal(err)
 	}

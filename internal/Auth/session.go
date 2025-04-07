@@ -20,8 +20,8 @@ func CreateSessionTokens(userId int64, c config.Config) (*TokenPackage, error) {
 	expires := fmt.Sprint(time.Now().AddDate(0, 0, 7).Unix())
 	s := db.CreateSessionParams{
 		UserID:    userId,
-		CreatedAt: db.Ns(issued),
-		ExpiresAt: db.Ns(expires),
+		CreatedAt: db.StringToNullString(issued),
+		ExpiresAt: db.StringToNullString(expires),
 	}
 	session, err := d.CreateSession(s)
 	if err != nil {

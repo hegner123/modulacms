@@ -2,8 +2,6 @@ package cli
 
 import (
 	"encoding/json"
-	"fmt"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	config "github.com/hegner123/modulacms/internal/Config"
@@ -12,24 +10,15 @@ import (
 )
 
 func (m *model) CLICreate(table db.DBTable) error {
-	logFile, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer func() {
-		if closeErr := logFile.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
+		utility.DefaultLogger.Ferror("", err)
 		return err
 	}
-	formValues := make(map[string]string, 0)
+	valuesMap := make(map[string]string, 0)
 	for i, v := range m.formValues {
-		formValues[m.headers[i]] = *v
+		valuesMap[m.headers[i]] = *v
 	}
 
 	defer func() {
@@ -37,8 +26,9 @@ func (m *model) CLICreate(table db.DBTable) error {
 			err = closeErr
 		}
 	}()
-	jsonData, err := json.Marshal(formValues)
+	jsonData, err := json.Marshal(valuesMap)
 	if err != nil {
+		utility.DefaultLogger.Ferror("JSON Marshal", err)
 		ErrLog.Fatal("", err)
 	}
 	m.formValues = make([]*string, 0)
@@ -49,6 +39,7 @@ func (m *model) CLICreate(table db.DBTable) error {
 			ErrLog.Fatal("", err)
 		}
 		params := db.MapCreateAdminContentDataParams(result)
+		utility.DefaultLogger.Finfo("", params)
 		d.CreateAdminContentData(params)
 	case db.Admin_content_fields:
 		var result db.CreateAdminContentFieldFormParams
@@ -197,24 +188,14 @@ func (m *model) CLICreate(table db.DBTable) error {
 }
 
 func (m *model) CLIUpdate(table db.DBTable) error {
-	logFile, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer func() {
-		if closeErr := logFile.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
 	}
-	formValues := make(map[string]string)
+	valuesMap := make(map[string]string)
 	for i, v := range m.formValues {
-		formValues[m.headers[i]] = *v
+		valuesMap[m.headers[i]] = *v
 	}
 
 	defer func() {
@@ -222,11 +203,11 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 			err = closeErr
 		}
 	}()
-	jsonData, err := json.Marshal(formValues)
+	jsonData, err := json.Marshal(valuesMap)
 	m.formValues = make([]*string, 0)
-	utility.DefaultLogger.Finfo(logFile, string(jsonData))
+	utility.DefaultLogger.Finfo(string(jsonData))
 	if err != nil {
-		utility.DefaultLogger.Ferror(logFile, "", err)
+		utility.DefaultLogger.Ferror("", err)
 	}
 
 	switch table {
@@ -235,6 +216,7 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
+
 		params := db.MapUpdateAdminContentDataParams(result)
 		_, err := d.UpdateAdminContentData(params)
 		if err != nil {
@@ -255,7 +237,7 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
-		utility.DefaultLogger.Finfo(logFile, "", result)
+		utility.DefaultLogger.Finfo("", result)
 		params := db.MapUpdateAdminDatatypeParams(result)
 		_, err := d.UpdateAdminDatatype(params)
 		if err != nil {
@@ -266,7 +248,7 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
-		utility.DefaultLogger.Finfo(logFile, "", result)
+		utility.DefaultLogger.Finfo("", result)
 		params := db.MapUpdateAdminDatatypeFieldParams(result)
 		_, err := d.UpdateAdminDatatypeField(params)
 		if err != nil {
@@ -303,12 +285,12 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 			return err
 		}
 	case db.Content_fields:
-		var result db.UpdateContentDataFormParams
+		var result db.UpdateContentFieldFormParams
 		if err := json.Unmarshal(jsonData, &result); err != nil {
 			ErrLog.Fatal("", err)
 		}
-		params := db.MapUpdateContentDataParams(result)
-		_, err := d.UpdateContentData(params)
+		params := db.MapUpdateContentFieldParams(result)
+		_, err := d.UpdateContentField(params)
 		if err != nil {
 			return err
 		}
@@ -455,15 +437,15 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	}()
 	s := make(map[string]string, 0)
-	utility.DefaultLogger.Fdebug(f, "row", m.rows[m.cursor][0])
+	utility.DefaultLogger.Fdebug( "row", m.rows[m.cursor][0])
 	s["ID"] = m.rows[m.cursor][0]
 
 	jsonData, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
-	utility.DefaultLogger.Finfo(f, "json ID", string(jsonData))
-	utility.DefaultLogger.Finfo(f, "table", table)
+	utility.DefaultLogger.Finfo( "json ID", string(jsonData))
+	utility.DefaultLogger.Finfo( "table", table)
 	switch table {
 	case db.Admin_content_data:
 		var result struct{ ID int64 }

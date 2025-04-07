@@ -1,6 +1,6 @@
 package db
 
-import mdbm "github.com/hegner123/modulacms/db-mysql"
+import mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 
 func (d MysqlDatabase) CreateAllTables() error {
 	if err := d.CreatePermissionTable(); err != nil {

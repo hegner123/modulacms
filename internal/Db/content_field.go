@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -116,30 +116,30 @@ type UpdateContentFieldFormParams struct {
 
 func MapCreateContentFieldParams(a CreateContentFieldFormParams) CreateContentFieldParams {
 	return CreateContentFieldParams{
-		ContentFieldID: Si(a.ContentFieldID),
-		RouteID:        Ni64(Si(a.RouteID)),
-		ContentDataID:  Si(a.ContentDataID),
-		FieldID:        Si(a.FieldID),
+		ContentFieldID: StringToInt64(a.ContentFieldID),
+		RouteID:        Int64ToNullInt64(StringToInt64(a.RouteID)),
+		ContentDataID:  StringToInt64(a.ContentDataID),
+		FieldID:        StringToInt64(a.FieldID),
 		FieldValue:     a.FieldValue,
-		AuthorID:       Si(a.AuthorID),
-		DateCreated:    Ns(a.DateCreated),
-		DateModified:   Ns(a.DateModified),
-		History:        Ns(a.History),
+		AuthorID:       StringToInt64(a.AuthorID),
+		DateCreated:    StringToNullString(a.DateCreated),
+		DateModified:   StringToNullString(a.DateModified),
+		History:        StringToNullString(a.History),
 	}
 }
 
 func MapUpdateContentFieldParams(a UpdateContentFieldFormParams) UpdateContentFieldParams {
 	return UpdateContentFieldParams{
-		ContentFieldID:   Si(a.ContentFieldID),
-		RouteID:          Ni64(Si(a.RouteID)),
-		ContentDataID:    Si(a.ContentDataID),
-		FieldID:          Si(a.FieldID),
+		ContentFieldID:   StringToInt64(a.ContentFieldID),
+		RouteID:          Int64ToNullInt64(StringToInt64(a.RouteID)),
+		ContentDataID:    StringToInt64(a.ContentDataID),
+		FieldID:          StringToInt64(a.FieldID),
 		FieldValue:       a.FieldValue,
-		AuthorID:         Si(a.AuthorID),
-		DateCreated:      Ns(a.DateCreated),
-		DateModified:     Ns(a.DateModified),
-		History:          Ns(a.History),
-		ContentFieldID_2: Si(a.ContentFieldID_2),
+		AuthorID:         StringToInt64(a.AuthorID),
+		DateCreated:      StringToNullString(a.DateCreated),
+		DateModified:     StringToNullString(a.DateModified),
+		History:          StringToNullString(a.History),
+		ContentFieldID_2: StringToInt64(a.ContentFieldID_2),
 	}
 }
 func MapCreateContentFieldJSONParams(a CreateContentFieldParamsJSON) CreateContentFieldParams {
@@ -291,7 +291,7 @@ func (d Database) ListContentFields() (*[]ContentFields, error) {
 
 func (d Database) ListContentFieldsByRoute(routeID int64) (*[]ContentFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRoute(d.Context, Ni64(routeID))
+	rows, err := queries.ListContentFieldsByRoute(d.Context, Int64ToNullInt64(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v\n", err)
 	}
@@ -322,20 +322,20 @@ func (d Database) UpdateContentField(s UpdateContentFieldParams) (*string, error
 func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
-		RouteID:        Ni64(int64(a.RouteID.Int32)),
+		RouteID:        Int64ToNullInt64(int64(a.RouteID.Int32)),
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		AuthorID:       int64(a.AuthorID),
-		DateCreated:    Ns(a.DateCreated.String()),
-		DateModified:   Ns(a.DateModified.String()),
+		DateCreated:    StringToNullString(a.DateCreated.String()),
+		DateModified:   StringToNullString(a.DateModified.String()),
 		History:        a.History,
 	}
 }
 
 func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbm.CreateContentFieldParams {
 	return mdbm.CreateContentFieldParams{
-		RouteID:       Ni32(a.RouteID.Int64),
+		RouteID:       Int64ToNullInt32(a.RouteID.Int64),
 		ContentDataID: int32(a.ContentDataID),
 		FieldID:       int32(a.FieldID),
 		FieldValue:    a.FieldValue,
@@ -347,7 +347,7 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbm.UpdateContentFieldParams {
 	return mdbm.UpdateContentFieldParams{
 		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:        Ni32(a.RouteID.Int64),
+		RouteID:        Int64ToNullInt32(a.RouteID.Int64),
 		ContentDataID:  int32(a.ContentDataID),
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -421,7 +421,7 @@ func (d MysqlDatabase) ListContentFields() (*[]ContentFields, error) {
 
 func (d MysqlDatabase) ListContentFieldsByRoute(routeID int64) (*[]ContentFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRoute(d.Context, Ni32(routeID))
+	rows, err := queries.ListContentFieldsByRoute(d.Context, Int64ToNullInt32(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v\n", err)
 	}
@@ -452,13 +452,13 @@ func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, 
 func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 	return ContentFields{
 		ContentFieldID: int64(a.ContentFieldID),
-		RouteID:        Ni64(int64(a.RouteID.Int32)),
+		RouteID:        Int64ToNullInt64(int64(a.RouteID.Int32)),
 		ContentDataID:  int64(a.ContentDataID),
 		FieldID:        int64(a.FieldID),
 		FieldValue:     a.FieldValue,
 		AuthorID:       int64(a.AuthorID),
-		DateCreated:    Ns(Nt(a.DateCreated)),
-		DateModified:   Ns(Nt(a.DateModified)),
+		DateCreated:    StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified:   StringToNullString(NullTimeToString(a.DateModified)),
 		History:        a.History,
 	}
 }
@@ -466,7 +466,7 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbp.CreateContentFieldParams {
 	return mdbp.CreateContentFieldParams{
 		ContentFieldID: int32(a.ContentFieldID),
-		RouteID:        Ni32(a.RouteID.Int64),
+		RouteID:        Int64ToNullInt32(a.RouteID.Int64),
 		ContentDataID:  int32(a.ContentDataID),
 		FieldID:        int32(a.FieldID),
 		FieldValue:     a.FieldValue,
@@ -480,7 +480,7 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdbp.UpdateContentFieldParams {
 	return mdbp.UpdateContentFieldParams{
 		ContentFieldID:   int32(a.ContentFieldID),
-		RouteID:          Ni32(a.RouteID.Int64),
+		RouteID:          Int64ToNullInt32(a.RouteID.Int64),
 		ContentDataID:    int32(a.ContentDataID),
 		FieldID:          int32(a.FieldID),
 		FieldValue:       a.FieldValue,
@@ -553,7 +553,7 @@ func (d PsqlDatabase) ListContentFields() (*[]ContentFields, error) {
 
 func (d PsqlDatabase) ListContentFieldsByRoute(routeID int64) (*[]ContentFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentFieldsByRoute(d.Context, Ni32(routeID))
+	rows, err := queries.ListContentFieldsByRoute(d.Context, Int64ToNullInt32(routeID))
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v\n", err)
 	}

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -125,27 +125,27 @@ type UpdateAdminFieldParamsJSON struct {
 // ////////////////////////////
 func MapCreateAdminFieldParams(a CreateAdminFieldFormParams) CreateAdminFieldParams {
 	return CreateAdminFieldParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 	}
 }
 func MapUpdateAdminFieldParams(a UpdateAdminFieldFormParams) UpdateAdminFieldParams {
 	return UpdateAdminFieldParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
-		AdminFieldID: Si(a.AdminFieldID),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
+		AdminFieldID: StringToInt64(a.AdminFieldID),
 	}
 }
 func MapStringAdminField(a AdminFields) StringAdminFields {
@@ -311,19 +311,19 @@ func (d Database) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
 func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: int64(a.AdminFieldID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 		History:      a.History,
 	}
 }
 func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.CreateAdminFieldParams {
 	return mdbm.CreateAdminFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
@@ -335,7 +335,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 }
 func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.UpdateAdminFieldParams {
 	return mdbm.UpdateAdminFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
@@ -431,19 +431,19 @@ func (d MysqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, erro
 func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: int64(a.AdminFieldID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Data:         a.Data,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 		History:      a.History,
 	}
 }
 func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.CreateAdminFieldParams {
 	return mdbp.CreateAdminFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),
@@ -455,7 +455,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 }
 func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.UpdateAdminFieldParams {
 	return mdbp.UpdateAdminFieldParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        AssertString(a.Label),
 		Data:         AssertString(a.Data),
 		Type:         AssertString(a.Type),

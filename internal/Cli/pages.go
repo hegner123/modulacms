@@ -1,10 +1,9 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
+	"strings"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	config "github.com/hegner123/modulacms/internal/Config"
 	utility "github.com/hegner123/modulacms/internal/Utility"
@@ -21,13 +20,34 @@ type Page struct {
 	Next       *Page
 }
 
+const (
+	HOMEPAGE PageIndex = iota
+	CMSPAGE
+	DATABASEPAGE
+	BUCKETPAGE
+	OAUTHPAGE
+	CONFIGPAGE
+	TABLEPAGE
+	CREATEPAGE
+	READPAGE
+	UPDATEPAGE
+	DELETEPAGE
+	UPDATEFORMPAGE
+	READSINGLEPAGE
+	CONTENTPAGE
+	MEDIAPAGE
+	USERSPAGE
+	DYNAMICPAGE
+	DEFINEDATATYPE
+)
+
 var (
 	homePage       *Page = &Page{Index: HOMEPAGE, Controller: pageInterface, Label: "Home", Parent: nil, Children: homepageMenu}
 	cmsPage        *Page = &Page{Index: CMSPAGE, Controller: pageInterface, Label: "CMS", Parent: nil, Children: cmsMenu}
 	databasePage   *Page = &Page{Index: DATABASEPAGE, Controller: tableInterface, Label: "Database", Parent: nil, Children: nil, Next: tablePage}
 	bucketPage     *Page = &Page{Index: BUCKETPAGE, Controller: pageInterface, Label: "Bucket", Parent: nil, Children: nil}
 	oauthPage      *Page = &Page{Index: OAUTHPAGE, Controller: pageInterface, Label: "oAuth", Parent: nil, Children: nil}
-	configPage     *Page = &Page{Index: CONFIGPAGE, Controller: pageInterface, Label: "Configuration", Parent: nil, Children: nil}
+	configPage     *Page = &Page{Index: CONFIGPAGE, Controller: configInterface, Label: "Configuration", Parent: nil, Children: nil}
 	tablePage      *Page = &Page{Index: TABLEPAGE, Controller: pageInterface, Label: "Table", Parent: nil, Children: tableMenu}
 	createPage     *Page = &Page{Index: CREATEPAGE, Controller: createInterface, Label: "Create", Parent: nil, Children: nil}
 	readPage       *Page = &Page{Index: READPAGE, Controller: readInterface, Label: "Read", Parent: nil, Children: nil}
@@ -41,8 +61,47 @@ var (
 	dynamicPage    *Page = &Page{Index: DYNAMICPAGE, Controller: pageInterface, Label: "Dynamic", Parent: nil, Children: nil}
 )
 
+func (m model) View() string {
+	var ui string
+	switch m.page.Index {
+	case homePage.Index:
+		p := NewMenuPage(m.pageMenu, m.titles[m.titleFont], "MAIN MENU", []Row{}, "q quit", m.RenderStatusBar())
+		ui = p.Render(m.cursor)
+	case databasePage.Index:
+		ui = m.PageDatabase()
+	case cmsPage.Index:
+		ui = m.PageCMS()
+	case bucketPage.Index:
+		ui = m.PageBucket()
+	case configPage.Index:
+		ui = m.PageConfig()
+	case tablePage.Index:
+		ui = m.PageTable()
+	case createPage.Index:
+		ui = m.PageCreate()
+	case readPage.Index:
+		ui = m.PageRead()
+	case updatePage.Index:
+		ui = m.PageUpdate()
+	case updateFormPage.Index:
+		ui = m.PageUpdateForm()
+	case deletePage.Index:
+		ui = m.PageDelete()
+	case contentPage.Index:
+		ui = m.PageContent()
+	case readSinglePage.Index:
+		ui = m.PageReadSingle()
+	case defineDatatype.Index:
+		ui = m.PageDefineDatatype()
+	default:
+		ui = m.Page404()
+	}
+	return ui
+}
+
 func (m model) PageHome() string {
 	m.header = "MAIN MENU"
+	var b strings.Builder
 	for i, choice := range m.pageMenu {
 
 		cursor := "  "
@@ -50,9 +109,14 @@ func (m model) PageHome() string {
 			cursor = "->"
 		}
 
-		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
+		b.WriteString(fmt.Sprintf("%s%s  \n", cursor, choice.Label))
 	}
-	m.body = RenderBorder(m.body)
+	l := lipgloss.JoinHorizontal(
+		lipgloss.Top,
+		RenderBorderFixed(b.String()),
+		RenderBlockFixed(StatusBlock()),
+	)
+	m.body = l
 	return m.RenderUI()
 }
 
@@ -78,7 +142,7 @@ func (m model) PageDatabase() string {
 		}
 	}
 	group = NewHorizontalGroup(lipgloss.Top, row)
-	m.body = RenderBorder(group)
+	m.body = RenderBorderFlex(group)
 	return m.RenderUI()
 }
 
@@ -93,7 +157,7 @@ func (m model) PageCMS() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }
 
@@ -108,7 +172,7 @@ func (m model) PageTable() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }
 
@@ -123,7 +187,7 @@ func (m model) PageContent() string {
 
 		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
 	}
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }
 
@@ -139,17 +203,17 @@ func (m model) PageCreate() string {
 
 func (m model) PageRead() string {
 	m.header = m.header + fmt.Sprintf("Read %s", m.table)
-	f, _ := tea.LogToFile("debug.log", "debug")
 	h, r, err := GetColumnsRows(m.table)
 	if err != nil {
-		utility.DefaultLogger.Finfo(f, "", err)
+		utility.DefaultLogger.Finfo("", err)
 	}
 	start, end := m.paginator.GetSliceBounds(len(m.rows))
 
 	t := StyledTable(h, r[start:end], m.cursor)
-
 	m.body = t.Render()
-	m.body += "\n\n" + m.paginator.View()
+	if len(r) > m.maxRows {
+		m.body += "\n\n" + m.paginator.View()
+	}
 	return m.RenderUI()
 }
 
@@ -165,19 +229,24 @@ func (m model) PageReadSingle() string {
 }
 
 func (m model) PageUpdate() string {
-	m.header = m.header + fmt.Sprintf("Update %s", m.table)
-	h, c, err := GetColumnsRows(m.table)
+	m.header = m.header + fmt.Sprintf("Select Row to Update %s", m.table)
+	h, r, err := GetColumnsRows(m.table)
 	if err != nil {
-		fmt.Println("err", err)
+		utility.DefaultLogger.Finfo("", err)
 	}
+	start, end := m.paginator.GetSliceBounds(len(m.rows))
 
-	t := StyledTable(h, c, m.cursor)
+	t := StyledTable(h, r[start:end], m.cursor)
 
 	m.body = t.Render()
+	if len(r) > m.maxRows {
+		m.body += "\n\n" + m.paginator.View()
+	}
 	return m.RenderUI()
 }
+
 func (m *model) PageUpdateForm() string {
-	m.header = m.header + fmt.Sprintf("Update %s", m.table)
+	m.header = m.header + fmt.Sprintf("Update Row  %s", m.table)
 	m.body = "\n"
 	if m.form == nil {
 		m.body += "Form == nil"
@@ -188,14 +257,18 @@ func (m *model) PageUpdateForm() string {
 
 func (m model) PageDelete() string {
 	m.header = m.header + fmt.Sprintf("Delete %s", m.table)
-	h, c, err := GetColumnsRows(m.table)
+	h, r, err := GetColumnsRows(m.table)
 	if err != nil {
-		fmt.Println("err", err)
+		utility.DefaultLogger.Finfo("", err)
 	}
+	start, end := m.paginator.GetSliceBounds(len(m.rows))
 
-	t := StyledTable(h, c, m.cursor)
+	t := StyledTable(h, r[start:end], m.cursor)
 
 	m.body = t.Render()
+	if len(r) > m.maxRows {
+		m.body += "\n\n" + m.paginator.View()
+	}
 	return m.RenderUI()
 }
 
@@ -209,16 +282,21 @@ func (m model) PageBucket() string {
 	m.body += "\nBucket_Endpoint: " + b2
 	m.body += "\nBucket_Access_Key: " + b3
 	m.body += "\nBucket_Secret_Key: " + b4
-	m.body = RenderBorder(m.body)
+	m.body = RenderBorderFixed(m.body)
 	return m.RenderUI()
 }
 
 func (m model) PageConfig() string {
-	m.header = "Configuration"
-	s, _ := json.Marshal(config.Env)
-	m.body += "\n" + string(s)
-
+	var b strings.Builder
+	if !m.ready {
+		return m.RenderUI()
+	}
+	b.WriteString(m.headerView() + "\n")
+	b.WriteString(m.viewport.View() + "\n")
+	b.WriteString(m.footerView() + "\n")
+	m.body += b.String()
 	return m.RenderUI()
+
 }
 
 func (m model) PageDynamic() string {

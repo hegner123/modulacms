@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -74,7 +74,7 @@ type UpdateUserOauthFormParams struct {
 
 func MapCreateUserOauthParams(a CreateUserOauthFormParams) CreateUserOauthParams {
 	return CreateUserOauthParams{
-		UserID:              Si(a.UserID),
+		UserID:              StringToInt64(a.UserID),
 		OauthProvider:       a.OauthProvider,
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
@@ -89,7 +89,7 @@ func MapUpdateUserOauthParams(a UpdateUserOauthFormParams) UpdateUserOauthParams
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
 		TokenExpiresAt: a.TokenExpiresAt,
-		UserOauthID:    Si(a.UserOauthID),
+		UserOauthID:    StringToInt64(a.UserOauthID),
 	}
 }
 

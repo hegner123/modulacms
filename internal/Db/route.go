@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -115,11 +115,11 @@ func MapCreateRouteParams(a CreateRouteFormParams) CreateRouteParams {
 	return CreateRouteParams{
 		Slug:         a.Slug,
 		Title:        a.Title,
-		Status:       Si(a.Status),
-        AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-        History:      Ns(a.History),
+		Status:       StringToInt64(a.Status),
+        AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+        History:      StringToNullString(a.History),
 	}
 }
 
@@ -127,11 +127,11 @@ func MapUpdateRouteParams(a UpdateRouteFormParams) UpdateRouteParams {
 	return UpdateRouteParams{
 		Slug:         a.Slug,
 		Title:        a.Title,
-		Status:       Si(a.Status),
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-        History:      Ns(a.History),
+		Status:       StringToInt64(a.Status),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+        History:      StringToNullString(a.History),
 		Slug_2:       a.Slug_2,
 	}
 }
@@ -307,8 +307,8 @@ func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
 		Title:        a.Title,
 		Status:       int64(a.Status),
         AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
         History:      a.History,
 	}
 }
@@ -434,8 +434,8 @@ func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
 		Title:        a.Title,
 		Status:       int64(a.Status),
         AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String),
-		DateModified: Ns(a.DateModified.String),
+		DateCreated:  StringToNullString(a.DateCreated.String),
+		DateModified: StringToNullString(a.DateModified.String),
         History:      a.History,
 	}
 }

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -116,26 +116,26 @@ type UpdateDatatypeParamsJSON struct {
 
 func MapCreateDatatypeParams(a CreateDatatypeFormParams) CreateDatatypeParams {
 	return CreateDatatypeParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 	}
 }
 
 func MapUpdateDatatypeParams(a UpdateDatatypeFormParams) UpdateDatatypeParams {
 	return UpdateDatatypeParams{
-		ParentID:     SNi64(a.ParentID),
+		ParentID:     StringToNullInt64(a.ParentID),
 		Label:        a.Label,
 		Type:         a.Type,
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
-		DatatypeID:   Si(a.DatatypeID),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
+		DatatypeID:   StringToInt64(a.DatatypeID),
 	}
 }
 
@@ -186,7 +186,7 @@ func MapDatatypeJSON(a Datatypes) DatatypeJSON {
 	}
 
 }
-func MapJSONCreateDatatypeParams(a CreateDatatypeParamsJSON)CreateDatatypeParams{
+func MapCreateDatatypeJSONParams(a CreateDatatypeParamsJSON)CreateDatatypeParams{
     return CreateDatatypeParams{
         ParentID: a.ParentID.NullInt64,
         Label: a.Label,
@@ -198,7 +198,7 @@ func MapJSONCreateDatatypeParams(a CreateDatatypeParamsJSON)CreateDatatypeParams
     }
 }
 
-func MapJSONUpdateDatatypeParams(a UpdateDatatypeParamsJSON)UpdateDatatypeParams{
+func MapUpdateDatatypeJSONParams(a UpdateDatatypeParamsJSON)UpdateDatatypeParams{
     return UpdateDatatypeParams{
         ParentID: a.ParentID.NullInt64,
         Label: a.Label,
@@ -332,19 +332,19 @@ func (d Database) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   int64(a.DatatypeID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 		History:      a.History,
 	}
 }
 
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
 	return mdbm.CreateDatatypeParams{
-		ParentID: Ni32(a.ParentID.Int64),
+		ParentID: Int64ToNullInt32(a.ParentID.Int64),
 		Label:    a.Label,
 		Type:     a.Type,
 		AuthorID: int32(a.AuthorID),
@@ -354,7 +354,7 @@ func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.Crea
 
 func (d MysqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbm.UpdateDatatypeParams {
 	return mdbm.UpdateDatatypeParams{
-		ParentID:   Ni32(a.ParentID.Int64),
+		ParentID:   Int64ToNullInt32(a.ParentID.Int64),
 		Label:      a.Label,
 		Type:       a.Type,
 		AuthorID:   int32(a.AuthorID),
@@ -445,19 +445,19 @@ func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 	return Datatypes{
 		DatatypeID:   int64(a.DatatypeID),
-		ParentID:     Ni64(int64(a.ParentID.Int32)),
+		ParentID:     Int64ToNullInt64(int64(a.ParentID.Int32)),
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 		History:      a.History,
 	}
 }
 
 func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.CreateDatatypeParams {
 	return mdbp.CreateDatatypeParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     int32(a.AuthorID),
@@ -469,7 +469,7 @@ func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.Creat
 
 func (d PsqlDatabase) MapUpdateDatatypeParams(a UpdateDatatypeParams) mdbp.UpdateDatatypeParams {
 	return mdbp.UpdateDatatypeParams{
-		ParentID:     Ni32(a.ParentID.Int64),
+		ParentID:     Int64ToNullInt32(a.ParentID.Int64),
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     int32(a.AuthorID),

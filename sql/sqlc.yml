@@ -7,7 +7,7 @@ sql:
       go:
         package: "mdb"
         emit_json_tags: true
-        out: "../db-sqlite"
+        out: "../internal/db-sqlite"
         emit_exact_table_names: true
   - engine: "postgresql"
     schema: "schema/**/schema_psql.sql"
@@ -16,7 +16,7 @@ sql:
       go:
         package: "mdbp"
         emit_json_tags: true
-        out: "../db-psql"
+        out: "../internal/db-psql"
         emit_exact_table_names: true
   - engine: "mysql"
     schema: "schema/**/schema_mysql.sql"
@@ -25,5 +25,5 @@ sql:
       go:
         package: "mdbm"
         emit_json_tags: true
-        out: "../db-mysql"
+        out: "../internal/db-mysql"
         emit_exact_table_names: true

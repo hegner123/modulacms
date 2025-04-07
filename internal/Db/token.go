@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -72,7 +72,7 @@ type UpdateTokenFormParams struct {
 
 func MapCreateTokenParams(a CreateTokenFormParams) CreateTokenParams {
 	return CreateTokenParams{
-		UserID:    Si(a.UserID),
+		UserID:    StringToInt64(a.UserID),
 		TokenType: a.TokenType,
 		Token:     a.Token,
 		IssuedAt:  a.IssuedAt,
@@ -87,7 +87,7 @@ func MapUpdateTokenParams(a UpdateTokenFormParams) UpdateTokenParams {
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   ParseBool(a.Revoked),
-		ID:        Si(a.ID),
+		ID:        StringToInt64(a.ID),
 	}
 }
 

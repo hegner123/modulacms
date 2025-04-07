@@ -12,12 +12,12 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_route_id INTEGER NOT NULL
         CONSTRAINT fk_admin_routes
             REFERENCES admin_routes
-            ON UPDATE CASCADE ON DELETE SET NULL,
-    admin_datatype_id INTEGER
+            ON UPDATE CASCADE,
+    admin_datatype_id INTEGER NOT NULL
         CONSTRAINT fk_admin_datatypes
             REFERENCES admin_datatypes
-            ON UPDATE CASCADE ON DELETE SET NULL,
-    author_id INTEGER NOT NULL
+            ON UPDATE CASCADE,
+    author_id INTEGER DEFAULT '1' NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
@@ -45,9 +45,10 @@ ORDER BY admin_content_data_id;
 
 -- name: CreateAdminContentData :one
 INSERT INTO admin_content_data (
-    admin_route_id,
     parent_id,
+    admin_route_id,
     admin_datatype_id,
+    author_id,
     date_created,
     date_modified,
     history
@@ -57,18 +58,20 @@ INSERT INTO admin_content_data (
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
 ) RETURNING *;
 
 -- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
-SET admin_route_id = $1,
-    parent_id = $2,
+SET parent_id = $1,
+    admin_route_id = $2,
     admin_datatype_id =$3,
+    author_id = $4,
     date_created = $5,
     date_modified = $6,
-    history = $4
-WHERE admin_content_data_id = $7;
+    history = $7
+WHERE admin_content_data_id = $8;
 
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data

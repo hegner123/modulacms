@@ -50,6 +50,7 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
+    author_id,
     date_created,
     date_modified,
     history
@@ -60,19 +61,21 @@ INSERT INTO admin_content_fields (
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_route_id=$1,
+SET admin_route_id=$1,
     admin_content_data_id=$2,
     admin_field_id=$3,
     admin_field_value=$4,
-    history=$5,
+    author_id=$5,
     date_created=$6,
-    date_modified=$7
-WHERE admin_content_field_id = $8;
+    date_modified=$7,
+    history=$8
+WHERE admin_content_field_id = $9;
 
 -- name: DeleteAdminContentField :exec
 DELETE FROM admin_content_fields

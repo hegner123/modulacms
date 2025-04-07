@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 

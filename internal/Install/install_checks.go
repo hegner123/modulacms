@@ -10,6 +10,13 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
+type DBStatus struct {
+    Driver string
+    URL string
+    Err error
+
+}
+
 func CheckConfigExists(path string) error {
 	var p string
 	if path != "" {
@@ -21,16 +28,19 @@ func CheckConfigExists(path string) error {
 	if err != nil {
 		return err
 	}
-    l:=utility.NewLogger(utility.INFO)
-    l.Info("Config exists at", p)
+	l := utility.NewLogger(utility.INFO)
+	l.Info("Config exists at", p)
 	return nil
 }
 
-func CheckBucket()error {
-	v := false
-	c := config.LoadConfig(&v, "")
+func CheckBucket(v *bool) (string, error) {
+	verbose := false
+	if v != nil {
+		verbose = *v
+	}
+	c := config.LoadConfig(&verbose, "")
 	if c.Bucket_Secret_Key == "" || c.Bucket_Endpoint == "" || c.Bucket_Access_Key == "" {
-		err := fmt.Errorf("Bucket Access Key: %s\nBucket Secret Key: %s\nBucket Endpoint: %s\n", c.Bucket_Access_Key, c.Bucket_Secret_Key, c.Bucket_Endpoint)
+		err := fmt.Errorf("bucket access key: %s\nbucket secret key: %s\nbucket endpoint: %s", c.Bucket_Access_Key, c.Bucket_Secret_Key, c.Bucket_Endpoint)
 		utility.LogError("Bucket fields not completed", err)
 	}
 	creds := bucket.S3Credintials{
@@ -40,34 +50,66 @@ func CheckBucket()error {
 	}
 	_, err := creds.GetBucket()
 	if err != nil {
-		return err
+		return err.Error(), err
 	}
-    l:=utility.NewLogger(utility.INFO)
-    l.Info("Bucket Connected Successfully")
-    return nil
+	if verbose {
+		l := utility.NewLogger(utility.INFO)
+		l.Info("Bucket Connected Successfully")
+	}
+	return "Connected", nil
 }
 
-func CheckOauth()error {
-    v := false
-    c := config.LoadConfig(&v, "")
-    if c.Oauth_Client_Id =="" || c.Oauth_Client_Secret == ""  || c.Oauth_Endpoint["oauth_auth_url"] == "" || c.Oauth_Endpoint["oauth_token_url"]== ""{
-        err := fmt.Errorf("")
-		utility.LogError("Oauth fields not completed", err)
-        return err
-    }
-    l:=utility.NewLogger(utility.INFO)
-    l.Info("Oauth, no missing fields in config")
-    return nil
+func CheckOauth(v *bool) (string, error) {
+	verbose := false
+	if v != nil {
+		verbose = *v
+	}
+	c := config.LoadConfig(&verbose, "")
+	if c.Oauth_Client_Id == "" || c.Oauth_Client_Secret == "" || c.Oauth_Endpoint["oauth_auth_url"] == "" || c.Oauth_Endpoint["oauth_token_url"] == "" {
+		err := fmt.Errorf("oauth fields not completed")
+		if verbose {
+			utility.LogError("CheckOauth: ", err)
+		}
+		return "Oauth fields not completed", err
+	}
+	if verbose {
+		l := utility.NewLogger(utility.INFO)
+		l.Info("Oauth, no missing fields in config")
+	}
+	return "Connected", nil
 }
 
-func CheckDb(c config.Config) error {
+func CheckDb(v *bool, c config.Config) (DBStatus, error) {
+	verbose := false
+    status := DBStatus{}
+	if v != nil {
+		verbose = *v
+	}
 	dbc := db.ConfigDB(c)
 	_, _, err := dbc.GetConnection()
 	if err != nil {
-		return err
-	}
+		if verbose {
+			err := fmt.Errorf("DB Not Connected")
+			if verbose {
+				utility.LogError("DBCheck:  ", err)
+			}
 
-	return nil
+		}
+        status.Err = err
+        status.Driver= ""
+        status.URL = ""
+		return status, err
+	}
+	connected := fmt.Sprint("db connected: ", c.Db_Driver, " ", c.Db_URL)
+	if verbose {
+		l := utility.NewLogger(utility.INFO)
+		l.Info(connected)
+	}
+    status.Driver = string(c.Db_Driver)
+    status.URL = c.Db_URL
+    status.Err = nil
+
+	return status, nil
 }
 
 func CheckCerts(path string) bool {

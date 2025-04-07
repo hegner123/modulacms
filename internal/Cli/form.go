@@ -21,7 +21,7 @@ func (m *model) BuildCreateDBForm(table db.DBTable) (*huh.Form, int) {
 			m.formValues = append(m.formValues, &blank)
 			continue
 		}
-		var value string
+        value := ""
 		t := *colType
 		f, err := m.NewFieldFromType(c, t[i], &value)
 		if err != nil {
@@ -43,13 +43,11 @@ func (m *model) BuildCreateDBForm(table db.DBTable) (*huh.Form, int) {
 	// Add submit handler with proper focus management
 	form.SubmitCmd = func() tea.Msg {
 		if m.formSubmit {
-			m.focus = PAGEFOCUS
 			return formCompletedMsg{}
 		}
 		return formCancelledMsg{}
 	}
 	form.SubmitCmd = func() tea.Msg {
-		m.focus = PAGEFOCUS
 		return tea.ResumeMsg{}
 	}
 	return form, len(*columns)
@@ -64,9 +62,9 @@ func (m *model) BuildUpdateDBForm(table db.DBTable) (*huh.Form, int) {
 	}
 	var fields []huh.Field
 	for i, c := range *columns {
-		blank := ""
 		if i == 0 {
-			m.formValues = append(m.formValues, &blank)
+			id := row[i]
+			m.formValues = append(m.formValues, &id)
 			continue
 		}
 		value := row[i]

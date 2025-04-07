@@ -74,6 +74,9 @@ type DbDriver interface {
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)
 	SortTables() error
 	DumpSql(config.Config) error
+	GetForeignKeys(args []string) *sql.Rows
+	ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow
+	SelectColumnFromTable(table string, column string)
 	//RestoreDB() error
 
 	// Count operations
@@ -756,10 +759,10 @@ func (d Database) DumpSql(c config.Config) error {
 		return err
 	}
 	// Close the file so that it can be executed.
-    err=tmpFile.Close()
-    if err!=nil {
-        return err
-    }
+	err = tmpFile.Close()
+	if err != nil {
+		return err
+	}
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
@@ -806,10 +809,10 @@ func (d MysqlDatabase) DumpSql(c config.Config) error {
 		return err
 	}
 	// Close the file so that it can be executed.
-    err=tmpFile.Close()
-    if err!=nil {
-        return err
-    }
+	err = tmpFile.Close()
+	if err != nil {
+		return err
+	}
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
@@ -856,10 +859,10 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 		return err
 	}
 	// Close the file so that it can be executed.
-    err=tmpFile.Close()
-    if err!=nil {
-        return err
-    }
+	err = tmpFile.Close()
+	if err != nil {
+		return err
+	}
 
 	// Make the temporary file executable.
 	if err := os.Chmod(tmpFile.Name(), 0755); err != nil {

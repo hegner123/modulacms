@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	utility "github.com/hegner123/modulacms/internal/Utility"
 	"github.com/sqlc-dev/pqtype"
 )
 
@@ -18,23 +19,19 @@ func StringDBTable(t string) DBTable {
 	return DBTable(t)
 }
 
-func Ns(s string) sql.NullString {
-	return sql.NullString{String: s, Valid: true}
-}
-
-func Ni(i int) sql.NullInt64 {
+func IntToNullInt64(i int) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
 
-func Ni64(i int64) sql.NullInt64 {
+func Int64ToNullInt64(i int64) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
 }
 
-func Ni32(i int64) sql.NullInt32 {
+func Int64ToNullInt32(i int64) sql.NullInt32 {
 	return sql.NullInt32{Int32: int32(i), Valid: true}
 }
 
-func Ni32Ni64(i sql.NullInt32) sql.NullInt64 {
+func NullInt32ToNullInt64(i sql.NullInt32) sql.NullInt64 {
 	if i.Valid {
 		return sql.NullInt64{
 			Int64: int64(i.Int32),
@@ -47,7 +44,7 @@ func Ni32Ni64(i sql.NullInt32) sql.NullInt64 {
 		}
 	}
 }
-func Ni64Ni32(i sql.NullInt64) sql.NullInt32 {
+func NullInt64ToNullInt32(i sql.NullInt64) sql.NullInt32 {
 	if i.Valid {
 		return sql.NullInt32{
 			Int32: int32(i.Int64),
@@ -61,11 +58,11 @@ func Ni64Ni32(i sql.NullInt64) sql.NullInt32 {
 	}
 }
 
-func Nb(b bool) sql.NullBool {
+func BoolToNullBool(b bool) sql.NullBool {
 	return sql.NullBool{Bool: b, Valid: true}
 }
 
-func NTT(t time.Time) sql.NullTime {
+func TimeToNullTime(t time.Time) sql.NullTime {
 	return sql.NullTime{Time: t, Valid: true}
 }
 
@@ -91,7 +88,7 @@ func StringToNTime(dateStr string) sql.NullTime {
 	return st
 }
 
-func Nt(t sql.NullTime) string {
+func NullTimeToString(t sql.NullTime) string {
 	v, err := t.Value()
 	if err != nil {
 		return ""
@@ -103,15 +100,26 @@ func Nt(t sql.NullTime) string {
 	return s
 }
 
-func NStringToTime(s sql.NullString) time.Time {
+func NullStringToTime(s sql.NullString) time.Time {
 	t, err := time.Parse(time.RFC3339, s.String)
 	if err != nil {
 		return time.Now()
 	}
 	return t
 }
+func NullStringToNullTime(s sql.NullString) sql.NullTime {
+    ns := ReadNullString(s)
+	t := utility.ParseTimeReadable(ns)
+    nt:= sql.NullTime{}
+	if t != nil {
+		nt = sql.NullTime{Time: *t, Valid: true}
+	} else {
+		nt = sql.NullTime{Time: time.Time{}, Valid: false}
+	}
+	return nt
+}
 
-func Si(s string) int64 {
+func StringToInt64(s string) int64 {
 	res, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
 		return 0
@@ -120,7 +128,7 @@ func Si(s string) int64 {
 	}
 }
 
-func Sb(s string) bool {
+func StringToBool(s string) bool {
 	res, err := strconv.ParseBool(s)
 	if err != nil {
 		return false
@@ -143,7 +151,7 @@ func ParseTime(s string) time.Time {
 	if err != nil {
 		return time.Now()
 	}
-    return t
+	return t
 
 }
 
@@ -179,11 +187,21 @@ func AssertInt64(i any) int64 {
 	return d
 }
 
-func SNi64(s string) sql.NullInt64 {
+func StringToNullString(s string) sql.NullString {
+	switch s {
+	case "":
+		return sql.NullString{String: s, Valid: false}
+	case "null":
+		return sql.NullString{String: s, Valid: false}
+	default:
+		return sql.NullString{String: s, Valid: true}
+	}
+}
+
+func StringToNullInt64(s string) sql.NullInt64 {
 	var res sql.NullInt64
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		res.Int64 = 0
 		res.Valid = false
 		return res
 	} else {
@@ -193,11 +211,11 @@ func SNi64(s string) sql.NullInt64 {
 	}
 
 }
-func SNi32(s string) sql.NullInt32 {
+
+func StringToNullInt32(s string) sql.NullInt32 {
 	var res sql.NullInt32
 	i, err := strconv.ParseInt(s, 10, 64)
 	if err != nil {
-		res.Int32 = 0
 		res.Valid = false
 		return res
 	} else {
@@ -206,6 +224,27 @@ func SNi32(s string) sql.NullInt32 {
 		return res
 	}
 
+}
+
+func StringToNullBool(s string) sql.NullBool {
+	var nb sql.NullBool
+	if b, err := strconv.ParseBool(s); err == nil {
+		nb = sql.NullBool{Bool: b, Valid: true}
+	} else {
+		nb = sql.NullBool{Bool: false, Valid: false}
+	}
+	return nb
+}
+
+func StringToNullTime(s string) sql.NullTime {
+	var nt sql.NullTime
+	t := utility.ParseTimeReadable(s)
+	if t != nil {
+		nt = sql.NullTime{Time: *t, Valid: true}
+	} else {
+		nt = sql.NullTime{Time: time.Time{}, Valid: false}
+	}
+	return nt
 }
 
 func ReadNullString(ns sql.NullString) string {

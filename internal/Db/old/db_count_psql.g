@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	mdbp "github.com/hegner123/modulacms/db-psql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 )
 
 

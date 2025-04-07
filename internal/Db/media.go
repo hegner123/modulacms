@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -168,38 +168,38 @@ type UpdateMediaParamsJSON struct {
 
 func MapCreateMediaParams(a CreateMediaFormParams) CreateMediaParams {
 	return CreateMediaParams{
-		Name:         Ns(a.Name),
-		DisplayName:  Ns(a.DisplayName),
-		Alt:          Ns(a.Alt),
-		Caption:      Ns(a.Caption),
-		Description:  Ns(a.Description),
-		Class:        Ns(a.Class),
-		Url:          Ns(a.Url),
-		Mimetype:     Ns(a.Mimetype),
-		Dimensions:   Ns(a.Dimensions),
-		Srcset:       Ns(a.Srcset),
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
+		Name:         StringToNullString(a.Name),
+		DisplayName:  StringToNullString(a.DisplayName),
+		Alt:          StringToNullString(a.Alt),
+		Caption:      StringToNullString(a.Caption),
+		Description:  StringToNullString(a.Description),
+		Class:        StringToNullString(a.Class),
+		Url:          StringToNullString(a.Url),
+		Mimetype:     StringToNullString(a.Mimetype),
+		Dimensions:   StringToNullString(a.Dimensions),
+		Srcset:       StringToNullString(a.Srcset),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
 	}
 }
 
 func MapUpdateMediaParams(a UpdateMediaFormParams) UpdateMediaParams {
 	return UpdateMediaParams{
-		Name:         Ns(a.Name),
-		DisplayName:  Ns(a.DisplayName),
-		Alt:          Ns(a.Alt),
-		Caption:      Ns(a.Caption),
-		Description:  Ns(a.Description),
-		Class:        Ns(a.Class),
-		Url:          Ns(a.Url),
-		Mimetype:     Ns(a.Mimetype),
-		Dimensions:   Ns(a.Dimensions),
-		Srcset:       Ns(a.Srcset),
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		MediaID:      Si(a.MediaID),
+		Name:         StringToNullString(a.Name),
+		DisplayName:  StringToNullString(a.DisplayName),
+		Alt:          StringToNullString(a.Alt),
+		Caption:      StringToNullString(a.Caption),
+		Description:  StringToNullString(a.Description),
+		Class:        StringToNullString(a.Class),
+		Url:          StringToNullString(a.Url),
+		Mimetype:     StringToNullString(a.Mimetype),
+		Dimensions:   StringToNullString(a.Dimensions),
+		Srcset:       StringToNullString(a.Srcset),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		MediaID:      StringToInt64(a.MediaID),
 	}
 }
 
@@ -366,7 +366,7 @@ func (d Database) GetMedia(id int64) (*Media, error) {
 
 func (d Database) GetMediaByName(name string) (*Media, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	row, err := queries.GetMediaByName(d.Context, StringToNullString(name))
 	if err != nil {
 		return nil, err
 	}
@@ -376,7 +376,7 @@ func (d Database) GetMediaByName(name string) (*Media, error) {
 
 func (d Database) GetMediaByURL(url string) (*Media, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	row, err := queries.GetMediaByUrl(d.Context, StringToNullString(url))
 	if err != nil {
 		return nil, err
 	}
@@ -428,8 +428,8 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 		Url:          a.Url,
 		Srcset:       a.Srcset,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 	}
 }
 
@@ -521,7 +521,7 @@ func (d MysqlDatabase) GetMedia(id int64) (*Media, error) {
 
 func (d MysqlDatabase) GetMediaByName(name string) (*Media, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	row, err := queries.GetMediaByName(d.Context, StringToNullString(name))
 	if err != nil {
 		return nil, err
 	}
@@ -531,7 +531,7 @@ func (d MysqlDatabase) GetMediaByName(name string) (*Media, error) {
 
 func (d MysqlDatabase) GetMediaByURL(url string) (*Media, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	row, err := queries.GetMediaByUrl(d.Context, StringToNullString(url))
 	if err != nil {
 		return nil, err
 	}
@@ -583,8 +583,8 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 		Url:          a.Url,
 		Srcset:       a.Srcset,
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 	}
 }
 
@@ -672,7 +672,7 @@ func (d PsqlDatabase) GetMedia(id int64) (*Media, error) {
 
 func (d PsqlDatabase) GetMediaByName(name string) (*Media, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetMediaByName(d.Context, Ns(name))
+	row, err := queries.GetMediaByName(d.Context, StringToNullString(name))
 	if err != nil {
 		return nil, err
 	}
@@ -682,7 +682,7 @@ func (d PsqlDatabase) GetMediaByName(name string) (*Media, error) {
 
 func (d PsqlDatabase) GetMediaByURL(url string) (*Media, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetMediaByUrl(d.Context, Ns(url))
+	row, err := queries.GetMediaByUrl(d.Context, StringToNullString(url))
 	if err != nil {
 		return nil, err
 	}

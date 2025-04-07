@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -87,20 +87,20 @@ type UpdateMediaDimensionParamsJSON struct {
 
 func MapCreateMediaDimensionParams(a CreateMediaDimensionFormParams) CreateMediaDimensionParams {
 	return CreateMediaDimensionParams{
-		Label:       Ns(a.Label),
-		Width:       SNi64(a.Width),
-		Height:      SNi64(a.Height),
-		AspectRatio: Ns(a.AspectRatio),
+		Label:       StringToNullString(a.Label),
+		Width:       StringToNullInt64(a.Width),
+		Height:      StringToNullInt64(a.Height),
+		AspectRatio: StringToNullString(a.AspectRatio),
 	}
 }
 
 func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMediaDimensionParams {
 	return UpdateMediaDimensionParams{
-		Label:       Ns(a.Label),
-		Width:       SNi64(a.Width),
-		Height:      SNi64(a.Height),
-		AspectRatio: Ns(a.AspectRatio),
-		MdID:        Si(a.MdID),
+		Label:       StringToNullString(a.Label),
+		Width:       StringToNullInt64(a.Width),
+		Height:      StringToNullInt64(a.Height),
+		AspectRatio: StringToNullString(a.AspectRatio),
+		MdID:        StringToInt64(a.MdID),
 	}
 }
 
@@ -245,8 +245,8 @@ func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions
 	return MediaDimensions{
 		MdID:        int64(a.MdID),
 		Label:       a.Label,
-		Width:       Ni64(int64(a.Width.Int32)),
-		Height:      Ni64(int64(a.Height.Int32)),
+		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
+		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
 		AspectRatio: a.AspectRatio,
 	}
 }
@@ -254,8 +254,8 @@ func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions
 func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbm.CreateMediaDimensionParams {
 	return mdbm.CreateMediaDimensionParams{
 		Label:       a.Label,
-		Width:       Ni32(a.Width.Int64),
-		Height:      Ni32(a.Height.Int64),
+		Width:       Int64ToNullInt32(a.Width.Int64),
+		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
 	}
 }
@@ -263,8 +263,8 @@ func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParam
 func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbm.UpdateMediaDimensionParams {
 	return mdbm.UpdateMediaDimensionParams{
 		Label:       a.Label,
-		Width:       Ni32(a.Width.Int64),
-		Height:      Ni32(a.Height.Int64),
+		Width:       Int64ToNullInt32(a.Width.Int64),
+		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
 		MdID:        int32(a.MdID),
 	}
@@ -353,8 +353,8 @@ func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions 
 	return MediaDimensions{
 		MdID:        int64(a.MdID),
 		Label:       a.Label,
-		Width:       Ni64(int64(a.Width.Int32)),
-		Height:      Ni64(int64(a.Height.Int32)),
+		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
+		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
 		AspectRatio: a.AspectRatio,
 	}
 }
@@ -362,8 +362,8 @@ func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions 
 func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbp.CreateMediaDimensionParams {
 	return mdbp.CreateMediaDimensionParams{
 		Label:       a.Label,
-		Width:       Ni32(a.Width.Int64),
-		Height:      Ni32(a.Height.Int64),
+		Width:       Int64ToNullInt32(a.Width.Int64),
+		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
 	}
 }
@@ -371,8 +371,8 @@ func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams
 func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbp.UpdateMediaDimensionParams {
 	return mdbp.UpdateMediaDimensionParams{
 		Label:       a.Label,
-		Width:       Ni32(a.Width.Int64),
-		Height:      Ni32(a.Height.Int64),
+		Width:       Int64ToNullInt32(a.Width.Int64),
+		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
 		MdID:        int32(a.MdID),
 	}

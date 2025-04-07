@@ -21,15 +21,7 @@ func (m model) RenderStatusTable() string {
 	controller := fmt.Sprintf("Controller\n%v\n", m.controller)
 	//tables := fmt.Sprintf("Tables\n%v\n", m.tables)
 	table := fmt.Sprintf("Table\n%s\n", m.table)
-	var history string
-	h, haspage := m.Peek()
-	if haspage {
-		history = fmt.Sprintf("History\nPrev:\n %v", h.Label)
-	} else {
-		history = "History\nPrev: No History\n"
-	}
-    if &m.maxRows != nil {
-    }
+	history := fmt.Sprintf("History\nLength:\n %v", len(m.history))
 	var formMapStatus []string
 	for i, v := range m.formValues {
 		s := fmt.Sprintf("%s: %v\n", m.headers[i], *v)
@@ -52,6 +44,11 @@ func (m model) RenderStatusTable() string {
 				lipgloss.Left,
 				table,
 				history,
+			)),
+		RenderBorderBlock(
+			lipgloss.JoinVertical(
+				lipgloss.Left,
+				m.err,
 			)),
 		RenderBorderBlock(
 			lipgloss.JoinVertical(

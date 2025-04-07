@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 ///////////////////////////////
@@ -101,22 +101,22 @@ func MapCreateAdminRouteParams(a CreateAdminRouteFormParams) CreateAdminRoutePar
 	return CreateAdminRouteParams{
 		Slug:         a.Slug,
 		Title:        a.Title,
-		Status:       Si(a.Status),
-        AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		Status:       StringToInt64(a.Status),
+        AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 	}
 }
 func MapUpdateAdminRouteParams(a UpdateAdminRouteFormParams) UpdateAdminRouteParams {
 	return UpdateAdminRouteParams{
 		Slug:         a.Slug,
 		Title:        a.Title,
-		Status:       Si(a.Status),
-		AuthorID:     Si(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated),
-		DateModified: Ns(a.DateModified),
-		History:      Ns(a.History),
+		Status:       StringToInt64(a.Status),
+		AuthorID:     StringToInt64(a.AuthorID),
+		DateCreated:  StringToNullString(a.DateCreated),
+		DateModified: StringToNullString(a.DateModified),
+		History:      StringToNullString(a.History),
 		Slug_2:       a.Slug_2,
 	}
 }
@@ -282,8 +282,8 @@ func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 		Title:        a.Title,
 		Status:       int64(a.Status),
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 		History:      a.History,
 	}
 }
@@ -396,8 +396,8 @@ func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 		Title:        a.Title,
 		Status:       int64(a.Status),
 		AuthorID:     int64(a.AuthorID),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 		History:      a.History,
 	}
 }

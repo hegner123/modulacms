@@ -20,7 +20,6 @@ type ModulaInit struct {
 	OauthConnected  bool
 }
 
-
 func CheckInstall() (ModulaInit, error) {
 	Status := ModulaInit{}
 	v := false
@@ -35,17 +34,17 @@ func CheckInstall() (ModulaInit, error) {
 		Status.ConfigExists = true
 	}
 	c := config.LoadConfig(&v, "")
-	err = CheckDb(c)
+	_, err = CheckDb(&v, c)
 	if err != nil {
 		Status.DBConnected = false
 		return Status, err
 	}
-	err = CheckBucket()
+	_, err = CheckBucket(&v)
 	if err != nil {
 		Status.BucketConnected = false
 		return Status, err
 	}
-	err = CheckOauth()
+	_, err = CheckOauth(&v)
 	if err != nil {
 		Status.OauthConnected = false
 		return Status, err
@@ -91,7 +90,7 @@ func InstallMain(configPath string, v *bool) error {
 		installConfig = true
 	}
 	c := config.LoadConfig(v, configPath)
-	err = CheckDb(c)
+	_, err = CheckDb(v, c)
 	if err != nil {
 		installDb = true
 	}

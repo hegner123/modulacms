@@ -4,7 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	_ "github.com/mattn/go-sqlite3"
 )
 

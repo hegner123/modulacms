@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -118,9 +118,9 @@ func MapCreateUserParams(a CreateUserFormParams) CreateUserParams {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Si(a.Role),
-        DateCreated:  Ns(a.DateCreated),
-        DateModified: Ns(a.DateModified),
+		Role:         StringToInt64(a.Role),
+        DateCreated:  StringToNullString(a.DateCreated),
+        DateModified: StringToNullString(a.DateModified),
 	}
 }
 
@@ -130,10 +130,10 @@ func MapUpdateUserParams(a UpdateUserFormParams) UpdateUserParams {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         Si(a.Role),
-        DateCreated:  Ns(a.DateCreated),
-        DateModified: Ns(a.DateModified),
-		UserID:       Si(a.UserID),
+		Role:         StringToInt64(a.Role),
+        DateCreated:  StringToNullString(a.DateCreated),
+        DateModified: StringToNullString(a.DateModified),
+		UserID:       StringToInt64(a.UserID),
 	}
 }
 
@@ -311,8 +311,8 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         int64(a.Role),
-		DateCreated:  Ns(a.DateCreated.String()),
-		DateModified: Ns(a.DateModified.String()),
+		DateCreated:  StringToNullString(a.DateCreated.String()),
+		DateModified: StringToNullString(a.DateModified.String()),
 	}
 }
 
@@ -439,8 +439,8 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         int64(a.Role),
-		DateCreated:  Ns(Nt(a.DateCreated)),
-		DateModified: Ns(Nt(a.DateModified)),
+		DateCreated:  StringToNullString(NullTimeToString(a.DateCreated)),
+		DateModified: StringToNullString(NullTimeToString(a.DateModified)),
 	}
 }
 

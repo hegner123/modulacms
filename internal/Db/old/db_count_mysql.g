@@ -3,7 +3,7 @@ package db
 import (
 	"fmt"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 )
 
 

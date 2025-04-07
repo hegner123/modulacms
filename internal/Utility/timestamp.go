@@ -10,25 +10,31 @@ func TimestampI() int64 {
 }
 
 func TimestampS() string {
-    return strconv.FormatInt(time.Now().Unix(), 10)
+	return strconv.FormatInt(time.Now().Unix(), 10)
 }
 
 func TimestampReadable() string {
-    return time.Now().Format(time.RFC3339)
+	return time.Now().Format(time.RFC3339)
+}
+
+func ParseTimeReadable(s string) *time.Time {
+	t, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		return nil
+	}
+	return &t
 }
 
 func TokenExpiredTime() (string, int64) {
-    now := time.Now()
-    t := now.Add(168 * time.Hour).Unix()
-    return strconv.FormatInt(t, 10), t
+	now := time.Now()
+	t := now.Add(168 * time.Hour).Unix()
+	return strconv.FormatInt(t, 10), t
 }
 
 func TimestampLessThan(a string) bool {
-    aInt, err := strconv.ParseInt(a, 10, 64)
-    if err != nil {
-        return false
-    }
-    return aInt < TimestampI()
+	aInt, err := strconv.ParseInt(a, 10, 64)
+	if err != nil {
+		return false
+	}
+	return aInt < TimestampI()
 }
-
-

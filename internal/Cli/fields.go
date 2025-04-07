@@ -8,18 +8,21 @@ import (
 	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
-func (m model) NewFieldFromType(column string, colType *sql.ColumnType, value *string) (huh.Field, error) {
+func (m *model) NewFieldFromType(column string, colType *sql.ColumnType, value *string) (huh.Field, error) {
 	if strings.Contains(column, "date_created") || strings.Contains(column, "date_modified") || strings.Contains(column, "history") {
 		switch column {
 		case "date_created":
 			ts := utility.TimestampReadable()
-			value = &ts
+			*value = ts
+            m.formValues = append(m.formValues, value)
 		case "date_modified":
 			ts := utility.TimestampReadable()
-			value = &ts
+			*value = ts
+            m.formValues = append(m.formValues, value)
 		case "history":
             h := ""
-			value = &h
+			*value = h
+            m.formValues = append(m.formValues, value)
 		}
 		return nil, nil
 	}

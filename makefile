@@ -50,6 +50,8 @@ dev: ## Prepare binaries and templates in src dir for faster iteration
 build: ## Build your project and put the output binary in out/bin/
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd
 	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(AMD_BINARY_NAME) ./cmd	
+	rsync -av out/bin/$(AMD_BINARY_NAME) modula:/root/app/modula/$(AMD_BINARY_NAME)
+	rsync -av modula.db  modula:/root/app/modula/modula.db
 
 ## Dump:
 dump: ## Dump sqlite db to sql

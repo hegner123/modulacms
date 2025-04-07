@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	mdbm "github.com/hegner123/modulacms/db-mysql"
-	mdbp "github.com/hegner123/modulacms/db-psql"
-	mdb "github.com/hegner123/modulacms/db-sqlite"
+	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
+	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // /////////////////////////////
@@ -51,14 +51,14 @@ type UpdateTableFormParams struct {
 func MapCreateTableParams(a CreateTableFormParams) CreateTableParams {
 	return CreateTableParams{
 		Label:    a.Label,
-		AuthorID: Si(a.AuthorID),
+		AuthorID: StringToInt64(a.AuthorID),
 	}
 }
 
 func MapUpdateTableParams(a UpdateTableFormParams) UpdateTableParams {
 	return UpdateTableParams{
 		Label: a.Label,
-		ID:    Si(a.ID),
+		ID:    StringToInt64(a.ID),
 	}
 }
 

@@ -1,6 +1,6 @@
 package db
 
-import mdbp "github.com/hegner123/modulacms/db-psql"
+import mdbp "github.com/hegner123/modulacms/internal/db-psql"
 
 func (d PsqlDatabase) CreateAllTables() error {
 	if err := d.CreatePermissionTable(); err != nil {

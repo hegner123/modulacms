@@ -8,7 +8,7 @@ import (
 func CreateMedia(name string, c config.Config) string {
 	d := db.ConfigDB(c)
 	params := db.CreateMediaParams{
-		Name: db.Ns(name),
+		Name: db.StringToNullString(name),
 	}
 	mediaRow := d.CreateMedia(params)
     return mediaRow.Name.String

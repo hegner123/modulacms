@@ -329,13 +329,15 @@ func (q *Queries) CountUserOauths(ctx context.Context) (int64, error) {
 
 const createAdminContentData = `-- name: CreateAdminContentData :exec
 INSERT INTO admin_content_data (
-    admin_route_id,
     parent_id,
+    admin_route_id,
     admin_datatype_id,
+    author_id,
     date_created,
     date_modified,
     history
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -346,9 +348,10 @@ INSERT INTO admin_content_data (
 `
 
 type CreateAdminContentDataParams struct {
-	AdminRouteID    int32          `json:"admin_route_id"`
 	ParentID        sql.NullInt32  `json:"parent_id"`
+	AdminRouteID    int32          `json:"admin_route_id"`
 	AdminDatatypeID int32          `json:"admin_datatype_id"`
+	AuthorID        int32          `json:"author_id"`
 	DateCreated     time.Time      `json:"date_created"`
 	DateModified    time.Time      `json:"date_modified"`
 	History         sql.NullString `json:"history"`
@@ -356,9 +359,10 @@ type CreateAdminContentDataParams struct {
 
 func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminContentData,
-		arg.AdminRouteID,
 		arg.ParentID,
+		arg.AdminRouteID,
 		arg.AdminDatatypeID,
+		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
@@ -377,14 +381,14 @@ CREATE TABLE admin_content_data (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     history TEXT NULL,
+    CONSTRAINT fk_admin_content_data_parent_id
+        FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
+             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_content_data_admin_datatypes
         FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_content_data_admin_route_id
         FOREIGN KEY (admin_route_id) REFERENCES admin_routes (admin_route_id)
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_admin_content_data_parent_id
-        FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_content_data_author_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
@@ -403,8 +407,14 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value, 
+    author_id,
+    date_created,
+    date_modified,
     history
 ) VALUES (
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -418,6 +428,9 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID int32          `json:"admin_content_data_id"`
 	AdminFieldID       int32          `json:"admin_field_id"`
 	AdminFieldValue    string         `json:"admin_field_value"`
+	AuthorID           int32          `json:"author_id"`
+	DateCreated        time.Time      `json:"date_created"`
+	DateModified       time.Time      `json:"date_modified"`
 	History            sql.NullString `json:"history"`
 }
 
@@ -427,6 +440,9 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 		arg.History,
 	)
 	return err
@@ -4354,9 +4370,10 @@ func (q *Queries) ListUserOauth(ctx context.Context) ([]UserOauth, error) {
 
 const updateAdminContentData = `-- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
-SET admin_route_id = ?,
-    parent_id = ?,
+SET parent_id = ?,
+    admin_route_id = ?,
     admin_datatype_id = ?,
+    author_id = ?,
     date_created = ?,
     date_modified = ?,
     history = ?
@@ -4364,9 +4381,10 @@ WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
-	AdminRouteID       int32          `json:"admin_route_id"`
 	ParentID           sql.NullInt32  `json:"parent_id"`
+	AdminRouteID       int32          `json:"admin_route_id"`
 	AdminDatatypeID    int32          `json:"admin_datatype_id"`
+	AuthorID           int32          `json:"author_id"`
 	DateCreated        time.Time      `json:"date_created"`
 	DateModified       time.Time      `json:"date_modified"`
 	History            sql.NullString `json:"history"`
@@ -4375,9 +4393,10 @@ type UpdateAdminContentDataParams struct {
 
 func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentData,
-		arg.AdminRouteID,
 		arg.ParentID,
+		arg.AdminRouteID,
 		arg.AdminDatatypeID,
+		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.History,
@@ -4388,10 +4407,13 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 
 const updateAdminContentField = `-- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
-SET  admin_route_id=?,
+SET admin_route_id=?,
     admin_content_data_id=?,
     admin_field_id=?,
     admin_field_value=?, 
+    author_id=?,
+    date_created=?,
+    date_modified=?,
     history=?
 WHERE admin_content_field_id = ?
 `
@@ -4401,6 +4423,9 @@ type UpdateAdminContentFieldParams struct {
 	AdminContentDataID  int32          `json:"admin_content_data_id"`
 	AdminFieldID        int32          `json:"admin_field_id"`
 	AdminFieldValue     string         `json:"admin_field_value"`
+	AuthorID            int32          `json:"author_id"`
+	DateCreated         time.Time      `json:"date_created"`
+	DateModified        time.Time      `json:"date_modified"`
 	History             sql.NullString `json:"history"`
 	AdminContentFieldID int32          `json:"admin_content_field_id"`
 }
@@ -4411,6 +4436,9 @@ func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminCo
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 		arg.History,
 		arg.AdminContentFieldID,
 	)

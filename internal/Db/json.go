@@ -4,7 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
 )
+
+
 type NullInt32 struct {
 	sql.NullInt32
 }
@@ -55,8 +58,6 @@ func (n *NullInt64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
-
 type NullString struct {
 	sql.NullString
 }
@@ -82,8 +83,6 @@ func (n *NullString) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-
-
 type NullTime struct {
 	sql.NullTime
 }
@@ -108,6 +107,3 @@ func (n *NullTime) UnmarshalJSON(data []byte) error {
 	}
 	return nil
 }
-
-
-
