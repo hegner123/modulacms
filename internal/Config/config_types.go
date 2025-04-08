@@ -4,11 +4,11 @@ type ConfigOption string
 type Endpoint string
 
 type DbDriver string
+
 const (
 	OauthAuthURL  Endpoint = "oauth_auth_url"
 	OauthTokenURL Endpoint = "oauth_token_url"
 )
-
 
 const (
 	Sqlite DbDriver = "sqlite"
@@ -17,6 +17,7 @@ const (
 )
 
 type Config struct {
+	Environment         string              `json:"environment"`
 	Port                string              `json:"port"`
 	SSL_Port            string              `json:"ssl_port"`
 	Cert_Dir            string              `json:"cert_dir"`

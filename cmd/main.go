@@ -16,7 +16,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
-	//"golang.org/x/crypto/acme/autocert"
+	"golang.org/x/crypto/acme/autocert"
 
 	auth "github.com/hegner123/modulacms/internal/auth"
 	cli "github.com/hegner123/modulacms/internal/cli"
@@ -238,13 +238,11 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		router.SlugHandler(w, r, Env)
 	})
-	/*
-		// Certificates
-		manager := autocert.Manager{
-			Prompt:     autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
-		}
-	*/
+	// Certificates
+	manager := autocert.Manager{
+		Prompt:     autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
+	}
 
 	middlewareHandler := middleware.Serve(mux)
 	var (
@@ -255,11 +253,17 @@ func main() {
 		}
 		// Define your HTTPS server instance.
 		httpsServer = &http.Server{
-			Addr: "localhost:" + Env.SSL_Port,
-			//			TLSConfig: manager.TLSConfig(),
-			Handler: middlewareHandler,
+			Addr:      Env.Client_Site + Env.SSL_Port,
+			TLSConfig: manager.TLSConfig(),
+			Handler:   middlewareHandler,
 		}
 	)
+	if Env.Environment == "local" {
+		httpsServer = &http.Server{
+			Addr:    "localhost:" + Env.SSL_Port,
+			Handler: middlewareHandler,
+		}
+	}
 
 	l := len(Env.Cert_Dir)
 	c := Env.Cert_Dir[l-1]

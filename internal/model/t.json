@@ -1,0 +1,149 @@
+{
+    "datatype": {
+        "info": {
+            "datatype_id": 1,
+            "parent_id": null,
+            "label": "Page",
+            "type": "content",
+            "author_id": 1,
+            "date_created": "2023-01-01",
+            "date_modified": "2023-01-01",
+            "history": null
+        },
+        "content": {
+            "content_data_id": 1,
+            "parent_id": null,
+            "route_id": 1,
+            "datatype_id": 1,
+            "author_id": 1,
+            "date_created": "2023-01-01",
+            "date_modified": "2023-01-01",
+            "history": null
+        }
+    },
+    "fields": [
+        {
+            "info": {
+                "field_id": 1,
+                "parent_id": null,
+                "label": "Title",
+                "data": "string",
+                "type": "text",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            },
+            "content": {
+                "content_field_id": 1,
+                "route_id": 1,
+                "content_data_id": 1,
+                "field_id": 1,
+                "field_value": "Welcome to my page",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            }
+        },
+        {
+            "info": {
+                "field_id": 2,
+                "parent_id": null,
+                "label": "Content",
+                "data": "text",
+                "type": "textarea",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            },
+            "content": {
+                "content_field_id": 1,
+                "route_id": 1,
+                "content_data_id": 1,
+                "field_id": 1,
+                "field_value": "Welcome to my page",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            }
+        },
+        {
+            "info": {
+                "field_id": 1,
+                "parent_id": null,
+                "label": "Title",
+                "data": "string",
+                "type": "text",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            },
+            "content": {
+                "content_field_id": 2,
+                "route_id": 1,
+                "content_data_id": 2,
+                "field_id": 2,
+                "field_value": "This is the content of my page section.",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            }
+        }
+    ],
+    "root": {
+        "datatype": {
+            "info": {
+                "datatype_id": 2,
+                "parent_id": null,
+                "label": "Section",
+                "type": "content",
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            },
+            "content": {
+                "content_data_id": 2,
+                "parent_id": null,
+                "route_id": 1,
+                "datatype_id": 2,
+                "author_id": 1,
+                "date_created": "2023-01-01",
+                "date_modified": "2023-01-01",
+                "history": null
+            }
+        },
+        "fields": [
+            {
+                "info": {
+                    "field_id": 2,
+                    "parent_id": null,
+                    "label": "Content",
+                    "data": "text",
+                    "type": "textarea",
+                    "author_id": 1,
+                    "date_created": "2023-01-01",
+                    "date_modified": "2023-01-01",
+                    "history": null
+                },
+                "content": {
+                    "content_field_id": 2,
+                    "route_id": 1,
+                    "content_data_id": 2,
+                    "field_id": 2,
+                    "field_value": "This is the content of my page section.",
+                    "author_id": 1,
+                    "date_created": "2023-01-01",
+                    "date_modified": "2023-01-01",
+                    "history": null
+                }
+            }
+        ],
+        "nodes": null
+    }
+}

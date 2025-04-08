@@ -1,7 +1,6 @@
 package model
 
 import (
-
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -16,18 +15,18 @@ func BuildTree(cd []db.ContentData, dt []db.Datatypes, cf []db.ContentFields, df
 	for i, v := range cf {
 		f[i].Info = db.MapFieldJSON(df[i])
 		f[i].Content = db.MapContentFieldJSON(v)
-	
-    }
-    /*
-	jd, err := json.Marshal(d)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+
 	}
-	jf, err := json.Marshal(f)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-	}
-    */
+	/*
+		jd, err := json.Marshal(d)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+		}
+		jf, err := json.Marshal(f)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+		}
+	*/
 	nodes := BuildNodes(d, f)
 	//utility.DefaultLogger.Info("datatypes", string(jd))
 	//utility.DefaultLogger.Info("fields", string(jf))
