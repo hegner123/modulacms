@@ -2,7 +2,8 @@ package permissions
 
 import (
 	"encoding/json"
-	"fmt"
+
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type Permission string
@@ -126,7 +127,7 @@ var AdminRole Role = Role{
 func (r Role) JSON() []byte {
 	j, err := json.Marshal(AdminRole)
 	if err != nil {
-		fmt.Println(err)
+        utility.DefaultLogger.Error("",err)
 	}
 	return j
 }

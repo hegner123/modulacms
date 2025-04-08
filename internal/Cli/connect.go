@@ -3,9 +3,9 @@ package cli
 import (
 	"database/sql"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 // ForeignKeyReference holds the referenced table and column information.
@@ -36,7 +36,7 @@ func GetTables() []string {
 		)
 		err = rows.Scan(&id, &label, &author_id)
 		if err != nil {
-			utility.LogError("", err)
+			utility.DefaultLogger.Error("", err)
 		}
 		labels = append(labels, label)
 	}
@@ -101,7 +101,7 @@ func (m model) GetSuggestionsString(column string) []string {
 	} else {
 		r, err := db.GetColumnRowsString(con, ctx, m.table, column)
 		if err != nil {
-			utility.LogError("ERROR", err)
+			utility.DefaultLogger.Error("ERROR", err)
 		}
 		return r
 	}

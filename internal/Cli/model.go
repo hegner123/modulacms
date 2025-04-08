@@ -12,7 +12,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type formCompletedMsg struct{}
@@ -22,6 +22,7 @@ type FocusKey int
 
 const (
 	PAGEFOCUS FocusKey = iota
+    TABLEFOCUS
 	FORMFOCUS
 	DIALOGFOCUS
 )
@@ -80,20 +81,25 @@ type model struct {
 var CliContinue bool = false
 
 func InitialModel(v *bool) model {
+    
 	verbose := false
 	if v != nil {
 		verbose = *v
 	}
+
+    // TODO add conditional to check ui config for custom titles
 	fs, err := TitleFile.ReadDir("titles")
 	if err != nil {
 		utility.DefaultLogger.Fatal("", err)
 	}
 	fonts := ParseTitleFonts(fs)
+
+    // paginator 
 	p := paginator.New()
 	p.Type = paginator.Dots
-
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
+
 	return model{
 		titleFont:  0,
 		titles:     LoadTitles(fonts),
@@ -148,7 +154,6 @@ func (m model) GetIDRow() int64 {
 		utility.DefaultLogger.Ferror( "", err)
 	}
 	return id
-
 }
 
 func ParseTitleFonts(f []fs.DirEntry) []string {

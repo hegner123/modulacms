@@ -3,7 +3,7 @@ package install
 import (
 	"testing"
 
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 func TestConfigPathCheck(t *testing.T) {

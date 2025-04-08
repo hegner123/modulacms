@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 func TestSqlite(t *testing.T) {

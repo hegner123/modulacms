@@ -33,12 +33,12 @@ WHERE content_field_id = ? LIMIT 1;
 
 -- name: ListContentFields :many
 SELECT * FROM content_fields
-ORDER BY content_fields_id;
+ORDER BY content_field_id;
 
 -- name: ListContentFieldsByRoute :many
 SELECT * FROM content_fields
 WHERE route_id = ?
-ORDER BY content_fields_id;
+ORDER BY content_field_id;
 
 -- name: CreateContentField :one
 INSERT INTO content_fields (

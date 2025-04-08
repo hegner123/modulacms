@@ -3,12 +3,12 @@ package cli
 import (
 	"encoding/json"
 
-	tea "github.com/charmbracelet/bubbletea"
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
+// TODO Add default case for generic operations
 func (m *model) CLICreate(table db.DBTable) error {
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
@@ -187,6 +187,7 @@ func (m *model) CLICreate(table db.DBTable) error {
 	return nil
 }
 
+// TODO Add default case for generic operations
 func (m *model) CLIUpdate(table db.DBTable) error {
 	d := db.ConfigDB(config.Env)
 	con, _, err := d.GetConnection()
@@ -419,14 +420,9 @@ func (m *model) CLIUpdate(table db.DBTable) error {
 	return nil
 }
 
+// TODO Add default case for generic operations
 func (m model) CLIDelete(table db.DBTable) error {
-	f, err := tea.LogToFile("debug.log", "debug")
 	d := db.ConfigDB(config.Env)
-	defer func() {
-		if closeErr := f.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
 	con, _, err := d.GetConnection()
 	if err != nil {
 		return err
@@ -437,15 +433,15 @@ func (m model) CLIDelete(table db.DBTable) error {
 		}
 	}()
 	s := make(map[string]string, 0)
-	utility.DefaultLogger.Fdebug( "row", m.rows[m.cursor][0])
+	utility.DefaultLogger.Fdebug("row", m.rows[m.cursor][0])
 	s["ID"] = m.rows[m.cursor][0]
 
 	jsonData, err := json.Marshal(s)
 	if err != nil {
 		return err
 	}
-	utility.DefaultLogger.Finfo( "json ID", string(jsonData))
-	utility.DefaultLogger.Finfo( "table", table)
+	utility.DefaultLogger.Finfo("json ID", string(jsonData))
+	utility.DefaultLogger.Finfo("table", table)
 	switch table {
 	case db.Admin_content_data:
 		var result struct{ ID int64 }

@@ -7,13 +7,12 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
-	"log"
 	"path/filepath"
 	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
-	config "github.com/hegner123/modulacms/internal/Config"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	utility "github.com/hegner123/modulacms/internal/utility"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -23,7 +22,7 @@ var SqlFiles embed.FS
 
 func (d Database) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.LogHeader("Connecting to SQLite database...")
+		utility.DefaultLogger.Info("Connecting to SQLite database...")
 	}
 	ctx := context.Background()
 
@@ -58,7 +57,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 }
 func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.LogHeader("Connecting to MySQL database...")
+		utility.DefaultLogger.Info("Connecting to MySQL database...")
 	}
 	ctx := context.Background()
 
@@ -95,7 +94,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 }
 func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
-		utility.LogHeader("Connecting to PostgreSQL database...")
+		utility.DefaultLogger.Info("Connecting to PostgreSQL database...")
 	}
 	ctx := context.Background()
 
@@ -151,7 +150,6 @@ func ConfigDB(env config.Config) DbDriver {
 	}
 	return nil
 }
-
 
 func (d Database) InitDB(v *bool) error {
 	tables, err := ReadSchemaFiles(v)
@@ -216,8 +214,7 @@ func GenerateKey() []byte {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)
 	if err != nil {
-		log.Fatalf("Failed to generate key: %v", err)
+		utility.DefaultLogger.Fatal("Failed to generate key: %v", err)
 	}
 	return key
 }
-

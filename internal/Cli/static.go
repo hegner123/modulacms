@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/charmbracelet/lipgloss"
-	config "github.com/hegner123/modulacms/internal/Config"
-	install "github.com/hegner123/modulacms/internal/Install"
+	config "github.com/hegner123/modulacms/internal/config"
+	install "github.com/hegner123/modulacms/internal/install"
 )
 
 func StatusBlock() string {

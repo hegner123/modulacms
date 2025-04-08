@@ -1,21 +1,17 @@
 package bucket
 
 import (
-	"fmt"
-	"log"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	utility "github.com/hegner123/modulacms/internal/utility"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
-	utility "github.com/hegner123/modulacms/internal/Utility"
 )
 
 type Metadata map[string]string
-
-
 
 func (cs S3Credintials) GetBucket() (*s3.S3, error) {
 	sess, err := session.NewSession(&aws.Config{
@@ -25,7 +21,7 @@ func (cs S3Credintials) GetBucket() (*s3.S3, error) {
 		S3ForcePathStyle: aws.Bool(true),               // Required for Linode Object Storage
 	})
 	if err != nil {
-		utility.LogError("Failed to create session: %v", err)
+		utility.DefaultLogger.Error("Failed to create session: %v", err)
 		return nil, err
 	}
 
@@ -46,23 +42,23 @@ func PrintBuckets(s3 *s3.S3) {
 	// Example: List buckets
 	result, err := s3.ListBuckets(nil)
 	if err != nil {
-		log.Fatalf("Unable to list buckets: %v", err)
+		utility.DefaultLogger.Fatal("Unable to list buckets: %w", err)
 	}
 
-	fmt.Println("Buckets:")
+	utility.DefaultLogger.Info("Buckets:")
 	for _, bucket := range result.Buckets {
-		fmt.Printf("%s created on %s\n",
+		utility.DefaultLogger.Info("%s created on %s\n",
 			aws.StringValue(bucket.Name),
 			aws.TimeValue(bucket.CreationDate))
 	}
 }
 
-//Must use output of GetBucket as s3 argument
-//Must use output of bucket.UploadPrep frunction as payload
+// Must use output of GetBucket as s3 argument
+// Must use output of bucket.UploadPrep frunction as payload
 func ObjectUpload(s3 *s3.S3, payload *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	upload, err := s3.PutObject(payload)
 	if err != nil {
-		utility.LogError("failed to upload ", err)
+		utility.DefaultLogger.Error("failed to upload ", err)
 	}
 	return upload, nil
 }

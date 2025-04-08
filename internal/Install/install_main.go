@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type ModulaInit struct {
@@ -115,10 +115,12 @@ func InstallDependencies(config bool, db bool, bucket bool, oauth bool) error {
 		}
 	}
 	if bucket {
-		fmt.Printf("Bucket is not setup placeholder\n")
+		err := fmt.Errorf("bucket is not setup placeholder")
+		utility.DefaultLogger.Warn("", err)
 	}
 	if oauth {
-		fmt.Printf("oAuth is not setup placeholder\n")
+		err := fmt.Errorf("oAuth is not setup placeholder")
+		utility.DefaultLogger.Warn("", err)
 	}
 	return nil
 }

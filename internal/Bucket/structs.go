@@ -1,7 +1,7 @@
 package bucket
 
 import (
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 type S3Credintials struct {

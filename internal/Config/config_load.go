@@ -2,10 +2,10 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
-	"log"
 	"os"
+
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 var file *os.File
@@ -13,34 +13,36 @@ var err error
 var config Config
 var Env Config
 
+// TODO Add error handling for when modula doesn't have permissions
+// to wirte to error log path
+
 func LoadConfig(verbose *bool, altConfig string) Config {
 	if altConfig != "" {
 		file, err = os.Open(altConfig)
 		if *verbose {
-			fmt.Println("load alt config")
-			fmt.Println(altConfig)
+			utility.DefaultLogger.Info("load alt config", altConfig)
 		}
 		if err != nil {
-			log.Fatal("Error opening file:", err)
+			utility.DefaultLogger.Error("Error opening file:", err)
 		}
 	} else {
 		file, err = os.Open("config.json")
 		if err != nil {
-			log.Fatal("Error opening file:", err)
+			utility.DefaultLogger.Fatal("Error opening file:", err)
 		}
 	}
 	defer file.Close()
 
 	bytes, err := io.ReadAll(file)
 	if err != nil {
-		log.Fatal("Error reading file:", err)
+		utility.DefaultLogger.Fatal("Error reading file:", err)
 	}
 
 	if err := json.Unmarshal(bytes, &config); err != nil {
-		log.Fatal("Error parsing JSON:", err)
+		utility.DefaultLogger.Fatal("Error parsing JSON:", err)
 	}
 	if *verbose {
-		fmt.Printf("%s\n", bytes)
+		utility.DefaultLogger.Finfo("", string(bytes))
 	}
 	Env = config
 	return config

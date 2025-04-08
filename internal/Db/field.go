@@ -17,7 +17,7 @@ import (
 type Fields struct {
 	FieldID      int64          `json:"field_id"`
 	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        any            `json:"label"`
+	Label        string         `json:"label"`
 	Data         string         `json:"data"`
 	Type         string         `json:"type"`
 	AuthorID     int64          `json:"author_id"`
@@ -138,6 +138,27 @@ func MapUpdateFieldParams(a UpdateFieldFormParams) UpdateFieldParams {
 		DateModified: StringToNullString(a.DateModified),
 		History:      StringToNullString(a.History),
 		FieldID:      StringToInt64(a.FieldID),
+	}
+}
+func MapFieldJSON(a Fields) FieldsJSON {
+	return FieldsJSON{
+		FieldID: a.FieldID,
+		ParentID: NullInt64{
+			NullInt64: a.ParentID,
+		},
+		Label:    a.Label,
+		Data:     a.Data,
+		Type:     a.Type,
+		AuthorID: a.AuthorID,
+		DateCreated: NullString{
+			NullString: a.DateCreated,
+		},
+		DateModified: NullString{
+			NullString: a.DateModified,
+		},
+		History: NullString{
+			NullString: a.History,
+		},
 	}
 }
 func MapCreateFieldJSONParams(a CreateFieldParamsJSON) CreateFieldParams {

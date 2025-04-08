@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type ColumnNameType map[string]string

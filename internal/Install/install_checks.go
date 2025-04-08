@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
-	bucket "github.com/hegner123/modulacms/internal/Bucket"
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	bucket "github.com/hegner123/modulacms/internal/bucket"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type DBStatus struct {
@@ -28,8 +28,7 @@ func CheckConfigExists(path string) error {
 	if err != nil {
 		return err
 	}
-	l := utility.NewLogger(utility.INFO)
-	l.Info("Config exists at", p)
+	utility.DefaultLogger.Info("Config exists at", p)
 	return nil
 }
 
@@ -41,7 +40,7 @@ func CheckBucket(v *bool) (string, error) {
 	c := config.LoadConfig(&verbose, "")
 	if c.Bucket_Secret_Key == "" || c.Bucket_Endpoint == "" || c.Bucket_Access_Key == "" {
 		err := fmt.Errorf("bucket access key: %s\nbucket secret key: %s\nbucket endpoint: %s", c.Bucket_Access_Key, c.Bucket_Secret_Key, c.Bucket_Endpoint)
-		utility.LogError("Bucket fields not completed", err)
+		utility.DefaultLogger.Error("Bucket fields not completed", err)
 	}
 	creds := bucket.S3Credintials{
 		AccessKey: c.Bucket_Access_Key,
@@ -53,8 +52,7 @@ func CheckBucket(v *bool) (string, error) {
 		return err.Error(), err
 	}
 	if verbose {
-		l := utility.NewLogger(utility.INFO)
-		l.Info("Bucket Connected Successfully")
+		utility.DefaultLogger.Info("Bucket Connected Successfully")
 	}
 	return "Connected", nil
 }
@@ -68,13 +66,12 @@ func CheckOauth(v *bool) (string, error) {
 	if c.Oauth_Client_Id == "" || c.Oauth_Client_Secret == "" || c.Oauth_Endpoint["oauth_auth_url"] == "" || c.Oauth_Endpoint["oauth_token_url"] == "" {
 		err := fmt.Errorf("oauth fields not completed")
 		if verbose {
-			utility.LogError("CheckOauth: ", err)
+			utility.DefaultLogger.Error("CheckOauth: ", err)
 		}
 		return "Oauth fields not completed", err
 	}
 	if verbose {
-		l := utility.NewLogger(utility.INFO)
-		l.Info("Oauth, no missing fields in config")
+		utility.DefaultLogger.Info("Oauth, no missing fields in config")
 	}
 	return "Connected", nil
 }
@@ -91,7 +88,7 @@ func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 		if verbose {
 			err := fmt.Errorf("DB Not Connected")
 			if verbose {
-				utility.LogError("DBCheck:  ", err)
+				utility.DefaultLogger.Error("DBCheck:  ", err)
 			}
 
 		}
@@ -102,8 +99,7 @@ func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 	}
 	connected := fmt.Sprint("db connected: ", c.Db_Driver, " ", c.Db_URL)
 	if verbose {
-		l := utility.NewLogger(utility.INFO)
-		l.Info(connected)
+		utility.DefaultLogger.Info(connected)
 	}
     status.Driver = string(c.Db_Driver)
     status.URL = c.Db_URL

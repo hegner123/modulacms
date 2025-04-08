@@ -4,8 +4,8 @@ import (
 	"os"
 	"os/exec"
 
-	file "github.com/hegner123/modulacms/internal/File"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	file "github.com/hegner123/modulacms/internal/file"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func RestoreBackup(path string, tempDir string, appDir string) error {
@@ -20,7 +20,7 @@ func RestoreBackup(path string, tempDir string, appDir string) error {
 	rsyncCmd.Stderr = os.Stderr
 
 	if err := rsyncCmd.Run(); err != nil {
-		utility.LogError("rsync failed: %v", err)
+		utility.DefaultLogger.Error("rsync failed", err)
 	}
 	l := utility.NewLogger(utility.INFO)
 	l.Info("Files synchronized successfully to", appDir)

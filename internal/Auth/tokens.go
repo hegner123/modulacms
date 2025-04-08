@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 type TokenType string

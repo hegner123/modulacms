@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	config "github.com/hegner123/modulacms/internal/Config"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type PageIndex int

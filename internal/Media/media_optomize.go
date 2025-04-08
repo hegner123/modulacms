@@ -11,14 +11,15 @@ import (
 	"strconv"
 	"strings"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
 
-//fsrc is the source file
-//dstPath is the location of optimized files
+// fsrc is the source file
+// dstPath is the location of optimized files
 func OptimizeUpload(fSrc string, dstPath string, c config.Config) (*[]string, error) {
 	d := db.ConfigDB(c)
 
@@ -38,13 +39,13 @@ func OptimizeUpload(fSrc string, dstPath string, c config.Config) (*[]string, er
 		return nil, fmt.Errorf("dimensions list is nil")
 	}
 
-    trimmedPrefix := strings.Split(fSrc, "/")
-    last := len(trimmedPrefix)
+	trimmedPrefix := strings.Split(fSrc, "/")
+	last := len(trimmedPrefix)
 	baseName := strings.TrimSuffix(trimmedPrefix[last-1], filepath.Ext(trimmedPrefix[last-1]))
 	ext := filepath.Ext(fSrc)
-    fmt.Println("last",last)
-    fmt.Println("trimmedprefix",trimmedPrefix)
-    fmt.Println("baseName",baseName)
+	utility.DefaultLogger.Debug("last", last)
+	utility.DefaultLogger.Debug("trimmedprefix", trimmedPrefix)
+	utility.DefaultLogger.Debug("baseName", baseName)
 
 	// Decode the image.
 	var dImg image.Image

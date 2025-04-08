@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"

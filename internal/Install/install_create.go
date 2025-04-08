@@ -3,8 +3,8 @@ package install
 import (
 	"os"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
 )
 
 func CreateDb(path string) error {

@@ -1,6 +1,4 @@
-# ModulaCMS
-
-
+# ModulaCMS to do list
 
 ## scripts
 - make
@@ -8,51 +6,50 @@
 
 ## ToDo
 - [x] Server: GO
-- [x] Endpoints: **api/vX/** JSON endpoints to serve admin
-- [x] DB: SQLite & Mysql & Postgres 
-- [x] Bucket: Deployment require cloud storage endpoint
+- [ ] Endpoints: **api/vX/** JSON endpoints to serve admin
+- [ ] DB: SQLite & Mysql & Postgres 
+- [ ] Bucket: Deployment require cloud storage endpoint
 - [ ] Reverse Proxy Bucket endpoints
 
 ## Db Functions
-- [x] DB MySql Queries
-- [x] DB MySql Schema
-- [x] DB MySql Functions
-- [x] DB PostgreSQL Queries
-- [x] DB PostgreSQL Schema
-- [x] DB PostgreSQL Functions
-- [x] DB Sqlite Queries
-- [x] DB Sqlite Schema 
-- [x] DB Sqlite Functions
+- [ ] DB MySql Queries
+- [ ] DB MySql Schema
+- [ ] DB MySql Functions
+- [ ] DB PostgreSQL Queries
+- [ ] DB PostgreSQL Schema
+- [ ] DB PostgreSQL Functions
+- [ ] DB Sqlite Queries
+- [ ] DB Sqlite Schema 
+- [ ] DB Sqlite Functions
 
 ## Proof of concept requires
 - [ ] Install Process
 - [x] Go Server
 - [x] Go DB connection
 - [x] DB CRUD functions
-- [x] Handle routes for Admin API
-- [x] Handle routes for Client API
+- [ ] Handle routes for Admin API
+- [ ] Handle routes for Client API
 - [x] Load and confirm bucket connection
 - [ ] Admin authentication - oAuth?
 - [ ] Local authentication
-- [x] Middleware
-- [x] CLI
+- [ ] Middleware
+- [ ] CLI
 - [x] Connect to Bucket Storage
 - [x] Media upload
 - [x] Media Optimize
-- [x] Backup
+- [ ] Backup
 - [ ] Restore
 
 
 ## Flags
-- -h Display help information about the application
-- -v Print the version of the application and exit
-- -q Run the application with minimal or no output
-- -V|V|V|V Provide more detailed output for debugging or analysis
-- -p Specify a network port
-- -config Specify a configuration file
-- -S Enable SSL/TLS for secure connections
-- -db use a connection string to connect to a db
-- -reset clear tables and reset. 
+* -h Display help information about the application
+* -q Run the application with minimal or no output
+* -v Provide more detailed output for debugging or analysis
+* -p Specify a network port
+* -config Specify a configuration path
+* -db use a connection string to connect to a db
+* -reset clear tables and reset. 
+* -version Print the version of the application and exit
 
 
 

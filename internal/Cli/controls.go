@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func (m *model) PageControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
@@ -234,6 +234,7 @@ func (m *model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (tea.Mode
 func (m *model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	var rows [][]string
+	m.focus = FORMFOCUS
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":

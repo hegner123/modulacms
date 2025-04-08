@@ -8,7 +8,7 @@ import (
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/term"
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 //go:embed titles

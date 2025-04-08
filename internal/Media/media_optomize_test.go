@@ -3,7 +3,7 @@ package media
 import (
 	"testing"
 
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 func TestOptimize(t *testing.T) {

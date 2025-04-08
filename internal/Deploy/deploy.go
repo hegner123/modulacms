@@ -1,6 +1,6 @@
 package deploy
 
-import backup "github.com/hegner123/modulacms/internal/Backup"
+import backup "github.com/hegner123/modulacms/internal/backup"
 
 func IssueMakeBackup() {}
 

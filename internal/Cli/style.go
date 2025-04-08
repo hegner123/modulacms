@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	width       = 96
+	width       = 80
 	White       = lipgloss.CompleteColor{TrueColor: "#FFFFFF", ANSI256: "15", ANSI: "15"}
 	LightGray   = lipgloss.CompleteColor{TrueColor: "#a3a3a3", ANSI256: "254", ANSI: "7"}
 	Gray        = lipgloss.CompleteColor{TrueColor: "#939393", ANSI256: "250", ANSI: "8"}
@@ -198,7 +198,7 @@ func (m model) RenderStatusBar() string {
 		fishCake,
 	)
 
-	doc.WriteString(statusBarStyle.Width(m.width).Render(bar))
+	doc.WriteString(statusBarStyle.Width(width).Render(bar))
 	return statusBarStyle.Render(doc.String())
 
 }

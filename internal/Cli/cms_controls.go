@@ -1,24 +1,16 @@
 package cli
 
 import (
-	"fmt"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	db "github.com/hegner123/modulacms/internal/Db"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func (m *model) CMSCreateDatatypeFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.focus = FORMFOCUS
-
-	logFile, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer logFile.Close()
 
 	form, cmd := m.form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
@@ -38,7 +30,7 @@ func (m *model) CMSCreateDatatypeFormControls(msg tea.Msg) (tea.Model, tea.Cmd) 
 		m.focus = PAGEFOCUS
 		err := m.CLICreate(db.DBTable(m.table))
 		if err != nil {
-			fmt.Fprintln(logFile, err.Error())
+			utility.DefaultLogger.Ferror("", err)
 		}
 		m.page = m.pages[READPAGE]
 		m.controller = m.page.Controller
@@ -51,13 +43,6 @@ func (m *model) CMSUpdateDatatypeFormControls(msg tea.Msg) (tea.Model, tea.Cmd) 
 	var cmds []tea.Cmd
 	m.focus = FORMFOCUS
 
-	logFile, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	defer logFile.Close()
-
 	form, cmd := m.form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		m.form = f
@@ -75,7 +60,7 @@ func (m *model) CMSUpdateDatatypeFormControls(msg tea.Msg) (tea.Model, tea.Cmd) 
 		m.focus = PAGEFOCUS
 		err := m.CLICreate(db.DBTable(m.table))
 		if err != nil {
-			fmt.Fprintln(logFile, err.Error())
+			utility.DefaultLogger.Ferror("", err)
 		}
 		m.page = m.pages[READPAGE]
 		m.controller = m.page.Controller

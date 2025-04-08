@@ -3435,7 +3435,7 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID int64) ([]
 
 const listContentFields = `-- name: ListContentFields :many
 SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields
-ORDER BY content_fields_id
+ORDER BY content_field_id
 `
 
 func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error) {
@@ -3474,7 +3474,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
 SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified, history FROM content_fields
 WHERE route_id = ?
-ORDER BY content_fields_id
+ORDER BY content_field_id
 `
 
 func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.NullInt64) ([]ContentFields, error) {

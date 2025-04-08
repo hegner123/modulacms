@@ -8,7 +8,7 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type ThemeComponent struct {

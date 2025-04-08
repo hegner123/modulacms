@@ -8,8 +8,8 @@ import (
 	"runtime"
 	"testing"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func TestObjectStorage(t *testing.T) {
@@ -17,7 +17,7 @@ func TestObjectStorage(t *testing.T) {
 
 	file, err := os.Open("testing-config.json")
 	if err != nil {
-		utility.LogError("failed to open config ", err)
+		utility.DefaultLogger.Error("failed to open config ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
@@ -25,7 +25,7 @@ func TestObjectStorage(t *testing.T) {
 	defer file.Close()
 	c, err := io.ReadAll(file)
 	if err != nil {
-		utility.LogError("failed to read config ", err)
+		utility.DefaultLogger.Error("failed to read config ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
@@ -33,7 +33,7 @@ func TestObjectStorage(t *testing.T) {
 
 	err = json.Unmarshal(c, &config)
 	if err != nil {
-		utility.LogError("failed to : ", err)
+		utility.DefaultLogger.Error("failed to : ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
@@ -44,9 +44,9 @@ func TestObjectStorage(t *testing.T) {
 		URL:       config.Bucket_Url,
 	}
 	bucket, err := S3Access.GetBucket()
-    if err!=nil {
-        return
-    }
+	if err != nil {
+		return
+	}
 	if bucket == nil {
 		t.FailNow()
 
@@ -56,10 +56,9 @@ func TestObjectStorage(t *testing.T) {
 func TestUpload(t *testing.T) {
 	config := config.Config{}
 
-
 	file, err := os.Open("testing-config.json")
 	if err != nil {
-		utility.LogError("failed to open config ", err)
+		utility.DefaultLogger.Error("failed to open config ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
@@ -67,21 +66,21 @@ func TestUpload(t *testing.T) {
 	defer file.Close()
 	c, err := io.ReadAll(file)
 	if err != nil {
-		utility.LogError("failed to read config ", err)
+		utility.DefaultLogger.Error("failed to read config ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
 	file, err = os.Open("testFiles/test1.png")
 	if err != nil {
-		utility.LogError("failed to open File", err)
+		utility.DefaultLogger.Error("failed to open File", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
 	err = json.Unmarshal(c, &config)
 	if err != nil {
-		utility.LogError("failed to : ", err)
+		utility.DefaultLogger.Error("failed to : ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
@@ -92,18 +91,19 @@ func TestUpload(t *testing.T) {
 		URL:       config.Bucket_Url,
 	}
 	bucket, err := S3Access.GetBucket()
-    if err!=nil {
-        return
-    }
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		return
+	}
 	payload, err := UploadPrep("media/test1.png", "backups", file)
 	if err != nil {
-		utility.LogError("failed to : ", err)
+		utility.DefaultLogger.Error("failed to : ", err)
 		_, file, line, _ := runtime.Caller(0)
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
 	_, err = ObjectUpload(bucket, payload)
 	if err != nil {
-		utility.LogError("failed to : ", err)
+		utility.DefaultLogger.Error("failed to : ", err)
 	}
 }

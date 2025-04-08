@@ -18,14 +18,14 @@ import (
 	"github.com/charmbracelet/wish/logging"
 	//"golang.org/x/crypto/acme/autocert"
 
-	auth "github.com/hegner123/modulacms/internal/Auth"
-	cli "github.com/hegner123/modulacms/internal/Cli"
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	install "github.com/hegner123/modulacms/internal/Install"
-	middleware "github.com/hegner123/modulacms/internal/Middleware"
-	router "github.com/hegner123/modulacms/internal/Router"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	auth "github.com/hegner123/modulacms/internal/auth"
+	cli "github.com/hegner123/modulacms/internal/cli"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	install "github.com/hegner123/modulacms/internal/install"
+	middleware "github.com/hegner123/modulacms/internal/middleware"
+	router "github.com/hegner123/modulacms/internal/router"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 var InitStatus install.ModulaInit
@@ -233,18 +233,18 @@ func main() {
 	mux.HandleFunc("/api/v1/users/", func(w http.ResponseWriter, r *http.Request) {
 		router.UserHandler(w, r, Env)
 	})
+	//mux.HandleFunc("/auth/google/login", oauthGoogleLogin)
+	//mux.HandleFunc("/auth/google/callback", oauthGoogleCallback)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		router.SlugHandler(w, r, Env)
 	})
-
-	// Certificates
-/*
-	manager := autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		Cache:      autocert.DirCache(Env.Cert_Dir),                         // Folder to store certificates
-		HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
-	}
-    */
+	/*
+		// Certificates
+		manager := autocert.Manager{
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist(Env.Client_Site, Env.Admin_Site), // Your domain(s)
+		}
+	*/
 
 	middlewareHandler := middleware.Serve(mux)
 	var (
@@ -255,9 +255,9 @@ func main() {
 		}
 		// Define your HTTPS server instance.
 		httpsServer = &http.Server{
-			Addr:      "localhost:" + Env.SSL_Port,
-			//TLSConfig: manager.TLSConfig(),
-			Handler:   middlewareHandler,
+			Addr: "localhost:" + Env.SSL_Port,
+			//			TLSConfig: manager.TLSConfig(),
+			Handler: middlewareHandler,
 		}
 	)
 

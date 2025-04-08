@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 func CreateAuthCookie(value string, c config.Config) (*http.Cookie, error) {

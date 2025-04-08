@@ -5,7 +5,7 @@ import (
 	"slices"
 	"strings"
 
-	config "github.com/hegner123/modulacms/internal/Config"
+	config "github.com/hegner123/modulacms/internal/config"
 )
 
 // CorsHandler sets CORS headers based on configuration

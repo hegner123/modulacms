@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/json"
 
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 
@@ -59,7 +59,7 @@ func (a AdminContentData) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -76,7 +76,7 @@ func (a AdminContentFields) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -93,7 +93,7 @@ func (a AdminDatatypes) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -111,7 +111,7 @@ func (a AdminFields) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -128,7 +128,7 @@ func (a AdminRoutes) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -143,7 +143,7 @@ func (c ContentData) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -160,7 +160,7 @@ func (c ContentFields) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -177,7 +177,7 @@ func (d Datatypes) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -195,7 +195,7 @@ func (f Fields) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }
@@ -212,7 +212,7 @@ func (r Routes) MapHistoryEntry() string {
 	}
 	j, err := json.Marshal(entry)
 	if err != nil {
-		utility.LogError("", err)
+		utility.DefaultLogger.Error("", err)
 	}
 	return string(j)
 }

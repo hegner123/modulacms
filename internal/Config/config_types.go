@@ -3,12 +3,12 @@ package config
 type ConfigOption string
 type Endpoint string
 
+type DbDriver string
 const (
 	OauthAuthURL  Endpoint = "oauth_auth_url"
 	OauthTokenURL Endpoint = "oauth_token_url"
 )
 
-type DbDriver string
 
 const (
 	Sqlite DbDriver = "sqlite"
@@ -25,6 +25,7 @@ type Config struct {
 	SSH_Host            string              `json:"ssh_host"`
 	SSH_Port            string              `json:"ssh_port"`
 	Options             map[string][]any    `json:"options"`
+	Log_Path            string              `json:"log_path"`
 	Auth_Salt           string              `json:"auth_salt"`
 	Cookie_Name         string              `json:"cookie_name"`
 	Cookie_Duration     string              `json:"cookie_duration"`

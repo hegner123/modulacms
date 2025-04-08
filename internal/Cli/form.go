@@ -3,8 +3,8 @@ package cli
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 var ErrLog utility.Logger = *utility.NewLogger(utility.ERROR)

@@ -3,7 +3,8 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"log"
+
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type SqliteForeignKeyQueryRow struct {
@@ -114,8 +115,7 @@ func (d Database) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQuer
 	for rows.Next() {
 		err := rows.Scan(&row.id, &row.seq, &row.tableName, &row.fromCol, &row.toCol, &row.onUpdate, &row.onDelete, &row.match)
 		if err != nil {
-			// handle error
-			log.Fatal(err)
+			utility.DefaultLogger.Fatal("", err)
 		}
 		foreignKeys = append(foreignKeys, row)
 	}
@@ -125,14 +125,14 @@ func (d Database) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQuer
 }
 
 func (d Database) SelectColumnFromTable(table string, column string) {
-    t := StringDBTable(table)
-    s,err:=GenericList(t,d)
-    if err!=nil {
-        return
-    }
-    for _,v := range s {
-        fmt.Println(v[:len(v)-3])
-    }
+	t := StringDBTable(table)
+	s, err := GenericList(t, d)
+	if err != nil {
+		return
+	}
+	for _, v := range s {
+		utility.DefaultLogger.Info("", v[:len(v)-3])
+	}
 }
 
 func (d MysqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow {
@@ -143,7 +143,7 @@ func (d MysqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKe
 		err := rows.Scan(&row.id, &row.seq, &row.tableName, &row.fromCol, &row.toCol, &row.onUpdate, &row.onDelete, &row.match)
 		if err != nil {
 			// handle error
-			log.Fatal(err)
+			utility.DefaultLogger.Fatal("", err)
 		}
 		foreignKeys = append(foreignKeys, row)
 	}
@@ -153,16 +153,15 @@ func (d MysqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKe
 }
 
 func (d MysqlDatabase) SelectColumnFromTable(table string, column string) {
-    t := StringDBTable(table)
-    s,err:=GenericList(t,d)
-    if err!=nil {
-        return
-    }
-    for _,v := range s {
-        fmt.Println(v[:len(v)-3])
-    }
+	t := StringDBTable(table)
+	s, err := GenericList(t, d)
+	if err != nil {
+		return
+	}
+	for _, v := range s {
+		utility.DefaultLogger.Info("", v[:len(v)-3])
+	}
 }
-
 
 func (d PsqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow {
 	row := SqliteForeignKeyQueryRow{}
@@ -172,7 +171,7 @@ func (d PsqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKey
 		err := rows.Scan(&row.id, &row.seq, &row.tableName, &row.fromCol, &row.toCol, &row.onUpdate, &row.onDelete, &row.match)
 		if err != nil {
 			// handle error
-			log.Fatal(err)
+			utility.DefaultLogger.Fatal("", err)
 		}
 		foreignKeys = append(foreignKeys, row)
 	}
@@ -182,12 +181,12 @@ func (d PsqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKey
 }
 
 func (d PsqlDatabase) SelectColumnFromTable(table string, column string) {
-    t := StringDBTable(table)
-    s,err:=GenericList(t,d)
-    if err!=nil {
-        return
-    }
-    for _,v := range s {
-        fmt.Println(v[:len(v)-3])
-    }
+	t := StringDBTable(table)
+	s, err := GenericList(t, d)
+	if err != nil {
+		return
+	}
+	for _, v := range s {
+		utility.DefaultLogger.Info("", v[:len(v)-3])
+	}
 }

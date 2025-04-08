@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func (m *model) NewFieldFromType(column string, colType *sql.ColumnType, value *string) (huh.Field, error) {

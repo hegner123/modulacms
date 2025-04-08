@@ -3,8 +3,9 @@ package middleware
 import (
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"net/http"
+
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 func SetCookieHandler(w http.ResponseWriter, c *http.Cookie) {
@@ -12,14 +13,13 @@ func SetCookieHandler(w http.ResponseWriter, c *http.Cookie) {
 	basic := []byte("Test")
 	// Set the cookie in the response header
 	http.SetCookie(w, c)
-	fmt.Println(w.Header())
+	utility.DefaultLogger.Debug("", w.Header())
 	i, err := w.Write(basic)
 	if err != nil {
 		return
 	}
-	fmt.Printf("wrote %d bytes\n", i)
-
-	fmt.Fprintln(w, "Cookie has been set!")
+    utility.DefaultLogger.Debug("wrote %d bytes\n", i)
+    utility.DefaultLogger.Fdebug("Cook has been set!", w)
 }
 
 func ReadCookie(c *http.Cookie) (*MiddlewareCookie, error) {

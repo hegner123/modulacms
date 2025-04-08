@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	install "github.com/hegner123/modulacms/internal/Install"
+	install "github.com/hegner123/modulacms/internal/install"
 )
 
 type GlobalTestingState struct {

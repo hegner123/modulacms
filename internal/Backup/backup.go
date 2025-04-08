@@ -7,9 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 type backupName func(string, string) string
@@ -39,12 +39,12 @@ func CreateBackup(dbFile, mediaDir, pluginDir, output string, bname backupName, 
 	d := db.ConfigDB(c)
 	Connection, _, err := d.GetConnection()
 	if err != nil {
-		utility.LogError("Db Connection failed", err)
+		utility.DefaultLogger.Error("db connection failed", err)
 	}
 
 	dbDumpFile, err := zipWriter.Create("database.sql")
 	if err != nil {
-		utility.LogError("failed to create database dump in archive: ", err)
+		utility.DefaultLogger.Error("failed to create database dump in archive:", err)
 	}
 
 	rows, err := Connection.Query("SELECT sql FROM sqlite_master WHERE type='table'")

@@ -109,6 +109,17 @@ type UpdateContentFieldFormParams struct {
 	History          string `json:"history"`
 	ContentFieldID_2 string `json:"content_field_id_2"`
 }
+type ContentFieldsJSON struct {
+	ContentFieldID int64      `json:"content_field_id"`
+	RouteID        NullInt64  `json:"route_id"`
+	ContentDataID  int64      `json:"content_data_id"`
+	FieldID        int64      `json:"field_id"`
+	FieldValue     string     `json:"field_value"`
+	AuthorID       int64      `json:"author_id"`
+	DateCreated    NullString `json:"date_created"`
+	DateModified   NullString `json:"date_modified"`
+	History        NullString `json:"history"`
+}
 
 ///////////////////////////////
 //GENERIC
@@ -158,15 +169,28 @@ func MapCreateContentFieldJSONParams(a CreateContentFieldParamsJSON) CreateConte
 
 func MapUpdateContentFieldJSONParams(a UpdateContentFieldParamsJSON) UpdateContentFieldParams {
 	return UpdateContentFieldParams{
-		RouteID:          a.RouteID.NullInt64,
-		ContentDataID:    a.ContentDataID,
-		FieldID:          a.FieldID,
-		FieldValue:       a.FieldValue,
-		AuthorID:         a.AuthorID,
-		DateCreated:      a.DateCreated.NullString,
-		DateModified:     a.DateModified.NullString,
-		History:          a.History.NullString,
-        ContentFieldID:   a.ContentFieldID,
+		RouteID:        a.RouteID.NullInt64,
+		ContentDataID:  a.ContentDataID,
+		FieldID:        a.FieldID,
+		FieldValue:     a.FieldValue,
+		AuthorID:       a.AuthorID,
+		DateCreated:    a.DateCreated.NullString,
+		DateModified:   a.DateModified.NullString,
+		History:        a.History.NullString,
+		ContentFieldID: a.ContentFieldID,
+	}
+}
+func MapContentFieldJSON(a ContentFields) ContentFieldsJSON {
+	return ContentFieldsJSON{
+		ContentFieldID: a.ContentFieldID,
+		RouteID:        NullInt64{a.RouteID},
+		ContentDataID:  a.ContentDataID,
+		FieldID:        a.FieldID,
+		FieldValue:     a.FieldValue,
+		AuthorID:       a.AuthorID,
+		DateCreated:    NullString{a.DateCreated},
+		DateModified:   NullString{a.DateModified},
+		History:        NullString{a.History},
 	}
 }
 
@@ -205,6 +229,19 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 
 func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.CreateContentFieldParams {
 	return mdb.CreateContentFieldParams{
+		RouteID:       a.RouteID,
+		ContentDataID: a.ContentDataID,
+		FieldID:       a.FieldID,
+		FieldValue:    a.FieldValue,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		History:       a.History,
+	}
+}
+
+func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.UpdateContentFieldParams {
+	return mdb.UpdateContentFieldParams{
 		RouteID:        a.RouteID,
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
@@ -213,20 +250,7 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
 		History:        a.History,
-	}
-}
-
-func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.UpdateContentFieldParams {
-	return mdb.UpdateContentFieldParams{
-		RouteID:          a.RouteID,
-		ContentDataID:    a.ContentDataID,
-		FieldID:          a.FieldID,
-		FieldValue:       a.FieldValue,
-		AuthorID:         a.AuthorID,
-		DateCreated:      a.DateCreated,
-		DateModified:     a.DateModified,
-		History:          a.History,
-        ContentFieldID:   a.ContentFieldID,
+		ContentFieldID: a.ContentFieldID,
 	}
 }
 

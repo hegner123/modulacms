@@ -10,6 +10,7 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 // LogLevel defines the severity of a log message
@@ -70,15 +71,35 @@ func GetVersion() (*string, error) {
 	return &versionString, nil
 }
 
-func PopError(err error) string {
-	unwrappedErr := strings.Split(err.Error(), " ")
-	msg := fmt.Sprint(unwrappedErr[len(unwrappedErr)-1])
-	return msg
+var (
+	// Level badges
+	debugStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#AF87FF")).Bold(true)                                       // Magenta
+	infoStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#87D787")).Bold(true)                                       // Green
+	warnStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFAF5F")).Bold(true)                                       // Yellow
+	errorStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF5F5F")).Bold(true)                                       // Red
+	fatalStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF5F5F")).Background(lipgloss.Color("#5F0000")).Bold(true) // Red with darker background
+
+	// Other log elements
+	timestampStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#767676"))              // Gray
+	fileInfoStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#5FAFD7"))              // Blue
+	prefixStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#AFAFD7"))              // Light purple
+	errMsgStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#FF5F5F")).Italic(true) // Red italic
+)
+
+// Helper functions that adapt the lipgloss.Style.Render method to our required signature
+func styleWrapper(style lipgloss.Style) func(string) string {
+	return func(s string) string {
+		return style.Render(s)
+	}
 }
 
-// LogError logs an error with context. This is the legacy method maintained for compatibility.
-func LogError(message string, err error, args ...any) {
-	DefaultLogger.Error(message, err, args...)
+// levelStyleMap maps LogLevel to its corresponding style function
+var levelStyleMap = map[LogLevel]LogLevelStyle{
+	DEBUG: {LevelName: "DEBUG", Style: styleWrapper(debugStyle)},
+	INFO:  {LevelName: "INFO", Style: styleWrapper(infoStyle)},
+	WARN:  {LevelName: "WARN", Style: styleWrapper(warnStyle)},
+	ERROR: {LevelName: "ERROR", Style: styleWrapper(errorStyle)},
+	FATAL: {LevelName: "FATAL", Style: styleWrapper(fatalStyle)},
 }
 
 // formatLogMessage creates a standardized log entry with timestamp, file/line info, and message
@@ -93,25 +114,10 @@ func formatLogMessage(level LogLevel, message string, err error, args ...any) st
 	// Format timestamp
 	timestamp := time.Now().Format("2006-01-02 15:04:05.000")
 
-	// Prepare level indicator
-	levelStr := "UNKNOWN"
-	var levelColor ANSIForegroundColor
-	switch level {
-	case DEBUG:
-		levelStr = "DEBUG"
-		levelColor = MAGENTAF
-	case INFO:
-		levelStr = "INFO"
-		levelColor = GREENF
-	case WARN:
-		levelStr = "WARN"
-		levelColor = YELLOWF
-	case ERROR:
-		levelStr = "ERROR"
-		levelColor = REDF
-	case FATAL:
-		levelStr = "FATAL"
-		levelColor = REDF
+	// Get level style
+	logStyle, ok := levelStyleMap[level]
+	if !ok {
+		logStyle = LogLevelStyle{LevelName: "UNKNOWN", Style: styleWrapper(debugStyle)}
 	}
 
 	// Format message parts
@@ -129,18 +135,18 @@ func formatLogMessage(level LogLevel, message string, err error, args ...any) st
 
 	// Build the log entry
 	var logEntry strings.Builder
-	logEntry.WriteString(fmt.Sprintf("%s[%s]%s ", levelColor, levelStr, RESET))
-	logEntry.WriteString(fmt.Sprintf("%s ", timestamp))
-	logEntry.WriteString(fmt.Sprintf("%s ", fileInfo))
+	logEntry.WriteString(fmt.Sprintf("%s ", logStyle.Style(fmt.Sprintf("[%s]", logStyle.LevelName))))
+	logEntry.WriteString(fmt.Sprintf("%s ", timestampStyle.Render(timestamp)))
+	logEntry.WriteString(fmt.Sprintf("%s ", fileInfoStyle.Render(fileInfo)))
 
 	if len(DefaultLogger.prefix) > 0 {
-		logEntry.WriteString(fmt.Sprintf("[%s] ", DefaultLogger.prefix))
+		logEntry.WriteString(fmt.Sprintf("%s ", prefixStyle.Render(fmt.Sprintf("[%s]", DefaultLogger.prefix))))
 	}
 
 	logEntry.WriteString(fullMessage)
 
 	if err != nil {
-		logEntry.WriteString(fmt.Sprintf(": %s%v%s", REDF, err, RESET))
+		logEntry.WriteString(fmt.Sprintf(": %s", errMsgStyle.Render(err.Error())))
 	}
 
 	return logEntry.String()
@@ -185,46 +191,50 @@ func (l *Logger) Fatal(message string, err error, args ...any) {
 // Debug logs a debug message
 func (l *Logger) Fdebug(message string, args ...any) {
 	if l.level <= DEBUG {
-		fmt.Fprintln(l.logFile, formatLogMessage(DEBUG, message, nil, args...))
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(DEBUG, message, nil, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
 	}
 }
 
 // Info logs an informational message
 func (l *Logger) Finfo(message string, args ...any) {
 	if l.level <= INFO {
-		fmt.Fprintln(l.logFile, formatLogMessage(INFO, message, nil, args...))
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(INFO, message, nil, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
 	}
 }
 
 // Warn logs a warning message
 func (l *Logger) Fwarn(message string, err error, args ...any) {
 	if l.level <= WARN {
-		fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
 	}
 }
 
 // Error logs an error message
 func (l *Logger) Ferror(message string, err error, args ...any) {
 	if l.level <= ERROR {
-		fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
 	}
 }
 
 // Fatal logs an error message and exits the program
 func (l *Logger) Ffatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
-		fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
 		os.Exit(1)
 	}
-}
-
-// LogHeader prints arguments in bright blue. Legacy, consider using Logger.Info with prefix.
-func LogHeader(args ...any) {
-	header := fmt.Sprint(args...)
-	fmt.Printf("%s%s%s\n", BRIGHTBLUEF, header, RESET)
-}
-
-// LogBody prints arguments in blue. Legacy, consider using Logger.Info instead.
-func LogBody(args ...any) {
-	DefaultLogger.Info(fmt.Sprint(args...))
 }

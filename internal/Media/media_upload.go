@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	bucket "github.com/hegner123/modulacms/internal/Bucket"
-	config "github.com/hegner123/modulacms/internal/Config"
-	db "github.com/hegner123/modulacms/internal/Db"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	bucket "github.com/hegner123/modulacms/internal/bucket"
+	config "github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 //srcFile is the source file
@@ -65,7 +65,7 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 		return err
 	}
 	d := db.ConfigDB(c)
-    fmt.Println("SQL Filter Condition:  ", srcFile)
+    utility.DefaultLogger.Debug("SQL Filter Condition:", srcFile)
 	rowPtr, err := d.GetMediaByName(baseName)
 	if err != nil {
 		return err

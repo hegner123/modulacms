@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/charmbracelet/huh"
-	utility "github.com/hegner123/modulacms/internal/Utility"
+	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
 var (
