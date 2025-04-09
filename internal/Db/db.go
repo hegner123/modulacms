@@ -190,7 +190,7 @@ type DbDriver interface {
 	GetRoute(int64) (*Routes, error)
 	GetRouteID(string) (*int64, error)
 	GetSession(int64) (*Sessions, error)
-	GetSessionsByUserId(int64) (*[]Sessions, error)
+	GetSessionByUserId(int64) (*Sessions, error)
 	GetTable(int64) (*Tables, error)
 	GetToken(int64) (*Tokens, error)
 	GetTokenByUserId(int64) (*[]Tokens, error)

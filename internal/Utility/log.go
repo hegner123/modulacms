@@ -17,7 +17,8 @@ import (
 type LogLevel int
 
 const (
-	DEBUG LogLevel = iota
+	BLANK LogLevel = iota
+	DEBUG
 	INFO
 	WARN
 	ERROR
@@ -39,7 +40,7 @@ type Logger struct {
 	logFile *os.File
 }
 
-var DefaultLogger = NewLogger(DEBUG)
+var DefaultLogger = NewLogger(BLANK)
 
 // NewLogger creates a new logger with the specified minimum level
 func NewLogger(level LogLevel) *Logger {
@@ -73,6 +74,7 @@ func GetVersion() (*string, error) {
 
 var (
 	// Level badges
+	blankStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFFFFF")).Bold(true)
 	debugStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#AF87FF")).Bold(true)                                       // Magenta
 	infoStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#87D787")).Bold(true)                                       // Green
 	warnStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFAF5F")).Bold(true)                                       // Yellow
@@ -95,6 +97,7 @@ func styleWrapper(style lipgloss.Style) func(string) string {
 
 // levelStyleMap maps LogLevel to its corresponding style function
 var levelStyleMap = map[LogLevel]LogLevelStyle{
+	BLANK: {LevelName: "BLANK", Style: styleWrapper(blankStyle)},
 	DEBUG: {LevelName: "DEBUG", Style: styleWrapper(debugStyle)},
 	INFO:  {LevelName: "INFO", Style: styleWrapper(infoStyle)},
 	WARN:  {LevelName: "WARN", Style: styleWrapper(warnStyle)},
@@ -104,6 +107,14 @@ var levelStyleMap = map[LogLevel]LogLevelStyle{
 
 // formatLogMessage creates a standardized log entry with timestamp, file/line info, and message
 func formatLogMessage(level LogLevel, message string, err error, args ...any) string {
+	if level == BLANK {
+		if args == nil {
+
+			return fmt.Sprintln(message)
+		}
+		fmt.Println("Blank Level")
+		return fmt.Sprintf(message+"\n", args)
+	}
 	// Get caller information
 	_, file, line, ok := runtime.Caller(2)
 	fileInfo := "unknown:0"
@@ -152,6 +163,13 @@ func formatLogMessage(level LogLevel, message string, err error, args ...any) st
 	return logEntry.String()
 }
 
+// Blank logs a raw message
+func (l *Logger) Blank(message string, args ...any) {
+	if l.level <= BLANK {
+		fmt.Println(formatLogMessage(BLANK, message, nil, args...))
+	}
+}
+
 // Debug logs a debug message
 func (l *Logger) Debug(message string, args ...any) {
 	if l.level <= DEBUG {
@@ -188,7 +206,17 @@ func (l *Logger) Fatal(message string, err error, args ...any) {
 	}
 }
 
-// Debug logs a debug message
+// Fblank logs a raw message to a file
+func (l *Logger) Fblank(message string, args ...any) {
+	if l.level <= BLANK {
+		_, err := fmt.Fprintln(l.logFile, formatLogMessage(BLANK, message, nil, args...))
+		if err != nil {
+			DefaultLogger.Error("", err)
+		}
+	}
+}
+
+// Fdebug logs a debug message to a file
 func (l *Logger) Fdebug(message string, args ...any) {
 	if l.level <= DEBUG {
 		_, err := fmt.Fprintln(l.logFile, formatLogMessage(DEBUG, message, nil, args...))
@@ -198,7 +226,7 @@ func (l *Logger) Fdebug(message string, args ...any) {
 	}
 }
 
-// Info logs an informational message
+// Finfo logs an informational message to a file
 func (l *Logger) Finfo(message string, args ...any) {
 	if l.level <= INFO {
 		_, err := fmt.Fprintln(l.logFile, formatLogMessage(INFO, message, nil, args...))
@@ -208,7 +236,7 @@ func (l *Logger) Finfo(message string, args ...any) {
 	}
 }
 
-// Warn logs a warning message
+// Fwarn logs a warning message to a file
 func (l *Logger) Fwarn(message string, err error, args ...any) {
 	if l.level <= WARN {
 		_, err := fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
@@ -218,7 +246,7 @@ func (l *Logger) Fwarn(message string, err error, args ...any) {
 	}
 }
 
-// Error logs an error message
+// Ferror logs an error message to a file
 func (l *Logger) Ferror(message string, err error, args ...any) {
 	if l.level <= ERROR {
 		_, err := fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
@@ -228,7 +256,7 @@ func (l *Logger) Ferror(message string, err error, args ...any) {
 	}
 }
 
-// Fatal logs an error message and exits the program
+// Ffatal logs an error message to a file and exits the program
 func (l *Logger) Ffatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
 		_, err := fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))

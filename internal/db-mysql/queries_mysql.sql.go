@@ -2820,41 +2820,25 @@ func (q *Queries) GetSession(ctx context.Context, sessionID int32) (Sessions, er
 	return i, err
 }
 
-const getSessionByUserId = `-- name: GetSessionByUserId :many
+const getSessionByUserId = `-- name: GetSessionByUserId :one
 SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 WHERE session_id = ?
 `
 
-func (q *Queries) GetSessionByUserId(ctx context.Context, sessionID int32) ([]Sessions, error) {
-	rows, err := q.db.QueryContext(ctx, getSessionByUserId, sessionID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Sessions
-	for rows.Next() {
-		var i Sessions
-		if err := rows.Scan(
-			&i.SessionID,
-			&i.UserID,
-			&i.CreatedAt,
-			&i.ExpiresAt,
-			&i.LastAccess,
-			&i.IpAddress,
-			&i.UserAgent,
-			&i.SessionData,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) GetSessionByUserId(ctx context.Context, sessionID int32) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByUserId, sessionID)
+	var i Sessions
+	err := row.Scan(
+		&i.SessionID,
+		&i.UserID,
+		&i.CreatedAt,
+		&i.ExpiresAt,
+		&i.LastAccess,
+		&i.IpAddress,
+		&i.UserAgent,
+		&i.SessionData,
+	)
+	return i, err
 }
 
 const getTable = `-- name: GetTable :one

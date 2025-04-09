@@ -8,8 +8,6 @@ import (
 )
 
 type Root struct {
-	Datatype Datatype `json:"datatype"`
-	Fields   []Field  `json:"fields"`
 	Node     *Node    `json:"root"`
 }
 
@@ -83,7 +81,6 @@ func (r Root) Render() string {
 	return string(j)
 }
 
-
 // FindNodeByID searches the tree for a node with the given ID
 func (n *Node) FindNodeByID(id int64) *Node {
 	if n.Datatype.Info.DatatypeID == id {
@@ -99,11 +96,8 @@ func (n *Node) FindNodeByID(id int64) *Node {
 	return nil
 }
 
-func NewRoot(d Datatype, f []Field) Root {
-	return Root{
-		Datatype: d,
-		Fields:   f,
-	}
+func NewRoot() Root {
+	return Root{}
 
 }
 

@@ -12,25 +12,36 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	utility "github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 type formCompletedMsg struct{}
 type formCancelledMsg struct{}
 
 type FocusKey int
+type ApplicationState int
 
 const (
 	PAGEFOCUS FocusKey = iota
-    TABLEFOCUS
+	TABLEFOCUS
 	FORMFOCUS
 	DIALOGFOCUS
+)
+
+const (
+	OK ApplicationState = iota
+	EDITING
+	DELETING
+	WARN
+	ERROR
 )
 
 type CliInterface string
 type InputType string
 
 type model struct {
+	status       ApplicationState
 	titleFont    int
 	titles       []string
 	term         string
@@ -81,26 +92,27 @@ type model struct {
 var CliContinue bool = false
 
 func InitialModel(v *bool) model {
-    
+
 	verbose := false
 	if v != nil {
 		verbose = *v
 	}
 
-    // TODO add conditional to check ui config for custom titles
+	// TODO add conditional to check ui config for custom titles
 	fs, err := TitleFile.ReadDir("titles")
 	if err != nil {
 		utility.DefaultLogger.Fatal("", err)
 	}
 	fonts := ParseTitleFonts(fs)
 
-    // paginator 
+	// paginator
 	p := paginator.New()
 	p.Type = paginator.Dots
 	p.ActiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "235", Dark: "252"}).Render("•")
 	p.InactiveDot = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{Light: "250", Dark: "238"}).Render("•")
 
 	return model{
+		status:     OK,
 		titleFont:  0,
 		titles:     LoadTitles(fonts),
 		focusIndex: 0,
@@ -151,7 +163,7 @@ func (m model) GetIDRow() int64 {
 	utility.DefaultLogger.Finfo("rowCOl", rowCol)
 	id, err := strconv.ParseInt(rowCol, 10, 64)
 	if err != nil {
-		utility.DefaultLogger.Ferror( "", err)
+		utility.DefaultLogger.Ferror("", err)
 	}
 	return id
 }
@@ -183,4 +195,25 @@ func LoadTitles(f []string) []string {
 	}
 
 	return titles
+}
+
+func (m model) GetStatus() string {
+	switch m.status {
+	case EDITING:
+		editStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
+		return editStyle.Render(" EDIT ")
+	case DELETING:
+		deleteStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(config.DefaultStyle.Accent2BG).Bold(true).Blink(true).Padding(0, 1)
+		return deleteStyle.Render("DELETE")
+	case WARN:
+        warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Background(config.DefaultStyle.WarnBG).Bold(true).Padding(0, 1)
+		return warnStyle.Render(" WARN ")
+	case ERROR:
+        errorStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(config.DefaultStyle.Accent2BG).Bold(true).Blink(true).Padding(0, 1)
+		return errorStyle.Render("ERROR ")
+	default:
+		okStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
+		return okStyle.Render("  OK  ")
+	}
+
 }

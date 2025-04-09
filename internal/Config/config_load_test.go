@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func CompareStructs(a, b interface{}) bool {
+func CompareStructs(a, b any) bool {
 	if reflect.DeepEqual(a, b) {
 		return true
 	}
@@ -21,7 +21,7 @@ func CompareStructs(a, b interface{}) bool {
 	}
 
 	// Iterate through the fields of the struct
-	for i := 0; i < valA.NumField(); i++ {
+	for i := range valA.NumField() {
 		fieldA := valA.Field(i)
 		fieldB := valB.Field(i)
 		fieldName := valA.Type().Field(i).Name
@@ -41,7 +41,7 @@ func TestLoadConfig(t *testing.T) {
 
 	expected := Config{
 		Port:                "8080",
-		SSL_Port:            "8443",
+		SSL_Port:            "4000",
 		Client_Site:         "modulacms.com",
 		Db_Driver:           "sqlite",
 		Db_URL:              "./modula.db",
@@ -58,7 +58,6 @@ func TestLoadConfig(t *testing.T) {
 		Oauth_Scopes:        []string{"profile", "profilePic"},
 		Oauth_Endpoint:      map[Endpoint]string{OauthAuthURL: "https://github.com/login/oauth/authorize", OauthTokenURL: "https://github.com/login/oauth2/token"},
 	}
-
 
 	res := CompareStructs(conf, expected)
 	if !res {

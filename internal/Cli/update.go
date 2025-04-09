@@ -22,6 +22,8 @@ const (
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
+        m.height = msg.Height
+        m.width = msg.Width
 		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.titles[m.titleFont]) + RenderHeading(m.header))
 		footerHeight := lipgloss.Height(m.footerView() + RenderFooter(m.footer))
 		verticalMarginHeight := headerHeight + footerHeight

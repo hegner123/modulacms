@@ -66,7 +66,7 @@ func (m model) View() string {
 	switch m.page.Index {
 	case homePage.Index:
 		p := NewMenuPage(m.pageMenu, m.titles[m.titleFont], "MAIN MENU", []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(m.cursor)
+		ui = p.Render(m.cursor, m)
 	case databasePage.Index:
 		ui = m.PageDatabase()
 	case cmsPage.Index:

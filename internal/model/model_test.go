@@ -216,25 +216,7 @@ func createMockContentField2() db.ContentFieldsJSON {
 
 // Create test models
 func createMockNode() Root {
-	rootDatatype := Datatype{
-		Info:    createMockDatatype(),
-		Content: createMockContentData(),
-	}
-	rootField := []Field{
-		{
-			Info:    createMockField(),
-			Content: createMockContentField(),
-		},
-		{
-			Info:    createMockField2(),
-			Content: createMockContentField(),
-		},
-		{
-			Info:    createMockField(),
-			Content: createMockContentField2(),
-		},
-	}
-	root := NewRoot(rootDatatype, rootField)
+	root := NewRoot()
 
 	child := &Node{
 		Datatype: Datatype{

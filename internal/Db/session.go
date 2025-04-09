@@ -264,17 +264,13 @@ func (d Database) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d Database) GetSessionsByUserId(userID int64) (*[]Sessions, error) {
+func (d Database) GetSessionByUserId(userID int64) (*Sessions, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, userID)
 	if err != nil {
 		return nil, err
 	}
-	res := []Sessions{}
-	for _, v := range rows {
-		m := d.MapSession(v)
-		res = append(res, m)
-	}
+	res := d.MapSession(rows)
 	return &res, nil
 }
 
@@ -397,17 +393,13 @@ func (d MysqlDatabase) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) GetSessionsByUserId(userID int64) (*[]Sessions, error) {
+func (d MysqlDatabase) GetSessionByUserId(userID int64) (*Sessions, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, int32(userID))
 	if err != nil {
 		return nil, err
 	}
-	res := []Sessions{}
-	for _, v := range rows {
-		m := d.MapSession(v)
-		res = append(res, m)
-	}
+	res := d.MapSession(rows)
 	return &res, nil
 }
 
@@ -526,17 +518,13 @@ func (d PsqlDatabase) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) GetSessionsByUserId(userID int64) (*[]Sessions, error) {
+func (d PsqlDatabase) GetSessionByUserId(userID int64) (*Sessions, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, int32(userID))
 	if err != nil {
 		return nil, err
 	}
-	res := []Sessions{}
-	for _, v := range rows {
-		m := d.MapSession(v)
-		res = append(res, m)
-	}
+	res := d.MapSession(rows)
 	return &res, nil
 }
 

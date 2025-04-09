@@ -3,11 +3,9 @@ package cli
 import (
 	"embed"
 	"encoding/json"
-	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/x/term"
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
@@ -15,33 +13,40 @@ import (
 var TitleFile embed.FS
 
 func (m model) RenderUI() string {
-	doc := strings.Builder{}
+	app := strings.Builder{}
 	column := []string{}
-	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
-	physicalWidth, physicalHeight, _ := term.GetSize(os.Stdout.Fd())
-	docStyle = docStyle.Width(physicalWidth).Height(physicalHeight)
+	docStyle := lipgloss.NewStyle()
+	docStyle = docStyle.Width(m.width).Height(m.height)
 	if m.footer == "" {
-		m.footer = "\n\nPress q to quit.\n"
+		m.footer = "Press q to quit."
 	}
+
 	title := RenderTitle(m.titles[m.titleFont])
 	header := RenderHeading(m.header)
 	footer := RenderFooter(m.footer)
 	column = append(column, title)
 	column = append(column, header)
-	column = append(column, m.body)
-	column = append(column, footer)
+	body := m.body
 	if m.verbose {
-		column = append(column, m.RenderStatusTable())
+		body = lipgloss.JoinHorizontal(lipgloss.Top, m.body, m.RenderStatusTable())
 
 	}
+	column = append(column, body)
 
-	doc.WriteString(lipgloss.JoinVertical(
+	app.WriteString(lipgloss.JoinVertical(
 		lipgloss.Left,
 		column...,
-	),
+	))
+	h := m.RenderSpace(app.String() + RenderFooter(m.footer))
+	doc := lipgloss.JoinVertical(
+		lipgloss.Top,
+		lipgloss.NewStyle().Padding(0, 2).Render(app.String()),
+		h,
+		footer,
+		m.RenderStatusBar(),
 	)
 
-	return docStyle.Render(doc.String())
+	return docStyle.Render(doc)
 }
 
 func formatJSON(b config.Config) (string, error) {
@@ -49,7 +54,7 @@ func formatJSON(b config.Config) (string, error) {
 	if err != nil {
 		return "", err
 	}
-    nulled:= strings.ReplaceAll(string(formatted),"\"\",","null")
+	nulled := strings.ReplaceAll(string(formatted), "\"\",", "null")
 	trimmed := strings.ReplaceAll(nulled, "\"", "")
 	return string(trimmed), nil
 }

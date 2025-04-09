@@ -25,7 +25,7 @@ WHERE session_id = $1 LIMIT 1;
 SELECT COUNT(*)
 FROM sessions;
 
--- name: GetSessionByUserId :many
+-- name: GetSessionByUserId :one
 SELECT * FROM sessions
 WHERE user_id = $1;
 

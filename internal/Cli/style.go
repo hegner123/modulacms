@@ -1,28 +1,16 @@
 package cli
 
 import (
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
-)
-
-var (
-	width       = 80
-	White       = lipgloss.CompleteColor{TrueColor: "#FFFFFF", ANSI256: "15", ANSI: "15"}
-	LightGray   = lipgloss.CompleteColor{TrueColor: "#a3a3a3", ANSI256: "254", ANSI: "7"}
-	Gray        = lipgloss.CompleteColor{TrueColor: "#939393", ANSI256: "250", ANSI: "8"}
-	Black       = lipgloss.CompleteColor{TrueColor: "#000000", ANSI256: "0", ANSI: "0"}
-	Purple      = lipgloss.CompleteColor{TrueColor: "#6612e3", ANSI256: "129", ANSI: "5"}
-	LightPurple = lipgloss.CompleteColor{TrueColor: "#8347de", ANSI256: "98", ANSI: "13"}
-	Emerald     = lipgloss.CompleteColor{TrueColor: "#00CC66", ANSI256: "41", ANSI: "2"}
-	Rose        = lipgloss.CompleteColor{TrueColor: "#D90368", ANSI256: "161", ANSI: "1"}
-	Yellow      = lipgloss.CompleteColor{TrueColor: "#F1C40F", ANSI256: "220", ANSI: "11"}
-	Orange      = lipgloss.CompleteColor{TrueColor: "#F75C03", ANSI256: "202", ANSI: "3"}
+	"github.com/hegner123/modulacms/internal/config"
 )
 
 func Active(s string) string {
-	a := lipgloss.NewStyle().Foreground(Rose)
+	a := lipgloss.NewStyle().Foreground(config.DefaultStyle.Primary)
 	return a.Render(s)
 }
 
@@ -45,16 +33,16 @@ func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 	}
 
 	var (
-		headerStyle  = lipgloss.NewStyle().Foreground(Purple).Bold(true).Align(lipgloss.Center)
+		headerStyle  = lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).Bold(true).Align(lipgloss.Center)
 		cellStyle    = lipgloss.NewStyle().MaxWidth(10)
-		activeStyle  = cellStyle.Background(LightGray).Foreground(Black).Bold(true)
-		oddRowStyle  = cellStyle.Foreground(Gray)
-		evenRowStyle = cellStyle.Foreground(LightGray)
+		activeStyle  = cellStyle.Foreground(config.DefaultStyle.Active).Background(config.DefaultStyle.ActiveBG).Bold(true)
+		oddRowStyle  = cellStyle.Foreground(config.DefaultStyle.Secondary).Background(config.DefaultStyle.SecondaryBG)
+		evenRowStyle = cellStyle.Foreground(config.DefaultStyle.Tertiary).Background(config.DefaultStyle.TertiaryBG)
 	)
 
 	t := table.New().
 		Border(lipgloss.NormalBorder()).
-		BorderStyle(lipgloss.NewStyle().Foreground(Purple)).
+		BorderStyle(lipgloss.NewStyle().Foreground(config.DefaultStyle.PrimaryBorder)).
 		StyleFunc(func(row, col int) lipgloss.Style {
 			switch {
 			case row == index:
@@ -75,8 +63,8 @@ func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
 
 func RenderEntry(h []string, e []string) string {
 	var row []string
-	keyStyle := lipgloss.NewStyle().Width(20).Align(lipgloss.Left, lipgloss.Top).Foreground(LightGray)
-	valueStyle := lipgloss.NewStyle().Foreground(LightGray).Width(50)
+	keyStyle := lipgloss.NewStyle().Width(20).Align(lipgloss.Left, lipgloss.Top).Foreground(config.DefaultStyle.Primary)
+	valueStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).Width(50)
 
 	for i, en := range e {
 		s := lipgloss.JoinHorizontal(lipgloss.Center,
@@ -95,27 +83,27 @@ func RenderEntry(h []string, e []string) string {
 
 func RenderTitle(s string) string {
 	titleStyle := lipgloss.NewStyle().
-		Foreground(Rose)
+		Foreground(config.DefaultStyle.Accent2)
 
 	return titleStyle.Render(s)
 }
 func RenderFooter(s string) string {
 	footerStyle := lipgloss.NewStyle().
-		Foreground(Gray)
+		Foreground(config.DefaultStyle.Secondary)
 	return footerStyle.Render(s)
 }
 
 func RenderHeading(s string) string {
 	headingStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(Purple)
+		Foreground(config.DefaultStyle.Secondary)
 	return headingStyle.Render(s)
 }
 
 func RenderBorderFlex(s string) string {
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(Purple).
+		BorderForeground(config.DefaultStyle.PrimaryBorder).
 		Padding(1)
 	return style.Render(s)
 }
@@ -123,60 +111,57 @@ func RenderBlockFlex(s string) string {
 	blockStyle := lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(Purple).
-		Foreground(LightGray).
-		Background(Rose).
-        Padding(1)
+		BorderForeground(config.DefaultStyle.PrimaryBorder).
+		Foreground(config.DefaultStyle.Tertiary).
+		Background(config.DefaultStyle.TertiaryBG).
+		Padding(1)
 	return blockStyle.Render(s)
 }
 func RenderBorderFixed(s string) string {
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(Purple).
+		BorderForeground(config.DefaultStyle.PrimaryBorder).
 		Padding(1).
-        Width(75).
-        Height(20)
+		Width(75).
+		Height(20)
 	return style.Render(s)
 }
 func RenderBlockFixed(s string) string {
 	blockStyle := lipgloss.NewStyle().
 		Align(lipgloss.Center).
 		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(Purple).
-		Foreground(LightGray).
-		Background(Rose).
-        Padding(1).
-        Width(75).
-        Height(20)
+		BorderForeground(config.DefaultStyle.Secondary).
+		Foreground(config.DefaultStyle.Tertiary).
+		Background(config.DefaultStyle.TertiaryBG).
+		Padding(1).
+		Width(75).
+		Height(20)
 	return blockStyle.Render(s)
+}
+
+func (m model) RenderSpace(content string) string {
+	spaceStyle := lipgloss.NewStyle().Height(m.height - lipgloss.Height(content) - 2)
+	return spaceStyle.Render("")
 }
 
 func (m model) RenderStatusBar() string {
 	doc := strings.Builder{}
 	status := []string{"Page", "Form", "Dialog"}
 	statusNugget := lipgloss.NewStyle().
-		Foreground(LightGray).
+		Foreground(config.DefaultStyle.Status1).
 		Padding(0, 1)
 
 	statusBarStyle := lipgloss.NewStyle().
-		Foreground(LightGray).
-		Background(Rose)
+		Foreground(config.DefaultStyle.Status2).
+		Background(config.DefaultStyle.Status2BG)
 
-	statusStyle := lipgloss.NewStyle().
-		Inherit(statusBarStyle).
-		Foreground(LightGray).
-		Background(Rose).
-		Padding(0, 1).
-		MarginRight(1)
-
-	encodingStyle := statusNugget.
-		Background(LightPurple).
+	nuggetStyle := statusNugget.
+		Background(config.DefaultStyle.Status3BG).
 		Align(lipgloss.Right)
 
 	statusText := lipgloss.NewStyle().Inherit(statusBarStyle)
 
-	fishCakeStyle := statusNugget.Background(Purple)
-	w := lipgloss.Width
+	fishCakeStyle := statusNugget.Background(config.DefaultStyle.Status3BG).Foreground(config.DefaultStyle.Status3)
 	var v string
 
 	v = m.page.Label
@@ -184,35 +169,46 @@ func (m model) RenderStatusBar() string {
 		v = m.table
 	}
 
-	statusKey := statusStyle.Render("STATUS")
-	encoding := encodingStyle.Render("UTF-8")
+	statusKey := m.GetStatus()
+	c := strconv.FormatInt(int64(m.cursor), 10)
+	nugget := nuggetStyle.Render("Cursor: " + c)
 	fishCake := fishCakeStyle.Render(v)
+
+	w := lipgloss.Width
 	statusVal := statusText.
-		Width(width - w(statusKey) - w(encoding) - w(fishCake)).
+		Width(m.width - w(statusKey) - w(nugget) - w(fishCake) - 34).
 		Render(status[m.focus])
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top,
 		statusKey,
 		statusVal,
-		encoding,
-		fishCake,
+		nugget,
+		lipgloss.JoinHorizontal(
+			lipgloss.Center,
+			HorizontalSpace(34-(lipgloss.Width(fishCake))/2),
+			fishCake,
+			HorizontalSpace((34-lipgloss.Width(fishCake))/2),
+		),
 	)
 
-	doc.WriteString(statusBarStyle.Width(width).Render(bar))
+	doc.WriteString(statusBarStyle.Width(m.width).Render(bar))
 	return statusBarStyle.Render(doc.String())
 
+}
+func HorizontalSpace(i int) string {
+	s := strings.Repeat(" ", i)
+	return s
 }
 
 func RenderBorderBlock(s string) string {
 	borderStyle := lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(Rose).
-		Padding(1)
+		BorderForeground(config.DefaultStyle.Tertiary)
 
 	blockStyle := lipgloss.NewStyle().
 		Align(lipgloss.Left).
-		Foreground(Black).
-		Background(Yellow).
+		Padding(1).
+		Foreground(config.DefaultStyle.Secondary).
+		Background(config.DefaultStyle.SecondaryBG).
 		Width(24)
 	return borderStyle.Render(blockStyle.Render(s))
 
@@ -220,8 +216,8 @@ func RenderBorderBlock(s string) string {
 
 func RenderButton(s string) string {
 	style := lipgloss.NewStyle().
-		Foreground(White).
-		Background(Purple).
+		Foreground(config.DefaultStyle.Secondary).
+		Background(config.DefaultStyle.SecondaryBG).
 		Padding(1, 1).
 		Margin(0, 1)
 	return style.Render(s)
@@ -229,8 +225,8 @@ func RenderButton(s string) string {
 
 func RenderActiveButton(s string) string {
 	style := lipgloss.NewStyle().
-		Foreground(White).
-		Background(Rose).
+		Foreground(config.DefaultStyle.Tertiary).
+		Background(config.DefaultStyle.TertiaryBG).
 		Padding(1, 1).
 		Margin(0, 1)
 	return style.Render(s)

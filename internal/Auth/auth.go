@@ -8,59 +8,15 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-	"mime/multipart"
 	"net/http"
 	"time"
 
 	config "github.com/hegner123/modulacms/internal/config"
-	db "github.com/hegner123/modulacms/internal/db"
 	utility "github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 )
 
-func HandleAuthForm(conf config.Config, form *multipart.Form) (bool, *db.Users, error) {
-	// Check form values exist
-	if len(form.Value["email"]) == 0 || len(form.Value["password"]) == 0 {
-		return false, nil, fmt.Errorf("authentication form missing required fields")
-	}
-
-	ue := form.Value["email"][0]
-	up := form.Value["password"][0]
-	
-	// Validate inputs
-	if ue == "" || up == "" {
-		return false, nil, fmt.Errorf("authentication failed: empty credentials provided")
-	}
-	
-	// Configure database connection
-	dbc := db.ConfigDB(conf)
-
-	// Get user by email
-	user, err := dbc.GetUserByEmail(ue)
-	if err != nil {
-		utility.DefaultLogger.Error("failed to get user by email", err, "email", ue)
-        return false, nil, fmt.Errorf("authentication failed: user lookup error: %w", err)
-	}
-	
-	// Check if hash is bcrypt (starts with $2a$, $2b$, or $2y$)
-	if len(user.Hash) > 4 && (user.Hash[0:4] == "$2a$" || user.Hash[0:4] == "$2b$" || user.Hash[0:4] == "$2y$") {
-		// Bcrypt hash verification
-		err = bcrypt.CompareHashAndPassword([]byte(user.Hash), []byte(up))
-		if err != nil {
-			return false, nil, fmt.Errorf("authentication failed: invalid password")
-		}
-		return true, user, nil
-	} else {
-		// Legacy SHA-256 hash verification - for backward compatibility
-		requestHash := AuthMakeHash(up, config.Env.Auth_Salt)
-		hashMatch := compareHashes(user.Hash, requestHash)
-		if !hashMatch {
-			return false, nil, fmt.Errorf("authentication failed: invalid password")
-		}
-		return true, user, nil
-	}
-}
 
 // HashPassword creates a bcrypt hash of the password
 func HashPassword(password string) (string, error) {
@@ -138,7 +94,4 @@ func OauthSettings(c config.Config) {
 	if err != nil {
 		utility.DefaultLogger.Error("failed to", err)
 	}
-    
-
-
 }

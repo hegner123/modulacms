@@ -24,7 +24,7 @@ FROM sessions;
 SELECT * FROM sessions
 WHERE session_id = ? LIMIT 1;
 
--- name: GetSessionByUserId :many
+-- name: GetSessionByUserId :one
 SELECT * FROM sessions
 WHERE user_id = ?;
 

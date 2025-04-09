@@ -110,16 +110,23 @@ func (m *MenuPage) RenderBody(c int) string {
 	return RenderBorderFixed(lipgloss.JoinVertical(lipgloss.Left, r...))
 }
 
-func (m MenuPage) Render(c int) string {
+func (m MenuPage) Render(c int, model model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
-	return docStyle.Render(lipgloss.JoinVertical(
+	s := lipgloss.JoinVertical(
 		lipgloss.Left,
 		RenderTitle(m.Title),
 		RenderHeading(m.Header),
 		m.RenderBody(c),
-		RenderFooter(m.Controls),
-		m.Status,
-	),
+	)
+	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(m.Controls))
+	f := RenderFooter(m.Controls)
+	status := m.Status
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		docStyle.Render(s),
+		h,
+		f,
+		status,
 	)
 }
 

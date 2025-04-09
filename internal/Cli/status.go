@@ -2,10 +2,19 @@ package cli
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/ansi"
+	"github.com/muesli/reflow/truncate"
 )
+
+var ellipsis string = "..."
+var statusBarNoteStyle = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#ffffff")).
+	Background(lipgloss.Color("#000000")).
+	Render
 
 func (m model) RenderStatusTable() string {
 	doc := strings.Builder{}
@@ -22,12 +31,6 @@ func (m model) RenderStatusTable() string {
 	//tables := fmt.Sprintf("Tables\n%v\n", m.tables)
 	table := fmt.Sprintf("Table\n%s\n", m.table)
 	history := fmt.Sprintf("History\nLength:\n %v", len(m.history))
-	var formMapStatus []string
-	for i, v := range m.formValues {
-		s := fmt.Sprintf("%s: %v\n", m.headers[i], *v)
-		formMapStatus = append(formMapStatus, s)
-
-	}
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		RenderBorderBlock(
@@ -42,18 +45,11 @@ func (m model) RenderStatusTable() string {
 		RenderBorderBlock(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
+				fmt.Sprint("Width:  ", m.width),
+				fmt.Sprint("Height: ", m.height),
 				table,
 				history,
-			)),
-		RenderBorderBlock(
-			lipgloss.JoinVertical(
-				lipgloss.Left,
 				m.err,
-			)),
-		RenderBorderBlock(
-			lipgloss.JoinVertical(
-				lipgloss.Left,
-				formMapStatus...,
 			)),
 	))
 
@@ -72,4 +68,36 @@ func getMenuLabels(m []*Page) string {
 	}
 	return labels
 
+}
+
+func (m model) StatusBarView(b *strings.Builder) {
+	const (
+		minPercent               float64 = 0.0
+		maxPercent               float64 = 1.0
+		percentToStringMagnitude float64 = 100.0
+	)
+
+	// Scroll percent
+	percent := math.Max(minPercent, math.Min(maxPercent, m.viewport.ScrollPercent()))
+	scrollPercent := fmt.Sprintf(" %3.f%% ", percent*percentToStringMagnitude)
+
+	// Note
+	var note string
+	note = truncate.StringWithTail(" "+note+" ", uint(max(0, m.width-ansi.PrintableRuneWidth(scrollPercent))), ellipsis)
+	note = statusBarNoteStyle(note)
+
+	// Empty space
+	padding := max(0,
+		m.width-
+			ansi.PrintableRuneWidth(note)-
+			ansi.PrintableRuneWidth(scrollPercent),
+	)
+	emptySpace := strings.Repeat(" ", padding)
+	emptySpace = statusBarNoteStyle(emptySpace)
+
+	fmt.Fprintf(b, "%s%s%s",
+		note,
+		emptySpace,
+		scrollPercent,
+	)
 }

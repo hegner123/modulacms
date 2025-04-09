@@ -20,6 +20,7 @@ func (m *model) PageRouter() {
 			m.focus = FORMFOCUS
 			m.page = m.pages[CREATEPAGE]
 			m.controller = m.page.Controller
+			m.status = EDITING
 		case updatePage:
 			m.headers, m.rows, err = GetColumnsRows(m.table)
 			if err != nil {
@@ -47,6 +48,7 @@ func (m *model) PageRouter() {
 			m.paginator.SetTotalPages(len(m.rows))
 			m.page = *m.pageMenu[m.cursor]
 			m.controller = m.page.Controller
+			m.status = DELETING
 		}
 	case UPDATEPAGE:
 		m.form, m.formLen = m.BuildUpdateDBForm(db.StringDBTable(m.table))
@@ -63,6 +65,7 @@ func (m *model) PageRouter() {
 		}
 		m.page = m.pages[UPDATEFORMPAGE]
 		m.controller = m.page.Controller
+		m.status = EDITING
 	case READPAGE:
 
 		m.page = m.pages[READSINGLEPAGE]
@@ -83,6 +86,7 @@ func (m *model) PageRouter() {
 		m.ready = true
 		m.page = *m.pageMenu[m.cursor]
 		m.controller = m.page.Controller
+		m.status = OK
 
 	}
 

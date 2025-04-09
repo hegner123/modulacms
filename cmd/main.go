@@ -110,9 +110,14 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
-		router.LoginHandler(w, r, Env)
+	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
 	})
+	/*
+		mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
+			router.LoginHandler(w, r, Env)
+		})
+	*/
 	mux.HandleFunc("/api/v1/auth/register", func(w http.ResponseWriter, r *http.Request) {
 		router.RegisterHandler(w, r, Env)
 	})
