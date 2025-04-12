@@ -10,13 +10,17 @@ import (
 )
 
 func TestBuildTree(t *testing.T) {
+    p := config.NewFileProvider("")
+    m := config.NewManager(p)
+    c,err := m.Config()
+    if err!=nil {
+        t.Fatal(err)
+    }
 	f, err := os.Create("log.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	v := false
-	c := config.LoadConfig(&v, "")
-	d := db.ConfigDB(c)
+	d := db.ConfigDB(*c)
 	cd, err := d.ListContentDataByRoute(1)
 	if err != nil {
 		t.Fatal(err)

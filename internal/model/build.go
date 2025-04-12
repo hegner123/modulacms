@@ -23,34 +23,50 @@ func BuildTree(cd []db.ContentData, dt []db.Datatypes, cf []db.ContentFields, df
 
 	return root
 }
-
 func BuildNodes(datatypes []Datatype, fields []Field) *Node {
-	nodesByID := make(map[int64]*Node)
-
-	for _, dt := range datatypes {
-		node := &Node{
+	// Build a slice of nodes from the datatypes.
+	nodes := make([]*Node, len(datatypes))
+	for i, dt := range datatypes {
+		nodes[i] = &Node{
 			Datatype: dt,
 			Fields:   []Field{},
 			Nodes:    []*Node{},
 		}
-		nodesByID[dt.Content.ContentDataID] = node
+	}
+
+	// Helper function to find a node in the slice by ContentDataID.
+	findNode := func(id int64) *Node {
+		for _, node := range nodes {
+			if node.Datatype.Content.ContentDataID == id {
+				return node
+			}
+		}
+		return nil
 	}
 
 	var root *Node
-	for _, node := range nodesByID {
+
+	// Build the tree by assigning each node to its parent.
+	for _, node := range nodes {
+		// Identify the root node.
 		if node.Datatype.Info.Type == "ROOT" {
 			root = node
 			continue
 		}
+
+		// Avoid self-parenting.
 		if node.Datatype.Content.ParentID.Int64 != node.Datatype.Content.ContentDataID {
-			if parent, ok := nodesByID[node.Datatype.Content.ParentID.Int64]; ok {
+			parent := findNode(node.Datatype.Content.ParentID.Int64)
+			if parent != nil {
 				parent.Nodes = append(parent.Nodes, node)
 			}
 		}
 	}
 
+	// Associate fields with the corresponding nodes.
 	for _, field := range fields {
-		if node, ok := nodesByID[field.Info.ParentID.Int64]; ok {
+		node := findNode(field.Info.ParentID.Int64)
+		if node != nil {
 			node.Fields = append(node.Fields, field)
 		} else {
 			utility.DefaultLogger.Info("no node found for field", field)
@@ -59,3 +75,4 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 
 	return root
 }
+

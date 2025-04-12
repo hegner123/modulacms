@@ -1,0 +1,38 @@
+package cli
+
+import "fmt"
+
+var (
+	defineDatatype *Page = &Page{Index: DEFINEDATATYPE, Controller: pageInterface, Label: "Define Datatype", Parent: nil, Children: nil}
+	datatypeMenu   *Page = &Page{Index: DEFINEDATATYPE, Controller: pageInterface, Label: "Define Datatype", Parent: nil, Children: nil}
+)
+
+func (m Model) PageDefineDatatype() string {
+	m.header = "Define Datatype"
+	for i, choice := range m.pageMenu {
+
+		cursor := "  "
+		if m.cursor == i {
+			cursor = "->"
+		}
+
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice.Label)
+	}
+	m.body = RenderBorderFixed(m.body)
+	return m.RenderUI()
+}
+
+func (m Model) PageDatatypeMenu() string {
+	m.header = "Datatypes"
+	for i, choice := range m.datatypeMenu {
+
+		cursor := "  "
+		if m.cursor == i {
+			cursor = "->"
+		}
+
+		m.body += fmt.Sprintf("%s%s  \n", cursor, choice)
+	}
+	m.body = RenderBorderFixed(m.body)
+	return m.RenderUI()
+}

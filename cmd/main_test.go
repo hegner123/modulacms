@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hegner123/modulacms/internal/config"
 	install "github.com/hegner123/modulacms/internal/install"
 )
 
@@ -35,7 +36,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestInit(t *testing.T) {
-	s,err := install.CheckInstall()
+    v := false
+    p:= config.NewFileProvider("")
+    m := config.NewManager(p)
+    c,err := m.Config()
+    if err!=nil {
+        t.Fatal(err)
+    }
+    
+	s,err := install.CheckInstall(c,&v)
     if err!=nil {
 		t.FailNow()
     }

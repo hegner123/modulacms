@@ -262,8 +262,21 @@ func createMockNode() Root {
 		},
 		Nodes: nil,
 	}
+	child4 := &Node{
+		Datatype: Datatype{
+			Info:    createMockDatatype(),
+			Content: createMockContentData(),
+		},
+		Fields: []Field{
+			{
+				Info:    createMockField(),
+				Content: createMockContentField(),
+			},
+		},
+	}
 
 	// Add different child nodes to avoid circular references
+	r.Node.AddChild(child4)
 	r.Node.AddChild(child2)
 	r.Node.AddChild(child3)
 	return r
