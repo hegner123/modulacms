@@ -7,6 +7,14 @@ import (
 	"github.com/charmbracelet/lipgloss/tree"
 )
 
+func RenderPreview(args ...string) string {
+	previewStyle := lipgloss.NewStyle()
+
+	col := lipgloss.JoinVertical(lipgloss.Top, args...)
+
+	return previewStyle.Render(col)
+}
+
 func CreateNewTree(args ...string) {
 	t := tree.New()
 
@@ -39,7 +47,6 @@ func StyledTree() {
 		RootStyle(rootStyle).
 		ItemStyle(itemStyle)
 
-    
-    fmt.Println(t)
+	fmt.Println(t)
 
 }

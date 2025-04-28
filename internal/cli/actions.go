@@ -9,17 +9,6 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-type dbCreateMsg struct {
-	OK bool
-}
-
-type dbUpdateMsg struct {
-	OK bool
-}
-
-type dbDeleteMsg struct {
-	OK bool
-}
 
 type dbErrMsg struct {
 	Error error

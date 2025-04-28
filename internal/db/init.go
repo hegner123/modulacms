@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"database/sql"
-	"embed"
 	"fmt"
 	"io/fs"
 	"path/filepath"
@@ -17,8 +16,6 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-//go:embed sql/*
-var SqlFiles embed.FS
 
 func (d Database) GetDb(verbose *bool) DbDriver {
 	if *verbose {

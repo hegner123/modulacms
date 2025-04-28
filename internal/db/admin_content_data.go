@@ -209,6 +209,7 @@ func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams
 	}
 }
 
+
 // QUERIES
 
 func (d Database) CountAdminContentData() (*int64, error) {

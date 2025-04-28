@@ -10,9 +10,10 @@ import (
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
-///////////////////////////////
-//STRUCTS
-//////////////////////////////
+
+// /////////////////////////////
+// STRUCTS
+// ////////////////////////////
 type AdminRoutes struct {
 	AdminRouteID int64          `json:"admin_route_id"`
 	Slug         string         `json:"slug"`
@@ -27,7 +28,7 @@ type CreateAdminRouteParams struct {
 	Slug         string         `json:"slug"`
 	Title        string         `json:"title"`
 	Status       int64          `json:"status"`
-    AuthorID     int64          `json:"author_id"`
+	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
 	History      sql.NullString `json:"history"`
@@ -59,7 +60,7 @@ type CreateAdminRouteFormParams struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-    AuthorID     string `json:"author_id"`
+	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 	History      string `json:"history"`
@@ -75,34 +76,34 @@ type UpdateAdminRouteFormParams struct {
 	Slug_2       string `json:"slug_2"`
 }
 type CreateAdminRouteParamsJSON struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-    AuthorID     int64          `json:"author_id"`
+	Slug         string     `json:"slug"`
+	Title        string     `json:"title"`
+	Status       int64      `json:"status"`
+	AuthorID     int64      `json:"author_id"`
 	DateCreated  NullString `json:"date_created"`
 	DateModified NullString `json:"date_modified"`
 	History      NullString `json:"history"`
 }
 type UpdateAdminRouteParamsJSON struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	AuthorID     int64          `json:"author_id"`
+	Slug         string     `json:"slug"`
+	Title        string     `json:"title"`
+	Status       int64      `json:"status"`
+	AuthorID     int64      `json:"author_id"`
 	DateCreated  NullString `json:"date_created"`
 	DateModified NullString `json:"date_modified"`
 	History      NullString `json:"history"`
-	Slug_2       string         `json:"slug_2"`
+	Slug_2       string     `json:"slug_2"`
 }
 
-///////////////////////////////
-//GENERIC
-//////////////////////////////
+// /////////////////////////////
+// GENERIC
+// ////////////////////////////
 func MapCreateAdminRouteParams(a CreateAdminRouteFormParams) CreateAdminRouteParams {
 	return CreateAdminRouteParams{
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       StringToInt64(a.Status),
-        AuthorID:     StringToInt64(a.AuthorID),
+		AuthorID:     StringToInt64(a.AuthorID),
 		DateCreated:  StringToNullString(a.DateCreated),
 		DateModified: StringToNullString(a.DateModified),
 		History:      StringToNullString(a.History),
@@ -138,7 +139,7 @@ func MapCreateAdminRouteJSONParams(a CreateAdminRouteParamsJSON) CreateAdminRout
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-        AuthorID:     a.AuthorID,
+		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated.NullString,
 		DateModified: a.DateModified.NullString,
 		History:      a.History.NullString,
@@ -161,7 +162,7 @@ func MapUpdateAdminRouteJSONParams(a UpdateAdminRouteParamsJSON) UpdateAdminRout
 //SQLITE
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
 	return AdminRoutes{
 		AdminRouteID: a.AdminRouteID,
@@ -180,7 +181,7 @@ func (d Database) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdb.Create
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
-        AuthorID:     a.AuthorID,
+		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		History:      a.History,
@@ -198,7 +199,8 @@ func (d Database) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdb.Update
 		Slug_2:       a.Slug_2,
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d Database) CountAdminRoutes() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminRoute(d.Context)
@@ -274,7 +276,7 @@ func (d Database) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
 //MYSQL
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 	return AdminRoutes{
 		AdminRouteID: int64(a.AdminRouteID),
@@ -310,7 +312,8 @@ func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.
 		Slug_2:       a.Slug_2,
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d MysqlDatabase) CountAdminRoutes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminroute(d.Context)
@@ -388,7 +391,7 @@ func (d MysqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, erro
 //POSTGRES
 //////////////////////////////
 
-///MAPS
+// /MAPS
 func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 	return AdminRoutes{
 		AdminRouteID: int64(a.AdminRouteID),
@@ -424,7 +427,8 @@ func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.U
 		Slug_2:       a.Slug_2,
 	}
 }
-///QUERIES
+
+// /QUERIES
 func (d PsqlDatabase) CountAdminRoutes() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountAdminroute(d.Context)
