@@ -9,6 +9,11 @@ const (
 	TB StorageUnit = 1 << 40
 )
 
+const (
+    AppJson string = "application/json"
+)
+
+
 func SizeInBytes(value int64, unit StorageUnit) int64 {
 	return value * int64(unit)
 }

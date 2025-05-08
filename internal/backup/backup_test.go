@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	config "github.com/hegner123/modulacms/internal/config"
-	utility "github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 func makeTestBackup(output string, timestamp string) string {
