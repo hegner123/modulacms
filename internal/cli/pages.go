@@ -36,26 +36,29 @@ const (
 	USERSPAGE
 	DYNAMICPAGE
 	DEFINEDATATYPE
+	DEVELOPMENT
 )
 
 var (
-	homePage         *Page = &Page{Index: HOMEPAGE, Controller: pageInterface, Label: "Home", Parent: nil, Children: homepageMenu}
-	cmsPage          *Page = &Page{Index: CMSPAGE, Controller: pageInterface, Label: "CMS", Parent: nil, Children: cmsMenu}
-	selectTablePage  *Page = &Page{Index: DATABASEPAGE, Controller: tableInterface, Label: "Database", Parent: nil, Children: nil, Next: tableActionsPage}
-	bucketPage       *Page = &Page{Index: BUCKETPAGE, Controller: pageInterface, Label: "Bucket", Parent: nil, Children: nil}
-	oauthPage        *Page = &Page{Index: OAUTHPAGE, Controller: pageInterface, Label: "oAuth", Parent: nil, Children: nil}
-	configPage       *Page = &Page{Index: CONFIGPAGE, Controller: configInterface, Label: "Configuration", Parent: nil, Children: nil}
-	tableActionsPage *Page = &Page{Index: TABLEPAGE, Controller: pageInterface, Label: "Table", Parent: nil, Children: tableMenu}
-	createPage       *Page = &Page{Index: CREATEPAGE, Controller: createInterface, Label: "Create", Parent: nil, Children: nil}
-	readPage         *Page = &Page{Index: READPAGE, Controller: readInterface, Label: "Read", Parent: nil, Children: nil}
-	updatePage       *Page = &Page{Index: UPDATEPAGE, Controller: updateInterface, Label: "Update", Parent: nil, Children: nil}
-	deletePage       *Page = &Page{Index: DELETEPAGE, Controller: deleteInterface, Label: "Delete", Parent: nil, Children: nil}
-	updateFormPage   *Page = &Page{Index: UPDATEFORMPAGE, Controller: updateFormInterface, Label: "UpdateForm", Parent: nil, Children: nil}
-	readSinglePage   *Page = &Page{Index: READSINGLEPAGE, Controller: readSingleInterface, Label: "ReadSingle", Parent: nil, Children: nil}
-	contentPage      *Page = &Page{Index: CONTENTPAGE, Controller: pageInterface, Label: "Content", Parent: nil, Children: nil}
-	mediaPage        *Page = &Page{Index: MEDIAPAGE, Controller: pageInterface, Label: "Media", Parent: nil, Children: nil}
-	usersPage        *Page = &Page{Index: USERSPAGE, Controller: pageInterface, Label: "Users", Parent: nil, Children: nil}
-	dynamicPage      *Page = &Page{Index: DYNAMICPAGE, Controller: pageInterface, Label: "Dynamic", Parent: nil, Children: nil}
+	homePage            *Page = &Page{Index: HOMEPAGE, Controller: pageInterface, Label: "Home", Parent: nil, Children: homepageMenu}
+	cmsPage             *Page = &Page{Index: CMSPAGE, Controller: pageInterface, Label: "CMS", Parent: nil, Children: cmsMenu}
+	selectTablePage     *Page = &Page{Index: DATABASEPAGE, Controller: tableInterface, Label: "Database", Parent: nil, Children: nil, Next: tableActionsPage}
+	bucketPage          *Page = &Page{Index: BUCKETPAGE, Controller: pageInterface, Label: "Bucket", Parent: nil, Children: nil}
+	oauthPage           *Page = &Page{Index: OAUTHPAGE, Controller: pageInterface, Label: "oAuth", Parent: nil, Children: nil}
+	configPage          *Page = &Page{Index: CONFIGPAGE, Controller: configInterface, Label: "Configuration", Parent: nil, Children: nil}
+	tableActionsPage    *Page = &Page{Index: TABLEPAGE, Controller: pageInterface, Label: "Table", Parent: nil, Children: tableMenu}
+	createPage          *Page = &Page{Index: CREATEPAGE, Controller: createInterface, Label: "Create", Parent: nil, Children: nil}
+	readPage            *Page = &Page{Index: READPAGE, Controller: readInterface, Label: "Read", Parent: nil, Children: nil}
+	updatePage          *Page = &Page{Index: UPDATEPAGE, Controller: updateInterface, Label: "Update", Parent: nil, Children: nil}
+	deletePage          *Page = &Page{Index: DELETEPAGE, Controller: deleteInterface, Label: "Delete", Parent: nil, Children: nil}
+	updateFormPage      *Page = &Page{Index: UPDATEFORMPAGE, Controller: updateFormInterface, Label: "UpdateForm", Parent: nil, Children: nil}
+	readSinglePage      *Page = &Page{Index: READSINGLEPAGE, Controller: readSingleInterface, Label: "ReadSingle", Parent: nil, Children: nil}
+	contentPage         *Page = &Page{Index: CONTENTPAGE, Controller: pageInterface, Label: "Content", Parent: nil, Children: nil}
+	mediaPage           *Page = &Page{Index: MEDIAPAGE, Controller: pageInterface, Label: "Media", Parent: nil, Children: nil}
+	usersPage           *Page = &Page{Index: USERSPAGE, Controller: pageInterface, Label: "Users", Parent: nil, Children: nil}
+	dynamicPage         *Page = &Page{Index: DYNAMICPAGE, Controller: pageInterface, Label: "Dynamic", Parent: nil, Children: nil}
+	definedDatatypePage *Page = &Page{Index: DEFINEDATATYPE, Controller: pageInterface, Label: "DefineDatatype", Parent: nil, Children: nil}
+	developmentPage     *Page = &Page{Index: DEVELOPMENT, Controller: developmentInterface, Label: "Development", Parent: nil, Children: nil}
 )
 
 func (m Model) View() string {
@@ -85,7 +88,8 @@ func (m Model) View() string {
 		p := NewMenuPage(menu, m.titles[m.titleFont], "CMS", []Row{}, "q quit", m.RenderStatusBar())
 		ui = p.Render(m)
 	case bucketPage.Index:
-		ui = m.PageBucket()
+		p := NewStaticPage(m.titles[m.titleFont], "BUCKET SETTINGS", []Row{}, "q quit", m.RenderStatusBar())
+		ui = p.Render(m)
 	case configPage.Index:
 		ui = m.PageConfig()
 	case tableActionsPage.Index:
@@ -112,8 +116,11 @@ func (m Model) View() string {
 		ui = m.PageContent()
 	case readSinglePage.Index:
 		ui = m.PageReadSingle()
-	case defineDatatype.Index:
-		ui = m.PageDefineDatatype()
+	case definedDatatypePage.Index:
+		ui = ""
+	case developmentPage.Index:
+		p := NewStaticPage(m.titles[m.titleFont], "Development", []Row{}, "q quit", "")
+		ui = p.Render(m)
 	default:
 		ui = m.Page404()
 	}
@@ -178,7 +185,7 @@ func (m *Model) PageUpdateForm() string {
 }
 
 func (m Model) PageBucket() string {
-    c := m.config
+	c := m.config
 	m.header = "Bucket Settings"
 	b1 := c.Bucket_Url
 	b2 := c.Bucket_Endpoint

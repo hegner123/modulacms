@@ -2,6 +2,7 @@ package cli
 
 
 var homepageMenu []*Page = []*Page{
+    developmentPage,
 	cmsPage,
 	selectTablePage,
 	bucketPage,
@@ -10,7 +11,7 @@ var homepageMenu []*Page = []*Page{
 }
 
 var cmsMenu []*Page = []*Page{
-    defineDatatype,
+    definedDatatypePage,
 	contentPage,
 	mediaPage,
 	usersPage,

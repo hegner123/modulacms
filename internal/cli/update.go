@@ -8,16 +8,17 @@ import (
 )
 
 const (
-	pageInterface       CliInterface = "PageInterface"
-	tableInterface      CliInterface = "TableInterface"
-	createInterface     CliInterface = "CreateInterface"
-	readInterface       CliInterface = "ReadInterface"
-	updateInterface     CliInterface = "UpdateInterface"
-	deleteInterface     CliInterface = "DeleteInterface"
-	updateFormInterface CliInterface = "UpdateFormInterface"
-	readSingleInterface CliInterface = "ReadSingleInterface"
-	contentInterface    CliInterface = "ContentInterface"
-	configInterface     CliInterface = "ConfigInterface"
+	developmentInterface CliInterface = "DevelopmentInterface"
+	pageInterface        CliInterface = "PageInterface"
+	tableInterface       CliInterface = "TableInterface"
+	createInterface      CliInterface = "CreateInterface"
+	readInterface        CliInterface = "ReadInterface"
+	updateInterface      CliInterface = "UpdateInterface"
+	deleteInterface      CliInterface = "DeleteInterface"
+	updateFormInterface  CliInterface = "UpdateFormInterface"
+	readSingleInterface  CliInterface = "ReadSingleInterface"
+	contentInterface     CliInterface = "ContentInterface"
+	configInterface      CliInterface = "ConfigInterface"
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -42,12 +43,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Data fetched successfully; update the model.
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
 		m.tables = msg.Tables
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case columnFetchedMsg:
 		m.columns = msg.Columns
 		m.columnTypes = msg.ColumnTypes
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case headersRowsFetchedMsg:
 		m.headers = msg.Headers
@@ -55,22 +56,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.paginator.PerPage = m.maxRows
 		m.paginator.SetTotalPages(len(m.rows))
 		m.cursorMax = m.paginator.ItemsOnPage(len(m.rows))
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case createFormMsg:
 		m.form = msg.Form
 		m.formLen = msg.FieldsCount
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case updateFormMsg:
 		m.form = msg.Form
 		m.formLen = msg.FieldsCount
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case cmsFormMsg:
 		m.form = msg.Form
 		m.formLen = msg.FieldsCount
-        m.loading = false
+		m.loading = false
 		return m, nil
 	case updateMaxCursorMsg:
 		m.cursorMax = msg.cursorMax
@@ -80,10 +81,41 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case ErrMsg:
 		// Handle an error from data fetching.
 		m.err = msg.Error
-        m.loading = false
+		m.loading = false
+		return m, nil
+	case ShowDialogMsg:
+		// Handle showing a dialog
+		dialog := NewDialog(msg.Title, msg.Message, msg.ShowCancel)
+		m.dialog = &dialog
+		m.dialogActive = true
+		m.focus = DIALOGFOCUS
+		return m, nil
+	case DialogAcceptMsg:
+		// Handle dialog accept action
+		m.dialogActive = false
+		m.focus = PAGEFOCUS
+		return m, nil
+	case DialogCancelMsg:
+		// Handle dialog cancel action
+		m.dialogActive = false
+		m.focus = PAGEFOCUS
 		return m, nil
 	default:
+		// Check if we need to handle dialog key presses first
+		if m.dialogActive && m.dialog != nil {
+			switch msg := msg.(type) {
+			case tea.KeyMsg:
+				dialog, cmd := m.dialog.Update(msg)
+				m.dialog = &dialog
+				if cmd != nil {
+					return m, cmd
+				}
+			}
+		}
+
 		switch m.controller {
+		case developmentInterface:
+			return m.DevelopmentInterface(msg)
 		case createInterface:
 			return m.UpdateDatabaseCreate(msg)
 		case readInterface:
@@ -108,6 +140,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+
+}
+
+func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch msg := message.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		//Exit
+		case "d":
+			d := NewDialog("", "", true)
+			m.dialog = &d
+			mg := ShowDialog("Dialog", "test", true)
+			cmds = append(cmds, mg)
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+		}
+
+	}
+
+	return m, tea.Batch(cmds...)
 
 }
 func (m Model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {

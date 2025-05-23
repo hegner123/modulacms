@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/hegner123/modulacms/internal/model"
 )
 
 /*
@@ -36,13 +37,13 @@ type BasePage struct {
 	Status   string
 }
 
-func NewBasePage(t string, h string, r []Row, c string, s string) BasePage {
+func NewBasePage(title string, header string, rows []Row, controls string, status string) BasePage {
 	return BasePage{
-		Title:    t,
-		Header:   h,
-		Rows:     r,
-		Controls: c,
-		Status:   s,
+		Title:    title,
+		Header:   header,
+		Rows:     rows,
+		Controls: controls,
+		Status:   status,
 	}
 }
 
@@ -70,15 +71,41 @@ func (s *StaticPage) RenderBody() string {
 	return lipgloss.JoinVertical(lipgloss.Left, r...)
 }
 
-func (s StaticPage) Render(c int) string {
+func (s StaticPage) Render(model Model) string {
+	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	rows := []string{RenderTitle(s.Title), RenderHeading(s.Header), s.RenderBody()}
+	if model.dialogActive {
+		rows = append(rows, model.dialog.Render(model.width, model.height))
+	}
+	ui := lipgloss.JoinVertical(
+		lipgloss.Left,
+		rows...,
+	)
+
+	h := model.RenderSpace(docStyle.Render(ui) + RenderFooter(s.Controls))
+	f := RenderFooter(s.Controls)
+	status := s.Status
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		s.Title,
-		s.Header,
-		s.RenderBody(),
-		s.Controls,
-		s.Status,
+		docStyle.Render(ui),
+		h,
+		f,
+		status,
 	)
+}
+
+func NewStaticPage(title string, header string, rows []Row, controls string, status string) StaticPage {
+	page := BasePage{
+		Title:    title,
+		Header:   header,
+		Rows:     rows,
+		Controls: controls,
+		Status:   status,
+	}
+	return StaticPage{
+		BasePage: page,
+	}
+
 }
 
 type MenuPage struct {
@@ -154,8 +181,6 @@ func NewMenuPage(m []string, title string, header string, body []Row, controls s
 	}
 }
 
-
-
 type TablePage struct {
 	BasePage
 	Table        string
@@ -229,8 +254,88 @@ type FormPage struct {
 	Form *huh.Form
 }
 
+func (f *FormPage) AddHeader(h string) {
+	f.Header += h
+}
+
+func (f *FormPage) AddControls(c string) {
+	f.Controls += c
+}
+
+func (f *FormPage) AddStatus(st string) {
+	f.Status += st
+}
+
+func (f FormPage) Render(model *Model) string {
+	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	s := lipgloss.JoinVertical(
+		lipgloss.Left,
+		RenderTitle(f.Title),
+		RenderHeading(f.Header),
+	)
+	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(f.Controls))
+	footer := RenderFooter(f.Controls)
+	status := f.Status
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		docStyle.Render(s),
+		h,
+		footer,
+		status,
+	)
+}
+
+type DisplayMode int
+
+const (
+	Main DisplayMode = iota
+	SelectDatatype
+	Options
+)
+
 type CMSPage struct {
 	BasePage
 	Datatype string
-	Tree     any
+	Tree     model.Root
+	Display  DisplayMode
+}
+
+func (c *CMSPage) AddHeader(h string) {
+	c.Header += h
+}
+
+func (c *CMSPage) AddControls(controls string) {
+	c.Controls += controls
+}
+
+func (c *CMSPage) AddStatus(st string) {
+	c.Status += st
+}
+
+func (c CMSPage) Render(model *Model) string {
+	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	s := lipgloss.JoinVertical(
+		lipgloss.Left,
+		RenderTitle(c.Title),
+		RenderHeading(c.Header),
+	)
+	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(c.Controls))
+	footer := RenderFooter(c.Controls)
+	status := c.Status
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		docStyle.Render(s),
+		h,
+		footer,
+		status,
+	)
+}
+
+func NewCMSPage(title string, header string, body []Row, controls string, status string) CMSPage {
+    b := NewBasePage(title, header, body, controls, status)
+	p := CMSPage{
+        BasePage: b,
+    }
+
+	return p
 }

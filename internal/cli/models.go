@@ -81,7 +81,7 @@ func NewNavigationComponent() NavigationComponent {
 			*updateFormPage,
 			*readSinglePage,
 			*dynamicPage,
-			*defineDatatype,
+			*definedDatatypePage,
 		},
 		controller: pageInterface,
 	}

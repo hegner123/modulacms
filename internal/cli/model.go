@@ -95,9 +95,22 @@ type Model struct {
 	history      []PageHistory
 	QueryResults []sql.Row
 	time         time.Time
+	dialog       *DialogModel
+	dialogActive bool
 }
 
 var CliContinue bool = false
+
+// ShowDialog creates a command to show a dialog
+func ShowDialog(title, message string, showCancel bool) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDialogMsg{
+			Title:      title,
+			Message:    message,
+			ShowCancel: showCancel,
+		}
+	}
+}
 
 func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 
@@ -140,6 +153,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		table:      "",
 		viewport:   viewport.Model{},
 		pageMenu: []*Page{
+			developmentPage,
 			cmsPage,
 			selectTablePage,
 			bucketPage,
@@ -161,7 +175,8 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 			*updateFormPage,
 			*readSinglePage,
 			*dynamicPage,
-			*defineDatatype,
+			*definedDatatypePage,
+			*developmentPage,
 		},
 		selected:   make(map[int]struct{}),
 		formMap:    make([]string, 0),

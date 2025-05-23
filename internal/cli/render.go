@@ -46,7 +46,14 @@ func (m Model) RenderUI() string {
 		m.RenderStatusBar(),
 	)
 
-	return docStyle.Render(doc)
+	renderedDoc := docStyle.Render(doc)
+
+	// If dialog is active, render dialog over the UI
+	if m.dialogActive && m.dialog != nil {
+		return DialogOverlay(renderedDoc, *m.dialog, m.width, m.height)
+	}
+
+	return renderedDoc
 }
 
 func formatJSON(b *config.Config) (string, error) {
