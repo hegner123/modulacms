@@ -18,6 +18,7 @@ type DialogModel struct {
 	OkText      string
 	CancelText  string
 	ShowCancel  bool
+	ReadyOK     bool
 	help        help.Model
 	borderStyle lipgloss.Style
 	titleStyle  lipgloss.Style
@@ -39,6 +40,7 @@ func NewDialog(title, message string, showCancel bool) DialogModel {
 		OkText:      "OK",
 		CancelText:  "Cancel",
 		ShowCancel:  showCancel,
+		ReadyOK:     false,
 		help:        h,
 		borderStyle: lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
 		titleStyle:  lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent),
@@ -65,7 +67,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab", "shift+tab":
+		case "tab", "shift+tab", "h", "l":
 			if d.ShowCancel {
 				d.focusIndex = (d.focusIndex + 1) % 2
 			}
@@ -90,11 +92,11 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 	// Build dialog content
 	titleText := d.titleStyle.Render(d.Title)
 	messageText := d.textStyle.Render(d.Message)
-	
+
 	// Build buttons
-    okButton := d.buttonStyle
+	okButton := d.buttonStyle
 	cancelButton := d.buttonStyle
-	
+
 	if d.focusIndex == 0 {
 		okButton = okButton.
 			Background(config.DefaultStyle.Accent).
@@ -104,10 +106,10 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 			Background(config.DefaultStyle.Accent).
 			Foreground(config.DefaultStyle.Primary)
 	}
-	
+
 	okButtonText := okButton.Render(d.OkText)
 	cancelButtonText := cancelButton.Render(d.CancelText)
-	
+
 	// Position buttons
 	var buttonBar string
 	if d.ShowCancel {
@@ -115,7 +117,7 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 	} else {
 		buttonBar = lipgloss.JoinHorizontal(lipgloss.Center, okButtonText)
 	}
-	
+
 	// Build the dialog box
 	content := strings.Join([]string{
 		titleText,
@@ -124,10 +126,10 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 		"",
 		buttonBar,
 	}, "\n")
-	
+
 	// Apply border and position
 	dialogBox := d.borderStyle.Width(contentWidth).Render(content)
-	
+
 	// Center the dialog on screen
 	dialogBox = lipgloss.Place(
 		windowWidth,
@@ -136,24 +138,24 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 		lipgloss.Center,
 		dialogBox,
 	)
-	
+
 	return dialogBox
 }
 
 // DialogOverlay positions a dialog over existing content
 func DialogOverlay(content string, dialog DialogModel, width, height int) string {
 	dialogContent := dialog.Render(width, height)
-	
-	
+
 	// Place the dialog on top of the overlay
-	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, dialogContent, 
-		lipgloss.WithWhitespaceChars(" "), 
+	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, dialogContent,
+		lipgloss.WithWhitespaceChars(" "),
 		lipgloss.WithWhitespaceForeground(lipgloss.Color("#000000")))
 }
 
 // Dialog-related messages
 type DialogAcceptMsg struct{}
 type DialogCancelMsg struct{}
+type DialogReadyOK struct{}
 type ShowDialogMsg struct {
 	Title      string
 	Message    string

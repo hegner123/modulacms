@@ -74,8 +74,8 @@ func (s *StaticPage) RenderBody() string {
 func (s StaticPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	rows := []string{RenderTitle(s.Title), RenderHeading(s.Header), s.RenderBody()}
-	if model.dialogActive {
-		rows = append(rows, model.dialog.Render(model.width, model.height))
+	if model.DialogActive {
+		rows = append(rows, model.Dialog.Render(model.Width, model.Height))
 	}
 	ui := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -133,7 +133,7 @@ func (m *MenuPage) RenderBody(model Model) string {
 	for i, choice := range m.Menu {
 
 		cursor := "   "
-		if model.cursor == i {
+		if model.Cursor == i {
 			cursor = " ->"
 		}
 
@@ -203,13 +203,13 @@ func (t *TablePage) AddStatus(st string) {
 }
 
 func (t *TablePage) RenderBody(m *Model) string {
-	start, end := m.paginator.GetSliceBounds(len(t.TableRows))
+	start, end := m.Paginator.GetSliceBounds(len(t.TableRows))
 	currentView := t.TableRows[start:end]
 
-	t.TableUI = StyledTable(t.TableHeaders, currentView, m.cursor)
+	t.TableUI = StyledTable(t.TableHeaders, currentView, m.Cursor)
 	paginator := ""
-	if len(t.TableRows) > m.maxRows {
-		paginator = "\n\n" + m.paginator.View()
+	if len(t.TableRows) > m.MaxRows {
+		paginator = "\n\n" + m.Paginator.View()
 	}
 	b := lipgloss.JoinVertical(
 		lipgloss.Top,
@@ -285,6 +285,13 @@ func (f FormPage) Render(model *Model) string {
 	)
 }
 
+func NewFormPage(title string, header string, body []Row, controls string, status string) FormPage {
+	basePage := NewBasePage(title, header, body, controls, status)
+	return FormPage{
+		BasePage: basePage,
+	}
+}
+
 type DisplayMode int
 
 const (
@@ -335,6 +342,7 @@ func NewCMSPage(title string, header string, body []Row, controls string, status
     b := NewBasePage(title, header, body, controls, status)
 	p := CMSPage{
         BasePage: b,
+        Tree: model.NewRoot(),
     }
 
 	return p

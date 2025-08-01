@@ -17,43 +17,46 @@ func (m *Model) PageControls(msg tea.KeyMsg, option int) (Model, tea.Cmd) {
 		return *m, tea.Quit
 
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < option-1 {
-			m.cursor++
+		if m.Cursor < option-1 {
+			m.Cursor++
 		}
 	case "h", "shift+tab", "backspace":
-		if len(m.history) > 0 {
+		if len(m.History) > 0 {
 			entry := *m.PopHistory()
-			m.page = entry.Page
-			m.cursor = entry.Cursor
-			m.controller = m.page.Controller
-			m.pageMenu = m.page.Children
+			m.Page = entry.Page
+			m.Cursor = entry.Cursor
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
 			return *m, nil
 		}
 
 	//Action
 	case "enter", "l":
-		m.PushHistory(PageHistory{Page: m.page, Cursor: m.cursor})
-		cmd := m.PageRouter()
-		if cmd != nil {
-			cmds = append(cmds, cmd)
+		// Only proceed if we have menu items
+		if len(m.PageMenu) > 0 {
+			m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
+			cmd := m.PageRouter()
+			if cmd != nil {
+				cmds = append(cmds, cmd)
+			}
 		}
 	default:
 		var scmd tea.Cmd
-		m.spinner, scmd = m.spinner.Update(msg)
+		m.Spinner, scmd = m.Spinner.Update(msg)
 		cmds = append(cmds, scmd)
 	}
 	cmds = append(cmds, tea.WindowSize())
@@ -68,48 +71,56 @@ func (m *Model) TableSelectControls(msg tea.KeyMsg, option int) (Model, tea.Cmd)
 	case "q", "esc", "ctrl+c":
 		return *m, tea.Quit
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < len(m.tables)-1 {
-			m.cursor++
+		if m.Cursor < len(m.Tables)-1 {
+			m.Cursor++
 		}
 	case "h", "left", "shift+tab", "backspace":
-		if len(m.history) > 0 {
+		if len(m.History) > 0 {
 			entry := *m.PopHistory()
-			m.cursor = entry.Cursor
-			m.page = entry.Page
-			m.controller = m.page.Controller
-			m.pageMenu = m.page.Children
+			m.Cursor = entry.Cursor
+			m.Page = entry.Page
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
 			return *m, nil
 		}
 
 	//Action
 	case "enter", "l":
-		m.PushHistory(PageHistory{Page: m.page, Cursor: m.cursor})
-		m.table = m.tables[m.cursor]
-		m.cursor = 0
-		m.page = *m.page.Next
-		m.controller = m.page.Controller
-		m.pageMenu = m.page.Children
+		m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
+		m.Table = m.Tables[m.Cursor]
+		m.Cursor = 0
+		// Check if Next is nil before dereferencing
+		if m.Page.Next != nil {
+			m.Page = *m.Page.Next
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
+		} else {
+			// If Next is nil, use tableActionsPage instead
+			m.Page = *tableActionsPage
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
+		}
 	}
 	return *m, tea.Batch(cmds...)
 }
 
 func (m *Model) DatabaseCreateControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	m.focus = FORMFOCUS
+	m.Focus = FORMFOCUS
 
 	logFile, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -119,32 +130,32 @@ func (m *Model) DatabaseCreateControls(msg tea.Msg) (Model, tea.Cmd) {
 	defer logFile.Close()
 
 	// Update form with the message
-	form, cmd := m.form.Update(msg)
+	form, cmd := m.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		m.form = f
+		m.Form = f
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.form.State == huh.StateAborted {
+	if m.Form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
-		m.focus = PAGEFOCUS
-		m.page = m.pages[READPAGE]
-		m.controller = m.page.Controller
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[READPAGE]
+		m.Controller = m.Page.Controller
 	}
 
-	if m.form.State == huh.StateCompleted {
+	if m.Form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
-		m.focus = PAGEFOCUS
-		err := m.CLICreate(m.config, db.DBTable(m.table))
+		m.Focus = PAGEFOCUS
+		err := m.CLICreate(m.Config, db.DBTable(m.Table))
 		cmds = append(cmds, err)
-		m.page = m.pages[READPAGE]
-		m.controller = m.page.Controller
-		cmd := FetchHeadersRows(m.config, m.table)
+		m.Page = m.Pages[READPAGE]
+		m.Controller = m.Page.Controller
+		cmd := FetchHeadersRows(m.Config, m.Table)
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd
-	m.spinner, scmd = m.spinner.Update(msg)
+	m.Spinner, scmd = m.Spinner.Update(msg)
 	cmds = append(cmds, scmd)
 
 	return *m, tea.Batch(cmds...)
@@ -157,56 +168,56 @@ func (m *Model) DatabaseReadControls(msg tea.KeyMsg, option int) (Model, tea.Cmd
 	case "q", "esc", "ctrl+c":
 		return *m, tea.Quit
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < m.cursorMax-1 {
-			m.cursor++
+		if m.Cursor < m.CursorMax-1 {
+			m.Cursor++
 		}
 	case "h", "shift+tab", "backspace":
 		entry := *m.PopHistory()
-		m.cursor = entry.Cursor
-		m.page = entry.Page
-		m.controller = m.page.Controller
-		m.pageMenu = m.page.Children
+		m.Cursor = entry.Cursor
+		m.Page = entry.Page
+		m.Controller = m.Page.Controller
+		m.PageMenu = m.Page.Children
 	case "left":
-		if m.pageMod > 0 {
-			m.pageMod--
+		if m.PageMod > 0 {
+			m.PageMod--
 		}
 	case "right":
-		if m.pageMod < len(m.rows)/m.maxRows {
-			m.pageMod++
+		if m.PageMod < len(m.Rows)/m.MaxRows {
+			m.PageMod++
 		}
 
 	//Action
 	case "enter", "l":
-		m.PushHistory(PageHistory{Page: m.page, Cursor: m.cursor})
+		m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
 
-		recordIndex := (m.pageMod * m.maxRows) + m.cursor
-		if recordIndex < len(m.rows) {
-			m.cursor = recordIndex
+		recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
+		if recordIndex < len(m.Rows) {
+			m.Cursor = recordIndex
 		}
-		m.page = m.pages[READSINGLEPAGE]
-		m.controller = m.page.Controller
+		m.Page = m.Pages[READSINGLEPAGE]
+		m.Controller = m.Page.Controller
 	default:
 
 		var scmd tea.Cmd
-		m.spinner, scmd = m.spinner.Update(msg)
+		m.Spinner, scmd = m.Spinner.Update(msg)
 		cmds = append(cmds, scmd)
 	}
 	var pcmd tea.Cmd
-	m.paginator, pcmd = m.paginator.Update(msg)
+	m.Paginator, pcmd = m.Paginator.Update(msg)
 	cmds = append(cmds, pcmd)
 	cmd := m.UpdateMaxCursor()
 	cmds = append(cmds, cmd)
@@ -220,38 +231,34 @@ func (m *Model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (Model, t
 	case "q", "esc", "ctrl+c":
 		return *m, tea.Quit
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < len(m.rows)-1 {
-			m.cursor++
+		if m.Cursor < len(m.Rows)-1 {
+			m.Cursor++
 		}
 	case "h", "shift+tab", "backspace":
-		if len(m.history) > 0 {
+		if len(m.History) > 0 {
 			entry := *m.PopHistory()
-			m.cursor = entry.Cursor
-			m.page = entry.Page
-			m.controller = m.page.Controller
-			m.pageMenu = m.page.Children
+			m.Cursor = entry.Cursor
+			m.Page = entry.Page
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
 		}
 
 	default:
-
-		var scmd tea.Cmd
-		m.spinner, scmd = m.spinner.Update(msg)
-		cmds = append(cmds, scmd)
-
+		// Do nothing for other keys
 	}
 	return *m, tea.Batch(cmds...)
 }
@@ -259,76 +266,76 @@ func (m *Model) DatabaseReadSingleControls(msg tea.KeyMsg, option int) (Model, t
 func (m *Model) DatabaseUpdateControls(msg tea.KeyMsg, option int) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	var rows [][]string
-	m.focus = FORMFOCUS
+	m.Focus = FORMFOCUS
 	switch msg.String() {
 	//Exit
 	case "q", "esc", "ctrl+c":
 		return *m, tea.Quit
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < m.cursorMax-1 {
-			m.cursor++
+		if m.Cursor < m.CursorMax-1 {
+			m.Cursor++
 		}
 	case "h", "shift+tab", "backspace":
-		if len(m.history) > 0 {
+		if len(m.History) > 0 {
 			entry := *m.PopHistory()
-			m.page = entry.Page
-			m.cursor = entry.Cursor
-			m.controller = m.page.Controller
-			m.pageMenu = m.page.Children
+			m.Page = entry.Page
+			m.Cursor = entry.Cursor
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
 		}
 	case "left":
-		if m.pageMod > 0 {
-			m.pageMod--
+		if m.PageMod > 0 {
+			m.PageMod--
 		}
 	case "right":
-		if m.pageMod < len(m.rows)/m.maxRows {
-			m.pageMod++
+		if m.PageMod < len(m.Rows)/m.MaxRows {
+			m.PageMod++
 		}
 
 	//Action
 	case "enter", "l":
-		rows = m.rows
-		m.PushHistory(PageHistory{Page: m.page, Cursor: m.cursor})
-		recordIndex := (m.pageMod * m.maxRows) + m.cursor
+		rows = m.Rows
+		m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
+		recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
 		// Only update if the calculated index is valid
-		if recordIndex < len(m.rows) {
-			m.cursor = recordIndex
+		if recordIndex < len(m.Rows) {
+			m.Cursor = recordIndex
 		}
-		m.row = &rows[recordIndex]
+		m.Row = &rows[recordIndex]
 		m.PageRouter()
-		m.cursor = 0
-		m.page = m.pages[UPDATEFORMPAGE]
-		m.controller = m.page.Controller
-		m.pageMenu = m.page.Children
+		m.Cursor = 0
+		m.Page = m.Pages[UPDATEFORMPAGE]
+		m.Controller = m.Page.Controller
+		m.PageMenu = m.Page.Children
 	default:
 
 		var scmd tea.Cmd
-		m.spinner, scmd = m.spinner.Update(msg)
+		m.Spinner, scmd = m.Spinner.Update(msg)
 		cmds = append(cmds, scmd)
 	}
 	var pcmd tea.Cmd
-	m.paginator, pcmd = m.paginator.Update(msg)
+	m.Paginator, pcmd = m.Paginator.Update(msg)
 	cmds = append(cmds, pcmd)
 	return *m, tea.Batch(cmds...)
 }
 
 func (m *Model) DatabaseUpdateFormControls(msg tea.Msg, option int) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	m.focus = FORMFOCUS
+	m.Focus = FORMFOCUS
 
 	logFile, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -338,30 +345,30 @@ func (m *Model) DatabaseUpdateFormControls(msg tea.Msg, option int) (Model, tea.
 	defer logFile.Close()
 
 	// Update form with the message
-	form, cmd := m.form.Update(msg)
+	form, cmd := m.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		m.form = f
+		m.Form = f
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.form.State == huh.StateAborted {
+	if m.Form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
-		m.focus = PAGEFOCUS
-		m.page = m.pages[UPDATEPAGE]
-		m.controller = m.page.Controller
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[UPDATEPAGE]
+		m.Controller = m.Page.Controller
 	}
 
-	if m.form.State == huh.StateCompleted {
+	if m.Form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
-		m.focus = PAGEFOCUS
-		m.page = m.pages[UPDATEPAGE]
-		m.controller = m.page.Controller
-		cmd := m.CLIUpdate(m.config, db.DBTable(m.table))
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[UPDATEPAGE]
+		m.Controller = m.Page.Controller
+		cmd := m.CLIUpdate(m.Config, db.DBTable(m.Table))
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd
-	m.spinner, scmd = m.spinner.Update(msg)
+	m.Spinner, scmd = m.Spinner.Update(msg)
 	cmds = append(cmds, scmd)
 
 	return *m, tea.Batch(cmds...)
@@ -374,50 +381,50 @@ func (m *Model) DatabaseDeleteControls(msg tea.KeyMsg, option int) (Model, tea.C
 	case "q", "esc", "ctrl+c":
 		return *m, tea.Quit
 	case "shift+left":
-		if m.titleFont > 0 {
-			m.titleFont--
+		if m.TitleFont > 0 {
+			m.TitleFont--
 		}
 	case "shift+right":
-		if m.titleFont < len(m.titles)-1 {
-			m.titleFont++
+		if m.TitleFont < len(m.Titles)-1 {
+			m.TitleFont++
 		}
 
 	//Navigation
 	case "up", "k":
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
 	case "down", "j":
-		if m.cursor < m.cursorMax-1 {
-			m.cursor++
+		if m.Cursor < m.CursorMax-1 {
+			m.Cursor++
 		}
 	case "h", "shift+tab", "backspace":
-		if len(m.history) > 0 {
+		if len(m.History) > 0 {
 			entry := *m.PopHistory()
-			m.cursor = entry.Cursor
-			m.page = entry.Page
-			m.controller = m.page.Controller
-			m.pageMenu = m.page.Children
+			m.Cursor = entry.Cursor
+			m.Page = entry.Page
+			m.Controller = m.Page.Controller
+			m.PageMenu = m.Page.Children
 		}
 
 	//Action
 	case "enter", "l":
-		err := m.CLIDelete(m.config, db.StringDBTable(m.table))
+		err := m.CLIDelete(m.Config, db.StringDBTable(m.Table))
 		if err != nil {
 			return *m, nil
 		}
-		if m.cursor > 0 {
-			m.cursor--
+		if m.Cursor > 0 {
+			m.Cursor--
 		}
-		cmd := FetchHeadersRows(m.config, m.table)
+		cmd := FetchHeadersRows(m.Config, m.Table)
 		cmds = append(cmds, cmd)
 	default:
 		var scmd tea.Cmd
-		m.spinner, scmd = m.spinner.Update(msg)
+		m.Spinner, scmd = m.Spinner.Update(msg)
 		cmds = append(cmds, scmd)
 	}
 	var pcmd tea.Cmd
-	m.paginator, pcmd = m.paginator.Update(msg)
+	m.Paginator, pcmd = m.Paginator.Update(msg)
 	cmds = append(cmds, pcmd)
 	return *m, tea.Batch(cmds...)
 }
@@ -432,40 +439,43 @@ func (m *Model) ContentControls(message tea.Msg) (Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			return *m, tea.Quit
 		case "shift+left":
-			if m.titleFont > 0 {
-				m.titleFont--
+			if m.TitleFont > 0 {
+				m.TitleFont--
 			}
 		case "shift+right":
-			if m.titleFont < len(m.titles)-1 {
-				m.titleFont++
+			if m.TitleFont < len(m.Titles)-1 {
+				m.TitleFont++
 			}
 
 		//Navigation
 		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+			if m.Cursor > 0 {
+				m.Cursor--
 			}
 		case "down", "j":
-			if m.cursor < len(m.pageMenu) {
-				m.cursor++
+			if m.Cursor < len(m.PageMenu) {
+				m.Cursor++
 			}
 		case "h", "left", "shift+tab", "backspace":
-			if len(m.history) > 0 {
+			if len(m.History) > 0 {
 				entry := *m.PopHistory()
-				m.cursor = entry.Cursor
-				m.page = entry.Page
-				m.controller = m.page.Controller
-				m.pageMenu = m.page.Children
+				m.Cursor = entry.Cursor
+				m.Page = entry.Page
+				m.Controller = m.Page.Controller
+				m.PageMenu = m.Page.Children
 			}
 
 		//Action
 		case "enter", "l":
-			m.PushHistory(PageHistory{Page: m.page, Cursor: m.cursor})
+			m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
 			m.PageRouter()
 		default:
-			var scmd tea.Cmd
-			m.spinner, scmd = m.spinner.Update(msg)
-			cmds = append(cmds, scmd)
+			// Only update spinner if we're in a loading state
+			if m.Loading {
+				var scmd tea.Cmd
+				m.Spinner, scmd = m.Spinner.Update(msg)
+				cmds = append(cmds, scmd)
+			}
 
 		}
 	}
@@ -485,19 +495,19 @@ func (m *Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			return *m, tea.Quit
 		case "h", "shift+tab", "backspace":
-			if len(m.history) > 0 {
+			if len(m.History) > 0 {
 				entry := *m.PopHistory()
-				m.cursor = entry.Cursor
-				m.page = entry.Page
-				m.controller = m.page.Controller
-				m.pageMenu = m.page.Children
+				m.Cursor = entry.Cursor
+				m.Page = entry.Page
+				m.Controller = m.Page.Controller
+				m.PageMenu = m.Page.Children
 				return *m, nil
 			}
 		}
 	}
 
 	// Handle keyboard and mouse events in the viewport
-	m.viewport, cmd = m.viewport.Update(msg)
+	m.Viewport, cmd = m.Viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
 	return *m, tea.Batch(cmds...)

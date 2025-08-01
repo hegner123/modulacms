@@ -24,15 +24,15 @@ type cmsFormMsg struct {
 func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		var fields []huh.Field
-		for i, c := range *m.columns {
+		for i, c := range *m.Columns {
 			blank := ""
 			if i == 0 {
-				m.formValues = append(m.formValues, &blank)
+				m.FormValues = append(m.FormValues, &blank)
 				continue
 			}
 			value := ""
-			t := *m.columnTypes
-			f, err := m.NewFieldFromType(m.config, c, t[i], &value)
+			t := *m.ColumnTypes
+			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 			if err != nil {
 				return ErrMsg{Error: err}
 			}
@@ -40,7 +40,7 @@ func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 				continue
 			}
 			fields = append(fields, f)
-			m.formValues = append(m.formValues, &value)
+			m.FormValues = append(m.FormValues, &value)
 
 		}
 		group := huh.NewGroup(fields...)
@@ -50,7 +50,7 @@ func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
-			if m.formSubmit {
+			if m.FormSubmit {
 				return formCompletedMsg{}
 			}
 			return formCancelledMsg{}
@@ -58,24 +58,24 @@ func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 		form.SubmitCmd = func() tea.Msg {
 			return tea.ResumeMsg{}
 		}
-		return createFormMsg{Form: form, FieldsCount: len(*m.columns)}
+		return createFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 
 }
 
 func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
-		row := *m.row
+		row := *m.Row
 		var fields []huh.Field
-		for i, c := range *m.columns {
+		for i, c := range *m.Columns {
 			if i == 0 {
 				id := row[i]
-				m.formValues = append(m.formValues, &id)
+				m.FormValues = append(m.FormValues, &id)
 				continue
 			}
 			value := row[i]
-			t := *m.columnTypes
-			f, err := m.NewUpdateFieldFromType(m.config, c, t[i], &value, row[i])
+			t := *m.ColumnTypes
+			f, err := m.NewUpdateFieldFromType(m.Config, c, t[i], &value, row[i])
 			if err != nil {
 				return ErrMsg{Error: err}
 			}
@@ -84,14 +84,14 @@ func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 			}
 
 			fields = append(fields, f)
-			m.formValues = append(m.formValues, &value)
+			m.FormValues = append(m.FormValues, &value)
 
 		}
 
-		m.formFields = fields
+		m.FormFields = fields
 
 		group := huh.NewGroup(fields...)
-		m.formGroups = []huh.Group{*group}
+		m.FormGroups = []huh.Group{*group}
 
 		form := huh.NewForm(
 			group,
@@ -99,30 +99,30 @@ func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
-			if m.formSubmit {
-				m.focus = PAGEFOCUS
+			if m.FormSubmit {
+				m.Focus = PAGEFOCUS
 				return formCompletedMsg{}
 			}
 			return formCancelledMsg{}
 		}
 		form.SubmitCmd = func() tea.Msg {
-			m.focus = PAGEFOCUS
+			m.Focus = PAGEFOCUS
 			return tea.ResumeMsg{}
 		}
-		return updateFormMsg{Form: form, FieldsCount: len(*m.columns)}
+		return updateFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 }
 
 func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		var fields []huh.Field
-		for i, c := range *m.columns {
+		for i, c := range *m.Columns {
 			if i == 0 {
 				continue
 			}
 			var value string
-			t := *m.columnTypes
-			f, err := m.NewFieldFromType(m.config, c, t[i], &value)
+			t := *m.ColumnTypes
+			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 			if err != nil {
 				return ErrMsg{Error: err}
 			}
@@ -130,7 +130,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 				continue
 			}
 			fields = append(fields, f)
-			m.formValues = append(m.formValues, &value)
+			m.FormValues = append(m.FormValues, &value)
 
 		}
 		group := huh.NewGroup(fields...)
@@ -141,17 +141,17 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
-			if m.formSubmit {
-				m.focus = PAGEFOCUS
+			if m.FormSubmit {
+				m.Focus = PAGEFOCUS
 				return formCompletedMsg{}
 			}
 			return formCancelledMsg{}
 		}
 		form.SubmitCmd = func() tea.Msg {
-			m.focus = PAGEFOCUS
+			m.Focus = PAGEFOCUS
 			return tea.ResumeMsg{}
 		}
-		return updateFormMsg{Form: form, FieldsCount: len(*m.columns)}
+		return updateFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 
 }

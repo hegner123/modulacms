@@ -19,18 +19,25 @@ var statusBarNoteStyle = lipgloss.NewStyle().
 func (m Model) RenderStatusTable() string {
 	doc := strings.Builder{}
 	var selected string
-	page := fmt.Sprintf("Page: %s  Index %d\n", m.page.Label, m.page.Index)
-	cursor := fmt.Sprintf("Cursor: %d\n", m.cursor)
-	menu := fmt.Sprintf("Menu: %v\nMenu Len:%d\n", getMenuLabels(m.pageMenu), len(m.pageMenu))
-	if len(m.pageMenu) > 0 {
-		selected = fmt.Sprintf("Selected: %v\n", m.pageMenu[m.cursor].Label)
+	page := fmt.Sprintf("Page: %s  Index %d\n", m.Page.Label, m.Page.Index)
+	cursor := fmt.Sprintf("Cursor: %d\n", m.Cursor)
+	menu := fmt.Sprintf("Menu: %v\nMenu Len:%d\n", getMenuLabels(m.PageMenu), len(m.PageMenu))
+	if len(m.PageMenu) > 0 {
+		selected = fmt.Sprintf("Selected: %v\n", m.PageMenu[m.Cursor].Label)
 	} else {
 		selected = "Selected: nil\n"
 	}
-	controller := fmt.Sprintf("Controller\n%v\n", m.controller)
-	//tables := fmt.Sprintf("Tables\n%v\n", m.tables)
-	table := fmt.Sprintf("Table\n%s\n", m.table)
-	history := fmt.Sprintf("History\nLength:\n %v", len(m.history))
+	controller := fmt.Sprintf("Controller\n%v\n", m.Controller)
+	//tables := fmt.Sprintf("Tables\n%v\n", m.Tables)
+	table := fmt.Sprintf("Table\n%s\n", m.Table)
+	history := fmt.Sprintf("History\nLength:\n %v", len(m.History))
+	
+	// Add Root info if available
+	rootInfo := "Root: Empty"
+	if m.Root.Node != nil {
+		rootInfo = fmt.Sprintf("Root: Node with %d children", len(m.Root.Node.Nodes))
+	}
+	
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		RenderBorderBlock(
@@ -45,11 +52,12 @@ func (m Model) RenderStatusTable() string {
 		RenderBorderBlock(
 			lipgloss.JoinVertical(
 				lipgloss.Left,
-				fmt.Sprint("Width:  ", m.width),
-				fmt.Sprint("Height: ", m.height),
+				fmt.Sprint("Width:  ", m.Width),
+				fmt.Sprint("Height: ", m.Height),
 				table,
 				history,
-				m.err.Error(),
+				rootInfo,
+				m.Err.Error(),
 			)),
 	))
 
@@ -78,17 +86,17 @@ func (m Model) StatusBarView(b *strings.Builder) {
 	)
 
 	// Scroll percent
-	percent := math.Max(minPercent, math.Min(maxPercent, m.viewport.ScrollPercent()))
+	percent := math.Max(minPercent, math.Min(maxPercent, m.Viewport.ScrollPercent()))
 	scrollPercent := fmt.Sprintf(" %3.f%% ", percent*percentToStringMagnitude)
 
 	// Note
 	var note string
-	note = truncate.StringWithTail(" "+note+" ", uint(max(0, m.width-ansi.PrintableRuneWidth(scrollPercent))), ellipsis)
+	note = truncate.StringWithTail(" "+note+" ", uint(max(0, m.Width-ansi.PrintableRuneWidth(scrollPercent))), ellipsis)
 	note = statusBarNoteStyle(note)
 
 	// Empty space
 	padding := max(0,
-		m.width-
+		m.Width-
 			ansi.PrintableRuneWidth(note)-
 			ansi.PrintableRuneWidth(scrollPercent),
 	)

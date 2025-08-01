@@ -1,4 +1,4 @@
-package cli
+package cms
 
 import (
 	"github.com/hegner123/modulacms/internal/config"

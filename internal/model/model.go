@@ -8,7 +8,7 @@ import (
 )
 
 type Root struct {
-	Node     *Node    `json:"root"`
+	Node *Node `json:"root"`
 }
 
 // Node represents a node in the content tree
@@ -106,6 +106,12 @@ func AddChild(r Root, n *Node) Root {
 		r.Node = n
 	}
 	return r
+}
+
+func NewNode(d Datatype) Node {
+	return Node{
+		Datatype: d,
+	}
 }
 
 // AddChild adds a child node to this node

@@ -4,6 +4,8 @@ import (
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/hegner123/modulacms/internal/cli/cms"
+	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -24,96 +26,123 @@ const (
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.height = msg.Height
-		m.width = msg.Width
-		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.titles[m.titleFont]) + RenderHeading(m.header))
-		footerHeight := lipgloss.Height(m.footerView() + RenderFooter(m.footer))
+		m.Height = msg.Height
+		m.Width = msg.Width
+		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.Titles[m.TitleFont]) + RenderHeading(m.Header))
+		footerHeight := lipgloss.Height(m.footerView() + RenderFooter(m.Footer))
 		verticalMarginHeight := headerHeight + footerHeight
 
-		if !m.ready {
-			m.viewport = viewport.New(msg.Width-4, msg.Height-verticalMarginHeight)
-			m.viewport.YPosition = headerHeight
-			m.ready = true
+		if !m.Ready {
+			m.Viewport = viewport.New(msg.Width-4, msg.Height-verticalMarginHeight)
+			m.Viewport.YPosition = headerHeight
+			m.Ready = true
 		} else {
-			m.viewport.YPosition = headerHeight
-			m.viewport.Width = msg.Width - 4
-			m.viewport.Height = msg.Height - verticalMarginHeight - 10
+			m.Viewport.YPosition = headerHeight
+			m.Viewport.Width = msg.Width - 4
+			m.Viewport.Height = msg.Height - verticalMarginHeight - 10
 		}
 	case tableFetchedMsg:
 		// Data fetched successfully; update the model.
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
-		m.tables = msg.Tables
-		m.loading = false
+		m.Tables = msg.Tables
+		m.Loading = false
 		return m, nil
 	case columnFetchedMsg:
-		m.columns = msg.Columns
-		m.columnTypes = msg.ColumnTypes
-		m.loading = false
+		m.Columns = msg.Columns
+		m.ColumnTypes = msg.ColumnTypes
+		m.Loading = false
 		return m, nil
 	case headersRowsFetchedMsg:
-		m.headers = msg.Headers
-		m.rows = msg.Rows
-		m.paginator.PerPage = m.maxRows
-		m.paginator.SetTotalPages(len(m.rows))
-		m.cursorMax = m.paginator.ItemsOnPage(len(m.rows))
-		m.loading = false
+		m.Headers = msg.Headers
+		m.Rows = msg.Rows
+		m.Paginator.PerPage = m.MaxRows
+		m.Paginator.SetTotalPages(len(m.Rows))
+		m.CursorMax = m.Paginator.ItemsOnPage(len(m.Rows))
+		m.Loading = false
 		return m, nil
 	case createFormMsg:
-		m.form = msg.Form
-		m.formLen = msg.FieldsCount
-		m.loading = false
+		m.Form = msg.Form
+		m.FormLen = msg.FieldsCount
+		m.Loading = false
 		return m, nil
 	case updateFormMsg:
-		m.form = msg.Form
-		m.formLen = msg.FieldsCount
-		m.loading = false
+		m.Form = msg.Form
+		m.FormLen = msg.FieldsCount
+		m.Loading = false
 		return m, nil
 	case cmsFormMsg:
-		m.form = msg.Form
-		m.formLen = msg.FieldsCount
-		m.loading = false
+		m.Form = msg.Form
+		m.FormLen = msg.FieldsCount
+		m.Loading = false
 		return m, nil
 	case updateMaxCursorMsg:
-		m.cursorMax = msg.cursorMax
-		if m.cursor > m.cursorMax-1 {
-			m.cursor = m.cursorMax - 1
+		m.CursorMax = msg.cursorMax
+		if m.Cursor > m.CursorMax-1 {
+			m.Cursor = m.CursorMax - 1
 		}
 	case ErrMsg:
 		// Handle an error from data fetching.
-		m.err = msg.Error
-		m.loading = false
+		m.Err = msg.Error
+		m.Loading = false
 		return m, nil
 	case ShowDialogMsg:
 		// Handle showing a dialog
 		dialog := NewDialog(msg.Title, msg.Message, msg.ShowCancel)
-		m.dialog = &dialog
-		m.dialogActive = true
-		m.focus = DIALOGFOCUS
+		m.Dialog = &dialog
+		m.DialogActive = true
+		m.Focus = DIALOGFOCUS
 		return m, nil
 	case DialogAcceptMsg:
 		// Handle dialog accept action
-		m.dialogActive = false
-		m.focus = PAGEFOCUS
+		m.DialogActive = false
+		m.Focus = PAGEFOCUS
 		return m, nil
 	case DialogCancelMsg:
 		// Handle dialog cancel action
-		m.dialogActive = false
-		m.focus = PAGEFOCUS
+		m.DialogActive = false
+		m.Focus = PAGEFOCUS
+		return m, nil
+	case DialogReadyOK:
+		m.Dialog.ReadyOK = true
+		return m, nil
+	case cms.NewRootMSG:
+		m.Root = model.CreateRoot()
+		return m, nil
+	case cms.NewNodeMSG:
+		m.Root = model.CreateNode(m.Root, int64(msg.ParentID), int64(msg.DatatypeID), int64(msg.ContentID))
+		return m, nil
+	case cms.LoadPageMSG:
+		// Load page from database using contentID
+		root, err := model.LoadPageContent(int64(msg.ContentID), *m.Config)
+		if err != nil {
+			m.Err = err
+			m.Status = ERROR
+		} else {
+			m.Root = root
+		}
+		return m, nil
+	case cms.SavePageMSG:
+		// Save page to database
+		err := model.SavePageContent(m.Root, *m.Config)
+		if err != nil {
+			m.Err = err
+			m.Status = ERROR
+		}
 		return m, nil
 	default:
 		// Check if we need to handle dialog key presses first
-		if m.dialogActive && m.dialog != nil {
+		if m.DialogActive && m.Dialog != nil {
 			switch msg := msg.(type) {
 			case tea.KeyMsg:
-				dialog, cmd := m.dialog.Update(msg)
-				m.dialog = &dialog
+				dialog, cmd := m.Dialog.Update(msg)
+				m.Dialog = &dialog
 				if cmd != nil {
 					return m, cmd
 				}
 			}
 		}
 
-		switch m.controller {
+		switch m.Controller {
 		case developmentInterface:
 			return m.DevelopmentInterface(msg)
 		case createInterface:
@@ -151,7 +180,7 @@ func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
 		//Exit
 		case "d":
 			d := NewDialog("", "", true)
-			m.dialog = &d
+			m.Dialog = &d
 			mg := ShowDialog("Dialog", "test", true)
 			cmds = append(cmds, mg)
 		case "q", "esc", "ctrl+c":
@@ -168,12 +197,15 @@ func (m Model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		var tcmd tea.Cmd
-		m, tcmd = m.TableSelectControls(msg, len(m.tables))
+		m, tcmd = m.TableSelectControls(msg, len(m.Tables))
 		cmds = append(cmds, tcmd)
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
+		// Only update spinner if we're in a loading state
+		if m.Loading {
+			var cmd tea.Cmd
+			m.Spinner, cmd = m.Spinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 	return &m, tea.Batch(cmds...)
 }
@@ -183,13 +215,15 @@ func (m Model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		var tcmd tea.Cmd
-		m, tcmd = m.PageControls(msg, len(m.pageMenu))
+		m, tcmd = m.PageControls(msg, len(m.PageMenu))
 		cmds = append(cmds, tcmd)
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
-
+		// Only update spinner if we're in a loading state
+		if m.Loading {
+			var cmd tea.Cmd
+			m.Spinner, cmd = m.Spinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 	return &m, tea.Batch(cmds...)
 }
@@ -202,12 +236,15 @@ func (m Model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		var tcmd tea.Cmd
-		m, tcmd = m.DatabaseReadControls(msg, len(m.rows))
+		m, tcmd = m.DatabaseReadControls(msg, len(m.Rows))
 		cmds = append(cmds, tcmd)
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
+		// Only update spinner if we're in a loading state
+		if m.Loading {
+			var cmd tea.Cmd
+			m.Spinner, cmd = m.Spinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 	return &m, tea.Batch(cmds...)
 }
@@ -216,12 +253,10 @@ func (m Model) UpdateDatabaseReadSingle(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		var tcmd tea.Cmd
-		m, tcmd = m.DatabaseReadSingleControls(msg, len(m.rows))
+		m, tcmd = m.DatabaseReadSingleControls(msg, len(m.Rows))
 		cmds = append(cmds, tcmd)
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
+		// Don't update spinner for other message types to prevent constant re-rendering
 	}
 	return &m, tea.Batch(cmds...)
 }
@@ -230,22 +265,25 @@ func (m Model) UpdateDatabaseUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
 		var tcmd tea.Cmd
-		m, tcmd = m.DatabaseUpdateControls(msg, len(m.rows))
+		m, tcmd = m.DatabaseUpdateControls(msg, len(m.Rows))
 		cmds = append(cmds, tcmd)
 	default:
-		var cmd tea.Cmd
-		m.spinner, cmd = m.spinner.Update(msg)
-		cmds = append(cmds, cmd)
+		// Only update spinner if we're in a loading state
+		if m.Loading {
+			var cmd tea.Cmd
+			m.Spinner, cmd = m.Spinner.Update(msg)
+			cmds = append(cmds, cmd)
+		}
 	}
 	return &m, tea.Batch(cmds...)
 }
 func (m Model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
-	return m.DatabaseUpdateFormControls(message, len(m.rows))
+	return m.DatabaseUpdateFormControls(message, len(m.Rows))
 }
 func (m Model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		return m.DatabaseDeleteControls(msg, len(m.rows))
+		return m.DatabaseDeleteControls(msg, len(m.Rows))
 	}
 	return &m, nil
 }

@@ -46,6 +46,9 @@ dev: ## Prepare binaries and templates in src dir for faster iteration
 	echo "" > debug.log
 	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
 
+run: dev ## Build and run the application
+	./$(X86_BINARY_NAME)
+
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
 	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd

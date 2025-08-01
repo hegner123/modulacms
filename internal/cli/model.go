@@ -15,6 +15,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -42,61 +43,70 @@ const (
 type CliInterface string
 type InputType string
 
+// ModelInterface defines the interface for interacting with CLI model
+type ModelInterface interface {
+	GetConfig() *config.Config
+	GetRoot() model.Root
+	SetRoot(root model.Root)
+	SetError(err error)
+}
+
 type Model struct {
-	config       *config.Config
-	status       ApplicationState
-	titleFont    int
-	titles       []string
-	term         string
-	profile      string
-	width        int
-	height       int
-	bg           string
-	txtStyle     lipgloss.Style
-	quitStyle    lipgloss.Style
-	loading      bool
-	cursor       int
-	cursorMax    int
-	focusIndex   int
-	page         Page
-	paginator    paginator.Model
-	pageMod      int
-	maxRows      int
-	table        string
-	pageMenu     []*Page
-	pages        []Page
-	datatypeMenu []string
-	tables       []string
-	columns      *[]string
-	columnTypes  *[]*sql.ColumnType
-	selected     map[int]struct{}
-	headers      []string
-	rows         [][]string
-	row          *[]string
-	form         *huh.Form
-	formLen      int
-	formMap      []string
-	formValues   []*string
-	formSubmit   bool
-	formGroups   []huh.Group
-	formFields   []huh.Field
-	focus        FocusKey
-	title        string
-	header       string
-	body         string
-	footer       string
-	verbose      bool
-	content      string
-	ready        bool
-	err          error
-	spinner      spinner.Model
-	viewport     viewport.Model
-	controller   CliInterface
-	history      []PageHistory
+	Config       *config.Config
+	Status       ApplicationState
+	TitleFont    int
+	Titles       []string
+	Term         string
+	Profile      string
+	Width        int
+	Height       int
+	Bg           string
+	TxtStyle     lipgloss.Style
+	QuitStyle    lipgloss.Style
+	Loading      bool
+	Cursor       int
+	CursorMax    int
+	FocusIndex   int
+	Page         Page
+	Paginator    paginator.Model
+	PageMod      int
+	MaxRows      int
+	Table        string
+	PageMenu     []*Page
+	Pages        []Page
+	DatatypeMenu []string
+	Tables       []string
+	Columns      *[]string
+	ColumnTypes  *[]*sql.ColumnType
+	Selected     map[int]struct{}
+	Headers      []string
+	Rows         [][]string
+	Row          *[]string
+	Form         *huh.Form
+	FormLen      int
+	FormMap      []string
+	FormValues   []*string
+	FormSubmit   bool
+	FormGroups   []huh.Group
+	FormFields   []huh.Field
+	Focus        FocusKey
+	Title        string
+	Header       string
+	Body         string
+	Footer       string
+	Verbose      bool
+	Content      string
+	Ready        bool
+	Err          error
+	Spinner      spinner.Model
+	Viewport     viewport.Model
+	Controller   CliInterface
+	History      []PageHistory
 	QueryResults []sql.Row
-	time         time.Time
-	dialog       *DialogModel
-	dialogActive bool
+	Time         time.Time
+	Dialog       *DialogModel
+	DialogActive bool
+	Root         model.Root
 }
 
 var CliContinue bool = false
@@ -138,21 +148,21 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	return Model{
-		config:     c,
-		status:     OK,
-		titleFont:  0,
-		titles:     LoadTitles(fonts),
-		focusIndex: 0,
-		page:       *homePage,
-		paginator:  p,
-		loading:    false,
-		spinner:    s,
-		pageMod:    0,
-		cursorMax:  0,
-		maxRows:    10,
-		table:      "",
-		viewport:   viewport.Model{},
-		pageMenu: []*Page{
+		Config:     c,
+		Status:     OK,
+		TitleFont:  0,
+		Titles:     LoadTitles(fonts),
+		FocusIndex: 0,
+		Page:       *homePage,
+		Paginator:  p,
+		Loading:    false,
+		Spinner:    s,
+		PageMod:    0,
+		CursorMax:  0,
+		MaxRows:    10,
+		Table:      "",
+		Viewport:   viewport.Model{},
+		PageMenu: []*Page{
 			developmentPage,
 			cmsPage,
 			selectTablePage,
@@ -160,7 +170,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 			oauthPage,
 			configPage,
 		},
-		pages: []Page{
+		Pages: []Page{
 			*homePage,
 			*cmsPage,
 			*selectTablePage,
@@ -178,18 +188,18 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 			*definedDatatypePage,
 			*developmentPage,
 		},
-		selected:   make(map[int]struct{}),
-		formMap:    make([]string, 0),
-		controller: pageInterface,
-		focus:      PAGEFOCUS,
-		history:    []PageHistory{},
-		verbose:    verbose,
+		Selected:   make(map[int]struct{}),
+		FormMap:    make([]string, 0),
+		Controller: pageInterface,
+		Focus:      PAGEFOCUS,
+		History:    []PageHistory{},
+		Verbose:    verbose,
 	}, GetTablesCMD(c)
 }
 
 func (m Model) GetIDRow() int64 {
-	rows := m.rows
-	row := rows[m.cursor]
+	rows := m.Rows
+	row := rows[m.Cursor]
 	rowCol := row[0]
 	utility.DefaultLogger.Finfo("rowCOl", rowCol)
 	id, err := strconv.ParseInt(rowCol, 10, 64)
@@ -229,7 +239,7 @@ func LoadTitles(f []string) []string {
 }
 
 func (m Model) GetStatus() string {
-	switch m.status {
+	switch m.Status {
 	case EDITING:
 		editStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
 		return editStyle.Render(" EDIT ")
@@ -246,5 +256,22 @@ func (m Model) GetStatus() string {
 		okStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
 		return okStyle.Render("  OK  ")
 	}
+}
 
+// Implement cms.ModelInterface for Model
+func (m *Model) GetConfig() *config.Config {
+	return m.Config
+}
+
+func (m *Model) GetRoot() model.Root {
+	return m.Root
+}
+
+func (m *Model) SetRoot(root model.Root) {
+	m.Root = root
+}
+
+func (m *Model) SetError(err error) {
+	m.Err = err
+	m.Status = ERROR
 }

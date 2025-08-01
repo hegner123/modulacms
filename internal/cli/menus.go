@@ -12,9 +12,10 @@ var homepageMenu []*Page = []*Page{
 
 var cmsMenu []*Page = []*Page{
     definedDatatypePage,
-	contentPage,
-	mediaPage,
-	usersPage,
+	// Removing undefined references
+	// contentPage,
+	// mediaPage,
+	// usersPage,
 }
 var tableMenu []*Page = []*Page{
 	createPage,
@@ -22,4 +23,3 @@ var tableMenu []*Page = []*Page{
 	updatePage,
 	deletePage,
 }
-

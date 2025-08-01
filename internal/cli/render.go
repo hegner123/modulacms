@@ -16,19 +16,19 @@ func (m Model) RenderUI() string {
 	app := strings.Builder{}
 	column := []string{}
 	docStyle := lipgloss.NewStyle()
-	docStyle = docStyle.Width(m.width).Height(m.height)
-	if m.footer == "" {
-		m.footer = "Press q to quit."
+	docStyle = docStyle.Width(m.Width).Height(m.Height)
+	if m.Footer == "" {
+		m.Footer = "Press q to quit."
 	}
 
-	title := RenderTitle(m.titles[m.titleFont])
-	header := RenderHeading(m.header)
-	footer := RenderFooter(m.footer)
+	title := RenderTitle(m.Titles[m.TitleFont])
+	header := RenderHeading(m.Header)
+	footer := RenderFooter(m.Footer)
 	column = append(column, title)
 	column = append(column, header)
-	body := m.body
-	if m.verbose {
-		body = lipgloss.JoinHorizontal(lipgloss.Top, m.body, m.RenderStatusTable())
+	body := m.Body
+	if m.Verbose {
+		body = lipgloss.JoinHorizontal(lipgloss.Top, m.Body, m.RenderStatusTable())
 
 	}
 	column = append(column, body)
@@ -37,7 +37,7 @@ func (m Model) RenderUI() string {
 		lipgloss.Left,
 		column...,
 	))
-	h := m.RenderSpace(app.String() + RenderFooter(m.footer))
+	h := m.RenderSpace(app.String() + RenderFooter(m.Footer))
 	doc := lipgloss.JoinVertical(
 		lipgloss.Top,
 		lipgloss.NewStyle().Padding(0, 2).Render(app.String()),
@@ -49,8 +49,8 @@ func (m Model) RenderUI() string {
 	renderedDoc := docStyle.Render(doc)
 
 	// If dialog is active, render dialog over the UI
-	if m.dialogActive && m.dialog != nil {
-		return DialogOverlay(renderedDoc, *m.dialog, m.width, m.height)
+	if m.DialogActive && m.Dialog != nil {
+		return DialogOverlay(renderedDoc, *m.Dialog, m.Width, m.Height)
 	}
 
 	return renderedDoc

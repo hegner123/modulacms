@@ -8,8 +8,8 @@ type updateMaxCursorMsg struct {
 
 func (m Model) UpdateMaxCursor() tea.Cmd {
 	return func() tea.Msg {
-		start, end := m.paginator.GetSliceBounds(len(m.rows))
-		currentView := m.rows[start:end]
+		start, end := m.Paginator.GetSliceBounds(len(m.Rows))
+		currentView := m.Rows[start:end]
 		return updateMaxCursorMsg{cursorMax: len(currentView)}
 	}
 }

@@ -2,81 +2,100 @@ package cli
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	 "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db"
 )
 
 func (m *Model) PageRouter() tea.Cmd {
 	var cmds []tea.Cmd
-	switch m.page.Index {
+	
+	// Safety check to ensure PageMenu is not empty and cursor is within bounds
+	if len(m.PageMenu) == 0 {
+		// No menu items, return nil
+		return nil
+	}
+	
+	// Ensure cursor is within bounds
+	if m.Cursor >= len(m.PageMenu) {
+		m.Cursor = len(m.PageMenu) - 1
+	}
+	
+	switch m.Page.Index {
 	case TABLEPAGE:
-		switch m.pageMenu[m.cursor] {
+		switch m.PageMenu[m.Cursor] {
 		case createPage:
-			cmd := FetchHeadersRows(m.config, m.table)
-			formCmd := m.BuildCreateDBForm(db.StringDBTable(m.table))
+			cmd := FetchHeadersRows(m.Config, m.Table)
+			formCmd := m.BuildCreateDBForm(db.StringDBTable(m.Table))
 			cmds = append(cmds, formCmd)
 			cmds = append(cmds, cmd)
-			m.form.Init()
-			m.focus = FORMFOCUS
-			m.page = m.pages[CREATEPAGE]
-			m.controller = m.page.Controller
-			m.status = EDITING
+			m.Form.Init()
+			m.Focus = FORMFOCUS
+			m.Page = m.Pages[CREATEPAGE]
+			m.Controller = m.Page.Controller
+			m.Status = EDITING
 			return tea.Batch(cmds...)
 		case updatePage:
-			cmd := FetchHeadersRows(m.config, m.table)
+			cmd := FetchHeadersRows(m.Config, m.Table)
 			cmds = append(cmds, cmd)
-			m.page = *m.pageMenu[m.cursor]
-			m.controller = m.page.Controller
+			m.Page = *m.PageMenu[m.Cursor]
+			m.Controller = m.Page.Controller
 			return tea.Batch(cmds...)
 		case readPage:
-			cmd := FetchHeadersRows(m.config, m.table)
-			m.page = *m.pageMenu[m.cursor]
-			m.controller = m.page.Controller
+			cmd := FetchHeadersRows(m.Config, m.Table)
+			m.Page = *m.PageMenu[m.Cursor]
+			m.Controller = m.Page.Controller
 			cmds = append(cmds, cmd)
 			return tea.Batch(cmds...)
 		case deletePage:
-			cmd := FetchHeadersRows(m.config, m.table)
-			m.page = *m.pageMenu[m.cursor]
-			m.controller = m.page.Controller
-			m.status = DELETING
+			cmd := FetchHeadersRows(m.Config, m.Table)
+			m.Page = *m.PageMenu[m.Cursor]
+			m.Controller = m.Page.Controller
+			m.Status = DELETING
 			cmds = append(cmds, cmd)
 			return tea.Batch(cmds...)
 		}
 	case UPDATEPAGE:
 
-		formCmd := m.BuildUpdateDBForm(db.StringDBTable(m.table))
+		formCmd := m.BuildUpdateDBForm(db.StringDBTable(m.Table))
 		cmds = append(cmds, formCmd)
-		cmd := FetchHeadersRows(m.config, m.table)
-		m.page = m.pages[UPDATEFORMPAGE]
-		m.controller = m.page.Controller
-		m.status = EDITING
+		cmd := FetchHeadersRows(m.Config, m.Table)
+		m.Page = m.Pages[UPDATEFORMPAGE]
+		m.Controller = m.Page.Controller
+		m.Status = EDITING
 		cmds = append(cmds, cmd)
 		return tea.Batch(cmds...)
 	case READPAGE:
 
-		m.page = m.pages[READSINGLEPAGE]
-		m.controller = m.page.Controller
+		m.Page = m.Pages[READSINGLEPAGE]
+		m.Controller = m.Page.Controller
 	case CONFIGPAGE:
-		formatted, err := formatJSON(m.config)
+		formatted, err := formatJSON(m.Config)
 		if err == nil {
-			m.content = formatted
+			m.Content = formatted
 		}
-		m.page = *m.pageMenu[m.cursor]
-		m.controller = m.page.Controller
+		if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
+			m.Page = *m.PageMenu[m.Cursor]
+			m.Controller = m.Page.Controller
+		}
 	default:
-		form, err := formatJSON(m.config)
+		form, err := formatJSON(m.Config)
 		if err == nil {
-			m.content = form
+			m.Content = form
 		}
-		m.viewport.SetContent(m.content)
-		m.ready = true
-		m.page = *m.pageMenu[m.cursor]
-		m.controller = m.page.Controller
-		m.status = OK
-		cmds = append(cmds, GetTablesCMD(m.config))
+		m.Viewport.SetContent(m.Content)
+		m.Ready = true
+		
+		// Check if PageMenu has elements and cursor is within bounds
+		if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
+			m.Page = *m.PageMenu[m.Cursor]
+			m.Controller = m.Page.Controller
+		}
+		
+		m.Status = OK
+		cmds = append(cmds, GetTablesCMD(m.Config))
 		return tea.Batch(cmds...)
 
 	}
 
-	m.pageMenu = m.page.Children
+	m.PageMenu = m.Page.Children
 	return nil
 }

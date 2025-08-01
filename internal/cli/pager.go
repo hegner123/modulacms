@@ -24,19 +24,19 @@ var (
 func (m Model) headerView() string {
 	var titleText string
 	
-	if m.page.Index == CONFIGPAGE {
+	if m.Page.Index == CONFIGPAGE {
 		titleText = "Configuration"
 	} else {
-		titleText = m.header
+		titleText = m.Header
 	}
 	
 	title := titleStyle.Render(titleText)
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(title)))
+	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
 
 func (m Model) footerView() string {
-	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.viewport.ScrollPercent()*100))
-	line := strings.Repeat("─", max(0, m.viewport.Width-lipgloss.Width(info)))
+	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.Viewport.ScrollPercent()*100))
+	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(info)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, line, info)
 }

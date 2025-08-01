@@ -14,5 +14,9 @@ func CliRun(m *Model) (*tea.Program, bool) {
 }
 
 func (m Model) Init() tea.Cmd {
-    return m.spinner.Tick
+    // Only return spinner tick if we're in a loading state
+    if m.Loading {
+        return m.Spinner.Tick
+    }
+    return nil
 }
