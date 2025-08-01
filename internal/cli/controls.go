@@ -127,7 +127,11 @@ func (m *Model) DatabaseCreateControls(msg tea.Msg) (Model, tea.Cmd) {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer logFile.Close()
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			fmt.Printf("Error closing log file: %v\n", err)
+		}
+	}()
 
 	// Update form with the message
 	form, cmd := m.Form.Update(msg)
@@ -342,7 +346,11 @@ func (m *Model) DatabaseUpdateFormControls(msg tea.Msg, option int) (Model, tea.
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	defer logFile.Close()
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			fmt.Printf("Error closing log file: %v\n", err)
+		}
+	}()
 
 	// Update form with the message
 	form, cmd := m.Form.Update(msg)

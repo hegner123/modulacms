@@ -178,6 +178,15 @@ func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		//Exit
+		case "h", "shift+tab", "backspace":
+			if len(m.History) > 0 {
+				entry := *m.PopHistory()
+				m.Page = entry.Page
+				m.Cursor = entry.Cursor
+				m.Controller = m.Page.Controller
+				m.PageMenu = m.Page.Children
+				return *m, nil
+			}
 		case "d":
 			d := NewDialog("", "", true)
 			m.Dialog = &d
@@ -297,3 +306,4 @@ func (m Model) UpdateConfig(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m.ConfigControls(msg)
 
 }
+

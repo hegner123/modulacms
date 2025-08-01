@@ -146,7 +146,7 @@ func (m Model) RenderSpace(content string) string {
 
 func (m Model) RenderStatusBar() string {
 	doc := strings.Builder{}
-	status := []string{"Page", "Form", "Dialog"}
+	status := []string{"Page", "Table", "Form", "Dialog"}
 	statusNugget := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Status1).
 		Padding(0, 1)
