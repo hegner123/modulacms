@@ -27,7 +27,6 @@ func (m Model) RenderStatusTable() string {
 	} else {
 		selected = "Selected: nil\n"
 	}
-	controller := fmt.Sprintf("Controller\n%v\n", m.Controller)
 	//tables := fmt.Sprintf("Tables\n%v\n", m.Tables)
 	table := fmt.Sprintf("Table\n%s\n", m.Table)
 	history := fmt.Sprintf("History\nLength:\n %v", len(m.History))
@@ -47,7 +46,6 @@ func (m Model) RenderStatusTable() string {
 				cursor,
 				menu,
 				selected,
-				controller,
 			)),
 		RenderBorderBlock(
 			lipgloss.JoinVertical(

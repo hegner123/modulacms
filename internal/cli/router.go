@@ -5,20 +5,21 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+
 func (m *Model) PageRouter() tea.Cmd {
 	var cmds []tea.Cmd
-	
+
 	// Safety check to ensure PageMenu is not empty and cursor is within bounds
 	if len(m.PageMenu) == 0 {
 		// No menu items, return nil
 		return nil
 	}
-	
+
 	// Ensure cursor is within bounds
 	if m.Cursor >= len(m.PageMenu) {
 		m.Cursor = len(m.PageMenu) - 1
 	}
-	
+
 	switch m.Page.Index {
 	case TABLEPAGE:
 		switch m.PageMenu[m.Cursor] {
@@ -30,25 +31,21 @@ func (m *Model) PageRouter() tea.Cmd {
 			m.Form.Init()
 			m.Focus = FORMFOCUS
 			m.Page = m.Pages[CREATEPAGE]
-			m.Controller = m.Page.Controller
 			m.Status = EDITING
 			return tea.Batch(cmds...)
 		case updatePage:
 			cmd := FetchHeadersRows(m.Config, m.Table)
 			cmds = append(cmds, cmd)
 			m.Page = *m.PageMenu[m.Cursor]
-			m.Controller = m.Page.Controller
 			return tea.Batch(cmds...)
 		case readPage:
 			cmd := FetchHeadersRows(m.Config, m.Table)
 			m.Page = *m.PageMenu[m.Cursor]
-			m.Controller = m.Page.Controller
 			cmds = append(cmds, cmd)
 			return tea.Batch(cmds...)
 		case deletePage:
 			cmd := FetchHeadersRows(m.Config, m.Table)
 			m.Page = *m.PageMenu[m.Cursor]
-			m.Controller = m.Page.Controller
 			m.Status = DELETING
 			cmds = append(cmds, cmd)
 			return tea.Batch(cmds...)
@@ -59,14 +56,12 @@ func (m *Model) PageRouter() tea.Cmd {
 		cmds = append(cmds, formCmd)
 		cmd := FetchHeadersRows(m.Config, m.Table)
 		m.Page = m.Pages[UPDATEFORMPAGE]
-		m.Controller = m.Page.Controller
 		m.Status = EDITING
 		cmds = append(cmds, cmd)
 		return tea.Batch(cmds...)
 	case READPAGE:
 
 		m.Page = m.Pages[READSINGLEPAGE]
-		m.Controller = m.Page.Controller
 	case CONFIGPAGE:
 		formatted, err := formatJSON(m.Config)
 		if err == nil {
@@ -74,8 +69,8 @@ func (m *Model) PageRouter() tea.Cmd {
 		}
 		if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
 			m.Page = *m.PageMenu[m.Cursor]
-			m.Controller = m.Page.Controller
 		}
+	case CMSPAGE:
 	default:
 		form, err := formatJSON(m.Config)
 		if err == nil {
@@ -83,15 +78,15 @@ func (m *Model) PageRouter() tea.Cmd {
 		}
 		m.Viewport.SetContent(m.Content)
 		m.Ready = true
-		
+
 		// Check if PageMenu has elements and cursor is within bounds
 		if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
 			m.Page = *m.PageMenu[m.Cursor]
-			m.Controller = m.Page.Controller
+			r := m.Page.PageInit(*m)
+			cmds = append(cmds, r)
 		}
-		
+
 		m.Status = OK
-		cmds = append(cmds, GetTablesCMD(m.Config))
 		return tea.Batch(cmds...)
 
 	}

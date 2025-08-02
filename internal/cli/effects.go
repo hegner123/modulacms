@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"database/sql"
-
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -19,21 +17,14 @@ type ForeignKeyReference struct {
 	Column string // Referenced column name.
 }
 
-type tableFetchedMsg struct {
+type FetchTables struct {
 	Tables []string
-}
-
-type columnFetchedMsg struct {
-	Columns     *[]string
-	ColumnTypes *[]*sql.ColumnType
 }
 
 type headersRowsFetchedMsg struct {
 	Headers []string
 	Rows    [][]string
 }
-
-// ForeignKeyReference holds the referenced table and column information.
 
 func GetTablesCMD(c *config.Config) tea.Cmd {
 	return func() tea.Msg {
@@ -42,30 +33,16 @@ func GetTablesCMD(c *config.Config) tea.Cmd {
 			labels []string
 		)
 		d = db.ConfigDB(*c)
-		con, ctx, _ := d.GetConnection()
-		q := "SELECT * FROM tables;"
-		rows, err := con.QueryContext(ctx, q)
+		tables, err := d.ListTables()
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return ErrMsg{Error: err}
 		}
 
-		for rows.Next() {
-			var (
-				id        int
-				label     string
-				author_id int
-			)
-			err = rows.Scan(&id, &label, &author_id)
-			if err != nil {
-				return ErrMsg{Error: err}
-			}
-			labels = append(labels, label)
+		for _, table := range *tables {
+			labels = append(labels, table.Label)
 		}
-		if err := rows.Err(); err != nil {
-			return ErrMsg{Error: err}
-		}
-		return tableFetchedMsg{Tables: labels}
+		return TablesSet{Tables: labels}
 	}
 }
 
@@ -78,6 +55,7 @@ func GetColumns(c *config.Config, t string) tea.Cmd {
 		if err != nil {
 			return ErrMsg{Error: err}
 		}
+		defer rows.Close()
 		clm, err := rows.Columns()
 		if err != nil {
 			return ErrMsg{Error: err}
@@ -85,9 +63,8 @@ func GetColumns(c *config.Config, t string) tea.Cmd {
 		ct, err := rows.ColumnTypes()
 		if err != nil {
 			return ErrMsg{Error: err}
-
 		}
-		return columnFetchedMsg{Columns: &clm, ColumnTypes: &ct}
+		return ColumnsFetched{Columns: &clm, ColumnTypes: &ct}
 	}
 }
 
@@ -102,6 +79,7 @@ func FetchHeadersRows(c *config.Config, t string) tea.Cmd {
 			utility.DefaultLogger.Ferror("", err)
 			return ErrMsg{Error: err}
 		}
+		defer rows.Close()
 		columns, err := rows.Columns()
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
@@ -114,5 +92,4 @@ func FetchHeadersRows(c *config.Config, t string) tea.Cmd {
 		}
 		return headersRowsFetchedMsg{Headers: columns, Rows: listRows}
 	}
-
 }

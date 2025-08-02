@@ -1,8 +1,9 @@
 package cli
 
+import "github.com/hegner123/modulacms/internal/db"
 
-var homepageMenu []*Page = []*Page{
-    developmentPage,
+var HomepageMenu []*Page = []*Page{
+	developmentPage,
 	cmsPage,
 	selectTablePage,
 	bucketPage,
@@ -10,16 +11,25 @@ var homepageMenu []*Page = []*Page{
 	configPage,
 }
 
-var cmsMenu []*Page = []*Page{
-    definedDatatypePage,
+var CmsMenu []*Page = []*Page{
+	definedDatatypePage,
 	// Removing undefined references
 	// contentPage,
 	// mediaPage,
 	// usersPage,
 }
-var tableMenu []*Page = []*Page{
+var TableMenu []*Page = []*Page{
 	createPage,
 	readPage,
 	updatePage,
 	deletePage,
+}
+
+func (m *Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
+	out := make([]*Page, 0)
+	for _, item := range datatypes {
+		page := NewDatatypePage(item.Label)
+		out = append(out, page)
+	}
+	return out
 }

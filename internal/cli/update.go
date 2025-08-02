@@ -1,29 +1,20 @@
 package cli
 
 import (
+	"os"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/cli/cms"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-const (
-	developmentInterface CliInterface = "DevelopmentInterface"
-	pageInterface        CliInterface = "PageInterface"
-	tableInterface       CliInterface = "TableInterface"
-	createInterface      CliInterface = "CreateInterface"
-	readInterface        CliInterface = "ReadInterface"
-	updateInterface      CliInterface = "UpdateInterface"
-	deleteInterface      CliInterface = "DeleteInterface"
-	updateFormInterface  CliInterface = "UpdateFormInterface"
-	readSingleInterface  CliInterface = "ReadSingleInterface"
-	contentInterface     CliInterface = "ContentInterface"
-	configInterface      CliInterface = "ConfigInterface"
-)
-
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var keyMsg tea.KeyMsg
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		m.Height = msg.Height
@@ -41,94 +32,294 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Viewport.Width = msg.Width - 4
 			m.Viewport.Height = msg.Height - verticalMarginHeight - 10
 		}
-	case tableFetchedMsg:
-		// Data fetched successfully; update the model.
-		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
-		m.Tables = msg.Tables
-		m.Loading = false
-		return m, nil
-	case columnFetchedMsg:
-		m.Columns = msg.Columns
-		m.ColumnTypes = msg.ColumnTypes
-		m.Loading = false
-		return m, nil
-	case headersRowsFetchedMsg:
-		m.Headers = msg.Headers
-		m.Rows = msg.Rows
-		m.Paginator.PerPage = m.MaxRows
-		m.Paginator.SetTotalPages(len(m.Rows))
-		m.CursorMax = m.Paginator.ItemsOnPage(len(m.Rows))
-		m.Loading = false
-		return m, nil
-	case createFormMsg:
-		m.Form = msg.Form
-		m.FormLen = msg.FieldsCount
-		m.Loading = false
-		return m, nil
-	case updateFormMsg:
-		m.Form = msg.Form
-		m.FormLen = msg.FieldsCount
-		m.Loading = false
-		return m, nil
-	case cmsFormMsg:
-		m.Form = msg.Form
-		m.FormLen = msg.FieldsCount
-		m.Loading = false
-		return m, nil
-	case updateMaxCursorMsg:
-		m.CursorMax = msg.cursorMax
-		if m.Cursor > m.CursorMax-1 {
-			m.Cursor = m.CursorMax - 1
+	case ClearScreen:
+		return m, tea.ClearScreen
+	case LoadingTrue:
+		newModel := m
+		newModel.Loading = true
+		return newModel, nil
+	case LoadingFalse:
+		newModel := m
+		newModel.Loading = false
+		return newModel, nil
+	case CursorUp:
+		newModel := m
+		newModel.Cursor = m.Cursor - 1
+		return newModel, nil
+	case CursorDown:
+		newModel := m
+		newModel.Cursor = m.Cursor + 1
+		return newModel, nil
+	case CursorReset:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, nil
+	case CursorSet:
+		newModel := m
+		newModel.Cursor = msg.Index
+		return newModel, nil
+	case FocusSet:
+		newModel := m
+		newModel.Focus = msg.Focus
+		return newModel, nil
+	case TitleFontNext:
+		newModel := m
+		if newModel.TitleFont < len(m.Titles)-1 {
+			newModel.TitleFont++
 		}
+		return newModel, nil
+	case TitleFontPrevious:
+		newModel := m
+		if newModel.TitleFont > 0 {
+			newModel.TitleFont--
+		}
+		return newModel, nil
+	case TableSet:
+		newModel := m
+		newModel.Table = msg.Table
+		return newModel, nil
+	case TablesSet:
+		newModel := m
+		newModel.Tables = msg.Tables
+		return newModel, nil
+	case PageSet:
+		newModel := m
+		newModel.Page = msg.Page
+		return newModel, nil
+	case HistoryPush:
+		newModel := m
+		newModel.History = append(newModel.History, msg.Page)
+		return newModel, nil
+	case NavigateToPage:
+		var cmds []tea.Cmd
+		cmds = append(cmds, PageSetCmd(m.Pages[m.Cursor]))
+		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor}))
+		cmds = append(cmds, CursorResetCmd())
+		if m.Pages[m.Cursor].Index == DATABASEPAGE {
+			cmds = append(cmds, TablesFetchCmd())
+		}
+
+		return m, tea.Batch(
+			cmds...,
+		)
+
+	case HistoryPop:
+		newModel := m
+		entry := m.PopHistory()
+		newModel.PageMenu = m.Page.Children
+		return newModel, tea.Batch(
+			PageSetCmd(entry.Page),
+			CursorSetCmd(entry.Cursor),
+		)
+	case SelectTable:
+		return m, tea.Batch(
+			NavigateToPageCmd(m.Pages[TABLEPAGE]),
+			TableSetCmd(m.Tables[m.Cursor]),
+			PageMenuSetCmd(TableMenu),
+		)
+	case NavigateToDatabaseCreate:
+		return m, tea.Batch(
+			NavigateToPageCmd(m.Pages[CREATEPAGE]),
+		)
+
+	case ColumnsSet:
+		newModel := m
+		newModel.Columns = msg.Columns
+		return newModel, nil
+	case ColumnTypesSet:
+		newModel := m
+		newModel.ColumnTypes = msg.ColumnTypes
+		return newModel, nil
+	case HeadersSet:
+		newModel := m
+		newModel.Headers = msg.Headers
+		return newModel, nil
+	case RowsSet:
+		newModel := m
+		newModel.Rows = msg.Rows
+		return newModel, nil
+	case CursorMaxSet:
+		newModel := m
+		newModel.CursorMax = msg.CursorMax
+		return newModel, nil
+	case PaginatorUpdate:
+		newModel := m
+		newModel.Paginator.PerPage = msg.PerPage
+		newModel.Paginator.SetTotalPages(msg.TotalPages)
+		return newModel, nil
+	case FormLenSet:
+		newModel := m
+		newModel.FormLen = msg.FormLen
+		return newModel, nil
+	case FormSet:
+		newModel := m
+		newModel.Form = &msg.Form
+		return newModel, nil
+	case ErrorSet:
+		newModel := m
+		newModel.Err = msg.Err
+		return newModel, nil
+	case StatusSet:
+		newModel := m
+		newModel.Status = msg.Status
+		return newModel, nil
+	case DialogSet:
+		newModel := m
+		newModel.Dialog = msg.Dialog
+		return newModel, nil
+	case DialogActiveSet:
+		newModel := m
+		newModel.DialogActive = msg.DialogActive
+		return newModel, nil
+	case RootSet:
+		newModel := m
+		newModel.Root = msg.Root
+		return newModel, nil
+	case DatatypeMenuSet:
+		newModel := m
+		newModel.DatatypeMenu = msg.DatatypeMenu
+		return newModel, nil
+	case PageMenuSet:
+		newModel := m
+		newModel.PageMenu = msg.PageMenu
+		return newModel, nil
+	case DialogReadyOKSet:
+		newModel := m
+		if newModel.Dialog != nil {
+			newModel.Dialog.ReadyOK = msg.Ready
+		}
+		return newModel, nil
+
+	case DatabaseDeleteEntry:
+	case DatabaseCreateEntry:
+	case DatabaseUpdateEntry:
+
+	case TablesFetch:
+		utility.DefaultLogger.Finfo("Tables Fetch ")
+		return m, GetTablesCMD(m.Config)
+	case ColumnsFetched:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ColumnTypesSetCmd(msg.ColumnTypes),
+			ColumnsSetCmd(msg.Columns),
+		)
+	case headersRowsFetchedMsg:
+		return m, tea.Batch(
+			HeadersSetCmd(msg.Headers),
+			RowsSetCmd(msg.Rows),
+			PaginatorUpdateCmd(m.MaxRows, len(msg.Rows)),
+			CursorMaxSetCmd(m.Paginator.ItemsOnPage(len(msg.Rows))),
+			LoadingStopCmd(),
+		)
+	case createFormMsg:
+		return m, tea.Batch(
+			FormSetCmd(*msg.Form),
+			FormLenSetCmd(msg.FieldsCount),
+			LoadingStopCmd(),
+		)
+	case updateFormMsg:
+		return m, tea.Batch(
+			FormSetCmd(*msg.Form),
+			FormLenSetCmd(msg.FieldsCount),
+			LoadingStopCmd(),
+		)
+	case cmsFormMsg:
+		return m, tea.Batch(
+			FormSetCmd(*msg.Form),
+			FormLenSetCmd(msg.FieldsCount),
+			LoadingStopCmd(),
+		)
+	case updateMaxCursorMsg:
+		cursorUpdate := func() tea.Msg {
+			if m.Cursor > msg.cursorMax-1 {
+				return CursorSet{Index: msg.cursorMax - 1}
+			}
+			return nil
+		}()
+
+		cmds := []tea.Cmd{
+			CursorMaxSetCmd(msg.cursorMax),
+		}
+
+		if cursorUpdate != nil {
+			cmds = append(cmds, func() tea.Msg { return cursorUpdate })
+		}
+
+		return m, tea.Batch(cmds...)
+	case DatatypesFetchedMsg:
+		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
+		newMenu := m.BuildDatatypeMenu(msg.data)
+		utility.DefaultLogger.Finfo("newMenu", newMenu)
+
+		datatypeMenuLabels := make([]string, 0, len(newMenu))
+		for _, item := range newMenu {
+			datatypeMenuLabels = append(datatypeMenuLabels, item.Label)
+			utility.DefaultLogger.Finfo("item", item)
+		}
+
+		return m, tea.Batch(
+			DatatypeMenuSetCmd(datatypeMenuLabels),
+			PageMenuSetCmd(newMenu),
+		)
+
 	case ErrMsg:
 		// Handle an error from data fetching.
-		m.Err = msg.Error
-		m.Loading = false
-		return m, nil
+		return m, tea.Batch(
+			ErrorSetCmd(msg.Error),
+			LoadingStopCmd(),
+		)
 	case ShowDialogMsg:
 		// Handle showing a dialog
 		dialog := NewDialog(msg.Title, msg.Message, msg.ShowCancel)
-		m.Dialog = &dialog
-		m.DialogActive = true
-		m.Focus = DIALOGFOCUS
-		return m, nil
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case DialogAcceptMsg:
 		// Handle dialog accept action
-		m.DialogActive = false
-		m.Focus = PAGEFOCUS
-		return m, nil
+		return m, tea.Batch(
+			DialogActiveSetCmd(false),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DialogCancelMsg:
 		// Handle dialog cancel action
-		m.DialogActive = false
-		m.Focus = PAGEFOCUS
-		return m, nil
+		return m, tea.Batch(
+			DialogActiveSetCmd(false),
+			FocusSetCmd(PAGEFOCUS),
+		)
 	case DialogReadyOK:
-		m.Dialog.ReadyOK = true
-		return m, nil
+		return m, DialogReadyOKSetCmd(true)
 	case cms.NewRootMSG:
-		m.Root = model.CreateRoot()
-		return m, nil
+		return m, RootSetCmd(model.CreateRoot())
 	case cms.NewNodeMSG:
-		m.Root = model.CreateNode(m.Root, int64(msg.ParentID), int64(msg.DatatypeID), int64(msg.ContentID))
-		return m, nil
+		return m, RootSetCmd(model.CreateNode(m.Root, int64(msg.ParentID), int64(msg.DatatypeID), int64(msg.ContentID)))
 	case cms.LoadPageMSG:
 		// Load page from database using contentID
-		root, err := model.LoadPageContent(int64(msg.ContentID), *m.Config)
-		if err != nil {
-			m.Err = err
-			m.Status = ERROR
-		} else {
-			m.Root = root
+		return m, func() tea.Msg {
+			root, err := model.LoadPageContent(int64(msg.ContentID), *m.Config)
+			if err != nil {
+				return tea.Batch(
+					ErrorSetCmd(err),
+					StatusSetCmd(ERROR),
+				)()
+			}
+			return RootSet{Root: root}
 		}
-		return m, nil
 	case cms.SavePageMSG:
 		// Save page to database
-		err := model.SavePageContent(m.Root, *m.Config)
-		if err != nil {
-			m.Err = err
-			m.Status = ERROR
+		return m, func() tea.Msg {
+			err := model.SavePageContent(m.Root, *m.Config)
+			if err != nil {
+				return tea.Batch(
+					ErrorSetCmd(err),
+					StatusSetCmd(ERROR),
+				)()
+			}
+			return nil
 		}
-		return m, nil
+	case tea.KeyMsg:
+		keyMsg = msg
 	default:
 		// Check if we need to handle dialog key presses first
 		if m.DialogActive && m.Dialog != nil {
@@ -141,38 +332,120 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+	}
 
-		switch m.Controller {
-		case developmentInterface:
-			return m.DevelopmentInterface(msg)
-		case createInterface:
-			return m.UpdateDatabaseCreate(msg)
-		case readInterface:
-			return m.UpdateDatabaseRead(msg)
-		case readSingleInterface:
-			return m.UpdateDatabaseReadSingle(msg)
-		case updateInterface:
-			return m.UpdateDatabaseUpdate(msg)
-		case updateFormInterface:
-			return m.UpdateDatabaseFormUpdate(msg)
-		case deleteInterface:
-			return m.UpdateDatabaseDelete(msg)
-		case pageInterface:
-			return m.UpdatePageSelect(msg)
-		case tableInterface:
-			return m.UpdateTableSelect(msg)
-		case contentInterface:
-			return m.UpdateContent(msg)
-		case configInterface:
-			return m.UpdateConfig(msg)
+	return PageSpecificMsgHandlers(m, nil, keyMsg)
 
+}
+
+func PageSpecificMsgHandlers(m Model, cmd tea.Cmd, msg tea.KeyMsg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch msg.String() {
+	//Exit
+	case "q", "esc", "ctrl+c":
+		return m, tea.Quit
+
+	case "shift+left":
+		if m.TitleFont > 0 {
+			return m, TitleFontPreviousCmd()
+		}
+	case "shift+right":
+		if m.TitleFont < len(m.Titles)-1 {
+			return m, TitleFontNextCmd()
+		}
+	case "h", "shift+tab", "backspace":
+		if len(m.History) > 0 {
+			return m, HistoryPopCmd()
+		}
+	}
+	switch m.Page.Index {
+	case HOMEPAGE:
+		return m.BasicControls(msg)
+	case DATABASEPAGE:
+		return m.SelectTable(msg)
+	case DEVELOPMENT:
+		return DevelopmentInterface(m, msg)
+	case DATATYPE:
+		return m.DefineDatatypeControls(msg)
+	case CONFIGPAGE:
+		return m.ConfigControls(msg)
+
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) BasicControls(msg tea.KeyMsg) (Model, tea.Cmd) {
+	switch msg.String() {
+	//Navigation
+	case "up", "k":
+		if m.Cursor > 0 {
+			return m, CursorUpCmd()
+		}
+	case "down", "j":
+		if m.Cursor < len(m.PageMenu)-1 {
+			return m, CursorDownCmd()
+		}
+	case "enter", "l":
+		// Only proceed if we have menu items
+		if len(m.PageMenu) > 0 {
+			return m, NavigateToPageCmd(m.Pages[m.Cursor])
 		}
 	}
 	return m, nil
 
 }
 
-func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) SelectTable(msg tea.KeyMsg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch msg.String() {
+	case "up", "k":
+		if m.Cursor > 0 {
+			return m, CursorUpCmd()
+		}
+	case "down", "j":
+		if m.Cursor < len(m.Tables)-1 {
+			return m, CursorDownCmd()
+		}
+	case "enter", "l":
+		cmds = append(cmds, SelectTableCmd(m.Tables[m.Cursor]))
+	}
+	return m, tea.Batch(cmds...)
+}
+
+func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	cmds = append(cmds, FocusSetCmd(FORMFOCUS))
+
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		os.Exit(1)
+	}
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			utility.DefaultLogger.Finfo("Tables Fetch ")
+		}
+	}()
+
+	// Update form with the message
+	form, cmd := m.Form.Update(msg)
+	if _, ok := form.(*huh.Form); ok {
+		cmds = append(cmds, cmd)
+	}
+
+	// Handle form state changes
+	if m.Form.State == huh.StateAborted {
+		cmds = append(cmds, FormAbortedCmd())
+	}
+
+	if m.Form.State == huh.StateCompleted {
+		utility.DefaultLogger.Finfo("Tables Fetch ")
+		// TODO: Implement form completion handling with proper messages
+	}
+
+	return m, tea.Batch(cmds...)
+}
+
+func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := message.(type) {
 	case tea.KeyMsg:
@@ -183,9 +456,8 @@ func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
 				entry := *m.PopHistory()
 				m.Page = entry.Page
 				m.Cursor = entry.Cursor
-				m.Controller = m.Page.Controller
 				m.PageMenu = m.Page.Children
-				return *m, nil
+				return m, nil
 			}
 		case "d":
 			d := NewDialog("", "", true)
@@ -201,43 +473,47 @@ func (m *Model) DevelopmentInterface(message tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 
 }
-func (m Model) UpdateTableSelect(message tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		var tcmd tea.Cmd
-		m, tcmd = m.TableSelectControls(msg, len(m.Tables))
-		cmds = append(cmds, tcmd)
-	default:
-		// Only update spinner if we're in a loading state
-		if m.Loading {
-			var cmd tea.Cmd
-			m.Spinner, cmd = m.Spinner.Update(msg)
-			cmds = append(cmds, cmd)
-		}
-	}
-	return &m, tea.Batch(cmds...)
-}
 
-func (m Model) UpdatePageSelect(message tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) UpdateDatabaseCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		var tcmd tea.Cmd
-		m, tcmd = m.PageControls(msg, len(m.PageMenu))
-		cmds = append(cmds, tcmd)
-	default:
-		// Only update spinner if we're in a loading state
-		if m.Loading {
-			var cmd tea.Cmd
-			m.Spinner, cmd = m.Spinner.Update(msg)
-			cmds = append(cmds, cmd)
-		}
+	m.Focus = FORMFOCUS
+
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		os.Exit(1)
 	}
-	return &m, tea.Batch(cmds...)
-}
-func (m Model) UpdateDatabaseCreate(message tea.Msg) (tea.Model, tea.Cmd) {
-	return m.DatabaseCreateControls(message)
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			utility.DefaultLogger.Finfo("Tables Fetch ")
+		}
+	}()
+
+	// Update form with the message
+	form, cmd := m.Form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.Form = f
+		cmds = append(cmds, cmd)
+	}
+
+	// Handle form state changes
+	if m.Form.State == huh.StateAborted {
+		_ = tea.ClearScreen()
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[READPAGE]
+	}
+
+	if m.Form.State == huh.StateCompleted {
+		_ = tea.ClearScreen()
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[READPAGE]
+		cmd := FetchHeadersRows(m.Config, m.Table)
+		cmds = append(cmds, cmd)
+	}
+	var scmd tea.Cmd
+	m.Spinner, scmd = m.Spinner.Update(msg)
+	cmds = append(cmds, scmd)
+
+	return m, tea.Batch(cmds...)
 }
 
 func (m Model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
@@ -257,53 +533,117 @@ func (m Model) UpdateDatabaseRead(message tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return &m, tea.Batch(cmds...)
 }
-func (m Model) UpdateDatabaseReadSingle(message tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) UpdateDatabaseUpdate(msg tea.KeyMsg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		var tcmd tea.Cmd
-		m, tcmd = m.DatabaseReadSingleControls(msg, len(m.Rows))
-		cmds = append(cmds, tcmd)
-	default:
-		// Don't update spinner for other message types to prevent constant re-rendering
-	}
-	return &m, tea.Batch(cmds...)
-}
-func (m Model) UpdateDatabaseUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		var tcmd tea.Cmd
-		m, tcmd = m.DatabaseUpdateControls(msg, len(m.Rows))
-		cmds = append(cmds, tcmd)
-	default:
-		// Only update spinner if we're in a loading state
-		if m.Loading {
-			var cmd tea.Cmd
-			m.Spinner, cmd = m.Spinner.Update(msg)
-			cmds = append(cmds, cmd)
+	var rows [][]string
+	m.Focus = FORMFOCUS
+	switch msg.String() {
+	//Exit
+	case "left":
+		if m.PageMod > 0 {
+			m.PageMod--
 		}
+	case "right":
+		if m.PageMod < len(m.Rows)/m.MaxRows {
+			m.PageMod++
+		}
+
+	//Action
+	case "enter", "l":
+		rows = m.Rows
+		m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
+		recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
+		// Only update if the calculated index is valid
+		if recordIndex < len(m.Rows) {
+			m.Cursor = recordIndex
+		}
+		m.Row = &rows[recordIndex]
+		m.Cursor = 0
+		m.Page = m.Pages[UPDATEFORMPAGE]
+		m.PageMenu = m.Page.Children
+
 	}
-	return &m, tea.Batch(cmds...)
+	var pcmd tea.Cmd
+	m.Paginator, pcmd = m.Paginator.Update(msg)
+	cmds = append(cmds, pcmd)
+	return m, tea.Batch(cmds...)
 }
-func (m Model) UpdateDatabaseFormUpdate(message tea.Msg) (tea.Model, tea.Cmd) {
-	return m.DatabaseUpdateFormControls(message, len(m.Rows))
-}
-func (m Model) UpdateDatabaseDelete(message tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := message.(type) {
-	case tea.KeyMsg:
-		return m.DatabaseDeleteControls(msg, len(m.Rows))
+func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	m.Focus = FORMFOCUS
+
+	logFile, err := tea.LogToFile("debug.log", "debug")
+	if err != nil {
+		os.Exit(1)
 	}
-	return &m, nil
+	defer func() {
+		if err := logFile.Close(); err != nil {
+			utility.DefaultLogger.Finfo("Tables Fetch ")
+		}
+	}()
+
+	// Update form with the message
+	form, cmd := m.Form.Update(msg)
+	if f, ok := form.(*huh.Form); ok {
+		m.Form = f
+		cmds = append(cmds, cmd)
+	}
+
+	// Handle form state changes
+	if m.Form.State == huh.StateAborted {
+		_ = tea.ClearScreen()
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[UPDATEPAGE]
+	}
+
+	if m.Form.State == huh.StateCompleted {
+		_ = tea.ClearScreen()
+		m.Focus = PAGEFOCUS
+		m.Page = m.Pages[UPDATEPAGE]
+		cmd := m.CLIUpdate(m.Config, db.DBTable(m.Table))
+		cmds = append(cmds, cmd)
+	}
+	var scmd tea.Cmd
+	m.Spinner, scmd = m.Spinner.Update(msg)
+	cmds = append(cmds, scmd)
+
+	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateContent(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m.ContentControls(msg)
-
+func (m Model) UpdateDatabaseDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
+	switch msg.String() {
+	case "enter", "l":
+		err := m.CLIDelete(m.Config, db.StringDBTable(m.Table))
+		if err != nil {
+			return m, nil
+		}
+		if m.Cursor > 0 {
+			m.Cursor--
+		}
+		cmd := FetchHeadersRows(m.Config, m.Table)
+		cmds = append(cmds, cmd)
+	default:
+		var scmd tea.Cmd
+		m.Spinner, scmd = m.Spinner.Update(msg)
+		cmds = append(cmds, scmd)
+	}
+	var pcmd tea.Cmd
+	m.Paginator, pcmd = m.Paginator.Update(msg)
+	cmds = append(cmds, pcmd)
+	return m, tea.Batch(cmds...)
 }
 
-func (m Model) UpdateConfig(msg tea.Msg) (tea.Model, tea.Cmd) {
-	return m.ConfigControls(msg)
+func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
+	var (
+		cmd  tea.Cmd
+		cmds []tea.Cmd
+	)
+
+	// Handle keyboard and mouse events in the viewport
+	m.Viewport, cmd = m.Viewport.Update(msg)
+	cmds = append(cmds, cmd)
+
+	return m, tea.Batch(cmds...)
 
 }
-

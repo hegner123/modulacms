@@ -9,7 +9,7 @@ import (
 )
 
 
-func CreateDatatypeForm(m ModelInterface) (*huh.Form, int) {
+func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	var (
 		parentID int
 		label    string
@@ -47,7 +47,7 @@ func CreateDatatypeForm(m ModelInterface) (*huh.Form, int) {
 
 	return form, 3 // 3 fields
 }
-func CreateFieldForm(m ModelInterface) (*huh.Form, int) {
+func CreateFieldForm(m Model) (*huh.Form, int) {
 	var (
 		parentID int
 		label    string
@@ -94,7 +94,7 @@ func CreateFieldForm(m ModelInterface) (*huh.Form, int) {
 // Using the existing cmsFormMsg from form.go
 
 // BuildCMSDatatypeForm creates a form for CMS datatypes
-func (m *Model) BuildCMSDatatypeForm() tea.Cmd {
+func (m Model) BuildCMSDatatypeForm() tea.Cmd {
 	return func() tea.Msg {
 		form, count := CreateDatatypeForm(m)
 		return cmsFormMsg{
@@ -105,7 +105,7 @@ func (m *Model) BuildCMSDatatypeForm() tea.Cmd {
 }
 
 // BuildCMSFieldForm creates a form for CMS fields
-func (m *Model) BuildCMSFieldForm() tea.Cmd {
+func (m Model) BuildCMSFieldForm() tea.Cmd {
 	return func() tea.Msg {
 		form, count := CreateFieldForm(m)
 		return cmsFormMsg{
@@ -130,7 +130,6 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[CMSPAGE]
-		m.Controller = m.Page.Controller
 	}
 
 	if m.Form.State == huh.StateCompleted {
@@ -138,7 +137,6 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.Focus = PAGEFOCUS
 		// Process completed form (implementation would depend on form type)
 		m.Page = m.Pages[CMSPAGE]
-		m.Controller = m.Page.Controller
 	}
 	
 	return m, tea.Batch(cmds...)

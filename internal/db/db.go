@@ -938,12 +938,17 @@ func BuildUpdateQuery(table string, id int64, values map[string]string) string {
 
 // BuildSelectQuery creates a SELECT query
 func BuildSelectQuery(table string, id int64) string {
-	query := fmt.Sprintf("SELECT * FROM %s WHERE id = %d", table, id)
+	query := fmt.Sprintf("SELECT * FROM \"%s\" WHERE id = %d", table, id)
+	return query
+}
+// BuildListQuery creates a SELECT query
+func BuildListQuery(table string) string {
+	query := fmt.Sprintf("SELECT * FROM \"%s\"", table)
 	return query
 }
 
 // BuildDeleteQuery creates a DELETE query
 func BuildDeleteQuery(table string, id int64) string {
-	query := fmt.Sprintf("DELETE FROM %s WHERE id = %d", table, id)
+	query := fmt.Sprintf("DELETE FROM \"%s\" WHERE id = %d", table, id)
 	return query
 }

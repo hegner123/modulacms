@@ -83,7 +83,6 @@ func NewNavigationComponent() NavigationComponent {
 			*dynamicPage,
 			*definedDatatypePage,
 		},
-		controller: pageInterface,
 	}
 
 }
