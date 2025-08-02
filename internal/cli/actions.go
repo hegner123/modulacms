@@ -10,7 +10,7 @@ import (
 )
 
 // TODO Add default case for generic operations
-func (m *Model) CLICreate(c *config.Config, table db.DBTable) tea.Cmd {
+func (m *Model) DatabaseInsert(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*c)
 		con, _, err := d.GetConnection()
@@ -18,14 +18,19 @@ func (m *Model) CLICreate(c *config.Config, table db.DBTable) tea.Cmd {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
 		}
-		valuesMap := make(map[string]string, 0)
+		valuesMap := make(map[string]any, 0)
 		for i, v := range m.FormValues {
 			valuesMap[m.Headers[i]] = *v
 		}
 
-		// Using generic query method since direct CRUD methods aren't available
-		query := db.BuildInsertQuery(string(table), valuesMap)
-		_, err = d.Query(con, query)
+		// Using secure query builder
+		sqb := db.NewSecureQueryBuilder(con)
+		query, args, err := sqb.SecureBuildInsertQuery(string(table), valuesMap)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return DbErrMsg{Error: err}
+		}
+		_, err = sqb.SecureExecuteModifyQuery(query, args)
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
@@ -39,9 +44,9 @@ func (m *Model) CLICreate(c *config.Config, table db.DBTable) tea.Cmd {
 	}
 }
 
-func (m *Model) CLIUpdate(c *config.Config, table db.DBTable) tea.Cmd {
+func (m *Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
-		id := m.GetIDRow()
+		id := m.GetCurrentRowId()
 		d := db.ConfigDB(*c)
 
 		con, _, err := d.GetConnection()
@@ -50,14 +55,19 @@ func (m *Model) CLIUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 			return DbErrMsg{Error: err}
 		}
 
-		valuesMap := make(map[string]string, 0)
+		valuesMap := make(map[string]any, 0)
 		for i, v := range m.FormValues {
 			valuesMap[m.Headers[i]] = *v
 		}
 
-		// Using generic query method since direct CRUD methods aren't available
-		query := db.BuildUpdateQuery(string(table), id, valuesMap)
-		_, err = d.Query(con, query)
+		// Using secure query builder
+		sqb := db.NewSecureQueryBuilder(con)
+		query, args, err := sqb.SecureBuildUpdateQuery(string(table), id, valuesMap)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return DbErrMsg{Error: err}
+		}
+		_, err = sqb.SecureExecuteModifyQuery(query, args)
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
@@ -71,23 +81,29 @@ func (m *Model) CLIUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	}
 }
 
-func (m *Model) CLIRead(c *config.Config, table db.DBTable) tea.Cmd {
+func (m *Model) DatabaseRead(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*c)
 
-		_, _, err := d.GetConnection()
+		con, _, err := d.GetConnection()
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return ReadMsg{Error: err, Result: nil, RType: nil}
 		}
 
-		// Using generic query method since direct CRUD methods aren't available
-		query := db.BuildListQuery(string(table))
-		r, err := d.ExecuteQuery(query, table)
+		// Using secure query builder
+		sqb := db.NewSecureQueryBuilder(con)
+		query, args, err := sqb.SecureBuildListQuery(string(table))
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return ReadMsg{Error: err, Result: nil, RType: nil}
 		}
+		r, err := sqb.SecureExecuteSelectQuery(query, args)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return ReadMsg{Error: err, Result: nil, RType: nil}
+		}
+		defer r.Close()
 
 		out := make([]db.Datatypes, 0)
 
@@ -115,9 +131,9 @@ func (m *Model) CLIRead(c *config.Config, table db.DBTable) tea.Cmd {
 
 }
 
-func (m *Model) CLIDelete(c *config.Config, table db.DBTable) tea.Cmd {
+func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
-		id := m.GetIDRow()
+		id := m.GetCurrentRowId()
 		d := db.ConfigDB(*c)
 
 		con, _, err := d.GetConnection()
@@ -126,9 +142,14 @@ func (m *Model) CLIDelete(c *config.Config, table db.DBTable) tea.Cmd {
 			return DbErrMsg{Error: err}
 		}
 
-		// Using generic query method since direct CRUD methods aren't available
-		query := db.BuildDeleteQuery(string(table), id)
-		_, err = d.Query(con, query)
+		// Using secure query builder
+		sqb := db.NewSecureQueryBuilder(con)
+		query, args, err := sqb.SecureBuildDeleteQuery(string(table), id)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return DbErrMsg{Error: err}
+		}
+		_, err = sqb.SecureExecuteModifyQuery(query, args)
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}

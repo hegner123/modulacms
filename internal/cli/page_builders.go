@@ -202,7 +202,7 @@ func (t *TablePage) AddStatus(st string) {
 	t.Status += st
 }
 
-func (t *TablePage) RenderBody(m *Model) string {
+func (t *TablePage) RenderBody(m Model) string {
 	start, end := m.Paginator.GetSliceBounds(len(t.TableRows))
 	currentView := t.TableRows[start:end]
 
@@ -219,7 +219,7 @@ func (t *TablePage) RenderBody(m *Model) string {
 	return b
 }
 
-func (t TablePage) Render(model *Model) string {
+func (t TablePage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	s := lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -230,13 +230,19 @@ func (t TablePage) Render(model *Model) string {
 	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(t.Controls))
 	f := RenderFooter(t.Controls)
 	status := t.Status
-	return lipgloss.JoinVertical(
+	content := lipgloss.JoinVertical(
 		lipgloss.Left,
 		docStyle.Render(s),
 		h,
 		f,
 		status,
 	)
+	if model.DialogActive && model.Dialog != nil {
+		d := model.Dialog
+		old := content
+		content = DialogOverlay(old, *d, model.Width, model.Height)
+	}
+	return content
 }
 
 func NewTablePage(headers []string, rows [][]string, table string, title string, header string, body []Row, controls string, status string) TablePage {
@@ -266,7 +272,7 @@ func (f *FormPage) AddStatus(st string) {
 	f.Status += st
 }
 
-func (f FormPage) Render(model *Model) string {
+func (f FormPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	form := ""
 	if model.Form != nil {

@@ -31,6 +31,7 @@ type PageModPrevious struct{}
 type PageSet struct {
 	Page Page
 }
+type UpdatePagination struct{}
 type TableSet struct {
 	Table string
 }

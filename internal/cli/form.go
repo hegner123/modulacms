@@ -26,7 +26,7 @@ func (m Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 			t := *m.ColumnTypes
 			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 			if err != nil {
-				return ErrMsg{Error: err}
+				return FetchErrMsg{Error: err}
 			}
 			if f == nil {
 				continue
@@ -70,7 +70,7 @@ func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 			t := *m.ColumnTypes
 			f, err := m.NewUpdateFieldFromType(m.Config, c, t[i], &value, row[i])
 			if err != nil {
-				return ErrMsg{Error: err}
+				return FetchErrMsg{Error: err}
 			}
 			if f == nil {
 				continue
@@ -118,7 +118,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 			t := *m.ColumnTypes
 			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 			if err != nil {
-				return ErrMsg{Error: err}
+				return FetchErrMsg{Error: err}
 			}
 			if f == nil {
 				continue

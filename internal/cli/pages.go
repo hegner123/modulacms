@@ -110,7 +110,7 @@ func (m Model) View() string {
 		ui = p.Render(m)
 	case readPage.Index:
 		p := NewTablePage(m.Headers, m.Rows, m.Table, m.Titles[m.TitleFont], "READ", []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(&m)
+		ui = p.Render(m)
 	case readSinglePage.Index:
 		var row []Row
 		value := make(map[string]string, len(m.Headers))
@@ -127,16 +127,16 @@ func (m Model) View() string {
 		ui = p.Render(m)
 	case updatePage.Index:
 		p := NewTablePage(m.Headers, m.Rows, m.Table, m.Titles[m.TitleFont], "UPDATE", []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(&m)
+		ui = p.Render(m)
 	case updateFormPage.Index:
 		p := NewFormPage(m.Titles[m.TitleFont], m.Table, []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(&m)
+		ui = p.Render(m)
 	case deletePage.Index:
 		p := NewTablePage(m.Headers, m.Rows, m.Table, m.Titles[m.TitleFont], "DELETE", []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(&m)
+		ui = p.Render(m)
 	case createPage.Index:
 		p := NewFormPage(m.Titles[m.TitleFont], m.Table, []Row{}, "q quit", m.RenderStatusBar())
-		ui = p.Render(&m)
+		ui = p.Render(m)
 	case developmentPage.Index:
 		p := NewStaticPage(m.Titles[m.TitleFont], "DEVELOPMENT", []Row{}, "q quit", m.RenderStatusBar())
 		ui = p.Render(m)

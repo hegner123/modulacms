@@ -9,6 +9,14 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
+// DialogAction represents the type of action this dialog performs
+type DialogAction string
+
+const (
+	DIALOGGENERIC DialogAction = "generic"
+	DIALOGDELETE  DialogAction = "delete"
+)
+
 // DialogModel represents a dialog that can be rendered on top of other content
 type DialogModel struct {
 	Title       string
@@ -19,6 +27,7 @@ type DialogModel struct {
 	CancelText  string
 	ShowCancel  bool
 	ReadyOK     bool
+	Action      DialogAction
 	help        help.Model
 	borderStyle lipgloss.Style
 	titleStyle  lipgloss.Style
@@ -28,7 +37,7 @@ type DialogModel struct {
 }
 
 // NewDialog creates a new dialog model with the given parameters
-func NewDialog(title, message string, showCancel bool) DialogModel {
+func NewDialog(title, message string, showCancel bool, action DialogAction) DialogModel {
 	h := help.New()
 	h.ShowAll = false
 
@@ -41,6 +50,7 @@ func NewDialog(title, message string, showCancel bool) DialogModel {
 		CancelText:  "Cancel",
 		ShowCancel:  showCancel,
 		ReadyOK:     false,
+		Action:      action,
 		help:        h,
 		borderStyle: lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
 		titleStyle:  lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent),
@@ -64,17 +74,27 @@ func (d *DialogModel) SetButtons(okText, cancelText string) {
 
 // Update handles user input for the dialog
 func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
+	switch d.Action {
+	case DIALOGDELETE:
+		return d.ToggleControls(msg)
+	default:
+		return *d, nil
+
+	}
+}
+
+func (d *DialogModel) ToggleControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "tab", "shift+tab", "h", "l":
+		case "tab", "shift+tab", "h", "l", "j", "k", "left", "right", "up", "down":
 			if d.ShowCancel {
 				d.focusIndex = (d.focusIndex + 1) % 2
 			}
 			return *d, nil
 		case "enter":
 			if d.focusIndex == 0 {
-				return *d, func() tea.Msg { return DialogAcceptMsg{} }
+				return *d, func() tea.Msg { return DialogAcceptMsg{Action: d.Action} }
 			}
 			return *d, func() tea.Msg { return DialogCancelMsg{} }
 		case "esc":
@@ -82,6 +102,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		}
 	}
 	return *d, nil
+
 }
 
 // Render renders the dialog
@@ -153,7 +174,9 @@ func DialogOverlay(content string, dialog DialogModel, width, height int) string
 }
 
 // Dialog-related messages
-type DialogAcceptMsg struct{}
+type DialogAcceptMsg struct {
+	Action DialogAction
+}
 type DialogCancelMsg struct{}
 type DialogReadyOK struct{}
 type ShowDialogMsg struct {

@@ -10,7 +10,7 @@ type PageLoadMSG struct{}
 func (c Page) PageInit(m Model) tea.Cmd {
 	switch c.Index {
 	case CMSPAGE:
-		r := m.CLIRead(m.Config, db.Datatype)
+		r := m.DatabaseRead(m.Config, db.Datatype)
 		return r
 	default:
 		r := PageLoad()

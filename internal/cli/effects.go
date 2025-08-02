@@ -7,7 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-type ErrMsg struct {
+type FetchErrMsg struct {
 	Error error
 }
 
@@ -32,7 +32,7 @@ func GetTablesCMD(c *config.Config) tea.Cmd {
 		tables, err := d.ListTables()
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
-			return ErrMsg{Error: err}
+			return FetchErrMsg{Error: err}
 		}
 
 		for _, table := range *tables {

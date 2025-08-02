@@ -34,8 +34,9 @@ func CursorSetCmd(index int) tea.Cmd { return func() tea.Msg { return CursorSet{
 func CursorMaxSetCmd(cursorMax int) tea.Cmd {
 	return func() tea.Msg { return CursorMaxSet{CursorMax: cursorMax} }
 }
-func PageModNextCmd() tea.Cmd { return func() tea.Msg { return PageModNext{} } }
-func PageModPreviousCmd() tea.Cmd { return func() tea.Msg { return PageModPrevious{} } }
+func PageModNextCmd() tea.Cmd      { return func() tea.Msg { return PageModNext{} } }
+func PageModPreviousCmd() tea.Cmd  { return func() tea.Msg { return PageModPrevious{} } }
+func PaginationUpdateCmd() tea.Cmd { return func() tea.Msg { return UpdatePagination{} } }
 
 // Page and navigation constructors
 func PageSetCmd(page Page) tea.Cmd     { return func() tea.Msg { return PageSet{Page: page} } }
@@ -124,8 +125,8 @@ func PageMenuSetCmd(menu []*Page) tea.Cmd {
 }
 
 // Composite constructors for common operations
-func ShowDialogCmd(title, message string, showCancel bool) tea.Cmd {
-	dialog := NewDialog(title, message, showCancel)
+func ShowDialogCmd(title, message string, showCancel bool, action DialogAction) tea.Cmd {
+	dialog := NewDialog(title, message, showCancel, action)
 	return func() tea.Msg {
 		return tea.Batch(
 			DialogSetCmd(&dialog),
