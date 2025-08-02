@@ -9,7 +9,6 @@ import (
 	"github.com/hegner123/modulacms/internal/model"
 )
 
-
 type ClearScreen struct{}
 
 type TitleFontNext struct{}
@@ -50,6 +49,7 @@ type HistoryPush struct {
 }
 type NavigateToPage struct {
 	Page Page
+	Menu []*Page
 }
 
 type NavigateToDatabaseCreate struct{}
@@ -136,65 +136,16 @@ type DatatypesFetchedMsg struct {
 type DataFetchErrorMsg struct {
 	Error error
 }
-type LogMsg struct{
-    Message string
+type LogMsg struct {
+	Message string
 }
 
-// Navigation messages that preserve history and handle complete flows
-type NavigateToTableCreatePage struct {
-	CurrentPage Page
-	Cursor      int
-	Table       string
-	Config      *config.Config
+type FetchHeadersRows struct {
+	Config config.Config
+	Table  string
 }
 
-type NavigateToTableUpdatePage struct {
-	CurrentPage Page
-	Cursor      int
-	Table       string
-	Config      *config.Config
-	TargetPage  *Page
-}
-
-type NavigateToTableReadPage struct {
-	CurrentPage Page
-	Cursor      int
-	Table       string
-	Config      *config.Config
-	TargetPage  *Page
-}
-
-type NavigateToTableDeletePage struct {
-	CurrentPage Page
-	Cursor      int
-	Table       string
-	Config      *config.Config
-	TargetPage  *Page
-}
-
-type NavigateToUpdateFormPage struct {
-	CurrentPage Page
-	Cursor      int
-	Table       string
-	Config      *config.Config
-}
-
-type NavigateToReadSinglePage struct {
-	CurrentPage Page
-	Cursor      int
-}
-
-type NavigateToConfigPage struct {
-	CurrentPage Page
-	Cursor      int
-	Config      *config.Config
-	PageMenu    []*Page
-}
-
-type NavigateWithDefaultRouter struct {
-	CurrentPage Page
-	Cursor      int
-	Config      *config.Config
-	PageMenu    []*Page
-	Pages       []Page
+type TableHeadersRowsFetchedMsg struct {
+	Headers []string
+	Rows    [][]string
 }

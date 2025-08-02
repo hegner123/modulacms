@@ -44,7 +44,6 @@ func (m *Model) DatabaseCreateControls(msg tea.Msg) (Model, tea.Cmd) {
 		err := m.CLICreate(m.Config, db.DBTable(m.Table))
 		cmds = append(cmds, err)
 		m.Page = m.Pages[READPAGE]
-		cmd := FetchHeadersRows(m.Config, m.Table)
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd

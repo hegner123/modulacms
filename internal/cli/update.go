@@ -94,108 +94,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		newModel := m
 		newModel.History = append(newModel.History, msg.Page)
 		return newModel, nil
-	case NavigateToTableCreatePage:
-		// Handle form initialization directly since it needs to happen immediately
-		formCmd := m.BuildCreateDBForm(db.StringDBTable(msg.Table))
-		m.Form.Init()
-
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			FetchHeadersRows(msg.Config, msg.Table),
-			formCmd,
-			FocusSetCmd(FORMFOCUS),
-			PageSetCmd(m.Pages[CREATEPAGE]),
-			StatusSetCmd(EDITING),
-		)
-
-	case NavigateToTableUpdatePage:
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			FetchHeadersRows(msg.Config, msg.Table),
-			PageSetCmd(*msg.TargetPage),
-		)
-
-	case NavigateToTableReadPage:
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			FetchHeadersRows(msg.Config, msg.Table),
-			PageSetCmd(*msg.TargetPage),
-		)
-
-	case NavigateToTableDeletePage:
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			FetchHeadersRows(msg.Config, msg.Table),
-			PageSetCmd(*msg.TargetPage),
-			StatusSetCmd(DELETING),
-		)
-
-	case NavigateToUpdateFormPage:
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			m.BuildUpdateDBForm(db.StringDBTable(msg.Table)),
-			FetchHeadersRows(msg.Config, msg.Table),
-			PageSetCmd(m.Pages[UPDATEFORMPAGE]),
-			StatusSetCmd(EDITING),
-		)
-
-	case NavigateToReadSinglePage:
-		return m, tea.Batch(
-			HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}),
-			CursorResetCmd(),
-			PageSetCmd(m.Pages[READSINGLEPAGE]),
-		)
-
-	case NavigateToConfigPage:
-		var cmds []tea.Cmd
-		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: msg.CurrentPage, Cursor: msg.Cursor}))
-		cmds = append(cmds, CursorResetCmd())
-
-		formatted, err := formatJSON(msg.Config)
-		if err == nil {
-			m.Content = formatted
-		}
-
-		if len(msg.PageMenu) > 0 && m.Cursor < len(msg.PageMenu) {
-			cmds = append(cmds, PageSetCmd(*msg.PageMenu[m.Cursor]))
-		}
-
-		return m, tea.Batch(cmds...)
-
-	case NavigateWithDefaultRouter:
-		var cmds []tea.Cmd
-		cmds = append(cmds, CursorResetCmd())
-
-		form, err := formatJSON(msg.Config)
-		if err == nil {
-			m.Content = form
-		}
-		m.Viewport.SetContent(m.Content)
-		m.Ready = true
-
-		// Check if PageMenu has elements and cursor is within bounds
-		if len(msg.PageMenu) > 0 && m.Cursor < len(msg.PageMenu) {
-			r := msg.PageMenu[m.Cursor].PageInit(m)
-			cmds = append(cmds, r)
-			cmds = append(cmds, PageSetCmd(*msg.PageMenu[m.Cursor]))
-		}
-
-		cmds = append(cmds, StatusSetCmd(OK))
-		cmds = append(cmds, PageMenuSetCmd(msg.PageMenu))
-		cmds = append(cmds, PageSetCmd(msg.Pages[m.Cursor]))
-
-		return m, tea.Batch(cmds...)
 
 	case NavigateToPage:
 		var cmds []tea.Cmd
 		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor}))
 		cmds = append(cmds, CursorResetCmd())
-		switch m.Pages[m.Cursor].Index {
+		switch msg.Page.Index {
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
@@ -203,24 +107,61 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			cmds = append(cmds, PageMenuSetCmd(TableMenu))
 			cmds = append(cmds, PageSetCmd(msg.Page))
 		case CREATEPAGE:
-			return m, NavigateToTableCreatePageCmd(m.Page, m.Cursor, m.Table, m.Config)
+			formCmd := m.BuildCreateDBForm(db.StringDBTable(m.Table))
+			m.Form.Init()
+
+			return m, tea.Batch(
+				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				formCmd,
+				FocusSetCmd(FORMFOCUS),
+				PageSetCmd(m.Pages[CREATEPAGE]),
+				StatusSetCmd(EDITING),
+			)
 		case UPDATEPAGE:
-			return m, NavigateToTableUpdatePageCmd(m.Page, m.Cursor, m.Table, m.Config, m.PageMenu[m.Cursor])
+			return m, tea.Batch(
+				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				PageSetCmd(m.Pages[UPDATEPAGE]),
+				StatusSetCmd(OK),
+			)
 		case READPAGE:
-			return m, NavigateToTableReadPageCmd(m.Page, m.Cursor, m.Table, m.Config, m.PageMenu[m.Cursor])
+			return m, tea.Batch(
+				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				PageSetCmd(m.Pages[READPAGE]),
+				StatusSetCmd(OK),
+			)
 		case DELETEPAGE:
-			return m, NavigateToTableDeletePageCmd(m.Page, m.Cursor, m.Table, m.Config, m.PageMenu[m.Cursor])
+			return m, tea.Batch(
+				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				PageSetCmd(m.Pages[DELETEPAGE]),
+				StatusSetCmd(DELETING),
+			)
 		case UPDATEFORMPAGE:
-			return m, NavigateToUpdateFormPageCmd(m.Page, m.Cursor, m.Table, m.Config)
+			return m, tea.Batch(
+				m.BuildUpdateDBForm(db.StringDBTable(m.Table)),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				PageSetCmd(m.Pages[UPDATEFORMPAGE]),
+				StatusSetCmd(EDITING),
+			)
 		case READSINGLEPAGE:
-			return m, NavigateToReadSinglePageCmd(m.Page, m.Cursor)
+			return m, tea.Batch(
+				PageSetCmd(m.Pages[READSINGLEPAGE]),
+			)
 		case CONFIGPAGE:
-			return m, NavigateToConfigPageCmd(m.Page, m.Cursor, m.Config, m.PageMenu)
-		default:
-			return m, NavigateWithDefaultRouterCmd(m.Page, m.Cursor, m.Config, m.PageMenu, m.Pages)
+			form, err := formatJSON(m.Config)
+			if err == nil {
+				m.Content = form
+			}
+			m.Viewport.SetContent(m.Content)
+			m.Ready = true
+
+			if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
+				cmds = append(cmds, PageSetCmd(*m.PageMenu[m.Cursor]))
+			}
+
+			return m, tea.Batch(cmds...)
 		}
 		cmds = append(cmds, LogMessage(fmt.Sprintln("cursor:", m.Cursor)))
-		cmds = append(cmds, LogMessage(fmt.Sprintln("pages", m.Pages)))
+		cmds = append(cmds, LogMessage(fmt.Sprintln("pages", ViewPageMenus(m))))
 
 		return m, tea.Batch(
 			cmds...,
@@ -245,6 +186,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			NavigateToPageCmd(m.Pages[CREATEPAGE]),
 		)
 
+	case FetchHeadersRows:
+		c := msg.Config
+		t := msg.Table
+		dbt := db.StringDBTable(t)
+		query := "SELECT * FROM"
+		d := db.ConfigDB(c)
+		rows, err := d.ExecuteQuery(query, dbt)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return m, ErrorSetCmd(err)
+		}
+		defer rows.Close()
+		columns, err := rows.Columns()
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return m, ErrorSetCmd(err)
+		}
+		listRows, err := db.GenericList(dbt, d)
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return m, ErrorSetCmd(err)
+		}
+		return m, TableHeadersRowsFetchedCmd(columns, listRows)
 	case ColumnsSet:
 		newModel := m
 		newModel.Columns = msg.Columns
@@ -326,7 +290,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			ColumnTypesSetCmd(msg.ColumnTypes),
 			ColumnsSetCmd(msg.Columns),
 		)
-	case headersRowsFetchedMsg:
+
+	case TableHeadersRowsFetchedMsg:
 		return m, tea.Batch(
 			HeadersSetCmd(msg.Headers),
 			RowsSetCmd(msg.Rows),
@@ -490,6 +455,8 @@ func PageSpecificMsgHandlers(m Model, cmd tea.Cmd, msg tea.KeyMsg) (Model, tea.C
 		return m.BasicControls(msg)
 	case READPAGE:
 		return m.DatabaseReadControls(msg)
+	case UPDATEPAGE:
+		return m.DatabaseReadControls(msg)
 	case DEVELOPMENT:
 		return DevelopmentInterface(m, msg)
 	case DATATYPE:
@@ -515,7 +482,7 @@ func (m Model) BasicControls(msg tea.KeyMsg) (Model, tea.Cmd) {
 	case "enter", "l":
 		// Only proceed if we have menu items
 		if len(m.PageMenu) > 0 {
-			return m, NavigateToPageCmd(m.Pages[m.Cursor])
+			return m, NavigateToPageCmd(*m.PageMenu[m.Cursor])
 		}
 	}
 	return m, nil
@@ -633,7 +600,7 @@ func (m Model) UpdateDatabaseCreate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[READPAGE]
-		cmd := FetchHeadersRows(m.Config, m.Table)
+		cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table)
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd
@@ -676,14 +643,13 @@ func (m Model) DatabaseReadControls(msg tea.KeyMsg) (Model, tea.Cmd) {
 		if recordIndex < len(m.Rows) {
 			m.Cursor = recordIndex
 		}
-		m.Page = m.Pages[READSINGLEPAGE]
+		cmds = append(cmds, NavigateToPageCmd(*m.PageMenu[m.Cursor]))
 
 	default:
 		var pcmd tea.Cmd
 		m.Paginator, pcmd = m.Paginator.Update(msg)
 		cmds = append(cmds, pcmd)
-		cmd := m.UpdateMaxCursor()
-		cmds = append(cmds, cmd)
+		cmds = append(cmds, m.UpdateMaxCursor())
 	}
 	return m, tea.Batch(cmds...)
 }
@@ -775,7 +741,7 @@ func (m Model) UpdateDatabaseDelete(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.Cursor > 0 {
 			m.Cursor--
 		}
-		cmd := FetchHeadersRows(m.Config, m.Table)
+		cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table)
 		cmds = append(cmds, cmd)
 	default:
 		var scmd tea.Cmd

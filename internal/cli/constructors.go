@@ -41,100 +41,7 @@ func TableSetCmd(table string) tea.Cmd { return func() tea.Msg { return TableSet
 func NavigateToPageCmd(page Page) tea.Cmd {
 	return func() tea.Msg { return NavigateToPage{Page: page} }
 }
-func NavigateToDatabaseCreateCmd() tea.Cmd {
-	return func() tea.Msg { return NavigateToDatabaseCreate{} }
-}
 
-// Page routing constructors with history preservation
-func NavigateToTableCreatePageCmd(currentPage Page, cursor int, table string, config *config.Config) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToTableCreatePage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Table:       table,
-			Config:      config,
-		}
-	}
-}
-
-func NavigateToTableUpdatePageCmd(currentPage Page, cursor int, table string, config *config.Config, targetPage *Page) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToTableUpdatePage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Table:       table,
-			Config:      config,
-			TargetPage:  targetPage,
-		}
-	}
-}
-
-func NavigateToTableReadPageCmd(currentPage Page, cursor int, table string, config *config.Config, targetPage *Page) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToTableReadPage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Table:       table,
-			Config:      config,
-			TargetPage:  targetPage,
-		}
-	}
-}
-
-func NavigateToTableDeletePageCmd(currentPage Page, cursor int, table string, config *config.Config, targetPage *Page) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToTableDeletePage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Table:       table,
-			Config:      config,
-			TargetPage:  targetPage,
-		}
-	}
-}
-
-func NavigateToUpdateFormPageCmd(currentPage Page, cursor int, table string, config *config.Config) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToUpdateFormPage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Table:       table,
-			Config:      config,
-		}
-	}
-}
-
-func NavigateToReadSinglePageCmd(currentPage Page, cursor int) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToReadSinglePage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-		}
-	}
-}
-
-func NavigateToConfigPageCmd(currentPage Page, cursor int, config *config.Config, pageMenu []*Page) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateToConfigPage{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Config:      config,
-			PageMenu:    pageMenu,
-		}
-	}
-}
-
-func NavigateWithDefaultRouterCmd(currentPage Page, cursor int, config *config.Config, pageMenu []*Page, pages []Page) tea.Cmd {
-	return func() tea.Msg {
-		return NavigateWithDefaultRouter{
-			CurrentPage: currentPage,
-			Cursor:      cursor,
-			Config:      config,
-			PageMenu:    pageMenu,
-			Pages:       pages,
-		}
-	}
-}
 func SelectTableCmd(table string) tea.Cmd { return func() tea.Msg { return SelectTable{Table: table} } }
 
 // Focus control constructors
@@ -262,13 +169,20 @@ func SetTableDataCmd(headers []string, rows [][]string, maxRows int) tea.Cmd {
 	}
 }
 
-func NavigateWithHistoryCmd(targetPage Page, currentPage Page, cursor int) tea.Cmd {
+func FetchTableHeadersRowsCmd(c config.Config, t string) tea.Cmd {
 	return func() tea.Msg {
-		return tea.Batch(
-			PageSetCmd(targetPage),
-			HistoryPushCmd(PageHistory{Page: currentPage, Cursor: cursor}),
-			CursorResetCmd(),
-		)()
+		return FetchHeadersRows{
+			Config: c,
+			Table:  t,
+		}
 	}
 }
 
+func TableHeadersRowsFetchedCmd(headers []string, rows [][]string) tea.Cmd {
+	return func() tea.Msg {
+		return TableHeadersRowsFetchedMsg{
+			Headers: headers,
+			Rows:    rows,
+		}
+	}
+}
