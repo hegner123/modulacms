@@ -42,25 +42,4 @@ func GetTablesCMD(c *config.Config) tea.Cmd {
 	}
 }
 
-func GetColumns(c *config.Config, t string) tea.Cmd {
-	return func() tea.Msg {
-		dbt := db.StringDBTable(t)
-		query := "SELECT * FROM"
-		d := db.ConfigDB(*c)
-		rows, err := d.ExecuteQuery(query, dbt)
-		if err != nil {
-			return ErrMsg{Error: err}
-		}
-		defer rows.Close()
-		clm, err := rows.Columns()
-		if err != nil {
-			return ErrMsg{Error: err}
-		}
-		ct, err := rows.ColumnTypes()
-		if err != nil {
-			return ErrMsg{Error: err}
-		}
-		return ColumnsFetched{Columns: &clm, ColumnTypes: &ct}
-	}
-}
 

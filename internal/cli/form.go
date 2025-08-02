@@ -6,28 +6,20 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-type createFormMsg struct {
+type NewFormMsg struct {
 	Form        *huh.Form
 	FieldsCount int
+	Values      []*string
 }
 
-type updateFormMsg struct {
-	Form        *huh.Form
-	FieldsCount int
-}
-
-type cmsFormMsg struct {
-	Form        *huh.Form
-	FieldsCount int
-}
-
-func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
+func (m Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		var fields []huh.Field
+		var values []*string
 		for i, c := range *m.Columns {
 			blank := ""
 			if i == 0 {
-				m.FormValues = append(m.FormValues, &blank)
+				values = append(values, &blank)
 				continue
 			}
 			value := ""
@@ -40,13 +32,14 @@ func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 				continue
 			}
 			fields = append(fields, f)
-			m.FormValues = append(m.FormValues, &value)
+			values = append(values, &value)
 
 		}
 		group := huh.NewGroup(fields...)
 		form := huh.NewForm(
 			group,
 		)
+		form.Init() // Initialize immediately
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
@@ -58,7 +51,7 @@ func (m *Model) BuildCreateDBForm(table db.DBTable) tea.Cmd {
 		form.SubmitCmd = func() tea.Msg {
 			return tea.ResumeMsg{}
 		}
-		return createFormMsg{Form: form, FieldsCount: len(*m.Columns)}
+        return NewFormMsg{Form: form, FieldsCount: len(*m.Columns), Values: values}
 	}
 
 }
@@ -96,6 +89,7 @@ func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 		form := huh.NewForm(
 			group,
 		)
+		form.Init() // Initialize immediately
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
@@ -109,7 +103,7 @@ func (m *Model) BuildUpdateDBForm(table db.DBTable) tea.Cmd {
 			m.Focus = PAGEFOCUS
 			return tea.ResumeMsg{}
 		}
-		return updateFormMsg{Form: form, FieldsCount: len(*m.Columns)}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 }
 
@@ -138,6 +132,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 		form := huh.NewForm(
 			group,
 		)
+		form.Init() // Initialize immediately
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
@@ -151,7 +146,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 			m.Focus = PAGEFOCUS
 			return tea.ResumeMsg{}
 		}
-		return updateFormMsg{Form: form, FieldsCount: len(*m.Columns)}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 
 }

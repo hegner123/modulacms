@@ -34,6 +34,8 @@ func CursorSetCmd(index int) tea.Cmd { return func() tea.Msg { return CursorSet{
 func CursorMaxSetCmd(cursorMax int) tea.Cmd {
 	return func() tea.Msg { return CursorMaxSet{CursorMax: cursorMax} }
 }
+func PageModNextCmd() tea.Cmd { return func() tea.Msg { return PageModNext{} } }
+func PageModPreviousCmd() tea.Cmd { return func() tea.Msg { return PageModPrevious{} } }
 
 // Page and navigation constructors
 func PageSetCmd(page Page) tea.Cmd     { return func() tea.Msg { return PageSet{Page: page} } }
@@ -48,8 +50,12 @@ func SelectTableCmd(table string) tea.Cmd { return func() tea.Msg { return Selec
 func FocusSetCmd(focus FocusKey) tea.Cmd { return func() tea.Msg { return FocusSet{Focus: focus} } }
 
 // Form control constructors
-func FormSetCmd(form huh.Form) tea.Cmd { return func() tea.Msg { return FormSet{Form: form} } }
-func FormAbortedCmd() tea.Cmd          { return func() tea.Msg { return FormAborted{} } }
+
+func FormNewCmd(f FormIndex) tea.Cmd       { return func() tea.Msg { return FormCreate{FormType: f} } }
+func FormSetCmd(form huh.Form) tea.Cmd     { return func() tea.Msg { return FormSet{Form: form} } }
+func FormSetValuesCmd(v []*string) tea.Cmd { return func() tea.Msg { return FormValuesSet{Values: v} } }
+func FormInitCmd() tea.Cmd                 { return func() tea.Msg { return FormInit{} } }
+func FormAbortedCmd() tea.Cmd              { return func() tea.Msg { return FormAborted{} } }
 func FormLenSetCmd(formLen int) tea.Cmd {
 	return func() tea.Msg { return FormLenSet{FormLen: formLen} }
 }
@@ -148,7 +154,7 @@ func SetErrorWithStatusCmd(err error, status ApplicationState) tea.Cmd {
 	}
 }
 
-func SetFormDataCmd(form huh.Form, formLen int) tea.Cmd {
+func SetFormDataCmd(form huh.Form, formLen int, values []*string) tea.Cmd {
 	return func() tea.Msg {
 		return tea.Batch(
 			FormSetCmd(form),
@@ -183,6 +189,15 @@ func TableHeadersRowsFetchedCmd(headers []string, rows [][]string) tea.Cmd {
 		return TableHeadersRowsFetchedMsg{
 			Headers: headers,
 			Rows:    rows,
+		}
+	}
+}
+
+func GetColumnsCmd(c config.Config, t string) tea.Cmd {
+	return func() tea.Msg {
+		return GetColumns{
+			Config: c,
+			Table:  t,
 		}
 	}
 }

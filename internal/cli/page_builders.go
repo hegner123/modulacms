@@ -268,10 +268,16 @@ func (f *FormPage) AddStatus(st string) {
 
 func (f FormPage) Render(model *Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	form := ""
+	if model.Form != nil {
+		form = model.Form.View()
+
+	}
 	s := lipgloss.JoinVertical(
 		lipgloss.Left,
 		RenderTitle(f.Title),
 		RenderHeading(f.Header),
+		form,
 	)
 	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(f.Controls))
 	footer := RenderFooter(f.Controls)
@@ -339,11 +345,11 @@ func (c CMSPage) Render(model *Model) string {
 }
 
 func NewCMSPage(title string, header string, body []Row, controls string, status string) CMSPage {
-    b := NewBasePage(title, header, body, controls, status)
+	b := NewBasePage(title, header, body, controls, status)
 	p := CMSPage{
-        BasePage: b,
-        Tree: model.NewRoot(),
-    }
+		BasePage: b,
+		Tree:     model.NewRoot(),
+	}
 
 	return p
 }

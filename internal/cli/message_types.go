@@ -26,6 +26,8 @@ type CursorReset struct{}
 type CursorSet struct {
 	Index int
 }
+type PageModNext struct{}
+type PageModPrevious struct{}
 type PageSet struct {
 	Page Page
 }
@@ -36,10 +38,19 @@ type TableSet struct {
 type FocusSet struct {
 	Focus FocusKey
 }
+type FormCreate struct {
+	FormType FormIndex
+}
 
 type FormSet struct {
-	Form huh.Form
+	Form   huh.Form
+	Values []*string
 }
+type FormValuesSet struct {
+	Values []*string
+}
+
+type FormInit struct{}
 
 type FormAborted struct {
 }
@@ -148,4 +159,8 @@ type FetchHeadersRows struct {
 type TableHeadersRowsFetchedMsg struct {
 	Headers []string
 	Rows    [][]string
+}
+type GetColumns struct {
+	Config config.Config
+	Table  string
 }

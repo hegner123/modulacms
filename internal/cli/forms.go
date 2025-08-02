@@ -8,6 +8,15 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+type FormIndex int
+
+const (
+    DATABASECREATE FormIndex = iota
+    DATABASEUPDATE
+    CMSCREATE
+    CMSUPDATE
+)
+
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	var (
@@ -91,13 +100,12 @@ func CreateFieldForm(m Model) (*huh.Form, int) {
 	return form, 4 // 4 fields
 }
 
-// Using the existing cmsFormMsg from form.go
 
 // BuildCMSDatatypeForm creates a form for CMS datatypes
 func (m Model) BuildCMSDatatypeForm() tea.Cmd {
 	return func() tea.Msg {
 		form, count := CreateDatatypeForm(m)
-		return cmsFormMsg{
+		return NewFormMsg{
 			Form:        form,
 			FieldsCount: count,
 		}
@@ -108,7 +116,7 @@ func (m Model) BuildCMSDatatypeForm() tea.Cmd {
 func (m Model) BuildCMSFieldForm() tea.Cmd {
 	return func() tea.Msg {
 		form, count := CreateFieldForm(m)
-		return cmsFormMsg{
+		return NewFormMsg{
 			Form:        form,
 			FieldsCount: count,
 		}
