@@ -23,6 +23,10 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Navigation to page %s: cursor at position %d", msg.Page.Label, m.Cursor)))
 		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Available menu options: %s", ViewPageMenus(m))))
 		switch msg.Page.Index {
+		case CMSPAGE:
+			cmds = append(cmds, PageSetCmd(msg.Page))
+			cmds = append(cmds, DatatypesFetchCmd())
+			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))

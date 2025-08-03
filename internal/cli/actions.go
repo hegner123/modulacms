@@ -139,7 +139,7 @@ func (m Model) DatabaseList(c *config.Config, table db.DBTable) tea.Cmd {
 			utility.DefaultLogger.Finfo("CLI Read successful", out)
 
 		}
-		return DatatypesFetchedMsg{data: out}
+		return DatatypesFetchResultsMsg{Data: out}
 	}
 
 }

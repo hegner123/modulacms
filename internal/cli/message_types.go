@@ -164,9 +164,9 @@ type ReadMsg struct {
 	Error  error
 	RType  any
 }
-
-type DatatypesFetchedMsg struct {
-	data []db.Datatypes
+type DatatypesFetchMsg struct{}
+type DatatypesFetchResultsMsg struct {
+	Data []db.Datatypes
 }
 type DataFetchErrorMsg struct {
 	Error error
@@ -187,4 +187,13 @@ type TableHeadersRowsFetchedMsg struct {
 type GetColumns struct {
 	Config config.Config
 	Table  string
+}
+
+type DatabaseGetMsg struct {
+	Table db.DBTable
+	Id    int
+}
+
+type DatabaseListMsg struct{
+    Table db.DBTable
 }

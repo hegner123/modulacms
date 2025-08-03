@@ -28,8 +28,10 @@ var TableMenu []*Page = []*Page{
 func (m *Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 	out := make([]*Page, 0)
 	for _, item := range datatypes {
-		page := NewDatatypePage(item.Label)
-		out = append(out, page)
+		if item.Type == "ROOT" {
+			page := NewDatatypePage(item.Label)
+			out = append(out, page)
+		}
 	}
 	return out
 }

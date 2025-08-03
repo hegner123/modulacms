@@ -16,6 +16,12 @@ func NewDatabaseUpdate() tea.Cmd {
 
 func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case DatabaseGetMsg:
+	case DatabaseListMsg:
+		return m, tea.Batch(
+
+			m.DatabaseList(m.Config, msg.Table),
+		)
 	case DatabaseDeleteEntry:
 		return m, LogMessageCmd(fmt.Sprintf("Database delete requested: ID %d from table %s", msg.Id, msg.Table))
 	case DatabaseInsertEntry:
@@ -29,5 +35,5 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 
 	}
-
+	return m, nil
 }

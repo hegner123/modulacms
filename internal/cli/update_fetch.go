@@ -76,19 +76,21 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 				ColumnsSetCmd(&clm),
 				ColumnTypesSetCmd(&ct),
 			)
+	case DatatypesFetchMsg:
+		return m, DatabaseListCmd(db.Datatype)
 
-	case DatatypesFetchedMsg:
+	case DatatypesFetchResultsMsg:
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
-		newMenu := m.BuildDatatypeMenu(msg.data)
+		newMenu := m.BuildDatatypeMenu(msg.Data)
 		utility.DefaultLogger.Finfo("newMenu", newMenu)
 
 		datatypeMenuLabels := make([]string, 0, len(newMenu))
 		for _, item := range newMenu {
 			datatypeMenuLabels = append(datatypeMenuLabels, item.Label)
-			utility.DefaultLogger.Finfo("item", item)
 		}
 
 		return m, tea.Batch(
+			LogMessageCmd(fmt.Sprintln(datatypeMenuLabels)),
 			DatatypeMenuSetCmd(datatypeMenuLabels),
 			PageMenuSetCmd(newMenu),
 		)

@@ -102,7 +102,28 @@ func HistoryPushCmd(page PageHistory) tea.Cmd {
 	return func() tea.Msg { return HistoryPush{Page: page} }
 }
 
+// Cms constructors
+func DatatypesFetchCmd() tea.Cmd { return func() tea.Msg { return DatatypesFetchMsg{} } }
+func DatatypesFetchResultCmd(data []db.Datatypes) tea.Cmd {
+	return func() tea.Msg { return DatatypesFetchResultsMsg{Data: data} }
+}
+
 // Database operation constructors
+func DatabaseGetCmd(table db.DBTable, id int) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseGetMsg{
+			Id:    id,
+			Table: table,
+		}
+	}
+}
+func DatabaseListCmd(table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseListMsg{
+			Table: table,
+		}
+	}
+}
 func DatabaseDeleteEntryCmd(id int, table string) tea.Cmd {
 	return func() tea.Msg { return DatabaseDeleteEntry{Id: id, Table: table} }
 }

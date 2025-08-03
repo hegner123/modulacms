@@ -26,6 +26,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.SelectTable(msg)
 	case TABLEPAGE:
 		return m.BasicControls(msg)
+    case CMSPAGE:
+        return m.BasicControls(msg)
 	case CREATEPAGE:
 		return m.FormControls(msg)
 	case READPAGE:
