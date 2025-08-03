@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/db"
 )
 
 type DatabaseUpdate struct{}
@@ -19,8 +20,20 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 	case DatabaseGetMsg:
 	case DatabaseListMsg:
 		return m, tea.Batch(
-
 			m.DatabaseList(m.Config, msg.Table),
+		)
+	case DatabaseListRowsMsg:
+		res := db.CastToTypedSlice(msg.Rows, msg.Table)
+		switch msg.Table {
+		case db.Datatype:
+			data, _ := res.([]db.Datatypes)
+			return m, tea.Batch(
+				DatatypesFetchResultCmd(data),
+			)
+
+		}
+		return m, tea.Batch(
+			LogMessageCmd(fmt.Sprintln(res)),
 		)
 	case DatabaseDeleteEntry:
 		return m, LogMessageCmd(fmt.Sprintf("Database delete requested: ID %d from table %s", msg.Id, msg.Table))

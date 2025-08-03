@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/db"
 )
 
 type NavigationUpdated struct{}
@@ -26,6 +27,8 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case CMSPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, DatatypesFetchCmd())
+			cmds = append(cmds, DatabaseListCmd(db.User))
+            
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())

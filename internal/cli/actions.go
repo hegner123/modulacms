@@ -95,52 +95,30 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 }
 
 func (m Model) DatabaseList(c *config.Config, table db.DBTable) tea.Cmd {
-	return func() tea.Msg {
-		d := db.ConfigDB(*c)
+	d := db.ConfigDB(*c)
 
-		con, _, err := d.GetConnection()
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return ReadMsg{Error: err, Result: nil, RType: nil}
-		}
-
-		// Using secure query builder
-		sqb := db.NewSecureQueryBuilder(con)
-		query, args, err := sqb.SecureBuildListQuery(string(table))
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return ReadMsg{Error: err, Result: nil, RType: nil}
-		}
-		r, err := sqb.SecureExecuteSelectQuery(query, args)
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return ReadMsg{Error: err, Result: nil, RType: nil}
-		}
-		defer r.Close()
-
-		out := make([]db.Datatypes, 0)
-
-		for r.Next() {
-			res := &db.Datatypes{}
-			err := r.Scan(
-				&res.DatatypeID,
-				&res.ParentID,
-				&res.Label,
-				&res.Type,
-				&res.AuthorID,
-				&res.DateCreated,
-				&res.DateModified,
-				&res.History,
-			)
-			if err != nil {
-				return DataFetchErrorMsg{Error: err}
-			}
-			out = append(out, *res)
-			utility.DefaultLogger.Finfo("CLI Read successful", out)
-
-		}
-		return DatatypesFetchResultsMsg{Data: out}
+	con, _, err := d.GetConnection()
+	if err != nil {
+		return LogMessageCmd(err.Error())
 	}
+
+	// Using secure query builder
+	sqb := db.NewSecureQueryBuilder(con)
+	query, args, err := sqb.SecureBuildListQuery(string(table))
+	if err != nil {
+		return LogMessageCmd(err.Error())
+	}
+	r, err := sqb.SecureExecuteSelectQuery(query, args)
+	if err != nil {
+		return LogMessageCmd(err.Error())
+	}
+	defer r.Close()
+	out, err := Parse(r, table)
+	if err != nil {
+		return LogMessageCmd(err.Error())
+	}
+
+	return DatabaseListRowsCmd(out, table)
 
 }
 

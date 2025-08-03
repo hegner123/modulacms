@@ -25,7 +25,7 @@ var TableMenu []*Page = []*Page{
 	deletePage,
 }
 
-func (m *Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
+func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 	out := make([]*Page, 0)
 	for _, item := range datatypes {
 		if item.Type == "ROOT" {
@@ -33,5 +33,16 @@ func (m *Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 			out = append(out, page)
 		}
 	}
+	return out
+}
+
+func (m Model) BuildContentDataMenu(contentData []db.ContentData,root int) []*Page {
+	out := make([]*Page, 0)
+	for _, item := range contentData {
+		if int(item.ParentID.Int64) == root {
+            
+		}
+	}
+
 	return out
 }

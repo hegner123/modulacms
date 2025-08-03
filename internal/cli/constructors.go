@@ -124,6 +124,14 @@ func DatabaseListCmd(table db.DBTable) tea.Cmd {
 		}
 	}
 }
+func DatabaseListRowsCmd(rows any, table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseListRowsMsg{
+			Table: table,
+			Rows:  rows,
+		}
+	}
+}
 func DatabaseDeleteEntryCmd(id int, table string) tea.Cmd {
 	return func() tea.Msg { return DatabaseDeleteEntry{Id: id, Table: table} }
 }

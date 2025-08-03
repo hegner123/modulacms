@@ -99,6 +99,10 @@ type DatabaseUpdateEntry struct {
 	Table  db.DBTable
 	Values []*string
 }
+type DatabaseListRowsMsg struct {
+	Table db.DBTable
+	Rows  any
+}
 type ColumnsFetched struct {
 	Columns     *[]string
 	ColumnTypes *[]*sql.ColumnType
@@ -194,6 +198,6 @@ type DatabaseGetMsg struct {
 	Id    int
 }
 
-type DatabaseListMsg struct{
-    Table db.DBTable
+type DatabaseListMsg struct {
+	Table db.DBTable
 }
