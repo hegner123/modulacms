@@ -9,11 +9,11 @@ import (
 type PageIndex int
 
 type Page struct {
-	Index      PageIndex
-	Label      string
-	Parent     *Page
-	Children   []*Page
-	Next       *Page
+	Index    PageIndex
+	Label    string
+	Parent   *Page
+	Children []*Page
+	Next     *Page
 }
 
 const (
@@ -57,9 +57,16 @@ var (
 
 func NewDatatypePage(label string) *Page {
 	return &Page{
-		Index:      DATATYPE,
-		Label:      label,
+		Index: DATATYPE,
+		Label: label,
 	}
+}
+func NewDynamicPage(label string) *Page {
+	return &Page{
+		Index: DYNAMICPAGE,
+		Label: label,
+	}
+
 }
 
 func (m Model) View() string {
@@ -141,8 +148,8 @@ func (m Model) View() string {
 		p := NewStaticPage(m.Titles[m.TitleFont], "DEVELOPMENT", []Row{}, "q quit", m.RenderStatusBar())
 		ui = p.Render(m)
 	case dynamicPage.Index:
-		p := ""
-		ui = p
+		p := NewCMSPage(m.Titles[m.TitleFont], "DYNAMIC", []Row{}, "q quit", m.RenderStatusBar())
+		ui = p.Render(m)
 	default:
 		ui = m.RenderUI()
 	}

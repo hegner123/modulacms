@@ -2,11 +2,11 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
-	"github.com/hegner123/modulacms/internal/model"
 )
 
 /*
@@ -314,9 +314,8 @@ const (
 
 type CMSPage struct {
 	BasePage
-	Datatype string
-	Tree     model.Root
-	Display  DisplayMode
+	Tree    PageCMS
+	Display DisplayMode
 }
 
 func (c *CMSPage) AddHeader(h string) {
@@ -331,12 +330,22 @@ func (c *CMSPage) AddStatus(st string) {
 	c.Status += st
 }
 
-func (c CMSPage) Render(model *Model) string {
+func (c CMSPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	t := c.Tree.GetFieldValues()
+	body := strings.Builder{}
+	for _, v := range t {
+		for _, val := range v {
+
+			body.WriteString(fmt.Sprintf("%v\n", val))
+		}
+
+	}
 	s := lipgloss.JoinVertical(
 		lipgloss.Left,
 		RenderTitle(c.Title),
 		RenderHeading(c.Header),
+		body.String(),
 	)
 	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(c.Controls))
 	footer := RenderFooter(c.Controls)
@@ -354,7 +363,7 @@ func NewCMSPage(title string, header string, body []Row, controls string, status
 	b := NewBasePage(title, header, body, controls, status)
 	p := CMSPage{
 		BasePage: b,
-		Tree:     model.NewRoot(),
+		Tree:     PageCMS{},
 	}
 
 	return p

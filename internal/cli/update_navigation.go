@@ -28,7 +28,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, DatatypesFetchCmd())
 			cmds = append(cmds, DatabaseListCmd(db.User))
-            
+
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())
@@ -49,21 +49,18 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		case UPDATEPAGE:
 			return m, tea.Batch(
-				CursorResetCmd(),
 				FetchTableHeadersRowsCmd(*m.Config, m.Table),
 				PageSetCmd(m.Pages[UPDATEPAGE]),
 				StatusSetCmd(OK),
 			)
 		case READPAGE:
 			return m, tea.Batch(
-				CursorResetCmd(),
 				FetchTableHeadersRowsCmd(*m.Config, m.Table),
 				PageSetCmd(m.Pages[READPAGE]),
 				StatusSetCmd(OK),
 			)
 		case DELETEPAGE:
 			return m, tea.Batch(
-				CursorResetCmd(),
 				FetchTableHeadersRowsCmd(*m.Config, m.Table),
 				PageSetCmd(m.Pages[DELETEPAGE]),
 				StatusSetCmd(DELETING),
@@ -80,6 +77,11 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 				PageSetCmd(m.Pages[READSINGLEPAGE]),
 				StatusSetCmd(OK),
 			)
+        case DYNAMICPAGE:
+            return m, tea.Batch(
+                PageSetCmd(m.Pages[DYNAMICPAGE]),
+				StatusSetCmd(OK),
+                )
 		case CONFIGPAGE:
 			form, err := formatJSON(m.Config)
 			if err == nil {
