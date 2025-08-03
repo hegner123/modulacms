@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -43,7 +44,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 
 		return m, tea.Batch(
 			TableHeadersRowsFetchedCmd(columns, listRows),
-			LogMessage(strings.Join(columns, " ")),
+			LogMessageCmd(fmt.Sprintf("Table %s headers fetched: %s", m.Table, strings.Join(columns, ", "))),
 		)
 	case TableHeadersRowsFetchedMsg:
 		return m, tea.Batch(
@@ -105,7 +106,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			ErrorSetCmd(msg.Error),
 			LoadingStopCmd(),
-			LogMessage(msg.Error.Error()),
+			LogMessageCmd(fmt.Sprintf("Database fetch error for table %s: %s", m.Table, msg.Error.Error())),
 		)
 	}
 	return m, nil

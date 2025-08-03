@@ -65,6 +65,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 			newModel.TitleFont--
 		}
 		return newModel, NewStateUpdate()
+	case PageSet:
+		newModel := m
+		newModel.Page = msg.Page
+		return newModel, NewStateUpdate()
+	case HistoryPush:
+		newModel := m
+		newModel.History = append(newModel.History, msg.Page)
+		return newModel, NewStateUpdate()
 	case TableSet:
 		newModel := m
 		newModel.Table = msg.Table
@@ -94,7 +102,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		return m, NewStateUpdate()
 	case ClearScreen:
 		return m, tea.ClearScreen
-
+	case SetPageContent:
+		newModel := m
+		newModel.Content = msg.Content
+		return newModel, NewStateUpdate()
+	case SetViewportContent:
+		newModel := m
+		newModel.Viewport.SetContent(msg.Content)
+		return newModel, NewStateUpdate()
 	case CursorMaxSet:
 		newModel := m
 		newModel.CursorMax = msg.CursorMax
@@ -107,7 +122,7 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case ErrorSet:
 		newModel := m
 		newModel.Err = msg.Err
-		return newModel, LogMessage(msg.Err.Error())
+		return newModel, LogMessageCmd(msg.Err.Error())
 	case StatusSet:
 		newModel := m
 		newModel.Status = msg.Status

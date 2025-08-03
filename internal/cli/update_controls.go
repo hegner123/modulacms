@@ -120,7 +120,6 @@ func (m Model) FormControls(msg tea.Msg) (Model, tea.Cmd) {
 		return newModel, nil
 	}
 
-	// Update form with the message - this should handle enter/tab navigation
 	form, cmd := newModel.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
 		newModel.Form = f
@@ -131,16 +130,14 @@ func (m Model) FormControls(msg tea.Msg) (Model, tea.Cmd) {
 
 	// Handle form state changes
 	if newModel.Form.State == huh.StateAborted {
-		cmds = append(cmds, tea.ClearScreen)
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
 		cmds = append(cmds, HistoryPopCmd())
 	}
 
 	if newModel.Form.State == huh.StateCompleted {
-		cmds = append(cmds, tea.ClearScreen)
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
+        cmds = append(cmds, FormSubmitCmd())
 		cmds = append(cmds, HistoryPopCmd())
-		cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table))
 	}
 
 	return newModel, tea.Batch(cmds...)
@@ -337,7 +334,7 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 
 	// Handle form state changes
 	if m.Form.State == huh.StateAborted {
-		cmds = append(cmds, FormAbortedCmd())
+		cmds = append(cmds, FormCancelCmd())
 	}
 
 	if m.Form.State == huh.StateCompleted {

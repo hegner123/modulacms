@@ -2,6 +2,7 @@ package cli
 
 import (
 	"database/sql"
+	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
@@ -11,10 +12,13 @@ import (
 )
 
 // Basic action constructors
-func ClearScreenCmd() tea.Cmd       { return func() tea.Msg { return ClearScreen{} } }
-func TitleFontNextCmd() tea.Cmd     { return func() tea.Msg { return TitleFontNext{} } }
-func TitleFontPreviousCmd() tea.Cmd { return func() tea.Msg { return TitleFontPrevious{} } }
-func LogMessage(msg string) tea.Cmd { return func() tea.Msg { return LogMsg{Message: msg} } }
+func ClearScreenCmd() tea.Cmd          { return func() tea.Msg { return ClearScreen{} } }
+func TitleFontNextCmd() tea.Cmd        { return func() tea.Msg { return TitleFontNext{} } }
+func TitleFontPreviousCmd() tea.Cmd    { return func() tea.Msg { return TitleFontPrevious{} } }
+func LogMessageCmd(msg string) tea.Cmd { return func() tea.Msg { return LogMsg{Message: msg} } }
+
+func ReadyTrueCmd() tea.Cmd  { return func() tea.Msg { return ReadyTrue{} } }
+func ReadyFalseCmd() tea.Cmd { return func() tea.Msg { return ReadyFalse{} } }
 
 // Data fetching constructors
 func TablesFetchCmd() tea.Cmd { return func() tea.Msg { return TablesFetch{} } }
@@ -47,6 +51,13 @@ func NavigateToPageCmd(page Page) tea.Cmd {
 
 func SelectTableCmd(table string) tea.Cmd { return func() tea.Msg { return SelectTable{Table: table} } }
 
+func SetPageContentCmd(content string) tea.Cmd {
+	return func() tea.Msg { return SetPageContent{Content: content} }
+}
+func SetViewportContentCmd(content string) tea.Cmd {
+	return func() tea.Msg { return SetViewportContent{Content: content} }
+}
+
 // Focus control constructors
 func FocusSetCmd(focus FocusKey) tea.Cmd { return func() tea.Msg { return FocusSet{Focus: focus} } }
 
@@ -55,10 +66,34 @@ func FocusSetCmd(focus FocusKey) tea.Cmd { return func() tea.Msg { return FocusS
 func FormNewCmd(f FormIndex) tea.Cmd       { return func() tea.Msg { return FormCreate{FormType: f} } }
 func FormSetCmd(form huh.Form) tea.Cmd     { return func() tea.Msg { return FormSet{Form: form} } }
 func FormSetValuesCmd(v []*string) tea.Cmd { return func() tea.Msg { return FormValuesSet{Values: v} } }
-func FormInitCmd() tea.Cmd                 { return func() tea.Msg { return FormInit{} } }
-func FormAbortedCmd() tea.Cmd              { return func() tea.Msg { return FormAborted{} } }
 func FormLenSetCmd(formLen int) tea.Cmd {
 	return func() tea.Msg { return FormLenSet{FormLen: formLen} }
+}
+func FormSubmitCmd() tea.Cmd { return func() tea.Msg { return FormSubmitMsg{} } }
+func FormCancelCmd() tea.Cmd { return func() tea.Msg { return FormCancelMsg{} } }
+func FormActionCmd(action DatabaseAction, table string, columns []string, values []*string) tea.Cmd {
+	return func() tea.Msg {
+		// Debug log to trace FormActionCmd execution
+		return tea.Batch(
+			LogMessageCmd(fmt.Sprintf("FormActionCmd executed: %s action on table %s", action, table)),
+			func() tea.Msg {
+				return FormActionMsg{
+					Action:  action,
+					Table:   table,
+					Columns: columns,
+					Values:  values,
+				}
+			},
+		)()
+	}
+}
+func FormAbortCmd(action DatabaseAction, table string) tea.Cmd {
+	return func() tea.Msg {
+		return FormAborted{
+			Action: action,
+			Table:  table,
+		}
+	}
 }
 
 // History management constructors
@@ -71,11 +106,17 @@ func HistoryPushCmd(page PageHistory) tea.Cmd {
 func DatabaseDeleteEntryCmd(id int, table string) tea.Cmd {
 	return func() tea.Msg { return DatabaseDeleteEntry{Id: id, Table: table} }
 }
-func DatabaseCreateEntryCmd(table db.DBTable, err error) tea.Cmd {
-	return func() tea.Msg { return DatabaseCreateEntry{Table: table, Err: err} }
+func DatabaseInsertCmd(table db.DBTable, columns []string, values []*string) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseInsertEntry{
+			Table:   table,
+			Columns: columns,
+			Values:  values,
+		}
+	}
 }
 func DatabaseUpdateEntryCmd(table db.DBTable, err error) tea.Cmd {
-	return func() tea.Msg { return DatabaseUpdateEntry{Table: table, Err: err} }
+	return func() tea.Msg { return DatabaseUpdateEntry{Table: table} }
 }
 
 // Data management constructors
@@ -88,8 +129,8 @@ func ColumnsSetCmd(columns *[]string) tea.Cmd {
 func ColumnTypesSetCmd(columnTypes *[]*sql.ColumnType) tea.Cmd {
 	return func() tea.Msg { return ColumnTypesSet{ColumnTypes: columnTypes} }
 }
-func HeadersSetCmd(headers []string) tea.Cmd {
-	return func() tea.Msg { return HeadersSet{Headers: headers} }
+func HeadersSetCmd(columns []string) tea.Cmd {
+	return func() tea.Msg { return HeadersSet{Headers: columns} }
 }
 func RowsSetCmd(rows [][]string) tea.Cmd {
 	return func() tea.Msg { return RowsSet{Rows: rows} }
@@ -160,6 +201,7 @@ func SetFormDataCmd(form huh.Form, formLen int, values []*string) tea.Cmd {
 		return tea.Batch(
 			FormSetCmd(form),
 			FormLenSetCmd(formLen),
+			FormSetValuesCmd(values),
 			LoadingStopCmd(),
 		)()
 	}
@@ -199,6 +241,15 @@ func GetColumnsCmd(c config.Config, t string) tea.Cmd {
 		return GetColumns{
 			Config: c,
 			Table:  t,
+		}
+	}
+}
+
+func DbResultCmd(res sql.Result, table string) tea.Cmd {
+	return func() tea.Msg {
+		return DbResMsg{
+			Result: res,
+			Table:  table,
 		}
 	}
 }

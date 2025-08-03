@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	utility "github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // SecureQueryBuilder provides SQL injection safe query building for SQLite

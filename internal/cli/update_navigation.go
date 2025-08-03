@@ -20,8 +20,8 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		var cmds []tea.Cmd
 		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor}))
 		cmds = append(cmds, CursorResetCmd())
-		cmds = append(cmds, LogMessage(fmt.Sprintln("cursor:", m.Cursor)))
-		cmds = append(cmds, LogMessage(fmt.Sprintln("pages", ViewPageMenus(m))))
+		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Navigation to page %s: cursor at position %d", msg.Page.Label, m.Cursor)))
+		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Available menu options: %s", ViewPageMenus(m))))
 		switch msg.Page.Index {
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())
@@ -76,10 +76,12 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case CONFIGPAGE:
 			form, err := formatJSON(m.Config)
 			if err == nil {
-				m.Content = form
+				cmds = append(cmds, SetViewportContentCmd(form))
+			} else {
+				cmds = append(cmds, SetViewportContentCmd(m.Content))
+
 			}
-			m.Viewport.SetContent(m.Content)
-			m.Ready = true
+			cmds = append(cmds, ReadyTrueCmd())
 
 			if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
 				cmds = append(cmds, PageSetCmd(*m.PageMenu[m.Cursor]))
@@ -95,14 +97,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			TableSetCmd(m.Tables[m.Cursor]),
 			PageMenuSetCmd(TableMenu),
 		)
-	case PageSet:
-		newModel := m
-		newModel.Page = msg.Page
-		return newModel, NewNavUpdate()
-	case HistoryPush:
-		newModel := m
-		newModel.History = append(newModel.History, msg.Page)
-		return newModel, NewNavUpdate()
 
 	case HistoryPop:
 		newModel := m

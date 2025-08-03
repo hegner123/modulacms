@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 )
@@ -22,14 +24,14 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		case DATABASECREATE:
 			if m.Columns == nil {
 				return m, tea.Batch(
-					LogMessage("Columns Empty"),
+					LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.Table)),
 				)
 			}
 			var cmds []tea.Cmd
-			c := m.BuildCreateDBForm(db.DBTable(m.Table))
+			c := m.NewInsertForm(db.DBTable(m.Table))
 			cmds = append(cmds, c)
 			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, LogMessage("NewForm Exit"))
+			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.Table, len(*m.Columns)-1)))
 			return m, tea.Batch(cmds...)
 		}
 	case FormLenSet:
@@ -46,7 +48,27 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		newModel.FormValues = msg.Values
 		return newModel, NewUpdatedForm()
 	case NewFormMsg:
-		return m, SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values),
+		)
+	case FormSubmitMsg:
+		newModel := m
+		newModel.FormSubmit = true
+		return newModel, tea.Batch()
+	case FormActionMsg:
+		switch msg.Action {
+		case INSERT:
+			return m, tea.Batch(
+				LogMessageCmd(fmt.Sprintf("Processing %s action for table %s", msg.Action, msg.Table)),
+				DatabaseInsertCmd(db.DBTable(msg.Table), msg.Columns, msg.Values),
+			)
+
+		}
+	case DbResMsg:
+		return m, tea.Batch(
+			LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table)),
+		)
 	}
 
 	return m, nil

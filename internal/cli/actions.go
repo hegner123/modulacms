@@ -2,6 +2,7 @@ package cli
 
 import (
 	"encoding/json"
+	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
@@ -9,42 +10,54 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+type DatabaseAction string
+
+const (
+	INSERT DatabaseAction = "insert"
+	SELECT DatabaseAction = "select"
+	UPDATE DatabaseAction = "update"
+	DELETE DatabaseAction = "delete"
+)
+
 // TODO Add default case for generic operations
-func (m *Model) DatabaseInsert(c *config.Config, table db.DBTable) tea.Cmd {
-	return func() tea.Msg {
-		d := db.ConfigDB(*c)
-		con, _, err := d.GetConnection()
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return DbErrMsg{Error: err}
-		}
-		valuesMap := make(map[string]any, 0)
-		for i, v := range m.FormValues {
-			valuesMap[m.Headers[i]] = *v
-		}
-
-		// Using secure query builder
-		sqb := db.NewSecureQueryBuilder(con)
-		query, args, err := sqb.SecureBuildInsertQuery(string(table), valuesMap)
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return DbErrMsg{Error: err}
-		}
-		_, err = sqb.SecureExecuteModifyQuery(query, args)
-		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
-			return DbErrMsg{Error: err}
-		}
-
-		// Reset the form values after creation
-		m.FormValues = nil
-
-		utility.DefaultLogger.Finfo("CLI Create successful", nil)
-		return DbErrMsg{Error: nil}
+func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []string, values []*string) tea.Cmd {
+	d := db.ConfigDB(*c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		return LogMessageCmd(err.Error())
 	}
+	valuesMap := make(map[string]any, 0)
+	for i, v := range values {
+		if i == 0 {
+			continue
+		} else {
+			valuesMap[columns[i]] = *v
+		}
+	}
+	// Using secure query builder
+	sqb := db.NewSecureQueryBuilder(con)
+	query, args, err := sqb.SecureBuildInsertQuery(string(table), valuesMap)
+	if err != nil {
+		return tea.Batch(
+			LogMessageCmd(err.Error()),
+			LogMessageCmd(fmt.Sprintln(valuesMap)),
+		)
+	}
+	res, err := sqb.SecureExecuteModifyQuery(query, args)
+	if err != nil {
+		return LogMessageCmd(err.Error())
+	}
+
+	// Reset the form values after creation
+	reset := make([]*string, 0)
+
+	return tea.Batch(
+		FormSetValuesCmd(reset),
+		DbResultCmd(res, string(table)),
+	)
 }
 
-func (m *Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
+func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		id := m.GetCurrentRowId()
 		d := db.ConfigDB(*c)
@@ -67,7 +80,7 @@ func (m *Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
 		}
-		_, err = sqb.SecureExecuteModifyQuery(query, args)
+		res, err := sqb.SecureExecuteModifyQuery(query, args)
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
@@ -77,11 +90,11 @@ func (m *Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 		m.FormValues = nil
 
 		utility.DefaultLogger.Finfo("CLI Update successful", nil)
-		return DbErrMsg{Error: nil}
+		return DbResultCmd(res, string(table))
 	}
 }
 
-func (m *Model) DatabaseRead(c *config.Config, table db.DBTable) tea.Cmd {
+func (m Model) DatabaseList(c *config.Config, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*c)
 
@@ -149,13 +162,13 @@ func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
 		}
-		_, err = sqb.SecureExecuteModifyQuery(query, args)
+		res, err := sqb.SecureExecuteModifyQuery(query, args)
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
 			return DbErrMsg{Error: err}
 		}
 
-		return DbErrMsg{Error: nil}
+		return DbResultCmd(res, string(table))
 	}
 }
 

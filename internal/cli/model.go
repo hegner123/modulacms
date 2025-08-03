@@ -18,8 +18,6 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-type formCompletedMsg struct{}
-type formCancelledMsg struct{}
 
 type FocusKey int
 type ApplicationState int

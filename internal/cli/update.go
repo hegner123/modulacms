@@ -5,6 +5,9 @@ import (
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if m, cmd := m.UpdateLog(msg); cmd != nil {
+		return m, cmd
+	}
 	if m, cmd := m.UpdateTea(msg); cmd != nil {
 		return m, cmd
 	}

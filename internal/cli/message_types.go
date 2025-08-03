@@ -11,6 +11,9 @@ import (
 
 type ClearScreen struct{}
 
+type ReadyTrue struct{}
+type ReadyFalse struct{}
+
 type TitleFontNext struct{}
 type TitleFontPrevious struct{}
 type TablesFetch struct{}
@@ -35,7 +38,13 @@ type UpdatePagination struct{}
 type TableSet struct {
 	Table string
 }
+type SetPageContent struct {
+	Content string
+}
 
+type SetViewportContent struct {
+	Content string
+}
 type FocusSet struct {
 	Focus FocusKey
 }
@@ -51,10 +60,18 @@ type FormValuesSet struct {
 	Values []*string
 }
 
-type FormInit struct{}
-
 type FormAborted struct {
+	Action DatabaseAction
+	Table  string
 }
+type FormSubmitMsg struct{}
+type FormActionMsg struct {
+	Action  DatabaseAction
+	Table   string
+	Columns []string
+	Values  []*string
+}
+type FormCancelMsg struct{}
 type HistoryPop struct{}
 type HistoryPush struct {
 	Page PageHistory
@@ -73,13 +90,14 @@ type DatabaseDeleteEntry struct {
 	Id    int
 	Table string
 }
-type DatabaseCreateEntry struct {
-	Table db.DBTable
-	Err   error
+type DatabaseInsertEntry struct {
+	Table   db.DBTable
+	Columns []string
+	Values  []*string
 }
 type DatabaseUpdateEntry struct {
-	Table db.DBTable
-	Err   error
+	Table  db.DBTable
+	Values []*string
 }
 type ColumnsFetched struct {
 	Columns     *[]string
@@ -130,6 +148,11 @@ type PageMenuSet struct {
 }
 type DialogReadyOKSet struct {
 	Ready bool
+}
+
+type DbResMsg struct {
+	Result sql.Result
+	Table  string
 }
 
 type DbErrMsg struct {
