@@ -77,7 +77,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 				ColumnTypesSetCmd(&ct),
 			)
 	case DatatypesFetchMsg:
-		return m, DatabaseListCmd(db.Datatype)
+		return m, DatabaseListCmd(DATATYPEMENU,db.Datatype)
 
 	case DatatypesFetchResultsMsg:
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")

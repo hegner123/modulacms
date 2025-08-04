@@ -18,10 +18,70 @@ func NewDatabaseUpdate() tea.Cmd {
 func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case DatabaseGetMsg:
+		return m, tea.Batch(
+			m.DatabaseGet(m.Config, msg.Source, msg.Table, msg.ID),
+		)
 	case DatabaseListMsg:
 		return m, tea.Batch(
-			m.DatabaseList(m.Config, msg.Table),
+			m.DatabaseList(m.Config, msg.Source, msg.Table),
 		)
+	case DatabaseListFilteredMsg:
+		return m, tea.Batch(
+			m.DatabaseFilteredList(m.Config, msg.Source, msg.Table, msg.Columns, msg.WhereColumn, msg.Value),
+		)
+	case DatabaseGetRowMsg:
+		res := db.CastToTypedSlice(msg.Rows, msg.Table)
+		switch msg.Table {
+		case db.Datatype:
+			dataSlice, _ := res.([]db.Datatypes)
+			data := dataSlice[0]
+			switch msg.Source {
+			case BUILDTREE:
+				return m, tea.Batch(
+					ProcessDatatypeFromContentDataIdCMD(data),
+				)
+			}
+		}
+	case DatabaseListFilteredRowsMsg:
+		res := db.CastToTypedSlice(msg.Rows, msg.Table)
+		switch msg.Table {
+		case db.Content_data:
+			data, _ := res.([]db.ContentData)
+			switch msg.Source {
+			case BUILDTREE:
+				return m, tea.Batch(
+					ProcessContentDataRowsFromRouteCMD(data),
+				)
+			}
+		case db.Content_fields:
+			data, _ := res.([]db.ContentFields)
+			switch msg.Source {
+			case BUILDTREE:
+				return m, tea.Batch(
+					ProcessContentFieldRowsFromRouteCMD(data),
+				)
+			}
+		case db.Datatype:
+			data, _ := res.([]db.Datatypes)
+			switch msg.Source {
+			case BUILDTREE:
+				return m, tea.Batch(
+					LogMessageCmd(fmt.Sprintln(data)),
+				)
+
+			}
+		case db.Field:
+			data, _ := res.([]db.Fields)
+			switch msg.Source {
+			case BUILDTREE:
+				return m, tea.Batch(
+					ProcessFieldsFromContentFieldIdCMD(data),
+					LogMessageCmd(fmt.Sprintln(data)),
+				)
+
+			}
+		}
+
 	case DatabaseListRowsMsg:
 		res := db.CastToTypedSlice(msg.Rows, msg.Table)
 		switch msg.Table {

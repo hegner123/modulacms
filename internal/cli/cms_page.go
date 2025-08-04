@@ -2,58 +2,48 @@ package cli
 
 import "github.com/hegner123/modulacms/internal/db"
 
-type PageCMS struct {
-	Root       db.ContentData
-	RootType   db.Datatypes
-	Fields     []db.ContentFields
-	FieldTypes []db.Fields
-	Nodes      *[]*NodeCMS
-	NodeIndex  map[int64]*NodeCMS
+type TreeRoot struct {
+	Root       TreeNode
+	NodeIndex  map[int64]*TreeNode
 }
 
-type NodeCMS struct {
+type TreeNode struct {
 	Node           db.ContentData
 	NodeFields     []db.ContentFields
 	NodeDatatype   db.Datatypes
 	NodeFieldTypes []db.Fields
-	Nodes          *[]*NodeCMS
+	Nodes          *[]*TreeNode
 }
 
-func NewCmsPage(root db.ContentData, rootType db.Datatypes, fields []db.ContentFields, fieldTypes []db.Fields) *PageCMS {
-	return &PageCMS{
+func NewTreeRoot(root TreeNode) *TreeRoot {
+	return &TreeRoot{
 		Root:       root,
-		RootType:   rootType,
-		Fields:     fields,
-		FieldTypes: fieldTypes,
-		Nodes:      nil,
-		NodeIndex:  make(map[int64]*NodeCMS, 0),
 	}
-
 }
 
-func (page *PageCMS) Insert(newNode NodeCMS, parent int64) bool {
-	if page.Nodes == nil {
-		if page.Root.ContentDataID == parent {
-			nn := make([]*NodeCMS, 0)
-			nn = append(nn, &newNode)
-			page.Nodes = &nn
-			page.NodeIndex[newNode.Node.ContentDataID] = &newNode
+func (page *TreeRoot) Insert(n TreeNode, parent int64) bool {
+	if page.Root.Nodes == nil {
+		if page.Root.Node.ContentDataID == parent {
+			nn := make([]*TreeNode, 0)
+			nn = append(nn, &n)
+			page.Root.Nodes = &nn
+			page.NodeIndex[n.Node.ContentDataID] = &n
 			return true
 		}
 		return false
-	} else if page.Root.ContentDataID == parent {
-		instance := *page.Nodes
-		instance = append(instance, &newNode)
-		page.Nodes = &instance
-		page.NodeIndex[newNode.Node.ContentDataID] = &newNode
+	} else if page.Root.Node.ContentDataID == parent {
+		instance := *page.Root.Nodes
+		instance = append(instance, &n)
+		page.Root.Nodes = &instance
+		page.NodeIndex[n.Node.ContentDataID] = &n
 		return true
 	}
-	instance := *page.Nodes
+	instance := *page.Root.Nodes
 	for _, v := range instance {
 		if v.Node.ContentDataID == parent {
-			res := v.Insert(newNode, parent)
+			res := v.Insert(n, parent)
 			if res {
-				page.NodeIndex[newNode.Node.ContentDataID] = &newNode
+				page.NodeIndex[n.Node.ContentDataID] = &n
 				return res
 			}
 
@@ -64,26 +54,26 @@ func (page *PageCMS) Insert(newNode NodeCMS, parent int64) bool {
 
 }
 
-func (node *NodeCMS) Insert(newNode NodeCMS, parent int64) bool {
+func (node *TreeNode) Insert(n TreeNode, parent int64) bool {
 	if node.Nodes == nil {
 		if node.Node.ContentDataID == parent {
-			nn := make([]*NodeCMS, 0)
-			nn = append(nn, &newNode)
-			node.Nodes = &nn
+			nodeSlice := make([]*TreeNode, 0)
+			nodeSlice = append(nodeSlice, &n)
+			node.Nodes = &nodeSlice
 			return true
 		}
 		return false
 	}
 	if node.Node.ContentDataID == parent {
-		instance := *node.Nodes
-		instance = append(instance, &newNode)
-		node.Nodes = &instance
+		nodeSlice := *node.Nodes
+		nodeSlice = append(nodeSlice, &n)
+		node.Nodes = &nodeSlice
 		return true
 	} else {
-		instance := *node.Nodes
-		for _, v := range instance {
+		nodeSlice := *node.Nodes
+		for _, v := range nodeSlice {
 			if v.Node.ContentDataID == parent {
-				return v.Insert(newNode, parent)
+				return v.Insert(n, parent)
 
 			}
 
@@ -93,70 +83,22 @@ func (node *NodeCMS) Insert(newNode NodeCMS, parent int64) bool {
 
 }
 
-func (page *PageCMS) NodeInsertByIndex(index *NodeCMS, newNode NodeCMS) {
+func (page *TreeRoot) NodeInsertByIndex(index *TreeNode, n TreeNode) {
 	if index.Nodes == nil {
-		nn := make([]*NodeCMS, 0)
-		nn = append(nn, &newNode)
-		index.Nodes = &nn
+		nodeSlice := make([]*TreeNode, 0)
+		nodeSlice = append(nodeSlice, &n)
+		index.Nodes = &nodeSlice
 	} else {
-		instance := *index.Nodes
-		instance = append(instance, &newNode)
-		index.Nodes = &instance
+		nodeSlice := *index.Nodes
+		nodeSlice = append(nodeSlice, &n)
+		index.Nodes = &nodeSlice
 	}
-	page.NodeIndex[newNode.Node.ContentDataID] = &newNode
+	page.NodeIndex[n.Node.ContentDataID] = &n
 
 }
 
-func (page *PageCMS) GetFieldValues() []map[string]any {
-	var result []map[string]any
-	
-	// Root field
-	rootMap := map[string]any{
-		"field_name": "Root",
-		"field_type": "db.ContentData",
-		"value":      page.Root,
-	}
-	result = append(result, rootMap)
-	
-	// RootType field
-	rootTypeMap := map[string]any{
-		"field_name": "RootType",
-		"field_type": "db.Datatypes",
-		"value":      page.RootType,
-	}
-	result = append(result, rootTypeMap)
-	
-	// Fields field
-	fieldsMap := map[string]any{
-		"field_name": "Fields",
-		"field_type": "[]db.ContentFields",
-		"value":      page.Fields,
-	}
-	result = append(result, fieldsMap)
-	
-	// FieldTypes field
-	fieldTypesMap := map[string]any{
-		"field_name": "FieldTypes",
-		"field_type": "[]db.Fields",
-		"value":      page.FieldTypes,
-	}
-	result = append(result, fieldTypesMap)
-	
-	// Nodes field
-	nodesMap := map[string]any{
-		"field_name": "Nodes",
-		"field_type": "*[]*NodeCMS",
-		"value":      page.Nodes,
-	}
-	result = append(result, nodesMap)
-	
-	// NodeIndex field
-	nodeIndexMap := map[string]any{
-		"field_name": "NodeIndex",
-		"field_type": "map[int64]*NodeCMS",
-		"value":      page.NodeIndex,
-	}
-	result = append(result, nodeIndexMap)
-	
-	return result
+func (page TreeRoot) GetContentByRouteID(id int64) ([]db.ContentData, error) {
+	out := make([]db.ContentData, 0)
+	return out, nil
 }
+

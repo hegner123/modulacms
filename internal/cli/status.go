@@ -33,8 +33,9 @@ func (m Model) RenderStatusTable() string {
 	
 	// Add Root info if available
 	rootInfo := "Root: Empty"
-	if m.Root.Node != nil {
-		rootInfo = fmt.Sprintf("Root: Node with %d children", len(m.Root.Node.Nodes))
+    tree:=m.Root
+	if tree.Root.Nodes != nil {
+		rootInfo = fmt.Sprintf("Root: Node with %d children", len(*tree.Root.Nodes))
 	}
 	
 	doc.WriteString(lipgloss.JoinHorizontal(

@@ -135,10 +135,6 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.DialogActive = msg.DialogActive
 		return newModel, NewStateUpdate()
-	case RootSet:
-		newModel := m
-		newModel.Root = msg.Root
-		return newModel, NewStateUpdate()
 	case DatatypeMenuSet:
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu

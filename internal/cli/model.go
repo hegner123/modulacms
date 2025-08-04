@@ -102,7 +102,7 @@ type Model struct {
 	Time         time.Time
 	Dialog       *DialogModel
 	DialogActive bool
-	Root         model.Root
+	Root         TreeRoot
 }
 
 var CliContinue bool = false
@@ -247,13 +247,6 @@ func (m *Model) GetConfig() *config.Config {
 	return m.Config
 }
 
-func (m *Model) GetRoot() model.Root {
-	return m.Root
-}
-
-func (m *Model) SetRoot(root model.Root) {
-	m.Root = root
-}
 
 func (m *Model) SetError(err error) {
 	m.Err = err

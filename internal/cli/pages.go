@@ -34,6 +34,7 @@ const (
 	DEFINEDATATYPE
 	DEVELOPMENT
 	DATATYPE
+    PICKCONTENT
 )
 
 var (
@@ -64,6 +65,13 @@ func NewDatatypePage(label string) *Page {
 func NewDynamicPage(label string) *Page {
 	return &Page{
 		Index: DYNAMICPAGE,
+		Label: label,
+	}
+
+}
+func NewPickContentPage(label string) *Page{
+	return &Page{
+		Index: PICKCONTENT,
 		Label: label,
 	}
 

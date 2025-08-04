@@ -99,9 +99,37 @@ type DatabaseUpdateEntry struct {
 	Table  db.DBTable
 	Values []*string
 }
+type DatabaseGetMsg struct {
+	Source FetchSource
+	Table  db.DBTable
+	ID     int64
+}
+
+type DatabaseListFilteredMsg struct {
+	Source      FetchSource
+	Table       db.DBTable
+	Columns     []string
+	WhereColumn string
+	Value       any
+}
+type DatabaseListMsg struct {
+	Source FetchSource
+	Table  db.DBTable
+}
+type DatabaseGetRowMsg struct {
+	Source FetchSource
+	Table  db.DBTable
+	Rows   any
+}
+type DatabaseListFilteredRowsMsg struct {
+	Source FetchSource
+	Table  db.DBTable
+	Rows   any
+}
 type DatabaseListRowsMsg struct {
-	Table db.DBTable
-	Rows  any
+	Source FetchSource
+	Table  db.DBTable
+	Rows   any
 }
 type ColumnsFetched struct {
 	Columns     *[]string
@@ -191,13 +219,4 @@ type TableHeadersRowsFetchedMsg struct {
 type GetColumns struct {
 	Config config.Config
 	Table  string
-}
-
-type DatabaseGetMsg struct {
-	Table db.DBTable
-	Id    int
-}
-
-type DatabaseListMsg struct {
-	Table db.DBTable
 }

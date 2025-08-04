@@ -29,7 +29,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case CMSPAGE:
 		return m.BasicCMSControls(msg)
 	case DYNAMICPAGE:
-		return m.BasicControls(msg)
+		return m.BasicDynamicControls(msg)
 	case CREATEPAGE:
 		return m.FormControls(msg)
 	case READPAGE:
@@ -120,13 +120,55 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 		case "enter", "l":
 			// Only proceed if we have menu items
 			if len(m.DatatypeMenu) > 0 {
-				return m, NavigateToPageCmd(m.Pages[DYNAMICPAGE])
+				return m, tea.Batch(
+					NavigateToPageCmd(m.Pages[DYNAMICPAGE]),
+				)
 			}
 		}
 	}
 	return m, nil
 }
 
+func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		// Don't intercept form navigation keys when form has focus
+		switch msg.String() {
+		//Exit
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+
+		case "shift+left":
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		case "shift+right":
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		case "up", "k":
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		case "down", "j":
+			if m.Cursor < len(m.PageMenu)-1 {
+				return m, CursorDownCmd()
+			}
+		case "h", "shift+tab", "backspace":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		case "enter", "l":
+			// Only proceed if we have menu items
+			if len(m.DatatypeMenu) > 0 {
+				return m, tea.Batch(
+					NavigateToPageCmd(m.Pages[DYNAMICPAGE]),
+				)
+			}
+		}
+	}
+	return m, nil
+}
 func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {

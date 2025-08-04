@@ -109,26 +109,58 @@ func DatatypesFetchResultCmd(data []db.Datatypes) tea.Cmd {
 }
 
 // Database operation constructors
-func DatabaseGetCmd(table db.DBTable, id int) tea.Cmd {
+func DatabaseGetCmd(source FetchSource, table db.DBTable, id int64) tea.Cmd {
 	return func() tea.Msg {
 		return DatabaseGetMsg{
-			Id:    id,
-			Table: table,
+			Source: source,
+			ID:     id,
+			Table:  table,
 		}
 	}
 }
-func DatabaseListCmd(table db.DBTable) tea.Cmd {
+func DatabaseListCmd(source FetchSource, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		return DatabaseListMsg{
-			Table: table,
+			Source: source,
+			Table:  table,
 		}
 	}
 }
-func DatabaseListRowsCmd(rows any, table db.DBTable) tea.Cmd {
+func DatabaseListFilteredCmd(source FetchSource, table db.DBTable, columns []string, whereColumn string, value any) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseListFilteredMsg{
+			Source:      source,
+			Table:       table,
+			Columns:     columns,
+			WhereColumn: whereColumn,
+			Value:       value,
+		}
+	}
+}
+func DatabaseGetRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseGetRowMsg{
+			Source: source,
+			Table:  table,
+			Rows:   rows,
+		}
+	}
+}
+func DatabaseListRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		return DatabaseListRowsMsg{
-			Table: table,
-			Rows:  rows,
+			Source: source,
+			Table:  table,
+			Rows:   rows,
+		}
+	}
+}
+func DatabaseListFilteredRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseListFilteredRowsMsg{
+			Source: source,
+			Table:  table,
+			Rows:   rows,
 		}
 	}
 }
