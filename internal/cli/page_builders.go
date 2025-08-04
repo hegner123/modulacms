@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
+	"github.com/hegner123/modulacms/internal/config"
 )
 
 /*
@@ -329,12 +330,24 @@ func (c *CMSPage) AddStatus(st string) {
 	c.Status += st
 }
 
+func (c *CMSPage) RenderColumn(width int, content string) string {
+	colStyle := lipgloss.NewStyle().Background(config.DefaultStyle.PrimaryBG).Foreground(config.DefaultStyle.Primary).Width(width)
+	return colStyle.Render(content)
+}
+
 func (c CMSPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+	v := lipgloss.JoinHorizontal(
+		lipgloss.Center,
+		c.RenderColumn(25, "testing testing"),
+		c.RenderColumn(50, "testing testingtesting testingtesting testingtesting testingtesting testing"),
+		c.RenderColumn(25, "testing testingtesting testingtesting testing"),
+	)
 	s := lipgloss.JoinVertical(
 		lipgloss.Left,
 		RenderTitle(c.Title),
 		RenderHeading(c.Header),
+		v,
 	)
 	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(c.Controls))
 	footer := RenderFooter(c.Controls)
