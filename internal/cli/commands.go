@@ -10,13 +10,13 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-type DatabaseAction string
+type DatabaseCMD string
 
 const (
-	INSERT DatabaseAction = "insert"
-	SELECT DatabaseAction = "select"
-	UPDATE DatabaseAction = "update"
-	DELETE DatabaseAction = "delete"
+	INSERT DatabaseCMD = "insert"
+	SELECT DatabaseCMD = "select"
+	UPDATE DatabaseCMD = "update"
+	DELETE DatabaseCMD = "delete"
 )
 
 // TODO Add default case for generic operations

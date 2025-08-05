@@ -71,7 +71,7 @@ func FormLenSetCmd(formLen int) tea.Cmd {
 }
 func FormSubmitCmd() tea.Cmd { return func() tea.Msg { return FormSubmitMsg{} } }
 func FormCancelCmd() tea.Cmd { return func() tea.Msg { return FormCancelMsg{} } }
-func FormActionCmd(action DatabaseAction, table string, columns []string, values []*string) tea.Cmd {
+func FormActionCmd(action DatabaseCMD, table string, columns []string, values []*string) tea.Cmd {
 	return func() tea.Msg {
 		// Debug log to trace FormActionCmd execution
 		return tea.Batch(
@@ -87,7 +87,7 @@ func FormActionCmd(action DatabaseAction, table string, columns []string, values
 		)()
 	}
 }
-func FormAbortCmd(action DatabaseAction, table string) tea.Cmd {
+func FormAbortCmd(action DatabaseCMD, table string) tea.Cmd {
 	return func() tea.Msg {
 		return FormAborted{
 			Action: action,

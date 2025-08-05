@@ -61,12 +61,12 @@ type FormValuesSet struct {
 }
 
 type FormAborted struct {
-	Action DatabaseAction
+	Action DatabaseCMD
 	Table  string
 }
 type FormSubmitMsg struct{}
 type FormActionMsg struct {
-	Action  DatabaseAction
+	Action  DatabaseCMD
 	Table   string
 	Columns []string
 	Values  []*string
