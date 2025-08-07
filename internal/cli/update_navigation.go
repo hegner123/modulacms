@@ -75,17 +75,17 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 				PageSetCmd(m.Pages[READSINGLEPAGE]),
 				StatusSetCmd(OK),
 			)
-        case DYNAMICPAGE:
-            return m, tea.Batch(
-                PageSetCmd(m.Pages[DYNAMICPAGE]),
+		case DYNAMICPAGE:
+			return m, tea.Batch(
+				PageSetCmd(m.Pages[DYNAMICPAGE]),
 				StatusSetCmd(OK),
-                )
-        case PICKCONTENT:
-            return m, tea.Batch(
-                PageSetCmd(*NewPickContentPage("Pick")),
-                
+			)
+		case PICKCONTENT:
+			return m, tea.Batch(
+				PageSetCmd(*NewPickContentPage("Pick")),
+
 				StatusSetCmd(OK),
-                )
+			)
 		case CONFIGPAGE:
 			form, err := formatJSON(m.Config)
 			if err == nil {

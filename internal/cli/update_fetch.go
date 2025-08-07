@@ -30,7 +30,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			utility.DefaultLogger.Ferror("", err)
 			return m, ErrorSetCmd(err)
 		}
-		defer rows.Close()
+		defer utility.HandleRowsCloseDeferErr(rows)
 		columns, err := rows.Columns()
 		if err != nil {
 			utility.DefaultLogger.Ferror("", err)
@@ -62,7 +62,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		if err != nil {
 			return m, ErrorSetCmd(err)
 		}
-		defer rows.Close()
+		defer utility.HandleRowsCloseDeferErr(rows)
 		clm, err := rows.Columns()
 		if err != nil {
 			return m, ErrorSetCmd(err)
@@ -77,7 +77,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 				ColumnTypesSetCmd(&ct),
 			)
 	case DatatypesFetchMsg:
-		return m, DatabaseListCmd(DATATYPEMENU,db.Datatype)
+		return m, DatabaseListCmd(DATATYPEMENU, db.Datatype)
 
 	case DatatypesFetchResultsMsg:
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")

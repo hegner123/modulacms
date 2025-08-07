@@ -1,6 +1,10 @@
 package cli
 
-import "github.com/hegner123/modulacms/internal/db"
+import (
+	"fmt"
+
+	"github.com/hegner123/modulacms/internal/db"
+)
 
 var HomepageMenu []*Page = []*Page{
 	developmentPage,
@@ -36,11 +40,12 @@ func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 	return out
 }
 
-func (m Model) BuildContentDataMenu(contentData []db.ContentData,root int) []*Page {
+func (m Model) BuildContentDataMenu(contentData []db.ContentData, root int) []*Page {
 	out := make([]*Page, 0)
 	for _, item := range contentData {
 		if int(item.ParentID.Int64) == root {
-            
+			out = append(out, NewDynamicPage(fmt.Sprint(item.ContentDataID)))
+
 		}
 	}
 

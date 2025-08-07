@@ -1,0 +1,6 @@
+                            root
+                              |
+                          ---------
+                         |        |
+                        Node    Node
+ pv

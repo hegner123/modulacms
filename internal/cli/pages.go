@@ -34,7 +34,7 @@ const (
 	DEFINEDATATYPE
 	DEVELOPMENT
 	DATATYPE
-    PICKCONTENT
+	PICKCONTENT
 )
 
 var (
@@ -69,7 +69,7 @@ func NewDynamicPage(label string) *Page {
 	}
 
 }
-func NewPickContentPage(label string) *Page{
+func NewPickContentPage(label string) *Page {
 	return &Page{
 		Index: PICKCONTENT,
 		Label: label,
@@ -156,7 +156,10 @@ func (m Model) View() string {
 		p := NewStaticPage(m.Titles[m.TitleFont], "DEVELOPMENT", []Row{}, "q quit", m.RenderStatusBar())
 		ui = p.Render(m)
 	case dynamicPage.Index:
-		p := NewCMSPage(m.Titles[m.TitleFont], "DYNAMIC", []Row{}, "q quit", m.RenderStatusBar())
+		p := NewCMSPage(m.Titles[m.TitleFont])
+                p.AddHeader("Dynamic")
+                p.AddControls("q quit")
+                p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	default:
 		ui = m.RenderUI()

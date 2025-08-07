@@ -18,7 +18,6 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-
 type FocusKey int
 type ApplicationState int
 
@@ -58,6 +57,7 @@ type Model struct {
 	Width        int
 	Height       int
 	Bg           string
+	PageRouteId  int64
 	TxtStyle     lipgloss.Style
 	QuitStyle    lipgloss.Style
 	Loading      bool
@@ -184,14 +184,13 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 			*definedDatatypePage,
 			*developmentPage,
 		},
-		Selected:   make(map[int]struct{}),
-		FormMap:    make([]string, 0),
-		Focus:      PAGEFOCUS,
-		History:    []PageHistory{},
-		Verbose:    verbose,
+		Selected: make(map[int]struct{}),
+		FormMap:  make([]string, 0),
+		Focus:    PAGEFOCUS,
+		History:  []PageHistory{},
+		Verbose:  verbose,
 	}, GetTablesCMD(c)
 }
-
 
 func ParseTitleFonts(f []fs.DirEntry) []string {
 	var fonts []string
@@ -246,7 +245,6 @@ func (m Model) GetStatus() string {
 func (m *Model) GetConfig() *config.Config {
 	return m.Config
 }
-
 
 func (m *Model) SetError(err error) {
 	m.Err = err

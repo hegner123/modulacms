@@ -2,11 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 )
 
 /*
@@ -37,13 +40,14 @@ type BasePage struct {
 	Status   string
 }
 
-func NewBasePage(title string, header string, rows []Row, controls string, status string) BasePage {
+func NewBasePage() BasePage {
+	body := []Row{}
 	return BasePage{
-		Title:    title,
-		Header:   header,
-		Rows:     rows,
-		Controls: controls,
-		Status:   status,
+		Title:    "",
+		Header:   "",
+		Rows:     body,
+		Controls: "",
+		Status:   "",
 	}
 }
 
@@ -95,13 +99,7 @@ func (s StaticPage) Render(model Model) string {
 }
 
 func NewStaticPage(title string, header string, rows []Row, controls string, status string) StaticPage {
-	page := BasePage{
-		Title:    title,
-		Header:   header,
-		Rows:     rows,
-		Controls: controls,
-		Status:   status,
-	}
+	page := NewBasePage()
 	return StaticPage{
 		BasePage: page,
 	}
@@ -174,7 +172,7 @@ func (m MenuPage) Render(model Model) string {
 }
 
 func NewMenuPage(m []string, title string, header string, body []Row, controls string, status string) MenuPage {
-	basePage := NewBasePage(title, header, body, controls, status)
+	basePage := NewBasePage()
 	return MenuPage{
 		BasePage: basePage,
 		Menu:     m,
@@ -246,12 +244,12 @@ func (t TablePage) Render(model Model) string {
 }
 
 func NewTablePage(headers []string, rows [][]string, table string, title string, header string, body []Row, controls string, status string) TablePage {
-	basePage := NewBasePage(title, header, body, controls, status)
+	basePage := NewBasePage()
 	return TablePage{
 		BasePage:     basePage,
-		Table:        table,
-		TableHeaders: headers,
-		TableRows:    rows,
+		Table:        "",
+		TableHeaders: make([]string, 0),
+		TableRows:    make([][]string, 0),
 	}
 }
 
@@ -298,7 +296,7 @@ func (f FormPage) Render(model Model) string {
 }
 
 func NewFormPage(title string, header string, body []Row, controls string, status string) FormPage {
-	basePage := NewBasePage(title, header, body, controls, status)
+	basePage := NewBasePage()
 	return FormPage{
 		BasePage: basePage,
 	}
@@ -307,9 +305,11 @@ func NewFormPage(title string, header string, body []Row, controls string, statu
 type DisplayMode int
 
 const (
-	Main DisplayMode = iota
-	SelectDatatype
-	Options
+	Main         DisplayMode = iota
+	NewDatatype              // Corresponds to a function that retrives the datatypes that can be a child of the current node.
+	EditDatatype             // Corresponds to replacing the content preview with a form of fields for that type
+	MoveDatatype             // Corresponds to a dialog where a cursor is used to select a node to move a node infront or behind.
+	FindDatatype             // Corresponds to a dialog where you type and it finds fields that match, entering on one makes it active.
 )
 
 type CMSPage struct {
@@ -331,23 +331,103 @@ func (c *CMSPage) AddStatus(st string) {
 }
 
 func (c *CMSPage) RenderColumn(width int, content string) string {
-	colStyle := lipgloss.NewStyle().Background(config.DefaultStyle.PrimaryBG).Foreground(config.DefaultStyle.Primary).Width(width)
+	colStyle := lipgloss.NewStyle().
+		Background(config.DefaultStyle.PrimaryBG).
+		Foreground(config.DefaultStyle.Primary).
+		Width(width)
 	return colStyle.Render(content)
+}
+
+func (c CMSPage) ProcessTreeDatatypes(model Model) string {
+	current := model.Root.Root
+	display := make([]string, 0)
+	index := 0
+	for current != nil {
+		row := FormatRow(current)
+		display = append(display, row)
+		next := *current.Nodes
+		current = next[index]
+		index++
+
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Top, display...)
+}
+func FormatRow(node *TreeNode) string {
+	row := ""
+	HasChildrenCollapsed := "+"
+	HasChildrenExpanded := "-"
+	Indent := "  "
+	Wrapped := ">>"
+	row += strings.Repeat(Wrapped, node.Wrapped)
+	row += strings.Repeat(Indent, node.Indent-(node.Wrapped-1))
+	if node.Nodes != nil {
+		if node.Expand {
+			row += HasChildrenExpanded
+		} else {
+			row += HasChildrenCollapsed
+		}
+	}
+	row += DecideNodeName(*node)
+
+	return row
+}
+
+func DecideNodeName(node TreeNode) string {
+	var out string
+	if index := slices.IndexFunc(node.NodeFieldTypes, FieldMatchesLabel); index > -1 {
+		id := node.NodeFieldTypes[index].FieldID
+		contentIndex := slices.IndexFunc(node.NodeFields, func(cf db.ContentFields) bool {
+			return cf.FieldID == id
+		})
+		out += node.NodeFields[contentIndex].FieldValue
+		out += "  ["
+		out += node.NodeDatatype.Label
+		out += "]"
+
+	} else {
+		out += node.NodeDatatype.Label
+	}
+	return out
+}
+
+func FieldMatchesLabel(field db.Fields) bool {
+	ValidLabelFields := []string{"Label", "label", "Title", "title", "Name", "name"}
+	return slices.Contains(ValidLabelFields, field.Label)
+}
+func (c CMSPage) ProcessContentPreview(tree TreeRoot) string {
+	return "Content Preview"
+}
+func (c CMSPage) ProcessFields(tree TreeRoot) string {
+	return "ProcessFields"
+}
+
+func (c CMSPage) CenterColumn(content string) string {
+	switch c.Display {
+	case Main:
+		return content
+	default:
+		return content
+	}
+
 }
 
 func (c CMSPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
-	v := lipgloss.JoinHorizontal(
+	col1 := c.ProcessTreeDatatypes(model)
+	col2 := c.ProcessContentPreview(model.Root)
+	col3 := c.ProcessFields(model.Root)
+	editor := lipgloss.JoinHorizontal(
 		lipgloss.Center,
-		c.RenderColumn(25, "testing testing"),
-		c.RenderColumn(50, "testing testingtesting testingtesting testingtesting testingtesting testing"),
-		c.RenderColumn(25, "testing testingtesting testingtesting testing"),
+		c.RenderColumn(model.Width/4, col1),
+		c.RenderColumn(model.Width/2, col2),
+		c.RenderColumn(model.Width/4, col3),
 	)
 	s := lipgloss.JoinVertical(
 		lipgloss.Left,
 		RenderTitle(c.Title),
 		RenderHeading(c.Header),
-		v,
+		editor,
 	)
 	h := model.RenderSpace(docStyle.Render(s) + RenderFooter(c.Controls))
 	footer := RenderFooter(c.Controls)
@@ -361,8 +441,8 @@ func (c CMSPage) Render(model Model) string {
 	)
 }
 
-func NewCMSPage(title string, header string, body []Row, controls string, status string) CMSPage {
-	b := NewBasePage(title, header, body, controls, status)
+func NewCMSPage(title string) CMSPage {
+	b := NewBasePage()
 	p := CMSPage{
 		BasePage: b,
 		Tree:     TreeRoot{},

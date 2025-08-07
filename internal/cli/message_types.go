@@ -220,3 +220,11 @@ type GetColumns struct {
 	Config config.Config
 	Table  string
 }
+type BuildTreeFromRows struct{
+        Rows []db.GetRouteTreeByRouteIDRow
+}
+type GetFullTreeResMsg struct {
+	Rows    []db.GetRouteTreeByRouteIDRow
+	Content string
+}
+type DatabaseTreeMsg struct{}

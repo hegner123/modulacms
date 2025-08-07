@@ -203,11 +203,22 @@ func (m Model) GetContentField(node *string) []byte {
 	return j
 }
 
+
+func (m Model) GetFullTree(c *config.Config, id int64) tea.Cmd {
+	// TODO: Implement tree retrieval logic
+	d := db.ConfigDB(*c)
+	res, err := d.GetRouteTreeByRouteID(1)
+	if err != nil {
+		return ErrorSetCmd(err)
+	}
+	out := db.LogRouteTree("GetFullTree", res)
+	return GetFullTreeResCMD(out, *res)
+}
+
 func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
-//	d := db.ConfigDB(*c)
-    //TODO JOIN STATEMENTS FOR CONTENT DATA AND DATATYPES
-    //TODO JOIN STATEMENTS FOR CONTENT FIELDS AND FIELDS
-    
+	//	d := db.ConfigDB(*c)
+	//TODO JOIN STATEMENTS FOR CONTENT DATA AND DATATYPES
+	//TODO JOIN STATEMENTS FOR CONTENT FIELDS AND FIELDS
 
 	return tea.Batch()
 }

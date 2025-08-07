@@ -1,5 +1,5 @@
 
--- name: GetShallowTreeByRouteId :many
+	query := `
     SELECT cd.*, dt.label as datatype_label, dt.type as datatype_type
     FROM content_data cd
     JOIN datatypes dt ON cd.datatype_id = dt.datatype_id  
@@ -8,4 +8,4 @@
         SELECT content_data_id FROM content_data 
         WHERE parent_id IS NULL AND route_id = ?
     ))
-    ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id;
+    ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id`

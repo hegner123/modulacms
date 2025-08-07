@@ -314,3 +314,26 @@ func DbResultCmd(res sql.Result, table string) tea.Cmd {
 		}
 	}
 }
+
+func GetFullTreeResCMD(s string, rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
+	return func() tea.Msg {
+		return GetFullTreeResMsg{
+			Rows:    rows,
+			Content: s,
+		}
+	}
+
+}
+func BuildTreeFromRowsCmd(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
+	return func() tea.Msg {
+		return BuildTreeFromRows{
+			Rows: rows,
+		}
+	}
+}
+
+func DatabaseTreeCMD() tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseTreeMsg{}
+	}
+}

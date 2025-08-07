@@ -1,0 +1,31 @@
+
+-- name: GetShallowTreeByRouteId :many
+    SELECT cd.*, dt.label as datatype_label, dt.type as datatype_type
+    FROM content_data cd
+    JOIN datatypes dt ON cd.datatype_id = dt.datatype_id  
+    WHERE cd.route_id = ? 
+    AND (cd.parent_id IS NULL OR cd.parent_id IN (
+        SELECT content_data_id FROM content_data 
+        WHERE cd.parent_id IS NULL AND cd.route_id = ?
+    ))
+    ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id;
+
+
+-- name: GetRouteTreeByRouteID :many
+SELECT 
+    cd.content_data_id,
+    cd.parent_id,
+    dt.label AS datatype_label,
+    dt.type AS datatype_type,
+    f.label AS field_label,
+    f.type AS field_type,
+    cf.field_value
+FROM content_data cd
+    INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+    INNER JOIN datatypes_fields df ON dt.datatype_id = df.datatype_id
+    INNER JOIN fields f ON df.field_id = f.field_id
+    LEFT JOIN content_fields cf ON cd.content_data_id = cf.content_data_id 
+        AND f.field_id = cf.field_id
+WHERE cd.route_id = ?
+ORDER BY cd.content_data_id, f.field_id;
+

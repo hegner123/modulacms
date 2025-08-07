@@ -196,6 +196,7 @@ type DbDriver interface {
 	GetTable(int64) (*Tables, error)
 	GetToken(int64) (*Tokens, error)
 	GetTokenByUserId(int64) (*[]Tokens, error)
+	GetRouteTreeByRouteID(int64) (*[]GetRouteTreeByRouteIDRow, error)
 	GetUser(int64) (*Users, error)
 	GetUserOauth(int64) (*UserOauth, error)
 	GetUserByEmail(string) (*Users, error)
