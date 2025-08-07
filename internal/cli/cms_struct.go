@@ -18,10 +18,45 @@ type TreeNode struct {
 	Wrapped        int
 }
 
-func NewTreeRoot(root TreeNode) *TreeRoot {
+func NewTreeRoot() *TreeRoot {
 	return &TreeRoot{
-		Root:      &root,
 		NodeIndex: make(map[int64]*TreeNode),
+	}
+}
+
+func NewTreeNode(row db.GetRouteTreeByRouteIDRow) *TreeNode {
+	cd := db.ContentData{
+		ContentDataID: row.ContentDataID,
+		ParentID:      row.ParentID,
+	}
+        
+
+	return &TreeNode{
+		Node: &cd,
+	}
+
+}
+
+func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
+	cd := db.ContentData{
+		ContentDataID: row.ContentDataID,
+		ParentID:      row.ParentID,
+		RouteID:       row.RouteID,
+		DatatypeID:    row.DatatypeID,
+		AuthorID:      row.AuthorID,
+		DateCreated:   row.DateCreated,
+		DateModified:  row.DateModified,
+	}
+
+	dt := db.Datatypes{
+		DatatypeID: row.DatatypeID,
+		Label:      row.DatatypeLabel,
+		Type:       row.DatatypeType,
+	}
+
+	return &TreeNode{
+		Node:         &cd,
+		NodeDatatype: dt,
 	}
 }
 

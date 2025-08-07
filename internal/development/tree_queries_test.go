@@ -95,7 +95,8 @@ func TestTreeQueries(t *testing.T) {
 		}
 		treeNode.NodeDatatype = *datatypeDef
 
-		tree := cli.NewTreeRoot(treeNode)
+		tree := cli.NewTreeRoot()
+		tree.Root = &treeNode
 
 		LogTreeStructure("Tree Root Node", tree)
 
@@ -236,7 +237,8 @@ func TestTreeQueries(t *testing.T) {
 			rootTreeNode.NodeDatatype = *datatypeDef
 		}
 
-		tree := cli.NewTreeRoot(rootTreeNode)
+		tree := cli.NewTreeRoot()
+		tree.Root = &rootTreeNode
 		insertAttempts[rootNode.ContentDataID] = InsertAttempt{
 			Node:             *rootNode,
 			Depth:            0,

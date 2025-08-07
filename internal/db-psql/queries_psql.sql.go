@@ -2463,6 +2463,97 @@ func (q *Queries) GetContentField(ctx context.Context, contentFieldID int32) (Co
 	return i, err
 }
 
+const getContentFieldsByRoute = `-- name: GetContentFieldsByRoute :many
+SELECT cf.content_data_id, cf.field_id, cf.field_value
+FROM content_data cd
+JOIN content_fields cf ON cd.content_data_id = cf.content_data_id
+WHERE cd.route_id = $1
+ORDER BY cf.content_data_id, cf.field_id
+`
+
+type GetContentFieldsByRouteRow struct {
+	ContentDataID int32  `json:"content_data_id"`
+	FieldID       int32  `json:"field_id"`
+	FieldValue    string `json:"field_value"`
+}
+
+func (q *Queries) GetContentFieldsByRoute(ctx context.Context, routeID sql.NullInt32) ([]GetContentFieldsByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContentFieldsByRoute, routeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetContentFieldsByRouteRow
+	for rows.Next() {
+		var i GetContentFieldsByRouteRow
+		if err := rows.Scan(&i.ContentDataID, &i.FieldID, &i.FieldValue); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getContentTreeByRoute = `-- name: GetContentTreeByRoute :many
+SELECT cd.content_data_id, cd.parent_id, cd.datatype_id, cd.route_id, cd.author_id, cd.date_created, cd.date_modified,
+       dt.label as datatype_label, dt.type as datatype_type
+FROM content_data cd 
+JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.route_id = $1
+ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id
+`
+
+type GetContentTreeByRouteRow struct {
+	ContentDataID int32         `json:"content_data_id"`
+	ParentID      sql.NullInt32 `json:"parent_id"`
+	DatatypeID    sql.NullInt32 `json:"datatype_id"`
+	RouteID       sql.NullInt32 `json:"route_id"`
+	AuthorID      int32         `json:"author_id"`
+	DateCreated   sql.NullTime  `json:"date_created"`
+	DateModified  sql.NullTime  `json:"date_modified"`
+	DatatypeLabel string        `json:"datatype_label"`
+	DatatypeType  string        `json:"datatype_type"`
+}
+
+func (q *Queries) GetContentTreeByRoute(ctx context.Context, routeID sql.NullInt32) ([]GetContentTreeByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContentTreeByRoute, routeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetContentTreeByRouteRow
+	for rows.Next() {
+		var i GetContentTreeByRouteRow
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.DatatypeID,
+			&i.RouteID,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.DatatypeLabel,
+			&i.DatatypeType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getDatatype = `-- name: GetDatatype :one
 SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified, history FROM datatypes
 WHERE datatype_id = $1 LIMIT 1
@@ -2504,6 +2595,50 @@ func (q *Queries) GetField(ctx context.Context, fieldID int32) (Fields, error) {
 		&i.History,
 	)
 	return i, err
+}
+
+const getFieldDefinitionsByRoute = `-- name: GetFieldDefinitionsByRoute :many
+SELECT DISTINCT f.field_id, f.label, f.type, df.datatype_id
+FROM content_data cd
+JOIN datatypes_fields df ON cd.datatype_id = df.datatype_id
+JOIN fields f ON df.field_id = f.field_id  
+WHERE cd.route_id = $1
+ORDER BY df.datatype_id, f.field_id
+`
+
+type GetFieldDefinitionsByRouteRow struct {
+	FieldID    int32  `json:"field_id"`
+	Label      string `json:"label"`
+	Type       string `json:"type"`
+	DatatypeID int32  `json:"datatype_id"`
+}
+
+func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, routeID sql.NullInt32) ([]GetFieldDefinitionsByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFieldDefinitionsByRoute, routeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetFieldDefinitionsByRouteRow
+	for rows.Next() {
+		var i GetFieldDefinitionsByRouteRow
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.Label,
+			&i.Type,
+			&i.DatatypeID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getMedia = `-- name: GetMedia :one

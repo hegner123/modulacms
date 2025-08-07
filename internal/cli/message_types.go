@@ -228,3 +228,98 @@ type GetFullTreeResMsg struct {
 	Content string
 }
 type DatabaseTreeMsg struct{}
+
+// Tree node state management message types
+type SetExpandMsg struct {
+	NodeID int64
+	Expand bool
+}
+
+type SetWrappedMsg struct {
+	NodeID  int64
+	Wrapped int
+}
+
+type SetIndentMsg struct {
+	NodeID int64
+	Indent int
+}
+
+type ExpandNodeMsg struct {
+	NodeID    int64
+	Recursive bool
+}
+
+type CollapseNodeMsg struct {
+	NodeID    int64
+	Recursive bool
+}
+
+type ToggleExpandMsg struct {
+	NodeID int64
+}
+
+type SetExpandForTypeMsg struct {
+	NodeType string
+	Expand   bool
+}
+
+type CalculateDepthsMsg struct{}
+
+type SetDepthsFromParentMsg struct {
+	ParentID   int64
+	StartDepth int
+}
+
+type GetNodeStateMsg struct {
+	NodeID int64
+}
+
+type SetNodeStateMsg struct {
+	NodeID int64
+	State  NodeState
+}
+
+type ApplyStatesMsg struct {
+	States []NodeState
+}
+
+type GetAllNodeStatesMsg struct{}
+
+type InitializeViewStatesMsg struct{}
+
+// Response message types for tree operations
+type NodeStateResponseMsg struct {
+	State  *NodeState
+	Exists bool
+}
+
+type AllNodeStatesResponseMsg struct {
+	States []NodeState
+}
+
+type TreeOperationResultMsg struct {
+	Success bool
+	NodeID  int64
+}
+
+// Bulk tree operation message types
+type BulkExpandMsg struct {
+	NodeIDs   []int64
+	Expand    bool
+	Recursive bool
+}
+
+type BulkSetWrappedMsg struct {
+	NodeUpdates []struct {
+		NodeID  int64
+		Wrapped int
+	}
+}
+
+type BulkSetIndentMsg struct {
+	NodeUpdates []struct {
+		NodeID int64
+		Indent int
+	}
+}
