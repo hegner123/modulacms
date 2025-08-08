@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,17 +8,17 @@ import (
 )
 
 type EfficientTreeData struct {
-	ContentNodes    []db.GetContentTreeByRouteRow
-	FieldDefs       []db.GetFieldDefinitionsByRouteRow
-	ContentFields   []db.GetContentFieldsByRouteRow
+	ContentNodes  []db.GetContentTreeByRouteRow
+	FieldDefs     []db.GetFieldDefinitionsByRouteRow
+	ContentFields []db.GetContentFieldsByRouteRow
 }
 
 type HybridTreeBuilder struct {
-	nodeMap           map[int64]*TreeNode
-	allNodes          []*TreeNode
-	childrenByParent  map[int64][]*TreeNode
-	fieldDefsByType   map[int64][]db.GetFieldDefinitionsByRouteRow
-	contentFieldsMap  map[int64][]db.GetContentFieldsByRouteRow
+	nodeMap          map[int64]*TreeNode
+	allNodes         []*TreeNode
+	childrenByParent map[int64][]*TreeNode
+	fieldDefsByType  map[int64][]db.GetFieldDefinitionsByRouteRow
+	contentFieldsMap map[int64][]db.GetContentFieldsByRouteRow
 }
 
 func LoadedShallowTreeCmd(t *TreeRoot) tea.Cmd {
@@ -55,34 +54,33 @@ func (m Model) LoadEfficientTree(database *db.Database, routeID int64) tea.Cmd {
 }
 
 func BuildEfficientTree(database *db.Database, routeID int64) (*TreeRoot, error) {
-	ctx := context.Background()
-	
-	contentNodes, err := database.GetContentTreeByRoute(ctx, routeID)
+
+	contentNodes, err := database.GetContentTreeByRoute(routeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content tree: %w", err)
 	}
-	
-	fieldDefs, err := database.GetFieldDefinitionsByRoute(ctx, routeID)
+
+	fieldDefs, err := database.GetFieldDefinitionsByRoute(routeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get field definitions: %w", err)
 	}
-	
-	contentFields, err := database.GetContentFieldsByRoute(ctx, routeID)
+
+	contentFields, err := database.GetContentFieldsByRoute(routeID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %w", err)
 	}
 
-	if len(contentNodes) == 0 {
+	if len(*contentNodes) == 0 {
 		return NewTreeRoot(), nil
 	}
 
 	builder := NewHybridTreeBuilder()
-	builder.prepareLookupMaps(fieldDefs, contentFields)
-	
+	builder.prepareLookupMaps(*fieldDefs, *contentFields)
+
 	var rootNode *TreeNode
-	for _, contentNode := range contentNodes {
+	for _, contentNode := range *contentNodes {
 		treeNode := builder.createTreeNode(contentNode)
-		
+
 		builder.nodeMap[contentNode.ContentDataID] = treeNode
 		builder.allNodes = append(builder.allNodes, treeNode)
 
@@ -103,11 +101,11 @@ func BuildEfficientTree(database *db.Database, routeID int64) (*TreeRoot, error)
 
 func NewHybridTreeBuilder() *HybridTreeBuilder {
 	return &HybridTreeBuilder{
-		nodeMap:           make(map[int64]*TreeNode),
-		allNodes:          make([]*TreeNode, 0),
-		childrenByParent:  make(map[int64][]*TreeNode),
-		fieldDefsByType:   make(map[int64][]db.GetFieldDefinitionsByRouteRow),
-		contentFieldsMap:  make(map[int64][]db.GetContentFieldsByRouteRow),
+		nodeMap:          make(map[int64]*TreeNode),
+		allNodes:         make([]*TreeNode, 0),
+		childrenByParent: make(map[int64][]*TreeNode),
+		fieldDefsByType:  make(map[int64][]db.GetFieldDefinitionsByRouteRow),
+		contentFieldsMap: make(map[int64][]db.GetContentFieldsByRouteRow),
 	}
 }
 
@@ -126,7 +124,7 @@ func (b *HybridTreeBuilder) prepareLookupMaps(
 
 func (b *HybridTreeBuilder) createTreeNode(contentNode db.GetContentTreeByRouteRow) *TreeNode {
 	treeNode := NewTreeNodeFromContentTree(contentNode)
-	
+
 	if defs, exists := b.fieldDefsByType[contentNode.DatatypeID]; exists {
 		fieldTypes := make([]db.Fields, 0, len(defs))
 		for _, def := range defs {
@@ -139,12 +137,12 @@ func (b *HybridTreeBuilder) createTreeNode(contentNode db.GetContentTreeByRouteR
 		}
 		treeNode.NodeFieldTypes = fieldTypes
 	}
-	
+
 	if fields, exists := b.contentFieldsMap[contentNode.ContentDataID]; exists {
 		nodeFields := make([]db.ContentFields, 0, len(fields))
 		for _, field := range fields {
 			cf := db.ContentFields{
-				ContentFieldID: 0, 
+				ContentFieldID: 0,
 				ContentDataID:  field.ContentDataID,
 				FieldID:        field.FieldID,
 				FieldValue:     field.FieldValue,
@@ -166,7 +164,7 @@ func (b *HybridTreeBuilder) buildTree(rootNode *TreeNode) (*TreeRoot, error) {
 		if children, hasChildren := b.childrenByParent[node.Node.ContentDataID]; hasChildren {
 			node.Nodes = &children
 		}
-		
+
 		if node != rootNode {
 			tree.NodeIndex[node.Node.ContentDataID] = node
 		}
@@ -192,7 +190,7 @@ func (tree *TreeRoot) GetChildrenAtDepth(parentID int64, depth int) []*TreeNode 
 	if depth == 0 {
 		return tree.GetOrderedChildren(parentID)
 	}
-	
+
 	var result []*TreeNode
 	children := tree.GetOrderedChildren(parentID)
 	for _, child := range children {
@@ -206,11 +204,11 @@ func (tree *TreeRoot) traverseAndCollect(node *TreeNode, nodeType string, collec
 	if node == nil {
 		return
 	}
-	
+
 	if node.NodeDatatype.Type == nodeType {
 		*collection = append(*collection, node)
 	}
-	
+
 	if node.Nodes != nil {
 		for _, child := range *node.Nodes {
 			tree.traverseAndCollect(child, nodeType, collection)
@@ -231,19 +229,19 @@ func (tree *TreeRoot) printNode(node *TreeNode, indent int) string {
 	for i := 0; i < indent; i++ {
 		prefix += "  "
 	}
-	
-	result += fmt.Sprintf("%s├─ %s (ID: %d, Type: %s)\n", 
-		prefix, 
+
+	result += fmt.Sprintf("%s├─ %s (ID: %d, Type: %s)\n",
+		prefix,
 		node.NodeDatatype.Label,
 		node.Node.ContentDataID,
 		node.NodeDatatype.Type)
-	
+
 	if node.Nodes != nil {
 		for _, child := range *node.Nodes {
 			result += tree.printNode(child, indent+1)
 		}
 	}
-	
+
 	return result
 }
 
@@ -278,7 +276,7 @@ func (tree *TreeRoot) SetIndent(nodeID int64, indent int) bool {
 func (tree *TreeRoot) ExpandNode(nodeID int64, recursive bool) bool {
 	if node, exists := tree.NodeIndex[nodeID]; exists {
 		node.Expand = true
-		
+
 		if recursive && node.Nodes != nil {
 			for _, child := range *node.Nodes {
 				tree.ExpandNode(child.Node.ContentDataID, recursive)
@@ -293,7 +291,7 @@ func (tree *TreeRoot) ExpandNode(nodeID int64, recursive bool) bool {
 func (tree *TreeRoot) CollapseNode(nodeID int64, recursive bool) bool {
 	if node, exists := tree.NodeIndex[nodeID]; exists {
 		node.Expand = false
-		
+
 		if recursive && node.Nodes != nil {
 			for _, child := range *node.Nodes {
 				tree.CollapseNode(child.Node.ContentDataID, recursive)
@@ -322,11 +320,11 @@ func (tree *TreeRoot) traverseAndSetExpand(node *TreeNode, nodeType string, expa
 	if node == nil {
 		return
 	}
-	
+
 	if node.NodeDatatype.Type == nodeType {
 		node.Expand = expand
 	}
-	
+
 	if node.Nodes != nil {
 		for _, child := range *node.Nodes {
 			tree.traverseAndSetExpand(child, nodeType, expand)
@@ -343,7 +341,7 @@ func (tree *TreeRoot) CalculateDepths() {
 
 func (tree *TreeRoot) setNodeDepth(node *TreeNode, depth int) {
 	node.Indent = depth
-	
+
 	if node.Nodes != nil {
 		for _, child := range *node.Nodes {
 			tree.setNodeDepth(child, depth+1)
@@ -401,7 +399,7 @@ func (tree *TreeRoot) ApplyStates(states []NodeState) {
 // GetAllNodeStates returns the current state of all nodes
 func (tree *TreeRoot) GetAllNodeStates() []NodeState {
 	var states []NodeState
-	
+
 	for nodeID, node := range tree.NodeIndex {
 		states = append(states, NodeState{
 			NodeID:  nodeID,
@@ -410,7 +408,7 @@ func (tree *TreeRoot) GetAllNodeStates() []NodeState {
 			Indent:  node.Indent,
 		})
 	}
-	
+
 	return states
 }
 
@@ -419,10 +417,10 @@ func (tree *TreeRoot) InitializeViewStates() {
 	if tree.Root == nil {
 		return
 	}
-	
+
 	// Calculate depths first
 	tree.CalculateDepths()
-	
+
 	// Set expand states based on content type and depth
 	tree.initializeExpandStates(tree.Root)
 }
@@ -431,7 +429,7 @@ func (tree *TreeRoot) initializeExpandStates(node *TreeNode) {
 	if node == nil {
 		return
 	}
-	
+
 	// Default expand rules based on your testing logic
 	switch node.NodeDatatype.Type {
 	case "Page":
@@ -445,7 +443,7 @@ func (tree *TreeRoot) initializeExpandStates(node *TreeNode) {
 	default:
 		node.Expand = false // Collapse content elements by default (lazy load)
 	}
-	
+
 	// Recursively initialize children
 	if node.Nodes != nil {
 		for _, child := range *node.Nodes {
