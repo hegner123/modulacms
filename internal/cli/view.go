@@ -57,7 +57,7 @@ func (m Model) View() string {
 		}
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
-                p.AddHeader("CMS")
+		p.AddHeader("CMS")
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
@@ -68,7 +68,7 @@ func (m Model) View() string {
 		}
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
-                p.AddHeader("Admin CMS")
+		p.AddHeader("Admin CMS")
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
@@ -176,6 +176,15 @@ func (m Model) View() string {
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Dynamic")
 		p.AddControls("q quit")
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
+	case contentPage.Index:
+		menu := make([]string, 0, len(m.DatatypeMenu))
+		menu = append(menu, m.DatatypeMenu...)
+		p := NewMenuPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Content")
+		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	default:

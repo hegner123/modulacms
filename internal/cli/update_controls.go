@@ -22,20 +22,22 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	switch m.Page.Index {
 	case HOMEPAGE:
 		return m.BasicControls(msg)
+	case CMSPAGE:
+		return m.BasicCMSControls(msg)
+	case ADMINCMSPAGE:
+		return m.BasicCMSControls(msg)
 	case DATABASEPAGE:
 		return m.SelectTable(msg)
 	case TABLEPAGE:
 		return m.BasicControls(msg)
-	case CMSPAGE:
-		return m.BasicCMSControls(msg)
 	case DYNAMICPAGE:
 		return m.BasicDynamicControls(msg)
 	case CREATEPAGE:
 		return m.FormControls(msg)
 	case READPAGE:
 		return m.TableNavigationControls(msg)
-        case READSINGLEPAGE:
-                return m.BasicControls(msg)
+	case READSINGLEPAGE:
+		return m.BasicControls(msg)
 	case UPDATEPAGE:
 		return m.TableNavigationControls(msg)
 	case DELETEPAGE:
@@ -46,6 +48,12 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.DefineDatatypeControls(msg)
 	case CONFIGPAGE:
 		return m.ConfigControls(msg)
+	case CONTENT:
+		return m.BasicCMSControls(msg)
+	case USERSADMIN:
+		return m.BasicCMSControls(msg)
+	case MEDIA:
+		return m.BasicCMSControls(msg)
 
 	}
 	return m, nil
@@ -112,7 +120,7 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, CursorUpCmd()
 			}
 		case "down", "j":
-			if m.Cursor < len(m.DatatypeMenu)-1 {
+			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
 		case "h", "shift+tab", "backspace":
@@ -121,11 +129,8 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		case "enter", "l":
 			// Only proceed if we have menu items
-			if len(m.DatatypeMenu) > 0 {
-				return m, tea.Batch(
-					NavigateToPageCmd(m.Pages[DYNAMICPAGE]),
-				)
-			}
+			page := m.PageMenu[m.Cursor]
+			return m, NavigateToPageCmd(*page)
 		}
 	}
 	return m, nil
@@ -310,7 +315,6 @@ func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
 		//Action
 		case "enter", "l":
 			rows = m.Rows
-			m.PushHistory(PageHistory{Page: m.Page, Cursor: m.Cursor})
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
 			// Only update if the calculated index is valid
 			if recordIndex < len(m.Rows) {

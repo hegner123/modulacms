@@ -3,6 +3,7 @@ package cli
 type PageHistory struct {
 	Cursor int
 	Page   Page
+	Menu   []*Page
 }
 
 func (m *Model) PushHistory(entry PageHistory) {
@@ -25,3 +26,4 @@ func (m *Model) Peek() (*PageHistory, bool) {
 	}
 	return &m.History[len(m.History)-1], true
 }
+

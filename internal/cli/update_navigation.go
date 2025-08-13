@@ -18,21 +18,19 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case NavigateToPage:
 		var cmds []tea.Cmd
-		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor}))
+		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu}))
 		cmds = append(cmds, CursorResetCmd())
 		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Navigation to page %s: cursor at position %d", msg.Page.Label, m.Cursor)))
 		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Available menu options: %s", ViewPageMenus(m))))
 		switch msg.Page.Index {
 		case CMSPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, DatatypesFetchCmd())
-                        cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
+			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
 
 			return m, tea.Batch(cmds...)
-                case ADMINCMSPAGE:
+		case ADMINCMSPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, DatatypesFetchCmd())
-                        cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
+			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
 
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
@@ -101,13 +99,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 				StatusSetCmd(OK),
 			)
 		case CONTENT:
-                        page := m.PageMap[CONTENT]
+			page := m.PageMap[CONTENT]
 			return m, tea.Batch(
 				PageSetCmd(page),
 				StatusSetCmd(OK),
 			)
 		case DYNAMICPAGE:
-                        page := m.PageMap[DYNAMICPAGE]
+			page := m.PageMap[DYNAMICPAGE]
 			return m, tea.Batch(
 				PageSetCmd(page),
 				StatusSetCmd(OK),
@@ -148,6 +146,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		entry := m.PopHistory()
 		return newModel, tea.Batch(
 			PageSetCmd(entry.Page),
+			PageMenuSetCmd(entry.Menu),
 			CursorSetCmd(entry.Cursor),
 		)
 
