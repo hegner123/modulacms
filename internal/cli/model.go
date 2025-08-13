@@ -71,6 +71,7 @@ type Model struct {
 	Table        string
 	PageMenu     []*Page
 	Pages        []Page
+	PageMap      map[PageIndex]Page
 	DatatypeMenu []string
 	Tables       []string
 	Columns      *[]string
@@ -159,30 +160,12 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		Table:      "",
 		Viewport:   viewport.Model{},
 		PageMenu:   HomepageMenu,
-		Pages: []Page{
-			*homePage,
-			*cmsPage,
-			*adminCmsPage,
-			*selectTablePage,
-			*bucketPage,
-			*oauthPage,
-			*configPage,
-			*tableActionsPage,
-			*createPage,
-			*readPage,
-			*updatePage,
-			*deletePage,
-			*updateFormPage,
-			*readSinglePage,
-			*dynamicPage,
-			*definedDatatypePage,
-			*developmentPage,
-		},
-		Selected: make(map[int]struct{}),
-		FormMap:  make([]string, 0),
-		Focus:    PAGEFOCUS,
-		History:  []PageHistory{},
-		Verbose:  verbose,
+		PageMap:    *InitPages(),
+		Selected:   make(map[int]struct{}),
+		FormMap:    make([]string, 0),
+		Focus:      PAGEFOCUS,
+		History:    []PageHistory{},
+		Verbose:    verbose,
 	}, GetTablesCMD(c)
 }
 

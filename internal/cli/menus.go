@@ -16,11 +16,8 @@ var HomepageMenu []*Page = []*Page{
 	configPage,
 }
 
-var CmsMenu []*Page = []*Page{
-        //Routes
-        //
-	definedDatatypePage,
-	// Removing undefined references
+var CmsHomeMenu []*Page = []*Page{
+	defineDatatypePage,
 	// contentPage,
 	// mediaPage,
 	// usersPage,
@@ -31,6 +28,7 @@ var TableMenu []*Page = []*Page{
 	updatePage,
 	deletePage,
 }
+
 
 func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 	out := make([]*Page, 0)

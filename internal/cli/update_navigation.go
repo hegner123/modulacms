@@ -42,43 +42,67 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(
 				FormNewCmd(DATABASECREATE),
 				FocusSetCmd(FORMFOCUS),
-				PageSetCmd(m.Pages[CREATEPAGE]),
+				PageSetCmd(m.PageMap[CREATEPAGE]),
 				StatusSetCmd(EDITING),
 			)
 		case UPDATEPAGE:
+			page := m.PageMap[UPDATEPAGE]
 			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[UPDATEPAGE]),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
 				StatusSetCmd(OK),
 			)
 		case READPAGE:
-			f := MakeFilter("Spinner", "Pages", "History","Pages", "Viewport","Paginator")
+			f := MakeFilter("Spinner", "Pages", "History", "Pages", "Viewport", "Paginator")
+			page := m.PageMap[READPAGE]
 			return m, tea.Batch(
 				LogModelCMD(nil, &f),
 				LoadingStartCmd(),
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[READPAGE]),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
 				StatusSetCmd(OK),
 			)
 		case DELETEPAGE:
+			page := m.PageMap[DELETEPAGE]
 			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[DELETEPAGE]),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
 				PageSetCmd(m.Pages[DELETEPAGE]),
 				StatusSetCmd(DELETING),
 			)
 		case UPDATEFORMPAGE:
+			page := m.PageMap[UPDATEFORMPAGE]
 			return m, tea.Batch(
 				FormNewCmd(DATABASEUPDATE),
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[UPDATEFORMPAGE]),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
 				PageSetCmd(m.Pages[UPDATEFORMPAGE]),
 				StatusSetCmd(EDITING),
 			)
 		case READSINGLEPAGE:
+			page := m.PageMap[READSINGLEPAGE]
 			return m, tea.Batch(
-				PageSetCmd(m.Pages[READSINGLEPAGE]),
+				PageSetCmd(page),
+				StatusSetCmd(OK),
+			)
+		case USERSADMIN:
+			page := m.PageMap[USERSADMIN]
+			return m, tea.Batch(
+				PageSetCmd(page),
+				StatusSetCmd(OK),
+			)
+		case MEDIA:
+			page := m.PageMap[MEDIA]
+			return m, tea.Batch(
+				PageSetCmd(page),
+				StatusSetCmd(OK),
+			)
+		case CONTENT:
+                        page := m.PageMap[CONTENT]
+			return m, tea.Batch(
+				PageSetCmd(page),
 				StatusSetCmd(OK),
 			)
 		case DYNAMICPAGE:
+                        page := m.PageMap[DYNAMICPAGE]
 			return m, tea.Batch(
-				PageSetCmd(m.Pages[DYNAMICPAGE]),
+				PageSetCmd(page),
 				StatusSetCmd(OK),
 			)
 		case PICKCONTENT:
@@ -107,7 +131,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		return m, nil
 	case SelectTable:
 		return m, tea.Batch(
-			NavigateToPageCmd(m.Pages[TABLEPAGE]),
+			NavigateToPageCmd(m.PageMap[TABLEPAGE]),
 			TableSetCmd(m.Tables[m.Cursor]),
 			PageMenuSetCmd(TableMenu),
 		)
