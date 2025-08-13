@@ -51,13 +51,25 @@ func (m Model) View() string {
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case cmsPage.Index:
+		menu := make([]string, 0, len(CmsHomeMenu))
+		for _, v := range CmsHomeMenu {
+			menu = append(menu, v.Label)
+		}
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
+                p.AddHeader("CMS")
+		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case adminCmsPage.Index:
+		menu := make([]string, 0, len(CmsHomeMenu))
+		for _, v := range CmsHomeMenu {
+			menu = append(menu, v.Label)
+		}
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
+                p.AddHeader("Admin CMS")
+		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case bucketPage.Index:

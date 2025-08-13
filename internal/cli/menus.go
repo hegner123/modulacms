@@ -18,9 +18,9 @@ var HomepageMenu []*Page = []*Page{
 
 var CmsHomeMenu []*Page = []*Page{
 	defineDatatypePage,
-	// contentPage,
-	// mediaPage,
-	// usersPage,
+	contentPage,
+	mediaPage,
+	usersAdminPage,
 }
 var TableMenu []*Page = []*Page{
 	createPage,
@@ -28,7 +28,6 @@ var TableMenu []*Page = []*Page{
 	updatePage,
 	deletePage,
 }
-
 
 func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []*Page {
 	out := make([]*Page, 0)

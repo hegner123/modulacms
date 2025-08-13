@@ -26,6 +26,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case CMSPAGE:
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, DatatypesFetchCmd())
+                        cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
+
+			return m, tea.Batch(cmds...)
+                case ADMINCMSPAGE:
+			cmds = append(cmds, PageSetCmd(msg.Page))
+			cmds = append(cmds, DatatypesFetchCmd())
+                        cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
 
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
