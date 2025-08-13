@@ -11,6 +11,15 @@ import (
 	"github.com/hegner123/modulacms/internal/model"
 )
 
+func LogModelCMD(include *[]string, exclude *[]string) tea.Cmd {
+	return func() tea.Msg {
+		return LogModelMsg{
+			Include: include,
+			Exclude: exclude,
+		}
+	}
+}
+
 // Basic action constructors
 func ClearScreenCmd() tea.Cmd          { return func() tea.Msg { return ClearScreen{} } }
 func TitleFontNextCmd() tea.Cmd        { return func() tea.Msg { return TitleFontNext{} } }
@@ -279,20 +288,22 @@ func SetTableDataCmd(headers []string, rows [][]string, maxRows int) tea.Cmd {
 	}
 }
 
-func FetchTableHeadersRowsCmd(c config.Config, t string) tea.Cmd {
+func FetchTableHeadersRowsCmd(c config.Config, t string, page *Page) tea.Cmd {
 	return func() tea.Msg {
 		return FetchHeadersRows{
 			Config: c,
 			Table:  t,
+			Page:   page,
 		}
 	}
 }
 
-func TableHeadersRowsFetchedCmd(headers []string, rows [][]string) tea.Cmd {
+func TableHeadersRowsFetchedCmd(headers []string, rows [][]string, page *Page) tea.Cmd {
 	return func() tea.Msg {
 		return TableHeadersRowsFetchedMsg{
 			Headers: headers,
 			Rows:    rows,
+			Page:    page,
 		}
 	}
 }
@@ -589,5 +600,13 @@ func RestoreTreeStateCmd(states []NodeState) tea.Cmd {
 			LogMessageCmd(fmt.Sprintf("Restoring tree state for %d nodes", len(states))),
 			ApplyStatesCmd(states),
 		)()
+	}
+}
+
+func (m Model) UpdateMaxCursorCmd() tea.Cmd {
+	return func() tea.Msg {
+		start, end := m.Paginator.GetSliceBounds(len(m.Rows))
+		currentView := m.Rows[start:end]
+		return UpdateMaxCursorMsg{cursorMax: len(currentView)}
 	}
 }

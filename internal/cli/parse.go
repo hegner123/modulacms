@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // Parse scans sql.Rows into appropriate structs based on the DBTable type
@@ -13,7 +14,7 @@ func Parse(rows *sql.Rows, table db.DBTable) (any, error) {
 	if rows == nil {
 		return nil, fmt.Errorf("rows cannot be nil")
 	}
-	defer rows.Close()
+	defer  utility.HandleRowsCloseDeferErr(rows)
 
 	switch table {
 	case db.User:

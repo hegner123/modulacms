@@ -9,6 +9,7 @@ import (
 var HomepageMenu []*Page = []*Page{
 	developmentPage,
 	cmsPage,
+	adminCmsPage,
 	selectTablePage,
 	bucketPage,
 	oauthPage,
@@ -16,6 +17,8 @@ var HomepageMenu []*Page = []*Page{
 }
 
 var CmsMenu []*Page = []*Page{
+        //Routes
+        //
 	definedDatatypePage,
 	// Removing undefined references
 	// contentPage,

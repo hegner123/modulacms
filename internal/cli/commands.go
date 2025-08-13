@@ -19,6 +19,40 @@ const (
 	DELETE DatabaseCMD = "delete"
 )
 
+type FetchErrMsg struct {
+	Error error
+}
+
+type ForeignKeyReference struct {
+	From   string
+	Table  string // Referenced table name.
+	Column string // Referenced column name.
+}
+
+type FetchTables struct {
+	Tables []string
+}
+
+func GetTablesCMD(c *config.Config) tea.Cmd {
+	return func() tea.Msg {
+		var (
+			d      db.DbDriver
+			labels []string
+		)
+		d = db.ConfigDB(*c)
+		tables, err := d.ListTables()
+		if err != nil {
+			utility.DefaultLogger.Ferror("", err)
+			return FetchErrMsg{Error: err}
+		}
+
+		for _, table := range *tables {
+			labels = append(labels, table.Label)
+		}
+		return TablesSet{Tables: labels}
+	}
+}
+
 // TODO Add default case for generic operations
 func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []string, values []*string) tea.Cmd {
 	d := db.ConfigDB(*c)
@@ -202,7 +236,6 @@ func (m Model) GetContentField(node *string) []byte {
 	}
 	return j
 }
-
 
 func (m Model) GetFullTree(c *config.Config, id int64) tea.Cmd {
 	// TODO: Implement tree retrieval logic

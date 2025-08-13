@@ -12,21 +12,10 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-/*
-  2. Create a BasePage instance with a header and render function
-  3. Set up any content needed for the BasePage (header, body, footer)
-  4. Create specialized components needed for your page (MenuComponent, TableComponent, FormComponent, etc.)
-  5. Define a concrete page struct that includes the BasePage and any specialized components
-  6. Implement the View method for your concrete page
-  7. Initialize your page with the necessary data
-  8. Render the page by calling its View method
-*/
-
 type PageUI interface {
+	AddTitle(string)
 	AddHeader(string)
 	AddBody(string)
-	AddRow(string)
-	AddColumn(string)
 	AddControls(string)
 	AddStatus(string)
 	Render(int) string
@@ -35,17 +24,16 @@ type PageUI interface {
 type BasePage struct {
 	Title    string
 	Header   string
-	Rows     []Row
+	Body     string
 	Controls string
 	Status   string
 }
 
 func NewBasePage() BasePage {
-	body := []Row{}
 	return BasePage{
 		Title:    "",
 		Header:   "",
-		Rows:     body,
+		Body:     "",
 		Controls: "",
 		Status:   "",
 	}
@@ -55,11 +43,15 @@ type StaticPage struct {
 	BasePage
 }
 
+func (s *StaticPage) AddTitle(t string) {
+	s.Title += t
+}
+
 func (s *StaticPage) AddHeader(h string) {
 	s.Header += h
 }
-func (s *StaticPage) AddRow(r Row) {
-	s.Rows = append(s.Rows, r)
+func (s *StaticPage) AddBody(b string) {
+	s.Body += b
 }
 func (s *StaticPage) AddControls(c string) {
 	s.Controls += c
@@ -67,17 +59,10 @@ func (s *StaticPage) AddControls(c string) {
 func (s *StaticPage) AddStatus(st string) {
 	s.Status += st
 }
-func (s *StaticPage) RenderBody() string {
-	r := make([]string, len(s.Rows))
-	for _, v := range s.Rows {
-		r = append(r, v.Build())
-	}
-	return lipgloss.JoinVertical(lipgloss.Left, r...)
-}
 
 func (s StaticPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
-	rows := []string{RenderTitle(s.Title), RenderHeading(s.Header), s.RenderBody()}
+	rows := []string{RenderTitle(s.Title), RenderHeading(s.Header), s.Body}
 	if model.DialogActive {
 		rows = append(rows, model.Dialog.Render(model.Width, model.Height))
 	}
@@ -98,7 +83,7 @@ func (s StaticPage) Render(model Model) string {
 	)
 }
 
-func NewStaticPage(title string, header string, rows []Row, controls string, status string) StaticPage {
+func NewStaticPage() StaticPage {
 	page := NewBasePage()
 	return StaticPage{
 		BasePage: page,
@@ -111,11 +96,15 @@ type MenuPage struct {
 	Menu []string
 }
 
+func (s *MenuPage) AddTitle(t string) {
+	s.Title += t
+}
+
 func (m *MenuPage) AddHeader(h string) {
 	m.Header += h
 }
-func (m *MenuPage) AddRow(r Row) {
-	m.Rows = append(m.Rows, r)
+func (m *MenuPage) AddBody(b string) {
+	m.Body += b
 }
 func (m *MenuPage) AddControls(c string) {
 	m.Controls += c
@@ -123,8 +112,12 @@ func (m *MenuPage) AddControls(c string) {
 func (m *MenuPage) AddStatus(st string) {
 	m.Status += st
 }
+
+func (m *MenuPage) AddMenu(menu []string) {
+	m.Menu = menu
+}
 func (m *MenuPage) RenderBody(model Model) string {
-	r := make([]string, len(m.Rows)+len(m.Menu))
+	r := make([]string, len(m.Body)+len(m.Menu))
 	var row []string
 	var column []string
 
@@ -144,9 +137,7 @@ func (m *MenuPage) RenderBody(model Model) string {
 		}
 	}
 	r = append(r, lipgloss.JoinHorizontal(lipgloss.Top, row...))
-	for _, v := range m.Rows {
-		r = append(r, v.Build())
-	}
+	r = append(r, m.Body)
 	return RenderBorderFlex(lipgloss.JoinHorizontal(lipgloss.Center, r...))
 
 }
@@ -171,8 +162,9 @@ func (m MenuPage) Render(model Model) string {
 	)
 }
 
-func NewMenuPage(m []string, title string, header string, body []Row, controls string, status string) MenuPage {
+func NewMenuPage() MenuPage {
 	basePage := NewBasePage()
+	m := make([]string, 0)
 	return MenuPage{
 		BasePage: basePage,
 		Menu:     m,
@@ -188,8 +180,19 @@ type TablePage struct {
 	PageMod      int
 }
 
+func (s *TablePage) AddTitle(t string) {
+	s.Title += t
+}
+
 func (t *TablePage) AddHeader(h string) {
 	t.Header += h
+}
+
+func (t *TablePage) AddHeaders(h []string) {
+	t.TableHeaders = h
+}
+func (t *TablePage) AddRows(r [][]string) {
+	t.TableRows = r
 }
 
 func (t *TablePage) AddControls(c string) {
@@ -200,11 +203,15 @@ func (t *TablePage) AddStatus(st string) {
 	t.Status += st
 }
 
+func (t *TablePage) AddBody(b string) {
+	t.Body += b
+}
+
 func (t *TablePage) RenderBody(m Model) string {
 	start, end := m.Paginator.GetSliceBounds(len(t.TableRows))
 	currentView := t.TableRows[start:end]
 
-	t.TableUI = StyledTable(t.TableHeaders, currentView, m.Cursor)
+	t.TableUI = TableRender(t.TableHeaders, currentView, m.Cursor)
 	paginator := ""
 	if len(t.TableRows) > m.MaxRows {
 		paginator = "\n\n" + m.Paginator.View()
@@ -243,7 +250,7 @@ func (t TablePage) Render(model Model) string {
 	return content
 }
 
-func NewTablePage(headers []string, rows [][]string, table string, title string, header string, body []Row, controls string, status string) TablePage {
+func NewTablePage() TablePage {
 	basePage := NewBasePage()
 	return TablePage{
 		BasePage:     basePage,
@@ -258,6 +265,9 @@ type FormPage struct {
 	Form *huh.Form
 }
 
+func (s *FormPage) AddTitle(t string) {
+	s.Title += t
+}
 func (f *FormPage) AddHeader(h string) {
 	f.Header += h
 }
@@ -268,6 +278,9 @@ func (f *FormPage) AddControls(c string) {
 
 func (f *FormPage) AddStatus(st string) {
 	f.Status += st
+}
+func (f *FormPage) AddBody(b string) {
+	f.Body += b
 }
 
 func (f FormPage) Render(model Model) string {
@@ -295,7 +308,7 @@ func (f FormPage) Render(model Model) string {
 	)
 }
 
-func NewFormPage(title string, header string, body []Row, controls string, status string) FormPage {
+func NewFormPage() FormPage {
 	basePage := NewBasePage()
 	return FormPage{
 		BasePage: basePage,
@@ -318,6 +331,10 @@ type CMSPage struct {
 	Display DisplayMode
 }
 
+func (s *CMSPage) AddTitle(t string) {
+	s.Title += t
+}
+
 func (c *CMSPage) AddHeader(h string) {
 	c.Header += h
 }
@@ -328,6 +345,10 @@ func (c *CMSPage) AddControls(controls string) {
 
 func (c *CMSPage) AddStatus(st string) {
 	c.Status += st
+}
+
+func (c *CMSPage) AddBody(b string) {
+	c.Body += b
 }
 
 func (c *CMSPage) RenderColumn(width int, content string) string {
@@ -348,11 +369,10 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 		next := *current.Nodes
 		current = next[index]
 		index++
-
 	}
-
 	return lipgloss.JoinVertical(lipgloss.Top, display...)
 }
+
 func FormatRow(node *TreeNode) string {
 	row := ""
 	HasChildrenCollapsed := "+"
@@ -395,6 +415,7 @@ func FieldMatchesLabel(field db.Fields) bool {
 	ValidLabelFields := []string{"Label", "label", "Title", "title", "Name", "name"}
 	return slices.Contains(ValidLabelFields, field.Label)
 }
+
 func (c CMSPage) ProcessContentPreview(tree TreeRoot) string {
 	return "Content Preview"
 }
@@ -441,7 +462,7 @@ func (c CMSPage) Render(model Model) string {
 	)
 }
 
-func NewCMSPage(title string) CMSPage {
+func NewCMSPage() CMSPage {
 	b := NewBasePage()
 	p := CMSPage{
 		BasePage: b,

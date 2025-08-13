@@ -11,9 +11,6 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
-/*
-functions to return new bubble inputs with value pointers and control pointers
-*/
 
 type fileModel struct {
 	filepicker   filepicker.Model
@@ -49,16 +46,11 @@ func (m fileModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	m.filepicker, cmd = m.filepicker.Update(msg)
 
-	// Did the user select a file?
 	if didSelect, path := m.filepicker.DidSelectFile(msg); didSelect {
-		// Get the path of the selected file.
 		m.selectedFile = path
 	}
 
-	// Did the user select a disabled file?
-	// This is only necessary to display an error to the user.
 	if didSelect, path := m.filepicker.DidSelectDisabledFile(msg); didSelect {
-		// Let's clear the selectedFile and display an error.
 		m.err = errors.New(path + " is not valid.")
 		m.selectedFile = ""
 		return m, tea.Batch(cmd, clearErrorAfter(2*time.Second))

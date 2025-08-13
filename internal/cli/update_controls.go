@@ -34,6 +34,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.FormControls(msg)
 	case READPAGE:
 		return m.TableNavigationControls(msg)
+        case READSINGLEPAGE:
+                return m.BasicControls(msg)
 	case UPDATEPAGE:
 		return m.TableNavigationControls(msg)
 	case DELETEPAGE:
@@ -279,7 +281,7 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 
 		default:
-			cmds = append(cmds, m.UpdateMaxCursor())
+			cmds = append(cmds, m.UpdateMaxCursorCmd())
 			cmds = append(cmds, PaginationUpdateCmd())
 		}
 	}
@@ -317,7 +319,6 @@ func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
 			m.Row = &rows[recordIndex]
 			m.Cursor = 0
 			m.Page = m.Pages[UPDATEFORMPAGE]
-			m.PageMenu = m.Page.Children
 
 		}
 	}
@@ -384,7 +385,7 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Cursor > 0 {
 				m.Cursor--
 			}
-			cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table)
+			cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table, nil)
 			cmds = append(cmds, cmd)
 		default:
 			var scmd tea.Cmd
@@ -443,7 +444,6 @@ func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 				entry := *m.PopHistory()
 				m.Page = entry.Page
 				m.Cursor = entry.Cursor
-				m.PageMenu = m.Page.Children
 				return m, nil
 			}
 		case "d":

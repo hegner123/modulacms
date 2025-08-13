@@ -47,26 +47,27 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		case UPDATEPAGE:
 			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table),
-				PageSetCmd(m.Pages[UPDATEPAGE]),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[UPDATEPAGE]),
 				StatusSetCmd(OK),
 			)
 		case READPAGE:
+			f := MakeFilter("Spinner", "Pages", "History","Pages", "Viewport","Paginator")
 			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table),
-				PageSetCmd(m.Pages[READPAGE]),
+				LogModelCMD(nil, &f),
+				LoadingStartCmd(),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[READPAGE]),
 				StatusSetCmd(OK),
 			)
 		case DELETEPAGE:
 			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[DELETEPAGE]),
 				PageSetCmd(m.Pages[DELETEPAGE]),
 				StatusSetCmd(DELETING),
 			)
 		case UPDATEFORMPAGE:
 			return m, tea.Batch(
 				FormNewCmd(DATABASEUPDATE),
-				FetchTableHeadersRowsCmd(*m.Config, m.Table),
+				FetchTableHeadersRowsCmd(*m.Config, m.Table, &m.Pages[UPDATEFORMPAGE]),
 				PageSetCmd(m.Pages[UPDATEFORMPAGE]),
 				StatusSetCmd(EDITING),
 			)
@@ -114,7 +115,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 	case HistoryPop:
 		newModel := m
 		entry := m.PopHistory()
-		newModel.PageMenu = m.Page.Children
 		return newModel, tea.Batch(
 			PageSetCmd(entry.Page),
 			CursorSetCmd(entry.Cursor),

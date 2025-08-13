@@ -14,7 +14,7 @@ func Active(s string) string {
 	return a.Render(s)
 }
 
-func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
+func TableRender(hdrs []string, r [][]string, index int) *table.Table {
 	var headers []string
 	var rows [][]string
 

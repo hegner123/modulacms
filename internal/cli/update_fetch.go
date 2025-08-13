@@ -43,15 +43,23 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		return m, tea.Batch(
-			TableHeadersRowsFetchedCmd(columns, listRows),
+			TableHeadersRowsFetchedCmd(columns, listRows, msg.Page),
 			LogMessageCmd(fmt.Sprintf("Table %s headers fetched: %s", m.Table, strings.Join(columns, ", "))),
 		)
 	case TableHeadersRowsFetchedMsg:
+		s := strings.Builder{}
+		for _, v := range m.Headers {
+			s.WriteString(v)
+			s.WriteString("\n")
+
+		}
 		return m, tea.Batch(
 			HeadersSetCmd(msg.Headers),
 			RowsSetCmd(msg.Rows),
 			PaginatorUpdateCmd(m.MaxRows, len(msg.Rows)),
 			CursorMaxSetCmd(m.Paginator.ItemsOnPage(len(msg.Rows))),
+			PageSetCmd(*msg.Page),
+			LogMessageCmd(s.String()),
 			LoadingStopCmd(),
 		)
 	case GetColumns:

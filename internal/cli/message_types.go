@@ -9,6 +9,11 @@ import (
 	"github.com/hegner123/modulacms/internal/model"
 )
 
+type LogModelMsg struct {
+	Include *[]string
+	Exclude *[]string
+}
+
 type ClearScreen struct{}
 
 type ReadyTrue struct{}
@@ -210,18 +215,20 @@ type LogMsg struct {
 type FetchHeadersRows struct {
 	Config config.Config
 	Table  string
+	Page   *Page
 }
 
 type TableHeadersRowsFetchedMsg struct {
 	Headers []string
 	Rows    [][]string
+	Page    *Page
 }
 type GetColumns struct {
 	Config config.Config
 	Table  string
 }
-type BuildTreeFromRows struct{
-        Rows []db.GetRouteTreeByRouteIDRow
+type BuildTreeFromRows struct {
+	Rows []db.GetRouteTreeByRouteIDRow
 }
 type GetFullTreeResMsg struct {
 	Rows    []db.GetRouteTreeByRouteIDRow
@@ -322,4 +329,7 @@ type BulkSetIndentMsg struct {
 		NodeID int64
 		Indent int
 	}
+}
+type UpdateMaxCursorMsg struct {
+	cursorMax int
 }
