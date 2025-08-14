@@ -333,3 +333,9 @@ type BulkSetIndentMsg struct {
 type UpdateMaxCursorMsg struct {
 	cursorMax int
 }
+
+type CmsDefineDatatypeLoadMsg struct{}
+type CmsDefineDatatypeReadyMsg struct{}
+
+type CmsBuildDefineDatatypeFormMsg struct{}
+type CmsDefineDatatypeFormMsg struct{}

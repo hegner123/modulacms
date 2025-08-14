@@ -4,10 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/hegner123/modulacms/internal/db"
 )
 
 func (m Model) Stringify() string {
@@ -191,21 +189,6 @@ func (m Model) Stringify() string {
 	formFieldsDebug := HuhFieldSliceDebugString(m.FormFields)
 	out = append(out, formFieldsDebug)
 
-	//Title        string
-	title := fmt.Sprintf("Title: %s", ValidString(m.Title))
-	out = append(out, title)
-
-	//Header       string
-	header := fmt.Sprintf("Header: %s", ValidString(m.Header))
-	out = append(out, header)
-
-	//Body         string
-	body := fmt.Sprintf("Body: %s", ValidString(m.Body))
-	out = append(out, body)
-
-	//Footer       string
-	footer := fmt.Sprintf("Footer: %s", ValidString(m.Footer))
-	out = append(out, footer)
 
 	//Verbose      bool
 	verb := fmt.Sprintf("Verbose: %v", m.Verbose)
@@ -344,7 +327,7 @@ func SqlRowDebugString(row sql.Row) string {
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
-
+/*
 func DbContentFieldsDebugString(cf db.ContentFields) string {
 	out := make([]string, 0)
 
@@ -379,9 +362,9 @@ func DbFieldsDebugString(f db.Fields) string {
 	out = append(out, fieldType)
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}
+}*/
 
-func TreeNodeDebugString(tn TreeNode) string {
+/*func TreeNodeDebugString(tn TreeNode) string {
 	out := make([]string, 0)
 
 	var nodeStr string
@@ -412,9 +395,9 @@ func TreeNodeDebugString(tn TreeNode) string {
 	out = append(out, nodes)
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}
+}*/
 
-func DbDatatypesDebugString(dt db.Datatypes) string {
+/*func DbDatatypesDebugString(dt db.Datatypes) string {
 	out := make([]string, 0)
 
 	datatypeID := fmt.Sprintf("DatatypeID: %d", dt.DatatypeID)
@@ -439,9 +422,9 @@ func DbDatatypesDebugString(dt db.Datatypes) string {
 	out = append(out, authorID)
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}
+}*/
 
-func DbContentDataDebugString(cd db.ContentData) string {
+/*func DbContentDataDebugString(cd db.ContentData) string {
 	out := make([]string, 0)
 
 	contentDataID := fmt.Sprintf("ContentDataID: %d", cd.ContentDataID)
@@ -466,9 +449,9 @@ func DbContentDataDebugString(cd db.ContentData) string {
 	out = append(out, authorID)
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
-}
+}*/
 
-func PageSliceDebugString(pages []*Page) string {
+/*func PageSliceDebugString(pages []*Page) string {
 	if len(pages) == 0 {
 		return "(empty slice)"
 	}
@@ -489,9 +472,9 @@ func PageSliceDebugString(pages []*Page) string {
 	//join verticle by end
 
 	return lipgloss.JoinHorizontal(lipgloss.Top)
-}
+}*/
 
-func PageValueSliceDebugString(pages []Page) string {
+/*func PageValueSliceDebugString(pages []Page) string {
 	if len(pages) == 0 {
 		return "(empty slice)"
 	}
@@ -505,7 +488,7 @@ func PageValueSliceDebugString(pages []Page) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
 func HuhGroupSliceDebugString(groups []huh.Group) string {
 	if len(groups) == 0 {
@@ -571,7 +554,7 @@ func SqlRowSliceDebugString(rows []sql.Row) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }
 
-func DbContentFieldsSliceDebugString(fields []db.ContentFields) string {
+/*func DbContentFieldsSliceDebugString(fields []db.ContentFields) string {
 	if len(fields) == 0 {
 		return "(empty slice)"
 	}
@@ -585,9 +568,9 @@ func DbContentFieldsSliceDebugString(fields []db.ContentFields) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
-func DbFieldsSliceDebugString(fields []db.Fields) string {
+/*func DbFieldsSliceDebugString(fields []db.Fields) string {
 	if len(fields) == 0 {
 		return "(empty slice)"
 	}
@@ -601,9 +584,9 @@ func DbFieldsSliceDebugString(fields []db.Fields) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
-func TreeNodeSliceDebugString(nodes []*TreeNode) string {
+/*func TreeNodeSliceDebugString(nodes []*TreeNode) string {
 	if len(nodes) == 0 {
 		return "(empty slice)"
 	}
@@ -622,9 +605,9 @@ func TreeNodeSliceDebugString(nodes []*TreeNode) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
-func DbDatatypesSliceDebugString(datatypes []db.Datatypes) string {
+/*func DbDatatypesSliceDebugString(datatypes []db.Datatypes) string {
 	if len(datatypes) == 0 {
 		return "(empty slice)"
 	}
@@ -638,9 +621,9 @@ func DbDatatypesSliceDebugString(datatypes []db.Datatypes) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
-func DbContentDataSliceDebugString(contentData []db.ContentData) string {
+/*func DbContentDataSliceDebugString(contentData []db.ContentData) string {
 	if len(contentData) == 0 {
 		return "(empty slice)"
 	}
@@ -654,9 +637,9 @@ func DbContentDataSliceDebugString(contentData []db.ContentData) string {
 	}
 
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
-}
+}*/
 
-func DebugViewPortString(v viewport.Model) string {
+/*func DebugViewPortString(v viewport.Model) string {
 	src := make([]string, 0)
 	src = append(src, fmt.Sprintf("Height: %d", v.Height))
 	src = append(src, fmt.Sprintf("Width: %d", v.Width))
@@ -664,4 +647,4 @@ func DebugViewPortString(v viewport.Model) string {
 	src = append(src, fmt.Sprintf("Mouse Wheel Delta: %d", v.MouseWheelDelta))
 
 	return lipgloss.JoinVertical(lipgloss.Top, src...)
-}
+}*/

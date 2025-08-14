@@ -610,3 +610,25 @@ func (m Model) UpdateMaxCursorCmd() tea.Cmd {
 		return UpdateMaxCursorMsg{cursorMax: len(currentView)}
 	}
 }
+
+func CmsDefineDatatypeLoadCmd() tea.Cmd {
+	return func() tea.Msg {
+		return CmsDefineDatatypeLoadMsg{}
+	}
+}
+
+func CmsDefineDatatypeReadyCmd() tea.Cmd {
+	return func() tea.Msg {
+		return CmsDefineDatatypeReadyMsg{}
+	}
+}
+func CmsBuildDefineDatatypeFormCmd ()tea.Cmd{
+return func()tea.Msg{
+                return CmsBuildDefineDatatypeFormMsg{}
+        }
+}
+func CmsDefineDatatypeFormCmd ()tea.Cmd{
+        return func()tea.Msg{
+                return CmsDefineDatatypeFormMsg{}
+        }
+}

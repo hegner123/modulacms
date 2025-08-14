@@ -143,10 +143,6 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 			}
 			return FormCancelMsg{}
 		}
-		form.SubmitCmd = func() tea.Msg {
-			m.Focus = PAGEFOCUS
-			return tea.ResumeMsg{}
-		}
 		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns)}
 	}
 

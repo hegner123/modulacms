@@ -7,6 +7,14 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+type FetchSource string
+
+const (
+	DATATYPEMENU    FetchSource = "datatype_menu"
+	BUILDTREE       FetchSource = "build_tree"
+	PICKCONTENTDATA FetchSource = "fetch_source"
+)
+
 type DatabaseUpdate struct{}
 
 func NewDatabaseUpdate() tea.Cmd {

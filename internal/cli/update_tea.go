@@ -22,8 +22,8 @@ func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.Height = msg.Height
 		m.Width = msg.Width
-		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.Titles[m.TitleFont]) + RenderHeading(m.Header))
-		footerHeight := lipgloss.Height(m.footerView() + RenderFooter(m.Footer))
+		headerHeight := lipgloss.Height(m.headerView() + RenderTitle(m.Titles[m.TitleFont]))
+		footerHeight := lipgloss.Height(m.footerView())
 		verticalMarginHeight := headerHeight + footerHeight
 
 		if !m.Ready {
@@ -60,10 +60,7 @@ func (m Model) headerView() string {
 
 	if m.Page.Index == CONFIGPAGE {
 		titleText = "Configuration"
-	} else {
-		titleText = m.Header
 	}
-
 	title := titleStyle.Render(titleText)
 	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(title)))
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)

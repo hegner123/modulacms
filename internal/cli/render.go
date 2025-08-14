@@ -13,36 +13,12 @@ import (
 var TitleFile embed.FS
 
 func (m Model) RenderUI() string {
-	app := strings.Builder{}
-	column := []string{}
 	docStyle := lipgloss.NewStyle()
 	docStyle = docStyle.Width(m.Width).Height(m.Height)
-	if m.Footer == "" {
-		m.Footer = "Press q to quit."
-	}
 
-	title := RenderTitle(m.Titles[m.TitleFont])
-	header := RenderHeading(m.Header)
-	footer := RenderFooter(m.Footer)
-	column = append(column, title)
-	column = append(column, header)
-	body := m.Body
-	if m.Verbose {
-		body = lipgloss.JoinHorizontal(lipgloss.Top, m.Body, m.RenderStatusTable())
-
-	}
-	column = append(column, body)
-
-	app.WriteString(lipgloss.JoinVertical(
-		lipgloss.Left,
-		column...,
-	))
-	h := m.RenderSpace(app.String() + RenderFooter(m.Footer))
 	doc := lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.NewStyle().Padding(0, 2).Render(app.String()),
-		h,
-		footer,
+		lipgloss.NewStyle().Padding(0, 2).Render(),
 		m.RenderStatusBar(),
 	)
 

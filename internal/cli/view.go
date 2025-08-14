@@ -107,6 +107,12 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
+	case createPage.Index:
+		p := NewFormPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Create")
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
 	case readPage.Index:
 		p := NewTablePage()
 		p.AddTitle(m.Titles[m.TitleFont])
@@ -129,8 +135,6 @@ func (m Model) View() string {
 			columns = append(columns, c)
 
 		}
-		//(m.Headers)
-		//m.Rows[m.Cursor][i]
 		for i := range columns {
 			columns[i].Value = m.Rows[m.Cursor][i]
 		}
@@ -154,14 +158,16 @@ func (m Model) View() string {
 	case updateFormPage.Index:
 		p := NewFormPage()
 		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Update FORM")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case deletePage.Index:
 		p := NewTablePage()
 		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Delete")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case createPage.Index:
+	case defineDatatypePage.Index:
 		p := NewFormPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
@@ -185,6 +191,12 @@ func (m Model) View() string {
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Content")
 		p.AddMenu(menu)
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
+	case mediaPage.Index:
+		p := NewStaticPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Content")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	default:

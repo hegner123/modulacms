@@ -52,6 +52,12 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 			LoadingStartCmd(),
 			SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values),
 		)
+	case CmsBuildDefineDatatypeFormMsg:
+		form, count,values := NewDefineDatatypeForm(m)
+		return m, tea.Batch(
+			SetFormDataCmd(*form, count, values),
+                        NavigateToPageCmd(*defineDatatypePage),
+		)
 	case FormSubmitMsg:
 		newModel := m
 		newModel.FormSubmit = true

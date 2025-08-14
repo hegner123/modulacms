@@ -47,6 +47,7 @@ type ModelInterface interface {
 	SetError(err error)
 }
 
+
 type Model struct {
 	Config       *config.Config
 	Status       ApplicationState
@@ -88,10 +89,6 @@ type Model struct {
 	FormGroups   []huh.Group
 	FormFields   []huh.Field
 	Focus        FocusKey
-	Title        string
-	Header       string
-	Body         string
-	Footer       string
 	Verbose      bool
 	Content      string
 	Ready        bool
@@ -131,7 +128,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	if err != nil {
 		utility.DefaultLogger.Fatal("", err)
 	}
-	fonts := ParseTitleFonts(fs)
+	fonts := ParseTitles(fs)
 
 	// paginator
 	p := paginator.New()
@@ -169,7 +166,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	}, GetTablesCMD(c)
 }
 
-func ParseTitleFonts(f []fs.DirEntry) []string {
+func ParseTitles(f []fs.DirEntry) []string {
 	var fonts []string
 
 	for _, file := range f {

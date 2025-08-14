@@ -24,11 +24,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Available menu options: %s", ViewPageMenus(m))))
 		switch msg.Page.Index {
 		case CMSPAGE:
+			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
 
 			return m, tea.Batch(cmds...)
 		case ADMINCMSPAGE:
+			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
 
@@ -36,90 +38,98 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case DATABASEPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
+
 			return m, tea.Batch(cmds...)
 		case TABLEPAGE:
 			cmds = append(cmds, PageMenuSetCmd(TableMenu))
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, GetColumnsCmd(*m.Config, m.Table))
+
 			return m, tea.Batch(cmds...)
 		case CREATEPAGE:
+			cmds = append(cmds, FormNewCmd(DATABASECREATE))
+			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
+			cmds = append(cmds, PageSetCmd(m.PageMap[CREATEPAGE]))
+			cmds = append(cmds, StatusSetCmd(EDITING))
 
-			return m, tea.Batch(
-				FormNewCmd(DATABASECREATE),
-				FocusSetCmd(FORMFOCUS),
-				PageSetCmd(m.PageMap[CREATEPAGE]),
-				StatusSetCmd(EDITING),
-			)
-		case UPDATEPAGE:
-			page := m.PageMap[UPDATEPAGE]
-			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
-				StatusSetCmd(OK),
-			)
+			return m, tea.Batch(cmds...)
 		case READPAGE:
 			f := MakeFilter("Spinner", "Pages", "History", "Pages", "Viewport", "Paginator")
 			page := m.PageMap[READPAGE]
-			return m, tea.Batch(
-				LogModelCMD(nil, &f),
-				LoadingStartCmd(),
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
-				StatusSetCmd(OK),
-			)
-		case DELETEPAGE:
-			page := m.PageMap[DELETEPAGE]
-			return m, tea.Batch(
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
-				PageSetCmd(m.Pages[DELETEPAGE]),
-				StatusSetCmd(DELETING),
-			)
-		case UPDATEFORMPAGE:
-			page := m.PageMap[UPDATEFORMPAGE]
-			return m, tea.Batch(
-				FormNewCmd(DATABASEUPDATE),
-				FetchTableHeadersRowsCmd(*m.Config, m.Table, &page),
-				PageSetCmd(m.Pages[UPDATEFORMPAGE]),
-				StatusSetCmd(EDITING),
-			)
+			cmds = append(cmds, LogModelCMD(nil, &f))
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
 		case READSINGLEPAGE:
 			page := m.PageMap[READSINGLEPAGE]
-			return m, tea.Batch(
-				PageSetCmd(page),
-				StatusSetCmd(OK),
-			)
-		case USERSADMIN:
-			page := m.PageMap[USERSADMIN]
-			return m, tea.Batch(
-				PageSetCmd(page),
-				StatusSetCmd(OK),
-			)
-		case MEDIA:
-			page := m.PageMap[MEDIA]
-			return m, tea.Batch(
-				PageSetCmd(page),
-				StatusSetCmd(OK),
-			)
-		case CONTENT:
-			page := m.PageMap[CONTENT]
-			return m, tea.Batch(
-				PageSetCmd(page),
-				StatusSetCmd(OK),
-			)
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
+		case UPDATEPAGE:
+			page := m.PageMap[UPDATEPAGE]
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
+		case UPDATEFORMPAGE:
+			page := m.PageMap[UPDATEFORMPAGE]
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FormNewCmd(DATABASEUPDATE))
+			cmds = append(cmds, StatusSetCmd(EDITING))
+
+			return m, tea.Batch(cmds...)
+		case DELETEPAGE:
+			page := m.PageMap[DELETEPAGE]
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, StatusSetCmd(DELETING))
+
+			return m, tea.Batch(cmds...)
 		case DYNAMICPAGE:
 			page := m.PageMap[DYNAMICPAGE]
-			return m, tea.Batch(
-				PageSetCmd(page),
-				StatusSetCmd(OK),
-			)
-		case PICKCONTENT:
-			return m, tea.Batch(
-				PageSetCmd(*NewPickContentPage("Pick")),
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
 
-				StatusSetCmd(OK),
-			)
+			return m, tea.Batch(cmds...)
+		case DEFINEDATATYPE:
+			page := m.PageMap[DEFINEDATATYPE]
+			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+                        cmds = append(cmds, LoadingStopCmd())
+
+			return m, tea.Batch(cmds...)
+		case CONTENT:
+			page := m.PageMap[CONTENT]
+			cmds = append(cmds, DatatypesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
+		case PICKCONTENT:
+			page := NewPickContentPage("Pick")
+			cmds = append(cmds, PageSetCmd(*page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
+		case MEDIA:
+			page := m.PageMap[MEDIA]
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
+		case USERSADMIN:
+			page := m.PageMap[USERSADMIN]
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+
+			return m, tea.Batch(cmds...)
 		case CONFIGPAGE:
-			form, err := formatJSON(m.Config)
+			content, err := formatJSON(m.Config)
 			if err == nil {
-				cmds = append(cmds, SetViewportContentCmd(form))
+				cmds = append(cmds, SetViewportContentCmd(content))
 			} else {
 				cmds = append(cmds, SetViewportContentCmd(m.Content))
 
@@ -133,25 +143,25 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 
-		return m, nil
+		return m, tea.Batch()
 	case SelectTable:
-		return m, tea.Batch(
-			NavigateToPageCmd(m.PageMap[TABLEPAGE]),
-			TableSetCmd(m.Tables[m.Cursor]),
-			PageMenuSetCmd(TableMenu),
-		)
+		cmds := make([]tea.Cmd, 0)
+		cmds = append(cmds, NavigateToPageCmd(m.PageMap[TABLEPAGE]))
+		cmds = append(cmds, TableSetCmd(m.Tables[m.Cursor]))
+		cmds = append(cmds, PageMenuSetCmd(TableMenu))
 
+		return m, tea.Batch(cmds...)
 	case HistoryPop:
+		cmds := make([]tea.Cmd, 0)
 		newModel := m
 		entry := m.PopHistory()
-		return newModel, tea.Batch(
-			PageSetCmd(entry.Page),
-			PageMenuSetCmd(entry.Menu),
-			CursorSetCmd(entry.Cursor),
-		)
+		cmds = append(cmds, PageSetCmd(entry.Page))
+		cmds = append(cmds, PageMenuSetCmd(entry.Menu))
+		cmds = append(cmds, CursorSetCmd(entry.Cursor))
+
+		return newModel, tea.Batch(cmds...)
 
 	default:
 		return m, nil
-
 	}
 }

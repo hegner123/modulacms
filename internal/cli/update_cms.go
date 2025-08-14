@@ -1,7 +1,6 @@
 package cli
 
 import (
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -14,6 +13,7 @@ func NewCmsUpdate() tea.Cmd {
 }
 
 func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
+	cmds := make([]tea.Cmd, 0)
 	switch msg := msg.(type) {
 	case GetFullTreeResMsg:
 		r := m.BuildTree(msg.Rows)
@@ -22,8 +22,14 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case BuildTreeFromRouteMsg:
 		return m, tea.Batch()
+	case CmsDefineDatatypeLoadMsg:
+		return m, tea.Batch(
+                        CmsBuildDefineDatatypeFormCmd(),
+                        )
+	case CmsDefineDatatypeReadyMsg:
+		return m, tea.Batch()
 	default:
-		return m, nil
+		return m, tea.Batch(cmds...)
 	}
 
 }

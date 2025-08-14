@@ -42,6 +42,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.TableNavigationControls(msg)
 	case DELETEPAGE:
 		return m.TableNavigationControls(msg)
+	case DEFINEDATATYPE:
+		return m.FormControls(msg)
 	case DEVELOPMENT:
 		return DevelopmentInterface(m, msg)
 	case DATATYPE:
@@ -130,7 +132,15 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 		case "enter", "l":
 			// Only proceed if we have menu items
 			page := m.PageMenu[m.Cursor]
-			return m, NavigateToPageCmd(*page)
+			switch page.Index {
+			case DEFINEDATATYPE:
+				return m, tea.Batch(
+					CmsDefineDatatypeLoadCmd(),
+				)
+			default:
+
+				return m, nil
+			}
 		}
 	}
 	return m, nil

@@ -11,12 +11,44 @@ import (
 type FormIndex int
 
 const (
-    DATABASECREATE FormIndex = iota
-    DATABASEUPDATE
-    CMSCREATE
-    CMSUPDATE
+	DATABASECREATE FormIndex = iota
+	DATABASEUPDATE
+	CMSCREATE
+	CMSUPDATE
 )
 
+func NewDefineDatatypeForm(m Model) (*huh.Form, int, []*string) {
+	values := make([]*string, 2)
+	var (
+		label    string
+		datatype string
+	)
+	groupDescription := "Define datatype"
+	typeDescription := "Optional - ROOT is reserved for root content types.\n"
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Label").
+				Description("Display name for this content type").
+				Value(&label),
+			huh.NewInput().
+				Title("Type").
+				Description(typeDescription).
+				Placeholder("ROOT").
+				Value(&datatype),
+		).Description(groupDescription),
+	)
+	form.SubmitCmd = func() tea.Msg {
+		if m.FormSubmit {
+			return FormActionMsg{}
+		}
+		return FormCancelMsg{}
+	}
+	values[0] = &label
+	values[1] = &datatype
+
+	return form, len(values), values
+}
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	var (
@@ -100,18 +132,6 @@ func CreateFieldForm(m Model) (*huh.Form, int) {
 	return form, 4 // 4 fields
 }
 
-
-// BuildCMSDatatypeForm creates a form for CMS datatypes
-func (m Model) BuildCMSDatatypeForm() tea.Cmd {
-	return func() tea.Msg {
-		form, count := CreateDatatypeForm(m)
-		return NewFormMsg{
-			Form:        form,
-			FieldsCount: count,
-		}
-	}
-}
-
 // BuildCMSFieldForm creates a form for CMS fields
 func (m Model) BuildCMSFieldForm() tea.Cmd {
 	return func() tea.Msg {
@@ -146,6 +166,6 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Process completed form (implementation would depend on form type)
 		m.Page = m.Pages[CMSPAGE]
 	}
-	
+
 	return m, tea.Batch(cmds...)
 }
