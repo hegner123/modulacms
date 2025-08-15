@@ -1,0 +1,22 @@
+# Database Table Creation Order
+1.  permissions
+2.  roles
+3.  media_dimension
+4.  users
+5.  admin_routes
+6.  routes
+7.  datatypes
+8.  fields
+9.  admin_datatypes
+10. admin_fields
+11. tokens
+12. user_oauth
+13. tables
+14. media
+15. sessions
+16. content_data
+17. content_fields
+18. admin_content_data
+19. admin_content_fields
+20. datatypes_fields
+21. admin_datatypes_fields

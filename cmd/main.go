@@ -1,10 +1,3 @@
-// Package main is the entry point for ModulaCMS, a flexible content management system.
-//
-// It handles server initialization, command-line arguments, installation processes,
-// and sets up HTTP, HTTPS, and SSH servers. The main package coordinates the various
-// components of the CMS including authentication, routing, middleware, and database
-// connections. It supports multiple operational modes including CLI-only, installation,
-// and update functionalities.
 package main
 
 import (
@@ -46,39 +39,49 @@ type AppFlags struct {
 	InstallFlag *bool
 	ConfigPath  *string
 }
+type ReturnCode int16
 
-var InitStatus install.ModulaInit
-var certDir string
-
-const updateUrl string = "https://modulacms.com/update"
+const (
+	OKSIG ReturnCode = iota
+	ERRSIG
+)
 
 func main() {
+
+	code, err := run()
+	if err != nil || code == ERRSIG {
+		utility.DefaultLogger.Fatal("Root Return: ", err)
+	}
+
+}
+
+func run() (ReturnCode, error) {
+	var InitStatus install.ModulaInit
+	var certDir string
+
+	const updateUrl string = "https://modulacms.com/update"
+
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// Create a context with a timeout for graceful shutdown.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	app := flags.ParseFlags()
 
 	if *app.VersionFlag {
-		proccessPrintVersion()
+		HandleFlagVersion()
 	}
 
 	configProvider := config.NewFileProvider(*app.ConfigPath)
 	configManager := config.NewManager(configProvider)
 
-	// Load config
 	if err := configManager.Load(); err != nil {
 		utility.DefaultLogger.Fatal("Failed to load configuration", err)
 	}
 
-	// Get the config
 	cfg, _ := configManager.Config()
 
-	// If install check fails, and install flag is present
-	// disable flag to prevent multiple calls to install
 	_, err := install.CheckInstall(cfg, app.VerboseFlag)
 	if err != nil {
 		if *app.InstallFlag {
@@ -89,17 +92,17 @@ func main() {
 	}
 
 	if *app.UpdateFlag {
-		proccessUpdateFlag()
+		HandleFlagUpdate(updateUrl)
 	}
 	if *app.AuthFlag {
-		proccessAuthCheck(*cfg)
+		HandleFlagAuth(*cfg)
 	}
 	if *app.CliFlag {
-		proccessRunCli(app.VerboseFlag, cfg)
+		HandleFlagCLI(app.VerboseFlag, cfg)
 	}
 
 	if *app.AlphaFlag {
-		proccessAlphaFlag()
+		HandleFlagAlpha()
 	}
 
 	if *app.ResetFlag {
@@ -117,12 +120,7 @@ func main() {
 	if !InitStatus.DbFileExists || *app.ResetFlag {
 		dbc, _, _ := db.ConfigDB(*cfg).GetConnection()
 
-		defer func() {
-			if closeErr := dbc.Close(); closeErr != nil && err == nil {
-				err = closeErr
-			}
-		}()
-
+		defer utility.HandleConnectionCloseDeferErr(dbc)
 	}
 
 	var host = cfg.SSH_Host
@@ -239,23 +237,25 @@ func main() {
 	// Shutdown SSH server.
 	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 		utility.DefaultLogger.Error("SSH server shutdown error: %v", err)
+		return ERRSIG, err
 	}
 
 	utility.DefaultLogger.Info("Servers gracefully stopped.")
+	return OKSIG, nil
 }
 
-func proccessAuthCheck(c config.Config) {
+func HandleFlagAuth(c config.Config) {
 	auth.OauthSettings(c)
 	os.Exit(0)
 }
 
-func proccessAlphaFlag() {
+func HandleFlagAlpha() {
 	_, err := os.Open("test.txt")
 	if err != nil {
 		utility.DefaultLogger.Fatal("failed to create database dump in archive: ", err)
 	}
 }
-func proccessPrintVersion() {
+func HandleFlagVersion() {
 	message, err := utility.GetVersion()
 	if err != nil {
 		utility.DefaultLogger.Fatal(*message, err)
@@ -264,7 +264,7 @@ func proccessPrintVersion() {
 	os.Exit(0)
 }
 
-func proccessRunCli(v *bool, c *config.Config) {
+func HandleFlagCLI(v *bool, c *config.Config) {
 	m, _ := cli.InitialModel(v, c)
 	if _, e := cli.CliRun(&m); !e {
 		//os.Exit(0)
@@ -281,8 +281,8 @@ func proccessRunCli(v *bool, c *config.Config) {
 	}
 }
 
-func proccessUpdateFlag() {
-	err := update.Fetch(updateUrl)
+func HandleFlagUpdate(url string) {
+	err := update.Fetch(url)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 	}

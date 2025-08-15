@@ -11,3 +11,10 @@ func HandleRowsCloseDeferErr(r *sql.Rows) {
 	}
 
 }
+func HandleConnectionCloseDeferErr(r *sql.DB) {
+	err := r.Close()
+	if err != nil {
+		return
+	}
+
+}
