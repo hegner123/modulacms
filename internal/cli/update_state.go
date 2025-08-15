@@ -148,6 +148,23 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.Paginator = p
 		return newModel, cmd
+	case FormLenSet:
+		newModel := m
+		newModel.FormLen = msg.FormLen
+		return newModel, NewStateUpdate()
+	case FormSet:
+		newModel := m
+		newModel.Form = &msg.Form
+		newModel.FormValues = msg.Values
+		return newModel, NewStateUpdate()
+	case FormValuesSet:
+		newModel := m
+		newModel.FormValues = msg.Values
+		return newModel, NewStateUpdate()
+	case FormOptionsSet:
+		newModel := m
+		return newModel, NewStateUpdate()
+
 	case UpdateMaxCursorMsg:
 		cursorUpdate := func() tea.Msg {
 			if m.Cursor > msg.cursorMax-1 {

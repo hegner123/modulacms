@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
@@ -34,29 +35,16 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.Table, len(*m.Columns)-1)))
 			return m, tea.Batch(cmds...)
 		}
-	case FormLenSet:
-		newModel := m
-		newModel.FormLen = msg.FormLen
-		return newModel, NewUpdatedForm()
-	case FormSet:
-		newModel := m
-		newModel.Form = &msg.Form
-		newModel.FormValues = msg.Values
-		return newModel, NewUpdatedForm()
-	case FormValuesSet:
-		newModel := m
-		newModel.FormValues = msg.Values
-		return newModel, NewUpdatedForm()
 	case NewFormMsg:
 		return m, tea.Batch(
 			LoadingStartCmd(),
 			SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values),
 		)
 	case CmsBuildDefineDatatypeFormMsg:
-		form, count,values := NewDefineDatatypeForm(m)
+		form, count, values := NewDefineDatatypeForm(m, false)
 		return m, tea.Batch(
 			SetFormDataCmd(*form, count, values),
-                        NavigateToPageCmd(*defineDatatypePage),
+			NavigateToPageCmd(*defineDatatypePage),
 		)
 	case FormSubmitMsg:
 		newModel := m
@@ -65,12 +53,40 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	case FormActionMsg:
 		switch msg.Action {
 		case INSERT:
+			filteredColumns := make([]string, 0)
+			filteredValues := make([]*string, 0)
+
+			for i, value := range msg.Values {
+				if value != nil && *value != "" {
+					filteredColumns = append(filteredColumns, msg.Columns[i])
+					filteredValues = append(filteredValues, value)
+				} else {
+					filteredColumns = append(filteredColumns, msg.Columns[i])
+					filteredValues = append(filteredValues, nil)
+
+				}
+			}
 			return m, tea.Batch(
-				LogMessageCmd(fmt.Sprintf("Processing %s action for table %s", msg.Action, msg.Table)),
-				DatabaseInsertCmd(db.DBTable(msg.Table), msg.Columns, msg.Values),
+				DatabaseInsertCmd(db.DBTable(msg.Table), filteredColumns, filteredValues),
+				LogMessageCmd(fmt.Sprintln(filteredColumns)),
+				LogMessageCmd(fmt.Sprintln(filteredValues)),
 			)
 
 		}
+	case FormInitOptionsMsg:
+		newModel := m
+		if newModel.FormOptions == nil {
+			newOptions := make(map[string][]huh.Option[string], 0)
+			newModel.FormOptions = (*FormOptionsMap)(&newOptions)
+		}
+		fo := *newModel.FormOptions
+		if fo[msg.Form] != nil {
+			return m, nil
+		}
+
+		newOptionsSet := make([]huh.Option[string], 0)
+		fo[msg.Form] = newOptionsSet
+		return newModel, NewUpdatedForm()
 	case DbResMsg:
 		return m, tea.Batch(
 			LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table)),

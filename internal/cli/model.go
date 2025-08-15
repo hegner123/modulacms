@@ -20,6 +20,7 @@ import (
 
 type FocusKey int
 type ApplicationState int
+type FormOptionsMap map[string][]huh.Option[string]
 
 const (
 	PAGEFOCUS FocusKey = iota
@@ -46,7 +47,6 @@ type ModelInterface interface {
 	SetRoot(root model.Root)
 	SetError(err error)
 }
-
 
 type Model struct {
 	Config       *config.Config
@@ -88,6 +88,7 @@ type Model struct {
 	FormSubmit   bool
 	FormGroups   []huh.Group
 	FormFields   []huh.Field
+	FormOptions  *FormOptionsMap
 	Focus        FocusKey
 	Verbose      bool
 	Content      string

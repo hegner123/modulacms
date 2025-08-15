@@ -28,6 +28,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
                         )
 	case CmsDefineDatatypeReadyMsg:
 		return m, tea.Batch()
+	
 	default:
 		return m, tea.Batch(cmds...)
 	}

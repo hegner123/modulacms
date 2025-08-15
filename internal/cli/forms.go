@@ -17,16 +17,52 @@ const (
 	CMSUPDATE
 )
 
-func NewDefineDatatypeForm(m Model) (*huh.Form, int, []*string) {
-	values := make([]*string, 2)
+// TODO add argument for admin / client specific action
+func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
+	values := make([]*string, 8)
+	columns := []string{
+		"datatype_id",
+		"parent_id",
+		"label",
+		"type",
+		"author_id",
+		"date_created",
+		"date_modified",
+		"history",
+	}
 	var (
+		parent   string
 		label    string
-		datatype string
+		datatype string = "ROOT"
 	)
 	groupDescription := "Define datatype"
 	typeDescription := "Optional - ROOT is reserved for root content types.\n"
 	form := huh.NewForm(
 		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Parent").
+				OptionsFunc(func() []huh.Option[string] {
+					options := make([]huh.Option[string], 0)
+					dbc := db.ConfigDB(*m.Config)
+					rows, err := dbc.ListDatatypes()
+					if err != nil {
+						return options
+					}
+					blankOption := huh.Option[string]{
+						Key:   "ROOT",
+						Value: "",
+					}
+					options = append(options, blankOption)
+					for _, v := range *rows {
+						option := huh.Option[string]{
+							Key:   v.Label,
+							Value: fmt.Sprint(v.DatatypeID),
+						}
+						options = append(options, option)
+					}
+					return options
+				}, nil).
+				Value(&parent),
 			huh.NewInput().
 				Title("Label").
 				Description("Display name for this content type").
@@ -34,21 +70,30 @@ func NewDefineDatatypeForm(m Model) (*huh.Form, int, []*string) {
 			huh.NewInput().
 				Title("Type").
 				Description(typeDescription).
-				Placeholder("ROOT").
 				Value(&datatype),
 		).Description(groupDescription),
 	)
-	form.SubmitCmd = func() tea.Msg {
-		if m.FormSubmit {
-			return FormActionMsg{}
-		}
-		return FormCancelMsg{}
+	values[1] = &parent
+	values[2] = &label
+	values[3] = &datatype
+	form.Init()
+	table := "datatypes"
+	if admin {
+		table = "admin_datatypes"
 	}
-	values[0] = &label
-	values[1] = &datatype
+	form.SubmitCmd = tea.Batch(
+		LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for INSERT on table %s", string(table))),
+		FormActionCmd(INSERT, table, columns, values),
+		FocusSetCmd(PAGEFOCUS),
+		func() tea.Msg {
+			return tea.ResumeMsg{}
+		},
+	)
 
 	return form, len(values), values
 }
+
+// Field Form for adding fields to a Datatype
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	var (

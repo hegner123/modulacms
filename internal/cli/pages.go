@@ -23,7 +23,9 @@ const (
 	UPDATEFORMPAGE
 	READSINGLEPAGE
 	DYNAMICPAGE
-	DEFINEDATATYPE
+	DATATYPES
+	DATATYPESMENU
+	FIELDS
 	DEVELOPMENT
 	DATATYPE
 	USERSADMIN
@@ -33,26 +35,28 @@ const (
 )
 
 var (
-	homePage           *Page = &Page{Index: HOMEPAGE, Label: "Home"}
-	cmsPage            *Page = &Page{Index: CMSPAGE, Label: "CMS"}
-	adminCmsPage       *Page = &Page{Index: ADMINCMSPAGE, Label: "ADMIN CMS"}
-	selectTablePage    *Page = &Page{Index: DATABASEPAGE, Label: "Database"}
-	bucketPage         *Page = &Page{Index: BUCKETPAGE, Label: "Bucket"}
-	oauthPage          *Page = &Page{Index: OAUTHPAGE, Label: "Oauth"}
-	configPage         *Page = &Page{Index: CONFIGPAGE, Label: "Config"}
-	tableActionsPage   *Page = &Page{Index: TABLEPAGE, Label: "Table Actions"}
-	createPage         *Page = &Page{Index: CREATEPAGE, Label: "Create"}
-	readPage           *Page = &Page{Index: READPAGE, Label: "Read"}
-	updatePage         *Page = &Page{Index: UPDATEPAGE, Label: "Update"}
-	deletePage         *Page = &Page{Index: DELETEPAGE, Label: "Delete"}
-	updateFormPage     *Page = &Page{Index: UPDATEFORMPAGE, Label: "UpdateForm"}
-	readSinglePage     *Page = &Page{Index: READSINGLEPAGE, Label: "ReadSingle"}
-	dynamicPage        *Page = &Page{Index: DYNAMICPAGE, Label: "Dynamic"}
-	defineDatatypePage *Page = &Page{Index: DEFINEDATATYPE, Label: "DefineDatatype"}
-	developmentPage    *Page = &Page{Index: DEVELOPMENT, Label: "Development"}
-	usersAdminPage     *Page = &Page{Index: USERSADMIN, Label: "Users"}
-	mediaPage          *Page = &Page{Index: MEDIA, Label: "Media"}
-	contentPage        *Page = &Page{Index: CONTENT, Label: "Content"}
+	homePage          *Page = &Page{Index: HOMEPAGE, Label: "Home"}
+	cmsPage           *Page = &Page{Index: CMSPAGE, Label: "Client CMS"}
+	adminCmsPage      *Page = &Page{Index: ADMINCMSPAGE, Label: "Admin CMS"}
+	selectTablePage   *Page = &Page{Index: DATABASEPAGE, Label: "Database"}
+	bucketPage        *Page = &Page{Index: BUCKETPAGE, Label: "Bucket"}
+	oauthPage         *Page = &Page{Index: OAUTHPAGE, Label: "Oauth"}
+	configPage        *Page = &Page{Index: CONFIGPAGE, Label: "Config"}
+	tableActionsPage  *Page = &Page{Index: TABLEPAGE, Label: "Table Actions"}
+	createPage        *Page = &Page{Index: CREATEPAGE, Label: "Create"}
+	readPage          *Page = &Page{Index: READPAGE, Label: "Read"}
+	updatePage        *Page = &Page{Index: UPDATEPAGE, Label: "Update"}
+	deletePage        *Page = &Page{Index: DELETEPAGE, Label: "Delete"}
+	updateFormPage    *Page = &Page{Index: UPDATEFORMPAGE, Label: "Update Form"}
+	readSinglePage    *Page = &Page{Index: READSINGLEPAGE, Label: "Read Single"}
+	dynamicPage       *Page = &Page{Index: DYNAMICPAGE, Label: "Dynamic"}
+	datatypesPage     *Page = &Page{Index: DATATYPES, Label: "Datatypes"}
+	datatypesMenuPage *Page = &Page{Index: DATATYPESMENU, Label: "Datatypes Menu"}
+	addFields         *Page = &Page{Index: FIELDS, Label: "Add Fields"}
+	developmentPage   *Page = &Page{Index: DEVELOPMENT, Label: "Development"}
+	usersAdminPage    *Page = &Page{Index: USERSADMIN, Label: "Users"}
+	mediaPage         *Page = &Page{Index: MEDIA, Label: "Media"}
+	contentPage       *Page = &Page{Index: CONTENT, Label: "Content"}
 )
 
 func NewDatatypePage(label string) *Page {
@@ -93,7 +97,9 @@ func InitPages() *map[PageIndex]Page {
 	p[UPDATEFORMPAGE] = *updateFormPage
 	p[READSINGLEPAGE] = *readSinglePage
 	p[DYNAMICPAGE] = *dynamicPage
-	p[DEFINEDATATYPE] = *defineDatatypePage
+	p[DATATYPES] = *datatypesPage
+	p[DATATYPESMENU] = *datatypesMenuPage
+	p[FIELDS] = *addFields
 	p[DEVELOPMENT] = *developmentPage
 	p[USERSADMIN] = *usersAdminPage
 	p[MEDIA] = *mediaPage

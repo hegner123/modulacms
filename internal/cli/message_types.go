@@ -77,6 +77,14 @@ type FormActionMsg struct {
 	Values  []*string
 }
 type FormCancelMsg struct{}
+type FormOptionsSet struct {
+	Options *FormOptionsMap
+}
+type FormInitOptionsMsg struct {
+	Form  string
+	Table string
+}
+
 type HistoryPop struct{}
 type HistoryPush struct {
 	Page PageHistory
@@ -339,3 +347,6 @@ type CmsDefineDatatypeReadyMsg struct{}
 
 type CmsBuildDefineDatatypeFormMsg struct{}
 type CmsDefineDatatypeFormMsg struct{}
+type CmsGetDatatypeParentOptionsMsg struct {
+	Admin bool
+}

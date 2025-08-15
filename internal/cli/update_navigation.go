@@ -93,14 +93,23 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
-		case DEFINEDATATYPE:
-			page := m.PageMap[DEFINEDATATYPE]
+		case DATATYPES:
+			page := m.PageMap[DATATYPES]
 			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
                         cmds = append(cmds, LoadingStopCmd())
 
 			return m, tea.Batch(cmds...)
+		case FIELDS:
+			page := m.PageMap[FIELDS]
+			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+                        cmds = append(cmds, LoadingStopCmd())
+
+			return m, tea.Batch(cmds...)
+
 		case CONTENT:
 			page := m.PageMap[CONTENT]
 			cmds = append(cmds, DatatypesFetchCmd())

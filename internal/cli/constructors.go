@@ -82,18 +82,12 @@ func FormSubmitCmd() tea.Cmd { return func() tea.Msg { return FormSubmitMsg{} } 
 func FormCancelCmd() tea.Cmd { return func() tea.Msg { return FormCancelMsg{} } }
 func FormActionCmd(action DatabaseCMD, table string, columns []string, values []*string) tea.Cmd {
 	return func() tea.Msg {
-		// Debug log to trace FormActionCmd execution
-		return tea.Batch(
-			LogMessageCmd(fmt.Sprintf("FormActionCmd executed: %s action on table %s", action, table)),
-			func() tea.Msg {
-				return FormActionMsg{
-					Action:  action,
-					Table:   table,
-					Columns: columns,
-					Values:  values,
-				}
-			},
-		)()
+		return FormActionMsg{
+			Action:  action,
+			Table:   table,
+			Columns: columns,
+			Values:  values,
+		}
 	}
 }
 func FormAbortCmd(action DatabaseCMD, table string) tea.Cmd {
@@ -622,13 +616,29 @@ func CmsDefineDatatypeReadyCmd() tea.Cmd {
 		return CmsDefineDatatypeReadyMsg{}
 	}
 }
-func CmsBuildDefineDatatypeFormCmd ()tea.Cmd{
-return func()tea.Msg{
-                return CmsBuildDefineDatatypeFormMsg{}
-        }
+func CmsBuildDefineDatatypeFormCmd() tea.Cmd {
+	return func() tea.Msg {
+		return CmsBuildDefineDatatypeFormMsg{}
+	}
 }
-func CmsDefineDatatypeFormCmd ()tea.Cmd{
-        return func()tea.Msg{
-                return CmsDefineDatatypeFormMsg{}
-        }
+func CmsDefineDatatypeFormCmd() tea.Cmd {
+	return func() tea.Msg {
+		return CmsDefineDatatypeFormMsg{}
+	}
+}
+func FormOptionsSetCmd(options *FormOptionsMap) tea.Cmd {
+	return func() tea.Msg {
+		return FormOptionsSet{
+			Options: options,
+		}
+	}
+}
+
+func FormInitOptionsCmd(form, table string) tea.Cmd {
+	return func() tea.Msg {
+		return FormInitOptionsMsg{
+			Form:  form,
+			Table: table,
+		}
+	}
 }

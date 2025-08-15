@@ -17,6 +17,7 @@ const (
 	SELECT DatabaseCMD = "select"
 	UPDATE DatabaseCMD = "update"
 	DELETE DatabaseCMD = "delete"
+	BATCH  DatabaseCMD = "batch"
 )
 
 type FetchErrMsg struct {
@@ -62,7 +63,7 @@ func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []stri
 	}
 	valuesMap := make(map[string]any, 0)
 	for i, v := range values {
-		if i == 0 {
+		if i == 0 || v == nil {
 			continue
 		} else {
 			valuesMap[columns[i]] = *v
@@ -82,11 +83,8 @@ func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []stri
 		return LogMessageCmd(err.Error())
 	}
 
-	// Reset the form values after creation
-	reset := make([]*string, 0)
 
 	return tea.Batch(
-		FormSetValuesCmd(reset),
 		DbResultCmd(res, string(table)),
 	)
 }

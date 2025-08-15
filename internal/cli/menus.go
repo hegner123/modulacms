@@ -18,6 +18,7 @@ var HomepageMenu []*Page = []*Page{
 
 var CmsHomeMenu []*Page = []*Page{
 	defineDatatypePage,
+	addFields,
 	contentPage,
 	mediaPage,
 	usersAdminPage,

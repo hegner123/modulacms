@@ -8,10 +8,11 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
@@ -79,9 +80,9 @@ func run() (ReturnCode, error) {
 		utility.DefaultLogger.Fatal("Failed to load configuration", err)
 	}
 
-	cfg, _ := configManager.Config()
+	configuration, _ := configManager.Config()
 
-	_, err := install.CheckInstall(cfg, app.VerboseFlag)
+	_, err := install.CheckInstall(configuration, app.VerboseFlag)
 	if err != nil {
 		if *app.InstallFlag {
 			*app.InstallFlag = false
@@ -93,11 +94,13 @@ func run() (ReturnCode, error) {
 	if *app.UpdateFlag {
 		HandleFlagUpdate(updateUrl)
 	}
+
 	if *app.AuthFlag {
-		HandleFlagAuth(*cfg)
+		HandleFlagAuth(*configuration)
 	}
+
 	if *app.CliFlag {
-		HandleFlagCLI(app.VerboseFlag, cfg)
+		HandleFlagCLI(app.VerboseFlag, configuration)
 	}
 
 	if *app.AlphaFlag {
@@ -108,7 +111,7 @@ func run() (ReturnCode, error) {
 		fmt.Println("Reset DB:")
 		err := os.Remove("./modula.db")
 		if err != nil {
-			log.Fatal("Error deleting file:", err)
+			utility.DefaultLogger.Fatal("Error deleting file:", err)
 		}
 	}
 
@@ -117,39 +120,41 @@ func run() (ReturnCode, error) {
 	}
 
 	if !InitStatus.DbFileExists || *app.ResetFlag {
-		dbc, _, _ := db.ConfigDB(*cfg).GetConnection()
-
-		defer utility.HandleConnectionCloseDeferErr(dbc)
+		databaseConnection, _, _ := db.ConfigDB(*configuration).GetConnection()
+		defer utility.HandleConnectionCloseDeferErr(databaseConnection)
 	}
 
-	var host = cfg.SSH_Host
+	var host = configuration.SSH_Host
 	sshServer, err := wish.NewServer(
-		wish.WithAddress(net.JoinHostPort(host, cfg.SSH_Port)),
+		wish.WithAddress(net.JoinHostPort(host, configuration.SSH_Port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			cli.CliMiddleware(app.VerboseFlag, cfg),
+			cli.CliMiddleware(app.VerboseFlag, configuration),
 			logging.Middleware(),
 		),
 	)
 
-	mux := router.NewModulacmsMux(*cfg)
-	middlewareHandler := middleware.Serve(mux, cfg)
+	mux := router.NewModulacmsMux(*configuration)
+	middlewareHandler := middleware.Serve(mux, configuration)
 	manager := autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist(cfg.Environment_Hosts[cfg.Environment], cfg.Client_Site, cfg.Admin_Site), // Your domain(s)
+		Prompt: autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(configuration.Environment_Hosts[configuration.Environment],
+			configuration.Client_Site,
+			configuration.Admin_Site,
+		),
 	}
+
 	var (
-		// Define your HTTP server instance.
 		httpServer = &http.Server{
-			Addr:         cfg.Client_Site + cfg.Port,
+			Addr:         configuration.Client_Site + configuration.Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		}
-		// Define your HTTPS server instance.
+
 		httpsServer = &http.Server{
-			Addr:         cfg.Client_Site + cfg.SSL_Port,
+			Addr:         configuration.Client_Site + configuration.SSL_Port,
 			TLSConfig:    manager.TLSConfig(),
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
@@ -157,16 +162,17 @@ func run() (ReturnCode, error) {
 			IdleTimeout:  60 * time.Second,
 		}
 	)
-	if cfg.Environment == "local" {
+
+	if configuration.Environment == "local" {
 		httpServer = &http.Server{
-			Addr:         "localhost:" + cfg.SSL_Port,
+			Addr:         "localhost:" + configuration.SSL_Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		}
 		httpsServer = &http.Server{
-			Addr:         "localhost:" + cfg.SSL_Port,
+			Addr:         "localhost:" + configuration.SSL_Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
@@ -174,18 +180,15 @@ func run() (ReturnCode, error) {
 		}
 	}
 
-	l := len(cfg.Cert_Dir)
-	c := cfg.Cert_Dir[l-1]
-	if string(c) != "/" {
-		certDir = cfg.Cert_Dir + "/"
-	} else {
-		certDir = cfg.Cert_Dir
+	certDir, err = sanitizeCertDir(configuration.Cert_Dir)
+	if err != nil {
+		utility.DefaultLogger.Fatal("Certificate Directory path is invalid:", err)
 	}
 
 	// Run the SSH server concurrently.
 	go func() {
 
-		utility.DefaultLogger.Info("Starting SSH server", "ssh "+cfg.SSH_Host+" -p "+cfg.SSH_Port)
+		utility.DefaultLogger.Info("Starting SSH server", "ssh "+configuration.SSH_Host+" -p "+configuration.SSH_Port)
 		go func() {
 			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 				utility.DefaultLogger.Error("Could not start server", err)
@@ -204,15 +207,15 @@ func run() (ReturnCode, error) {
 
 	go func() {
 
-		if !InitStatus.UseSSL && cfg.Environment != "local" {
-			utility.DefaultLogger.Info("Server is running at https://localhost:", cfg.SSL_Port)
+		if !InitStatus.UseSSL && configuration.Environment != "local" {
+			utility.DefaultLogger.Info("Server is running at https://localhost:", configuration.SSL_Port)
 			err = httpsServer.ListenAndServeTLS(certDir+"localhost.crt", certDir+"localhost.key")
 			if err != nil {
 				utility.DefaultLogger.Info("Shutting Down Server", err)
 				done <- syscall.SIGTERM
 			}
 		}
-		utility.DefaultLogger.Info("Server is running at http://localhost:", cfg.Port)
+		utility.DefaultLogger.Info("Server is running at http://localhost:", configuration.Port)
 		err = httpServer.ListenAndServe()
 		if err != nil {
 			utility.DefaultLogger.Info("Shutting Down Server", err)
@@ -220,22 +223,19 @@ func run() (ReturnCode, error) {
 		}
 	}()
 
-	// Wait for an OS signal (e.g., Ctrl-C)
 	<-done
 	utility.DefaultLogger.Info("Shutting down servers...")
 
-	// Shutdown HTTP server.
 	if err := httpServer.Shutdown(ctx); err != nil {
-		utility.DefaultLogger.Error("HTTP server shutdown error: %v", err)
+		utility.DefaultLogger.Error("HTTP server shutdown error:", err)
 	}
 
 	if err := httpsServer.Shutdown(ctx); err != nil {
-		utility.DefaultLogger.Error("HTTPS server shutdown error: %v", err)
+		utility.DefaultLogger.Error("HTTPS server shutdown error:", err)
 	}
 
-	// Shutdown SSH server.
 	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-		utility.DefaultLogger.Error("SSH server shutdown error: %v", err)
+		utility.DefaultLogger.Error("SSH server shutdown error:", err)
 		return ERRSIG, err
 	}
 
@@ -263,17 +263,15 @@ func HandleFlagVersion() {
 }
 
 func HandleFlagCLI(v *bool, c *config.Config) {
-	m, _ := cli.InitialModel(v, c)
-	if _, e := cli.CliRun(&m); !e {
-		//os.Exit(0)
-		p, err := os.FindProcess(os.Getpid())
+	model, _ := cli.InitialModel(v, c)
+	if _, e := cli.CliRun(&model); !e {
+		process, err := os.FindProcess(os.Getpid())
 		if err != nil {
 			utility.DefaultLogger.Error("", err)
 			return
 		}
 
-		// Send a SIGTERM to the process.
-		if err := p.Signal(syscall.SIGTERM); err != nil {
+		if err := process.Signal(syscall.SIGTERM); err != nil {
 			utility.DefaultLogger.Error("", err)
 		}
 	}
@@ -284,4 +282,28 @@ func HandleFlagUpdate(url string) {
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 	}
+}
+
+func sanitizeCertDir(configCertDir string) (string, error) {
+	if strings.TrimSpace(configCertDir) == "" {
+		return "", errors.New("certificate directory path cannot be empty")
+	}
+
+	certDir := filepath.Clean(configCertDir)
+
+	absPath, err := filepath.Abs(certDir)
+	if err != nil {
+		return "", err
+	}
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return "", err
+	}
+
+	if !info.IsDir() {
+		return "", errors.New("certificate path is not a directory")
+	}
+
+	return absPath, nil
 }
