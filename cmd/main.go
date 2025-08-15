@@ -15,7 +15,6 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
-	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -245,7 +244,6 @@ func run() (ReturnCode, error) {
 }
 
 func HandleFlagAuth(c config.Config) {
-	auth.OauthSettings(c)
 	os.Exit(0)
 }
 
