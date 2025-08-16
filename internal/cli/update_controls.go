@@ -472,15 +472,16 @@ func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 }
 
 func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
+	newModel:=m
 	var (
 		cmd  tea.Cmd
 		cmds []tea.Cmd
 	)
 
 	// Handle keyboard and mouse events in the viewport
-	m.Viewport, cmd = m.Viewport.Update(msg)
+	newModel.Viewport, cmd = newModel.Viewport.Update(msg)
 	cmds = append(cmds, cmd)
 
-	return m, tea.Batch(cmds...)
+	return newModel, tea.Batch(cmds...)
 
 }

@@ -7,7 +7,7 @@
 
 ## Overview
 
-A fully modular CMS server featuring content management via ssh. ModulaCMS facilitates building custom admin experience and a custom client schema.  Designed to support Oauth integration, S3-compatiable bucket usage, and SQL databases. 
+A fully modular CMS server featuring content management via ssh. ModulaCMS facilitates a custom admin experience and a custom client schema.  Designed to support Oauth integration, S3-compatiable bucket usage, and SQL databases. 
 
 
 ## Features

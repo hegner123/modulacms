@@ -142,7 +142,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, ReadyTrueCmd())
 
 			if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
-				cmds = append(cmds, PageSetCmd(m.PageMenu[m.Cursor]))
+				cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
 			}
 
 			return m, tea.Batch(cmds...)
@@ -159,7 +159,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 	case HistoryPop:
 		cmds := make([]tea.Cmd, 0)
 		newModel := m
-		entry := m.PopHistory()
+		entry := newModel.PopHistory()
 		cmds = append(cmds, PageSetCmd(entry.Page))
 		cmds = append(cmds, PageMenuSetCmd(entry.Menu))
 		cmds = append(cmds, CursorSetCmd(entry.Cursor))

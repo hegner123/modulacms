@@ -136,6 +136,12 @@ func (m *MenuPage) RenderBody(model Model) string {
 			column = []string{}
 		}
 	}
+	list := make([]string, 0)
+	for _, v := range model.History {
+		list = append(list, v.Page.Label)
+	}
+	content := lipgloss.JoinVertical(lipgloss.Top, list...)
+	row = append(row, content)
 	r = append(r, lipgloss.JoinHorizontal(lipgloss.Top, row...))
 	r = append(r, m.Body)
 	return RenderBorderFlex(lipgloss.JoinHorizontal(lipgloss.Center, r...))
