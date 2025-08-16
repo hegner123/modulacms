@@ -29,9 +29,9 @@ func (m Model) View() string {
 		return str
 	}
 	switch m.Page.Index {
-	case homePage.Index:
-		menu := make([]string, 0, len(HomepageMenu))
-		for _, v := range HomepageMenu {
+	case HOMEPAGE:
+		menu := make([]string, 0, len(m.PageMenu))
+		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
 		}
 		p := NewMenuPage()
@@ -41,7 +41,7 @@ func (m Model) View() string {
 		p.AddStatus(m.RenderStatusBar())
 
 		ui = p.Render(m)
-	case selectTablePage.Index:
+	case DATABASEPAGE:
 		menu := make([]string, 0, len(m.Tables))
 		menu = append(menu, m.Tables...)
 		p := NewMenuPage()
@@ -50,9 +50,9 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case cmsPage.Index:
-		menu := make([]string, 0, len(CmsHomeMenu))
-		for _, v := range CmsHomeMenu {
+	case CMSPAGE:
+		menu := make([]string, 0, len(m.PageMenu))
+		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
 		}
 		p := NewMenuPage()
@@ -61,9 +61,9 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case adminCmsPage.Index:
-		menu := make([]string, 0, len(CmsHomeMenu))
-		for _, v := range CmsHomeMenu {
+	case ADMINCMSPAGE:
+		menu := make([]string, 0, len(m.PageMenu))
+		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
 		}
 		p := NewMenuPage()
@@ -72,7 +72,7 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case bucketPage.Index:
+	case BUCKETPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
 		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
@@ -82,7 +82,7 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case oauthPage.Index:
+	case OAUTHPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
 		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
@@ -92,12 +92,12 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case configPage.Index:
+	case CONFIGPAGE:
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case tableActionsPage.Index:
+	case TABLEPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
 		for _, v := range m.PageMenu {
 			menu = append(menu, v.Label)
@@ -107,13 +107,13 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case createPage.Index:
+	case CREATEPAGE:
 		p := NewFormPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Create")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case readPage.Index:
+	case READPAGE:
 		p := NewTablePage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader(fmt.Sprintf("Read %s", m.Table))
@@ -124,7 +124,7 @@ func (m Model) View() string {
 		}
 
 		ui = p.Render(m)
-	case readSinglePage.Index:
+	case READSINGLEPAGE:
 		columns := make([]ReadSingleRow, 0, len(m.Headers))
 		for i, v := range m.Headers {
 			c := ReadSingleRow{
@@ -133,7 +133,6 @@ func (m Model) View() string {
 				Value: "",
 			}
 			columns = append(columns, c)
-
 		}
 		for i := range columns {
 			columns[i].Value = m.Rows[m.Cursor][i]
@@ -150,41 +149,51 @@ func (m Model) View() string {
 		p.AddBody(content)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case updatePage.Index:
+	case UPDATEPAGE:
 		p := NewTablePage()
+		if !m.Loading {
+			p.AddHeaders(m.Headers)
+			p.AddRows(m.Rows)
+			p.AddStatus(m.RenderStatusBar())
+		}
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case updateFormPage.Index:
+	case UPDATEFORMPAGE:
 		p := NewFormPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Update FORM")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case deletePage.Index:
+	case DELETEPAGE:
 		p := NewTablePage()
+		if !m.Loading {
+			p.AddHeaders(m.Headers)
+			p.AddRows(m.Rows)
+			p.AddStatus(m.RenderStatusBar())
+		}
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Delete")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case defineDatatypePage.Index:
+	case DATATYPES:
 		p := NewFormPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case developmentPage.Index:
+	case DEVELOPMENT:
 		p := NewStaticPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case dynamicPage.Index:
+	case DYNAMICPAGE:
 		p := NewCMSPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Dynamic")
 		p.AddControls("q quit")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case contentPage.Index:
+	case CONTENT:
 		menu := make([]string, 0, len(m.DatatypeMenu))
 		menu = append(menu, m.DatatypeMenu...)
 		p := NewMenuPage()
@@ -193,7 +202,7 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case mediaPage.Index:
+	case MEDIA:
 		p := NewStaticPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Content")

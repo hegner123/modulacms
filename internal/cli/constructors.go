@@ -225,7 +225,7 @@ func RootSetCmd(root model.Root) tea.Cmd { return func() tea.Msg { return RootSe
 func DatatypeMenuSetCmd(menu []string) tea.Cmd {
 	return func() tea.Msg { return DatatypeMenuSet{DatatypeMenu: menu} }
 }
-func PageMenuSetCmd(menu []*Page) tea.Cmd {
+func PageMenuSetCmd(menu []Page) tea.Cmd {
 	return func() tea.Msg { return PageMenuSet{PageMenu: menu} }
 }
 

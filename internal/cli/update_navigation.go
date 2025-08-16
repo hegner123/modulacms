@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -20,19 +18,17 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		var cmds []tea.Cmd
 		cmds = append(cmds, HistoryPushCmd(PageHistory{Page: m.Page, Cursor: m.Cursor, Menu: m.PageMenu}))
 		cmds = append(cmds, CursorResetCmd())
-		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Navigation to page %s: cursor at position %d", msg.Page.Label, m.Cursor)))
-		cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Available menu options: %s", ViewPageMenus(m))))
 		switch msg.Page.Index {
 		case CMSPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
+			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
 
 			return m, tea.Batch(cmds...)
 		case ADMINCMSPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PageMenuSetCmd(CmsHomeMenu))
+			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
 
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
@@ -41,7 +37,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 
 			return m, tea.Batch(cmds...)
 		case TABLEPAGE:
-			cmds = append(cmds, PageMenuSetCmd(TableMenu))
+			cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, GetColumnsCmd(*m.Config, m.Table))
 
@@ -98,7 +94,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-                        cmds = append(cmds, LoadingStopCmd())
+			cmds = append(cmds, LoadingStopCmd())
 
 			return m, tea.Batch(cmds...)
 		case FIELDS:
@@ -106,7 +102,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
-                        cmds = append(cmds, LoadingStopCmd())
+			cmds = append(cmds, LoadingStopCmd())
 
 			return m, tea.Batch(cmds...)
 
@@ -119,7 +115,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		case PICKCONTENT:
 			page := NewPickContentPage("Pick")
-			cmds = append(cmds, PageSetCmd(*page))
+			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
@@ -146,7 +142,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, ReadyTrueCmd())
 
 			if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
-				cmds = append(cmds, PageSetCmd(*m.PageMenu[m.Cursor]))
+				cmds = append(cmds, PageSetCmd(m.PageMenu[m.Cursor]))
 			}
 
 			return m, tea.Batch(cmds...)
@@ -157,7 +153,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		cmds := make([]tea.Cmd, 0)
 		cmds = append(cmds, NavigateToPageCmd(m.PageMap[TABLEPAGE]))
 		cmds = append(cmds, TableSetCmd(m.Tables[m.Cursor]))
-		cmds = append(cmds, PageMenuSetCmd(TableMenu))
+		cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 
 		return m, tea.Batch(cmds...)
 	case HistoryPop:

@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 type FormIndex int
@@ -33,7 +34,7 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 	var (
 		parent   string
 		label    string
-		datatype string = "ROOT"
+		datatype = "ROOT"
 	)
 	groupDescription := "Define datatype"
 	typeDescription := "Optional - ROOT is reserved for root content types.\n"
@@ -111,8 +112,7 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
-							e := fmt.Errorf("error listing datatypes %w", err)
-							m.SetError(e)
+							utility.DefaultLogger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
 							option := huh.NewOption(v.Label, int(v.DatatypeID))
@@ -150,8 +150,7 @@ func CreateFieldForm(m Model) (*huh.Form, int) {
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
-							e := fmt.Errorf("error listing datatypes %w", err)
-							m.SetError(e)
+							utility.DefaultLogger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
 							option := huh.NewOption(v.Label, int(v.DatatypeID))

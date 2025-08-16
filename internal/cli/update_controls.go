@@ -37,7 +37,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case READPAGE:
 		return m.TableNavigationControls(msg)
 	case READSINGLEPAGE:
-		return m.BasicControls(msg)
+		return m.TableNavigationControls(msg)
 	case UPDATEPAGE:
 		return m.TableNavigationControls(msg)
 	case DELETEPAGE:
@@ -93,7 +93,7 @@ func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 		case "enter", "l":
 			// Only proceed if we have menu items
 			if len(m.PageMenu) > 0 {
-				return m, NavigateToPageCmd(*m.PageMenu[m.Cursor])
+				return m, NavigateToPageCmd(m.PageMenu[m.Cursor])
 			}
 		}
 	}
@@ -285,10 +285,10 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				switch m.Page.Index {
 				case READPAGE:
 					// Navigate to single record view
-					cmds = append(cmds, NavigateToPageCmd(m.Pages[READSINGLEPAGE]))
+					cmds = append(cmds, NavigateToPageCmd(m.PageMap[READSINGLEPAGE]))
 				case UPDATEPAGE:
 					// Navigate to update form with pre-populated values
-					cmds = append(cmds, NavigateToPageCmd(m.Pages[UPDATEFORMPAGE]))
+					cmds = append(cmds, NavigateToPageCmd(m.PageMap[UPDATEFORMPAGE]))
 				case DELETEPAGE:
 					// Show confirmation dialog
 					cmds = append(cmds, ShowDialogCmd("Confirm Delete",

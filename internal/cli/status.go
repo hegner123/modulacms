@@ -63,7 +63,7 @@ func (m Model) RenderStatusTable() string {
 	return doc.String()
 }
 
-func getMenuLabels(m []*Page) string {
+func getMenuLabels(m []Page) string {
 	var labels string
 	if m != nil {
 		for _, item := range m {

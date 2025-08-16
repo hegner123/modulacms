@@ -65,12 +65,12 @@ type Model struct {
 	Cursor       int
 	CursorMax    int
 	FocusIndex   int
-	Page         Page
 	Paginator    paginator.Model
 	PageMod      int
 	MaxRows      int
 	Table        string
-	PageMenu     []*Page
+	Page         Page
+	PageMenu     []Page
 	Pages        []Page
 	PageMap      map[PageIndex]Page
 	DatatypeMenu []string
@@ -142,13 +142,13 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
-	return Model{
+	m := Model{
 		Config:     c,
 		Status:     OK,
 		TitleFont:  0,
 		Titles:     LoadTitles(fonts),
 		FocusIndex: 0,
-		Page:       *homePage,
+		Page:       NewPage(HOMEPAGE, "Home"),
 		Paginator:  p,
 		Loading:    false,
 		Spinner:    s,
@@ -157,14 +157,24 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		MaxRows:    10,
 		Table:      "",
 		Viewport:   viewport.Model{},
-		PageMenu:   HomepageMenu,
 		PageMap:    *InitPages(),
 		Selected:   make(map[int]struct{}),
 		FormMap:    make([]string, 0),
 		Focus:      PAGEFOCUS,
 		History:    []PageHistory{},
 		Verbose:    verbose,
-	}, GetTablesCMD(c)
+	}
+	m.PageMenu = m.HomepageMenuInit()
+	return m, tea.Batch(
+		GetTablesCMD(m.Config),
+	)
+}
+
+func ModelPostInit(m Model) tea.Cmd {
+	return tea.Batch(
+		LogMessageCmd("Test Menu Init"),
+		PageMenuSetCmd(m.HomepageMenuInit()),
+	)
 }
 
 func ParseTitles(f []fs.DirEntry) []string {
@@ -219,9 +229,4 @@ func (m Model) GetStatus() string {
 // Implement cms.ModelInterface for Model
 func (m *Model) GetConfig() *config.Config {
 	return m.Config
-}
-
-func (m *Model) SetError(err error) {
-	m.Err = err
-	m.Status = ERROR
 }

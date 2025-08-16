@@ -170,10 +170,10 @@ func (m Model) RenderStatusBar() string {
 	}
 
 	statusKey := m.GetStatus()
-	c := strconv.FormatInt(int64(m.Cursor), 10)
+	p := m.Page.Label
 	cm := strconv.FormatInt(int64(m.CursorMax), 10)
 
-	nugget := nuggetStyle.Render("Cursor: " + c + "  CursorMax: " + cm)
+	nugget := nuggetStyle.Render("Page: " + p + "  CursorMax: " + cm)
 	fishCake := fishCakeStyle.Render(v)
 
 	w := lipgloss.Width

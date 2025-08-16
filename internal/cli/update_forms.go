@@ -44,7 +44,7 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		form, count, values := NewDefineDatatypeForm(m, false)
 		return m, tea.Batch(
 			SetFormDataCmd(*form, count, values),
-			NavigateToPageCmd(*defineDatatypePage),
+			NavigateToPageCmd(m.PageMap[DATATYPES]),
 		)
 	case FormSubmitMsg:
 		newModel := m

@@ -34,75 +34,77 @@ const (
 	PICKCONTENT
 )
 
-var (
-	homePage          *Page = &Page{Index: HOMEPAGE, Label: "Home"}
-	cmsPage           *Page = &Page{Index: CMSPAGE, Label: "Client CMS"}
-	adminCmsPage      *Page = &Page{Index: ADMINCMSPAGE, Label: "Admin CMS"}
-	selectTablePage   *Page = &Page{Index: DATABASEPAGE, Label: "Database"}
-	bucketPage        *Page = &Page{Index: BUCKETPAGE, Label: "Bucket"}
-	oauthPage         *Page = &Page{Index: OAUTHPAGE, Label: "Oauth"}
-	configPage        *Page = &Page{Index: CONFIGPAGE, Label: "Config"}
-	tableActionsPage  *Page = &Page{Index: TABLEPAGE, Label: "Table Actions"}
-	createPage        *Page = &Page{Index: CREATEPAGE, Label: "Create"}
-	readPage          *Page = &Page{Index: READPAGE, Label: "Read"}
-	updatePage        *Page = &Page{Index: UPDATEPAGE, Label: "Update"}
-	deletePage        *Page = &Page{Index: DELETEPAGE, Label: "Delete"}
-	updateFormPage    *Page = &Page{Index: UPDATEFORMPAGE, Label: "Update Form"}
-	readSinglePage    *Page = &Page{Index: READSINGLEPAGE, Label: "Read Single"}
-	dynamicPage       *Page = &Page{Index: DYNAMICPAGE, Label: "Dynamic"}
-	datatypesPage     *Page = &Page{Index: DATATYPES, Label: "Datatypes"}
-	datatypesMenuPage *Page = &Page{Index: DATATYPESMENU, Label: "Datatypes Menu"}
-	addFields         *Page = &Page{Index: FIELDS, Label: "Add Fields"}
-	developmentPage   *Page = &Page{Index: DEVELOPMENT, Label: "Development"}
-	usersAdminPage    *Page = &Page{Index: USERSADMIN, Label: "Users"}
-	mediaPage         *Page = &Page{Index: MEDIA, Label: "Media"}
-	contentPage       *Page = &Page{Index: CONTENT, Label: "Content"}
-)
-
-func NewDatatypePage(label string) *Page {
-	return &Page{
+func NewDatatypePage(label string) Page {
+	return Page{
 		Index: DATATYPE,
 		Label: label,
 	}
 }
 
-func NewDynamicPage(label string) *Page {
-	return &Page{
+func NewDynamicPage(label string) Page {
+	return Page{
 		Index: DYNAMICPAGE,
 		Label: label,
 	}
 }
 
-func NewPickContentPage(label string) *Page {
-	return &Page{
+func NewPickContentPage(label string) Page {
+	return Page{
 		Index: PICKCONTENT,
 		Label: label,
 	}
 }
 
+func NewPage(index PageIndex, label string) Page {
+	return Page{Index: index, Label: label}
+}
+
 func InitPages() *map[PageIndex]Page {
+	homePage := NewPage(HOMEPAGE, "Home")
+	cmsPage := NewPage(CMSPAGE, "CMS")
+	adminCmsPage := NewPage(ADMINCMSPAGE, "Admin CMS")
+	databasePage := NewPage(DATABASEPAGE, "Database")
+	bucketPage := NewPage(BUCKETPAGE, "Bucket Settings")
+	oauthPage := NewPage(OAUTHPAGE, "Oauth Settings")
+	configPage := NewPage(CONFIGPAGE, "Config")
+	tableActionsPage := NewPage(TABLEPAGE, "Table Actions")
+	createPage := NewPage(CREATEPAGE, "Create")
+	readPage := NewPage(READPAGE, "Read")
+	updatePage := NewPage(UPDATEPAGE, "Update")
+	deletePage := NewPage(DELETEPAGE, "Delete")
+	updateFormPage := NewPage(UPDATEFORMPAGE, "Update Form")
+	readSinglePage := NewPage(READSINGLEPAGE, "Read Single")
+	dynamicPage := NewPage(DYNAMICPAGE, "Dynamic Page")
+	datatypesPage := NewPage(DATATYPES, "Datatypes")
+	datatypesMenuPage := NewPage(DATATYPESMENU, "Datatypes Menu")
+	addFields := NewPage(FIELDS, "Fields")
+	developmentPage := NewPage(DEVELOPMENT, "Development")
+	usersAdminPage := NewPage(USERSADMIN, "Users")
+	mediaPage := NewPage(MEDIA, "Media")
+	contentPage := NewPage(CONTENT, "Content")
+
 	p := make(map[PageIndex]Page, 0)
-	p[HOMEPAGE] = *homePage
-	p[CMSPAGE] = *cmsPage
-	p[ADMINCMSPAGE] = *adminCmsPage
-	p[DATABASEPAGE] = *selectTablePage
-	p[BUCKETPAGE] = *bucketPage
-	p[OAUTHPAGE] = *oauthPage
-	p[CONFIGPAGE] = *configPage
-	p[TABLEPAGE] = *tableActionsPage
-	p[CREATEPAGE] = *createPage
-	p[READPAGE] = *readPage
-	p[UPDATEPAGE] = *updatePage
-	p[DELETEPAGE] = *deletePage
-	p[UPDATEFORMPAGE] = *updateFormPage
-	p[READSINGLEPAGE] = *readSinglePage
-	p[DYNAMICPAGE] = *dynamicPage
-	p[DATATYPES] = *datatypesPage
-	p[DATATYPESMENU] = *datatypesMenuPage
-	p[FIELDS] = *addFields
-	p[DEVELOPMENT] = *developmentPage
-	p[USERSADMIN] = *usersAdminPage
-	p[MEDIA] = *mediaPage
-	p[CONTENT] = *contentPage
+	p[HOMEPAGE] = homePage
+	p[CMSPAGE] = cmsPage
+	p[ADMINCMSPAGE] = adminCmsPage
+	p[DATABASEPAGE] = databasePage
+	p[BUCKETPAGE] = bucketPage
+	p[OAUTHPAGE] = oauthPage
+	p[CONFIGPAGE] = configPage
+	p[TABLEPAGE] = tableActionsPage
+	p[CREATEPAGE] = createPage
+	p[READPAGE] = readPage
+	p[UPDATEPAGE] = updatePage
+	p[DELETEPAGE] = deletePage
+	p[UPDATEFORMPAGE] = updateFormPage
+	p[READSINGLEPAGE] = readSinglePage
+	p[DYNAMICPAGE] = dynamicPage
+	p[DATATYPES] = datatypesPage
+	p[DATATYPESMENU] = datatypesMenuPage
+	p[FIELDS] = addFields
+	p[DEVELOPMENT] = developmentPage
+	p[USERSADMIN] = usersAdminPage
+	p[MEDIA] = mediaPage
+	p[CONTENT] = contentPage
 	return &p
 }

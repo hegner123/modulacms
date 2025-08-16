@@ -189,7 +189,7 @@ type DatatypeMenuSet struct {
 	DatatypeMenu []string
 }
 type PageMenuSet struct {
-	PageMenu []*Page
+	PageMenu []Page
 }
 type DialogReadyOKSet struct {
 	Ready bool
