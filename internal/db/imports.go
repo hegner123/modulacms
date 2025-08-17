@@ -25,7 +25,7 @@ type StringRoutes struct {
 	Slug         string `json:"slug"`
 	Title        string `json:"title"`
 	Status       string `json:"status"`
-    AuthorID     string `json:"author_id"`
+	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 	History      string `json:"history"`
@@ -123,6 +123,9 @@ type StringContentData struct {
 	ContentDataID string `json:"content_data_id"`
 	RouteID       string `json:"route_id"`
 	ParentID      string `json:"parent_id"`
+	FirstChildID  string `json:"first_child_id"`
+	NextSiblingID string `json:"next_sibling_id"`
+	PrevSiblingID string `json:"prev_sibling_id"`
 	DatatypeID    string `json:"datatype_id"`
 	AuthorID      string `json:"author_id"`
 	DateCreated   string `json:"date_created"`
@@ -193,7 +196,7 @@ type StringAdminContentFields struct {
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`
-	AuthorID           string `json:"author_id"`
+	AuthorID            string `json:"author_id"`
 	DateCreated         string `json:"date_created"`
 	DateModified        string `json:"date_modified"`
 	History             string `json:"history"`

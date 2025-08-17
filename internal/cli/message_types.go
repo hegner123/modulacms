@@ -256,3 +256,10 @@ type CmsDefineDatatypeFormMsg struct{}
 type CmsGetDatatypeParentOptionsMsg struct {
 	Admin bool
 }
+
+type CmsAddNewContentDataMsg struct {
+	Datatype int64
+}
+type CmsAddNewContentFieldsMsg struct {
+	Datatype int64
+}

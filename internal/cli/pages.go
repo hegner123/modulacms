@@ -32,6 +32,7 @@ const (
 	MEDIA
 	CONTENT
 	PICKCONTENT
+	EDITCONTENT
 )
 
 func NewDatatypePage(label string) Page {
@@ -82,6 +83,7 @@ func InitPages() *map[PageIndex]Page {
 	usersAdminPage := NewPage(USERSADMIN, "Users")
 	mediaPage := NewPage(MEDIA, "Media")
 	contentPage := NewPage(CONTENT, "Content")
+	editContentPage := NewPage(EDITCONTENT, "Edit")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -106,5 +108,6 @@ func InitPages() *map[PageIndex]Page {
 	p[USERSADMIN] = usersAdminPage
 	p[MEDIA] = mediaPage
 	p[CONTENT] = contentPage
+	p[EDITCONTENT] = editContentPage
 	return &p
 }

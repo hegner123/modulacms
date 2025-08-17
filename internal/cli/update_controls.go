@@ -147,6 +147,49 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		//Exit
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+
+		case "shift+left":
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		case "shift+right":
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		case "up", "k":
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		case "down", "j":
+			if m.Cursor < len(m.PageMenu) {
+				return m, CursorDownCmd()
+			}
+		case "h", "shift+tab", "backspace":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		case "enter", "l":
+			// Only proceed if we have menu items
+			// Use datatypes as menu items
+			// Next page has AddNew and a list of existing content
+			page := m.PageMenu[m.Cursor]
+			switch page.Index {
+			default:
+				return m, nil
+			}
+		}
+	}
+	return m, nil
+}
+
+
 func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:

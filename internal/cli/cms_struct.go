@@ -1,10 +1,35 @@
 package cli
 
-import "github.com/hegner123/modulacms/internal/db"
+import (
+	"fmt"
+
+	"github.com/hegner123/modulacms/internal/db"
+)
 
 type TreeRoot struct {
 	Root      *TreeNode
 	NodeIndex map[int64]*TreeNode
+	Orphans   map[int64]*TreeNode
+	MaxRetry  int
+}
+
+type LoadStats struct {
+	NodesCount      int
+	OrphansResolved int
+	RetryAttempts   int
+	CircularRefs    []int64
+	FinalOrphans    []int64
+}
+
+func (stats LoadStats) String() string {
+	return fmt.Sprintf("Nodes Count: %d\nOrphans Resolved %d\nRetry Attempts%d\nCircular Refs %v\nFinal Orphans %v\n",
+		stats.NodesCount,
+		stats.OrphansResolved,
+		stats.RetryAttempts,
+		stats.CircularRefs,
+		stats.FinalOrphans,
+	)
+
 }
 
 type TreeNode struct {
@@ -12,8 +37,10 @@ type TreeNode struct {
 	InstanceFields []db.ContentFields
 	Datatype       db.Datatypes
 	Fields         []db.Fields
+	Parent         *TreeNode
 	FirstChild     *TreeNode
 	NextSibling    *TreeNode
+	PrevSibling    *TreeNode
 	Expand         bool
 	Indent         int
 	Wrapped        int
@@ -22,6 +49,8 @@ type TreeNode struct {
 func NewTreeRoot() *TreeRoot {
 	return &TreeRoot{
 		NodeIndex: make(map[int64]*TreeNode),
+		Orphans:   make(map[int64]*TreeNode),
+		MaxRetry:  100,
 	}
 }
 
@@ -35,6 +64,178 @@ func NewTreeNode(row db.GetRouteTreeByRouteIDRow) *TreeNode {
 		Instance: &cd,
 	}
 
+}
+
+func (page *TreeRoot) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadStats, error) {
+	stats := &LoadStats{
+		NodesCount:      0,
+		OrphansResolved: 0,
+		RetryAttempts:   0,
+		CircularRefs:    make([]int64, 0),
+		FinalOrphans:    make([]int64, 0),
+	}
+
+	// Phase 1: Create all nodes and populate indexes
+	if err := page.createAllNodes(rows, stats); err != nil {
+		return stats, err
+	}
+
+	// Phase 2: Assign hierarchy for nodes with existing parents
+	if err := page.assignImmediateHierarchy(stats); err != nil {
+		return stats, err
+	}
+
+	// Phase 3: Iteratively resolve orphaned nodes
+	if err := page.resolveOrphans(stats); err != nil {
+		return stats, err
+	}
+
+	return stats, page.validateFinalState(stats)
+}
+
+func (page *TreeRoot) createAllNodes(rows *[]db.GetContentTreeByRouteRow, stats *LoadStats) error {
+	for _, row := range *rows {
+		node := NewTreeNodeFromContentTree(row)
+		page.NodeIndex[node.Instance.ContentDataID] = node
+		stats.NodesCount++
+
+		// Set root immediately if no parent
+		if !node.Instance.ParentID.Valid && page.Root == nil {
+			page.Root = node
+			node.Parent = nil
+		}
+	}
+	return nil
+}
+
+// Phase 2: Immediate Hierarchy Assignment
+func (page *TreeRoot) assignImmediateHierarchy(stats *LoadStats) error {
+	for id, node := range page.NodeIndex {
+		if !node.Instance.ParentID.Valid {
+			continue // Skip root
+		}
+
+		parentID := node.Instance.ParentID.Int64
+		parent := page.NodeIndex[parentID]
+
+		if parent != nil {
+			// Parent exists - assign immediately
+			page.attachNodeToParent(node, parent)
+		} else {
+			// Parent missing - defer resolution
+			page.Orphans[id] = node
+		}
+	}
+	return nil
+}
+
+// Phase 3: Iterative Orphan Resolution
+func (page *TreeRoot) resolveOrphans(stats *LoadStats) error {
+	for len(page.Orphans) > 0 && stats.RetryAttempts < page.MaxRetry {
+		stats.RetryAttempts++
+		orphansResolved := 0
+
+		// Try to resolve each orphan
+		for id, orphan := range page.Orphans {
+			parentID := orphan.Instance.ParentID.Int64
+			parent := page.NodeIndex[parentID]
+
+			if parent != nil && parent.Parent != nil { // Parent now exists and is connected
+				page.attachNodeToParent(orphan, parent)
+				delete(page.Orphans, id)
+				orphansResolved++
+				stats.OrphansResolved++
+			}
+		}
+
+		// No progress made - check for circular references
+		if orphansResolved == 0 {
+			if page.detectCircularReferences(stats) {
+				break // Found circular refs, stop trying
+			}
+			// Could be legitimate forward references, continue trying
+		}
+	}
+
+	return nil
+}
+
+// Detect circular reference chains
+func (page *TreeRoot) detectCircularReferences(stats *LoadStats) bool {
+	circularRefs := []int64{}
+
+	for id, orphan := range page.Orphans {
+		if page.hasCircularReference(orphan, make(map[int64]bool)) {
+			circularRefs = append(circularRefs, id)
+		}
+	}
+
+	stats.CircularRefs = circularRefs
+	return len(circularRefs) > 0
+}
+
+// Check if node creates circular reference
+func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[int64]bool) bool {
+	nodeID := node.Instance.ContentDataID
+
+	if visited[nodeID] {
+		return true // Found cycle
+	}
+
+	if !node.Instance.ParentID.Valid {
+		return false // Reached root
+	}
+
+	visited[nodeID] = true
+	parentID := node.Instance.ParentID.Int64
+	parent := page.NodeIndex[parentID]
+
+	if parent == nil {
+		return false // Parent doesn't exist (not circular, just missing)
+	}
+
+	return page.hasCircularReference(parent, visited)
+}
+
+// Attach node to parent with proper sibling linking
+func (page *TreeRoot) attachNodeToParent(node, parent *TreeNode) {
+	node.Parent = parent
+
+	if parent.FirstChild == nil {
+		parent.FirstChild = node
+	} else {
+		// Add as last sibling
+		current := parent.FirstChild
+		for current.NextSibling != nil {
+			current = current.NextSibling
+		}
+		current.NextSibling = node
+		node.PrevSibling = current
+	}
+}
+
+// Final validation and error reporting
+func (page *TreeRoot) validateFinalState(stats *LoadStats) error {
+	// Record final orphans
+	for id := range page.Orphans {
+		stats.FinalOrphans = append(stats.FinalOrphans, id)
+	}
+
+	// Validate tree integrity
+	if page.Root == nil {
+		return fmt.Errorf("no root node found")
+	}
+
+	// Report results
+	if len(stats.CircularRefs) > 0 {
+		return fmt.Errorf("circular references detected in nodes: %v", stats.CircularRefs)
+	}
+
+	if len(stats.FinalOrphans) > 0 {
+		return fmt.Errorf("unresolved orphan nodes: %v (parents may not exist)", stats.FinalOrphans)
+	}
+
+	return nil
 }
 
 func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
@@ -60,66 +261,141 @@ func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
 	}
 }
 
-func (page *TreeRoot) Insert(n TreeNode) bool {
-	if page.Root == nil {
-		if !n.Instance.ParentID.Valid { // null parent = root
-			page.Root = &n
-			page.NodeIndex[n.Instance.ContentDataID] = page.Root
-			return true
-		}
-		return false // can't insert non-root when no root exists
-	}
+func (page *TreeRoot) InsertTreeNodeByIndex(parent, firstChild, prevSibling, nextSibling, n *TreeNode) {
+	page.NodeIndex[n.Instance.ContentDataID] = n
+	n.Parent = parent
+	n.FirstChild = firstChild
+	n.PrevSibling = prevSibling
+	n.NextSibling = nextSibling
 
-	if page.Root.InsertRecursive(n) {
-		page.NodeIndex[n.Instance.ContentDataID] = &n
-		return true
-	}
-	return false
 }
 
-func (node *TreeNode) InsertRecursive(n TreeNode) bool {
-	if !n.Instance.ParentID.Valid {
+// Functions for working with Nodes in a tree where access is constant
+
+func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
+	target := page.NodeIndex[n.Instance.ContentDataID]
+	if page.Root == nil || target == nil || page.Root == target || target.Parent == nil {
 		return false
 	}
-
-	if node.Instance.ContentDataID == n.Instance.ParentID.Int64 {
-		node.AddNode(n)
+	if target.Parent.FirstChild == target {
+		DeleteFirstChild(target)
+		delete(page.NodeIndex, n.Instance.ContentDataID)
 		return true
 	}
+	current := target.Parent.FirstChild
+	for current != nil && current != target {
+		current = current.NextSibling
+	}
+	if current == nil {
+		return false
+	}
+	DeleteNestedChild(target)
 
-	// Check children first
-	if node.FirstChild != nil {
-		if node.FirstChild.InsertRecursive(n) {
-			return true
+	delete(page.NodeIndex, n.Instance.ContentDataID)
+	return true
+}
+
+func DeleteFirstChild(target *TreeNode) bool {
+	if target.FirstChild != nil {
+		return DeleteFirstChildHasChildren(target)
+	} else {
+		return DeleteFirstChildNoChildren(target)
+
+	}
+}
+
+func DeleteFirstChildHasChildren(target *TreeNode) bool {
+	if target.NextSibling != nil {
+		target.Parent.FirstChild = target.FirstChild
+		current := target.FirstChild
+		// traverse target.FirstChild.NextSibling until NextSibling == nil, LastSibling
+		for current.NextSibling != nil {
+			current.Parent = target.Parent
+			current = current.NextSibling
 		}
-	}
-
-	// Then check siblings
-	if node.NextSibling != nil {
-		return node.NextSibling.InsertRecursive(n)
-	}
-
-	return false
-}
-func (node *TreeNode) AddNode(n TreeNode) bool {
-	if node.FirstChild == nil {
-		node.FirstChild = &n
-		return true
-	}
-	return node.FirstChild.AddSibling(n) // traverse to end of sibling chain
-}
-
-func (node *TreeNode) AddSibling(n TreeNode) bool {
-	if node.NextSibling == nil {
-		node.NextSibling = &n
+		target.NextSibling.PrevSibling = current
+		current.NextSibling = target.NextSibling
+		current.Parent = target.Parent
 		return true
 	} else {
-		return node.NextSibling.AddSibling(n)
+		target.Parent.FirstChild = target.FirstChild
+		current := target.FirstChild
+		for current != nil {
+			current.Parent = target.Parent
+			current = current.NextSibling
+		}
+		return true
 	}
 }
 
+func DeleteFirstChildNoChildren(target *TreeNode) bool {
+	// else (No children but is first child)
+	if target.NextSibling != nil {
+		target.Parent.FirstChild = target.NextSibling
+		target.NextSibling.PrevSibling = nil
+		return true
+	} else {
+		// if target.NextSibling = nil
+		target.Parent.FirstChild = nil
+		return true
+	}
 
-func (page *TreeRoot) NodeInsertByIndex(index *TreeNode, n TreeNode) {
-	page.NodeIndex[n.Instance.ContentDataID] = &n
 }
 
+func DeleteNestedChild(target *TreeNode) bool {
+	if target.FirstChild != nil {
+		return DeleteNestedChildHasChildren(target)
+	} else {
+		return DeleteNestedChildNoChildren(target)
+	}
+
+}
+func DeleteNestedChildHasChildren(target *TreeNode) bool {
+	if target.NextSibling != nil {
+		if target.PrevSibling == nil {
+			return false
+		}
+		target.PrevSibling.NextSibling = target.FirstChild
+		current := target.FirstChild
+		for current.NextSibling != nil {
+			current.Parent = target.Parent
+			current = current.NextSibling
+		}
+		target.NextSibling.PrevSibling = current
+		current.NextSibling = target.NextSibling
+		current.Parent = target.Parent
+		return true
+	} else {
+		if target.PrevSibling == nil || target.FirstChild == nil {
+			return false
+		}
+		target.PrevSibling.NextSibling = target.FirstChild
+		target.FirstChild.PrevSibling = target.PrevSibling
+		current := target.FirstChild
+		for current != nil {
+			current.Parent = target.Parent
+			current = current.NextSibling
+		}
+		return true
+	}
+
+}
+
+func DeleteNestedChildNoChildren(target *TreeNode) bool {
+	// else (No children but isn't first child)
+	if target.NextSibling != nil {
+		if target.PrevSibling == nil {
+			return false
+		}
+		target.PrevSibling.NextSibling = target.NextSibling
+		target.NextSibling.PrevSibling = target.PrevSibling
+		return true
+	} else {
+		if target.PrevSibling == nil {
+			return false
+		}
+		target.PrevSibling.NextSibling = nil
+		return true
+	}
+
+}

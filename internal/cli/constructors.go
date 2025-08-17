@@ -387,3 +387,17 @@ func FormInitOptionsCmd(form, table string) tea.Cmd {
 		}
 	}
 }
+func CmsAddNewContentDataCmd(id int64) tea.Cmd {
+	return func() tea.Msg {
+		return CmsAddNewContentDataMsg{
+			Datatype: id,
+		}
+	}
+}
+func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
+	return func() tea.Msg {
+		return CmsAddNewContentFieldsMsg{
+			Datatype: id,
+		}
+	}
+}

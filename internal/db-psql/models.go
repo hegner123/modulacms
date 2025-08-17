@@ -77,6 +77,9 @@ type AdminRoutes struct {
 type ContentData struct {
 	ContentDataID int32          `json:"content_data_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`
+	FirstChildID  sql.NullInt32  `json:"first_child_id"`
+	NextSiblingID sql.NullInt32  `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32  `json:"prev_sibling_id"`
 	RouteID       sql.NullInt32  `json:"route_id"`
 	DatatypeID    sql.NullInt32  `json:"datatype_id"`
 	AuthorID      int32          `json:"author_id"`

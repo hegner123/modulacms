@@ -2,11 +2,23 @@
 DROP TABLE content_data;
 
 -- name: CreateContentDataTable :exec
-CREATE TABLE content_data (
+CREATE TABLE IF NOT EXISTS content_data (
     content_data_id SERIAL
         PRIMARY KEY,
     parent_id INTEGER
         CONSTRAINT fk_parent_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    first_child_id INTEGER
+        CONSTRAINT fk_first_child_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    next_sibling_id INTEGER
+        CONSTRAINT fk_next_sibling_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    prev_sibling_id INTEGER
+        CONSTRAINT fk_prev_sibling_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
     route_id INTEGER
@@ -46,6 +58,9 @@ ORDER BY content_data_id;
 -- name: CreateContentData :one
 INSERT INTO content_data (
     parent_id,
+    first_child_id,
+    next_sibling_id,
+    prev_sibling_id,
     route_id,
     datatype_id,
     author_id,
@@ -59,19 +74,25 @@ INSERT INTO content_data (
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8,
+    $9,
+    $10
 ) RETURNING *;
 
 -- name: UpdateContentData :exec
 UPDATE content_data
 SET route_id = $1,
     parent_id = $2,
-    datatype_id =$3,
-    author_id = $4,
-    date_created = $5,
-    date_modified = $6,
-    history = $7
-WHERE content_data_id = $8;
+    first_child_id = $3,
+    next_sibling_id = $4,
+    prev_sibling_id = $5,
+    datatype_id =$6,
+    author_id = $7,
+    date_created = $8,
+    date_modified = $9,
+    history = $10
+WHERE content_data_id = $11;
 
 -- name: DeleteContentData :exec
 DELETE FROM content_data

@@ -4,6 +4,15 @@ CREATE TABLE IF NOT EXISTS content_data (
     parent_id INTEGER
         REFERENCES content_data
             ON DELETE SET NULL,
+    first_child_id INTEGER
+        REFERENCES content_data
+            ON DELETE SET NULL,
+    next_sibling_id INTEGER
+        REFERENCES content_data
+            ON DELETE SET NULL,
+    prev_sibling_id INTEGER
+        REFERENCES content_data
+            ON DELETE SET NULL,
     route_id INTEGER NOT NULL
         REFERENCES routes
             ON DELETE CASCADE,

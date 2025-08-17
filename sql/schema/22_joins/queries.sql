@@ -11,7 +11,16 @@
     ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id;
 
 -- name: GetContentTreeByRoute :many
-SELECT cd.content_data_id, cd.parent_id, cd.datatype_id, cd.route_id, cd.author_id, cd.date_created, cd.date_modified,
+SELECT cd.content_data_id, 
+        cd.parent_id, 
+        cd.first_child_id, 
+        cd.next_sibling_id, 
+        cd.prev_sibling_id, 
+        cd.datatype_id, 
+        cd.route_id, 
+        cd.author_id,
+        cd.date_created, 
+        cd.date_modified,
        dt.label as datatype_label, dt.type as datatype_type
 FROM content_data cd 
 JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
@@ -37,6 +46,9 @@ ORDER BY cf.content_data_id, cf.field_id;
 SELECT 
     cd.content_data_id,
     cd.parent_id,
+    cd.first_child_id,
+    cd.next_sibling_id,
+    cd.prev_sibling_id,
     dt.label AS datatype_label,
     dt.type AS datatype_type,
     f.label AS field_label,

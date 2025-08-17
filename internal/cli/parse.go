@@ -14,7 +14,7 @@ func Parse(rows *sql.Rows, table db.DBTable) (any, error) {
 	if rows == nil {
 		return nil, fmt.Errorf("rows cannot be nil")
 	}
-	defer  utility.HandleRowsCloseDeferErr(rows)
+	defer utility.HandleRowsCloseDeferErr(rows)
 
 	switch table {
 	case db.User:
@@ -468,6 +468,9 @@ func parseContentData(rows *sql.Rows) ([]db.ContentData, error) {
 			&content.DateCreated,
 			&content.DateModified,
 			&content.History,
+			&content.FirstChildID,
+			&content.NextSiblingID,
+			&content.PrevSiblingID,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan content data: %v", err)

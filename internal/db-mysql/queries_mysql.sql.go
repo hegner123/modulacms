@@ -732,6 +732,9 @@ const createContentData = `-- name: CreateContentData :exec
 INSERT INTO content_data (
     route_id,
     parent_id,
+    first_child_id,
+    next_sibling_id,
+    prev_sibling_id,
     datatype_id,
     author_id,
     date_created,
@@ -744,24 +747,33 @@ INSERT INTO content_data (
     ?,
     ?,
     ?,
+    ?,
+    ?,
+    ?,
     ?
 )
 `
 
 type CreateContentDataParams struct {
-	RouteID      sql.NullInt32  `json:"route_id"`
-	ParentID     sql.NullInt32  `json:"parent_id"`
-	DatatypeID   sql.NullInt32  `json:"datatype_id"`
-	AuthorID     int32          `json:"author_id"`
-	DateCreated  time.Time      `json:"date_created"`
-	DateModified time.Time      `json:"date_modified"`
-	History      sql.NullString `json:"history"`
+	RouteID       sql.NullInt32  `json:"route_id"`
+	ParentID      sql.NullInt32  `json:"parent_id"`
+	FirstChildID  sql.NullInt32  `json:"first_child_id"`
+	NextSiblingID sql.NullInt32  `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32  `json:"prev_sibling_id"`
+	DatatypeID    sql.NullInt32  `json:"datatype_id"`
+	AuthorID      int32          `json:"author_id"`
+	DateCreated   time.Time      `json:"date_created"`
+	DateModified  time.Time      `json:"date_modified"`
+	History       sql.NullString `json:"history"`
 }
 
 func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, createContentData,
 		arg.RouteID,
 		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
 		arg.DatatypeID,
 		arg.AuthorID,
 		arg.DateCreated,
@@ -772,10 +784,13 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 }
 
 const createContentDataTable = `-- name: CreateContentDataTable :exec
-CREATE TABLE content_data (
+CREATE TABLE IF NOT EXISTS content_data (
     content_data_id INT AUTO_INCREMENT
         PRIMARY KEY,
     parent_id INT NULL,
+    first_child_id INT NULL,
+    next_sibling_id INT NULL,
+    prev_sibling_id  INT NULL,
     route_id INT NULL,
     datatype_id INT NULL,
     author_id INT DEFAULT 1 NOT NULL,
@@ -787,6 +802,15 @@ CREATE TABLE content_data (
             ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_parent_id
         FOREIGN KEY (parent_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_first_child_id
+        FOREIGN KEY (first_child_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_next_sibling_id
+        FOREIGN KEY (next_sibling_id) REFERENCES content_data (content_data_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_content_data_prev_sibling_id
+        FOREIGN KEY (prev_sibling_id) REFERENCES content_data (content_data_id)
             ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_route_id
         FOREIGN KEY (route_id) REFERENCES routes (route_id)
@@ -2162,7 +2186,7 @@ func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, slug string) (int32
 }
 
 const getContentData = `-- name: GetContentData :one
-SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 WHERE content_data_id = ? LIMIT 1
 `
 
@@ -2172,6 +2196,9 @@ func (q *Queries) GetContentData(ctx context.Context, contentDataID int32) (Cont
 	err := row.Scan(
 		&i.ContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.RouteID,
 		&i.DatatypeID,
 		&i.AuthorID,
@@ -2242,7 +2269,16 @@ func (q *Queries) GetContentFieldsByRoute(ctx context.Context, routeID sql.NullI
 }
 
 const getContentTreeByRoute = `-- name: GetContentTreeByRoute :many
-SELECT cd.content_data_id, cd.parent_id, cd.datatype_id, cd.route_id, cd.author_id, cd.date_created, cd.date_modified,
+SELECT cd.content_data_id, 
+        cd.parent_id, 
+        cd.first_child_id,
+        cd.next_sibling_id,
+        cd.prev_sibling_id,
+        cd.datatype_id, 
+        cd.route_id, 
+        cd.author_id, 
+        cd.date_created, 
+        cd.date_modified,
        dt.label as datatype_label, dt.type as datatype_type
 FROM content_data cd 
 JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
@@ -2253,6 +2289,9 @@ ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id
 type GetContentTreeByRouteRow struct {
 	ContentDataID int32         `json:"content_data_id"`
 	ParentID      sql.NullInt32 `json:"parent_id"`
+	FirstChildID  sql.NullInt32 `json:"first_child_id"`
+	NextSiblingID sql.NullInt32 `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32 `json:"prev_sibling_id"`
 	DatatypeID    sql.NullInt32 `json:"datatype_id"`
 	RouteID       sql.NullInt32 `json:"route_id"`
 	AuthorID      int32         `json:"author_id"`
@@ -2274,6 +2313,9 @@ func (q *Queries) GetContentTreeByRoute(ctx context.Context, routeID sql.NullInt
 		if err := rows.Scan(
 			&i.ContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.DatatypeID,
 			&i.RouteID,
 			&i.AuthorID,
@@ -2496,7 +2538,7 @@ func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
 }
 
 const getLastContentData = `-- name: GetLastContentData :one
-SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
@@ -2505,6 +2547,9 @@ func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
 	err := row.Scan(
 		&i.ContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.RouteID,
 		&i.DatatypeID,
 		&i.AuthorID,
@@ -2938,6 +2983,9 @@ const getRouteTreeByRouteID = `-- name: GetRouteTreeByRouteID :many
 SELECT 
     cd.content_data_id,
     cd.parent_id,
+    cd.first_child_id,
+    cd.next_sibling_id,
+    cd.prev_sibling_id,
     dt.label AS datatype_label,
     dt.type AS datatype_type,
     f.label AS field_label,
@@ -2956,6 +3004,9 @@ ORDER BY cd.content_data_id, f.field_id
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID int32          `json:"content_data_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`
+	FirstChildID  sql.NullInt32  `json:"first_child_id"`
+	NextSiblingID sql.NullInt32  `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32  `json:"prev_sibling_id"`
 	DatatypeLabel string         `json:"datatype_label"`
 	DatatypeType  string         `json:"datatype_type"`
 	FieldLabel    string         `json:"field_label"`
@@ -2975,6 +3026,9 @@ func (q *Queries) GetRouteTreeByRouteID(ctx context.Context, routeID sql.NullInt
 		if err := rows.Scan(
 			&i.ContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.DatatypeLabel,
 			&i.DatatypeType,
 			&i.FieldLabel,
@@ -3734,7 +3788,7 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 }
 
 const listContentData = `-- name: ListContentData :many
-SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 ORDER BY content_data_id
 `
 
@@ -3750,6 +3804,9 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 		if err := rows.Scan(
 			&i.ContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.RouteID,
 			&i.DatatypeID,
 			&i.AuthorID,
@@ -3771,7 +3828,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 }
 
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
-SELECT content_data_id, parent_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified, history FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 `
@@ -3788,6 +3845,9 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID sql.NullIn
 		if err := rows.Scan(
 			&i.ContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.RouteID,
 			&i.DatatypeID,
 			&i.AuthorID,
@@ -4760,6 +4820,9 @@ const updateContentData = `-- name: UpdateContentData :exec
 UPDATE content_data
 set route_id = ?,
     parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
     datatype_id = ?,
     author_id = ?,
     date_created = ?,
@@ -4771,6 +4834,9 @@ WHERE content_data_id = ?
 type UpdateContentDataParams struct {
 	RouteID       sql.NullInt32  `json:"route_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`
+	FirstChildID  sql.NullInt32  `json:"first_child_id"`
+	NextSiblingID sql.NullInt32  `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32  `json:"prev_sibling_id"`
 	DatatypeID    sql.NullInt32  `json:"datatype_id"`
 	AuthorID      int32          `json:"author_id"`
 	DateCreated   time.Time      `json:"date_created"`
@@ -4783,6 +4849,9 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 	_, err := q.db.ExecContext(ctx, updateContentData,
 		arg.RouteID,
 		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
 		arg.DatatypeID,
 		arg.AuthorID,
 		arg.DateCreated,
