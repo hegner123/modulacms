@@ -14,21 +14,16 @@ func NewCmsUpdate() tea.Cmd {
 
 func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	cmds := make([]tea.Cmd, 0)
-	switch msg := msg.(type) {
-	case GetFullTreeResMsg:
-		r := m.BuildTree(msg.Rows)
-		return m, tea.Batch(
-			r,
-		)
+	switch msg.(type) {
 	case BuildTreeFromRouteMsg:
 		return m, tea.Batch()
 	case CmsDefineDatatypeLoadMsg:
 		return m, tea.Batch(
-                        CmsBuildDefineDatatypeFormCmd(),
-                        )
+			CmsBuildDefineDatatypeFormCmd(),
+		)
 	case CmsDefineDatatypeReadyMsg:
 		return m, tea.Batch()
-	
+
 	default:
 		return m, tea.Batch(cmds...)
 	}

@@ -8,11 +8,12 @@ type TreeRoot struct {
 }
 
 type TreeNode struct {
-	Node           *db.ContentData
-	NodeFields     []db.ContentFields
-	NodeDatatype   db.Datatypes
-	NodeFieldTypes []db.Fields
-	Nodes          *[]*TreeNode
+	Instance       *db.ContentData
+	InstanceFields []db.ContentFields
+	Datatype       db.Datatypes
+	Fields         []db.Fields
+	FirstChild     *TreeNode
+	NextSibling    *TreeNode
 	Expand         bool
 	Indent         int
 	Wrapped        int
@@ -29,10 +30,9 @@ func NewTreeNode(row db.GetRouteTreeByRouteIDRow) *TreeNode {
 		ContentDataID: row.ContentDataID,
 		ParentID:      row.ParentID,
 	}
-        
 
 	return &TreeNode{
-		Node: &cd,
+		Instance: &cd,
 	}
 
 }
@@ -55,144 +55,71 @@ func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
 	}
 
 	return &TreeNode{
-		Node:         &cd,
-		NodeDatatype: dt,
+		Instance: &cd,
+		Datatype: dt,
 	}
 }
 
-func (page *TreeRoot) Insert(n TreeNode, parent int64) bool {
-	if page.Root.Nodes == nil {
-		if page.Root.Node.ContentDataID == parent {
-			nn := make([]*TreeNode, 0)
-			nn = append(nn, &n)
-			page.Root.Nodes = &nn
-			page.NodeIndex[n.Node.ContentDataID] = &n
+func (page *TreeRoot) Insert(n TreeNode) bool {
+	if page.Root == nil {
+		if !n.Instance.ParentID.Valid { // null parent = root
+			page.Root = &n
+			page.NodeIndex[n.Instance.ContentDataID] = page.Root
 			return true
 		}
-		return false
-	} else if page.Root.Node.ContentDataID == parent {
-		instance := *page.Root.Nodes
-		instance = append(instance, &n)
-		page.Root.Nodes = &instance
-		page.NodeIndex[n.Node.ContentDataID] = &n
+		return false // can't insert non-root when no root exists
+	}
+
+	if page.Root.InsertRecursive(n) {
+		page.NodeIndex[n.Instance.ContentDataID] = &n
 		return true
 	}
-	instance := *page.Root.Nodes
-	for _, v := range instance {
-		if v.Node.ContentDataID == parent {
-			res := v.Insert(n, parent)
-			if res {
-				page.NodeIndex[n.Node.ContentDataID] = &n
-				return res
-			}
-
-			return res
-		}
-	}
 	return false
-
 }
 
-func (node *TreeNode) Insert(n TreeNode, parent int64) bool {
-	if node.Nodes == nil {
-		if node.Node.ContentDataID == parent {
-			nodeSlice := make([]*TreeNode, 0)
-			nodeSlice = append(nodeSlice, &n)
-			node.Nodes = &nodeSlice
-			return true
-		}
+func (node *TreeNode) InsertRecursive(n TreeNode) bool {
+	if !n.Instance.ParentID.Valid {
 		return false
 	}
-	if node.Node.ContentDataID == parent {
-		nodeSlice := *node.Nodes
-		nodeSlice = append(nodeSlice, &n)
-		node.Nodes = &nodeSlice
+
+	if node.Instance.ContentDataID == n.Instance.ParentID.Int64 {
+		node.AddNode(n)
 		return true
-	} else {
-		nodeSlice := *node.Nodes
-		for _, v := range nodeSlice {
-			if v.Node.ContentDataID == parent {
-				return v.Insert(n, parent)
-
-			}
-
-		}
 	}
-	return false
 
-}
-
-func (node *TreeNode) ShallowInsert(newNode TreeNode, parent int64) bool {
-	if node == nil {
-		return false
-	}
-	ContentID := node.Node.ContentDataID
-	if node.Nodes == nil {
-		if Match(ContentID, parent) {
-			node.Nodes = NewNodeSlice(newNode)
+	// Check children first
+	if node.FirstChild != nil {
+		if node.FirstChild.InsertRecursive(n) {
 			return true
 		}
-		return false
 	}
-	if Match(ContentID, parent) {
-		AppendNode(node.Nodes, &newNode)
+
+	// Then check siblings
+	if node.NextSibling != nil {
+		return node.NextSibling.InsertRecursive(n)
+	}
+
+	return false
+}
+func (node *TreeNode) AddNode(n TreeNode) bool {
+	if node.FirstChild == nil {
+		node.FirstChild = &n
+		return true
+	}
+	return node.FirstChild.AddSibling(n) // traverse to end of sibling chain
+}
+
+func (node *TreeNode) AddSibling(n TreeNode) bool {
+	if node.NextSibling == nil {
+		node.NextSibling = &n
 		return true
 	} else {
-		MatchOnSlice(node.Nodes, newNode, ContentID, parent)
+		return node.NextSibling.AddSibling(n)
 	}
-	return false
-
 }
 
-func IsNil[T *any](data T) bool {
-	return data == nil
-}
-
-func Match(in int64, compare int64) bool {
-	return in == compare
-
-}
-
-func NewNodeSlice(newNode TreeNode) *[]*TreeNode {
-	nodeSlice := make([]*TreeNode, 0)
-	nodeSlice = append(nodeSlice, &newNode)
-	return &nodeSlice
-
-}
-
-func AppendNode(src *[]*TreeNode, node *TreeNode) *[]*TreeNode {
-	nodeSlice := *src
-	nodeSlice = append(nodeSlice, node)
-	return &nodeSlice
-
-}
-
-func MatchOnSlice(nodes *[]*TreeNode, n TreeNode, item int64, parent int64) bool {
-	nodeSlice := *nodes
-	for _, v := range nodeSlice {
-		if Match(item, parent) {
-			return v.ShallowInsert(n, parent)
-		}
-	}
-	return false
-
-}
 
 func (page *TreeRoot) NodeInsertByIndex(index *TreeNode, n TreeNode) {
-	if index.Nodes == nil {
-		nodeSlice := make([]*TreeNode, 0)
-		nodeSlice = append(nodeSlice, &n)
-		index.Nodes = &nodeSlice
-	} else {
-		nodeSlice := *index.Nodes
-		nodeSlice = append(nodeSlice, &n)
-		index.Nodes = &nodeSlice
-	}
-	page.NodeIndex[n.Node.ContentDataID] = &n
-
+	page.NodeIndex[n.Instance.ContentDataID] = &n
 }
 
-func (page TreeRoot) GetContentByRouteID(id int64) ([]db.ContentData, error) {
-	out := make([]db.ContentData, 0)
-	return out, nil
-}

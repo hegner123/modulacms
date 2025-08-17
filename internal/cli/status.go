@@ -31,12 +31,6 @@ func (m Model) RenderStatusTable() string {
 	table := fmt.Sprintf("Table\n%s\n", m.Table)
 	history := fmt.Sprintf("History\nLength:\n %v", len(m.History))
 	
-	// Add Root info if available
-	rootInfo := "Root: Empty"
-    tree:=m.Root
-	if tree.Root.Nodes != nil {
-		rootInfo = fmt.Sprintf("Root: Node with %d children", len(*tree.Root.Nodes))
-	}
 	
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
@@ -55,7 +49,6 @@ func (m Model) RenderStatusTable() string {
 				fmt.Sprint("Height: ", m.Height),
 				table,
 				history,
-				rootInfo,
 				m.Err.Error(),
 			)),
 	))

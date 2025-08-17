@@ -372,8 +372,6 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 	for current != nil {
 		row := FormatRow(current)
 		display = append(display, row)
-		next := *current.Nodes
-		current = next[index]
 		index++
 	}
 	return lipgloss.JoinVertical(lipgloss.Top, display...)
@@ -381,19 +379,12 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 
 func FormatRow(node *TreeNode) string {
 	row := ""
-	HasChildrenCollapsed := "+"
-	HasChildrenExpanded := "-"
+	//HasChildrenCollapsed := "+"
+	//HasChildrenExpanded := "-"
 	Indent := "  "
 	Wrapped := ">>"
 	row += strings.Repeat(Wrapped, node.Wrapped)
 	row += strings.Repeat(Indent, node.Indent-(node.Wrapped-1))
-	if node.Nodes != nil {
-		if node.Expand {
-			row += HasChildrenExpanded
-		} else {
-			row += HasChildrenCollapsed
-		}
-	}
 	row += DecideNodeName(*node)
 
 	return row
@@ -401,18 +392,18 @@ func FormatRow(node *TreeNode) string {
 
 func DecideNodeName(node TreeNode) string {
 	var out string
-	if index := slices.IndexFunc(node.NodeFieldTypes, FieldMatchesLabel); index > -1 {
-		id := node.NodeFieldTypes[index].FieldID
-		contentIndex := slices.IndexFunc(node.NodeFields, func(cf db.ContentFields) bool {
+	if index := slices.IndexFunc(node.Fields, FieldMatchesLabel); index > -1 {
+		id := node.Fields[index].FieldID
+		contentIndex := slices.IndexFunc(node.InstanceFields, func(cf db.ContentFields) bool {
 			return cf.FieldID == id
 		})
-		out += node.NodeFields[contentIndex].FieldValue
+		out += node.InstanceFields[contentIndex].FieldValue
 		out += "  ["
-		out += node.NodeDatatype.Label
+		out += node.Datatype.Label
 		out += "]"
 
 	} else {
-		out += node.NodeDatatype.Label
+		out += node.Datatype.Label
 	}
 	return out
 }

@@ -167,14 +167,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 
 	case UpdateMaxCursorMsg:
 		cursorUpdate := func() tea.Msg {
-			if m.Cursor > msg.cursorMax-1 {
-				return CursorSet{Index: msg.cursorMax - 1}
+			if m.Cursor > msg.CursorMax-1 {
+				return CursorSet{Index: msg.CursorMax - 1}
 			}
 			return nil
 		}()
 
 		cmds := []tea.Cmd{
-			CursorMaxSetCmd(msg.cursorMax),
+			CursorMaxSetCmd(msg.CursorMax),
 		}
 
 		if cursorUpdate != nil {
