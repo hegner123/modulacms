@@ -345,7 +345,7 @@ INSERT INTO admin_content_data (
     ?,
     ?,
     ?
-) RETURNING admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history
+) RETURNING admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history
 `
 
 type CreateAdminContentDataParams struct {
@@ -372,6 +372,9 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 	err := row.Scan(
 		&i.AdminContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -386,6 +389,9 @@ const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id INTEGER PRIMARY KEY,
     parent_id INTEGER,
+    first_child_id INTEGER,
+    next_sibling_id INTEGER,
+    prev_sibling_id INTEGER,
     admin_route_id INTEGER NOT NULL,
     admin_datatype_id INTEGER NOT NULL,
     author_id INTEGER NOT NULL DEFAULT 1,
@@ -393,6 +399,9 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
@@ -865,7 +874,14 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL
+    history TEXT DEFAULT NULL,
+    FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
+    FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
 )
 `
 
@@ -2232,7 +2248,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -2242,6 +2258,9 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 	err := row.Scan(
 		&i.AdminContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -3156,7 +3175,7 @@ func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int64, erro
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -3172,6 +3191,9 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 		if err := rows.Scan(
 			&i.AdminContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -3193,7 +3215,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
@@ -3210,6 +3232,9 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 		if err := rows.Scan(
 			&i.AdminContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,

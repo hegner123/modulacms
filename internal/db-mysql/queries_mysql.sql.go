@@ -371,10 +371,13 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 }
 
 const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
-CREATE TABLE admin_content_data (
+CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id INT AUTO_INCREMENT
         PRIMARY KEY,
     parent_id INT NULL,
+    first_child_id INT NULL,
+    next_sibling_id INT NULL,
+    prev_sibling_id INT NULL,
     admin_route_id INT NOT NULL,
     admin_datatype_id INT NOT NULL,
     author_id INT DEFAULT 1 NOT NULL,
@@ -383,6 +386,15 @@ CREATE TABLE admin_content_data (
     history TEXT NULL,
     CONSTRAINT fk_admin_content_data_parent_id
         FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
+             ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_first_child_id
+        FOREIGN KEY (first_child_id) REFERENCES admin_content_data (admin_content_data_id)
+             ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_next_sibling_id
+        FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data (admin_content_data_id)
+             ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_data_prev_sibling_id
+        FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data (admin_content_data_id)
              ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_content_data_admin_datatypes
         FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
@@ -2045,7 +2057,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -2055,6 +2067,9 @@ func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID in
 	err := row.Scan(
 		&i.AdminContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -2425,7 +2440,7 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, routeID sql.Nu
 }
 
 const getLastAdminContentData = `-- name: GetLastAdminContentData :one
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData, error) {
@@ -2434,6 +2449,9 @@ func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
 		&i.ParentID,
+		&i.FirstChildID,
+		&i.NextSiblingID,
+		&i.PrevSiblingID,
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
@@ -3288,7 +3306,7 @@ func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int32, erro
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -3304,6 +3322,9 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 		if err := rows.Scan(
 			&i.AdminContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
@@ -3325,7 +3346,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, parent_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified, history FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
@@ -3342,6 +3363,9 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID 
 		if err := rows.Scan(
 			&i.AdminContentDataID,
 			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
