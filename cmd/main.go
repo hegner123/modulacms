@@ -1,10 +1,3 @@
-// Package main is the entry point for ModulaCMS, a flexible content management system.
-//
-// It handles server initialization, command-line arguments, installation processes,
-// and sets up HTTP, HTTPS, and SSH servers. The main package coordinates the various
-// components of the CMS including authentication, routing, middleware, and database
-// connections. It supports multiple operational modes including CLI-only, installation,
-// and update functionalities.
 package main
 
 import (
@@ -15,14 +8,14 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/charmbracelet/log"
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
-	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -46,40 +39,50 @@ type AppFlags struct {
 	InstallFlag *bool
 	ConfigPath  *string
 }
+type ReturnCode int16
 
-var InitStatus install.ModulaInit
-var certDir string
-
-const updateUrl string = "https://modulacms.com/update"
+const (
+	OKSIG ReturnCode = iota
+	ERRSIG
+)
 
 func main() {
+
+	code, err := run()
+	if err != nil || code == ERRSIG {
+		utility.DefaultLogger.Fatal("Root Return: ", err)
+	}
+
+}
+
+func run() (ReturnCode, error) {
+	var InitStatus install.ModulaInit
+	var certDir string
+
+	const updateUrl string = "https://modulacms.com/update"
+
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// Create a context with a timeout for graceful shutdown.
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
 	app := flags.ParseFlags()
 
 	if *app.VersionFlag {
-		proccessPrintVersion()
+		HandleFlagVersion()
 	}
 
 	configProvider := config.NewFileProvider(*app.ConfigPath)
 	configManager := config.NewManager(configProvider)
 
-	// Load config
 	if err := configManager.Load(); err != nil {
 		utility.DefaultLogger.Fatal("Failed to load configuration", err)
 	}
 
-	// Get the config
-	cfg, _ := configManager.Config()
+	configuration, _ := configManager.Config()
 
-	// If install check fails, and install flag is present
-	// disable flag to prevent multiple calls to install
-	_, err := install.CheckInstall(cfg, app.VerboseFlag)
+	_, err := install.CheckInstall(configuration, app.VerboseFlag)
 	if err != nil {
 		if *app.InstallFlag {
 			*app.InstallFlag = false
@@ -89,24 +92,26 @@ func main() {
 	}
 
 	if *app.UpdateFlag {
-		proccessUpdateFlag()
+		HandleFlagUpdate(updateUrl)
 	}
+
 	if *app.AuthFlag {
-		proccessAuthCheck(*cfg)
+		HandleFlagAuth(*configuration)
 	}
+
 	if *app.CliFlag {
-		proccessRunCli(app.VerboseFlag, cfg)
+		HandleFlagCLI(app.VerboseFlag, configuration)
 	}
 
 	if *app.AlphaFlag {
-		proccessAlphaFlag()
+		HandleFlagAlpha()
 	}
 
 	if *app.ResetFlag {
 		fmt.Println("Reset DB:")
 		err := os.Remove("./modula.db")
 		if err != nil {
-			log.Fatal("Error deleting file:", err)
+			utility.DefaultLogger.Fatal("Error deleting file:", err)
 		}
 	}
 
@@ -115,44 +120,41 @@ func main() {
 	}
 
 	if !InitStatus.DbFileExists || *app.ResetFlag {
-		dbc, _, _ := db.ConfigDB(*cfg).GetConnection()
-
-		defer func() {
-			if closeErr := dbc.Close(); closeErr != nil && err == nil {
-				err = closeErr
-			}
-		}()
-
+		databaseConnection, _, _ := db.ConfigDB(*configuration).GetConnection()
+		defer utility.HandleConnectionCloseDeferErr(databaseConnection)
 	}
 
-	var host = cfg.SSH_Host
+	var host = configuration.SSH_Host
 	sshServer, err := wish.NewServer(
-		wish.WithAddress(net.JoinHostPort(host, cfg.SSH_Port)),
+		wish.WithAddress(net.JoinHostPort(host, configuration.SSH_Port)),
 		wish.WithHostKeyPath(".ssh/id_ed25519"),
 		wish.WithMiddleware(
-			cli.CliMiddleware(app.VerboseFlag, cfg),
+			cli.CliMiddleware(app.VerboseFlag, configuration),
 			logging.Middleware(),
 		),
 	)
 
-	mux := router.NewModulacmsMux(*cfg)
-	middlewareHandler := middleware.Serve(mux, cfg)
+	mux := router.NewModulacmsMux(*configuration)
+	middlewareHandler := middleware.Serve(mux, configuration)
 	manager := autocert.Manager{
-		Prompt:     autocert.AcceptTOS,
-		HostPolicy: autocert.HostWhitelist(cfg.Environment_Hosts[cfg.Environment], cfg.Client_Site, cfg.Admin_Site), // Your domain(s)
+		Prompt: autocert.AcceptTOS,
+		HostPolicy: autocert.HostWhitelist(configuration.Environment_Hosts[configuration.Environment],
+			configuration.Client_Site,
+			configuration.Admin_Site,
+		),
 	}
+
 	var (
-		// Define your HTTP server instance.
 		httpServer = &http.Server{
-			Addr:         cfg.Client_Site + cfg.Port,
+			Addr:         configuration.Client_Site + configuration.Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		}
-		// Define your HTTPS server instance.
+
 		httpsServer = &http.Server{
-			Addr:         cfg.Client_Site + cfg.SSL_Port,
+			Addr:         configuration.Client_Site + configuration.SSL_Port,
 			TLSConfig:    manager.TLSConfig(),
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
@@ -160,16 +162,17 @@ func main() {
 			IdleTimeout:  60 * time.Second,
 		}
 	)
-	if cfg.Environment == "local" {
+
+	if configuration.Environment == "local" {
 		httpServer = &http.Server{
-			Addr:         "localhost:" + cfg.SSL_Port,
+			Addr:         "localhost:" + configuration.SSL_Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
 			IdleTimeout:  60 * time.Second,
 		}
 		httpsServer = &http.Server{
-			Addr:         "localhost:" + cfg.SSL_Port,
+			Addr:         "localhost:" + configuration.SSL_Port,
 			Handler:      middlewareHandler,
 			ReadTimeout:  15 * time.Second,
 			WriteTimeout: 15 * time.Second,
@@ -177,18 +180,15 @@ func main() {
 		}
 	}
 
-	l := len(cfg.Cert_Dir)
-	c := cfg.Cert_Dir[l-1]
-	if string(c) != "/" {
-		certDir = cfg.Cert_Dir + "/"
-	} else {
-		certDir = cfg.Cert_Dir
+	certDir, err = sanitizeCertDir(configuration.Cert_Dir)
+	if err != nil {
+		utility.DefaultLogger.Fatal("Certificate Directory path is invalid:", err)
 	}
 
 	// Run the SSH server concurrently.
 	go func() {
 
-		utility.DefaultLogger.Info("Starting SSH server", "ssh "+cfg.SSH_Host+" -p "+cfg.SSH_Port)
+		utility.DefaultLogger.Info("Starting SSH server", "ssh "+configuration.SSH_Host+" -p "+configuration.SSH_Port)
 		go func() {
 			if err = sshServer.ListenAndServe(); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 				utility.DefaultLogger.Error("Could not start server", err)
@@ -207,15 +207,15 @@ func main() {
 
 	go func() {
 
-		if !InitStatus.UseSSL && cfg.Environment != "local" {
-			utility.DefaultLogger.Info("Server is running at https://localhost:", cfg.SSL_Port)
+		if !InitStatus.UseSSL && configuration.Environment != "local" {
+			utility.DefaultLogger.Info("Server is running at https://localhost:", configuration.SSL_Port)
 			err = httpsServer.ListenAndServeTLS(certDir+"localhost.crt", certDir+"localhost.key")
 			if err != nil {
 				utility.DefaultLogger.Info("Shutting Down Server", err)
 				done <- syscall.SIGTERM
 			}
 		}
-		utility.DefaultLogger.Info("Server is running at http://localhost:", cfg.Port)
+		utility.DefaultLogger.Info("Server is running at http://localhost:", configuration.Port)
 		err = httpServer.ListenAndServe()
 		if err != nil {
 			utility.DefaultLogger.Info("Shutting Down Server", err)
@@ -223,39 +223,37 @@ func main() {
 		}
 	}()
 
-	// Wait for an OS signal (e.g., Ctrl-C)
 	<-done
 	utility.DefaultLogger.Info("Shutting down servers...")
 
-	// Shutdown HTTP server.
 	if err := httpServer.Shutdown(ctx); err != nil {
-		utility.DefaultLogger.Error("HTTP server shutdown error: %v", err)
+		utility.DefaultLogger.Error("HTTP server shutdown error:", err)
 	}
 
 	if err := httpsServer.Shutdown(ctx); err != nil {
-		utility.DefaultLogger.Error("HTTPS server shutdown error: %v", err)
+		utility.DefaultLogger.Error("HTTPS server shutdown error:", err)
 	}
 
-	// Shutdown SSH server.
 	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
-		utility.DefaultLogger.Error("SSH server shutdown error: %v", err)
+		utility.DefaultLogger.Error("SSH server shutdown error:", err)
+		return ERRSIG, err
 	}
 
 	utility.DefaultLogger.Info("Servers gracefully stopped.")
+	return OKSIG, nil
 }
 
-func proccessAuthCheck(c config.Config) {
-	auth.OauthSettings(c)
+func HandleFlagAuth(c config.Config) {
 	os.Exit(0)
 }
 
-func proccessAlphaFlag() {
+func HandleFlagAlpha() {
 	_, err := os.Open("test.txt")
 	if err != nil {
 		utility.DefaultLogger.Fatal("failed to create database dump in archive: ", err)
 	}
 }
-func proccessPrintVersion() {
+func HandleFlagVersion() {
 	message, err := utility.GetVersion()
 	if err != nil {
 		utility.DefaultLogger.Fatal(*message, err)
@@ -264,26 +262,48 @@ func proccessPrintVersion() {
 	os.Exit(0)
 }
 
-func proccessRunCli(v *bool, c *config.Config) {
-	m, _ := cli.InitialModel(v, c)
-	if _, e := cli.CliRun(&m); !e {
-		//os.Exit(0)
-		p, err := os.FindProcess(os.Getpid())
+func HandleFlagCLI(v *bool, c *config.Config) {
+	model, _ := cli.InitialModel(v, c)
+	if _, e := cli.CliRun(&model); !e {
+		process, err := os.FindProcess(os.Getpid())
 		if err != nil {
 			utility.DefaultLogger.Error("", err)
 			return
 		}
 
-		// Send a SIGTERM to the process.
-		if err := p.Signal(syscall.SIGTERM); err != nil {
+		if err := process.Signal(syscall.SIGTERM); err != nil {
 			utility.DefaultLogger.Error("", err)
 		}
 	}
 }
 
-func proccessUpdateFlag() {
-	err := update.Fetch(updateUrl)
+func HandleFlagUpdate(url string) {
+	err := update.Fetch(url)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 	}
+}
+
+func sanitizeCertDir(configCertDir string) (string, error) {
+	if strings.TrimSpace(configCertDir) == "" {
+		return "", errors.New("certificate directory path cannot be empty")
+	}
+
+	certDir := filepath.Clean(configCertDir)
+
+	absPath, err := filepath.Abs(certDir)
+	if err != nil {
+		return "", err
+	}
+
+	info, err := os.Stat(absPath)
+	if err != nil {
+		return "", err
+	}
+
+	if !info.IsDir() {
+		return "", errors.New("certificate path is not a directory")
+	}
+
+	return absPath, nil
 }

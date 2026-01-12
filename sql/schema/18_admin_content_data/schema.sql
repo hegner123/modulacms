@@ -1,6 +1,9 @@
 CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_content_data_id INTEGER PRIMARY KEY,
     parent_id INTEGER,
+    first_child_id INTEGER,
+    next_sibling_id INTEGER,
+    prev_sibling_id INTEGER,
     admin_route_id INTEGER NOT NULL,
     admin_datatype_id INTEGER NOT NULL,
     author_id INTEGER NOT NULL DEFAULT 1,
@@ -8,6 +11,9 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
     history TEXT,
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
+    FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT

@@ -13,40 +13,23 @@ import (
 var TitleFile embed.FS
 
 func (m Model) RenderUI() string {
-	app := strings.Builder{}
-	column := []string{}
 	docStyle := lipgloss.NewStyle()
-	docStyle = docStyle.Width(m.width).Height(m.height)
-	if m.footer == "" {
-		m.footer = "Press q to quit."
-	}
+	docStyle = docStyle.Width(m.Width).Height(m.Height)
 
-	title := RenderTitle(m.titles[m.titleFont])
-	header := RenderHeading(m.header)
-	footer := RenderFooter(m.footer)
-	column = append(column, title)
-	column = append(column, header)
-	body := m.body
-	if m.verbose {
-		body = lipgloss.JoinHorizontal(lipgloss.Top, m.body, m.RenderStatusTable())
-
-	}
-	column = append(column, body)
-
-	app.WriteString(lipgloss.JoinVertical(
-		lipgloss.Left,
-		column...,
-	))
-	h := m.RenderSpace(app.String() + RenderFooter(m.footer))
 	doc := lipgloss.JoinVertical(
 		lipgloss.Top,
-		lipgloss.NewStyle().Padding(0, 2).Render(app.String()),
-		h,
-		footer,
+		lipgloss.NewStyle().Padding(0, 2).Render(),
 		m.RenderStatusBar(),
 	)
 
-	return docStyle.Render(doc)
+	renderedDoc := docStyle.Render(doc)
+
+	// If dialog is active, render dialog over the UI
+	if m.DialogActive && m.Dialog != nil {
+		return DialogOverlay(renderedDoc, *m.Dialog, m.Width, m.Height)
+	}
+
+	return renderedDoc
 }
 
 func formatJSON(b *config.Config) (string, error) {

@@ -18,6 +18,9 @@ func DBTableString(t DBTable) string {
 func StringDBTable(t string) DBTable {
 	return DBTable(t)
 }
+func TimeToNullString(s time.Time) sql.NullString {
+	return sql.NullString{String: s.String(), Valid: true}
+}
 
 func IntToNullInt64(i int) sql.NullInt64 {
 	return sql.NullInt64{Int64: int64(i), Valid: true}
@@ -108,9 +111,9 @@ func NullStringToTime(s sql.NullString) time.Time {
 	return t
 }
 func NullStringToNullTime(s sql.NullString) sql.NullTime {
-    ns := ReadNullString(s)
+	ns := ReadNullString(s)
 	t := utility.ParseTimeReadable(ns)
-    nt:= sql.NullTime{}
+	nt := sql.NullTime{}
 	if t != nil {
 		nt = sql.NullTime{Time: *t, Valid: true}
 	} else {

@@ -9,6 +9,18 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
         CONSTRAINT fk_parent_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
+    first_child_id INTEGER
+        CONSTRAINT fk_first_child_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    next_sibling_id INTEGER
+        CONSTRAINT fk_first_child_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    prev_sibling_id INTEGER
+        CONSTRAINT fk_first_child_id
+            REFERENCES admin_content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     admin_route_id INTEGER NOT NULL
         CONSTRAINT fk_admin_routes
             REFERENCES admin_routes
@@ -25,6 +37,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     history TEXT
 );
+
 
 -- name: CountAdminContentData :one
 SELECT COUNT(*)

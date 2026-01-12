@@ -1,7 +1,6 @@
 package db
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 	"strconv"
@@ -12,10 +11,6 @@ import (
 )
 
 // Types
-type userRepo struct {
-	db  *sql.DB
-	ctx context.Context
-}
 
 // Users represents a user record from the database.
 type Users struct {

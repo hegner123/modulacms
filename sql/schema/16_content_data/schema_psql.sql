@@ -5,6 +5,18 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_parent_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
+    first_child_id INTEGER
+        CONSTRAINT fk_first_child_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    next_sibling_id INTEGER
+        CONSTRAINT fk_next_sibling_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    prev_sibling_id INTEGER
+        CONSTRAINT fk_prev_sibling_id
+            REFERENCES content_data
+            ON UPDATE CASCADE ON DELETE SET NULL,
     route_id INTEGER
         CONSTRAINT fk_routes
             REFERENCES routes

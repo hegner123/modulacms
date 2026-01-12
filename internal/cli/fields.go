@@ -16,15 +16,15 @@ func (m *Model) NewFieldFromType(c *config.Config, column string, colType *sql.C
 		case "date_created":
 			ts := utility.TimestampReadable()
 			*value = ts
-			m.formValues = append(m.formValues, value)
+			m.FormValues = append(m.FormValues, value)
 		case "date_modified":
 			ts := utility.TimestampReadable()
 			*value = ts
-			m.formValues = append(m.formValues, value)
+			m.FormValues = append(m.FormValues, value)
 		case "history":
 			h := ""
 			*value = h
-			m.formValues = append(m.formValues, value)
+			m.FormValues = append(m.FormValues, value)
 		}
 		return nil, nil
 	}
@@ -69,13 +69,13 @@ func (m *Model) NewUpdateFieldFromType(c *config.Config, column string, colType 
 		switch column {
 		case "date_created":
 			pv := prevValue
-			m.formValues = append(m.formValues, &pv)
+			m.FormValues = append(m.FormValues, &pv)
 		case "date_modified":
 			ts := utility.TimestampReadable()
-			m.formValues = append(m.formValues, &ts)
+			m.FormValues = append(m.FormValues, &ts)
 		case "history":
 			pv := prevValue
-			m.formValues = append(m.formValues, &pv)
+			m.FormValues = append(m.FormValues, &pv)
 		}
 		return nil, nil
 	}
@@ -112,7 +112,7 @@ func (m Model) GetSuggestionsString(c *config.Config, column string) []string {
 	if column == "NIll" {
 		return nil
 	} else {
-		r, err := db.GetColumnRowsString(con, ctx, m.table, column)
+		r, err := db.GetColumnRowsString(con, ctx, m.Table, column)
 		if err != nil {
 			utility.DefaultLogger.Error("ERROR", err)
 			return nil

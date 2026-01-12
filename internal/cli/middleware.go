@@ -32,10 +32,10 @@ func CliMiddleware(v *bool, c *config.Config) wish.Middleware {
 			return nil
 		}
 		m, _ := InitialModel(v, c)
-		m.term = pty.Term
-		m.width = pty.Window.Width
-		m.height = pty.Window.Height
-		m.time = time.Now()
+		m.Term = pty.Term
+		m.Width = pty.Window.Width
+		m.Height = pty.Window.Height
+		m.Time = time.Now()
 		return newProg(&m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
 	return bubbletea.MiddlewareWithProgramHandler(teaHandler, termenv.ANSI256)

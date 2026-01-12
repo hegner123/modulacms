@@ -3,25 +3,26 @@ package cli
 type PageHistory struct {
 	Cursor int
 	Page   Page
+	Menu   []Page
 }
 
 func (m *Model) PushHistory(entry PageHistory) {
-	m.history = append(m.history, entry)
+	m.History = append(m.History, entry)
 }
 
 func (m *Model) PopHistory() *PageHistory {
-	if len(m.history) == 0 {
+	if len(m.History) == 0 {
 		return nil
 	}
-	index := len(m.history) - 1
-	pageHistory := m.history[index]
-	m.history = m.history[:index]
+	index := len(m.History) - 1
+	pageHistory := m.History[index]
+	m.History = m.History[:index]
 	return &pageHistory
 }
 
 func (m *Model) Peek() (*PageHistory, bool) {
-	if len(m.history) == 0 {
+	if len(m.History) == 0 {
 		return nil, false
 	}
-	return &m.history[len(m.history)-1], true
+	return &m.History[len(m.History)-1], true
 }

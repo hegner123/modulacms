@@ -14,7 +14,7 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test build vendor
+.PHONY: all test build vendor test-development
 
 all: help
 
@@ -30,7 +30,10 @@ test: ## Run the tests of the project
 	rm ./testdb/*.db
 
 template-test: ## Run the template test
-	$(GOTEST) -run TestServeTemplate  -outputdir tests 
+	$(GOTEST) -run TestServeTemplate  -outputdir tests
+
+test-development: ## Run tests for the development package
+	$(GOTEST) -v ./internal/development 
 
 coverage: ## Run the tests of the project and export the coverage
 	$(GOTEST) -cover -covermode=count -coverprofile=profile.cov ./...
@@ -45,6 +48,9 @@ endif
 dev: ## Prepare binaries and templates in src dir for faster iteration
 	echo "" > debug.log
 	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
+
+run: dev ## Build and run the application
+	./$(X86_BINARY_NAME)
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/

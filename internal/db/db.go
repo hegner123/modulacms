@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"sort"
+	"strings"
 
 	config "github.com/hegner123/modulacms/internal/config"
 	utility "github.com/hegner123/modulacms/internal/utility"
@@ -72,6 +73,7 @@ type DbDriver interface {
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)
+	Query(db *sql.DB, query string) (sql.Result, error)
 	SortTables() error
 	DumpSql(config.Config) error
 	GetForeignKeys(args []string) *sql.Rows
@@ -194,6 +196,10 @@ type DbDriver interface {
 	GetTable(int64) (*Tables, error)
 	GetToken(int64) (*Tokens, error)
 	GetTokenByUserId(int64) (*[]Tokens, error)
+	GetRouteTreeByRouteID(int64) (*[]GetRouteTreeByRouteIDRow, error)
+	GetContentTreeByRoute(int64) (*[]GetContentTreeByRouteRow, error)
+	GetFieldDefinitionsByRoute(int64) (*[]GetFieldDefinitionsByRouteRow, error)
+	GetContentFieldsByRoute(int64) (*[]GetContentFieldsByRouteRow, error)
 	GetUser(int64) (*Users, error)
 	GetUserOauth(int64) (*UserOauth, error)
 	GetUserByEmail(string) (*Users, error)
@@ -881,4 +887,72 @@ func (d PsqlDatabase) DumpSql(c config.Config) error {
 	}
 	return nil
 
+}
+
+// Query methods for database implementations
+func (d Database) Query(db *sql.DB, query string) (sql.Result, error) {
+	utility.DefaultLogger.Finfo("Executing query:", query)
+	return db.Exec(query)
+}
+
+func (d MysqlDatabase) Query(db *sql.DB, query string) (sql.Result, error) {
+	utility.DefaultLogger.Finfo("Executing query:", query)
+	return db.Exec(query)
+}
+
+func (d PsqlDatabase) Query(db *sql.DB, query string) (sql.Result, error) {
+	utility.DefaultLogger.Finfo("Executing query:", query)
+	return db.Exec(query)
+}
+
+// Helper functions for CRUD operations that use the Query method
+
+// BuildInsertQuery creates an INSERT query
+func BuildInsertQuery(table string, values map[string]string) string {
+	var cols, vals []string
+	
+	for col, val := range values {
+		cols = append(cols, col)
+		vals = append(vals, fmt.Sprintf("'%s'", val))
+	}
+	
+	query := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+		table,
+		strings.Join(cols, ", "),
+		strings.Join(vals, ", "))
+	
+	return query
+}
+
+// BuildUpdateQuery creates an UPDATE query
+func BuildUpdateQuery(table string, id int64, values map[string]string) string {
+	var setStmts []string
+	
+	for col, val := range values {
+		setStmts = append(setStmts, fmt.Sprintf("%s = '%s'", col, val))
+	}
+	
+	query := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
+		table,
+		strings.Join(setStmts, ", "),
+		id)
+	
+	return query
+}
+
+// BuildSelectQuery creates a SELECT query
+func BuildSelectQuery(table string, id int64) string {
+	query := fmt.Sprintf("SELECT * FROM \"%s\" WHERE id = %d", table, id)
+	return query
+}
+// BuildListQuery creates a SELECT query
+func BuildListQuery(table string) string {
+	query := fmt.Sprintf("SELECT * FROM \"%s\"", table)
+	return query
+}
+
+// BuildDeleteQuery creates a DELETE query
+func BuildDeleteQuery(table string, id int64) string {
+	query := fmt.Sprintf("DELETE FROM \"%s\" WHERE id = %d", table, id)
+	return query
 }

@@ -15,7 +15,7 @@ tables:
 10 admin_field
 11 token
 12 user_oauth
-13 table
+13 tables
 14 media
 15 session
 16 content_data

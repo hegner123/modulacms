@@ -14,7 +14,7 @@ func Active(s string) string {
 	return a.Render(s)
 }
 
-func StyledTable(hdrs []string, r [][]string, index int) *table.Table {
+func TableRender(hdrs []string, r [][]string, index int) *table.Table {
 	var headers []string
 	var rows [][]string
 
@@ -140,13 +140,13 @@ func RenderBlockFixed(s string) string {
 }
 
 func (m Model) RenderSpace(content string) string {
-	spaceStyle := lipgloss.NewStyle().Height(m.height - lipgloss.Height(content) - 2)
+	spaceStyle := lipgloss.NewStyle().Height(m.Height - lipgloss.Height(content) - 2)
 	return spaceStyle.Render("")
 }
 
 func (m Model) RenderStatusBar() string {
 	doc := strings.Builder{}
-	status := []string{"Page", "Form", "Dialog"}
+	status := []string{"Page", "Table", "Form", "Dialog"}
 	statusNugget := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Status1).
 		Padding(0, 1)
@@ -164,22 +164,22 @@ func (m Model) RenderStatusBar() string {
 	fishCakeStyle := statusNugget.Background(config.DefaultStyle.Status3BG).Foreground(config.DefaultStyle.Status3)
 	var v string
 
-	v = m.page.Label
-	if m.table != "" {
-		v = m.table
+	v = m.Page.Label
+	if m.Table != "" {
+		v = m.Table
 	}
 
 	statusKey := m.GetStatus()
-	c := strconv.FormatInt(int64(m.cursor), 10)
-	cm := strconv.FormatInt(int64(m.cursorMax), 10)
+	p := m.Page.Label
+	cm := strconv.FormatInt(int64(m.CursorMax), 10)
 
-	nugget := nuggetStyle.Render("Cursor: " + c + "  CursorMax: " + cm)
+	nugget := nuggetStyle.Render("Page: " + p + "  CursorMax: " + cm)
 	fishCake := fishCakeStyle.Render(v)
 
 	w := lipgloss.Width
 	statusVal := statusText.
-		Width(m.width - w(statusKey) - w(nugget) - w(fishCake) - 34).
-		Render(status[m.focus])
+		Width(m.Width - w(statusKey) - w(nugget) - w(fishCake) - 34).
+		Render(status[m.Focus])
 
 	bar := lipgloss.JoinHorizontal(lipgloss.Top,
 		statusKey,
@@ -193,7 +193,7 @@ func (m Model) RenderStatusBar() string {
 		),
 	)
 
-	doc.WriteString(statusBarStyle.Width(m.width).Render(bar))
+	doc.WriteString(statusBarStyle.Width(m.Width).Render(bar))
 	return statusBarStyle.Render(doc.String())
 
 }

@@ -11,6 +11,7 @@ func NewHorizontalGroup(p lipgloss.Position, s []string) string {
 func NewVerticalGroup(p lipgloss.Position, s []string) string {
 	return lipgloss.JoinVertical(p, s...)
 }
+
 type Row struct {
 	Position lipgloss.Position
 	Items    []Column
