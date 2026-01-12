@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "team-memory": {
+      "command": "node",
+      "args": [
+        "mcp/dist/memory-server.js"
+      ],
+      "description": "Team memory and knowledge base for ModulaCMS development",
+      "autoApprove": []
+    }
+  }
+}
