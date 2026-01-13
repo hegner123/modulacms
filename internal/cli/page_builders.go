@@ -292,8 +292,8 @@ func (f *FormPage) AddBody(b string) {
 func (f FormPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	form := ""
-	if model.Form != nil {
-		form = model.Form.View()
+	if model.FormState.Form != nil {
+		form = model.FormState.Form.View()
 
 	}
 	s := lipgloss.JoinVertical(

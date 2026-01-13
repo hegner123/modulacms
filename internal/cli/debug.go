@@ -157,7 +157,7 @@ func (m Model) Stringify() string {
 	out = append(out, row)
 	//Form         *huh.Form
 	var formStr string
-	if m.Form != nil {
+	if m.FormState.Form != nil {
 		formStr = "initialized"
 	} else {
 		formStr = "(nil)"
@@ -166,27 +166,27 @@ func (m Model) Stringify() string {
 	out = append(out, form)
 
 	//FormLen      int
-	formLen := fmt.Sprintf("FormLen: %d", m.FormLen)
+	formLen := fmt.Sprintf("FormLen: %d", m.FormState.FormLen)
 	out = append(out, formLen)
 
 	//FormMap      []string
-	formMap := fmt.Sprintf("FormMap(length): %d", len(m.FormMap))
+	formMap := fmt.Sprintf("FormMap(length): %d", len(m.FormState.FormMap))
 	out = append(out, formMap)
 
 	//FormValues   []*string
-	formValues := fmt.Sprintf("FormValues(length): %d", len(m.FormValues))
+	formValues := fmt.Sprintf("FormValues(length): %d", len(m.FormState.FormValues))
 	out = append(out, formValues)
 
 	//FormSubmit   bool
-	formSubmit := fmt.Sprintf("FormSubmit: %v", m.FormSubmit)
+	formSubmit := fmt.Sprintf("FormSubmit: %v", m.FormState.FormSubmit)
 	out = append(out, formSubmit)
 
 	//FormGroups   []huh.Group
-	formGroupsDebug := HuhGroupSliceDebugString(m.FormGroups)
+	formGroupsDebug := HuhGroupSliceDebugString(m.FormState.FormGroups)
 	out = append(out, formGroupsDebug)
 
 	//FormFields   []huh.Field
-	formFieldsDebug := HuhFieldSliceDebugString(m.FormFields)
+	formFieldsDebug := HuhFieldSliceDebugString(m.FormState.FormFields)
 	out = append(out, formFieldsDebug)
 
 

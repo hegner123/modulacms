@@ -48,7 +48,7 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case FormSubmitMsg:
 		newModel := m
-		newModel.FormSubmit = true
+		newModel.FormState.FormSubmit = true
 		return newModel, tea.Batch()
 	case FormActionMsg:
 		switch msg.Action {
@@ -75,11 +75,11 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	case FormInitOptionsMsg:
 		newModel := m
-		if newModel.FormOptions == nil {
+		if newModel.FormState.FormOptions == nil {
 			newOptions := make(map[string][]huh.Option[string], 0)
-			newModel.FormOptions = (*FormOptionsMap)(&newOptions)
+			newModel.FormState.FormOptions = (*FormOptionsMap)(&newOptions)
 		}
-		fo := *newModel.FormOptions
+		fo := *newModel.FormState.FormOptions
 		if fo[msg.Form] != nil {
 			return m, nil
 		}

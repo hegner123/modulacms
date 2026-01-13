@@ -192,19 +192,19 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.Focus = FORMFOCUS
 
-	form, cmd := m.Form.Update(msg)
+	form, cmd := m.FormState.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		m.Form = f
+		m.FormState.Form = f
 		cmds = append(cmds, cmd)
 	}
 
-	if m.Form.State == huh.StateAborted {
+	if m.FormState.Form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[CMSPAGE]
 	}
 
-	if m.Form.State == huh.StateCompleted {
+	if m.FormState.Form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		// Process completed form (implementation would depend on form type)

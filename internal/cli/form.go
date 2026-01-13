@@ -65,7 +65,7 @@ func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 		for i, c := range *m.Columns {
 			if i == 0 {
 				id := row[i]
-				m.FormValues = append(m.FormValues, &id)
+				m.FormState.FormValues = append(m.FormState.FormValues, &id)
 				continue
 			} else {
 
@@ -80,15 +80,15 @@ func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 				}
 
 				fields = append(fields, f)
-				m.FormValues = append(m.FormValues, &value)
+				m.FormState.FormValues = append(m.FormState.FormValues, &value)
 			}
 
 		}
 
-		m.FormFields = fields
+		m.FormState.FormFields = fields
 
 		group := huh.NewGroup(fields...)
-		m.FormGroups = []huh.Group{*group}
+		m.FormState.FormGroups = []huh.Group{*group}
 
 		form := huh.NewForm(
 			group,
@@ -98,7 +98,7 @@ func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 		// Add submit handler with proper focus management
 		form.SubmitCmd = tea.Batch(
 			LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for UPDATE on table %s", string(table))),
-			FormActionCmd(UPDATE, string(table), m.Headers, m.FormValues),
+			FormActionCmd(UPDATE, string(table), m.Headers, m.FormState.FormValues),
 			FocusSetCmd(PAGEFOCUS),
 			func() tea.Msg {
 				return tea.ResumeMsg{}
@@ -125,7 +125,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 				continue
 			}
 			fields = append(fields, f)
-			m.FormValues = append(m.FormValues, &value)
+			m.FormState.FormValues = append(m.FormState.FormValues, &value)
 
 		}
 		group := huh.NewGroup(fields...)
@@ -137,7 +137,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 
 		// Add submit handler with proper focus management
 		form.SubmitCmd = func() tea.Msg {
-			if m.FormSubmit {
+			if m.FormState.FormSubmit {
 				m.Focus = PAGEFOCUS
 				return FormActionMsg{}
 			}

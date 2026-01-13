@@ -99,7 +99,7 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	}
 
 	valuesMap := make(map[string]any, 0)
-	for i, v := range m.FormValues {
+	for i, v := range m.FormState.FormValues {
 		valuesMap[m.Headers[i]] = *v
 	}
 
@@ -115,7 +115,7 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	}
 
 	// Reset the form values after update
-	m.FormValues = nil
+	m.FormState.FormValues = nil
 
 	utility.DefaultLogger.Finfo("CLI Update successful", nil)
 	return DbResultCmd(res, string(table))

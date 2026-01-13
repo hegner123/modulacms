@@ -16,15 +16,15 @@ func (m *Model) NewFieldFromType(c *config.Config, column string, colType *sql.C
 		case "date_created":
 			ts := utility.TimestampReadable()
 			*value = ts
-			m.FormValues = append(m.FormValues, value)
+			m.FormState.FormValues = append(m.FormState.FormValues, value)
 		case "date_modified":
 			ts := utility.TimestampReadable()
 			*value = ts
-			m.FormValues = append(m.FormValues, value)
+			m.FormState.FormValues = append(m.FormState.FormValues, value)
 		case "history":
 			h := ""
 			*value = h
-			m.FormValues = append(m.FormValues, value)
+			m.FormState.FormValues = append(m.FormState.FormValues, value)
 		}
 		return nil, nil
 	}
@@ -69,13 +69,13 @@ func (m *Model) NewUpdateFieldFromType(c *config.Config, column string, colType 
 		switch column {
 		case "date_created":
 			pv := prevValue
-			m.FormValues = append(m.FormValues, &pv)
+			m.FormState.FormValues = append(m.FormState.FormValues, &pv)
 		case "date_modified":
 			ts := utility.TimestampReadable()
-			m.FormValues = append(m.FormValues, &ts)
+			m.FormState.FormValues = append(m.FormState.FormValues, &ts)
 		case "history":
 			pv := prevValue
-			m.FormValues = append(m.FormValues, &pv)
+			m.FormState.FormValues = append(m.FormState.FormValues, &pv)
 		}
 		return nil, nil
 	}

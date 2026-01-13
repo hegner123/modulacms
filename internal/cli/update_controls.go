@@ -262,25 +262,25 @@ func (m Model) FormControls(msg tea.Msg) (Model, tea.Cmd) {
 	newModel.Focus = FORMFOCUS
 
 	// Ensure form exists before updating
-	if newModel.Form == nil {
+	if newModel.FormState.Form == nil {
 		return newModel, nil
 	}
 
-	form, cmd := newModel.Form.Update(msg)
+	form, cmd := newModel.FormState.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		newModel.Form = f
+		newModel.FormState.Form = f
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 	}
 
 	// Handle form state changes
-	if newModel.Form.State == huh.StateAborted {
+	if newModel.FormState.Form.State == huh.StateAborted {
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
 		cmds = append(cmds, HistoryPopCmd())
 	}
 
-	if newModel.Form.State == huh.StateCompleted {
+	if newModel.FormState.Form.State == huh.StateCompleted {
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
 		cmds = append(cmds, FormSubmitCmd())
 		cmds = append(cmds, HistoryPopCmd())
@@ -400,20 +400,20 @@ func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
 	}()
 
 	// Update form with the message
-	form, cmd := m.Form.Update(msg)
+	form, cmd := m.FormState.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		m.Form = f
+		m.FormState.Form = f
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.Form.State == huh.StateAborted {
+	if m.FormState.Form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[UPDATEPAGE]
 	}
 
-	if m.Form.State == huh.StateCompleted {
+	if m.FormState.Form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[UPDATEPAGE]
@@ -471,17 +471,17 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	}()
 
 	// Update form with the message
-	form, cmd := m.Form.Update(msg)
+	form, cmd := m.FormState.Form.Update(msg)
 	if _, ok := form.(*huh.Form); ok {
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.Form.State == huh.StateAborted {
+	if m.FormState.Form.State == huh.StateAborted {
 		cmds = append(cmds, FormCancelCmd())
 	}
 
-	if m.Form.State == huh.StateCompleted {
+	if m.FormState.Form.State == huh.StateCompleted {
 		utility.DefaultLogger.Finfo("Tables Fetch ")
 		// TODO: Implement form completion handling with proper messages
 	}

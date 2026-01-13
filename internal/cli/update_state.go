@@ -150,19 +150,20 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		return newModel, cmd
 	case FormLenSet:
 		newModel := m
-		newModel.FormLen = msg.FormLen
+		newModel.FormState.FormLen = msg.FormLen
 		return newModel, NewStateUpdate()
 	case FormSet:
 		newModel := m
-		newModel.Form = &msg.Form
-		newModel.FormValues = msg.Values
+		newModel.FormState.Form = &msg.Form
+		newModel.FormState.FormValues = msg.Values
 		return newModel, NewStateUpdate()
 	case FormValuesSet:
 		newModel := m
-		newModel.FormValues = msg.Values
+		newModel.FormState.FormValues = msg.Values
 		return newModel, NewStateUpdate()
 	case FormOptionsSet:
 		newModel := m
+		newModel.FormState.FormOptions = msg.Options
 		return newModel, NewStateUpdate()
 
 	case UpdateMaxCursorMsg:

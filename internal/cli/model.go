@@ -81,14 +81,7 @@ type Model struct {
 	Headers      []string
 	Rows         [][]string
 	Row          *[]string
-	Form         *huh.Form
-	FormLen      int
-	FormMap      []string
-	FormValues   []*string
-	FormSubmit   bool
-	FormGroups   []huh.Group
-	FormFields   []huh.Field
-	FormOptions  *FormOptionsMap
+	FormState    *FormModel
 	Focus        FocusKey
 	Verbose      bool
 	Content      string
@@ -159,7 +152,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		Viewport:   viewport.Model{},
 		PageMap:    *InitPages(),
 		Selected:   make(map[int]struct{}),
-		FormMap:    make([]string, 0),
+		FormState:  NewFormModel(),
 		Focus:      PAGEFOCUS,
 		History:    []PageHistory{},
 		Verbose:    verbose,
