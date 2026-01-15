@@ -75,7 +75,7 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		return newModel, NewStateUpdate()
 	case TableSet:
 		newModel := m
-		newModel.Table = msg.Table
+		newModel.TableState.Table = msg.Table
 		return newModel, NewStateUpdate()
 	case TablesSet:
 		newModel := m
@@ -83,19 +83,19 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		return newModel, NewStateUpdate()
 	case ColumnsSet:
 		newModel := m
-		newModel.Columns = msg.Columns
+		newModel.TableState.Columns = msg.Columns
 		return newModel, NewStateUpdate()
 	case ColumnTypesSet:
 		newModel := m
-		newModel.ColumnTypes = msg.ColumnTypes
+		newModel.TableState.ColumnTypes = msg.ColumnTypes
 		return newModel, NewStateUpdate()
 	case HeadersSet:
 		newModel := m
-		newModel.Headers = msg.Headers
+		newModel.TableState.Headers = msg.Headers
 		return newModel, NewStateUpdate()
 	case RowsSet:
 		newModel := m
-		newModel.Rows = msg.Rows
+		newModel.TableState.Rows = msg.Rows
 		return newModel, NewStateUpdate()
 	case LogMsg:
 		utility.DefaultLogger.Finfo(msg.Message)

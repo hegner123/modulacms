@@ -23,16 +23,16 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	case FormCreate:
 		switch msg.FormType {
 		case DATABASECREATE:
-			if m.Columns == nil {
+			if m.TableState.Columns == nil {
 				return m, tea.Batch(
-					LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.Table)),
+					LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.TableState.Table)),
 				)
 			}
 			var cmds []tea.Cmd
-			c := m.NewInsertForm(db.DBTable(m.Table))
+			c := m.NewInsertForm(db.DBTable(m.TableState.Table))
 			cmds = append(cmds, c)
 			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.Table, len(*m.Columns)-1)))
+			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.TableState.Table, len(*m.TableState.Columns)-1)))
 			return m, tea.Batch(cmds...)
 		}
 	case NewFormMsg:

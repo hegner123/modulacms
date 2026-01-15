@@ -302,7 +302,7 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, CursorUpCmd()
 			}
 		case "down", "j":
-			if m.Cursor < len(m.Rows)-1 {
+			if m.Cursor < len(m.TableState.Rows)-1 {
 				return m, CursorDownCmd()
 			}
 		case "h", "shift+tab", "backspace":
@@ -314,14 +314,14 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, PageModPreviousCmd()
 			}
 		case "right":
-			if m.PageMod < (len(m.Rows)-1)/m.MaxRows {
+			if m.PageMod < (len(m.TableState.Rows)-1)/m.MaxRows {
 				return m, PageModNextCmd()
 			}
 
 		//Action
 		case "enter", "l":
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
-			if recordIndex < len(m.Rows) {
+			if recordIndex < len(m.TableState.Rows) {
 				cmds = append(cmds, CursorSetCmd(recordIndex))
 
 				// Handle different actions based on current page
@@ -362,19 +362,19 @@ func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
 				m.PageMod--
 			}
 		case "right":
-			if m.PageMod < len(m.Rows)/m.MaxRows {
+			if m.PageMod < len(m.TableState.Rows)/m.MaxRows {
 				m.PageMod++
 			}
 
 		//Action
 		case "enter", "l":
-			rows = m.Rows
+			rows = m.TableState.Rows
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
 			// Only update if the calculated index is valid
-			if recordIndex < len(m.Rows) {
+			if recordIndex < len(m.TableState.Rows) {
 				m.Cursor = recordIndex
 			}
-			m.Row = &rows[recordIndex]
+			m.TableState.Row = &rows[recordIndex]
 			m.Cursor = 0
 			m.Page = m.Pages[UPDATEFORMPAGE]
 
@@ -417,7 +417,7 @@ func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[UPDATEPAGE]
-		cmd := m.DatabaseUpdate(m.Config, db.DBTable(m.Table))
+		cmd := m.DatabaseUpdate(m.Config, db.DBTable(m.TableState.Table))
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd
@@ -436,14 +436,14 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q":
 			return m, tea.Quit
 		case "enter", "l":
-			err := m.DatabaseDelete(m.Config, db.StringDBTable(m.Table))
+			err := m.DatabaseDelete(m.Config, db.StringDBTable(m.TableState.Table))
 			if err != nil {
 				return m, nil
 			}
 			if m.Cursor > 0 {
 				m.Cursor--
 			}
-			cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table, nil)
+			cmd := FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, nil)
 			cmds = append(cmds, cmd)
 		default:
 			var scmd tea.Cmd

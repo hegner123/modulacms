@@ -35,7 +35,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		case DIALOGDELETE:
 			id := m.GetCurrentRowId()
 			return m, tea.Batch(
-				DatabaseDeleteEntryCmd(int(id), m.Table),
+				DatabaseDeleteEntryCmd(int(id), m.TableState.Table),
 				DialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 			)

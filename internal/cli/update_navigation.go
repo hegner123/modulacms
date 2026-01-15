@@ -39,7 +39,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case TABLEPAGE:
 			cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, GetColumnsCmd(*m.Config, m.Table))
+			cmds = append(cmds, GetColumnsCmd(*m.Config, m.TableState.Table))
 
 			return m, tea.Batch(cmds...)
 		case CREATEPAGE:
@@ -54,7 +54,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			page := m.PageMap[READPAGE]
 			cmds = append(cmds, LogModelCMD(nil, &f))
 			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
@@ -66,20 +66,20 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		case UPDATEPAGE:
 			page := m.PageMap[UPDATEPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
 		case UPDATEFORMPAGE:
 			page := m.PageMap[UPDATEFORMPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, FormNewCmd(DATABASEUPDATE))
 			cmds = append(cmds, StatusSetCmd(EDITING))
 
 			return m, tea.Batch(cmds...)
 		case DELETEPAGE:
 			page := m.PageMap[DELETEPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(DELETING))
 
 			return m, tea.Batch(cmds...)

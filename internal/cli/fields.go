@@ -112,7 +112,7 @@ func (m Model) GetSuggestionsString(c *config.Config, column string) []string {
 	if column == "NIll" {
 		return nil
 	} else {
-		r, err := db.GetColumnRowsString(con, ctx, m.Table, column)
+		r, err := db.GetColumnRowsString(con, ctx, m.TableState.Table, column)
 		if err != nil {
 			utility.DefaultLogger.Error("ERROR", err)
 			return nil

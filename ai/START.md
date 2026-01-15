@@ -3,7 +3,7 @@
 ModulaCMS AI Agent Documentation Index
 
 **Purpose:** Navigation index for ModulaCMS documentation
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-01-13
 
 
 ## Onboarding
@@ -11,7 +11,11 @@ ModulaCMS AI Agent Documentation Index
 Memorize the following absolute paths, not their contents.
 Memorize the key directories, not their contents.
 
-CURRENT IMPLEMENTATION PROJECT: DOCUMENTATION_IMPLEMENTATION_PLAN.md
+CURRENT IMPLEMENTATION PROJECT: None - Phase 2 complete, awaiting Phase 3 planning
+
+COMPLETED PROJECTS:
+- **[TABLE_REFACTOR_PLAN.md](TABLE_REFACTOR_PLAN.md)** - CLI Model TableModel Extraction (Phase 2 of 4) ✅
+- **[FORM_REFACTOR_PLAN.md](FORM_REFACTOR_PLAN.md)** - CLI Model FormModel Extraction (Phase 1 of 4) ✅
 
 ---
 
@@ -81,4 +85,4 @@ sql/postgres/            - PostgreSQL queries
 
 ---
 
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-01-13

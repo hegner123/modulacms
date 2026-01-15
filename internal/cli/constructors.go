@@ -344,8 +344,8 @@ func DatabaseTreeCMD() tea.Cmd {
 
 func (m Model) UpdateMaxCursorCmd() tea.Cmd {
 	return func() tea.Msg {
-		start, end := m.Paginator.GetSliceBounds(len(m.Rows))
-		currentView := m.Rows[start:end]
+		start, end := m.Paginator.GetSliceBounds(len(m.TableState.Rows))
+		currentView := m.TableState.Rows[start:end]
 		return UpdateMaxCursorMsg{CursorMax: len(currentView)}
 	}
 }

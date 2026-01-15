@@ -68,20 +68,14 @@ type Model struct {
 	Paginator    paginator.Model
 	PageMod      int
 	MaxRows      int
-	Table        string
 	Page         Page
 	PageMenu     []Page
 	Pages        []Page
 	PageMap      map[PageIndex]Page
 	DatatypeMenu []string
 	Tables       []string
-	Columns      *[]string
-	ColumnTypes  *[]*sql.ColumnType
-	Selected     map[int]struct{}
-	Headers      []string
-	Rows         [][]string
-	Row          *[]string
 	FormState    *FormModel
+	TableState   *TableModel
 	Focus        FocusKey
 	Verbose      bool
 	Content      string
@@ -148,11 +142,10 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		PageMod:    0,
 		CursorMax:  0,
 		MaxRows:    10,
-		Table:      "",
 		Viewport:   viewport.Model{},
 		PageMap:    *InitPages(),
-		Selected:   make(map[int]struct{}),
 		FormState:  NewFormModel(),
+		TableState: NewTableModel(),
 		Focus:      PAGEFOCUS,
 		History:    []PageHistory{},
 		Verbose:    verbose,

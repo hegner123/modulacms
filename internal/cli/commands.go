@@ -100,7 +100,7 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 
 	valuesMap := make(map[string]any, 0)
 	for i, v := range m.FormState.FormValues {
-		valuesMap[m.Headers[i]] = *v
+		valuesMap[m.TableState.Headers[i]] = *v
 	}
 
 	// Using secure query builder
@@ -227,7 +227,7 @@ func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 }
 
 func (m Model) GetContentField(node *string) []byte {
-	row := m.Rows[m.Cursor]
+	row := m.TableState.Rows[m.Cursor]
 	j, err := json.Marshal(row)
 	if err != nil {
 		utility.DefaultLogger.Ferror("", err)

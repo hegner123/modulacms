@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS memories (
         'client-customization',
         'pattern',
         'workflow',
+        'implementation-plans',
+        'active-implementation-plan',
         'general'
     )),
     tags TEXT, -- Comma-separated tags for flexible categorization

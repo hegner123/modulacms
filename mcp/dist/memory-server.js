@@ -42,7 +42,7 @@ const tools = [
                 content: { type: 'string', description: 'Detailed content of the memory' },
                 category: {
                     type: 'string',
-                    enum: ['design-decision', 'architecture', 'component', 'agent-output', 'issue', 'best-practice', 'client-customization', 'pattern', 'workflow', 'general'],
+                    enum: ['design-decision', 'architecture', 'component', 'agent-output', 'issue', 'best-practice', 'client-customization', 'pattern', 'workflow', 'implementation-plans', 'active-implementation-plan', 'general'],
                     description: 'Category of the memory'
                 },
                 tags: { type: 'string', description: 'Comma-separated tags for categorization (optional)' },

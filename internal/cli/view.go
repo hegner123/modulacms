@@ -116,17 +116,17 @@ func (m Model) View() string {
 	case READPAGE:
 		p := NewTablePage()
 		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader(fmt.Sprintf("Read %s", m.Table))
+		p.AddHeader(fmt.Sprintf("Read %s", m.TableState.Table))
 		if !m.Loading {
-			p.AddHeaders(m.Headers)
-			p.AddRows(m.Rows)
+			p.AddHeaders(m.TableState.Headers)
+			p.AddRows(m.TableState.Rows)
 			p.AddStatus(m.RenderStatusBar())
 		}
 
 		ui = p.Render(m)
 	case READSINGLEPAGE:
-		columns := make([]ReadSingleRow, 0, len(m.Headers))
-		for i, v := range m.Headers {
+		columns := make([]ReadSingleRow, 0, len(m.TableState.Headers))
+		for i, v := range m.TableState.Headers {
 			c := ReadSingleRow{
 				Index: i,
 				Key:   v,
@@ -135,7 +135,7 @@ func (m Model) View() string {
 			columns = append(columns, c)
 		}
 		for i := range columns {
-			columns[i].Value = m.Rows[m.Cursor][i]
+			columns[i].Value = m.TableState.Rows[m.Cursor][i]
 		}
 		formatted := make([]string, 0)
 		for _, v := range columns {
@@ -145,15 +145,15 @@ func (m Model) View() string {
 		content := lipgloss.JoinVertical(lipgloss.Left, formatted...)
 		p := NewStaticPage()
 		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader(fmt.Sprintf("Read %s Row %d", m.Table, m.Cursor))
+		p.AddHeader(fmt.Sprintf("Read %s Row %d", m.TableState.Table, m.Cursor))
 		p.AddBody(content)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case UPDATEPAGE:
 		p := NewTablePage()
 		if !m.Loading {
-			p.AddHeaders(m.Headers)
-			p.AddRows(m.Rows)
+			p.AddHeaders(m.TableState.Headers)
+			p.AddRows(m.TableState.Rows)
 			p.AddStatus(m.RenderStatusBar())
 		}
 		p.AddTitle(m.Titles[m.TitleFont])
@@ -168,8 +168,8 @@ func (m Model) View() string {
 	case DELETEPAGE:
 		p := NewTablePage()
 		if !m.Loading {
-			p.AddHeaders(m.Headers)
-			p.AddRows(m.Rows)
+			p.AddHeaders(m.TableState.Headers)
+			p.AddRows(m.TableState.Rows)
 			p.AddStatus(m.RenderStatusBar())
 		}
 		p.AddTitle(m.Titles[m.TitleFont])

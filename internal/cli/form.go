@@ -18,14 +18,14 @@ func (m Model) NewInsertForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		var fields []huh.Field
 		var values []*string
-		for i, c := range *m.Columns {
+		for i, c := range *m.TableState.Columns {
 			blank := ""
 			if i == 0 {
 				values = append(values, &blank)
 				continue
 			} else {
 				value := ""
-				t := *m.ColumnTypes
+				t := *m.TableState.ColumnTypes
 				f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 				if err != nil {
 					return FetchErrMsg{Error: err}
@@ -46,23 +46,23 @@ func (m Model) NewInsertForm(table db.DBTable) tea.Cmd {
 		// Add submit handler with proper focus management
 		form.SubmitCmd = tea.Batch(
 			LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for INSERT on table %s", string(table))),
-			LogMessageCmd(fmt.Sprintf("Headers  %v", m.Columns)),
-			FormActionCmd(INSERT, string(table), *m.Columns, values),
+			LogMessageCmd(fmt.Sprintf("Headers  %v", m.TableState.Columns)),
+			FormActionCmd(INSERT, string(table), *m.TableState.Columns, values),
 			FocusSetCmd(PAGEFOCUS),
 			func() tea.Msg {
 				return tea.ResumeMsg{}
 			},
 		)
-		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns), Values: values}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns), Values: values}
 	}
 
 }
 
 func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
-		row := *m.Row
+		row := *m.TableState.Row
 		var fields []huh.Field
-		for i, c := range *m.Columns {
+		for i, c := range *m.TableState.Columns {
 			if i == 0 {
 				id := row[i]
 				m.FormState.FormValues = append(m.FormState.FormValues, &id)
@@ -70,7 +70,7 @@ func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 			} else {
 
 				value := row[i]
-				t := *m.ColumnTypes
+				t := *m.TableState.ColumnTypes
 				f, err := m.NewUpdateFieldFromType(m.Config, c, t[i], &value, row[i])
 				if err != nil {
 					return FetchErrMsg{Error: err}
@@ -98,25 +98,25 @@ func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
 		// Add submit handler with proper focus management
 		form.SubmitCmd = tea.Batch(
 			LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for UPDATE on table %s", string(table))),
-			FormActionCmd(UPDATE, string(table), m.Headers, m.FormState.FormValues),
+			FormActionCmd(UPDATE, string(table), m.TableState.Headers, m.FormState.FormValues),
 			FocusSetCmd(PAGEFOCUS),
 			func() tea.Msg {
 				return tea.ResumeMsg{}
 			},
 		)
-		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns)}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns)}
 	}
 }
 
 func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		var fields []huh.Field
-		for i, c := range *m.Columns {
+		for i, c := range *m.TableState.Columns {
 			if i == 0 {
 				continue
 			}
 			var value string
-			t := *m.ColumnTypes
+			t := *m.TableState.ColumnTypes
 			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
 			if err != nil {
 				return FetchErrMsg{Error: err}
@@ -143,7 +143,7 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 			}
 			return FormCancelMsg{}
 		}
-		return NewFormMsg{Form: form, FieldsCount: len(*m.Columns)}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns)}
 	}
 
 }

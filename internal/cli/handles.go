@@ -7,7 +7,7 @@ import (
 )
 
 func (m Model) GetCurrentRowId() int64 {
-	rows := m.Rows
+	rows := m.TableState.Rows
 	if len(rows) == 0 {
 		utility.DefaultLogger.Ferror("No rows available", nil)
 		return 0

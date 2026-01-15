@@ -165,8 +165,8 @@ func (m Model) RenderStatusBar() string {
 	var v string
 
 	v = m.Page.Label
-	if m.Table != "" {
-		v = m.Table
+	if m.TableState.Table != "" {
+		v = m.TableState.Table
 	}
 
 	statusKey := m.GetStatus()
