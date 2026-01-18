@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -28,17 +29,19 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 
 	dbc := db.ConfigDB(*c)
 
-	utility.DefaultLogger.Info("userCookie ID %v\n", userCookie.UserId)
+	utility.DefaultLogger.Fdebug("userCookie ID %v\n", userCookie.UserId)
 
 	session, err := dbc.GetSessionByUserId(userCookie.UserId)
-	utility.DefaultLogger.Info("", session)
+	utility.DefaultLogger.Fdebug("", session)
 	if err != nil || session == nil {
-		utility.DefaultLogger.Error("Error retrieving session or no sessions found:", err)
+		utility.DefaultLogger.Ferror("Error retrieving session or no sessions found:", err)
 		return nil, err
 	}
+	utility.DefaultLogger.Fdebug("Cookie session: %s", userCookie.Session)
+	utility.DefaultLogger.Fdebug("DB session: %s", session.SessionData.String)
 	if userCookie.Session != session.SessionData.String {
 		err := fmt.Errorf("sessions don't match")
-		utility.DefaultLogger.Warn("", err)
+		utility.DefaultLogger.Fwarn("", err)
 		return nil, err
 	}
 
@@ -46,6 +49,14 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 	if expired {
 		err := fmt.Errorf("session is expired")
 		return nil, err
+	}
+
+	// Check and refresh OAuth tokens if needed
+	refresher := auth.NewTokenRefresher(c)
+	if err := refresher.RefreshIfNeeded(userCookie.UserId); err != nil {
+		utility.DefaultLogger.Fwarn("Token refresh warning: %v", err)
+		// Don't fail auth if refresh fails - token might still be valid
+		// This is especially important for non-OAuth users
 	}
 
 	u, err := dbc.GetUser(userCookie.UserId)

@@ -13,7 +13,7 @@ import (
 
 type Metadata map[string]string
 
-func (cs S3Credintials) GetBucket() (*s3.S3, error) {
+func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Credentials:      credentials.NewStaticCredentials(cs.AccessKey, cs.SecretKey, ""),
 		Endpoint:         aws.String(cs.URL),

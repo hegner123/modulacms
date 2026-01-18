@@ -1,28 +1,35 @@
 package cli
 
-import "database/sql"
+import (
+	"strconv"
 
-func IsNullInt64(value sql.NullInt64) bool {
-	return value.Valid
-}
-func IsNullInt32(value sql.NullInt32) bool {
-	return value.Valid
-}
-func IsNullInt16(value sql.NullInt16) bool {
-	return value.Valid
-}
-func IsNullString(value sql.NullString) bool {
-	return value.Valid
-}
-func IsNullByte(value sql.NullByte) bool {
-	return value.Valid
-}
-func IsNullFloat64(value sql.NullFloat64) bool {
-	return value.Valid
-}
-func IsNullTime(value sql.NullTime) bool {
-	return value.Valid
-}
-func IsNullBool(value sql.NullBool) bool {
-	return value.Valid
+	"github.com/hegner123/modulacms/internal/utility"
+)
+
+// CollectFieldValuesFromForm extracts field values from form state
+// Returns map[field_id]field_value
+func (m Model) CollectFieldValuesFromForm() map[int64]string {
+	fieldValues := make(map[int64]string)
+
+	// FormState.FormValues is []*string and FormState.FormMap is []string
+	// where FormMap contains field_id as string
+	for i, value := range m.FormState.FormValues {
+		if value == nil || *value == "" {
+			continue
+		}
+
+		// Parse field ID from FormMap
+		if i < len(m.FormState.FormMap) {
+			fieldIDStr := m.FormState.FormMap[i]
+			fieldID, err := strconv.ParseInt(fieldIDStr, 10, 64)
+			if err != nil {
+				utility.DefaultLogger.Ferror("Failed to parse field ID", err)
+				continue
+			}
+
+			fieldValues[fieldID] = *value
+		}
+	}
+
+	return fieldValues
 }

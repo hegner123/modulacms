@@ -5,6 +5,11 @@ import (
 )
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// Handle user provisioning first if needed
+	if m, cmd := m.UpdateProvisioning(msg); cmd != nil {
+		return m, cmd
+	}
+
 	if m, cmd := m.UpdateLog(msg); cmd != nil {
 		return m, cmd
 	}
@@ -50,5 +55,4 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m.PageSpecificMsgHandlers(nil, msg)
-
 }

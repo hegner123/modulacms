@@ -38,7 +38,7 @@ func TestObjectStorage(t *testing.T) {
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
-	S3Access := S3Credintials{
+	S3Access := S3Credentials{
 		AccessKey: config.Bucket_Access_Key,
 		SecretKey: config.Bucket_Secret_Key,
 		URL:       config.Bucket_Url,
@@ -85,7 +85,7 @@ func TestUpload(t *testing.T) {
 		fmt.Printf("Current line number: %s:%d\n", file, line)
 		t.FailNow()
 	}
-	S3Access := S3Credintials{
+	S3Access := S3Credentials{
 		AccessKey: config.Bucket_Access_Key,
 		SecretKey: config.Bucket_Secret_Key,
 		URL:       config.Bucket_Url,

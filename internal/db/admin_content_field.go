@@ -142,14 +142,14 @@ func MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldFormParams) Updat
 func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
 	return StringAdminContentFields{
 		AdminContentFieldID: strconv.FormatInt(a.AdminContentFieldID, 10),
-		AdminRouteID:        ReadNullInt64(a.AdminRouteID),
+		AdminRouteID:        utility.NullToString(a.AdminRouteID),
 		AdminContentDataID:  strconv.FormatInt(a.AdminContentDataID, 10),
 		AdminFieldID:        strconv.FormatInt(a.AdminFieldID, 10),
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:         ReadNullString(a.DateCreated),
-		DateModified:        ReadNullString(a.DateModified),
-		History:             ReadNullString(a.History),
+		DateCreated:         utility.NullToString(a.DateCreated),
+		DateModified:        utility.NullToString(a.DateModified),
+		History:             utility.NullToString(a.History),
 	}
 }
 func MapAdminContentFieldJSON(a AdminContentFieldsJSON) AdminContentFields {

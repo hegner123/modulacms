@@ -89,6 +89,12 @@ type Model struct {
 	Dialog       *DialogModel
 	DialogActive bool
 	Root         TreeRoot
+
+	// SSH User Provisioning
+	NeedsProvisioning bool
+	SSHFingerprint    string
+	SSHKeyType        string
+	SSHPublicKey      string
 }
 
 var CliContinue bool = false
@@ -130,25 +136,26 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	m := Model{
-		Config:     c,
-		Status:     OK,
-		TitleFont:  0,
-		Titles:     LoadTitles(fonts),
-		FocusIndex: 0,
-		Page:       NewPage(HOMEPAGE, "Home"),
-		Paginator:  p,
-		Loading:    false,
-		Spinner:    s,
-		PageMod:    0,
-		CursorMax:  0,
-		MaxRows:    10,
-		Viewport:   viewport.Model{},
-		PageMap:    *InitPages(),
-		FormState:  NewFormModel(),
-		TableState: NewTableModel(),
-		Focus:      PAGEFOCUS,
-		History:    []PageHistory{},
-		Verbose:    verbose,
+		Config:      c,
+		Status:      OK,
+		TitleFont:   0,
+		Titles:      LoadTitles(fonts),
+		FocusIndex:  0,
+		Page:        NewPage(HOMEPAGE, "Home"),
+		Paginator:   p,
+		Loading:     false,
+		Spinner:     s,
+		PageMod:     0,
+		CursorMax:   0,
+		MaxRows:     10,
+		Viewport:    viewport.Model{},
+		PageMap:     *InitPages(),
+		FormState:   NewFormModel(),
+		TableState:  NewTableModel(),
+		Focus:       PAGEFOCUS,
+		History:     []PageHistory{},
+		Verbose:     verbose,
+		PageRouteId: 1, // TODO: Implement route selection UI - using route 1 (Home) for testing
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

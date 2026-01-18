@@ -8,7 +8,6 @@ type UpdatedDialog struct{}
 
 func NewDialogUpdate() tea.Cmd {
 	return func() tea.Msg {
-
 		return UpdatedDialog{}
 	}
 }

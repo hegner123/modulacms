@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
@@ -397,5 +398,18 @@ func DeleteNestedChildNoChildren(target *TreeNode) bool {
 		target.PrevSibling.NextSibling = nil
 		return true
 	}
+}
 
+// Message types
+type BuildTreeFromRouteMsg struct {
+	RouteID int64
+}
+
+// Constructors
+func BuildTreeFromRouteCMD(id int64) tea.Cmd {
+	return func() tea.Msg {
+		return BuildTreeFromRouteMsg{
+			RouteID: id,
+		}
+	}
 }

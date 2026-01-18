@@ -40,7 +40,7 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 		err := fmt.Errorf("bucket access key: %s\nbucket secret key: %s\nbucket endpoint: %s", c.Bucket_Access_Key, c.Bucket_Secret_Key, c.Bucket_Endpoint)
 		utility.DefaultLogger.Error("Bucket fields not completed", err)
 	}
-	creds := bucket.S3Credintials{
+	creds := bucket.S3Credentials{
 		AccessKey: c.Bucket_Access_Key,
 		SecretKey: c.Bucket_Secret_Key,
 		URL:       c.Bucket_Endpoint,

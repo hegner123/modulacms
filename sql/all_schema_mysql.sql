@@ -121,6 +121,21 @@ CREATE TABLE IF NOT EXISTS user_oauth (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS user_ssh_keys (
+    ssh_key_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    public_key TEXT NOT NULL,
+    key_type VARCHAR(50) NOT NULL,
+    fingerprint VARCHAR(255) NOT NULL UNIQUE,
+    label VARCHAR(255),
+    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    last_used TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE INDEX idx_ssh_keys_fingerprint ON user_ssh_keys(fingerprint);
+CREATE INDEX idx_ssh_keys_user_id ON user_ssh_keys(user_id);
+
 CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id INT AUTO_INCREMENT PRIMARY KEY,
     slug VARCHAR(255) NOT NULL UNIQUE,

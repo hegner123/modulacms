@@ -549,8 +549,236 @@ PRAGMA foreign_keys = ON;
 
 ---
 
+## Database Initialization
+
+### ⚠️ CRITICAL: Sequential Table Creation Required
+
+**Database tables MUST be created in dependency order** to satisfy foreign key constraints.
+
+The correct creation order is documented in:
+- **[TABLE_CREATION_ORDER.md](../reference/TABLE_CREATION_ORDER.md)** - Complete dependency graph and creation order
+
+**Key Rules:**
+1. Tables must be created sequentially, NOT in parallel
+2. Parent tables MUST exist before child tables that reference them
+3. Foundation tables (roles, permissions, media_dimensions) come first
+4. Users table depends on roles
+5. Most content tables depend on users (author_id foreign key)
+
+**Common Violation:**
+- ❌ Creating `content_fields` before `fields` (violates FK constraint)
+- ✅ Create `fields` first, then `content_fields`
+
+See TABLE_CREATION_ORDER.md for complete 21-table sequential order.
+
+---
+
+### Bootstrap Data Requirements
+
+**⚠️ CRITICAL: Required System Records**
+
+Some tables REQUIRE bootstrap data for the system to function. These records must be inserted immediately after table creation.
+
+#### 1. **permissions** - System Admin Permission
+
+```sql
+-- Required: System admin permission for full system access
+INSERT INTO permissions (permission_id, table_id, mode, label)
+VALUES (1, 0, 7, 'system_admin');
+```
+
+**Why required**: Role definitions reference permission IDs. System admin role needs this permission.
+
+---
+
+#### 2. **roles** - System Admin Role
+
+```sql
+-- Required: System admin role with all permissions
+INSERT INTO roles (role_id, label, permissions)
+VALUES (1, 'system_admin', '{"system_admin": true}');
+
+-- Recommended: Default viewer role
+INSERT INTO roles (role_id, label, permissions)
+VALUES (4, 'viewer', '{"read": true}');
+```
+
+**Why required**:
+- Users table has FK: `role → roles.role_id` with DEFAULT 4
+- System needs at least one role for users
+- Role ID 1 = system_admin (full access)
+- Role ID 4 = viewer (default for new users)
+
+---
+
+#### 3. **users** - System Admin User
+
+```sql
+-- Required: System admin user account
+INSERT INTO users (user_id, username, name, email, hash, role)
+VALUES (
+    1,
+    'system',
+    'System Administrator',
+    'system@modulacms.local',
+    '', -- Empty hash for system account
+    1   -- system_admin role
+);
+```
+
+**Why required**:
+- Most tables have FK: `author_id → users.user_id`
+- Many tables default `author_id = 1`
+- Content creation requires valid author_id
+- System operations reference user ID 1
+
+**Default Author IDs across tables:**
+- `admin_routes.author_id` DEFAULT 1
+- `routes.author_id` DEFAULT 1
+- `datatypes.author_id` DEFAULT 1
+- `admin_fields.author_id` DEFAULT 1
+- `tables.author_id` DEFAULT 1
+- `media.author_id` DEFAULT 1
+- `fields.author_id` DEFAULT 1
+- `admin_content_data.author_id` DEFAULT 1
+
+---
+
+#### 4. **routes** - Default Home Route (Recommended)
+
+```sql
+-- Recommended: Default home route for content
+INSERT INTO routes (route_id, slug, title, status, author_id)
+VALUES (1, '/', 'Home', 1, 1);
+```
+
+**Why recommended**:
+- Content data requires valid route_id
+- Most applications need at least one route
+- Prevents FK constraint failures during content creation
+
+---
+
+#### 5. **datatypes** - Default Page Datatype (Recommended)
+
+```sql
+-- Recommended: Default page datatype for content
+INSERT INTO datatypes (datatype_id, label, type, author_id)
+VALUES (1, 'Page', 'page', 1);
+```
+
+**Why recommended**:
+- Content data requires valid datatype_id
+- Most applications need at least one content type
+- Prevents FK constraint failures during content creation
+
+---
+
+### Bootstrap Sequence
+
+**Complete initialization sequence:**
+
+```sql
+-- 1. Create foundation tables (no dependencies)
+CREATE TABLE permissions ...;
+CREATE TABLE roles ...;
+CREATE TABLE media_dimensions ...;
+
+-- 2. Insert bootstrap permissions
+INSERT INTO permissions (permission_id, table_id, mode, label)
+VALUES (1, 0, 7, 'system_admin');
+
+-- 3. Insert bootstrap roles
+INSERT INTO roles (role_id, label, permissions)
+VALUES (1, 'system_admin', '{"system_admin": true}'),
+       (4, 'viewer', '{"read": true}');
+
+-- 4. Create users table
+CREATE TABLE users ...;
+
+-- 5. Insert system admin user
+INSERT INTO users (user_id, username, name, email, hash, role)
+VALUES (1, 'system', 'System Administrator', 'system@modulacms.local', '', 1);
+
+-- 6. Create remaining tables in dependency order
+CREATE TABLE tokens ...;
+CREATE TABLE sessions ...;
+CREATE TABLE routes ...;
+-- ... (see TABLE_CREATION_ORDER.md for complete sequence)
+
+-- 7. Insert recommended bootstrap data
+INSERT INTO routes (route_id, slug, title, status, author_id)
+VALUES (1, '/', 'Home', 1, 1);
+
+INSERT INTO datatypes (datatype_id, label, type, author_id)
+VALUES (1, 'Page', 'page', 1);
+```
+
+---
+
+### Verification Queries
+
+**Check if bootstrap data exists:**
+
+```sql
+-- Check permissions
+SELECT * FROM permissions WHERE permission_id = 1;
+
+-- Check roles
+SELECT * FROM roles WHERE role_id IN (1, 4);
+
+-- Check system admin user
+SELECT * FROM users WHERE user_id = 1;
+
+-- Check default route (recommended)
+SELECT * FROM routes WHERE route_id = 1;
+
+-- Check default datatype (recommended)
+SELECT * FROM datatypes WHERE datatype_id = 1;
+```
+
+**Expected results:**
+- 1 permission: system_admin
+- 2 roles: system_admin, viewer
+- 1 user: system
+- 1 route: / (Home) - if created
+- 1 datatype: Page - if created
+
+---
+
+### Common Initialization Errors
+
+**Error: "FOREIGN KEY constraint failed"**
+
+**Cause**: Trying to insert data before parent table exists or bootstrap data missing.
+
+**Solution**:
+1. Verify table creation order (see TABLE_CREATION_ORDER.md)
+2. Check bootstrap data exists:
+   ```sql
+   SELECT * FROM roles WHERE role_id = 1;  -- Must exist
+   SELECT * FROM users WHERE user_id = 1;  -- Must exist
+   ```
+3. Insert missing bootstrap records
+
+**Error: "no such table: users"**
+
+**Cause**: Tables created out of order.
+
+**Solution**: Follow sequential creation order from TABLE_CREATION_ORDER.md.
+
+**Error: "NOT NULL constraint failed: users.role"**
+
+**Cause**: Trying to create user without valid role_id.
+
+**Solution**: Insert roles bootstrap data first, then create users.
+
+---
+
 ## Related Documentation
 
+- **[TABLE_CREATION_ORDER.md](../reference/TABLE_CREATION_ORDER.md)** - ⚠️ **CRITICAL** - Table creation order & FK dependencies
+- **[NON_NULL_FIELDS_REFERENCE.md](../reference/NON_NULL_FIELDS_REFERENCE.md)** - Required fields and FK constraints
 - **DB_PACKAGE.md** - Guide for working with internal/db/ Go code
 - **FILE_TREE.md** - Complete directory structure
 - **CLAUDE.md** - Project-wide development guidelines

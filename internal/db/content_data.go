@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // /////////////////////////////
@@ -221,15 +222,15 @@ func MapStringContentData(a ContentData) StringContentData {
 	return StringContentData{
 		ContentDataID: strconv.FormatInt(a.ContentDataID, 10),
 		RouteID:       strconv.FormatInt(a.RouteID, 10),
-		ParentID:      strconv.FormatInt(a.ParentID.Int64, 10),
-		FirstChildID:  strconv.FormatInt(a.FirstChildID.Int64, 10),
-		NextSiblingID: strconv.FormatInt(a.NextSiblingID.Int64, 10),
-		PrevSiblingID: strconv.FormatInt(a.PrevSiblingID.Int64, 10),
+		ParentID:      utility.NullToString(a.ParentID),
+		FirstChildID:  utility.NullToString(a.FirstChildID),
+		NextSiblingID: utility.NullToString(a.NextSiblingID),
+		PrevSiblingID: utility.NullToString(a.PrevSiblingID),
 		DatatypeID:    strconv.FormatInt(a.DatatypeID, 10),
 		AuthorID:      strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:   a.DateCreated.String,
-		DateModified:  a.DateModified.String,
-		History:       a.History.String,
+		DateCreated:   utility.NullToString(a.DateCreated),
+		DateModified:  utility.NullToString(a.DateModified),
+		History:       utility.NullToString(a.History),
 	}
 }
 
@@ -262,6 +263,7 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID, // Was missing - caused FK constraint failure
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 		History:       a.History,

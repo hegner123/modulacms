@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // /////////////////////////////
@@ -141,12 +142,12 @@ func MapStringSession(a Sessions) StringSessions {
 	return StringSessions{
 		SessionID:   strconv.FormatInt(a.SessionID, 10),
 		UserID:      strconv.FormatInt(a.UserID, 10),
-		CreatedAt:   a.CreatedAt.String,
-		ExpiresAt:   a.ExpiresAt.String,
-		LastAccess:  a.LastAccess.String,
-		IpAddress:   a.IpAddress.String,
-		UserAgent:   a.UserAgent.String,
-		SessionData: a.SessionData.String,
+		CreatedAt:   utility.NullToString(a.CreatedAt),
+		ExpiresAt:   utility.NullToString(a.ExpiresAt),
+		LastAccess:  utility.NullToString(a.LastAccess),
+		IpAddress:   utility.NullToString(a.IpAddress),
+		UserAgent:   utility.NullToString(a.UserAgent),
+		SessionData: utility.NullToString(a.SessionData),
 	}
 }
 func MapCreateSessionJSONParams(a CreateSessionParamsJSON) CreateSessionParams {

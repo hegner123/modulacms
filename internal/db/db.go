@@ -69,6 +69,8 @@ const (
 type DbDriver interface {
 	// Database Connection
 	CreateAllTables() error
+	CreateBootstrapData() error
+	ValidateBootstrapData() error
 	InitDB(v *bool) error
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
@@ -103,6 +105,7 @@ type DbDriver interface {
 	CountTokens() (*int64, error)
 	CountUsers() (*int64, error)
 	CountUserOauths() (*int64, error)
+	CountUserSshKeys() (*int64, error)
 
 	// Create operations
 	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
@@ -126,6 +129,7 @@ type DbDriver interface {
 	CreateToken(CreateTokenParams) Tokens
 	CreateUser(CreateUserParams) (*Users, error)
 	CreateUserOauth(CreateUserOauthParams) (*UserOauth, error)
+	CreateUserSshKey(CreateUserSshKeyParams) (*UserSshKeys, error)
 
 	// Create table operations
 	CreateAdminContentDataTable() error
@@ -149,6 +153,7 @@ type DbDriver interface {
 	CreateTokenTable() error
 	CreateUserTable() error
 	CreateUserOauthTable() error
+	CreateUserSshKeyTable() error
 
 	// Delete operations
 	DeleteAdminContentData(int64) error
@@ -203,6 +208,11 @@ type DbDriver interface {
 	GetUser(int64) (*Users, error)
 	GetUserOauth(int64) (*UserOauth, error)
 	GetUserByEmail(string) (*Users, error)
+	GetUserOauthByUserId(int64) (*UserOauth, error)
+	GetUserOauthByProviderID(string, string) (*UserOauth, error)
+	GetUserSshKey(int64) (*UserSshKeys, error)
+	GetUserSshKeyByFingerprint(string) (*UserSshKeys, error)
+	GetUserBySSHFingerprint(string) (*Users, error)
 
 	// List operations
 	ListAdminContentData() (*[]AdminContentData, error)
@@ -236,6 +246,7 @@ type DbDriver interface {
 	ListTokens() (*[]Tokens, error)
 	ListUsers() (*[]Users, error)
 	ListUserOauths() (*[]UserOauth, error)
+	ListUserSshKeys(int64) (*[]UserSshKeys, error)
 
 	// Update operations
 	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
@@ -259,6 +270,11 @@ type DbDriver interface {
 	UpdateToken(UpdateTokenParams) (*string, error)
 	UpdateUser(UpdateUserParams) (*string, error)
 	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
+	UpdateUserSshKeyLastUsed(int64, string) error
+	UpdateUserSshKeyLabel(int64, string) error
+
+	// Delete operations
+	DeleteUserSshKey(int64) error
 }
 
 // GetConnection returns the database connection and context
@@ -311,43 +327,11 @@ func (d PsqlDatabase) ExecuteQuery(query string, table DBTable) (*sql.Rows, erro
 
 // CreateAllTables creates all database tables
 func (d Database) CreateAllTables() error {
-	// Create all tables
-	err := d.CreateUserTable()
-	if err != nil {
-		return err
-	}
+	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
+	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
-	err = d.CreateRouteTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaDimensionTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateTokenTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateSessionTable()
+	// Tier 0: Foundation tables (no dependencies)
+	err := d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -357,52 +341,19 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
-	err = d.CreatePermissionTable()
+	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateDatatypeTable()
+	// Tier 1: User management (depends on roles)
+	err = d.CreateUserTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateContentDataTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateContentFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminRouteTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentDataTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateTableTable()
+	// Tier 2: User-related tables and core content tables (depend on users)
+	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
@@ -412,48 +363,597 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateUserSshKeyTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateSessionTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateTableTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateMediaTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes)
+	err = d.CreateFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 4: Content data tables (depend on routes, datatypes, users)
+	err = d.CreateContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 5: Content field values (depend on content_data and fields)
+	err = d.CreateContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 6: Junction tables (depend on both sides)
+	err = d.CreateDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateBootstrapData inserts required system records for initial database setup.
+// CRITICAL: Must be called after CreateAllTables() succeeds.
+// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// If any table failed to create, this function will catch it immediately during install rather than later during operation.
+func (d Database) CreateBootstrapData() error {
+	// 1. Create system admin permission (permission_id = 1)
+	permission := d.CreatePermission(CreatePermissionParams{
+		TableID: 0,
+		Mode:    7,
+		Label:   "system_admin",
+	})
+	if permission.PermissionID == 0 {
+		return fmt.Errorf("failed to create system admin permission")
+	}
+
+	// 2. Create system admin role (role_id = 1)
+	adminRole := d.CreateRole(CreateRoleParams{
+		Label:       "system_admin",
+		Permissions: `{"system_admin": true}`,
+	})
+	if adminRole.RoleID == 0 {
+		return fmt.Errorf("failed to create system admin role")
+	}
+
+	// 3. Create viewer role (role_id = 4)
+	viewerRole := d.CreateRole(CreateRoleParams{
+		Label:       "viewer",
+		Permissions: `{"read": true}`,
+	})
+	if viewerRole.RoleID == 0 {
+		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 4. Create system admin user (user_id = 1)
+	systemUser, err := d.CreateUser(CreateUserParams{
+		Username:     "system",
+		Name:         "System Administrator",
+		Email:        "system@modulacms.local",
+		Hash:         "",
+		Role:         1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create system user: %v", err)
+	}
+	if systemUser.UserID == 0 {
+		return fmt.Errorf("failed to create system user: user_id is 0")
+	}
+
+	// 5. Create default home route (route_id = 1) - Recommended
+	homeRoute := d.CreateRoute(CreateRouteParams{
+		Slug:         "/",
+		Title:        "Home",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if homeRoute.RouteID == 0 {
+		return fmt.Errorf("failed to create default home route")
+	}
+
+	// 6. Create default page datatype (datatype_id = 1)
+	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Page",
+		Type:         "page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if pageDatatype.DatatypeID == 0 {
+		return fmt.Errorf("failed to create default page datatype")
+	}
+
+	// 7. Create default admin route (admin_route_id = 1)
+	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+		Slug:         "/admin",
+		Title:        "Admin",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminRoute.AdminRouteID == 0 {
+		return fmt.Errorf("failed to create default admin route")
+	}
+
+	// 8. Create default admin datatype (admin_datatype_id = 1)
+	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Admin Page",
+		Type:         "admin_page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminDatatype.AdminDatatypeID == 0 {
+		return fmt.Errorf("failed to create default admin datatype")
+	}
+
+	// 9. Create default admin field (admin_field_id = 1)
+	adminField := d.CreateAdminField(CreateAdminFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminField.AdminFieldID == 0 {
+		return fmt.Errorf("failed to create default admin field")
+	}
+
+	// 10. Create default field (field_id = 1)
+	field := d.CreateField(CreateFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if field.FieldID == 0 {
+		return fmt.Errorf("failed to create default field")
+	}
+
+	// 11. Create default content_data record (content_data_id = 1)
+	contentData := d.CreateContentData(CreateContentDataParams{
+		RouteID:       1,
+		ParentID:      sql.NullInt64{},
+		FirstChildID:  sql.NullInt64{},
+		NextSiblingID: sql.NullInt64{},
+		PrevSiblingID: sql.NullInt64{},
+		DatatypeID:    1,
+		AuthorID:      1,
+		DateCreated:   StringToNullString(utility.TimestampS()),
+		DateModified:  StringToNullString(utility.TimestampS()),
+		History:       sql.NullString{},
+	})
+	if contentData.ContentDataID == 0 {
+		return fmt.Errorf("failed to create default content_data")
+	}
+
+	// 12. Create default admin_content_data record (admin_content_data_id = 1)
+	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+		ParentID:        sql.NullInt64{},
+		AdminRouteID:    1,
+		AdminDatatypeID: 1,
+		AuthorID:        1,
+		DateCreated:     StringToNullString(utility.TimestampS()),
+		DateModified:    StringToNullString(utility.TimestampS()),
+		History:         sql.NullString{},
+	})
+	if adminContentData.AdminContentDataID == 0 {
+		return fmt.Errorf("failed to create default admin_content_data")
+	}
+
+	// 13. Create default content_field (content_field_id = 1)
+	contentField := d.CreateContentField(CreateContentFieldParams{
+		ContentFieldID: 0,
+		RouteID:        sql.NullInt64{},
+		ContentDataID:  contentData.ContentDataID,
+		FieldID:        field.FieldID,
+		FieldValue:     "Default content",
+		AuthorID:       1,
+		DateCreated:    StringToNullString(utility.TimestampS()),
+		DateModified:   StringToNullString(utility.TimestampS()),
+		History:        sql.NullString{},
+	})
+	if contentField.ContentFieldID == 0 {
+		return fmt.Errorf("failed to create default content_field")
+	}
+
+	// 14. Create default admin_content_field (admin_content_field_id = 1)
+	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+		AdminRouteID:       sql.NullInt64{},
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		AdminFieldID:       adminField.AdminFieldID,
+		AdminFieldValue:    "Default admin content",
+		AuthorID:           1,
+		DateCreated:        StringToNullString(utility.TimestampS()),
+		DateModified:       StringToNullString(utility.TimestampS()),
+		History:            sql.NullString{},
+	})
+	if adminContentField.AdminContentFieldID == 0 {
+		return fmt.Errorf("failed to create default admin_content_field")
+	}
+
+	// 15. Create default media_dimension (md_id = 1) - Validation record
+	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+		Label:       StringToNullString("Default"),
+		Width:       Int64ToNullInt64(1920),
+		Height:      Int64ToNullInt64(1080),
+		AspectRatio: StringToNullString("16:9"),
+	})
+	if mediaDimension.MdID == 0 {
+		return fmt.Errorf("failed to create default media_dimension")
+	}
+
+	// 16. Create default media record (media_id = 1) - Validation record
+	media := d.CreateMedia(CreateMediaParams{
+		Name:         StringToNullString("default"),
+		DisplayName:  StringToNullString("Default Media"),
+		Alt:          StringToNullString("Default"),
+		Caption:      sql.NullString{},
+		Description:  sql.NullString{},
+		Class:        sql.NullString{},
+		Url:          sql.NullString{},
+		Mimetype:     sql.NullString{},
+		Dimensions:   sql.NullString{},
+		Srcset:       sql.NullString{},
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if media.MediaID == 0 {
+		return fmt.Errorf("failed to create default media")
+	}
+
+	// 17. Create default token (id = 1) - Validation record
+	token := d.CreateToken(CreateTokenParams{
+		UserID:    1,
+		TokenType: "validation",
+		Token:     "bootstrap_validation_token",
+		IssuedAt:  utility.TimestampS(),
+		ExpiresAt: utility.TimestampS(),
+		Revoked:   true,
+	})
+	if token.ID == 0 {
+		return fmt.Errorf("failed to create default token")
+	}
+
+	// 18. Create default session (session_id = 1) - Validation record
+	session, err := d.CreateSession(CreateSessionParams{
+		UserID:      1,
+		CreatedAt:   StringToNullString(utility.TimestampS()),
+		ExpiresAt:   StringToNullString(utility.TimestampS()),
+		LastAccess:  StringToNullString(utility.TimestampS()),
+		IpAddress:   StringToNullString("127.0.0.1"),
+		UserAgent:   StringToNullString("bootstrap"),
+		SessionData: sql.NullString{},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default session: %v", err)
+	}
+	if session.SessionID == 0 {
+		return fmt.Errorf("failed to create default session: session_id is 0")
+	}
+
+	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
+	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+		UserID:              1,
+		OauthProvider:       "bootstrap",
+		OauthProviderUserID: "bootstrap_user",
+		AccessToken:         "bootstrap_access_token",
+		RefreshToken:        "bootstrap_refresh_token",
+		TokenExpiresAt:      utility.TimestampS(),
+		DateCreated:         utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_oauth: %v", err)
+	}
+	if userOauth.UserOauthID == 0 {
+		return fmt.Errorf("failed to create default user_oauth: user_oauth_id is 0")
+	}
+
+	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
+	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+		UserID:      1,
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		KeyType:     "ssh-ed25519",
+		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
+		Label:       "Bootstrap Validation Key",
+		DateCreated: utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
+	}
+	if userSshKey.SshKeyID == 0 {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	}
+
+	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// This tracks all tables in the system and is critical for plugin support
+	tableNames := []string{
+		"permissions",
+		"roles",
+		"media_dimensions",
+		"users",
+		"tokens",
+		"sessions",
+		"routes",
+		"media",
+		"tables",
+		"datatypes",
+		"fields",
+		"admin_fields",
+		"content_data",
+		"admin_content_data",
+		"content_fields",
+		"admin_content_fields",
+		"datatypes_fields",
+		"admin_datatypes_fields",
+		"admin_routes",
+		"admin_datatypes",
+		"user_oauth",
+		"user_ssh_keys",
+	}
+
+	for _, tableName := range tableNames {
+		table := d.CreateTable(tableName)
+		if table.ID == 0 {
+			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
+		}
+	}
+
+	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
+	})
+	if datatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default datatypes_fields")
+	}
+
+	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
+	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
+	})
+	if adminDatatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default admin_datatypes_fields")
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 22 tables validated with bootstrap records + complete table registry populated")
+	return nil
+}
+
+// ValidateBootstrapData verifies all tables have expected bootstrap records.
+// CRITICAL: Call after CreateBootstrapData() to catch any silent failures.
+// Returns detailed error if any table validation fails.
+func (d Database) ValidateBootstrapData() error {
+	var errors []string
+
+	// Validate permissions table (should have at least 1 record)
+	permCount, err := d.CountPermissions()
+	if err != nil || permCount == nil || *permCount < 1 {
+		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
+	}
+
+	// Validate roles table (should have at least 2 records: system_admin + viewer)
+	roleCount, err := d.CountRoles()
+	if err != nil || roleCount == nil || *roleCount < 2 {
+		errors = append(errors, "roles table: expected ≥2 records, validation failed")
+	}
+
+	// Validate users table (should have at least 1 record: system user)
+	userCount, err := d.CountUsers()
+	if err != nil || userCount == nil || *userCount < 1 {
+		errors = append(errors, "users table: expected ≥1 records, validation failed")
+	}
+
+	// Validate routes table (should have at least 1 record)
+	routeCount, err := d.CountRoutes()
+	if err != nil || routeCount == nil || *routeCount < 1 {
+		errors = append(errors, "routes table: expected ≥1 records, validation failed")
+	}
+
+	// Validate datatypes table (should have at least 1 record)
+	datatypeCount, err := d.CountDatatypes()
+	if err != nil || datatypeCount == nil || *datatypeCount < 1 {
+		errors = append(errors, "datatypes table: expected ≥1 records, validation failed")
+	}
+
+	// Validate fields table (should have at least 1 record)
+	fieldCount, err := d.CountFields()
+	if err != nil || fieldCount == nil || *fieldCount < 1 {
+		errors = append(errors, "fields table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_routes table (should have at least 1 record)
+	adminRouteCount, err := d.CountAdminRoutes()
+	if err != nil || adminRouteCount == nil || *adminRouteCount < 1 {
+		errors = append(errors, "admin_routes table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_datatypes table (should have at least 1 record)
+	adminDatatypeCount, err := d.CountAdminDatatypes()
+	if err != nil || adminDatatypeCount == nil || *adminDatatypeCount < 1 {
+		errors = append(errors, "admin_datatypes table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_fields table (should have at least 1 record)
+	adminFieldCount, err := d.CountAdminFields()
+	if err != nil || adminFieldCount == nil || *adminFieldCount < 1 {
+		errors = append(errors, "admin_fields table: expected ≥1 records, validation failed")
+	}
+
+	// Validate content_data table (should have at least 1 record)
+	contentDataCount, err := d.CountContentData()
+	if err != nil || contentDataCount == nil || *contentDataCount < 1 {
+		errors = append(errors, "content_data table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_content_data table (should have at least 1 record)
+	adminContentDataCount, err := d.CountAdminContentData()
+	if err != nil || adminContentDataCount == nil || *adminContentDataCount < 1 {
+		errors = append(errors, "admin_content_data table: expected ≥1 records, validation failed")
+	}
+
+	// Validate content_fields table (should have at least 1 record)
+	contentFieldCount, err := d.CountContentFields()
+	if err != nil || contentFieldCount == nil || *contentFieldCount < 1 {
+		errors = append(errors, "content_fields table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_content_fields table (should have at least 1 record)
+	adminContentFieldCount, err := d.CountAdminContentFields()
+	if err != nil || adminContentFieldCount == nil || *adminContentFieldCount < 1 {
+		errors = append(errors, "admin_content_fields table: expected ≥1 records, validation failed")
+	}
+
+	// Validate media_dimensions table (should have at least 1 record)
+	mediaDimCount, err := d.CountMediaDimensions()
+	if err != nil || mediaDimCount == nil || *mediaDimCount < 1 {
+		errors = append(errors, "media_dimensions table: expected ≥1 records, validation failed")
+	}
+
+	// Validate media table (should have at least 1 record)
+	mediaCount, err := d.CountMedia()
+	if err != nil || mediaCount == nil || *mediaCount < 1 {
+		errors = append(errors, "media table: expected ≥1 records, validation failed")
+	}
+
+	// Validate tokens table (should have at least 1 record)
+	tokenCount, err := d.CountTokens()
+	if err != nil || tokenCount == nil || *tokenCount < 1 {
+		errors = append(errors, "tokens table: expected ≥1 records, validation failed")
+	}
+
+	// Validate sessions table (should have at least 1 record)
+	sessionCount, err := d.CountSessions()
+	if err != nil || sessionCount == nil || *sessionCount < 1 {
+		errors = append(errors, "sessions table: expected ≥1 records, validation failed")
+	}
+
+	// Validate user_oauth table (should have at least 1 record)
+	userOauthCount, err := d.CountUserOauths()
+	if err != nil || userOauthCount == nil || *userOauthCount < 1 {
+		errors = append(errors, "user_oauth table: expected ≥1 records, validation failed")
+	}
+
+	// Validate user_ssh_keys table (should have at least 1 record)
+	userSshKeyCount, err := d.CountUserSshKeys()
+	if err != nil || userSshKeyCount == nil || *userSshKeyCount < 1 {
+		errors = append(errors, "user_ssh_keys table: expected ≥1 records, validation failed")
+	}
+
+	// Validate tables table (should have EXACTLY 22 records - all core tables)
+	tableCount, err := d.CountTables()
+	if err != nil || tableCount == nil || *tableCount != 22 {
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 22 records (table registry), got %v", tableCount))
+	}
+
+	// Validate datatypes_fields junction table (should have at least 1 record)
+	datatypeFieldCount, err := d.CountDatatypeFields()
+	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
+		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_datatypes_fields junction table (should have at least 1 record)
+	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
+	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
+		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	// If any validation failed, return combined error
+	if len(errors) > 0 {
+		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
+		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		return err
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
 	return nil
 }
 
 // CreateAllTables creates all MySQL database tables
 func (d MysqlDatabase) CreateAllTables() error {
-	// Create all tables
-	err := d.CreateUserTable()
-	if err != nil {
-		return err
-	}
+	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
+	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
-	err = d.CreateRouteTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaDimensionTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateTokenTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateSessionTable()
+	// Tier 0: Foundation tables (no dependencies)
+	err := d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -463,47 +963,34 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
-	err = d.CreatePermissionTable()
+	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateDatatypeTable()
+	// Tier 1: User management (depends on roles)
+	err = d.CreateUserTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateContentDataTable()
+	// Tier 2: User-related tables and core content tables (depend on users)
+	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateContentFieldTable()
+	err = d.CreateUserOauthTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateAdminRouteTable()
+	err = d.CreateUserSshKeyTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateAdminFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentDataTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentFieldTable()
+	err = d.CreateSessionTable()
 	if err != nil {
 		return err
 	}
@@ -513,7 +1000,71 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
-	err = d.CreateUserOauthTable()
+	err = d.CreateMediaTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes)
+	err = d.CreateFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 4: Content data tables (depend on routes, datatypes, users)
+	err = d.CreateContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 5: Content field values (depend on content_data and fields)
+	err = d.CreateContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 6: Junction tables (depend on both sides)
+	err = d.CreateDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeFieldTable()
 	if err != nil {
 		return err
 	}
@@ -521,45 +1072,483 @@ func (d MysqlDatabase) CreateAllTables() error {
 	return nil
 }
 
+// CreateBootstrapData inserts required system records for initial database setup.
+// CRITICAL: Must be called after CreateAllTables() succeeds.
+// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// If any table failed to create, this function will catch it immediately during install rather than later during operation.
+func (d MysqlDatabase) CreateBootstrapData() error {
+	// 1. Create system admin permission (permission_id = 1)
+	permission := d.CreatePermission(CreatePermissionParams{
+		TableID: 0,
+		Mode:    7,
+		Label:   "system_admin",
+	})
+	if permission.PermissionID == 0 {
+		return fmt.Errorf("failed to create system admin permission")
+	}
+
+	// 2. Create system admin role (role_id = 1)
+	adminRole := d.CreateRole(CreateRoleParams{
+		Label:       "system_admin",
+		Permissions: `{"system_admin": true}`,
+	})
+	if adminRole.RoleID == 0 {
+		return fmt.Errorf("failed to create system admin role")
+	}
+
+	// 3. Create viewer role (role_id = 4)
+	viewerRole := d.CreateRole(CreateRoleParams{
+		Label:       "viewer",
+		Permissions: `{"read": true}`,
+	})
+	if viewerRole.RoleID == 0 {
+		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 4. Create system admin user (user_id = 1)
+	systemUser, err := d.CreateUser(CreateUserParams{
+		Username:     "system",
+		Name:         "System Administrator",
+		Email:        "system@modulacms.local",
+		Hash:         "",
+		Role:         1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create system user: %v", err)
+	}
+	if systemUser.UserID == 0 {
+		return fmt.Errorf("failed to create system user: user_id is 0")
+	}
+
+	// 5. Create default home route (route_id = 1) - Recommended
+	homeRoute := d.CreateRoute(CreateRouteParams{
+		Slug:         "/",
+		Title:        "Home",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if homeRoute.RouteID == 0 {
+		return fmt.Errorf("failed to create default home route")
+	}
+
+	// 6. Create default page datatype (datatype_id = 1)
+	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Page",
+		Type:         "page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if pageDatatype.DatatypeID == 0 {
+		return fmt.Errorf("failed to create default page datatype")
+	}
+
+	// 7. Create default admin route (admin_route_id = 1)
+	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+		Slug:         "/admin",
+		Title:        "Admin",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminRoute.AdminRouteID == 0 {
+		return fmt.Errorf("failed to create default admin route")
+	}
+
+	// 8. Create default admin datatype (admin_datatype_id = 1)
+	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Admin Page",
+		Type:         "admin_page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminDatatype.AdminDatatypeID == 0 {
+		return fmt.Errorf("failed to create default admin datatype")
+	}
+
+	// 9. Create default admin field (admin_field_id = 1)
+	adminField := d.CreateAdminField(CreateAdminFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminField.AdminFieldID == 0 {
+		return fmt.Errorf("failed to create default admin field")
+	}
+
+	// 10. Create default field (field_id = 1)
+	field := d.CreateField(CreateFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if field.FieldID == 0 {
+		return fmt.Errorf("failed to create default field")
+	}
+
+	// 11. Create default content_data record (content_data_id = 1)
+	contentData := d.CreateContentData(CreateContentDataParams{
+		RouteID:       1,
+		ParentID:      sql.NullInt64{},
+		FirstChildID:  sql.NullInt64{},
+		NextSiblingID: sql.NullInt64{},
+		PrevSiblingID: sql.NullInt64{},
+		DatatypeID:    1,
+		AuthorID:      1,
+		DateCreated:   StringToNullString(utility.TimestampS()),
+		DateModified:  StringToNullString(utility.TimestampS()),
+		History:       sql.NullString{},
+	})
+	if contentData.ContentDataID == 0 {
+		return fmt.Errorf("failed to create default content_data")
+	}
+
+	// 12. Create default admin_content_data record (admin_content_data_id = 1)
+	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+		ParentID:        sql.NullInt64{},
+		AdminRouteID:    1,
+		AdminDatatypeID: 1,
+		AuthorID:        1,
+		DateCreated:     StringToNullString(utility.TimestampS()),
+		DateModified:    StringToNullString(utility.TimestampS()),
+		History:         sql.NullString{},
+	})
+	if adminContentData.AdminContentDataID == 0 {
+		return fmt.Errorf("failed to create default admin_content_data")
+	}
+
+	// 13. Create default content_field (content_field_id = 1)
+	contentField := d.CreateContentField(CreateContentFieldParams{
+		ContentFieldID: 0,
+		RouteID:        sql.NullInt64{},
+		ContentDataID:  contentData.ContentDataID,
+		FieldID:        field.FieldID,
+		FieldValue:     "Default content",
+		AuthorID:       1,
+		DateCreated:    StringToNullString(utility.TimestampS()),
+		DateModified:   StringToNullString(utility.TimestampS()),
+		History:        sql.NullString{},
+	})
+	if contentField.ContentFieldID == 0 {
+		return fmt.Errorf("failed to create default content_field")
+	}
+
+	// 14. Create default admin_content_field (admin_content_field_id = 1)
+	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+		AdminRouteID:       sql.NullInt64{},
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		AdminFieldID:       adminField.AdminFieldID,
+		AdminFieldValue:    "Default admin content",
+		AuthorID:           1,
+		DateCreated:        StringToNullString(utility.TimestampS()),
+		DateModified:       StringToNullString(utility.TimestampS()),
+		History:            sql.NullString{},
+	})
+	if adminContentField.AdminContentFieldID == 0 {
+		return fmt.Errorf("failed to create default admin_content_field")
+	}
+
+	// 15. Create default media_dimension (md_id = 1) - Validation record
+	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+		Label:       StringToNullString("Default"),
+		Width:       Int64ToNullInt64(1920),
+		Height:      Int64ToNullInt64(1080),
+		AspectRatio: StringToNullString("16:9"),
+	})
+	if mediaDimension.MdID == 0 {
+		return fmt.Errorf("failed to create default media_dimension")
+	}
+
+	// 16. Create default media record (media_id = 1) - Validation record
+	media := d.CreateMedia(CreateMediaParams{
+		Name:         StringToNullString("default"),
+		DisplayName:  StringToNullString("Default Media"),
+		Alt:          StringToNullString("Default"),
+		Caption:      sql.NullString{},
+		Description:  sql.NullString{},
+		Class:        sql.NullString{},
+		Url:          sql.NullString{},
+		Mimetype:     sql.NullString{},
+		Dimensions:   sql.NullString{},
+		Srcset:       sql.NullString{},
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if media.MediaID == 0 {
+		return fmt.Errorf("failed to create default media")
+	}
+
+	// 17. Create default token (id = 1) - Validation record
+	token := d.CreateToken(CreateTokenParams{
+		UserID:    1,
+		TokenType: "validation",
+		Token:     "bootstrap_validation_token",
+		IssuedAt:  utility.TimestampS(),
+		ExpiresAt: utility.TimestampS(),
+		Revoked:   true,
+	})
+	if token.ID == 0 {
+		return fmt.Errorf("failed to create default token")
+	}
+
+	// 18. Create default session (session_id = 1) - Validation record
+	session, err := d.CreateSession(CreateSessionParams{
+		UserID:      1,
+		CreatedAt:   StringToNullString(utility.TimestampS()),
+		ExpiresAt:   StringToNullString(utility.TimestampS()),
+		LastAccess:  StringToNullString(utility.TimestampS()),
+		IpAddress:   StringToNullString("127.0.0.1"),
+		UserAgent:   StringToNullString("bootstrap"),
+		SessionData: sql.NullString{},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default session: %v", err)
+	}
+	if session.SessionID == 0 {
+		return fmt.Errorf("failed to create default session: session_id is 0")
+	}
+
+	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
+	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+		UserID:              1,
+		OauthProvider:       "bootstrap",
+		OauthProviderUserID: "bootstrap_user",
+		AccessToken:         "bootstrap_access_token",
+		RefreshToken:        "bootstrap_refresh_token",
+		TokenExpiresAt:      utility.TimestampS(),
+		DateCreated:         utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_oauth: %v", err)
+	}
+	if userOauth.UserOauthID == 0 {
+		return fmt.Errorf("failed to create default user_oauth: user_oauth_id is 0")
+	}
+
+	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
+	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+		UserID:      1,
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		KeyType:     "ssh-ed25519",
+		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
+		Label:       "Bootstrap Validation Key",
+		DateCreated: utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
+	}
+	if userSshKey.SshKeyID == 0 {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	}
+
+	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// This tracks all tables in the system and is critical for plugin support
+	tableNames := []string{
+		"permissions",
+		"roles",
+		"media_dimensions",
+		"users",
+		"tokens",
+		"sessions",
+		"routes",
+		"media",
+		"tables",
+		"datatypes",
+		"fields",
+		"admin_fields",
+		"content_data",
+		"admin_content_data",
+		"content_fields",
+		"admin_content_fields",
+		"datatypes_fields",
+		"admin_datatypes_fields",
+		"admin_routes",
+		"admin_datatypes",
+		"user_oauth",
+		"user_ssh_keys",
+	}
+
+	for _, tableName := range tableNames {
+		table := d.CreateTable(tableName)
+		if table.ID == 0 {
+			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
+		}
+	}
+
+	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
+	})
+	if datatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default datatypes_fields")
+	}
+
+	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
+	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
+	})
+	if adminDatatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default admin_datatypes_fields")
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
+	return nil
+}
+
+// ValidateBootstrapData verifies all tables have expected bootstrap records for MySQL.
+// CRITICAL: Call after CreateBootstrapData() to catch any silent failures.
+// Returns detailed error if any table validation fails.
+func (d MysqlDatabase) ValidateBootstrapData() error {
+	var errors []string
+
+	// Validate all 21 tables have expected record counts
+	permCount, err := d.CountPermissions()
+	if err != nil || permCount == nil || *permCount < 1 {
+		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
+	}
+
+	roleCount, err := d.CountRoles()
+	if err != nil || roleCount == nil || *roleCount < 2 {
+		errors = append(errors, "roles table: expected ≥2 records, validation failed")
+	}
+
+	userCount, err := d.CountUsers()
+	if err != nil || userCount == nil || *userCount < 1 {
+		errors = append(errors, "users table: expected ≥1 records, validation failed")
+	}
+
+	routeCount, err := d.CountRoutes()
+	if err != nil || routeCount == nil || *routeCount < 1 {
+		errors = append(errors, "routes table: expected ≥1 records, validation failed")
+	}
+
+	datatypeCount, err := d.CountDatatypes()
+	if err != nil || datatypeCount == nil || *datatypeCount < 1 {
+		errors = append(errors, "datatypes table: expected ≥1 records, validation failed")
+	}
+
+	fieldCount, err := d.CountFields()
+	if err != nil || fieldCount == nil || *fieldCount < 1 {
+		errors = append(errors, "fields table: expected ≥1 records, validation failed")
+	}
+
+	adminRouteCount, err := d.CountAdminRoutes()
+	if err != nil || adminRouteCount == nil || *adminRouteCount < 1 {
+		errors = append(errors, "admin_routes table: expected ≥1 records, validation failed")
+	}
+
+	adminDatatypeCount, err := d.CountAdminDatatypes()
+	if err != nil || adminDatatypeCount == nil || *adminDatatypeCount < 1 {
+		errors = append(errors, "admin_datatypes table: expected ≥1 records, validation failed")
+	}
+
+	adminFieldCount, err := d.CountAdminFields()
+	if err != nil || adminFieldCount == nil || *adminFieldCount < 1 {
+		errors = append(errors, "admin_fields table: expected ≥1 records, validation failed")
+	}
+
+	contentDataCount, err := d.CountContentData()
+	if err != nil || contentDataCount == nil || *contentDataCount < 1 {
+		errors = append(errors, "content_data table: expected ≥1 records, validation failed")
+	}
+
+	adminContentDataCount, err := d.CountAdminContentData()
+	if err != nil || adminContentDataCount == nil || *adminContentDataCount < 1 {
+		errors = append(errors, "admin_content_data table: expected ≥1 records, validation failed")
+	}
+
+	contentFieldCount, err := d.CountContentFields()
+	if err != nil || contentFieldCount == nil || *contentFieldCount < 1 {
+		errors = append(errors, "content_fields table: expected ≥1 records, validation failed")
+	}
+
+	adminContentFieldCount, err := d.CountAdminContentFields()
+	if err != nil || adminContentFieldCount == nil || *adminContentFieldCount < 1 {
+		errors = append(errors, "admin_content_fields table: expected ≥1 records, validation failed")
+	}
+
+	mediaDimCount, err := d.CountMediaDimensions()
+	if err != nil || mediaDimCount == nil || *mediaDimCount < 1 {
+		errors = append(errors, "media_dimensions table: expected ≥1 records, validation failed")
+	}
+
+	mediaCount, err := d.CountMedia()
+	if err != nil || mediaCount == nil || *mediaCount < 1 {
+		errors = append(errors, "media table: expected ≥1 records, validation failed")
+	}
+
+	tokenCount, err := d.CountTokens()
+	if err != nil || tokenCount == nil || *tokenCount < 1 {
+		errors = append(errors, "tokens table: expected ≥1 records, validation failed")
+	}
+
+	sessionCount, err := d.CountSessions()
+	if err != nil || sessionCount == nil || *sessionCount < 1 {
+		errors = append(errors, "sessions table: expected ≥1 records, validation failed")
+	}
+
+	userOauthCount, err := d.CountUserOauths()
+	if err != nil || userOauthCount == nil || *userOauthCount < 1 {
+		errors = append(errors, "user_oauth table: expected ≥1 records, validation failed")
+	}
+
+	tableCount, err := d.CountTables()
+	if err != nil || tableCount == nil || *tableCount != 21 {
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 21 records (table registry), got %v", tableCount))
+	}
+
+	datatypeFieldCount, err := d.CountDatatypeFields()
+	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
+		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
+	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
+		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	if len(errors) > 0 {
+		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
+		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		return err
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
+	return nil
+}
+
 // CreateAllTables creates all PostgreSQL database tables
 func (d PsqlDatabase) CreateAllTables() error {
-	// Create all tables
-	err := d.CreateUserTable()
-	if err != nil {
-		return err
-	}
+	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
+	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
-	err = d.CreateRouteTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateMediaDimensionTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateTokenTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateSessionTable()
+	// Tier 0: Foundation tables (no dependencies)
+	err := d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -569,52 +1558,19 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
-	err = d.CreatePermissionTable()
+	err = d.CreateMediaDimensionTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateDatatypeTable()
+	// Tier 1: User management (depends on roles)
+	err = d.CreateUserTable()
 	if err != nil {
 		return err
 	}
 
-	err = d.CreateContentDataTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateContentFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminRouteTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentDataTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminContentFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateTableTable()
+	// Tier 2: User-related tables and core content tables (depend on users)
+	err = d.CreateTokenTable()
 	if err != nil {
 		return err
 	}
@@ -624,6 +1580,560 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateUserSshKeyTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateSessionTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateTableTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateMediaTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateRouteTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 3: Field definition tables (depend on datatypes)
+	err = d.CreateFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 4: Content data tables (depend on routes, datatypes, users)
+	err = d.CreateContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentDataTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 5: Content field values (depend on content_data and fields)
+	err = d.CreateContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentFieldTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 6: Junction tables (depend on both sides)
+	err = d.CreateDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminDatatypeFieldTable()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateBootstrapData inserts required system records for initial database setup.
+// CRITICAL: Must be called after CreateAllTables() succeeds.
+// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// If any table failed to create, this function will catch it immediately during install rather than later during operation.
+func (d PsqlDatabase) CreateBootstrapData() error {
+	// 1. Create system admin permission (permission_id = 1)
+	permission := d.CreatePermission(CreatePermissionParams{
+		TableID: 0,
+		Mode:    7,
+		Label:   "system_admin",
+	})
+	if permission.PermissionID == 0 {
+		return fmt.Errorf("failed to create system admin permission")
+	}
+
+	// 2. Create system admin role (role_id = 1)
+	adminRole := d.CreateRole(CreateRoleParams{
+		Label:       "system_admin",
+		Permissions: `{"system_admin": true}`,
+	})
+	if adminRole.RoleID == 0 {
+		return fmt.Errorf("failed to create system admin role")
+	}
+
+	// 3. Create viewer role (role_id = 4)
+	viewerRole := d.CreateRole(CreateRoleParams{
+		Label:       "viewer",
+		Permissions: `{"read": true}`,
+	})
+	if viewerRole.RoleID == 0 {
+		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 4. Create system admin user (user_id = 1)
+	systemUser, err := d.CreateUser(CreateUserParams{
+		Username:     "system",
+		Name:         "System Administrator",
+		Email:        "system@modulacms.local",
+		Hash:         "",
+		Role:         1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create system user: %v", err)
+	}
+	if systemUser.UserID == 0 {
+		return fmt.Errorf("failed to create system user: user_id is 0")
+	}
+
+	// 5. Create default home route (route_id = 1) - Recommended
+	homeRoute := d.CreateRoute(CreateRouteParams{
+		Slug:         "/",
+		Title:        "Home",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if homeRoute.RouteID == 0 {
+		return fmt.Errorf("failed to create default home route")
+	}
+
+	// 6. Create default page datatype (datatype_id = 1)
+	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Page",
+		Type:         "page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if pageDatatype.DatatypeID == 0 {
+		return fmt.Errorf("failed to create default page datatype")
+	}
+
+	// 7. Create default admin route (admin_route_id = 1)
+	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+		Slug:         "/admin",
+		Title:        "Admin",
+		Status:       1,
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminRoute.AdminRouteID == 0 {
+		return fmt.Errorf("failed to create default admin route")
+	}
+
+	// 8. Create default admin datatype (admin_datatype_id = 1)
+	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Admin Page",
+		Type:         "admin_page",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminDatatype.AdminDatatypeID == 0 {
+		return fmt.Errorf("failed to create default admin datatype")
+	}
+
+	// 9. Create default admin field (admin_field_id = 1)
+	adminField := d.CreateAdminField(CreateAdminFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if adminField.AdminFieldID == 0 {
+		return fmt.Errorf("failed to create default admin field")
+	}
+
+	// 10. Create default field (field_id = 1)
+	field := d.CreateField(CreateFieldParams{
+		ParentID:     sql.NullInt64{},
+		Label:        "Content",
+		Data:         "",
+		Type:         "text",
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+		History:      sql.NullString{},
+	})
+	if field.FieldID == 0 {
+		return fmt.Errorf("failed to create default field")
+	}
+
+	// 11. Create default content_data record (content_data_id = 1)
+	contentData := d.CreateContentData(CreateContentDataParams{
+		RouteID:       1,
+		ParentID:      sql.NullInt64{},
+		FirstChildID:  sql.NullInt64{},
+		NextSiblingID: sql.NullInt64{},
+		PrevSiblingID: sql.NullInt64{},
+		DatatypeID:    1,
+		AuthorID:      1,
+		DateCreated:   StringToNullString(utility.TimestampS()),
+		DateModified:  StringToNullString(utility.TimestampS()),
+		History:       sql.NullString{},
+	})
+	if contentData.ContentDataID == 0 {
+		return fmt.Errorf("failed to create default content_data")
+	}
+
+	// 12. Create default admin_content_data record (admin_content_data_id = 1)
+	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+		ParentID:        sql.NullInt64{},
+		AdminRouteID:    1,
+		AdminDatatypeID: 1,
+		AuthorID:        1,
+		DateCreated:     StringToNullString(utility.TimestampS()),
+		DateModified:    StringToNullString(utility.TimestampS()),
+		History:         sql.NullString{},
+	})
+	if adminContentData.AdminContentDataID == 0 {
+		return fmt.Errorf("failed to create default admin_content_data")
+	}
+
+	// 13. Create default content_field (content_field_id = 1)
+	contentField := d.CreateContentField(CreateContentFieldParams{
+		ContentFieldID: 0,
+		RouteID:        sql.NullInt64{},
+		ContentDataID:  contentData.ContentDataID,
+		FieldID:        field.FieldID,
+		FieldValue:     "Default content",
+		AuthorID:       1,
+		DateCreated:    StringToNullString(utility.TimestampS()),
+		DateModified:   StringToNullString(utility.TimestampS()),
+		History:        sql.NullString{},
+	})
+	if contentField.ContentFieldID == 0 {
+		return fmt.Errorf("failed to create default content_field")
+	}
+
+	// 14. Create default admin_content_field (admin_content_field_id = 1)
+	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+		AdminRouteID:       sql.NullInt64{},
+		AdminContentDataID: adminContentData.AdminContentDataID,
+		AdminFieldID:       adminField.AdminFieldID,
+		AdminFieldValue:    "Default admin content",
+		AuthorID:           1,
+		DateCreated:        StringToNullString(utility.TimestampS()),
+		DateModified:       StringToNullString(utility.TimestampS()),
+		History:            sql.NullString{},
+	})
+	if adminContentField.AdminContentFieldID == 0 {
+		return fmt.Errorf("failed to create default admin_content_field")
+	}
+
+	// 15. Create default media_dimension (md_id = 1) - Validation record
+	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+		Label:       StringToNullString("Default"),
+		Width:       Int64ToNullInt64(1920),
+		Height:      Int64ToNullInt64(1080),
+		AspectRatio: StringToNullString("16:9"),
+	})
+	if mediaDimension.MdID == 0 {
+		return fmt.Errorf("failed to create default media_dimension")
+	}
+
+	// 16. Create default media record (media_id = 1) - Validation record
+	media := d.CreateMedia(CreateMediaParams{
+		Name:         StringToNullString("default"),
+		DisplayName:  StringToNullString("Default Media"),
+		Alt:          StringToNullString("Default"),
+		Caption:      sql.NullString{},
+		Description:  sql.NullString{},
+		Class:        sql.NullString{},
+		Url:          sql.NullString{},
+		Mimetype:     sql.NullString{},
+		Dimensions:   sql.NullString{},
+		Srcset:       sql.NullString{},
+		AuthorID:     1,
+		DateCreated:  StringToNullString(utility.TimestampS()),
+		DateModified: StringToNullString(utility.TimestampS()),
+	})
+	if media.MediaID == 0 {
+		return fmt.Errorf("failed to create default media")
+	}
+
+	// 17. Create default token (id = 1) - Validation record
+	token := d.CreateToken(CreateTokenParams{
+		UserID:    1,
+		TokenType: "validation",
+		Token:     "bootstrap_validation_token",
+		IssuedAt:  utility.TimestampS(),
+		ExpiresAt: utility.TimestampS(),
+		Revoked:   true,
+	})
+	if token.ID == 0 {
+		return fmt.Errorf("failed to create default token")
+	}
+
+	// 18. Create default session (session_id = 1) - Validation record
+	session, err := d.CreateSession(CreateSessionParams{
+		UserID:      1,
+		CreatedAt:   StringToNullString(utility.TimestampS()),
+		ExpiresAt:   StringToNullString(utility.TimestampS()),
+		LastAccess:  StringToNullString(utility.TimestampS()),
+		IpAddress:   StringToNullString("127.0.0.1"),
+		UserAgent:   StringToNullString("bootstrap"),
+		SessionData: sql.NullString{},
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default session: %v", err)
+	}
+	if session.SessionID == 0 {
+		return fmt.Errorf("failed to create default session: session_id is 0")
+	}
+
+	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
+	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+		UserID:              1,
+		OauthProvider:       "bootstrap",
+		OauthProviderUserID: "bootstrap_user",
+		AccessToken:         "bootstrap_access_token",
+		RefreshToken:        "bootstrap_refresh_token",
+		TokenExpiresAt:      utility.TimestampS(),
+		DateCreated:         utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_oauth: %v", err)
+	}
+	if userOauth.UserOauthID == 0 {
+		return fmt.Errorf("failed to create default user_oauth: user_oauth_id is 0")
+	}
+
+	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
+	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+		UserID:      1,
+		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
+		KeyType:     "ssh-ed25519",
+		Fingerprint: "SHA256:bootstrap_validation_fingerprint",
+		Label:       "Bootstrap Validation Key",
+		DateCreated: utility.TimestampS(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
+	}
+	if userSshKey.SshKeyID == 0 {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	}
+
+	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// This tracks all tables in the system and is critical for plugin support
+	tableNames := []string{
+		"permissions",
+		"roles",
+		"media_dimensions",
+		"users",
+		"tokens",
+		"sessions",
+		"routes",
+		"media",
+		"tables",
+		"datatypes",
+		"fields",
+		"admin_fields",
+		"content_data",
+		"admin_content_data",
+		"content_fields",
+		"admin_content_fields",
+		"datatypes_fields",
+		"admin_datatypes_fields",
+		"admin_routes",
+		"admin_datatypes",
+		"user_oauth",
+		"user_ssh_keys",
+	}
+
+	for _, tableName := range tableNames {
+		table := d.CreateTable(tableName)
+		if table.ID == 0 {
+			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
+		}
+	}
+
+	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
+	})
+	if datatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default datatypes_fields")
+	}
+
+	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
+	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
+	})
+	if adminDatatypeField.ID == 0 {
+		return fmt.Errorf("failed to create default admin_datatypes_fields")
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
+	return nil
+}
+
+// ValidateBootstrapData verifies all tables have expected bootstrap records for PostgreSQL.
+// CRITICAL: Call after CreateBootstrapData() to catch any silent failures.
+// Returns detailed error if any table validation fails.
+func (d PsqlDatabase) ValidateBootstrapData() error {
+	var errors []string
+
+	// Validate all 21 tables have expected record counts
+	permCount, err := d.CountPermissions()
+	if err != nil || permCount == nil || *permCount < 1 {
+		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
+	}
+
+	roleCount, err := d.CountRoles()
+	if err != nil || roleCount == nil || *roleCount < 2 {
+		errors = append(errors, "roles table: expected ≥2 records, validation failed")
+	}
+
+	userCount, err := d.CountUsers()
+	if err != nil || userCount == nil || *userCount < 1 {
+		errors = append(errors, "users table: expected ≥1 records, validation failed")
+	}
+
+	routeCount, err := d.CountRoutes()
+	if err != nil || routeCount == nil || *routeCount < 1 {
+		errors = append(errors, "routes table: expected ≥1 records, validation failed")
+	}
+
+	datatypeCount, err := d.CountDatatypes()
+	if err != nil || datatypeCount == nil || *datatypeCount < 1 {
+		errors = append(errors, "datatypes table: expected ≥1 records, validation failed")
+	}
+
+	fieldCount, err := d.CountFields()
+	if err != nil || fieldCount == nil || *fieldCount < 1 {
+		errors = append(errors, "fields table: expected ≥1 records, validation failed")
+	}
+
+	adminRouteCount, err := d.CountAdminRoutes()
+	if err != nil || adminRouteCount == nil || *adminRouteCount < 1 {
+		errors = append(errors, "admin_routes table: expected ≥1 records, validation failed")
+	}
+
+	adminDatatypeCount, err := d.CountAdminDatatypes()
+	if err != nil || adminDatatypeCount == nil || *adminDatatypeCount < 1 {
+		errors = append(errors, "admin_datatypes table: expected ≥1 records, validation failed")
+	}
+
+	adminFieldCount, err := d.CountAdminFields()
+	if err != nil || adminFieldCount == nil || *adminFieldCount < 1 {
+		errors = append(errors, "admin_fields table: expected ≥1 records, validation failed")
+	}
+
+	contentDataCount, err := d.CountContentData()
+	if err != nil || contentDataCount == nil || *contentDataCount < 1 {
+		errors = append(errors, "content_data table: expected ≥1 records, validation failed")
+	}
+
+	adminContentDataCount, err := d.CountAdminContentData()
+	if err != nil || adminContentDataCount == nil || *adminContentDataCount < 1 {
+		errors = append(errors, "admin_content_data table: expected ≥1 records, validation failed")
+	}
+
+	contentFieldCount, err := d.CountContentFields()
+	if err != nil || contentFieldCount == nil || *contentFieldCount < 1 {
+		errors = append(errors, "content_fields table: expected ≥1 records, validation failed")
+	}
+
+	adminContentFieldCount, err := d.CountAdminContentFields()
+	if err != nil || adminContentFieldCount == nil || *adminContentFieldCount < 1 {
+		errors = append(errors, "admin_content_fields table: expected ≥1 records, validation failed")
+	}
+
+	mediaDimCount, err := d.CountMediaDimensions()
+	if err != nil || mediaDimCount == nil || *mediaDimCount < 1 {
+		errors = append(errors, "media_dimensions table: expected ≥1 records, validation failed")
+	}
+
+	mediaCount, err := d.CountMedia()
+	if err != nil || mediaCount == nil || *mediaCount < 1 {
+		errors = append(errors, "media table: expected ≥1 records, validation failed")
+	}
+
+	tokenCount, err := d.CountTokens()
+	if err != nil || tokenCount == nil || *tokenCount < 1 {
+		errors = append(errors, "tokens table: expected ≥1 records, validation failed")
+	}
+
+	sessionCount, err := d.CountSessions()
+	if err != nil || sessionCount == nil || *sessionCount < 1 {
+		errors = append(errors, "sessions table: expected ≥1 records, validation failed")
+	}
+
+	userOauthCount, err := d.CountUserOauths()
+	if err != nil || userOauthCount == nil || *userOauthCount < 1 {
+		errors = append(errors, "user_oauth table: expected ≥1 records, validation failed")
+	}
+
+	tableCount, err := d.CountTables()
+	if err != nil || tableCount == nil || *tableCount != 21 {
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 21 records (table registry), got %v", tableCount))
+	}
+
+	datatypeFieldCount, err := d.CountDatatypeFields()
+	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
+		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
+	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
+		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+	}
+
+	if len(errors) > 0 {
+		err := fmt.Errorf("bootstrap validation failed:\n  - %s", strings.Join(errors, "\n  - "))
+		utility.DefaultLogger.Ferror("Bootstrap validation failed", err)
+		return err
+	}
+
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
 	return nil
 }
 

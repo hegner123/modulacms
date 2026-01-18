@@ -112,6 +112,11 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
+			// Load content tree if PageRouteId is set
+			if m.PageRouteId > 0 {
+				cmds = append(cmds, ReloadContentTreeCmd(m.Config, m.PageRouteId))
+			}
+
 			return m, tea.Batch(cmds...)
 		case PICKCONTENT:
 			page := NewPickContentPage("Pick")
@@ -154,7 +159,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 
-		return m, tea.Batch()
+		return m, nil
 	case SelectTable:
 		cmds := make([]tea.Cmd, 0)
 		cmds = append(cmds, NavigateToPageCmd(m.PageMap[TABLEPAGE]))
@@ -162,10 +167,39 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 
 		return m, tea.Batch(cmds...)
+	case FormCompletedMsg:
+		cmds := make([]tea.Cmd, 0)
+		newModel := m
+
+		// Priority 1: Use specified destination page
+		if msg.DestinationPage != nil {
+			cmds = append(cmds, NavigateToPageCmd(*msg.DestinationPage))
+			return newModel, tea.Batch(cmds...)
+		}
+
+		// Priority 2: Try to pop history
+		entry := newModel.PopHistory()
+		if entry != nil {
+			cmds = append(cmds, PageSetCmd(entry.Page))
+			cmds = append(cmds, PageMenuSetCmd(entry.Menu))
+			cmds = append(cmds, CursorSetCmd(entry.Cursor))
+			return newModel, tea.Batch(cmds...)
+		}
+
+		// Priority 3: Fallback to home page
+		cmds = append(cmds, NavigateToPageCmd(m.PageMap[HOMEPAGE]))
+		return newModel, tea.Batch(cmds...)
+
 	case HistoryPop:
 		cmds := make([]tea.Cmd, 0)
 		newModel := m
 		entry := newModel.PopHistory()
+
+		// Check if history was empty
+		if entry == nil {
+			return newModel, nil
+		}
+
 		cmds = append(cmds, PageSetCmd(entry.Page))
 		cmds = append(cmds, PageMenuSetCmd(entry.Menu))
 		cmds = append(cmds, CursorSetCmd(entry.Cursor))

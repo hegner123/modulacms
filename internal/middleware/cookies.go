@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/hegner123/modulacms/internal/config"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -14,12 +15,12 @@ func SetCookieHandler(w http.ResponseWriter, c *http.Cookie) {
 	basic := []byte("Test")
 	// Set the cookie in the response header
 	http.SetCookie(w, c)
-	utility.DefaultLogger.Debug("", w.Header())
+	utility.DefaultLogger.Fdebug("", w.Header())
 	i, err := w.Write(basic)
 	if err != nil {
 		return
 	}
-    utility.DefaultLogger.Debug("wrote %d bytes\n", i)
+    utility.DefaultLogger.Fdebug("wrote %d bytes\n", i)
     utility.DefaultLogger.Fdebug("Cook has been set!", w)
 }
 
@@ -44,4 +45,43 @@ func ReadCookie(c *http.Cookie) (*MiddlewareCookie, error) {
 	}
 
 	return &k, nil
+}
+
+// WriteCookie creates and sets a secure authentication cookie with proper security flags.
+// It encodes the session data and user ID as base64-encoded JSON and applies security
+// settings from the configuration (HttpOnly, Secure, SameSite).
+// Returns an error if encoding or cookie creation fails.
+func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, userId int64) error {
+	cookie := MiddlewareCookie{
+		Session: sessionData,
+		UserId:  userId,
+	}
+
+	jsonData, err := json.Marshal(cookie)
+	if err != nil {
+		return err
+	}
+
+	encoded := base64.StdEncoding.EncodeToString(jsonData)
+
+	// Parse SameSite mode from config
+	sameSite := http.SameSiteLaxMode // Default to Lax
+	if c.Cookie_SameSite == "strict" {
+		sameSite = http.SameSiteStrictMode
+	} else if c.Cookie_SameSite == "none" {
+		sameSite = http.SameSiteNoneMode
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     c.Cookie_Name,
+		Value:    encoded,
+		Path:     "/",
+		MaxAge:   86400,             // 24 hours
+		HttpOnly: true,              // Prevent JavaScript access
+		Secure:   c.Cookie_Secure,   // HTTPS only (from config)
+		SameSite: sameSite,          // CSRF protection (from config)
+	})
+
+	utility.DefaultLogger.Finfo("Secure cookie set for user %d", userId)
+	return nil
 }

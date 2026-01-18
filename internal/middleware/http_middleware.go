@@ -1,0 +1,142 @@
+package middleware
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/utility"
+)
+
+// HTTPLoggingMiddleware logs HTTP requests and responses
+func HTTPLoggingMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+			utility.DefaultLogger.Finfo("HTTP request started", "method", r.Method, "path", r.URL.Path, "remote", r.RemoteAddr)
+
+			// Create a response wrapper to capture status code
+			rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+
+			next.ServeHTTP(rw, r)
+
+			duration := time.Since(start)
+			utility.DefaultLogger.Finfo("HTTP request completed",
+				"method", r.Method,
+				"path", r.URL.Path,
+				"status", rw.statusCode,
+				"duration", duration.String(),
+			)
+		})
+	}
+}
+
+// HTTPAuthenticationMiddleware validates session cookies and populates request context
+func HTTPAuthenticationMiddleware(c *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authCtx, user := AuthRequest(w, r, c)
+			if authCtx != nil && user != nil {
+				// Inject authenticated user into context
+				ctx := context.WithValue(r.Context(), authCtx, user)
+				next.ServeHTTP(w, r.WithContext(ctx))
+				return
+			}
+
+			// No authenticated user - continue without auth context
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// HTTPAuthorizationMiddleware blocks unauthenticated requests to protected endpoints
+// Use this on routes that require authentication
+func HTTPAuthorizationMiddleware(c *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Check if user is authenticated
+			var authCtx authcontext = "authenticated"
+			user := r.Context().Value(authCtx)
+
+			if user == nil {
+				utility.DefaultLogger.Fwarn("Unauthorized HTTP request", nil, r.URL.Path)
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// PublicEndpoints lists API endpoints that don't require authentication
+var PublicEndpoints = []string{
+	"/api/v1/auth/login",
+	"/api/v1/auth/register",
+	"/api/v1/auth/logout",
+	"/api/v1/auth/reset",
+	"/api/v1/auth/me",
+	"/api/v1/auth/oauth/login",
+	"/api/v1/auth/oauth/callback",
+	"/api/v1/users",
+	"/favicon.ico",
+}
+
+// HTTPPublicEndpointMiddleware allows public endpoints through, blocks others
+// This is used as a global middleware to protect all /api/* routes by default
+func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Allow public endpoints
+			for _, endpoint := range PublicEndpoints {
+				if strings.HasPrefix(r.URL.Path, endpoint) {
+					next.ServeHTTP(w, r)
+					return
+				}
+			}
+
+			// Allow non-API routes (like /)
+			if !strings.HasPrefix(r.URL.Path, "/api") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			// Check if authenticated for API routes
+			var authCtx authcontext = "authenticated"
+			user := r.Context().Value(authCtx)
+
+			if user == nil {
+				utility.DefaultLogger.Fwarn("Unauthorized API access", nil, r.URL.Path)
+				http.Error(w, fmt.Sprintf("Unauthorized request to %s", r.URL.Path), http.StatusUnauthorized)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+// Chain applies multiple middleware in sequence (left to right)
+// Example: Chain(middleware1, middleware2, middleware3)(handler)
+func Chain(middlewares ...func(http.Handler) http.Handler) func(http.Handler) http.Handler {
+	return func(final http.Handler) http.Handler {
+		for i := len(middlewares) - 1; i >= 0; i-- {
+			final = middlewares[i](final)
+		}
+		return final
+	}
+}
+
+// responseWriter wraps http.ResponseWriter to capture status code
+type responseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.statusCode = code
+	rw.ResponseWriter.WriteHeader(code)
+}

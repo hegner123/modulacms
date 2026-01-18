@@ -136,12 +136,6 @@ func (m *MenuPage) RenderBody(model Model) string {
 			column = []string{}
 		}
 	}
-	list := make([]string, 0)
-	for _, v := range model.History {
-		list = append(list, v.Page.Label)
-	}
-	content := lipgloss.JoinVertical(lipgloss.Top, list...)
-	row = append(row, content)
 	r = append(r, lipgloss.JoinHorizontal(lipgloss.Top, row...))
 	r = append(r, m.Body)
 	return RenderBorderFlex(lipgloss.JoinHorizontal(lipgloss.Center, r...))
@@ -366,15 +360,79 @@ func (c *CMSPage) RenderColumn(width int, content string) string {
 }
 
 func (c CMSPage) ProcessTreeDatatypes(model Model) string {
-	current := model.Root.Root
+	if model.PageRouteId == 0 {
+		return "No route selected\n\nPlease select a route to view content."
+	}
+	if model.Root.Root == nil {
+		return "No content loaded"
+	}
 	display := make([]string, 0)
-	index := 0
-	for current != nil {
-		row := FormatRow(current)
-		display = append(display, row)
-		index++
+	currentIndex := 0
+	c.traverseTree(model.Root.Root, &display, model.Cursor, &currentIndex)
+	if len(display) == 0 {
+		return "Empty content tree"
 	}
 	return lipgloss.JoinVertical(lipgloss.Top, display...)
+}
+
+// traverseTree recursively renders the tree with proper indentation and cursor
+func (c CMSPage) traverseTree(node *TreeNode, display *[]string, cursor int, currentIndex *int) {
+	if node == nil {
+		return
+	}
+
+	// Render current node with cursor highlight
+	row := c.FormatTreeRow(node, *currentIndex == cursor)
+	*display = append(*display, row)
+	*currentIndex++
+
+	// Render children if expanded
+	if node.Expand && node.FirstChild != nil {
+		c.traverseTree(node.FirstChild, display, cursor, currentIndex)
+	}
+
+	// Render siblings
+	if node.NextSibling != nil {
+		c.traverseTree(node.NextSibling, display, cursor, currentIndex)
+	}
+}
+
+// FormatTreeRow formats a single tree node with proper styling
+func (c CMSPage) FormatTreeRow(node *TreeNode, isSelected bool) string {
+	indent := strings.Repeat("  ", node.Indent)
+
+	// Icon based on node type and state
+	icon := "📄"
+	if node.FirstChild != nil {
+		if node.Expand {
+			icon = "📂"  // Open folder
+		} else {
+			icon = "📁"  // Closed folder
+		}
+	}
+
+	// Get node name
+	name := DecideNodeName(*node)
+
+	// Selection indicator
+	cursor := " "
+	if isSelected {
+		cursor = ">"
+	}
+
+	// Build the row
+	row := cursor + " " + indent + icon + " " + name
+
+	// Style based on selection
+	if isSelected {
+		style := lipgloss.NewStyle().
+			Background(config.DefaultStyle.ActiveBG).
+			Foreground(config.DefaultStyle.Active).
+			Bold(true)
+		return style.Render(row)
+	}
+
+	return row
 }
 
 func FormatRow(node *TreeNode) string {
@@ -413,11 +471,127 @@ func FieldMatchesLabel(field db.Fields) bool {
 	return slices.Contains(ValidLabelFields, field.Label)
 }
 
-func (c CMSPage) ProcessContentPreview(tree TreeRoot) string {
-	return "Content Preview"
+func (c CMSPage) ProcessContentPreview(model Model) string {
+	node := c.getSelectedNode(model)
+	if node == nil {
+		return "No content selected"
+	}
+
+	// Build preview content
+	preview := []string{}
+
+	// Title/Name
+	title := DecideNodeName(*node)
+	titleStyle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent2)
+	preview = append(preview, titleStyle.Render(title))
+	preview = append(preview, "")
+
+	// Content Type
+	preview = append(preview, fmt.Sprintf("Type: %s", node.Datatype.Label))
+
+	// Content ID
+	preview = append(preview, fmt.Sprintf("ID: %d", node.Instance.ContentDataID))
+
+	// Author
+	preview = append(preview, fmt.Sprintf("Author ID: %d", node.Instance.AuthorID))
+
+	// Dates
+	if node.Instance.DateCreated.Valid {
+		preview = append(preview, fmt.Sprintf("Created: %s", node.Instance.DateCreated.String))
+	}
+	if node.Instance.DateModified.Valid {
+		preview = append(preview, fmt.Sprintf("Modified: %s", node.Instance.DateModified.String))
+	}
+
+	// Tree structure info
+	preview = append(preview, "")
+	preview = append(preview, "Structure:")
+	if node.Parent != nil {
+		preview = append(preview, "  ├─ Has parent")
+	}
+	if node.FirstChild != nil {
+		preview = append(preview, "  ├─ Has children")
+	}
+	if node.NextSibling != nil {
+		preview = append(preview, "  ├─ Has next sibling")
+	}
+	if node.PrevSibling != nil {
+		preview = append(preview, "  └─ Has previous sibling")
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, preview...)
 }
-func (c CMSPage) ProcessFields(tree TreeRoot) string {
-	return "ProcessFields"
+
+func (c CMSPage) ProcessFields(model Model) string {
+	node := c.getSelectedNode(model)
+	if node == nil || len(node.InstanceFields) == 0 {
+		return "No fields"
+	}
+
+	fields := []string{}
+	fieldsTitle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Secondary).Render("Fields:")
+	fields = append(fields, fieldsTitle)
+	fields = append(fields, "")
+
+	for _, cf := range node.InstanceFields {
+		// Find field definition
+		var fieldLabel string
+		for _, f := range node.Fields {
+			if f.FieldID == cf.FieldID {
+				fieldLabel = f.Label
+				break
+			}
+		}
+		if fieldLabel == "" {
+			fieldLabel = fmt.Sprintf("Field %d", cf.FieldID)
+		}
+
+		// Truncate long values
+		value := cf.FieldValue
+		if len(value) > 50 {
+			value = value[:47] + "..."
+		}
+
+		fields = append(fields, fmt.Sprintf("├─ %s: %s", fieldLabel, value))
+	}
+
+	return lipgloss.JoinVertical(lipgloss.Left, fields...)
+}
+
+// getSelectedNode finds the node at the current cursor position
+func (c CMSPage) getSelectedNode(model Model) *TreeNode {
+	if model.Root.Root == nil {
+		return nil
+	}
+	currentIndex := 0
+	return c.findNodeAtCursor(model.Root.Root, model.Cursor, &currentIndex)
+}
+
+// findNodeAtCursor traverses the tree to find the node at cursor position
+func (c CMSPage) findNodeAtCursor(node *TreeNode, cursor int, currentIndex *int) *TreeNode {
+	if node == nil {
+		return nil
+	}
+
+	// Check if this is the node we're looking for
+	if *currentIndex == cursor {
+		return node
+	}
+	*currentIndex++
+
+	// Check children if expanded
+	if node.Expand && node.FirstChild != nil {
+		if result := c.findNodeAtCursor(node.FirstChild, cursor, currentIndex); result != nil {
+			return result
+		}
+	}
+
+	// Check siblings
+	if node.NextSibling != nil {
+		return c.findNodeAtCursor(node.NextSibling, cursor, currentIndex)
+	}
+
+	return nil
 }
 
 func (c CMSPage) CenterColumn(content string) string {
@@ -433,8 +607,8 @@ func (c CMSPage) CenterColumn(content string) string {
 func (c CMSPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	col1 := c.ProcessTreeDatatypes(model)
-	col2 := c.ProcessContentPreview(model.Root)
-	col3 := c.ProcessFields(model.Root)
+	col2 := c.ProcessContentPreview(model)
+	col3 := c.ProcessFields(model)
 	editor := lipgloss.JoinHorizontal(
 		lipgloss.Center,
 		c.RenderColumn(model.Width/4, col1),

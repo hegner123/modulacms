@@ -47,15 +47,33 @@ endif
 ## Dev
 dev: ## Prepare binaries and templates in src dir for faster iteration
 	echo "" > debug.log
-	GO111MODULE=on $(GOCMD) build -mod vendor -o $(X86_BINARY_NAME) ./cmd
+	$(eval VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev"))
+	$(eval COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown"))
+	$(eval BUILD_DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S'))
+	GO111MODULE=on $(GOCMD) build -mod vendor \
+		-ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$(VERSION)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$(COMMIT)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$(BUILD_DATE)'" \
+		-o $(X86_BINARY_NAME) ./cmd
 
 run: dev ## Build and run the application
 	./$(X86_BINARY_NAME)
 
 ## Build:
 build: ## Build your project and put the output binary in out/bin/
-	GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(X86_BINARY_NAME) ./cmd
-	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor -o out/bin/$(AMD_BINARY_NAME) ./cmd	
+	$(eval VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev"))
+	$(eval COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown"))
+	$(eval BUILD_DATE := $(shell date -u '+%Y-%m-%d_%H:%M:%S'))
+	GO111MODULE=on $(GOCMD) build -mod vendor \
+		-ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$(VERSION)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$(COMMIT)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$(BUILD_DATE)'" \
+		-o out/bin/$(X86_BINARY_NAME) ./cmd
+	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor \
+		-ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$(VERSION)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$(COMMIT)' \
+		-X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$(BUILD_DATE)'" \
+		-o out/bin/$(AMD_BINARY_NAME) ./cmd
 	rsync -av out/bin/$(AMD_BINARY_NAME) modula:/root/app/modula/$(AMD_BINARY_NAME)
 	rsync -av modula.db  modula:/root/app/modula/modula.db
 

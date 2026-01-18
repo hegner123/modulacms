@@ -192,6 +192,29 @@ func (d Database) GetUserOauth(id int64) (*UserOauth, error) {
 	return &res, nil
 }
 
+func (d Database) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetUserOauthByUserId(d.Context, userID)
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
+func (d Database) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetUserOauthByProviderID(d.Context, mdb.GetUserOauthByProviderIDParams{
+		OauthProvider:       provider,
+		OauthProviderUserID: providerUserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
 func (d Database) ListUserOauths() (*[]UserOauth, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListUserOauth(d.Context)
@@ -307,6 +330,29 @@ func (d MysqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetUserOauthByUserId(d.Context, int32(userID))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
+func (d MysqlDatabase) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetUserOauthByProviderID(d.Context, mdbm.GetUserOauthByProviderIDParams{
+		OauthProvider:       provider,
+		OauthProviderUserID: providerUserID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
 func (d MysqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListUserOauth(d.Context)
@@ -411,6 +457,29 @@ func (d PsqlDatabase) DeleteUserOauth(id int64) error {
 func (d PsqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetUserOauth(d.Context, int32(id))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
+func (d PsqlDatabase) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetUserOauthByUserId(d.Context, int32(userID))
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapUserOauth(row)
+	return &res, nil
+}
+
+func (d PsqlDatabase) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetUserOauthByProviderID(d.Context, mdbp.GetUserOauthByProviderIDParams{
+		OauthProvider:       provider,
+		OauthProviderUserID: providerUserID,
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -77,6 +77,10 @@ func FormSetValuesCmd(v []*string) tea.Cmd { return func() tea.Msg { return Form
 func FormLenSetCmd(formLen int) tea.Cmd {
 	return func() tea.Msg { return FormLenSet{FormLen: formLen} }
 }
+
+func FormMapSetCmd(formMap []string) tea.Cmd {
+	return func() tea.Msg { return FormMapSet{FormMap: formMap} }
+}
 func FormSubmitCmd() tea.Cmd { return func() tea.Msg { return FormSubmitMsg{} } }
 func FormCancelCmd() tea.Cmd { return func() tea.Msg { return FormCancelMsg{} } }
 func FormActionCmd(action DatabaseCMD, table string, columns []string, values []*string) tea.Cmd {
@@ -102,6 +106,11 @@ func FormAbortCmd(action DatabaseCMD, table string) tea.Cmd {
 func HistoryPopCmd() tea.Cmd { return func() tea.Msg { return HistoryPop{} } }
 func HistoryPushCmd(page PageHistory) tea.Cmd {
 	return func() tea.Msg { return HistoryPush{Page: page} }
+}
+
+// Form completion constructor
+func FormCompletedCmd(destinationPage *Page) tea.Cmd {
+	return func() tea.Msg { return FormCompletedMsg{DestinationPage: destinationPage} }
 }
 
 // Cms constructors
@@ -259,14 +268,22 @@ func SetErrorWithStatusCmd(err error, status ApplicationState) tea.Cmd {
 	}
 }
 
-func SetFormDataCmd(form huh.Form, formLen int, values []*string) tea.Cmd {
+func SetFormDataCmd(form huh.Form, formLen int, values []*string, formMap []string) tea.Cmd {
 	return func() tea.Msg {
-		return tea.Batch(
+		cmds := []tea.Cmd{
 			FormSetCmd(form),
 			FormLenSetCmd(formLen),
 			FormSetValuesCmd(values),
-			LoadingStopCmd(),
-		)()
+		}
+
+		// Only set FormMap if provided
+		if len(formMap) > 0 {
+			cmds = append(cmds, FormMapSetCmd(formMap))
+		}
+
+		cmds = append(cmds, LoadingStopCmd())
+
+		return tea.Batch(cmds...)()
 	}
 }
 
@@ -399,5 +416,34 @@ func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 		return CmsAddNewContentFieldsMsg{
 			Datatype: id,
 		}
+	}
+}
+
+func BuildContentFormCmd(datatypeID int64, routeID int64) tea.Cmd {
+	return func() tea.Msg {
+		return BuildContentFormMsg{
+			DatatypeID: datatypeID,
+			RouteID:    routeID,
+		}
+	}
+}
+
+func CreateContentWithFieldsCmd(
+	config *config.Config,
+	datatypeID int64,
+	routeID int64,
+	authorID int64,
+	fieldValues map[int64]string,
+) tea.Cmd {
+	return func() tea.Msg {
+		m := Model{Config: config}
+		return m.CreateContentWithFields(config, datatypeID, routeID, authorID, fieldValues)()
+	}
+}
+
+func ReloadContentTreeCmd(config *config.Config, routeID int64) tea.Cmd {
+	return func() tea.Msg {
+		m := Model{Config: config}
+		return m.ReloadContentTree(config, routeID)()
 	}
 }

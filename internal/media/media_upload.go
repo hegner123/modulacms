@@ -28,7 +28,7 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	if err != nil {
 		return err
 	}
-	s3Creds := bucket.S3Credintials{
+	s3Creds := bucket.S3Credentials{
 		AccessKey: c.Bucket_Access_Key,
 		SecretKey: c.Bucket_Secret_Key,
 		URL:       c.Bucket_Endpoint,

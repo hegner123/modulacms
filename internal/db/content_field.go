@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 
@@ -198,14 +199,14 @@ func MapContentFieldJSON(a ContentFields) ContentFieldsJSON {
 func MapStringContentField(a ContentFields) StringContentFields {
 	return StringContentFields{
 		ContentFieldID: strconv.FormatInt(a.ContentFieldID, 10),
-		RouteID:        strconv.FormatInt(a.RouteID.Int64, 10),
+		RouteID:        utility.NullToString(a.RouteID),
 		ContentDataID:  strconv.FormatInt(a.ContentDataID, 10),
 		FieldID:        strconv.FormatInt(a.FieldID, 10),
 		FieldValue:     a.FieldValue,
 		AuthorID:       strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:    a.DateCreated.String,
-		DateModified:   a.DateModified.String,
-		History:        a.History.String,
+		DateCreated:    utility.NullToString(a.DateCreated),
+		DateModified:   utility.NullToString(a.DateModified),
+		History:        utility.NullToString(a.History),
 	}
 }
 

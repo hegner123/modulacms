@@ -213,3 +213,215 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	return m, tea.Batch(cmds...)
 }
+
+// Database form builders
+
+type NewFormMsg struct {
+	Form        *huh.Form
+	FieldsCount int
+	Values      []*string
+	FormMap     []string
+}
+
+func (m Model) NewInsertForm(table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		var fields []huh.Field
+		var values []*string
+		for i, c := range *m.TableState.Columns {
+			blank := ""
+			if i == 0 {
+				values = append(values, &blank)
+				continue
+			} else {
+				value := ""
+				t := *m.TableState.ColumnTypes
+				f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
+				if err != nil {
+					return FetchErrMsg{Error: err}
+				}
+				if f == nil {
+					continue
+				}
+				fields = append(fields, f)
+				values = append(values, &value)
+			}
+
+		}
+		group := huh.NewGroup(fields...)
+		form := huh.NewForm(
+			group,
+		)
+		form.Init() // Initialize immediately
+		// Add submit handler with proper focus management
+		form.SubmitCmd = tea.Batch(
+			LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for INSERT on table %s", string(table))),
+			LogMessageCmd(fmt.Sprintf("Headers  %v", m.TableState.Columns)),
+			FormActionCmd(INSERT, string(table), *m.TableState.Columns, values),
+			FocusSetCmd(PAGEFOCUS),
+			func() tea.Msg {
+				return tea.ResumeMsg{}
+			},
+		)
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns), Values: values}
+	}
+
+}
+
+func (m *Model) NewUpdateForm(table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		row := *m.TableState.Row
+		var fields []huh.Field
+		for i, c := range *m.TableState.Columns {
+			if i == 0 {
+				id := row[i]
+				m.FormState.FormValues = append(m.FormState.FormValues, &id)
+				continue
+			} else {
+
+				value := row[i]
+				t := *m.TableState.ColumnTypes
+				f, err := m.NewUpdateFieldFromType(m.Config, c, t[i], &value, row[i])
+				if err != nil {
+					return FetchErrMsg{Error: err}
+				}
+				if f == nil {
+					continue
+				}
+
+				fields = append(fields, f)
+				m.FormState.FormValues = append(m.FormState.FormValues, &value)
+			}
+
+		}
+
+		m.FormState.FormFields = fields
+
+		group := huh.NewGroup(fields...)
+		m.FormState.FormGroups = []huh.Group{*group}
+
+		form := huh.NewForm(
+			group,
+		)
+		form.Init() // Initialize immediately
+
+		// Add submit handler with proper focus management
+		form.SubmitCmd = tea.Batch(
+			LogMessageCmd(fmt.Sprintf("Form SubmitCmd triggered for UPDATE on table %s", string(table))),
+			FormActionCmd(UPDATE, string(table), m.TableState.Headers, m.FormState.FormValues),
+			FocusSetCmd(PAGEFOCUS),
+			func() tea.Msg {
+				return tea.ResumeMsg{}
+			},
+		)
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns)}
+	}
+}
+
+func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
+	return func() tea.Msg {
+		var fields []huh.Field
+		for i, c := range *m.TableState.Columns {
+			if i == 0 {
+				continue
+			}
+			var value string
+			t := *m.TableState.ColumnTypes
+			f, err := m.NewFieldFromType(m.Config, c, t[i], &value)
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if f == nil {
+				continue
+			}
+			fields = append(fields, f)
+			m.FormState.FormValues = append(m.FormState.FormValues, &value)
+
+		}
+		group := huh.NewGroup(fields...)
+		// Create form with both groups
+		form := huh.NewForm(
+			group,
+		)
+		form.Init() // Initialize immediately
+
+		// Add submit handler with proper focus management
+		form.SubmitCmd = func() tea.Msg {
+			if m.FormState.FormSubmit {
+				m.Focus = PAGEFOCUS
+				return FormActionMsg{}
+			}
+			return FormCancelMsg{}
+		}
+		return NewFormMsg{Form: form, FieldsCount: len(*m.TableState.Columns)}
+	}
+}
+
+// BuildContentFieldsForm creates a dynamic form for content creation based on datatype fields
+func (m Model) BuildContentFieldsForm(datatypeID int64, routeID int64) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*m.Config)
+
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Building content form for datatype %d, route %d", datatypeID, routeID))
+
+		// Fetch fields for this datatype
+		fields, err := d.ListFieldsByDatatypeID(datatypeID)
+		if err != nil {
+			utility.DefaultLogger.Ferror("ListFieldsByDatatypeID error", err)
+			return FetchErrMsg{Error: err}
+		}
+
+		if fields == nil || len(*fields) == 0 {
+			utility.DefaultLogger.Finfo(fmt.Sprintf("No fields found for datatype %d", datatypeID))
+			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %d", datatypeID)}
+		}
+
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d fields for datatype %d", len(*fields), datatypeID))
+
+		// Build form inputs for each field
+		var formFields []huh.Field
+		var formMap []string
+		var values []*string
+
+		for _, field := range *fields {
+			value := ""
+			values = append(values, &value)
+
+			// Create input field based on field type
+			input := huh.NewInput().
+				Title(field.Label).
+				Value(&value)
+
+			// Add description if field has data
+			if field.Data != "" {
+				input = input.Description(field.Data)
+			}
+
+			formFields = append(formFields, input)
+			formMap = append(formMap, fmt.Sprint(field.FieldID))
+		}
+
+		// Create form with field group
+		group := huh.NewGroup(formFields...)
+		form := huh.NewForm(group)
+		form.Init()
+
+		// Set submit handler to dispatch content creation
+		form.SubmitCmd = tea.Batch(
+			LogMessageCmd(fmt.Sprintf("Form submitted for content creation (Datatype: %d, Route: %d)", datatypeID, routeID)),
+			CmsAddNewContentDataCmd(datatypeID),
+			FocusSetCmd(PAGEFOCUS),
+			func() tea.Msg {
+				return tea.ResumeMsg{}
+			},
+		)
+
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Returning NewFormMsg with %d fields", len(*fields)))
+
+		return NewFormMsg{
+			Form:        form,
+			FieldsCount: len(*fields),
+			Values:      values,
+			FormMap:     formMap,
+		}
+	}
+}

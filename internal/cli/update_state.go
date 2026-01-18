@@ -11,7 +11,6 @@ func NewStateUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return StateUpdated{}
 	}
-
 }
 
 func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
@@ -151,6 +150,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case FormLenSet:
 		newModel := m
 		newModel.FormState.FormLen = msg.FormLen
+		return newModel, NewStateUpdate()
+	case FormMapSet:
+		newModel := m
+		newModel.FormState.FormMap = msg.FormMap
 		return newModel, NewStateUpdate()
 	case FormSet:
 		newModel := m

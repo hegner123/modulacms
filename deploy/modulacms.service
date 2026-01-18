@@ -1,0 +1,30 @@
+[Unit]
+Description=ModulaCMS Headless CMS
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/app/modula
+ExecStart=/root/app/modula/modulacms-amd
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=modulacms
+
+# Environment variables
+Environment="MODULACMS_ENV=production"
+
+# Resource limits
+LimitNOFILE=65536
+
+# Security hardening (optional - adjust as needed)
+# NoNewPrivileges=true
+# PrivateTmp=true
+# ProtectSystem=strict
+# ProtectHome=true
+# ReadWritePaths=/root/app/modula
+
+[Install]
+WantedBy=multi-user.target

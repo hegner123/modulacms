@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // Types
@@ -155,8 +156,8 @@ func MapStringUser(a Users) StringUsers {
 		Email:        a.Email,
 		Hash:         a.Hash,
 		Role:         strconv.FormatInt(a.Role, 10),
-		DateCreated:  a.DateCreated.String,
-		DateModified: a.DateModified.String,
+		DateCreated:  utility.NullToString(a.DateCreated),
+		DateModified: utility.NullToString(a.DateModified),
 	}
 }
 

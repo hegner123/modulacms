@@ -36,6 +36,16 @@ func CliMiddleware(v *bool, c *config.Config) wish.Middleware {
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height
 		m.Time = time.Now()
+
+		// Check if user needs provisioning
+		ctx := s.Context()
+		if needsProvisioning, ok := ctx.Value("needs_provisioning").(bool); ok && needsProvisioning {
+			m.NeedsProvisioning = true
+			m.SSHFingerprint = ctx.Value("ssh_fingerprint").(string)
+			m.SSHKeyType = ctx.Value("ssh_key_type").(string)
+			m.SSHPublicKey = ctx.Value("ssh_public_key").(string)
+		}
+
 		return newProg(&m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
 	return bubbletea.MiddlewareWithProgramHandler(teaHandler, termenv.ANSI256)

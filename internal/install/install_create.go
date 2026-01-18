@@ -13,6 +13,19 @@ func CreateDb(path string, c *config.Config) error {
 	if err != nil {
 		return err
 	}
+
+	// Insert required bootstrap data after tables are created
+	err = d.CreateBootstrapData()
+	if err != nil {
+		return err
+	}
+
+	// Validate bootstrap data was inserted correctly
+	err = d.ValidateBootstrapData()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 

@@ -1,25 +1,208 @@
-name: Go
+name: CI/CD
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop", "dev" ]
+    tags:
+      - 'v*'
   pull_request:
     branches: [ "main" ]
 
 jobs:
-
-  build:
+  test:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v5
       with:
-        go-version: '1.23.1'
-
-    - name: Build
-      run: go build -v ./
+        go-version: '1.24.2'
 
     - name: Test
-      run: go test -v ./
+      run: make test
+
+  build:
+    needs: test
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            goos: darwin
+            goarch: amd64
+          - os: macos-latest
+            goos: darwin
+            goarch: arm64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: amd64
+          - os: ubuntu-latest
+            goos: linux
+            goarch: arm64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Build
+        env:
+          CGO_ENABLED: 1
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          VERSION="${{ github.ref_name }}"
+          if [[ ! "$VERSION" =~ ^v[0-9] ]]; then
+            VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          fi
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+
+          go build \
+            -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
+            -o modulacms-${{ matrix.goos }}-${{ matrix.goarch }} cmd/main.go
+          chmod +x modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+
+  deploy-dev:
+    needs: test
+    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.2'
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-x86-64-linux-gnu g++-x86-64-linux-gnu
+
+      - name: Build for Linux AMD64
+        env:
+          CGO_ENABLED: 1
+          GOOS: linux
+          GOARCH: amd64
+          CC: x86_64-linux-gnu-gcc
+          CXX: x86_64-linux-gnu-g++
+        run: |
+          VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+
+          go build -mod vendor \
+            -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
+            -o modulacms-amd ./cmd
+
+          echo "Built version: $VERSION (commit: $COMMIT)"
+
+      - name: Setup SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Deploy to server
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          DEPLOY_PATH=${DEPLOY_PATH:-/root/app/modula}
+
+          echo "Deploying to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
+
+          # Stop the service (ignore errors if service doesn't exist yet)
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl stop modulacms || echo 'Service not running'"
+
+          # Backup current binary
+          ssh $DEPLOY_USER@$DEPLOY_HOST "cp $DEPLOY_PATH/modulacms-amd $DEPLOY_PATH/modulacms-amd.backup || echo 'No existing binary to backup'"
+
+          # Upload new binary
+          scp modulacms-amd $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/modulacms-amd
+
+          # Set permissions
+          ssh $DEPLOY_USER@$DEPLOY_HOST "chmod +x $DEPLOY_PATH/modulacms-amd"
+
+          # Start service
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl start modulacms"
+
+          echo "Deployment completed successfully"
+
+      - name: Health check
+        env:
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
+        run: |
+          echo "Waiting for service to start..."
+          sleep 10
+
+          # Check if service is active
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl is-active modulacms" || {
+            echo "Service failed to start, attempting restart..."
+            ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl restart modulacms"
+            sleep 5
+          }
+
+          # Optional: HTTP health check if URL is provided
+          if [ -n "$HEALTH_CHECK_URL" ]; then
+            echo "Performing health check at $HEALTH_CHECK_URL"
+            for i in {1..5}; do
+              if curl -f -s "$HEALTH_CHECK_URL" > /dev/null; then
+                echo "Health check passed"
+                exit 0
+              fi
+              echo "Health check attempt $i failed, retrying..."
+              sleep 5
+            done
+            echo "Warning: Health check failed after 5 attempts"
+          fi
+
+          # Final service status check
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl status modulacms --no-pager"

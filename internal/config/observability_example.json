@@ -1,0 +1,18 @@
+{
+  "observability_enabled": true,
+  "observability_provider": "sentry",
+  "observability_dsn": "https://examplePublicKey@o0.ingest.sentry.io/0",
+  "observability_environment": "production",
+  "observability_release": "modulacms@1.0.0",
+  "observability_sample_rate": 1.0,
+  "observability_traces_rate": 0.1,
+  "observability_send_pii": false,
+  "observability_debug": false,
+  "observability_server_name": "modulacms-prod-01",
+  "observability_flush_interval": "30s",
+  "observability_tags": {
+    "service": "modulacms",
+    "region": "us-east-1",
+    "datacenter": "aws"
+  }
+}

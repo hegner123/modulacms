@@ -1,0 +1,84 @@
+# ModulaCMS Caddy Reverse Proxy Configuration (OPTIONAL)
+#
+# NOTE: ModulaCMS has built-in HTTPS with Let's Encrypt support.
+# You DO NOT need Caddy for HTTPS - ModulaCMS handles it automatically.
+#
+# Only use this reverse proxy configuration if you need:
+# - Multiple applications on the same server
+# - Additional security layers
+# - Load balancing across multiple ModulaCMS instances
+# - Custom routing/middleware
+#
+# Place this file at: /etc/caddy/Caddyfile
+# Reload with: sudo systemctl reload caddy
+
+# If using Caddy, ModulaCMS should run on a different port (e.g., 3000)
+# Update ModulaCMS config to disable built-in HTTPS and use HTTP only
+
+your-domain.com {
+    # Automatic HTTPS with Let's Encrypt
+    # Caddy handles SSL certificates automatically
+
+    # Reverse proxy to ModulaCMS
+    reverse_proxy localhost:3000 {
+        # Health check
+        health_uri /health
+        health_interval 10s
+        health_timeout 5s
+
+        # Headers
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+
+        # Prevent clickjacking
+        X-Frame-Options "SAMEORIGIN"
+
+        # Prevent MIME sniffing
+        X-Content-Type-Options "nosniff"
+
+        # XSS Protection
+        X-XSS-Protection "1; mode=block"
+
+        # Referrer policy
+        Referrer-Policy "no-referrer-when-downgrade"
+
+        # Remove server header
+        -Server
+    }
+
+    # Logging
+    log {
+        output file /var/log/caddy/modulacms.log {
+            roll_size 100mb
+            roll_keep 5
+            roll_keep_for 720h
+        }
+        format json
+    }
+
+    # Request size limit (for media uploads)
+    request_body {
+        max_size 100MB
+    }
+}
+
+# Optional: www redirect
+www.your-domain.com {
+    redir https://your-domain.com{uri} permanent
+}
+
+# Optional: Multiple domains/subdomains
+# api.your-domain.com {
+#     reverse_proxy localhost:3000
+# }
+#
+# admin.your-domain.com {
+#     reverse_proxy localhost:3000
+# }

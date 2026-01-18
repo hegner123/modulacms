@@ -24,7 +24,12 @@ func TableRender(hdrs []string, r [][]string, index int) *table.Table {
 	if len(hdrs) > max {
 		headers = hdrs[:max]
 		for _, row := range r {
-			ro := row[:max]
+			// Use minimum of max and row length to avoid panic
+			rowMax := max
+			if len(row) < max {
+				rowMax = len(row)
+			}
+			ro := row[:rowMax]
 			rows = append(rows, ro)
 		}
 	} else {

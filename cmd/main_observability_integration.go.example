@@ -1,0 +1,231 @@
+package main
+
+// EXAMPLE: How to integrate observability into your existing main.go
+// This shows the minimal changes needed to add concurrent observability
+
+/*
+func run() (ReturnCode, error) {
+	var InitStatus install.ModulaInit
+	var certDir string
+
+	const updateUrl string = "https://modulacms.com/update"
+
+	// Create root context for all background workers
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	app := flags.ParseFlags()
+
+	// ... existing flag handling code ...
+
+	configuration, _ := configManager.Config()
+
+	// ============================================================
+	// NEW: Initialize observability (runs concurrently)
+	// ============================================================
+	if configuration.Observability_Enabled {
+		obsClient, err := utility.NewObservabilityClient(utility.ObservabilityConfig{
+			Enabled:       configuration.Observability_Enabled,
+			Provider:      configuration.Observability_Provider,
+			DSN:           configuration.Observability_DSN,
+			Environment:   configuration.Observability_Environment,
+			Release:       configuration.Observability_Release,
+			SampleRate:    configuration.Observability_Sample_Rate,
+			TracesRate:    configuration.Observability_Traces_Rate,
+			SendPII:       configuration.Observability_Send_PII,
+			Debug:         configuration.Observability_Debug,
+			ServerName:    configuration.Observability_Server_Name,
+			FlushInterval: configuration.Observability_Flush_Interval,
+			Tags:          configuration.Observability_Tags,
+		})
+
+		if err != nil {
+			utility.DefaultLogger.Error("Failed to initialize observability", err)
+		} else {
+			utility.GlobalObservability = obsClient
+
+			// Start background metric flushing in goroutine
+			obsClient.Start(ctx)
+
+			utility.DefaultLogger.Info("Observability started",
+				"provider", configuration.Observability_Provider,
+				"interval", configuration.Observability_Flush_Interval,
+			)
+
+			// Register graceful shutdown
+			defer func() {
+				utility.DefaultLogger.Info("Stopping observability...")
+				shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer shutdownCancel()
+
+				// Stop will flush remaining metrics before closing
+				if err := obsClient.Stop(); err != nil {
+					utility.DefaultLogger.Error("Observability shutdown error", err)
+				}
+			}()
+		}
+	}
+	// ============================================================
+	// END NEW CODE
+	// ============================================================
+
+	// ... existing database setup ...
+
+	// Start SSH server (existing code)
+	sshServer, err := wish.NewServer(...)
+
+	// Start HTTP servers (existing code)
+	mux := router.NewModulacmsMux(*configuration)
+	middlewareHandler := middleware.DefaultMiddlewareChain(configuration)(mux)
+
+	// ... existing server setup ...
+
+	// Run servers in goroutines (existing code)
+	go func() {
+		// SSH server
+	}()
+
+	go func() {
+		// HTTP/HTTPS servers
+	}()
+
+	// Wait for shutdown signal
+	<-done
+	utility.DefaultLogger.Info("Shutting down servers...")
+
+	// Cancel context - stops observability and other background workers
+	cancel()
+
+	// Shutdown servers with timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := httpServer.Shutdown(ctx); err != nil {
+		utility.DefaultLogger.Error("HTTP server shutdown error:", err)
+	}
+
+	if err := httpsServer.Shutdown(ctx); err != nil {
+		utility.DefaultLogger.Error("HTTPS server shutdown error:", err)
+	}
+
+	if err := sshServer.Shutdown(ctx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
+		utility.DefaultLogger.Error("SSH server shutdown error:", err)
+		return ERRSIG, err
+	}
+
+	utility.DefaultLogger.Info("Servers gracefully stopped.")
+	return OKSIG, nil
+}
+*/
+
+// EXAMPLE: Using metrics in your middleware
+/*
+func HTTPLoggingMiddleware() func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			start := time.Now()
+
+			// Track request count
+			utility.GlobalMetrics.Increment(utility.MetricHTTPRequests, utility.Labels{
+				"method": r.Method,
+				"path":   r.URL.Path,
+			})
+
+			// Track active connections
+			utility.GlobalMetrics.Counter(utility.MetricActiveConnections, 1, utility.Labels{
+				"type": "http",
+			})
+			defer utility.GlobalMetrics.Counter(utility.MetricActiveConnections, -1, utility.Labels{
+				"type": "http",
+			})
+
+			// Execute handler
+			rw := &responseWriter{ResponseWriter: w, statusCode: http.StatusOK}
+			next.ServeHTTP(rw, r)
+
+			// Record duration
+			duration := time.Since(start)
+			utility.GlobalMetrics.Timing(utility.MetricHTTPDuration, duration, utility.Labels{
+				"method": r.Method,
+				"path":   r.URL.Path,
+				"status": strconv.Itoa(rw.statusCode),
+			})
+
+			// Track errors
+			if rw.statusCode >= 400 {
+				utility.GlobalMetrics.Increment(utility.MetricHTTPErrors, utility.Labels{
+					"method": r.Method,
+					"path":   r.URL.Path,
+					"status": strconv.Itoa(rw.statusCode),
+				})
+			}
+
+			// Log completed request
+			utility.DefaultLogger.Info("HTTP request completed",
+				"method", r.Method,
+				"path", r.URL.Path,
+				"status", rw.statusCode,
+				"duration", duration.String(),
+			)
+		})
+	}
+}
+*/
+
+// EXAMPLE: Tracking database queries
+/*
+func (dbc *DatabaseClient) QueryWithMetrics(query string) error {
+	start := time.Now()
+
+	utility.GlobalMetrics.Increment(utility.MetricDBQueries, utility.Labels{
+		"driver": "sqlite",
+	})
+
+	err := dbc.executeQuery(query)
+
+	duration := time.Since(start)
+	utility.GlobalMetrics.Timing(utility.MetricDBDuration, duration, utility.Labels{
+		"driver": "sqlite",
+	})
+
+	if err != nil {
+		utility.GlobalMetrics.Increment(utility.MetricDBErrors, utility.Labels{
+			"driver": "sqlite",
+		})
+
+		// Send error to Sentry
+		utility.CaptureError(err, map[string]any{
+			"query":    query,
+			"duration": duration.Milliseconds(),
+		})
+	}
+
+	return err
+}
+*/
+
+// EXAMPLE: Tracking SSH connections
+/*
+func SSHSessionLoggingMiddleware(c *config.Config) wish.Middleware {
+	return func(next ssh.Handler) ssh.Handler {
+		return func(s ssh.Session) {
+			utility.GlobalMetrics.Increment(utility.MetricSSHConnections, utility.Labels{
+				"user": s.User(),
+			})
+
+			// Track active SSH connections
+			utility.GlobalMetrics.Counter(utility.MetricActiveConnections, 1, utility.Labels{
+				"type": "ssh",
+			})
+			defer utility.GlobalMetrics.Counter(utility.MetricActiveConnections, -1, utility.Labels{
+				"type": "ssh",
+			})
+
+			next(s)
+		}
+	}
+}
+*/

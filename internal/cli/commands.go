@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 
@@ -252,4 +253,136 @@ func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
 	//TODO JOIN STATEMENTS FOR CONTENT FIELDS AND FIELDS
 
 	return tea.Batch()
+}
+
+// CreateContentWithFields performs atomic content creation using typed DbDriver methods.
+// Creates ContentData first, then uses the returned ID to create associated ContentFields.
+// This solves the ID-passing problem that the generic query builder pattern couldn't handle.
+func (m Model) CreateContentWithFields(
+	c *config.Config,
+	datatypeID int64,
+	routeID int64,
+	authorID int64,
+	fieldValues map[int64]string,
+) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*c)
+
+		// Debug logging
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%d, RouteID=%d, AuthorID=%d", datatypeID, routeID, authorID))
+
+		// Step 1: Create ContentData using typed DbDriver method
+		contentData := d.CreateContentData(db.CreateContentDataParams{
+			DatatypeID:    datatypeID,
+			RouteID:       routeID,
+			AuthorID:      authorID,
+			DateCreated:   db.StringToNullString(utility.TimestampS()),
+			DateModified:  db.StringToNullString(utility.TimestampS()),
+			ParentID:      sql.NullInt64{}, // NULL - no parent initially
+			FirstChildID:  sql.NullInt64{}, // NULL - no children initially
+			NextSiblingID: sql.NullInt64{}, // NULL - no siblings initially
+			PrevSiblingID: sql.NullInt64{}, // NULL - no siblings initially
+			History:       db.StringToNullString(""),
+		})
+
+		// Check if creation succeeded
+		if contentData.ContentDataID == 0 {
+			return DbErrMsg{
+				Error: fmt.Errorf("failed to create content data"),
+			}
+		}
+
+		// Step 2: Create ContentFields (we have the ID now!)
+		var failedFields []int64
+		createdFields := 0
+
+		for fieldID, value := range fieldValues {
+			// Skip empty values
+			if value == "" {
+				continue
+			}
+
+			fieldResult := d.CreateContentField(db.CreateContentFieldParams{
+				ContentDataID:  contentData.ContentDataID,
+				FieldID:        fieldID,
+				FieldValue:     value,
+				RouteID:        db.Int64ToNullInt64(routeID),
+				AuthorID:       authorID,
+				DateCreated:    db.StringToNullString(utility.TimestampS()),
+				DateModified:   db.StringToNullString(utility.TimestampS()),
+				History:        db.StringToNullString(""),
+				ContentFieldID: 0, // Auto-generated
+			})
+
+			// Track failures
+			if fieldResult.ContentFieldID == 0 {
+				failedFields = append(failedFields, fieldID)
+			} else {
+				createdFields++
+			}
+		}
+
+		// Step 3: Return appropriate message based on results
+		if len(failedFields) > 0 {
+			return ContentCreatedWithErrorsMsg{
+				ContentDataID: contentData.ContentDataID,
+				RouteID:       routeID,
+				CreatedFields: createdFields,
+				FailedFields:  failedFields,
+			}
+		}
+
+		return ContentCreatedMsg{
+			ContentDataID: contentData.ContentDataID,
+			RouteID:       routeID,
+			FieldCount:    createdFields,
+		}
+	}
+}
+
+// ReloadContentTree fetches tree data from database and loads it into the Root
+func (m Model) ReloadContentTree(c *config.Config, routeID int64) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*c)
+
+		// Fetch tree data from database
+		rows, err := d.GetContentTreeByRoute(routeID)
+		if err != nil {
+			utility.DefaultLogger.Ferror(fmt.Sprintf("GetContentTreeByRoute error for route %d", routeID), err)
+			return FetchErrMsg{Error: fmt.Errorf("failed to fetch content tree: %w", err)}
+		}
+
+		if rows == nil {
+			utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned nil rows for route %d", routeID))
+			return TreeLoadedMsg{
+				RouteID:  routeID,
+				Stats:    &LoadStats{},
+				RootNode: nil,
+			}
+		}
+
+		utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned %d rows for route %d", len(*rows), routeID))
+
+		if len(*rows) == 0 {
+			utility.DefaultLogger.Finfo(fmt.Sprintf("No rows returned for route %d", routeID))
+			return TreeLoadedMsg{
+				RouteID:  routeID,
+				Stats:    &LoadStats{},
+				RootNode: nil,
+			}
+		}
+
+		// Create new tree root and load from rows
+		newRoot := NewTreeRoot()
+		stats, err := newRoot.LoadFromRows(rows)
+		if err != nil {
+			return FetchErrMsg{Error: fmt.Errorf("failed to load tree from rows: %w", err)}
+		}
+
+		return TreeLoadedMsg{
+			RouteID:  routeID,
+			Stats:    stats,
+			RootNode: newRoot,
+		}
+	}
 }

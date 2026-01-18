@@ -27,7 +27,9 @@ WHERE session_id = ? LIMIT 1;
 
 -- name: GetSessionByUserId :one
 SELECT * FROM sessions
-WHERE session_id = ?;
+WHERE user_id = ?
+ORDER BY session_id DESC
+LIMIT 1;
 
 -- name: ListSession :many
 SELECT * FROM sessions;

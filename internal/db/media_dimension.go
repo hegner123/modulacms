@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // /////////////////////////////
@@ -107,10 +108,10 @@ func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMedia
 func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 	return StringMediaDimensions{
 		MdID:        strconv.FormatInt(a.MdID, 10),
-		Label:       a.Label.String,
-		Width:       strconv.FormatInt(a.Width.Int64, 10),
-		Height:      strconv.FormatInt(a.Height.Int64, 10),
-		AspectRatio: a.AspectRatio.String,
+		Label:       utility.NullToString(a.Label),
+		Width:       utility.NullToString(a.Width),
+		Height:      utility.NullToString(a.Height),
+		AspectRatio: utility.NullToString(a.AspectRatio),
 	}
 }
 func MapCreateMediaDimensionJSONParams(a CreateMediaDimensionParamsJSON) CreateMediaDimensionParams {

@@ -74,6 +74,9 @@ type FormAborted struct {
 	Table  string
 }
 type FormSubmitMsg struct{}
+type FormCompletedMsg struct {
+	DestinationPage *Page // Optional - if nil, will try history pop, then home
+}
 type FormActionMsg struct {
 	Action  DatabaseCMD
 	Table   string
@@ -174,6 +177,10 @@ type PaginatorUpdate struct {
 type FormLenSet struct {
 	FormLen int
 }
+
+type FormMapSet struct {
+	FormMap []string
+}
 type ErrorSet struct {
 	Err error
 }
@@ -262,4 +269,28 @@ type CmsAddNewContentDataMsg struct {
 }
 type CmsAddNewContentFieldsMsg struct {
 	Datatype int64
+}
+
+type ContentCreatedMsg struct {
+	ContentDataID int64
+	RouteID       int64
+	FieldCount    int
+}
+
+type ContentCreatedWithErrorsMsg struct {
+	ContentDataID int64
+	RouteID       int64
+	CreatedFields int
+	FailedFields  []int64
+}
+
+type TreeLoadedMsg struct {
+	RouteID  int64
+	Stats    *LoadStats
+	RootNode *TreeRoot
+}
+
+type BuildContentFormMsg struct {
+	DatatypeID int64
+	RouteID    int64
 }
