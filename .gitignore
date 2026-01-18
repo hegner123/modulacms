@@ -57,8 +57,11 @@ tests/
 backups/
 legacydb/
 .Ignore/
+old/
 testing-config.json
 *.log
+*.g
+*_tes.go
 
 #certs
 certs/
