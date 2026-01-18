@@ -38,6 +38,8 @@ ui
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 
 #binary
 modulacms-amd
