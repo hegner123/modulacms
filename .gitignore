@@ -61,6 +61,7 @@ testing-config.json
 *.log
 *.g
 *_tes.go
+*_test.go
 
 #certs
 certs/
