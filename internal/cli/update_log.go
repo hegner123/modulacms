@@ -33,4 +33,3 @@ func (m Model) UpdateLog(msg tea.Msg) (Model, tea.Cmd) {
 
 	return m, nil
 }
-

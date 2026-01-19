@@ -27,7 +27,9 @@ FROM sessions;
 
 -- name: GetSessionByUserId :one
 SELECT * FROM sessions
-WHERE user_id = $1;
+WHERE user_id = $1
+ORDER BY session_id DESC
+LIMIT 1;
 
 -- name: ListSession :many
 SELECT * FROM sessions;

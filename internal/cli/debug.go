@@ -96,7 +96,7 @@ func (m Model) Stringify() string {
 	out = append(out, mr)
 
 	//Table        string
-	table := fmt.Sprintf("Table: %s", m.Table)
+	table := fmt.Sprintf("Table: %s", m.TableState.Table)
 	out = append(out, table)
 
 	/*
@@ -119,8 +119,8 @@ func (m Model) Stringify() string {
 
 	//Columns      *[]string
 	var columnsStr string
-	if m.Columns != nil {
-		columnsStr = fmt.Sprintf("length: %d", len(*m.Columns))
+	if m.TableState.Columns != nil {
+		columnsStr = fmt.Sprintf("length: %d", len(*m.TableState.Columns))
 	} else {
 		columnsStr = "(nil)"
 	}
@@ -129,8 +129,8 @@ func (m Model) Stringify() string {
 
 	//ColumnTypes  *[]*sql.ColumnType
 	var columnTypesStr string
-	if m.ColumnTypes != nil {
-		columnTypesStr = fmt.Sprintf("length: %d", len(*m.ColumnTypes))
+	if m.TableState.ColumnTypes != nil {
+		columnTypesStr = fmt.Sprintf("length: %d", len(*m.TableState.ColumnTypes))
 	} else {
 		columnTypesStr = "(nil)"
 	}
@@ -138,18 +138,18 @@ func (m Model) Stringify() string {
 	out = append(out, columnTypes)
 
 	//Selected     map[int]struct{}
-	selected := fmt.Sprintf("Selected(length): %d", len(m.Selected))
+	selected := fmt.Sprintf("Selected(length): %d", len(m.TableState.Selected))
 	out = append(out, selected)
 	//Headers      []string
-	headers := fmt.Sprintf("Headers(length): %d", len(m.Headers))
+	headers := fmt.Sprintf("Headers(length): %d", len(m.TableState.Headers))
 	out = append(out, headers)
 	//Rows         [][]string
-	rows := fmt.Sprintf("Rows(length): %d", len(m.Rows))
+	rows := fmt.Sprintf("Rows(length): %d", len(m.TableState.Rows))
 	out = append(out, rows)
 	//Row          *[]string
 	var rowStr string
-	if m.Row != nil {
-		rowStr = fmt.Sprintf("length: %d", len(*m.Row))
+	if m.TableState.Row != nil {
+		rowStr = fmt.Sprintf("length: %d", len(*m.TableState.Row))
 	} else {
 		rowStr = "(nil)"
 	}
@@ -157,7 +157,7 @@ func (m Model) Stringify() string {
 	out = append(out, row)
 	//Form         *huh.Form
 	var formStr string
-	if m.Form != nil {
+	if m.FormState.Form != nil {
 		formStr = "initialized"
 	} else {
 		formStr = "(nil)"
@@ -166,27 +166,27 @@ func (m Model) Stringify() string {
 	out = append(out, form)
 
 	//FormLen      int
-	formLen := fmt.Sprintf("FormLen: %d", m.FormLen)
+	formLen := fmt.Sprintf("FormLen: %d", m.FormState.FormLen)
 	out = append(out, formLen)
 
 	//FormMap      []string
-	formMap := fmt.Sprintf("FormMap(length): %d", len(m.FormMap))
+	formMap := fmt.Sprintf("FormMap(length): %d", len(m.FormState.FormMap))
 	out = append(out, formMap)
 
 	//FormValues   []*string
-	formValues := fmt.Sprintf("FormValues(length): %d", len(m.FormValues))
+	formValues := fmt.Sprintf("FormValues(length): %d", len(m.FormState.FormValues))
 	out = append(out, formValues)
 
 	//FormSubmit   bool
-	formSubmit := fmt.Sprintf("FormSubmit: %v", m.FormSubmit)
+	formSubmit := fmt.Sprintf("FormSubmit: %v", m.FormState.FormSubmit)
 	out = append(out, formSubmit)
 
 	//FormGroups   []huh.Group
-	formGroupsDebug := HuhGroupSliceDebugString(m.FormGroups)
+	formGroupsDebug := HuhGroupSliceDebugString(m.FormState.FormGroups)
 	out = append(out, formGroupsDebug)
 
 	//FormFields   []huh.Field
-	formFieldsDebug := HuhFieldSliceDebugString(m.FormFields)
+	formFieldsDebug := HuhFieldSliceDebugString(m.FormState.FormFields)
 	out = append(out, formFieldsDebug)
 
 

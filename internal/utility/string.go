@@ -1,10 +1,11 @@
 package utility
 
 import (
+	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"regexp"
 	"strconv"
-	"time"
 )
 
 func TrimStringEnd(str string, l int) string {
@@ -29,9 +30,19 @@ func FormatJSON(b any) (string, error) {
 	return string(formatted), nil
 }
 
-func MakeRandomString() string {
-	t := time.Now().Unix()
-	tstring := strconv.FormatInt(t, 10)
-	enc := base64.RawStdEncoding.EncodeToString([]byte(tstring))
-	return enc
+// MakeRandomString generates a cryptographically secure random string
+// Returns 32 random bytes encoded as base64 (43 characters)
+func MakeRandomString() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// IsValidEmail checks if an email address is valid
+func IsValidEmail(email string) bool {
+	// Simple email validation regex
+	emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+	return emailRegex.MatchString(email)
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -51,7 +52,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case CONFIGPAGE:
 		return m.ConfigControls(msg)
 	case CONTENT:
-		return m.BasicCMSControls(msg)
+		return m.ContentBrowserControls(msg)
 	case USERSADMIN:
 		return m.BasicCMSControls(msg)
 	case MEDIA:
@@ -86,11 +87,11 @@ func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.PageMenu)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l":
+		case "enter", "l", "right":
 			// Only proceed if we have menu items
 			if len(m.PageMenu) > 0 {
 				return m, NavigateToPageCmd(m.PageMenu[m.Cursor])
@@ -125,11 +126,11 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l":
+		case "enter", "l", "right":
 			// Only proceed if we have menu items
 			page := m.PageMenu[m.Cursor]
 			switch page.Index {
@@ -139,12 +140,153 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 				)
 			case FIELDS:
 				return m, tea.Batch()
+			case CONTENT:
+				// Navigate to content browser
+				return m, NavigateToPageCmd(m.PageMap[CONTENT])
+			case MEDIA:
+				// Navigate to media page
+				return m, NavigateToPageCmd(m.PageMap[MEDIA])
+			case USERSADMIN:
+				// Navigate to users admin page
+				return m, NavigateToPageCmd(m.PageMap[USERSADMIN])
 			default:
 				return m, nil
 			}
 		}
 	}
 	return m, nil
+}
+
+// ContentBrowserControls handles keyboard navigation for the content browser
+func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		// Exit / Back
+		case "q", "esc", "h", "left", "backspace":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
+		case "ctrl+c":
+			return m, tea.Quit
+
+		// Navigation
+		case "up", "k":
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		case "down", "j":
+			// Count visible nodes
+			maxCursor := m.countVisibleNodes()
+			if m.Cursor < maxCursor-1 {
+				return m, CursorDownCmd()
+			}
+
+		// Expand/Collapse
+		case "enter", "space":
+			node := m.getSelectedNodeFromModel()
+			if node != nil && node.FirstChild != nil {
+				node.Expand = !node.Expand
+				return m, nil
+			}
+
+		// Actions
+		case "e":
+			// Edit selected content
+			return m, NavigateToPageCmd(m.PageMap[EDITCONTENT])
+		case "n":
+			// Create new content - build form based on selected datatype
+			node := m.getSelectedNodeFromModel()
+			utility.DefaultLogger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
+			if node != nil {
+				utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %d (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
+				// Use the datatype from the selected node
+				return m, BuildContentFormCmd(node.Datatype.DatatypeID, m.PageRouteId)
+			}
+			// Fallback: if no node selected, we can't create content
+			utility.DefaultLogger.Finfo("No node selected")
+			return m, ShowDialog("Error", "Please select a content type first", false)
+		case "d":
+			// Delete content (with confirmation)
+			return m, ShowDialog("Confirm Delete", "Delete this content? This cannot be undone.", true)
+
+		// Search
+		case "/":
+			// TODO: Implement search
+			return m, nil
+
+		// Title font change
+		case "shift+left":
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		case "shift+right":
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// countVisibleNodes counts the number of visible nodes in the tree
+func (m Model) countVisibleNodes() int {
+	if m.Root.Root == nil {
+		return 0
+	}
+	count := 0
+	m.countNodesRecursive(m.Root.Root, &count)
+	return count
+}
+
+// countNodesRecursive recursively counts visible nodes
+func (m Model) countNodesRecursive(node *TreeNode, count *int) {
+	if node == nil {
+		return
+	}
+	*count++
+
+	if node.Expand && node.FirstChild != nil {
+		m.countNodesRecursive(node.FirstChild, count)
+	}
+
+	if node.NextSibling != nil {
+		m.countNodesRecursive(node.NextSibling, count)
+	}
+}
+
+// getSelectedNodeFromModel returns the currently selected node
+func (m Model) getSelectedNodeFromModel() *TreeNode {
+	if m.Root.Root == nil {
+		return nil
+	}
+	currentIndex := 0
+	return m.findNodeAtIndex(m.Root.Root, m.Cursor, &currentIndex)
+}
+
+// findNodeAtIndex finds the node at the given index
+func (m Model) findNodeAtIndex(node *TreeNode, targetIndex int, currentIndex *int) *TreeNode {
+	if node == nil {
+		return nil
+	}
+
+	if *currentIndex == targetIndex {
+		return node
+	}
+	*currentIndex++
+
+	if node.Expand && node.FirstChild != nil {
+		if result := m.findNodeAtIndex(node.FirstChild, targetIndex, currentIndex); result != nil {
+			return result
+		}
+	}
+
+	if node.NextSibling != nil {
+		return m.findNodeAtIndex(node.NextSibling, targetIndex, currentIndex)
+	}
+
+	return nil
 }
 
 func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
@@ -171,11 +313,11 @@ func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l":
+		case "enter", "l", "right":
 			// Only proceed if we have menu items
 			// Use datatypes as menu items
 			// Next page has AddNew and a list of existing content
@@ -215,11 +357,11 @@ func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.PageMenu)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l":
+		case "enter", "l", "right":
 			// Only proceed if we have menu items
 			if len(m.DatatypeMenu) > 0 {
 				return m, tea.Batch(
@@ -245,11 +387,11 @@ func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.Tables)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
+		case "h", "left", "shift+tab", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l":
+		case "enter", "l", "right":
 			cmds = append(cmds, SelectTableCmd(m.Tables[m.Cursor]))
 		}
 	}
@@ -262,28 +404,29 @@ func (m Model) FormControls(msg tea.Msg) (Model, tea.Cmd) {
 	newModel.Focus = FORMFOCUS
 
 	// Ensure form exists before updating
-	if newModel.Form == nil {
+	if newModel.FormState.Form == nil {
 		return newModel, nil
 	}
 
-	form, cmd := newModel.Form.Update(msg)
+	form, cmd := newModel.FormState.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		newModel.Form = f
+		newModel.FormState.Form = f
 		if cmd != nil {
 			cmds = append(cmds, cmd)
 		}
 	}
 
 	// Handle form state changes
-	if newModel.Form.State == huh.StateAborted {
+	if newModel.FormState.Form.State == huh.StateAborted {
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
-		cmds = append(cmds, HistoryPopCmd())
+		cmds = append(cmds, FormCompletedCmd(nil)) // Will try history pop, then home
 	}
 
-	if newModel.Form.State == huh.StateCompleted {
+	if newModel.FormState.Form.State == huh.StateCompleted {
 		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
 		cmds = append(cmds, FormSubmitCmd())
-		cmds = append(cmds, HistoryPopCmd())
+		// Note: Don't navigate here - let specific form completion messages
+		// (like ContentCreatedMsg) handle navigation after async operations complete
 	}
 
 	return newModel, tea.Batch(cmds...)
@@ -302,7 +445,7 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, CursorUpCmd()
 			}
 		case "down", "j":
-			if m.Cursor < len(m.Rows)-1 {
+			if m.Cursor < len(m.TableState.Rows)-1 {
 				return m, CursorDownCmd()
 			}
 		case "h", "shift+tab", "backspace":
@@ -314,14 +457,14 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, PageModPreviousCmd()
 			}
 		case "right":
-			if m.PageMod < (len(m.Rows)-1)/m.MaxRows {
+			if m.PageMod < (len(m.TableState.Rows)-1)/m.MaxRows {
 				return m, PageModNextCmd()
 			}
 
 		//Action
 		case "enter", "l":
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
-			if recordIndex < len(m.Rows) {
+			if recordIndex < len(m.TableState.Rows) {
 				cmds = append(cmds, CursorSetCmd(recordIndex))
 
 				// Handle different actions based on current page
@@ -362,19 +505,19 @@ func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
 				m.PageMod--
 			}
 		case "right":
-			if m.PageMod < len(m.Rows)/m.MaxRows {
+			if m.PageMod < len(m.TableState.Rows)/m.MaxRows {
 				m.PageMod++
 			}
 
 		//Action
 		case "enter", "l":
-			rows = m.Rows
+			rows = m.TableState.Rows
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
 			// Only update if the calculated index is valid
-			if recordIndex < len(m.Rows) {
+			if recordIndex < len(m.TableState.Rows) {
 				m.Cursor = recordIndex
 			}
-			m.Row = &rows[recordIndex]
+			m.TableState.Row = &rows[recordIndex]
 			m.Cursor = 0
 			m.Page = m.Pages[UPDATEFORMPAGE]
 
@@ -400,24 +543,24 @@ func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
 	}()
 
 	// Update form with the message
-	form, cmd := m.Form.Update(msg)
+	form, cmd := m.FormState.Form.Update(msg)
 	if f, ok := form.(*huh.Form); ok {
-		m.Form = f
+		m.FormState.Form = f
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.Form.State == huh.StateAborted {
+	if m.FormState.Form.State == huh.StateAborted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[UPDATEPAGE]
 	}
 
-	if m.Form.State == huh.StateCompleted {
+	if m.FormState.Form.State == huh.StateCompleted {
 		_ = tea.ClearScreen()
 		m.Focus = PAGEFOCUS
 		m.Page = m.Pages[UPDATEPAGE]
-		cmd := m.DatabaseUpdate(m.Config, db.DBTable(m.Table))
+		cmd := m.DatabaseUpdate(m.Config, db.DBTable(m.TableState.Table))
 		cmds = append(cmds, cmd)
 	}
 	var scmd tea.Cmd
@@ -436,14 +579,14 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q":
 			return m, tea.Quit
 		case "enter", "l":
-			err := m.DatabaseDelete(m.Config, db.StringDBTable(m.Table))
+			err := m.DatabaseDelete(m.Config, db.StringDBTable(m.TableState.Table))
 			if err != nil {
 				return m, nil
 			}
 			if m.Cursor > 0 {
 				m.Cursor--
 			}
-			cmd := FetchTableHeadersRowsCmd(*m.Config, m.Table, nil)
+			cmd := FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, nil)
 			cmds = append(cmds, cmd)
 		default:
 			var scmd tea.Cmd
@@ -471,17 +614,17 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	}()
 
 	// Update form with the message
-	form, cmd := m.Form.Update(msg)
+	form, cmd := m.FormState.Form.Update(msg)
 	if _, ok := form.(*huh.Form); ok {
 		cmds = append(cmds, cmd)
 	}
 
 	// Handle form state changes
-	if m.Form.State == huh.StateAborted {
+	if m.FormState.Form.State == huh.StateAborted {
 		cmds = append(cmds, FormCancelCmd())
 	}
 
-	if m.Form.State == huh.StateCompleted {
+	if m.FormState.Form.State == huh.StateCompleted {
 		utility.DefaultLogger.Finfo("Tables Fetch ")
 		// TODO: Implement form completion handling with proper messages
 	}

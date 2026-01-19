@@ -44,11 +44,11 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 
 		return m, tea.Batch(
 			TableHeadersRowsFetchedCmd(columns, listRows, msg.Page),
-			LogMessageCmd(fmt.Sprintf("Table %s headers fetched: %s", m.Table, strings.Join(columns, ", "))),
+			LogMessageCmd(fmt.Sprintf("Table %s headers fetched: %s", m.TableState.Table, strings.Join(columns, ", "))),
 		)
 	case TableHeadersRowsFetchedMsg:
 		s := strings.Builder{}
-		for _, v := range m.Headers {
+		for _, v := range m.TableState.Headers {
 			s.WriteString(v)
 			s.WriteString("\n")
 
@@ -116,7 +116,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			ErrorSetCmd(msg.Error),
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database fetch error for table %s: %s", m.Table, msg.Error.Error())),
+			LogMessageCmd(fmt.Sprintf("Database fetch error for table %s: %s", m.TableState.Table, msg.Error.Error())),
 		)
 	}
 	return m, nil

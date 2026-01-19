@@ -14,7 +14,6 @@ func NewUpdatedForm() tea.Cmd {
 	return func() tea.Msg {
 		return UpdatedForm{}
 	}
-
 }
 
 func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
@@ -23,33 +22,32 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	case FormCreate:
 		switch msg.FormType {
 		case DATABASECREATE:
-			if m.Columns == nil {
-				return m, tea.Batch(
-					LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.Table)),
-				)
+			if m.TableState.Columns == nil {
+				return m, LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.TableState.Table))
 			}
 			var cmds []tea.Cmd
-			c := m.NewInsertForm(db.DBTable(m.Table))
+			c := m.NewInsertForm(db.DBTable(m.TableState.Table))
 			cmds = append(cmds, c)
 			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.Table, len(*m.Columns)-1)))
+			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.TableState.Table, len(*m.TableState.Columns)-1)))
 			return m, tea.Batch(cmds...)
 		}
 	case NewFormMsg:
 		return m, tea.Batch(
 			LoadingStartCmd(),
-			SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values),
+			SetFormDataCmd(*msg.Form, msg.FieldsCount, msg.Values, msg.FormMap),
+			NavigateToPageCmd(m.PageMap[CREATEPAGE]),
 		)
 	case CmsBuildDefineDatatypeFormMsg:
 		form, count, values := NewDefineDatatypeForm(m, false)
 		return m, tea.Batch(
-			SetFormDataCmd(*form, count, values),
+			SetFormDataCmd(*form, count, values, nil),
 			NavigateToPageCmd(m.PageMap[DATATYPES]),
 		)
 	case FormSubmitMsg:
 		newModel := m
-		newModel.FormSubmit = true
-		return newModel, tea.Batch()
+		newModel.FormState.FormSubmit = true
+		return newModel, nil
 	case FormActionMsg:
 		switch msg.Action {
 		case INSERT:
@@ -75,11 +73,11 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	case FormInitOptionsMsg:
 		newModel := m
-		if newModel.FormOptions == nil {
+		if newModel.FormState.FormOptions == nil {
 			newOptions := make(map[string][]huh.Option[string], 0)
-			newModel.FormOptions = (*FormOptionsMap)(&newOptions)
+			newModel.FormState.FormOptions = (*FormOptionsMap)(&newOptions)
 		}
-		fo := *newModel.FormOptions
+		fo := *newModel.FormState.FormOptions
 		if fo[msg.Form] != nil {
 			return m, nil
 		}
@@ -88,9 +86,7 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		fo[msg.Form] = newOptionsSet
 		return newModel, NewUpdatedForm()
 	case DbResMsg:
-		return m, tea.Batch(
-			LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table)),
-		)
+		return m, LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table))
 	}
 
 	return m, nil

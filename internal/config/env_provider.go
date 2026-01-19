@@ -30,5 +30,15 @@ func (ep *EnvProvider) Get() (*Config, error) {
 		config.Cors_Origins = strings.Split(corsOrigins, ",")
 	}
 
+	// Update settings
+	if autoUpdate := os.Getenv(ep.prefix + "UPDATE_AUTO_ENABLED"); autoUpdate != "" {
+		config.Update_Auto_Enabled = autoUpdate == "true"
+	}
+	config.Update_Check_Interval = os.Getenv(ep.prefix + "UPDATE_CHECK_INTERVAL")
+	config.Update_Channel = os.Getenv(ep.prefix + "UPDATE_CHANNEL")
+	if notifyOnly := os.Getenv(ep.prefix + "UPDATE_NOTIFY_ONLY"); notifyOnly != "" {
+		config.Update_Notify_Only = notifyOnly == "true"
+	}
+
 	return config, nil
 }

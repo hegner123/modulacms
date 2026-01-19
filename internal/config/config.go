@@ -5,9 +5,12 @@ type Endpoint string
 
 type DbDriver string
 
+type OutputFormat string
+
 const (
-	OauthAuthURL  Endpoint = "oauth_auth_url"
-	OauthTokenURL Endpoint = "oauth_token_url"
+	OauthAuthURL     Endpoint = "oauth_auth_url"
+	OauthTokenURL    Endpoint = "oauth_token_url"
+	OauthUserInfoURL Endpoint = "oauth_userinfo_url"
 )
 
 const (
@@ -16,8 +19,19 @@ const (
 	Psql   DbDriver = "postgres"
 )
 
+const (
+	FormatContentful OutputFormat = "contentful"
+	FormatSanity     OutputFormat = "sanity"
+	FormatStrapi     OutputFormat = "strapi"
+	FormatWordPress  OutputFormat = "wordpress"
+	FormatClean      OutputFormat = "clean"
+	FormatRaw        OutputFormat = "raw"
+	FormatDefault    OutputFormat = "" // Empty string defaults to raw
+)
+
 type Config struct {
 	Environment         string              `json:"environment"`
+	OS                  string              `json:"os"`
 	Environment_Hosts   map[string]string   `json:"environment_hosts"`
 	Port                string              `json:"port"`
 	SSL_Port            string              `json:"ssl_port"`
@@ -31,6 +45,8 @@ type Config struct {
 	Auth_Salt           string              `json:"auth_salt"`
 	Cookie_Name         string              `json:"cookie_name"`
 	Cookie_Duration     string              `json:"cookie_duration"`
+	Cookie_Secure       bool                `json:"cookie_secure"`
+	Cookie_SameSite     string              `json:"cookie_samesite"`
 	Db_Driver           DbDriver            `json:"db_driver"`
 	Db_URL              string              `json:"db_url"`
 	Db_Name             string              `json:"db_name"`
@@ -43,17 +59,63 @@ type Config struct {
 	Bucket_Endpoint     string              `json:"bucket_endpoint"`
 	Bucket_Access_Key   string              `json:"bucket_access_key"`
 	Bucket_Secret_Key   string              `json:"bucket_secret_key"`
+	Bucket_Default_ACL  string              `json:"bucket_default_acl"`
 	Backup_Option       string              `json:"backup_option"`
 	Backup_Paths        []string            `json:"backup_paths"`
-	Oauth_Client_Id     string              `json:"oauth_client_id"`
-	Oauth_Client_Secret string              `json:"oauth_client_secret"`
-	Oauth_Scopes        []string            `json:"oauth_scopes"`
-	Oauth_Endpoint      map[Endpoint]string `json:"oauth_endpoint"`
+	Oauth_Client_Id        string              `json:"oauth_client_id"`
+	Oauth_Client_Secret    string              `json:"oauth_client_secret"`
+	Oauth_Scopes           []string            `json:"oauth_scopes"`
+	Oauth_Endpoint         map[Endpoint]string `json:"oauth_endpoint"`
+	Oauth_Provider_Name    string              `json:"oauth_provider_name"`
+	Oauth_Redirect_URL     string              `json:"oauth_redirect_url"`
+	Oauth_Success_Redirect string              `json:"oauth_success_redirect"`
 	Cors_Origins        []string            `json:"cors_origins"`
 	Cors_Methods        []string            `json:"cors_methods"`
 	Cors_Headers        []string            `json:"cors_headers"`
 	Cors_Credentials    bool                `json:"cors_credentials"`
 	Custom_Style_Path   string              `json:"custom_style_path"`
+	Update_Auto_Enabled   bool         `json:"update_auto_enabled"`
+	Update_Check_Interval string       `json:"update_check_interval"`
+	Update_Channel        string       `json:"update_channel"`
+	Update_Notify_Only    bool         `json:"update_notify_only"`
+	Output_Format         OutputFormat `json:"output_format"`
+	Space_ID              string       `json:"space_id"`
+
+	// Observability - Metrics and Error Tracking
+	Observability_Enabled        bool    `json:"observability_enabled"`
+	Observability_Provider       string  `json:"observability_provider"`        // "sentry", "datadog", "newrelic", etc.
+	Observability_DSN            string  `json:"observability_dsn"`             // Sentry DSN or equivalent connection string
+	Observability_Environment    string  `json:"observability_environment"`     // "production", "staging", "development"
+	Observability_Release        string  `json:"observability_release"`         // Version/release identifier
+	Observability_Sample_Rate    float64 `json:"observability_sample_rate"`     // 0.0 to 1.0 - percentage of events to send
+	Observability_Traces_Rate    float64 `json:"observability_traces_rate"`     // 0.0 to 1.0 - percentage of traces to send
+	Observability_Send_PII       bool    `json:"observability_send_pii"`        // Whether to send personally identifiable info
+	Observability_Debug          bool    `json:"observability_debug"`           // Enable debug logging for observability client
+	Observability_Server_Name    string  `json:"observability_server_name"`     // Server/instance name
+	Observability_Flush_Interval string  `json:"observability_flush_interval"`  // How often to flush metrics (e.g., "30s", "1m")
+	Observability_Tags           map[string]string `json:"observability_tags"` // Global tags for all metrics/events
 }
 
 var DisableSystemTables ConfigOption = "disableSystemTables"
+
+// IsValidOutputFormat checks if the given format string is valid
+func IsValidOutputFormat(format string) bool {
+	switch OutputFormat(format) {
+	case FormatContentful, FormatSanity, FormatStrapi, FormatWordPress, FormatClean, FormatRaw, FormatDefault:
+		return true
+	default:
+		return false
+	}
+}
+
+// GetValidOutputFormats returns a slice of all valid output formats
+func GetValidOutputFormats() []string {
+	return []string{
+		string(FormatContentful),
+		string(FormatSanity),
+		string(FormatStrapi),
+		string(FormatWordPress),
+		string(FormatClean),
+		string(FormatRaw),
+	}
+}

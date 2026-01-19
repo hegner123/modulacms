@@ -23,19 +23,3 @@ type LogLevelStyle struct {
 	LevelName string
 	Style     func(string) string
 }
-
-/*
-
-BRIGHTBlackB= "\033[100m"
-BRIGHTRedB= "\033[101m"
-BRIGHTGreenB= "\033[102m"
-BRIGHTYellowB= "\033[103m"
-BRIGHTBlueB= "\033[104m"
-BRIGHTMagentaB= "\033[105m"
-BRIGHTCyanB= "\033[106m"
-BRIGHTWhiteB= "\033[107m"
-Resetting Formatting
-To reset the text formatting and colors back to the terminal’s defaults, use:
-
-Reset= "\033[0m"
-*/

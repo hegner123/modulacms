@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 ///////////////////////////////
@@ -143,9 +144,9 @@ func MapStringRoute(a Routes) StringRoutes {
 		Title:        a.Title,
 		Status:       strconv.FormatInt(a.Status, 10),
         AuthorID:     strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:  a.DateCreated.String,
-		DateModified: a.DateModified.String,
-        History:      a.History.String,
+		DateCreated:  utility.NullToString(a.DateCreated),
+		DateModified: utility.NullToString(a.DateModified),
+        History:      utility.NullToString(a.History),
 	}
 }
 func MapCreateRouteJSONParams(a CreateRouteParamsJSON) CreateRouteParams {

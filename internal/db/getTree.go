@@ -124,13 +124,45 @@ func (d Database) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRouteID
 }
 
 func (d Database) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRouteRow, error) {
-	return nil, nil
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetContentTreeByRoute(d.Context, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content tree: %v", err)
+	}
+	res := []GetContentTreeByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetContentTreeByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
+
 func (d Database) GetFieldDefinitionsByRoute(id int64) (*[]GetFieldDefinitionsByRouteRow, error) {
-	return nil, nil
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get field definitions: %v", err)
+	}
+	res := []GetFieldDefinitionsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetFieldDefinitionsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
+
 func (d Database) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByRouteRow, error) {
-	return nil, nil
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetContentFieldsByRoute(d.Context, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []GetContentFieldsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetContentFieldsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
 ///////////////////////////////

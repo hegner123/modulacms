@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 ///////////////////////////////
@@ -206,19 +207,19 @@ func MapUpdateMediaParams(a UpdateMediaFormParams) UpdateMediaParams {
 func MapStringMedia(a Media) StringMedia {
 	return StringMedia{
 		MediaID:      strconv.FormatInt(a.MediaID, 10),
-		Name:         a.Name.String,
-		DisplayName:  a.DisplayName.String,
-		Alt:          a.Alt.String,
-		Caption:      a.Caption.String,
-		Description:  a.Description.String,
-		Class:        a.Class.String,
-		Mimetype:     a.Mimetype.String,
-		Dimensions:   a.Dimensions.String,
-		Url:          a.Url.String,
-		Srcset:       a.Srcset.String,
+		Name:         utility.NullToString(a.Name),
+		DisplayName:  utility.NullToString(a.DisplayName),
+		Alt:          utility.NullToString(a.Alt),
+		Caption:      utility.NullToString(a.Caption),
+		Description:  utility.NullToString(a.Description),
+		Class:        utility.NullToString(a.Class),
+		Mimetype:     utility.NullToString(a.Mimetype),
+		Dimensions:   utility.NullToString(a.Dimensions),
+		Url:          utility.NullToString(a.Url),
+		Srcset:       utility.NullToString(a.Srcset),
 		AuthorID:     strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:  a.DateCreated.String,
-		DateModified: a.DateModified.String,
+		DateCreated:  utility.NullToString(a.DateCreated),
+		DateModified: utility.NullToString(a.DateModified),
 	}
 }
 func MapCreateMediaJSONParams(a CreateMediaParamsJSON) CreateMediaParams {

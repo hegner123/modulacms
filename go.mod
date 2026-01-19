@@ -1,6 +1,6 @@
 module github.com/hegner123/modulacms
 
-go 1.23.0
+go 1.24.0
 
 toolchain go1.24.2
 
@@ -62,5 +62,6 @@ require (
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
+	golang.org/x/time v0.14.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 )

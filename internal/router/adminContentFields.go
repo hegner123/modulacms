@@ -1,0 +1,224 @@
+package router
+
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"strconv"
+
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/utility"
+)
+
+// AdminContentFieldsHandler handles CRUD operations that do not require a specific ID.
+func AdminContentFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	switch r.Method {
+	case http.MethodGet:
+		err := apiListAdminContentFields(w, r, c)
+		if err != nil {
+			return
+		}
+	case http.MethodPost:
+		err := apiCreateAdminContentField(w, r, c)
+		if err != nil {
+			return
+		}
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// AdminContentFieldHandler handles CRUD operations for specific items.
+func AdminContentFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	switch r.Method {
+	case http.MethodGet:
+		err := apiGetAdminContentField(w, r, c)
+		if err != nil {
+			return
+		}
+	case http.MethodPut:
+		err := apiUpdateAdminContentField(w, r, c)
+		if err != nil {
+			return
+		}
+	case http.MethodDelete:
+		err := apiDeleteAdminContentField(w, r, c)
+		if err != nil {
+			return
+		}
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// apiListAdminContentFields handles GET requests for listing admin content fields
+func apiListAdminContentFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	defer con.Close()
+	if r == nil {
+		err := fmt.Errorf("request error")
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+
+	}
+
+	adminContentFields, err := d.ListAdminContentFields()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(adminContentFields)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	return nil
+}
+
+// apiCreateAdminContentField handles POST requests to create a new admin content field
+func apiCreateAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	defer con.Close()
+
+	var newAdminContentField db.CreateAdminContentFieldParams
+	err = json.NewDecoder(r.Body).Decode(&newAdminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	createdAdminContentField := d.CreateAdminContentField(newAdminContentField)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	err = json.NewEncoder(w).Encode(createdAdminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	return nil
+}
+
+// apiUpdateAdminContentField handles PUT requests to update an existing admin content field
+func apiUpdateAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	defer con.Close()
+
+	var updateAdminContentField db.UpdateAdminContentFieldParams
+	err = json.NewDecoder(r.Body).Decode(&updateAdminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	updatedAdminContentField, err := d.UpdateAdminContentField(updateAdminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(updatedAdminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	return nil
+}
+
+// apiGetAdminContentField handles GET requests for a single admin content field
+func apiGetAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	defer con.Close()
+
+	q := r.URL.Query().Get("q")
+	acfID, err := strconv.ParseInt(q, 10, 64)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	adminContentField, err := d.GetAdminContentField(acfID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	err = json.NewEncoder(w).Encode(adminContentField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	return nil
+}
+
+// apiDeleteAdminContentField handles DELETE requests for admin content fields
+func apiDeleteAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	con, _, err := d.GetConnection()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	defer con.Close()
+
+	q := r.URL.Query().Get("q")
+	cfID, err := strconv.ParseInt(q, 10, 64)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	err = d.DeleteAdminContentField(cfID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	return nil
+}

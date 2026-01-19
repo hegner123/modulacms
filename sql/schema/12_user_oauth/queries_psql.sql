@@ -33,6 +33,18 @@ JOIN users u ON uo.user_id = u.user_id
 WHERE u.email = $1
 LIMIT 1;
 
+-- name: GetUserOauthByUserId :one
+SELECT *
+FROM user_oauth
+WHERE user_id = $1
+LIMIT 1;
+
+-- name: GetUserOauthByProviderID :one
+SELECT *
+FROM user_oauth
+WHERE oauth_provider = $1 AND oauth_provider_user_id = $2
+LIMIT 1;
+
 -- name: GetUserOauthId :one
 SELECT uo.user_id
 FROM user_oauth uo

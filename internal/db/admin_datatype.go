@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 
@@ -144,13 +145,13 @@ func MapUpdateAdminDatatypeParams(a UpdateAdminDatatypeFormParams) UpdateAdminDa
 func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 	return StringAdminDatatypes{
 		AdminDatatypeID: strconv.FormatInt(a.AdminDatatypeID, 10),
-		ParentID:        ReadNullInt64(a.ParentID),
+		ParentID:        utility.NullToString(a.ParentID),
 		Label:           a.Label,
 		Type:            a.Type,
 		AuthorID:        strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:     ReadNullString(a.DateCreated),
-		DateModified:    ReadNullString(a.DateModified),
-		History:         ReadNullString(a.History),
+		DateCreated:     utility.NullToString(a.DateCreated),
+		DateModified:    utility.NullToString(a.DateModified),
+		History:         utility.NullToString(a.History),
 	}
 }
 func MapCreateAdminDatatypeJSONParams(a CreateAdminDatatypeParamsJSON) CreateAdminDatatypeParams {

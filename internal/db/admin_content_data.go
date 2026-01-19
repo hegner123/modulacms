@@ -8,6 +8,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 ///////////////////////////////
@@ -131,13 +132,13 @@ func MapUpdateAdminContentDataParams(a UpdateAdminContentDataFormParams) UpdateA
 func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 	return StringAdminContentData{
 		AdminContentDataID: strconv.FormatInt(a.AdminContentDataID, 10),
-		ParentID:           ReadNullInt64(a.ParentID),
+		ParentID:           utility.NullToString(a.ParentID),
 		AdminRouteID:       strconv.FormatInt(a.AdminRouteID, 10),
 		AdminDatatypeID:    strconv.FormatInt(a.AdminDatatypeID, 10),
 		AuthorID:           strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:        ReadNullString(a.DateCreated),
-		DateModified:       ReadNullString(a.DateModified),
-		History:            ReadNullString(a.History),
+		DateCreated:        utility.NullToString(a.DateCreated),
+		DateModified:       utility.NullToString(a.DateModified),
+		History:            utility.NullToString(a.History),
 	}
 }
 

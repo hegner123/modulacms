@@ -39,7 +39,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case TABLEPAGE:
 			cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, GetColumnsCmd(*m.Config, m.Table))
+			cmds = append(cmds, GetColumnsCmd(*m.Config, m.TableState.Table))
 
 			return m, tea.Batch(cmds...)
 		case CREATEPAGE:
@@ -54,7 +54,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			page := m.PageMap[READPAGE]
 			cmds = append(cmds, LogModelCMD(nil, &f))
 			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
@@ -66,20 +66,20 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		case UPDATEPAGE:
 			page := m.PageMap[UPDATEPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			return m, tea.Batch(cmds...)
 		case UPDATEFORMPAGE:
 			page := m.PageMap[UPDATEFORMPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, FormNewCmd(DATABASEUPDATE))
 			cmds = append(cmds, StatusSetCmd(EDITING))
 
 			return m, tea.Batch(cmds...)
 		case DELETEPAGE:
 			page := m.PageMap[DELETEPAGE]
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.Table, &page))
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(DELETING))
 
 			return m, tea.Batch(cmds...)
@@ -111,6 +111,11 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, DatatypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
+
+			// Load content tree if PageRouteId is set
+			if m.PageRouteId > 0 {
+				cmds = append(cmds, ReloadContentTreeCmd(m.Config, m.PageRouteId))
+			}
 
 			return m, tea.Batch(cmds...)
 		case PICKCONTENT:
@@ -154,7 +159,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		}
 
-		return m, tea.Batch()
+		return m, nil
 	case SelectTable:
 		cmds := make([]tea.Cmd, 0)
 		cmds = append(cmds, NavigateToPageCmd(m.PageMap[TABLEPAGE]))
@@ -162,10 +167,39 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 
 		return m, tea.Batch(cmds...)
+	case FormCompletedMsg:
+		cmds := make([]tea.Cmd, 0)
+		newModel := m
+
+		// Priority 1: Use specified destination page
+		if msg.DestinationPage != nil {
+			cmds = append(cmds, NavigateToPageCmd(*msg.DestinationPage))
+			return newModel, tea.Batch(cmds...)
+		}
+
+		// Priority 2: Try to pop history
+		entry := newModel.PopHistory()
+		if entry != nil {
+			cmds = append(cmds, PageSetCmd(entry.Page))
+			cmds = append(cmds, PageMenuSetCmd(entry.Menu))
+			cmds = append(cmds, CursorSetCmd(entry.Cursor))
+			return newModel, tea.Batch(cmds...)
+		}
+
+		// Priority 3: Fallback to home page
+		cmds = append(cmds, NavigateToPageCmd(m.PageMap[HOMEPAGE]))
+		return newModel, tea.Batch(cmds...)
+
 	case HistoryPop:
 		cmds := make([]tea.Cmd, 0)
 		newModel := m
 		entry := newModel.PopHistory()
+
+		// Check if history was empty
+		if entry == nil {
+			return newModel, nil
+		}
+
 		cmds = append(cmds, PageSetCmd(entry.Page))
 		cmds = append(cmds, PageMenuSetCmd(entry.Menu))
 		cmds = append(cmds, CursorSetCmd(entry.Cursor))

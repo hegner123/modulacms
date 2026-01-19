@@ -151,14 +151,17 @@ func GetFullSqlSetup(i *InstallArguments) {
 	fUrl := "localhost"
 	fName := "modula_db"
 	fUser := "modula_db_u"
-	fPassword := utility.MakeRandomString()
+	fPassword, err := utility.MakeRandomString()
+	if err != nil {
+		utility.DefaultLogger.Fatal("Failed to generate random password", err)
+	}
 	f1 := huh.NewInput().Title("URL to Database Host: ").Value(&fUrl)
 	f2 := huh.NewInput().Title("Database Name: ").Value(&fName)
 	f3 := huh.NewInput().Title("Database User: ").Value(&fUser)
 	f4 := huh.NewInput().Title("Database Password: ").Value(&fPassword)
 	g := huh.NewGroup(f1, f2, f3, f4)
 	f := huh.NewForm(g)
-	err := f.Run()
+	err = f.Run()
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 	}

@@ -1,7 +1,6 @@
 package utility
 
 import (
-	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,7 +39,7 @@ type Logger struct {
 	logFile *os.File
 }
 
-var DefaultLogger = NewLogger(BLANK)
+var DefaultLogger = NewLogger(INFO)
 
 // NewLogger creates a new logger with the specified minimum level
 func NewLogger(level LogLevel) *Logger {
@@ -60,16 +59,9 @@ func (l *Logger) WithPrefix(prefix string) *Logger {
 	}
 }
 
-//go:embed version.json
-var vJson embed.FS
-
-func GetVersion() (*string, error) {
-	file, err := vJson.ReadFile("version.json")
-	if err != nil {
-		return nil, fmt.Errorf("failed to read version file: %w", err)
-	}
-	versionString := string(file)
-	return &versionString, nil
+// SetLevel changes the logger's minimum level
+func (l *Logger) SetLevel(level LogLevel) {
+	l.level = level
 }
 
 var (
@@ -239,9 +231,9 @@ func (l *Logger) Finfo(message string, args ...any) {
 // Fwarn logs a warning message to a file
 func (l *Logger) Fwarn(message string, err error, args ...any) {
 	if l.level <= WARN {
-		_, err := fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
-		if err != nil {
-			DefaultLogger.Error("", err)
+		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(WARN, message, err, args...))
+		if writeErr != nil {
+			DefaultLogger.Error("Failed to write warning to log file", writeErr)
 		}
 	}
 }
@@ -249,9 +241,9 @@ func (l *Logger) Fwarn(message string, err error, args ...any) {
 // Ferror logs an error message to a file
 func (l *Logger) Ferror(message string, err error, args ...any) {
 	if l.level <= ERROR {
-		_, err := fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
-		if err != nil {
-			DefaultLogger.Error("", err)
+		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(ERROR, message, err, args...))
+		if writeErr != nil {
+			DefaultLogger.Error("Failed to write error to log file", writeErr)
 		}
 	}
 }
@@ -259,9 +251,9 @@ func (l *Logger) Ferror(message string, err error, args ...any) {
 // Ffatal logs an error message to a file and exits the program
 func (l *Logger) Ffatal(message string, err error, args ...any) {
 	if l.level <= FATAL {
-		_, err := fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
-		if err != nil {
-			DefaultLogger.Error("", err)
+		_, writeErr := fmt.Fprintln(l.logFile, formatLogMessage(FATAL, message, err, args...))
+		if writeErr != nil {
+			DefaultLogger.Error("Failed to write fatal error to log file", writeErr)
 		}
 		os.Exit(1)
 	}

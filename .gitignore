@@ -24,7 +24,6 @@ go.work.sum
 node_modules/
 api/
 package-lock.json
-router/
 testFiles/
 volumes/
 
@@ -38,6 +37,8 @@ ui
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 
 #binary
 modulacms-amd
@@ -55,8 +56,12 @@ tests/
 backups/
 legacydb/
 .Ignore/
+old/
 testing-config.json
 *.log
+*.g
+*_tes.go
+*_test.go
 
 #certs
 certs/
@@ -77,4 +82,6 @@ demo.gif
 #Ai
 CLAUDE.md
 .claude/
+.trash/
+trash/
 ~/

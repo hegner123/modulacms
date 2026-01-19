@@ -8,6 +8,22 @@ import (
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
+// CorsMiddleware wraps an http.Handler and adds CORS headers
+func CorsMiddleware(c *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			CorsWithConfig(w, r, c)
+
+			// If it's a preflight request, we already responded in CorsWithConfig
+			if r.Method == http.MethodOptions {
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
 // CorsHandler sets CORS headers based on configuration
 func Cors(w http.ResponseWriter, r *http.Request, c *config.Config) {
 	CorsWithConfig(w, r, c)
