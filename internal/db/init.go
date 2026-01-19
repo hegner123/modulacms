@@ -5,9 +5,6 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
-	"io/fs"
-	"path/filepath"
-	"strings"
 
 	_ "github.com/go-sql-driver/mysql"
 	config "github.com/hegner123/modulacms/internal/config"
@@ -148,64 +145,7 @@ func ConfigDB(env config.Config) DbDriver {
 	return nil
 }
 
-func (d Database) InitDB(v *bool) error {
-	tables, err := ReadSchemaFiles(v)
-	if err != nil {
-		return err
-	}
-	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
-		return err
-	}
 
-	return nil
-}
-func (d MysqlDatabase) InitDB(v *bool) error {
-	tables, err := ReadSchemaFiles(v)
-	if err != nil {
-		return err
-	}
-	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
-		return err
-	}
-
-	return nil
-}
-func (d PsqlDatabase) InitDB(v *bool) error {
-	tables, err := ReadSchemaFiles(v)
-	if err != nil {
-		return err
-	}
-	if _, err := d.Connection.ExecContext(d.Context, tables); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ReadSchemaFiles(verbose *bool) (string, error) {
-	var result []string
-
-	err := fs.WalkDir(SqlFiles, ".", func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
-			return err
-		}
-		if !d.IsDir() && filepath.Base(path) == "schema.sql" {
-			data, err := SqlFiles.ReadFile(path)
-			if err != nil {
-				return fmt.Errorf("failed to read file %s: %w", path, err)
-			}
-			result = append(result, string(data))
-		}
-		return nil
-	})
-	if err != nil {
-		return "", err
-	}
-	if *verbose {
-		fmt.Println(strings.Join(result, "\n"))
-	}
-	return strings.Join(result, "\n"), nil
-}
 
 func GenerateKey() []byte {
 	key := make([]byte, 32)

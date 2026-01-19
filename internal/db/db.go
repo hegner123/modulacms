@@ -71,7 +71,6 @@ type DbDriver interface {
 	CreateAllTables() error
 	CreateBootstrapData() error
 	ValidateBootstrapData() error
-	InitDB(v *bool) error
 	Ping() error
 	GetConnection() (*sql.DB, context.Context, error)
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)

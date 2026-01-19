@@ -1,6 +1,7 @@
 package bucket
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -8,7 +9,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	utility "github.com/hegner123/modulacms/internal/utility"
-	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 type Metadata map[string]string
@@ -28,12 +28,12 @@ func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 	return s3.New(sess), nil
 }
 
-func UploadPrep(uploadPath string, bucketName string, data *os.File) (*s3.PutObjectInput, error) {
+func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string) (*s3.PutObjectInput, error) {
 	upload := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
 		Key:    aws.String(uploadPath),
 		Body:   data,
-		ACL:    aws.String("public-read"),
+		ACL:    aws.String(acl),
 	}
 	return upload, nil
 }
@@ -58,10 +58,7 @@ func PrintBuckets(s3 *s3.S3) {
 func ObjectUpload(s3 *s3.S3, payload *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	upload, err := s3.PutObject(payload)
 	if err != nil {
-		utility.DefaultLogger.Error("failed to upload ", err)
+		return nil, fmt.Errorf("failed to upload to S3: %w", err)
 	}
 	return upload, nil
-}
-
-func ParseMetaData(dbEntry mdb.Media) {
 }
