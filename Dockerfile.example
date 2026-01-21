@@ -1,0 +1,118 @@
+# =============================================================================
+# ModulaCMS Production Dockerfile
+# =============================================================================
+# Multi-stage build for minimal, secure production image
+#
+# Build:
+#   docker build -t modulacms .
+#   docker build --build-arg TARGETARCH=arm -t modulacms:arm .
+#
+# Run:
+#   docker run -d -p 8080:8080 -p 8443:8443 -p 2222:2222 \
+#     -v modulacms-data:/app/data \
+#     -v modulacms-certs:/app/certs \
+#     -v modulacms-ssh:/app/.ssh \
+#     modulacms
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Stage 1: Builder
+# -----------------------------------------------------------------------------
+FROM golang:1.24-bookworm AS builder
+
+ARG TARGETARCH=amd64
+ARG VERSION=dev
+ARG COMMIT=unknown
+ARG BUILD_DATE=unknown
+
+WORKDIR /app
+
+# Install cross-compilers for different architectures
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-arm-linux-gnueabihf \
+    gcc-aarch64-linux-gnu \
+    && rm -rf /var/lib/apt/lists/*
+
+# Cache dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy source code
+COPY . .
+
+# Set build environment
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+
+# Build based on target architecture
+RUN case "${TARGETARCH}" in \
+        amd64) \
+            export GOARCH=amd64 && \
+            export CC=gcc ;; \
+        arm64) \
+            export GOARCH=arm64 && \
+            export CC=aarch64-linux-gnu-gcc ;; \
+        arm) \
+            export GOARCH=arm && \
+            export CC=arm-linux-gnueabihf-gcc ;; \
+        *) \
+            echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac && \
+    go build -mod vendor \
+        -ldflags="-s -w \
+            -X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
+            -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
+            -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
+        -o modulacms ./cmd
+
+# -----------------------------------------------------------------------------
+# Stage 2: Runtime
+# -----------------------------------------------------------------------------
+FROM debian:bookworm-slim AS runtime
+
+# Labels
+LABEL org.opencontainers.image.title="ModulaCMS"
+LABEL org.opencontainers.image.description="Headless CMS with HTTP, HTTPS, and SSH servers"
+LABEL org.opencontainers.image.source="https://github.com/hegner123/modulacms"
+LABEL org.opencontainers.image.licenses="AGPL-3.0"
+
+# Install runtime dependencies
+# - ca-certificates: HTTPS/TLS connections
+# - tzdata: timezone support
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/* \
+    && update-ca-certificates
+
+# Create non-root user
+RUN groupadd --gid 1000 modulacms \
+    && useradd --uid 1000 --gid modulacms --shell /bin/false --create-home modulacms
+
+WORKDIR /app
+
+# Create directories for persistent data
+RUN mkdir -p /app/data /app/certs /app/.ssh /app/backups \
+    && chown -R modulacms:modulacms /app
+
+# Copy binary from builder
+COPY --from=builder --chown=modulacms:modulacms /app/modulacms /app/modulacms
+
+# Switch to non-root user
+USER modulacms
+
+# Expose ports
+# 8080  - HTTP
+# 8443  - HTTPS
+# 2222  - SSH
+EXPOSE 8080 8443 2222
+
+# Volumes for persistent data
+VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups"]
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD ["/app/modulacms", "--version"]
+
+# Run the application
+ENTRYPOINT ["/app/modulacms"]

@@ -14,7 +14,7 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test build vendor test-development
+.PHONY: all test build vendor test-development check
 
 all: help
 
@@ -45,6 +45,11 @@ ifeq ($(EXPORT_RESULT), true)
 endif
 
 ## Dev
+check: ## Check compilation of cmd and internal packages (no artifacts)
+	@GO111MODULE=on $(GOCMD) build -mod vendor -o /dev/null ./cmd && \
+		$(GOCMD) build -mod vendor ./internal/... && \
+		echo "$(GREEN)Build check passed$(RESET)"
+
 dev: ## Prepare binaries and templates in src dir for faster iteration
 	echo "" > debug.log
 	$(eval VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev"))

@@ -37,8 +37,11 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 		verbose = *v
 	}
 	if c.Bucket_Secret_Key == "" || c.Bucket_Endpoint == "" || c.Bucket_Access_Key == "" {
-		err := fmt.Errorf("bucket access key: %s\nbucket secret key: %s\nbucket endpoint: %s", c.Bucket_Access_Key, c.Bucket_Secret_Key, c.Bucket_Endpoint)
-		utility.DefaultLogger.Error("Bucket fields not completed", err)
+		// Empty bucket credentials - this is a non-fatal condition (bucket is optional)
+		if verbose {
+			utility.DefaultLogger.Warn("Bucket fields not completed - S3 storage will be unavailable", nil)
+		}
+		return "Not configured", nil
 	}
 	creds := bucket.S3Credentials{
 		AccessKey: c.Bucket_Access_Key,
@@ -47,7 +50,11 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 	}
 	_, err := creds.GetBucket()
 	if err != nil {
-		return err.Error(), err
+		installErr := ErrBucketConnect(err)
+		if verbose {
+			utility.DefaultLogger.Error("Bucket connection failed", installErr)
+		}
+		return installErr.Error(), installErr
 	}
 	if verbose {
 		utility.DefaultLogger.Info("Bucket Connected Successfully")
@@ -83,16 +90,13 @@ func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 	_, _, err := dbc.GetConnection()
 	if err != nil {
 		if verbose {
-			err := fmt.Errorf("DB Not Connected")
-			if verbose {
-				utility.DefaultLogger.Error("DBCheck:  ", err)
-			}
-
+			utility.DefaultLogger.Error("DBCheck: ", err)
 		}
-		status.Err = err
+		installErr := ErrDBConnect(err, string(c.Db_Driver))
+		status.Err = installErr
 		status.Driver = ""
 		status.URL = ""
-		return status, err
+		return status, installErr
 	}
 	connected := fmt.Sprint("db connected: ", c.Db_Driver, " ", c.Db_URL)
 	if verbose {

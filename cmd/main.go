@@ -155,7 +155,9 @@ func run() (ReturnCode, error) {
 			*app.InstallFlag = false
 		}
 		utility.DefaultLogger.Error("Installation check failed", err)
-		install.RunInstall(app.VerboseFlag)
+		if installErr := install.RunInstall(app.VerboseFlag); installErr != nil {
+			utility.DefaultLogger.Fatal("Installation failed", installErr)
+		}
 	}
 
 	if *app.UpdateFlag {
@@ -183,7 +185,9 @@ func run() (ReturnCode, error) {
 	}
 
 	if *app.InstallFlag {
-		install.RunInstall(app.VerboseFlag)
+		if installErr := install.RunInstall(app.VerboseFlag); installErr != nil {
+			utility.DefaultLogger.Fatal("Installation failed", installErr)
+		}
 	}
 
 	if !InitStatus.DbFileExists || *app.ResetFlag {
