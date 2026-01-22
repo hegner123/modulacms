@@ -37,3 +37,16 @@ CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(p
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);
+
+CREATE OR REPLACE FUNCTION update_admin_content_data_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_admin_content_data_modified_trigger
+    BEFORE UPDATE ON admin_content_data
+    FOR EACH ROW
+    EXECUTE FUNCTION update_admin_content_data_modified();

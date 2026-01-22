@@ -13,3 +13,16 @@ CREATE TABLE IF NOT EXISTS routes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_routes_author ON routes(author_id);
+
+CREATE OR REPLACE FUNCTION update_routes_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_routes_modified_trigger
+    BEFORE UPDATE ON routes
+    FOR EACH ROW
+    EXECUTE FUNCTION update_routes_modified();

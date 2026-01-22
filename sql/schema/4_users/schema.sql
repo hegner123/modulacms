@@ -13,3 +13,11 @@ CREATE TABLE IF NOT EXISTS users (
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TRIGGER IF NOT EXISTS update_users_modified
+    AFTER UPDATE ON users
+    FOR EACH ROW
+    BEGIN
+        UPDATE users SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE user_id = NEW.user_id;
+    END;
+

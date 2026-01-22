@@ -21,3 +21,16 @@ CREATE TABLE IF NOT EXISTS media (
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);
+
+CREATE OR REPLACE FUNCTION update_media_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_media_modified_trigger
+    BEFORE UPDATE ON media
+    FOR EACH ROW
+    EXECUTE FUNCTION update_media_modified();

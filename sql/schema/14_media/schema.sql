@@ -20,3 +20,11 @@ CREATE TABLE IF NOT EXISTS media (
 );
 
 CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_media_modified
+    AFTER UPDATE ON media
+    FOR EACH ROW
+    BEGIN
+        UPDATE media SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE media_id = NEW.media_id;
+    END;

@@ -15,3 +15,11 @@ CREATE TABLE IF NOT EXISTS datatypes(
 
 CREATE INDEX IF NOT EXISTS idx_datatypes_parent ON datatypes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_datatypes_author ON datatypes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_datatypes_modified
+    AFTER UPDATE ON datatypes
+    FOR EACH ROW
+    BEGIN
+        UPDATE datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE datatype_id = NEW.datatype_id;
+    END;

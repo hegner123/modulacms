@@ -23,3 +23,11 @@ CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(p
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_content_data_modified
+    AFTER UPDATE ON admin_content_data
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_content_data SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_content_data_id = NEW.admin_content_data_id;
+    END;

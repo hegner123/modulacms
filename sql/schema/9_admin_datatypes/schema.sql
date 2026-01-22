@@ -15,3 +15,11 @@ CREATE TABLE admin_datatypes (
 
 CREATE INDEX IF NOT EXISTS idx_admin_datatypes_parent ON admin_datatypes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_admin_datatypes_author ON admin_datatypes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_datatypes_modified
+    AFTER UPDATE ON admin_datatypes
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_datatype_id = NEW.admin_datatype_id;
+    END;

@@ -39,3 +39,11 @@ CREATE INDEX IF NOT EXISTS idx_content_data_route ON content_data(route_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_datatype ON content_data(datatype_id);
 CREATE INDEX IF NOT EXISTS idx_content_data_author ON content_data(author_id);
 
+CREATE TRIGGER IF NOT EXISTS update_content_data_modified
+    AFTER UPDATE ON content_data
+    FOR EACH ROW
+    BEGIN
+        UPDATE content_data SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE content_data_id = NEW.content_data_id;
+    END;
+

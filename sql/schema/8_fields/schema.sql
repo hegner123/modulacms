@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS fields(
             ON DELETE SET DEFAULT,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
-    type TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users
             ON DELETE SET DEFAULT,
@@ -16,3 +16,11 @@ CREATE TABLE IF NOT EXISTS fields(
 
 CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_fields_modified
+    AFTER UPDATE ON fields
+    FOR EACH ROW
+    BEGIN
+        UPDATE fields SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE field_id = NEW.field_id;
+    END;

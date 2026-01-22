@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
-    type TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id INTEGER DEFAULT 1 NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
@@ -18,3 +18,16 @@ CREATE TABLE IF NOT EXISTS fields (
 
 CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
 CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
+
+CREATE OR REPLACE FUNCTION update_fields_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_fields_modified_trigger
+    BEFORE UPDATE ON fields
+    FOR EACH ROW
+    EXECUTE FUNCTION update_fields_modified();

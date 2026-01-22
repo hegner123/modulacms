@@ -13,3 +13,11 @@ CREATE TABLE IF NOT EXISTS admin_routes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_routes_author ON admin_routes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_routes_modified
+    AFTER UPDATE ON admin_routes
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_routes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_route_id = NEW.admin_route_id;
+    END;

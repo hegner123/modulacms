@@ -26,3 +26,16 @@ CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_field
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);
+
+CREATE OR REPLACE FUNCTION update_admin_content_fields_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_admin_content_fields_modified_trigger
+    BEFORE UPDATE ON admin_content_fields
+    FOR EACH ROW
+    EXECUTE FUNCTION update_admin_content_fields_modified();

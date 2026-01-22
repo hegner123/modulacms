@@ -26,3 +26,16 @@ CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);
+
+CREATE OR REPLACE FUNCTION update_content_fields_modified()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.date_modified = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER update_content_fields_modified_trigger
+    BEFORE UPDATE ON content_fields
+    FOR EACH ROW
+    EXECUTE FUNCTION update_content_fields_modified();
