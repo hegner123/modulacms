@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_admin_fields_parent ON admin_fields(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_fields_author ON admin_fields(author_id);

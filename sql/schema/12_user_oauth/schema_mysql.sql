@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS user_oauth (
         FOREIGN KEY (user_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE INDEX idx_user_oauth_user ON user_oauth(user_id);

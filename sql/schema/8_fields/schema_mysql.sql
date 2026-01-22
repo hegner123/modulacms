@@ -17,3 +17,5 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_fields_parent ON fields(parent_id);
+CREATE INDEX idx_fields_author ON fields(author_id);

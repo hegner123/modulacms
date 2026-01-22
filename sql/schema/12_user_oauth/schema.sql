@@ -12,3 +12,4 @@ CREATE TABLE IF NOT EXISTS user_oauth (
     date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_user_oauth_user ON user_oauth(user_id);

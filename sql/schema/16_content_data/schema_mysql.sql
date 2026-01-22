@@ -34,3 +34,7 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_content_data_parent ON content_data(parent_id);
+CREATE INDEX idx_content_data_route ON content_data(route_id);
+CREATE INDEX idx_content_data_datatype ON content_data(datatype_id);
+CREATE INDEX idx_content_data_author ON content_data(author_id);

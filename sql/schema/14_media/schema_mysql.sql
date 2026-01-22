@@ -21,3 +21,4 @@ CREATE TABLE IF NOT EXISTS media (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_media_author ON media(author_id);

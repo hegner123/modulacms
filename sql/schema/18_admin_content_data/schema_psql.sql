@@ -33,3 +33,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);

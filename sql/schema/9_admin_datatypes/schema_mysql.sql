@@ -16,3 +16,5 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_admin_datatypes_parent ON admin_datatypes(parent_id);
+CREATE INDEX idx_admin_datatypes_author ON admin_datatypes(author_id);

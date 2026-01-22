@@ -11,3 +11,5 @@ CREATE TABLE IF NOT EXISTS routes (
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_routes_author ON routes(author_id);

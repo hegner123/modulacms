@@ -12,4 +12,5 @@ CREATE TABLE IF NOT EXISTS tokens (
     revoked BOOLEAN NOT NULL DEFAULT 0
 );
 
+CREATE INDEX IF NOT EXISTS idx_tokens_user ON tokens(user_id);
 

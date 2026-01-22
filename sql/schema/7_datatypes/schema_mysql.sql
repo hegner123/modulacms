@@ -16,3 +16,5 @@ CREATE TABLE IF NOT EXISTS datatypes (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_datatypes_parent ON datatypes(parent_id);
+CREATE INDEX idx_datatypes_author ON datatypes(author_id);

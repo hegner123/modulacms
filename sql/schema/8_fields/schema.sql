@@ -13,3 +13,6 @@ CREATE TABLE IF NOT EXISTS fields(
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
+CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);

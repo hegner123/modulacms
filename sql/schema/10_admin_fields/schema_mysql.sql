@@ -16,3 +16,6 @@ CREATE TABLE IF NOT EXISTS admin_fields (
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE
 );
+
+CREATE INDEX idx_admin_fields_parent ON admin_fields(parent_id);
+CREATE INDEX idx_admin_fields_author ON admin_fields(author_id);

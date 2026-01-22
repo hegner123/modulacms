@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
             REFERENCES admin_fields
             ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_datatype ON admin_datatypes_fields(admin_datatype_id);
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_field ON admin_datatypes_fields(admin_field_id);

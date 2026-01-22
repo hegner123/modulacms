@@ -14,3 +14,5 @@ CREATE TABLE IF NOT EXISTS routes (
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE
 );
+
+CREATE INDEX idx_routes_author ON routes(author_id);

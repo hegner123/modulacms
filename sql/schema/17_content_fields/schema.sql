@@ -17,3 +17,8 @@ CREATE TABLE IF NOT EXISTS content_fields (
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
+CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
+CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);

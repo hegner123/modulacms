@@ -18,3 +18,8 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
 );
+
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_route ON admin_content_data(admin_route_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_datatype ON admin_content_data(admin_datatype_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_data_author ON admin_content_data(author_id);

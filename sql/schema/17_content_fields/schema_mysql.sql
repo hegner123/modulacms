@@ -23,3 +23,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
             ON UPDATE CASCADE
 );
 
+CREATE INDEX idx_content_fields_route ON content_fields(route_id);
+CREATE INDEX idx_content_fields_content ON content_fields(content_data_id);
+CREATE INDEX idx_content_fields_field ON content_fields(field_id);
+CREATE INDEX idx_content_fields_author ON content_fields(author_id);

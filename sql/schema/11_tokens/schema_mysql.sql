@@ -13,3 +13,5 @@ CREATE TABLE IF NOT EXISTS tokens (
         FOREIGN KEY (user_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE INDEX idx_tokens_user ON tokens(user_id);

@@ -10,3 +10,6 @@ CREATE TABLE IF NOT EXISTS datatypes_fields (
         FOREIGN KEY (field_id) REFERENCES fields (field_id)
             ON UPDATE CASCADE ON DELETE CASCADE
 );
+
+CREATE INDEX idx_datatypes_fields_datatype ON datatypes_fields(datatype_id);
+CREATE INDEX idx_datatypes_fields_field ON datatypes_fields(field_id);

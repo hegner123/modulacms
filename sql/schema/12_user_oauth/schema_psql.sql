@@ -11,3 +11,5 @@ CREATE TABLE IF NOT EXISTS user_oauth (
     token_expires_at TIMESTAMP NOT NULL,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_user_oauth_user ON user_oauth(user_id);

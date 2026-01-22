@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS media (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_media_author ON media(author_id);

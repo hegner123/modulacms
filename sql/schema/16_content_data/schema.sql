@@ -34,3 +34,8 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
 );
 
+CREATE INDEX IF NOT EXISTS idx_content_data_parent ON content_data(parent_id);
+CREATE INDEX IF NOT EXISTS idx_content_data_route ON content_data(route_id);
+CREATE INDEX IF NOT EXISTS idx_content_data_datatype ON content_data(datatype_id);
+CREATE INDEX IF NOT EXISTS idx_content_data_author ON content_data(author_id);
+

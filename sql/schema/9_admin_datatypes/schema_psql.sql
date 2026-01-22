@@ -14,3 +14,6 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_parent ON admin_datatypes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_author ON admin_datatypes(author_id);

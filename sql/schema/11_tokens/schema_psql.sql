@@ -12,3 +12,5 @@ CREATE TABLE IF NOT EXISTS tokens (
     expires_at TIMESTAMP NOT NULL,
     revoked BOOLEAN NOT NULL DEFAULT FALSE
 );
+
+CREATE INDEX IF NOT EXISTS idx_tokens_user ON tokens(user_id);

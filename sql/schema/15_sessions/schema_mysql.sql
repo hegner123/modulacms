@@ -13,3 +13,4 @@ CREATE TABLE sessions (
             ON UPDATE CASCADE ON DELETE CASCADE
 );
 
+CREATE INDEX idx_sessions_user ON sessions(user_id);
