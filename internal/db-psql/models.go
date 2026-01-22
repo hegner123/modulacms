@@ -77,6 +77,23 @@ type AdminRoutes struct {
 	History      sql.NullString `json:"history"`
 }
 
+type ChangeEvents struct {
+	EventID       string                `json:"event_id"`
+	HlcTimestamp  int64                 `json:"hlc_timestamp"`
+	WallTimestamp time.Time             `json:"wall_timestamp"`
+	NodeID        string                `json:"node_id"`
+	TableName     string                `json:"table_name"`
+	RecordID      string                `json:"record_id"`
+	Operation     string                `json:"operation"`
+	Action        sql.NullString        `json:"action"`
+	UserID        sql.NullString        `json:"user_id"`
+	OldValues     pqtype.NullRawMessage `json:"old_values"`
+	NewValues     pqtype.NullRawMessage `json:"new_values"`
+	Metadata      pqtype.NullRawMessage `json:"metadata"`
+	SyncedAt      sql.NullTime          `json:"synced_at"`
+	ConsumedAt    sql.NullTime          `json:"consumed_at"`
+}
+
 type ContentData struct {
 	ContentDataID int32          `json:"content_data_id"`
 	ParentID      sql.NullInt32  `json:"parent_id"`

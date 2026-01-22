@@ -6,6 +6,7 @@ package mdbm
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 )
 
@@ -73,6 +74,23 @@ type AdminRoutes struct {
 	DateCreated  time.Time      `json:"date_created"`
 	DateModified time.Time      `json:"date_modified"`
 	History      sql.NullString `json:"history"`
+}
+
+type ChangeEvents struct {
+	EventID       string          `json:"event_id"`
+	HlcTimestamp  int64           `json:"hlc_timestamp"`
+	WallTimestamp time.Time       `json:"wall_timestamp"`
+	NodeID        string          `json:"node_id"`
+	TableName     string          `json:"table_name"`
+	RecordID      string          `json:"record_id"`
+	Operation     string          `json:"operation"`
+	Action        sql.NullString  `json:"action"`
+	UserID        sql.NullString  `json:"user_id"`
+	OldValues     json.RawMessage `json:"old_values"`
+	NewValues     json.RawMessage `json:"new_values"`
+	Metadata      json.RawMessage `json:"metadata"`
+	SyncedAt      sql.NullTime    `json:"synced_at"`
+	ConsumedAt    sql.NullTime    `json:"consumed_at"`
 }
 
 type ContentData struct {

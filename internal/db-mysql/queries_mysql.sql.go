@@ -8,6 +8,8 @@ package mdbm
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
+	"strings"
 	"time"
 )
 
@@ -142,6 +144,34 @@ SELECT COUNT(*) FROM admin_routes
 
 func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countAdminroute)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countChangeEvents = `-- name: CountChangeEvents :one
+SELECT COUNT(*) FROM change_events
+`
+
+func (q *Queries) CountChangeEvents(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChangeEvents)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countChangeEventsByRecord = `-- name: CountChangeEventsByRecord :one
+SELECT COUNT(*) FROM change_events
+WHERE table_name = ? AND record_id = ?
+`
+
+type CountChangeEventsByRecordParams struct {
+	TableName string `json:"table_name"`
+	RecordID  string `json:"record_id"`
+}
+
+func (q *Queries) CountChangeEventsByRecord(ctx context.Context, arg CountChangeEventsByRecordParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countChangeEventsByRecord, arg.TableName, arg.RecordID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -748,6 +778,31 @@ CREATE TABLE admin_routes (
 
 func (q *Queries) CreateAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminRouteTable)
+	return err
+}
+
+const createChangeEventsTable = `-- name: CreateChangeEventsTable :exec
+CREATE TABLE IF NOT EXISTS change_events (
+    event_id CHAR(26) PRIMARY KEY,
+    hlc_timestamp BIGINT NOT NULL,
+    wall_timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    node_id CHAR(26) NOT NULL,
+    table_name VARCHAR(64) NOT NULL,
+    record_id CHAR(26) NOT NULL,
+    operation VARCHAR(20) NOT NULL,
+    action VARCHAR(20),
+    user_id CHAR(26),
+    old_values JSON,
+    new_values JSON,
+    metadata JSON,
+    synced_at TIMESTAMP NULL,
+    consumed_at TIMESTAMP NULL,
+    CONSTRAINT chk_operation CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE'))
+)
+`
+
+func (q *Queries) CreateChangeEventsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createChangeEventsTable)
 	return err
 }
 
@@ -1776,6 +1831,28 @@ func (q *Queries) DeleteAdminRoute(ctx context.Context, adminRouteID int32) erro
 	return err
 }
 
+const deleteChangeEvent = `-- name: DeleteChangeEvent :exec
+DELETE FROM change_events
+WHERE event_id = ?
+`
+
+func (q *Queries) DeleteChangeEvent(ctx context.Context, eventID string) error {
+	_, err := q.db.ExecContext(ctx, deleteChangeEvent, eventID)
+	return err
+}
+
+const deleteChangeEventsOlderThan = `-- name: DeleteChangeEventsOlderThan :exec
+DELETE FROM change_events
+WHERE wall_timestamp < ?
+AND synced_at IS NOT NULL
+AND consumed_at IS NOT NULL
+`
+
+func (q *Queries) DeleteChangeEventsOlderThan(ctx context.Context, wallTimestamp time.Time) error {
+	_, err := q.db.ExecContext(ctx, deleteChangeEventsOlderThan, wallTimestamp)
+	return err
+}
+
 const deleteContentData = `-- name: DeleteContentData :exec
 DELETE FROM content_data
 WHERE content_data_id = ?
@@ -1989,6 +2066,15 @@ DROP TABLE admin_routes
 
 func (q *Queries) DropAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropAdminRouteTable)
+	return err
+}
+
+const dropChangeEventsTable = `-- name: DropChangeEventsTable :exec
+DROP TABLE IF EXISTS change_events
+`
+
+func (q *Queries) DropChangeEventsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropChangeEventsTable)
 	return err
 }
 
@@ -2278,6 +2364,139 @@ func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, slug string) (int32
 	var admin_route_id int32
 	err := row.Scan(&admin_route_id)
 	return admin_route_id, err
+}
+
+const getChangeEvent = `-- name: GetChangeEvent :one
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE event_id = ? LIMIT 1
+`
+
+func (q *Queries) GetChangeEvent(ctx context.Context, eventID string) (ChangeEvents, error) {
+	row := q.db.QueryRowContext(ctx, getChangeEvent, eventID)
+	var i ChangeEvents
+	err := row.Scan(
+		&i.EventID,
+		&i.HlcTimestamp,
+		&i.WallTimestamp,
+		&i.NodeID,
+		&i.TableName,
+		&i.RecordID,
+		&i.Operation,
+		&i.Action,
+		&i.UserID,
+		&i.OldValues,
+		&i.NewValues,
+		&i.Metadata,
+		&i.SyncedAt,
+		&i.ConsumedAt,
+	)
+	return i, err
+}
+
+const getChangeEventsByRecord = `-- name: GetChangeEventsByRecord :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE table_name = ? AND record_id = ?
+ORDER BY hlc_timestamp DESC
+`
+
+type GetChangeEventsByRecordParams struct {
+	TableName string `json:"table_name"`
+	RecordID  string `json:"record_id"`
+}
+
+func (q *Queries) GetChangeEventsByRecord(ctx context.Context, arg GetChangeEventsByRecordParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, getChangeEventsByRecord, arg.TableName, arg.RecordID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getChangeEventsByRecordPaginated = `-- name: GetChangeEventsByRecordPaginated :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE table_name = ? AND record_id = ?
+ORDER BY hlc_timestamp DESC
+LIMIT ? OFFSET ?
+`
+
+type GetChangeEventsByRecordPaginatedParams struct {
+	TableName string `json:"table_name"`
+	RecordID  string `json:"record_id"`
+	Limit     int32  `json:"limit"`
+	Offset    int32  `json:"offset"`
+}
+
+func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetChangeEventsByRecordPaginatedParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, getChangeEventsByRecordPaginated,
+		arg.TableName,
+		arg.RecordID,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getContentData = `-- name: GetContentData :one
@@ -3271,6 +3490,146 @@ func (q *Queries) GetTokenByUserId(ctx context.Context, userID int32) ([]Tokens,
 	return items, nil
 }
 
+const getUnconsumedEvents = `-- name: GetUnconsumedEvents :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE consumed_at IS NULL
+ORDER BY hlc_timestamp ASC
+LIMIT ?
+`
+
+func (q *Queries) GetUnconsumedEvents(ctx context.Context, limit int32) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, getUnconsumedEvents, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnsyncedEvents = `-- name: GetUnsyncedEvents :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE synced_at IS NULL
+ORDER BY hlc_timestamp ASC
+LIMIT ?
+`
+
+func (q *Queries) GetUnsyncedEvents(ctx context.Context, limit int32) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, getUnsyncedEvents, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getUnsyncedEventsByNode = `-- name: GetUnsyncedEventsByNode :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE synced_at IS NULL AND node_id = ?
+ORDER BY hlc_timestamp ASC
+LIMIT ?
+`
+
+type GetUnsyncedEventsByNodeParams struct {
+	NodeID string `json:"node_id"`
+	Limit  int32  `json:"limit"`
+}
+
+func (q *Queries) GetUnsyncedEventsByNode(ctx context.Context, arg GetUnsyncedEventsByNodeParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, getUnsyncedEventsByNode, arg.NodeID, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUser = `-- name: GetUser :one
 SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users
 WHERE user_id = ? LIMIT 1
@@ -3997,6 +4356,157 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 			&i.DateCreated,
 			&i.DateModified,
 			&i.History,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChangeEvents = `-- name: ListChangeEvents :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+ORDER BY hlc_timestamp DESC
+LIMIT ? OFFSET ?
+`
+
+type ListChangeEventsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListChangeEvents(ctx context.Context, arg ListChangeEventsParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, listChangeEvents, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChangeEventsByAction = `-- name: ListChangeEventsByAction :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE action = ?
+ORDER BY hlc_timestamp DESC
+LIMIT ? OFFSET ?
+`
+
+type ListChangeEventsByActionParams struct {
+	Action sql.NullString `json:"action"`
+	Limit  int32          `json:"limit"`
+	Offset int32          `json:"offset"`
+}
+
+func (q *Queries) ListChangeEventsByAction(ctx context.Context, arg ListChangeEventsByActionParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, listChangeEventsByAction, arg.Action, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChangeEventsByUser = `-- name: ListChangeEventsByUser :many
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, action, user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+WHERE user_id = ?
+ORDER BY hlc_timestamp DESC
+LIMIT ? OFFSET ?
+`
+
+type ListChangeEventsByUserParams struct {
+	UserID sql.NullString `json:"user_id"`
+	Limit  int32          `json:"limit"`
+	Offset int32          `json:"offset"`
+}
+
+func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEventsByUserParams) ([]ChangeEvents, error) {
+	rows, err := q.db.QueryContext(ctx, listChangeEventsByUser, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ChangeEvents
+	for rows.Next() {
+		var i ChangeEvents
+		if err := rows.Scan(
+			&i.EventID,
+			&i.HlcTimestamp,
+			&i.WallTimestamp,
+			&i.NodeID,
+			&i.TableName,
+			&i.RecordID,
+			&i.Operation,
+			&i.Action,
+			&i.UserID,
+			&i.OldValues,
+			&i.NewValues,
+			&i.Metadata,
+			&i.SyncedAt,
+			&i.ConsumedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -4867,6 +5377,119 @@ func (q *Queries) ListUserSshKeys(ctx context.Context, userID int32) ([]UserSshK
 		return nil, err
 	}
 	return items, nil
+}
+
+const markEventConsumed = `-- name: MarkEventConsumed :exec
+UPDATE change_events
+SET consumed_at = CURRENT_TIMESTAMP
+WHERE event_id = ?
+`
+
+func (q *Queries) MarkEventConsumed(ctx context.Context, eventID string) error {
+	_, err := q.db.ExecContext(ctx, markEventConsumed, eventID)
+	return err
+}
+
+const markEventSynced = `-- name: MarkEventSynced :exec
+UPDATE change_events
+SET synced_at = CURRENT_TIMESTAMP
+WHERE event_id = ?
+`
+
+func (q *Queries) MarkEventSynced(ctx context.Context, eventID string) error {
+	_, err := q.db.ExecContext(ctx, markEventSynced, eventID)
+	return err
+}
+
+const markEventsConsumedBatch = `-- name: MarkEventsConsumedBatch :exec
+UPDATE change_events
+SET consumed_at = CURRENT_TIMESTAMP
+WHERE event_id IN (/*SLICE:event_ids*/?)
+`
+
+func (q *Queries) MarkEventsConsumedBatch(ctx context.Context, eventIds []string) error {
+	query := markEventsConsumedBatch
+	var queryParams []interface{}
+	if len(eventIds) > 0 {
+		for _, v := range eventIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(eventIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const markEventsSyncedBatch = `-- name: MarkEventsSyncedBatch :exec
+UPDATE change_events
+SET synced_at = CURRENT_TIMESTAMP
+WHERE event_id IN (/*SLICE:event_ids*/?)
+`
+
+func (q *Queries) MarkEventsSyncedBatch(ctx context.Context, eventIds []string) error {
+	query := markEventsSyncedBatch
+	var queryParams []interface{}
+	if len(eventIds) > 0 {
+		for _, v := range eventIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(eventIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
+}
+
+const recordChangeEvent = `-- name: RecordChangeEvent :exec
+INSERT INTO change_events (
+    event_id,
+    hlc_timestamp,
+    node_id,
+    table_name,
+    record_id,
+    operation,
+    action,
+    user_id,
+    old_values,
+    new_values,
+    metadata
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+)
+`
+
+type RecordChangeEventParams struct {
+	EventID      string          `json:"event_id"`
+	HlcTimestamp int64           `json:"hlc_timestamp"`
+	NodeID       string          `json:"node_id"`
+	TableName    string          `json:"table_name"`
+	RecordID     string          `json:"record_id"`
+	Operation    string          `json:"operation"`
+	Action       sql.NullString  `json:"action"`
+	UserID       sql.NullString  `json:"user_id"`
+	OldValues    json.RawMessage `json:"old_values"`
+	NewValues    json.RawMessage `json:"new_values"`
+	Metadata     json.RawMessage `json:"metadata"`
+}
+
+func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventParams) error {
+	_, err := q.db.ExecContext(ctx, recordChangeEvent,
+		arg.EventID,
+		arg.HlcTimestamp,
+		arg.NodeID,
+		arg.TableName,
+		arg.RecordID,
+		arg.Operation,
+		arg.Action,
+		arg.UserID,
+		arg.OldValues,
+		arg.NewValues,
+		arg.Metadata,
+	)
+	return err
 }
 
 const updateAdminContentData = `-- name: UpdateAdminContentData :exec
