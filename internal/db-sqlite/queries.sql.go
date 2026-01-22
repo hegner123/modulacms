@@ -149,6 +149,40 @@ func (q *Queries) CountAdminRoute(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countBackupSets = `-- name: CountBackupSets :one
+SELECT COUNT(*) FROM backup_sets
+`
+
+func (q *Queries) CountBackupSets(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBackupSets)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countBackups = `-- name: CountBackups :one
+SELECT COUNT(*) FROM backups
+`
+
+func (q *Queries) CountBackups(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBackups)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countBackupsByNode = `-- name: CountBackupsByNode :one
+SELECT COUNT(*) FROM backups
+WHERE node_id = ?
+`
+
+func (q *Queries) CountBackupsByNode(ctx context.Context, nodeID string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBackupsByNode, nodeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countChangeEvents = `-- name: CountChangeEvents :one
 SELECT COUNT(*) FROM change_events
 `
@@ -363,6 +397,17 @@ SELECT COUNT(*) FROM user_ssh_keys
 
 func (q *Queries) CountUserSshKeys(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countUserSshKeys)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countVerifications = `-- name: CountVerifications :one
+SELECT COUNT(*) FROM backup_verifications
+`
+
+func (q *Queries) CountVerifications(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countVerifications)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -787,6 +832,136 @@ CREATE TABLE admin_routes (
 
 func (q *Queries) CreateAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminRouteTable)
+	return err
+}
+
+const createBackup = `-- name: CreateBackup :one
+
+INSERT INTO backups (
+    backup_id, node_id, backup_type, status, started_at, storage_path,
+    triggered_by, metadata
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?
+)
+RETURNING backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata
+`
+
+type CreateBackupParams struct {
+	BackupID    string         `json:"backup_id"`
+	NodeID      string         `json:"node_id"`
+	BackupType  string         `json:"backup_type"`
+	Status      string         `json:"status"`
+	StartedAt   string         `json:"started_at"`
+	StoragePath string         `json:"storage_path"`
+	TriggeredBy sql.NullString `json:"triggered_by"`
+	Metadata    sql.NullString `json:"metadata"`
+}
+
+// Backups CRUD
+func (q *Queries) CreateBackup(ctx context.Context, arg CreateBackupParams) (Backups, error) {
+	row := q.db.QueryRowContext(ctx, createBackup,
+		arg.BackupID,
+		arg.NodeID,
+		arg.BackupType,
+		arg.Status,
+		arg.StartedAt,
+		arg.StoragePath,
+		arg.TriggeredBy,
+		arg.Metadata,
+	)
+	var i Backups
+	err := row.Scan(
+		&i.BackupID,
+		&i.NodeID,
+		&i.BackupType,
+		&i.Status,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.DurationMs,
+		&i.RecordCount,
+		&i.SizeBytes,
+		&i.ReplicationLsn,
+		&i.HlcTimestamp,
+		&i.StoragePath,
+		&i.Checksum,
+		&i.TriggeredBy,
+		&i.ErrorMessage,
+		&i.Metadata,
+	)
+	return i, err
+}
+
+const createBackupSet = `-- name: CreateBackupSet :one
+
+INSERT INTO backup_sets (
+    backup_set_id, created_at, hlc_timestamp, status,
+    backup_ids, node_count, completed_count, error_message
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?
+)
+RETURNING backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message
+`
+
+type CreateBackupSetParams struct {
+	BackupSetID    string         `json:"backup_set_id"`
+	CreatedAt      string         `json:"created_at"`
+	HlcTimestamp   int64          `json:"hlc_timestamp"`
+	Status         string         `json:"status"`
+	BackupIds      string         `json:"backup_ids"`
+	NodeCount      int64          `json:"node_count"`
+	CompletedCount sql.NullInt64  `json:"completed_count"`
+	ErrorMessage   sql.NullString `json:"error_message"`
+}
+
+// Backup Sets CRUD
+func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams) (BackupSets, error) {
+	row := q.db.QueryRowContext(ctx, createBackupSet,
+		arg.BackupSetID,
+		arg.CreatedAt,
+		arg.HlcTimestamp,
+		arg.Status,
+		arg.BackupIds,
+		arg.NodeCount,
+		arg.CompletedCount,
+		arg.ErrorMessage,
+	)
+	var i BackupSets
+	err := row.Scan(
+		&i.BackupSetID,
+		&i.CreatedAt,
+		&i.HlcTimestamp,
+		&i.Status,
+		&i.BackupIds,
+		&i.NodeCount,
+		&i.CompletedCount,
+		&i.ErrorMessage,
+	)
+	return i, err
+}
+
+const createBackupTables = `-- name: CreateBackupTables :exec
+CREATE TABLE IF NOT EXISTS backups (
+    backup_id       TEXT PRIMARY KEY CHECK (length(backup_id) = 26),
+    node_id         TEXT NOT NULL CHECK (length(node_id) = 26),
+    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
+    status          TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    started_at      TEXT NOT NULL,
+    completed_at    TEXT,
+    duration_ms     INTEGER,
+    record_count    INTEGER,
+    size_bytes      INTEGER,
+    replication_lsn TEXT,
+    hlc_timestamp   INTEGER,
+    storage_path    TEXT NOT NULL,
+    checksum        TEXT,
+    triggered_by    TEXT,
+    error_message   TEXT,
+    metadata        TEXT
+)
+`
+
+func (q *Queries) CreateBackupTables(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createBackupTables)
 	return err
 }
 
@@ -1919,6 +2094,61 @@ func (q *Queries) CreateUserTable(ctx context.Context) error {
 	return err
 }
 
+const createVerification = `-- name: CreateVerification :one
+
+INSERT INTO backup_verifications (
+    verification_id, backup_id, verified_at, verified_by,
+    restore_tested, checksum_valid, record_count_match,
+    status, error_message, duration_ms
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+)
+RETURNING verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms
+`
+
+type CreateVerificationParams struct {
+	VerificationID   string         `json:"verification_id"`
+	BackupID         string         `json:"backup_id"`
+	VerifiedAt       string         `json:"verified_at"`
+	VerifiedBy       sql.NullString `json:"verified_by"`
+	RestoreTested    sql.NullInt64  `json:"restore_tested"`
+	ChecksumValid    sql.NullInt64  `json:"checksum_valid"`
+	RecordCountMatch sql.NullInt64  `json:"record_count_match"`
+	Status           string         `json:"status"`
+	ErrorMessage     sql.NullString `json:"error_message"`
+	DurationMs       sql.NullInt64  `json:"duration_ms"`
+}
+
+// Backup Verifications CRUD
+func (q *Queries) CreateVerification(ctx context.Context, arg CreateVerificationParams) (BackupVerifications, error) {
+	row := q.db.QueryRowContext(ctx, createVerification,
+		arg.VerificationID,
+		arg.BackupID,
+		arg.VerifiedAt,
+		arg.VerifiedBy,
+		arg.RestoreTested,
+		arg.ChecksumValid,
+		arg.RecordCountMatch,
+		arg.Status,
+		arg.ErrorMessage,
+		arg.DurationMs,
+	)
+	var i BackupVerifications
+	err := row.Scan(
+		&i.VerificationID,
+		&i.BackupID,
+		&i.VerifiedAt,
+		&i.VerifiedBy,
+		&i.RestoreTested,
+		&i.ChecksumValid,
+		&i.RecordCountMatch,
+		&i.Status,
+		&i.ErrorMessage,
+		&i.DurationMs,
+	)
+	return i, err
+}
+
 const deleteAdminContentData = `-- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data
 WHERE admin_content_data_id = ?
@@ -1976,6 +2206,26 @@ WHERE admin_route_id = ?
 
 func (q *Queries) DeleteAdminRoute(ctx context.Context, adminRouteID int64) error {
 	_, err := q.db.ExecContext(ctx, deleteAdminRoute, adminRouteID)
+	return err
+}
+
+const deleteBackup = `-- name: DeleteBackup :exec
+DELETE FROM backups
+WHERE backup_id = ?
+`
+
+func (q *Queries) DeleteBackup(ctx context.Context, backupID string) error {
+	_, err := q.db.ExecContext(ctx, deleteBackup, backupID)
+	return err
+}
+
+const deleteBackupSet = `-- name: DeleteBackupSet :exec
+DELETE FROM backup_sets
+WHERE backup_set_id = ?
+`
+
+func (q *Queries) DeleteBackupSet(ctx context.Context, backupSetID string) error {
+	_, err := q.db.ExecContext(ctx, deleteBackupSet, backupSetID)
 	return err
 }
 
@@ -2071,6 +2321,16 @@ func (q *Queries) DeleteMediaDimension(ctx context.Context, mdID int64) error {
 	return err
 }
 
+const deleteOldBackups = `-- name: DeleteOldBackups :exec
+DELETE FROM backups
+WHERE started_at < ? AND status IN ('completed', 'verified')
+`
+
+func (q *Queries) DeleteOldBackups(ctx context.Context, startedAt string) error {
+	_, err := q.db.ExecContext(ctx, deleteOldBackups, startedAt)
+	return err
+}
+
 const deletePermission = `-- name: DeletePermission :exec
 DELETE FROM permissions 
 WHERE permission_id = ?
@@ -2161,6 +2421,16 @@ func (q *Queries) DeleteUserSshKey(ctx context.Context, sshKeyID int64) error {
 	return err
 }
 
+const deleteVerification = `-- name: DeleteVerification :exec
+DELETE FROM backup_verifications
+WHERE verification_id = ?
+`
+
+func (q *Queries) DeleteVerification(ctx context.Context, verificationID string) error {
+	_, err := q.db.ExecContext(ctx, deleteVerification, verificationID)
+	return err
+}
+
 const dropAdminContentData = `-- name: DropAdminContentData :exec
 DROP TABLE admin_content_data
 `
@@ -2212,6 +2482,15 @@ DROP TABLE admin_routes
 
 func (q *Queries) DropAdminRouteTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropAdminRouteTable)
+	return err
+}
+
+const dropBackupTables = `-- name: DropBackupTables :exec
+DROP TABLE IF EXISTS backup_sets
+`
+
+func (q *Queries) DropBackupTables(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropBackupTables)
 	return err
 }
 
@@ -2503,6 +2782,236 @@ func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, slug string) (int64
 	var admin_route_id int64
 	err := row.Scan(&admin_route_id)
 	return admin_route_id, err
+}
+
+const getBackup = `-- name: GetBackup :one
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE backup_id = ? LIMIT 1
+`
+
+func (q *Queries) GetBackup(ctx context.Context, backupID string) (Backups, error) {
+	row := q.db.QueryRowContext(ctx, getBackup, backupID)
+	var i Backups
+	err := row.Scan(
+		&i.BackupID,
+		&i.NodeID,
+		&i.BackupType,
+		&i.Status,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.DurationMs,
+		&i.RecordCount,
+		&i.SizeBytes,
+		&i.ReplicationLsn,
+		&i.HlcTimestamp,
+		&i.StoragePath,
+		&i.Checksum,
+		&i.TriggeredBy,
+		&i.ErrorMessage,
+		&i.Metadata,
+	)
+	return i, err
+}
+
+const getBackupSet = `-- name: GetBackupSet :one
+SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+WHERE backup_set_id = ? LIMIT 1
+`
+
+func (q *Queries) GetBackupSet(ctx context.Context, backupSetID string) (BackupSets, error) {
+	row := q.db.QueryRowContext(ctx, getBackupSet, backupSetID)
+	var i BackupSets
+	err := row.Scan(
+		&i.BackupSetID,
+		&i.CreatedAt,
+		&i.HlcTimestamp,
+		&i.Status,
+		&i.BackupIds,
+		&i.NodeCount,
+		&i.CompletedCount,
+		&i.ErrorMessage,
+	)
+	return i, err
+}
+
+const getBackupSetByHLC = `-- name: GetBackupSetByHLC :one
+SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+WHERE hlc_timestamp = ?
+ORDER BY created_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetBackupSetByHLC(ctx context.Context, hlcTimestamp int64) (BackupSets, error) {
+	row := q.db.QueryRowContext(ctx, getBackupSetByHLC, hlcTimestamp)
+	var i BackupSets
+	err := row.Scan(
+		&i.BackupSetID,
+		&i.CreatedAt,
+		&i.HlcTimestamp,
+		&i.Status,
+		&i.BackupIds,
+		&i.NodeCount,
+		&i.CompletedCount,
+		&i.ErrorMessage,
+	)
+	return i, err
+}
+
+const getBackupsByHLCRange = `-- name: GetBackupsByHLCRange :many
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE hlc_timestamp >= ? AND hlc_timestamp <= ?
+ORDER BY hlc_timestamp ASC
+`
+
+type GetBackupsByHLCRangeParams struct {
+	HlcTimestamp   sql.NullInt64 `json:"hlc_timestamp"`
+	HlcTimestamp_2 sql.NullInt64 `json:"hlc_timestamp_2"`
+}
+
+func (q *Queries) GetBackupsByHLCRange(ctx context.Context, arg GetBackupsByHLCRangeParams) ([]Backups, error) {
+	rows, err := q.db.QueryContext(ctx, getBackupsByHLCRange, arg.HlcTimestamp, arg.HlcTimestamp_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Backups
+	for rows.Next() {
+		var i Backups
+		if err := rows.Scan(
+			&i.BackupID,
+			&i.NodeID,
+			&i.BackupType,
+			&i.Status,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.DurationMs,
+			&i.RecordCount,
+			&i.SizeBytes,
+			&i.ReplicationLsn,
+			&i.HlcTimestamp,
+			&i.StoragePath,
+			&i.Checksum,
+			&i.TriggeredBy,
+			&i.ErrorMessage,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBackupsByNode = `-- name: GetBackupsByNode :many
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE node_id = ?
+ORDER BY started_at DESC
+LIMIT ? OFFSET ?
+`
+
+type GetBackupsByNodeParams struct {
+	NodeID string `json:"node_id"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
+}
+
+func (q *Queries) GetBackupsByNode(ctx context.Context, arg GetBackupsByNodeParams) ([]Backups, error) {
+	rows, err := q.db.QueryContext(ctx, getBackupsByNode, arg.NodeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Backups
+	for rows.Next() {
+		var i Backups
+		if err := rows.Scan(
+			&i.BackupID,
+			&i.NodeID,
+			&i.BackupType,
+			&i.Status,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.DurationMs,
+			&i.RecordCount,
+			&i.SizeBytes,
+			&i.ReplicationLsn,
+			&i.HlcTimestamp,
+			&i.StoragePath,
+			&i.Checksum,
+			&i.TriggeredBy,
+			&i.ErrorMessage,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getBackupsByStatus = `-- name: GetBackupsByStatus :many
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE status = ?
+ORDER BY started_at DESC
+LIMIT ? OFFSET ?
+`
+
+type GetBackupsByStatusParams struct {
+	Status string `json:"status"`
+	Limit  int64  `json:"limit"`
+	Offset int64  `json:"offset"`
+}
+
+func (q *Queries) GetBackupsByStatus(ctx context.Context, arg GetBackupsByStatusParams) ([]Backups, error) {
+	rows, err := q.db.QueryContext(ctx, getBackupsByStatus, arg.Status, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Backups
+	for rows.Next() {
+		var i Backups
+		if err := rows.Scan(
+			&i.BackupID,
+			&i.NodeID,
+			&i.BackupType,
+			&i.Status,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.DurationMs,
+			&i.RecordCount,
+			&i.SizeBytes,
+			&i.ReplicationLsn,
+			&i.HlcTimestamp,
+			&i.StoragePath,
+			&i.Checksum,
+			&i.TriggeredBy,
+			&i.ErrorMessage,
+			&i.Metadata,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getChangeEvent = `-- name: GetChangeEvent :one
@@ -2875,6 +3384,98 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, routeID int64)
 	return items, nil
 }
 
+const getLatestBackup = `-- name: GetLatestBackup :one
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE node_id = ? AND status = 'completed'
+ORDER BY started_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestBackup(ctx context.Context, nodeID string) (Backups, error) {
+	row := q.db.QueryRowContext(ctx, getLatestBackup, nodeID)
+	var i Backups
+	err := row.Scan(
+		&i.BackupID,
+		&i.NodeID,
+		&i.BackupType,
+		&i.Status,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.DurationMs,
+		&i.RecordCount,
+		&i.SizeBytes,
+		&i.ReplicationLsn,
+		&i.HlcTimestamp,
+		&i.StoragePath,
+		&i.Checksum,
+		&i.TriggeredBy,
+		&i.ErrorMessage,
+		&i.Metadata,
+	)
+	return i, err
+}
+
+const getLatestBackupByType = `-- name: GetLatestBackupByType :one
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+WHERE node_id = ? AND backup_type = ? AND status = 'completed'
+ORDER BY started_at DESC
+LIMIT 1
+`
+
+type GetLatestBackupByTypeParams struct {
+	NodeID     string `json:"node_id"`
+	BackupType string `json:"backup_type"`
+}
+
+func (q *Queries) GetLatestBackupByType(ctx context.Context, arg GetLatestBackupByTypeParams) (Backups, error) {
+	row := q.db.QueryRowContext(ctx, getLatestBackupByType, arg.NodeID, arg.BackupType)
+	var i Backups
+	err := row.Scan(
+		&i.BackupID,
+		&i.NodeID,
+		&i.BackupType,
+		&i.Status,
+		&i.StartedAt,
+		&i.CompletedAt,
+		&i.DurationMs,
+		&i.RecordCount,
+		&i.SizeBytes,
+		&i.ReplicationLsn,
+		&i.HlcTimestamp,
+		&i.StoragePath,
+		&i.Checksum,
+		&i.TriggeredBy,
+		&i.ErrorMessage,
+		&i.Metadata,
+	)
+	return i, err
+}
+
+const getLatestVerification = `-- name: GetLatestVerification :one
+SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
+WHERE backup_id = ?
+ORDER BY verified_at DESC
+LIMIT 1
+`
+
+func (q *Queries) GetLatestVerification(ctx context.Context, backupID string) (BackupVerifications, error) {
+	row := q.db.QueryRowContext(ctx, getLatestVerification, backupID)
+	var i BackupVerifications
+	err := row.Scan(
+		&i.VerificationID,
+		&i.BackupID,
+		&i.VerifiedAt,
+		&i.VerifiedBy,
+		&i.RestoreTested,
+		&i.ChecksumValid,
+		&i.RecordCountMatch,
+		&i.Status,
+		&i.ErrorMessage,
+		&i.DurationMs,
+	)
+	return i, err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 WHERE media_id = ? LIMIT 1
@@ -2972,6 +3573,44 @@ func (q *Queries) GetMediaDimension(ctx context.Context, mdID int64) (MediaDimen
 		&i.AspectRatio,
 	)
 	return i, err
+}
+
+const getPendingBackupSets = `-- name: GetPendingBackupSets :many
+SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+WHERE status = 'pending'
+ORDER BY created_at ASC
+`
+
+func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSets, error) {
+	rows, err := q.db.QueryContext(ctx, getPendingBackupSets)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BackupSets
+	for rows.Next() {
+		var i BackupSets
+		if err := rows.Scan(
+			&i.BackupSetID,
+			&i.CreatedAt,
+			&i.HlcTimestamp,
+			&i.Status,
+			&i.BackupIds,
+			&i.NodeCount,
+			&i.CompletedCount,
+			&i.ErrorMessage,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getPermission = `-- name: GetPermission :one
@@ -3675,6 +4314,80 @@ func (q *Queries) GetUserSshKeyByFingerprint(ctx context.Context, fingerprint st
 	return i, err
 }
 
+const getVerification = `-- name: GetVerification :one
+SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
+WHERE verification_id = ? LIMIT 1
+`
+
+func (q *Queries) GetVerification(ctx context.Context, verificationID string) (BackupVerifications, error) {
+	row := q.db.QueryRowContext(ctx, getVerification, verificationID)
+	var i BackupVerifications
+	err := row.Scan(
+		&i.VerificationID,
+		&i.BackupID,
+		&i.VerifiedAt,
+		&i.VerifiedBy,
+		&i.RestoreTested,
+		&i.ChecksumValid,
+		&i.RecordCountMatch,
+		&i.Status,
+		&i.ErrorMessage,
+		&i.DurationMs,
+	)
+	return i, err
+}
+
+const getVerificationsByBackup = `-- name: GetVerificationsByBackup :many
+SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
+WHERE backup_id = ?
+ORDER BY verified_at DESC
+`
+
+func (q *Queries) GetVerificationsByBackup(ctx context.Context, backupID string) ([]BackupVerifications, error) {
+	rows, err := q.db.QueryContext(ctx, getVerificationsByBackup, backupID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BackupVerifications
+	for rows.Next() {
+		var i BackupVerifications
+		if err := rows.Scan(
+			&i.VerificationID,
+			&i.BackupID,
+			&i.VerifiedAt,
+			&i.VerifiedBy,
+			&i.RestoreTested,
+			&i.ChecksumValid,
+			&i.RecordCountMatch,
+			&i.Status,
+			&i.ErrorMessage,
+			&i.DurationMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const incrementBackupSetCompleted = `-- name: IncrementBackupSetCompleted :exec
+UPDATE backup_sets
+SET completed_count = completed_count + 1
+WHERE backup_set_id = ?
+`
+
+func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, backupSetID string) error {
+	_, err := q.db.ExecContext(ctx, incrementBackupSetCompleted, backupSetID)
+	return err
+}
+
 const listAdminContentData = `-- name: ListAdminContentData :many
 SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified FROM admin_content_data
 ORDER BY admin_content_data_id
@@ -4159,6 +4872,100 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBackupSets = `-- name: ListBackupSets :many
+SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+ORDER BY created_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListBackupSetsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListBackupSets(ctx context.Context, arg ListBackupSetsParams) ([]BackupSets, error) {
+	rows, err := q.db.QueryContext(ctx, listBackupSets, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BackupSets
+	for rows.Next() {
+		var i BackupSets
+		if err := rows.Scan(
+			&i.BackupSetID,
+			&i.CreatedAt,
+			&i.HlcTimestamp,
+			&i.Status,
+			&i.BackupIds,
+			&i.NodeCount,
+			&i.CompletedCount,
+			&i.ErrorMessage,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listBackups = `-- name: ListBackups :many
+SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
+ORDER BY started_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListBackupsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListBackups(ctx context.Context, arg ListBackupsParams) ([]Backups, error) {
+	rows, err := q.db.QueryContext(ctx, listBackups, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Backups
+	for rows.Next() {
+		var i Backups
+		if err := rows.Scan(
+			&i.BackupID,
+			&i.NodeID,
+			&i.BackupType,
+			&i.Status,
+			&i.StartedAt,
+			&i.CompletedAt,
+			&i.DurationMs,
+			&i.RecordCount,
+			&i.SizeBytes,
+			&i.ReplicationLsn,
+			&i.HlcTimestamp,
+			&i.StoragePath,
+			&i.Checksum,
+			&i.TriggeredBy,
+			&i.ErrorMessage,
+			&i.Metadata,
 		); err != nil {
 			return nil, err
 		}
@@ -5176,6 +5983,51 @@ func (q *Queries) ListUserSshKeys(ctx context.Context, userID int64) ([]UserSshK
 	return items, nil
 }
 
+const listVerifications = `-- name: ListVerifications :many
+SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, checksum_valid, record_count_match, status, error_message, duration_ms FROM backup_verifications
+ORDER BY verified_at DESC
+LIMIT ? OFFSET ?
+`
+
+type ListVerificationsParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListVerifications(ctx context.Context, arg ListVerificationsParams) ([]BackupVerifications, error) {
+	rows, err := q.db.QueryContext(ctx, listVerifications, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []BackupVerifications
+	for rows.Next() {
+		var i BackupVerifications
+		if err := rows.Scan(
+			&i.VerificationID,
+			&i.BackupID,
+			&i.VerifiedAt,
+			&i.VerifiedBy,
+			&i.RestoreTested,
+			&i.ChecksumValid,
+			&i.RecordCountMatch,
+			&i.Status,
+			&i.ErrorMessage,
+			&i.DurationMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markEventConsumed = `-- name: MarkEventConsumed :exec
 UPDATE change_events
 SET consumed_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
@@ -5500,6 +6352,83 @@ func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRoutePara
 		arg.DateCreated,
 		arg.DateModified,
 		arg.Slug_2,
+	)
+	return err
+}
+
+const updateBackupHLC = `-- name: UpdateBackupHLC :exec
+UPDATE backups
+SET hlc_timestamp = ?, replication_lsn = ?
+WHERE backup_id = ?
+`
+
+type UpdateBackupHLCParams struct {
+	HlcTimestamp   sql.NullInt64  `json:"hlc_timestamp"`
+	ReplicationLsn sql.NullString `json:"replication_lsn"`
+	BackupID       string         `json:"backup_id"`
+}
+
+func (q *Queries) UpdateBackupHLC(ctx context.Context, arg UpdateBackupHLCParams) error {
+	_, err := q.db.ExecContext(ctx, updateBackupHLC, arg.HlcTimestamp, arg.ReplicationLsn, arg.BackupID)
+	return err
+}
+
+const updateBackupSetStatus = `-- name: UpdateBackupSetStatus :exec
+UPDATE backup_sets
+SET status = ?, completed_count = ?, error_message = ?
+WHERE backup_set_id = ?
+`
+
+type UpdateBackupSetStatusParams struct {
+	Status         string         `json:"status"`
+	CompletedCount sql.NullInt64  `json:"completed_count"`
+	ErrorMessage   sql.NullString `json:"error_message"`
+	BackupSetID    string         `json:"backup_set_id"`
+}
+
+func (q *Queries) UpdateBackupSetStatus(ctx context.Context, arg UpdateBackupSetStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateBackupSetStatus,
+		arg.Status,
+		arg.CompletedCount,
+		arg.ErrorMessage,
+		arg.BackupSetID,
+	)
+	return err
+}
+
+const updateBackupStatus = `-- name: UpdateBackupStatus :exec
+UPDATE backups
+SET status = ?,
+    completed_at = ?,
+    duration_ms = ?,
+    record_count = ?,
+    size_bytes = ?,
+    checksum = ?,
+    error_message = ?
+WHERE backup_id = ?
+`
+
+type UpdateBackupStatusParams struct {
+	Status       string         `json:"status"`
+	CompletedAt  sql.NullString `json:"completed_at"`
+	DurationMs   sql.NullInt64  `json:"duration_ms"`
+	RecordCount  sql.NullInt64  `json:"record_count"`
+	SizeBytes    sql.NullInt64  `json:"size_bytes"`
+	Checksum     sql.NullString `json:"checksum"`
+	ErrorMessage sql.NullString `json:"error_message"`
+	BackupID     string         `json:"backup_id"`
+}
+
+func (q *Queries) UpdateBackupStatus(ctx context.Context, arg UpdateBackupStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateBackupStatus,
+		arg.Status,
+		arg.CompletedAt,
+		arg.DurationMs,
+		arg.RecordCount,
+		arg.SizeBytes,
+		arg.Checksum,
+		arg.ErrorMessage,
+		arg.BackupID,
 	)
 	return err
 }

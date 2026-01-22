@@ -6,6 +6,7 @@ package mdbp
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/sqlc-dev/pqtype"
@@ -70,6 +71,49 @@ type AdminRoutes struct {
 	AuthorID     int32        `json:"author_id"`
 	DateCreated  sql.NullTime `json:"date_created"`
 	DateModified sql.NullTime `json:"date_modified"`
+}
+
+type BackupSets struct {
+	BackupSetID    string          `json:"backup_set_id"`
+	CreatedAt      time.Time       `json:"created_at"`
+	HlcTimestamp   int64           `json:"hlc_timestamp"`
+	Status         string          `json:"status"`
+	BackupIds      json.RawMessage `json:"backup_ids"`
+	NodeCount      int32           `json:"node_count"`
+	CompletedCount sql.NullInt32   `json:"completed_count"`
+	ErrorMessage   sql.NullString  `json:"error_message"`
+}
+
+type BackupVerifications struct {
+	VerificationID   string         `json:"verification_id"`
+	BackupID         string         `json:"backup_id"`
+	VerifiedAt       time.Time      `json:"verified_at"`
+	VerifiedBy       sql.NullString `json:"verified_by"`
+	RestoreTested    sql.NullBool   `json:"restore_tested"`
+	ChecksumValid    sql.NullBool   `json:"checksum_valid"`
+	RecordCountMatch sql.NullBool   `json:"record_count_match"`
+	Status           string         `json:"status"`
+	ErrorMessage     sql.NullString `json:"error_message"`
+	DurationMs       sql.NullInt32  `json:"duration_ms"`
+}
+
+type Backups struct {
+	BackupID       string                `json:"backup_id"`
+	NodeID         string                `json:"node_id"`
+	BackupType     string                `json:"backup_type"`
+	Status         string                `json:"status"`
+	StartedAt      time.Time             `json:"started_at"`
+	CompletedAt    sql.NullTime          `json:"completed_at"`
+	DurationMs     sql.NullInt32         `json:"duration_ms"`
+	RecordCount    sql.NullInt64         `json:"record_count"`
+	SizeBytes      sql.NullInt64         `json:"size_bytes"`
+	ReplicationLsn sql.NullString        `json:"replication_lsn"`
+	HlcTimestamp   sql.NullInt64         `json:"hlc_timestamp"`
+	StoragePath    string                `json:"storage_path"`
+	Checksum       sql.NullString        `json:"checksum"`
+	TriggeredBy    sql.NullString        `json:"triggered_by"`
+	ErrorMessage   sql.NullString        `json:"error_message"`
+	Metadata       pqtype.NullRawMessage `json:"metadata"`
 }
 
 type ChangeEvents struct {
