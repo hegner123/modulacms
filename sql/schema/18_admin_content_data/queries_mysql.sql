@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT NULL,
+
     CONSTRAINT fk_admin_content_data_parent_id
         FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
              ON UPDATE CASCADE ON DELETE CASCADE,
@@ -63,10 +63,8 @@ INSERT INTO admin_content_data (
     admin_datatype_id,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -85,8 +83,7 @@ SET parent_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE admin_content_data_id = ?;
 
 -- name: DeleteAdminContentData :exec

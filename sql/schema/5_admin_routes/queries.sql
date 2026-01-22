@@ -12,8 +12,7 @@ CREATE TABLE admin_routes (
         REFERENCES users
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CreateAdminRouteSlugIndex :exec
@@ -47,10 +46,8 @@ INSERT INTO admin_routes (
     status,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES (    
-    ?,
     ?,
     ?,
     ?,
@@ -66,8 +63,7 @@ SET slug = ?,
     status = ?,  
     author_id = ?, 
     date_created = ?, 
-    date_modified = ?, 
-    history = ?
+    date_modified = ?
     WHERE slug = ?
     RETURNING *;
 

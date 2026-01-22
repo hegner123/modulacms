@@ -16,8 +16,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountDatatype :one
@@ -54,16 +53,14 @@ INSERT INTO datatypes (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES (    
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
     ) RETURNING *;
 
 -- name: UpdateDatatype :exec
@@ -73,9 +70,8 @@ SET parent_id = $1,
     type = $3,
     author_id = $4,
     date_created = $5,
-    date_modified = $6,
-    history = $7
-    WHERE datatype_id = $8
+    date_modified = $6
+    WHERE datatype_id = $7
     RETURNING *;
 
 -- name: DeleteDatatype :exec

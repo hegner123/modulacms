@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    history TEXT NULL,
+
     CONSTRAINT fk_admin_datatypes_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE,
@@ -52,10 +52,8 @@ INSERT INTO admin_datatypes (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -74,8 +72,7 @@ SET parent_id = ?,
     type = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE admin_datatype_id = ?;
 
 -- name: DeleteAdminDatatype :exec

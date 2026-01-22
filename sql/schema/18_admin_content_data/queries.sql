@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
@@ -47,10 +47,8 @@ INSERT INTO admin_content_data (
     admin_datatype_id,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES ( 
-    ?,
     ?,
     ?,
     ?,
@@ -66,8 +64,7 @@ SET parent_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE admin_content_data_id = ?;
 
 -- name: DeleteAdminContentData :exec

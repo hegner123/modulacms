@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS routes (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT NULL,
+
     CONSTRAINT unique_slug
         UNIQUE (slug),
     CONSTRAINT fk_routes_routes_author_id
@@ -48,10 +48,8 @@ INSERT INTO routes (
     status,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -65,7 +63,7 @@ UPDATE routes
 SET slug = ?,
     title = ?,
     status = ?,
-    history = ?,
+
     author_id = ?,
     date_created = ?,
     date_modified = ?

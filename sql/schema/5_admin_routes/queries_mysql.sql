@@ -11,7 +11,7 @@ CREATE TABLE admin_routes (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
-    history TEXT NULL,
+
     CONSTRAINT slug
         UNIQUE (slug),
     CONSTRAINT fk_admin_routes_users_user_id
@@ -49,10 +49,8 @@ INSERT INTO admin_routes (
     status,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -71,8 +69,7 @@ SET slug = ?,
     status = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE slug = ?;
 
 -- name: DeleteAdminRoute :exec

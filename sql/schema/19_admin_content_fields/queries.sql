@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     author_id INTEGER NOT NULL DEFAULT 0,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     PRIMARY KEY (admin_content_field_id),
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
@@ -49,10 +49,8 @@ INSERT INTO admin_content_fields (
     admin_field_value,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -70,8 +68,7 @@ SET admin_route_id = ?,
     admin_field_value = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE admin_content_field_id = ?;
 
 -- name: DeleteAdminContentField :exec

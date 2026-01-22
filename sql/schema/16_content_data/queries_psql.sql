@@ -34,8 +34,7 @@ CREATE TABLE IF NOT EXISTS content_data (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountContentData :one
@@ -65,8 +64,7 @@ INSERT INTO content_data (
     datatype_id,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
     $1,
     $2,
@@ -76,8 +74,7 @@ INSERT INTO content_data (
     $6,
     $7,
     $8,
-    $9,
-    $10
+    $9
 ) RETURNING *;
 
 -- name: UpdateContentData :exec
@@ -90,9 +87,8 @@ SET route_id = $1,
     datatype_id =$6,
     author_id = $7,
     date_created = $8,
-    date_modified = $9,
-    history = $10
-WHERE content_data_id = $11;
+    date_modified = $9
+WHERE content_data_id = $10;
 
 -- name: DeleteContentData :exec
 DELETE FROM content_data

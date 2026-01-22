@@ -13,8 +13,7 @@ CREATE TABLE admin_routes (
         REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CreateAdminRouteSlugIndex :exec
@@ -49,16 +48,14 @@ INSERT INTO admin_routes (
     status,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES ( 
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
     ) RETURNING *;
 
 -- name: UpdateAdminRoute :exec
@@ -68,9 +65,8 @@ SET slug = $1,
     status = $3, 
     author_id = $4,
     date_created = $5,
-    date_modified = $6,
-    history = $7
-    WHERE slug = $8
+    date_modified = $6
+    WHERE slug = $7
     RETURNING *;
 
 -- name: DeleteAdminRoute :exec

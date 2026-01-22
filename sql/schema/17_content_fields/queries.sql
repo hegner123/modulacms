@@ -19,8 +19,7 @@ CREATE TABLE content_fields (
         REFERENCES users
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountContentField :one
@@ -48,10 +47,8 @@ INSERT INTO content_fields (
     field_value,
     author_id, 
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -70,8 +67,7 @@ SET route_id = ?,
     field_value = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE content_field_id = ?;
 
 -- name: DeleteContentField :exec

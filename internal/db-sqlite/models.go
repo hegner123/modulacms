@@ -19,7 +19,6 @@ type AdminContentData struct {
 	AuthorID           int64          `json:"author_id"`
 	DateCreated        sql.NullString `json:"date_created"`
 	DateModified       sql.NullString `json:"date_modified"`
-	History            sql.NullString `json:"history"`
 }
 
 type AdminContentFields struct {
@@ -31,7 +30,6 @@ type AdminContentFields struct {
 	AuthorID            int64          `json:"author_id"`
 	DateCreated         sql.NullString `json:"date_created"`
 	DateModified        sql.NullString `json:"date_modified"`
-	History             sql.NullString `json:"history"`
 }
 
 type AdminDatatypes struct {
@@ -42,7 +40,6 @@ type AdminDatatypes struct {
 	AuthorID        int64          `json:"author_id"`
 	DateCreated     sql.NullString `json:"date_created"`
 	DateModified    sql.NullString `json:"date_modified"`
-	History         sql.NullString `json:"history"`
 }
 
 type AdminDatatypesFields struct {
@@ -60,7 +57,6 @@ type AdminFields struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
 }
 
 type AdminRoutes struct {
@@ -71,7 +67,6 @@ type AdminRoutes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
 }
 
 type ChangeEvents struct {
@@ -102,7 +97,6 @@ type ContentData struct {
 	AuthorID      int64          `json:"author_id"`
 	DateCreated   sql.NullString `json:"date_created"`
 	DateModified  sql.NullString `json:"date_modified"`
-	History       sql.NullString `json:"history"`
 }
 
 type ContentFields struct {
@@ -114,7 +108,6 @@ type ContentFields struct {
 	AuthorID       int64          `json:"author_id"`
 	DateCreated    sql.NullString `json:"date_created"`
 	DateModified   sql.NullString `json:"date_modified"`
-	History        sql.NullString `json:"history"`
 }
 
 type Datatypes struct {
@@ -125,7 +118,6 @@ type Datatypes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
 }
 
 type DatatypesFields struct {
@@ -143,7 +135,6 @@ type Fields struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
 }
 
 type Media struct {
@@ -192,7 +183,6 @@ type Routes struct {
 	AuthorID     int64          `json:"author_id"`
 	DateCreated  sql.NullString `json:"date_created"`
 	DateModified sql.NullString `json:"date_modified"`
-	History      sql.NullString `json:"history"`
 }
 
 type Sessions struct {

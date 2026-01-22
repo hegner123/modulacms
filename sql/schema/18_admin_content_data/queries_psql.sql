@@ -34,8 +34,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 
@@ -63,16 +62,14 @@ INSERT INTO admin_content_data (
     admin_datatype_id,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (    
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
 ) RETURNING *;
 
 -- name: UpdateAdminContentData :exec
@@ -82,9 +79,8 @@ SET parent_id = $1,
     admin_datatype_id =$3,
     author_id = $4,
     date_created = $5,
-    date_modified = $6,
-    history = $7
-WHERE admin_content_data_id = $8;
+    date_modified = $6
+WHERE admin_content_data_id = $7;
 
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data

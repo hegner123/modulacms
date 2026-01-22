@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS routes (
         ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS user_oauth (
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
         ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS datatypes (
@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     CONSTRAINT fk_datatypes_parent FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON DELETE SET DEFAULT,
@@ -178,7 +178,7 @@ CREATE TABLE IF NOT EXISTS fields (
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     CONSTRAINT fk_datatypes FOREIGN KEY (parent_id)
         REFERENCES datatypes(datatype_id)
         ON DELETE SET DEFAULT,
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     author_id INT NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     CONSTRAINT fk_parent_id FOREIGN KEY (parent_id)
         REFERENCES admin_datatypes(admin_datatype_id)
         ON UPDATE CASCADE
@@ -243,7 +243,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
         ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
@@ -277,7 +277,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_datatype_id INTEGER,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
+
     CONSTRAINT fk_admin_routes FOREIGN KEY (admin_route_id)
         REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
@@ -297,7 +297,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_field_value TEXT NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     CONSTRAINT fk_admin_route_id FOREIGN KEY (admin_route_id)
         REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
@@ -318,7 +318,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     datatype_id INTEGER,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
+
     CONSTRAINT fk_routes FOREIGN KEY (route_id)
         REFERENCES routes(route_id)
         ON DELETE SET NULL,
@@ -338,7 +338,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
     field_value TEXT NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     CONSTRAINT fk_route_id FOREIGN KEY (route_id)
         REFERENCES routes(route_id)
         ON DELETE SET NULL,

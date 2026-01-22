@@ -13,8 +13,7 @@ CREATE TABLE IF NOT EXISTS routes (
         REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountRoute :one
@@ -45,16 +44,14 @@ INSERT INTO routes (
     status,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6,
-    $7
+    $6
 )
 RETURNING *;
 
@@ -64,10 +61,9 @@ SET slug = $1,
     title = $2,
     status = $3,
     author_id = $4,
-    history = $5,
-    date_created = $6,
-    date_modified = $7
-WHERE slug = $8
+    date_created = $5,
+    date_modified = $6
+WHERE slug = $7
 RETURNING *;
 
 -- name: DeleteRoute :exec

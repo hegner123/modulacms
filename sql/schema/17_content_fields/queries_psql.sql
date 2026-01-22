@@ -23,8 +23,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountContentField :one
@@ -52,7 +51,7 @@ INSERT INTO content_fields (
     field_id,
     field_value,
     author_id, 
-    history,
+
     date_created,
     date_modified
 ) VALUES (
@@ -63,8 +62,7 @@ INSERT INTO content_fields (
     $5,
     $6,
     $7,
-    $8,
-    $9
+    $8
 ) RETURNING *;
 
 -- name: UpdateContentField :exec
@@ -75,10 +73,9 @@ SET  content_field_id = $1,
     field_id = $4,
     field_value = $5,
     author_id = $6,
-    history = $7,
-    date_created = $8,
-    date_modified = $9
-WHERE content_field_id = $10;
+    date_created = $7,
+    date_modified = $8
+WHERE content_field_id = $9;
 
 -- name: DeleteContentField :exec
 DELETE FROM content_fields

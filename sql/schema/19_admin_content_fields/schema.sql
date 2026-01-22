@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     author_id INTEGER NOT NULL DEFAULT 0,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)

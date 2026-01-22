@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS routes (
     ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS datatypes(
@@ -90,7 +90,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 
@@ -107,7 +107,7 @@ CREATE TABLE admin_datatypes (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 
@@ -125,7 +125,7 @@ CREATE TABLE admin_fields (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS tokens (
@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
+
     FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
@@ -278,7 +278,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS fields(
@@ -295,7 +295,7 @@ CREATE TABLE IF NOT EXISTS fields(
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+
 );
 
 CREATE TABLE IF NOT EXISTS admin_content_data (
@@ -309,7 +309,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     author_id INTEGER NOT NULL DEFAULT 1,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
@@ -329,7 +329,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     author_id INTEGER NOT NULL DEFAULT 0,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT,
+
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id)
         ON DELETE SET NULL,
     FOREIGN KEY (admin_content_data_id) REFERENCES admin_content_data(admin_content_data_id)

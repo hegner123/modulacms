@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT NULL,
+
     CONSTRAINT fk_admin_fields_admin_datatypes
         FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
             ON UPDATE CASCADE ON DELETE SET NULL,

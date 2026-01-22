@@ -11,6 +11,5 @@ CREATE TABLE admin_fields (
         REFERENCES users
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

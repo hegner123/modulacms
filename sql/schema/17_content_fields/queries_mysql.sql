@@ -12,7 +12,7 @@ CREATE TABLE content_fields (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT NULL,
+
     CONSTRAINT fk_content_field_content_data
         FOREIGN KEY (content_data_id) REFERENCES content_data (content_data_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -50,10 +50,8 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value, 
-    author_id,
-    history
+    author_id
 ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -70,8 +68,7 @@ set  route_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?, 
-    author_id = ?,
-    history = ?
+    author_id = ?
 WHERE content_field_id = ?;
 
 -- name: DeleteContentField :exec

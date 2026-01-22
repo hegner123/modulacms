@@ -13,8 +13,7 @@ CREATE TABLE IF NOT EXISTS routes (
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT  DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT  DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountRoute :one
@@ -45,11 +44,10 @@ INSERT INTO routes (
     title,
     status,
     author_id,
-    history,
+
     date_created,
     date_modified
-) VALUES ( 
-    ?,
+) VALUES (
     ?,
     ?,
     ?,
@@ -66,8 +64,7 @@ SET slug = ?,
     status = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ? 
+    date_modified = ?
 WHERE slug = ?
 RETURNING *;
 

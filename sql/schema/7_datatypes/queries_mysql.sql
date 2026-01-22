@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    history TEXT NULL,
+
     CONSTRAINT fk_dt_datatypes_parent
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE,
@@ -53,10 +53,8 @@ INSERT INTO datatypes (
     parent_id,
     label,
     type,
-    author_id,
-    history
+    author_id
     ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -72,8 +70,7 @@ set
     parent_id = ?,
     label = ?,
     type = ?,
-    author_id = ?,
-    history = ?
+    author_id = ?
     WHERE datatype_id = ?;
 
 -- name: DeleteDatatype :exec

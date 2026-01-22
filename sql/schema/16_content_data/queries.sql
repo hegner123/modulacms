@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT DEFAULT NULL,
+
     FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
@@ -67,10 +67,8 @@ INSERT INTO content_data (
     datatype_id,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES ( 
-    ?,
     ?,
     ?,
     ?,
@@ -92,8 +90,7 @@ SET route_id = ?,
     datatype_id = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
 WHERE content_data_id = ?;
 
 -- name: DeleteContentData :exec

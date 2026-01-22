@@ -15,8 +15,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
         REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountAdminField :one
@@ -49,17 +48,15 @@ INSERT INTO admin_fields (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
-) VALUES ( 
+    date_modified
+) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 )
 RETURNING *;
 
@@ -71,9 +68,8 @@ SET parent_id    = $1,
     type         = $4,
     author_id    = $5,
     date_created = $6,
-    date_modified= $7,
-    history      = $8
-WHERE admin_field_id = $9;
+    date_modified= $7
+WHERE admin_field_id = $8;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields

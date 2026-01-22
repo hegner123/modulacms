@@ -17,8 +17,7 @@ CREATE TABLE IF NOT EXISTS fields (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CreateParentIDIndex :exec
@@ -50,8 +49,7 @@ INSERT INTO fields  (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES (
     $1,
     $2,
@@ -59,8 +57,7 @@ INSERT INTO fields  (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
     ) RETURNING *;
 
 
@@ -72,9 +69,8 @@ SET parent_id = $1,
     type = $4,
     author_id = $5,
     date_created = $6,
-    date_modified = $7,
-    history = $8
-    WHERE field_id = $9
+    date_modified = $7
+    WHERE field_id = $8
     RETURNING *;
 
 -- name: DeleteField :exec

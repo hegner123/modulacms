@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS fields (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    history TEXT NULL,
+
     CONSTRAINT fk_fields_datatypes
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE ON DELETE SET NULL,
@@ -46,10 +46,8 @@ INSERT INTO fields  (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -71,8 +69,7 @@ set
     type = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history =?
+    date_modified = ?
     WHERE field_id = ?;
 
 -- name: DeleteField :exec

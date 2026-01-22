@@ -15,8 +15,7 @@ CREATE TABLE admin_fields (
         REFERENCES users
             ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CreateAdminFieldParentIndex :exec
@@ -50,10 +49,8 @@ INSERT INTO admin_fields (
     type,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
     ) VALUES (
-    ?,
     ?,
     ?,
     ?,
@@ -72,8 +69,7 @@ SET parent_id = ?,
     type = ?,
     author_id = ?,
     date_created = ?,
-    date_modified = ?,
-    history = ?
+    date_modified = ?
     WHERE admin_field_id = ?
     RETURNING *;
 

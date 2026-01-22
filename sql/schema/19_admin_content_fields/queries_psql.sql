@@ -23,8 +23,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET DEFAULT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    history TEXT
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- name: CountAdminContentField :one
@@ -52,8 +51,7 @@ INSERT INTO admin_content_fields (
     admin_field_value,
     author_id,
     date_created,
-    date_modified,
-    history
+    date_modified
 ) VALUES ( 
     $1,
     $2,
@@ -61,8 +59,7 @@ INSERT INTO admin_content_fields (
     $4,
     $5,
     $6,
-    $7,
-    $8
+    $7
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
@@ -73,9 +70,8 @@ SET admin_route_id=$1,
     admin_field_value=$4,
     author_id=$5,
     date_created=$6,
-    date_modified=$7,
-    history=$8
-WHERE admin_content_field_id = $9;
+    date_modified=$7
+WHERE admin_content_field_id = $8;
 
 -- name: DeleteAdminContentField :exec
 DELETE FROM admin_content_fields

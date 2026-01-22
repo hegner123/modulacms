@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
     author_id INT DEFAULT 1 NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
-    history TEXT NULL,
+
     CONSTRAINT slug
         UNIQUE (slug),
     CONSTRAINT fk_admin_routes_users_user_id
