@@ -650,7 +650,7 @@ After completing this quickstart, explore these resources:
 
 **Getting Started:**
 - `/Users/home/Documents/Code/Go_dev/modulacms/README.md` - Project overview and philosophy
-- `/Users/home/Documents/Code/Go_dev/modulacms/ai/START.md` - Documentation index
+- `/Users/home/Documents/Code/Go_dev/modulacms/START.md` - Documentation index and onboarding
 
 **Reference:**
 - `/Users/home/Documents/Code/Go_dev/modulacms/ai/reference/PATTERNS.md` - Common code patterns

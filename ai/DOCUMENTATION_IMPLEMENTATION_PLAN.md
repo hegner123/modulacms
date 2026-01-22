@@ -732,7 +732,7 @@ ai/
 **Goal:** Polish and interconnect documentation.
 
 #### 7.1 Update START.md
-**Path:** `ai/START.md`
+**Path:** `START.md` (project root)
 **Priority:** HIGH (after Phase 1-2 complete)
 **Estimated Tokens:** ~1,500
 
@@ -876,7 +876,7 @@ ai/
 ## Related Files
 
 **Core Documentation:**
-- `/Users/home/Documents/Code/Go_dev/modulacms/ai/START.md` - Entry point
+- `/Users/home/Documents/Code/Go_dev/modulacms/START.md` - Entry point (onboarding)
 - `/Users/home/Documents/Code/Go_dev/modulacms/ai/FILE_TREE.md` - Directory structure
 - `/Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md` - Development guidelines
 
