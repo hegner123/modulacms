@@ -19,6 +19,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/muesli/reflow v0.3.0
 	github.com/muesli/termenv v0.16.0
+	github.com/oklog/ulid/v2 v2.1.1
 	github.com/sqlc-dev/pqtype v0.3.0
 	github.com/yuin/gopher-lua v1.1.1
 	golang.org/x/crypto v0.37.0
