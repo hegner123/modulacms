@@ -18,7 +18,7 @@ Search team-memory for previously stored documentation paths:
 ```
 mcp__team-memory__search_memories
   query: "modulacms documentation paths"
-  category: "onboarding"
+  category: "workflow"
 ```
 
 If results exist and timestamp is within 7 days, use cached paths but verify files still exist. If files are missing or timestamp is stale, proceed to Step 2.
@@ -32,7 +32,7 @@ Store the following paths using the team-memory MCP tool. This enables faster on
 ```
 mcp__team-memory__add_memory
   content: "ModulaCMS documentation paths stored [DATE]. Primary: /Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md (dev guidelines), /Users/home/Documents/Code/Go_dev/modulacms/ai/ (documentation root). Active project: See START.md Project Status section."
-  category: "onboarding"
+  category: "workflow"
   tags: ["modulacms", "paths", "documentation"]
 ```
 
