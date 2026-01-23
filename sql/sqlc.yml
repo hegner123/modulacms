@@ -229,16 +229,69 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
           - column: "backups.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backups.started_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.completed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.record_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.size_bytes"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.replication_lsn"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.checksum"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.triggered_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "backup_verifications.verification_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
           - column: "backup_verifications.backup_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
           - column: "backup_verifications.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_verifications.verified_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backup_verifications.verified_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.restore_tested"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.checksum_valid"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.record_count_match"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
           - column: "backup_sets.backup_set_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
           - column: "backup_sets.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          - column: "backup_sets.backup_ids"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "backup_sets.completed_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backup_sets.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          # CHANGE EVENTS
+          - column: "change_events.wall_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.old_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.new_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.synced_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.consumed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
@@ -480,16 +533,69 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
           - column: "backups.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backups.started_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.completed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.record_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.size_bytes"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.replication_lsn"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.checksum"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.triggered_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "backup_verifications.verification_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
           - column: "backup_verifications.backup_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
           - column: "backup_verifications.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_verifications.verified_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backup_verifications.verified_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.restore_tested"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.checksum_valid"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.record_count_match"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
           - column: "backup_sets.backup_set_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
           - column: "backup_sets.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          - column: "backup_sets.backup_ids"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "backup_sets.completed_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backup_sets.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          # CHANGE EVENTS
+          - column: "change_events.wall_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.old_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.new_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.synced_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.consumed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
@@ -731,16 +837,69 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
           - column: "backups.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backups.started_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.completed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backups.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.record_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.size_bytes"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backups.replication_lsn"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.checksum"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.triggered_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backups.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "backup_verifications.verification_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
           - column: "backup_verifications.backup_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
           - column: "backup_verifications.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_verifications.verified_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "backup_verifications.verified_by"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.restore_tested"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.checksum_valid"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.record_count_match"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableBool"}
+          - column: "backup_verifications.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "backup_verifications.duration_ms"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
           - column: "backup_sets.backup_set_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
           - column: "backup_sets.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          - column: "backup_sets.backup_ids"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "backup_sets.completed_count"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "backup_sets.error_message"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          # CHANGE EVENTS
+          - column: "change_events.wall_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.old_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.new_values"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.metadata"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.synced_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "change_events.consumed_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}

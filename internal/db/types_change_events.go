@@ -2,28 +2,27 @@ package db
 
 import (
 	"context"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// ChangeEvent represents a row in the change_events table.
-// It serves as:
-// 1. Audit trail - Who changed what, when
-// 2. Replication log - What to sync to other nodes
-// 3. Webhook source - What events to fire
-type ChangeEvent struct {
-	EventID       EventID        `json:"event_id"`
-	HLCTimestamp  HLC            `json:"hlc_timestamp"`
-	WallTimestamp Timestamp      `json:"wall_timestamp"`
-	NodeID        NodeID         `json:"node_id"`
-	TableName     string         `json:"table_name"`
-	RecordID      string         `json:"record_id"`
-	Operation     Operation      `json:"operation"`
-	Action        Action         `json:"action,omitempty"`
-	UserID        NullableUserID `json:"user_id,omitempty"`
-	OldValues     any            `json:"old_values,omitempty"`
-	NewValues     any            `json:"new_values,omitempty"`
-	Metadata      any            `json:"metadata,omitempty"`
-	SyncedAt      Timestamp      `json:"synced_at,omitempty"`
-	ConsumedAt    Timestamp      `json:"consumed_at,omitempty"`
+// ChangeEventBuilder is a convenience builder for creating change events.
+// The actual ChangeEvent struct is defined in change_event.go as the database wrapper.
+type ChangeEventBuilder struct {
+	EventID       types.EventID        `json:"event_id"`
+	HLCTimestamp  types.HLC            `json:"hlc_timestamp"`
+	WallTimestamp types.Timestamp      `json:"wall_timestamp"`
+	NodeID        types.NodeID         `json:"node_id"`
+	TableName     string               `json:"table_name"`
+	RecordID      string               `json:"record_id"`
+	Operation     types.Operation      `json:"operation"`
+	Action        types.Action         `json:"action,omitempty"`
+	UserID        types.NullableUserID `json:"user_id,omitempty"`
+	OldValues     any                  `json:"old_values,omitempty"`
+	NewValues     any                  `json:"new_values,omitempty"`
+	Metadata      any                  `json:"metadata,omitempty"`
+	SyncedAt      types.Timestamp      `json:"synced_at,omitempty"`
+	ConsumedAt    types.Timestamp      `json:"consumed_at,omitempty"`
 }
 
 // EventLogger interface for change event operations
@@ -35,7 +34,7 @@ type EventLogger interface {
 	GetEventsByRecord(ctx context.Context, tableName, recordID string) ([]ChangeEvent, error)
 
 	// GetEventsSince retrieves events after an HLC timestamp (for replication)
-	GetEventsSince(ctx context.Context, hlc HLC, limit int) ([]ChangeEvent, error)
+	GetEventsSince(ctx context.Context, hlc types.HLC, limit int) ([]ChangeEvent, error)
 
 	// GetUnsyncedEvents retrieves events not yet synced to other nodes
 	GetUnsyncedEvents(ctx context.Context, limit int) ([]ChangeEvent, error)
@@ -44,36 +43,36 @@ type EventLogger interface {
 	GetUnconsumedEvents(ctx context.Context, limit int) ([]ChangeEvent, error)
 
 	// MarkSynced marks events as synced
-	MarkSynced(ctx context.Context, eventIDs []EventID) error
+	MarkSynced(ctx context.Context, eventIDs []types.EventID) error
 
 	// MarkConsumed marks events as consumed by webhooks
-	MarkConsumed(ctx context.Context, eventIDs []EventID) error
+	MarkConsumed(ctx context.Context, eventIDs []types.EventID) error
 }
 
-// NewChangeEvent creates a change event for the current node
-func NewChangeEvent(nodeID NodeID, tableName, recordID string, op Operation, action Action, userID UserID) ChangeEvent {
-	return ChangeEvent{
-		EventID:       NewEventID(),
-		HLCTimestamp:  HLCNow(),
-		WallTimestamp: TimestampNow(),
+// NewChangeEventBuilder creates a change event builder for the current node
+func NewChangeEventBuilder(nodeID types.NodeID, tableName, recordID string, op types.Operation, action types.Action, userID types.UserID) ChangeEventBuilder {
+	return ChangeEventBuilder{
+		EventID:       types.NewEventID(),
+		HLCTimestamp:  types.HLCNow(),
+		WallTimestamp: types.TimestampNow(),
 		NodeID:        nodeID,
 		TableName:     tableName,
 		RecordID:      recordID,
 		Operation:     op,
 		Action:        action,
-		UserID:        NullableUserID{ID: userID, Valid: userID != ""},
+		UserID:        types.NullableUserID{ID: userID, Valid: userID != ""},
 	}
 }
 
 // WithChanges adds old/new values to the event
-func (e ChangeEvent) WithChanges(oldVal, newVal any) ChangeEvent {
+func (e ChangeEventBuilder) WithChanges(oldVal, newVal any) ChangeEventBuilder {
 	e.OldValues = oldVal
 	e.NewValues = newVal
 	return e
 }
 
 // WithMetadata adds metadata to the event
-func (e ChangeEvent) WithMetadata(meta any) ChangeEvent {
+func (e ChangeEventBuilder) WithMetadata(meta any) ChangeEventBuilder {
 	e.Metadata = meta
 	return e
 }

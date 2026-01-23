@@ -889,14 +889,14 @@ RETURNING backup_id, node_id, backup_type, status, started_at, completed_at, dur
 `
 
 type CreateBackupParams struct {
-	BackupID    types.BackupID     `json:"backup_id"`
-	NodeID      types.NodeID       `json:"node_id"`
-	BackupType  types.BackupType   `json:"backup_type"`
-	Status      types.BackupStatus `json:"status"`
-	StartedAt   string             `json:"started_at"`
-	StoragePath string             `json:"storage_path"`
-	TriggeredBy sql.NullString     `json:"triggered_by"`
-	Metadata    sql.NullString     `json:"metadata"`
+	BackupID    types.BackupID       `json:"backup_id"`
+	NodeID      types.NodeID         `json:"node_id"`
+	BackupType  types.BackupType     `json:"backup_type"`
+	Status      types.BackupStatus   `json:"status"`
+	StartedAt   types.Timestamp      `json:"started_at"`
+	StoragePath string               `json:"storage_path"`
+	TriggeredBy types.NullableString `json:"triggered_by"`
+	Metadata    types.JSONData       `json:"metadata"`
 }
 
 // Backups CRUD
@@ -949,10 +949,10 @@ type CreateBackupSetParams struct {
 	CreatedAt      types.Timestamp       `json:"created_at"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
-	BackupIds      string                `json:"backup_ids"`
+	BackupIds      types.JSONData        `json:"backup_ids"`
 	NodeCount      int64                 `json:"node_count"`
-	CompletedCount sql.NullInt64         `json:"completed_count"`
-	ErrorMessage   sql.NullString        `json:"error_message"`
+	CompletedCount types.NullableInt64   `json:"completed_count"`
+	ErrorMessage   types.NullableString  `json:"error_message"`
 }
 
 // Backup Sets CRUD
@@ -2155,14 +2155,14 @@ RETURNING verification_id, backup_id, verified_at, verified_by, restore_tested, 
 type CreateVerificationParams struct {
 	VerificationID   types.VerificationID     `json:"verification_id"`
 	BackupID         types.BackupID           `json:"backup_id"`
-	VerifiedAt       string                   `json:"verified_at"`
-	VerifiedBy       sql.NullString           `json:"verified_by"`
-	RestoreTested    sql.NullInt64            `json:"restore_tested"`
-	ChecksumValid    sql.NullInt64            `json:"checksum_valid"`
-	RecordCountMatch sql.NullInt64            `json:"record_count_match"`
+	VerifiedAt       types.Timestamp          `json:"verified_at"`
+	VerifiedBy       types.NullableString     `json:"verified_by"`
+	RestoreTested    types.NullableBool       `json:"restore_tested"`
+	ChecksumValid    types.NullableBool       `json:"checksum_valid"`
+	RecordCountMatch types.NullableBool       `json:"record_count_match"`
 	Status           types.VerificationStatus `json:"status"`
-	ErrorMessage     sql.NullString           `json:"error_message"`
-	DurationMs       sql.NullInt64            `json:"duration_ms"`
+	ErrorMessage     types.NullableString     `json:"error_message"`
+	DurationMs       types.NullableInt64      `json:"duration_ms"`
 }
 
 // Backup Verifications CRUD
@@ -2329,7 +2329,7 @@ AND consumed_at IS NOT NULL
 `
 
 type DeleteChangeEventsOlderThanParams struct {
-	WallTimestamp string `json:"wall_timestamp"`
+	WallTimestamp types.Timestamp `json:"wall_timestamp"`
 }
 
 func (q *Queries) DeleteChangeEventsOlderThan(ctx context.Context, arg DeleteChangeEventsOlderThanParams) error {
@@ -2441,7 +2441,7 @@ WHERE started_at < ? AND status IN ('completed', 'verified')
 `
 
 type DeleteOldBackupsParams struct {
-	StartedAt string `json:"started_at"`
+	StartedAt types.Timestamp `json:"started_at"`
 }
 
 func (q *Queries) DeleteOldBackups(ctx context.Context, arg DeleteOldBackupsParams) error {
@@ -6547,9 +6547,9 @@ type RecordChangeEventParams struct {
 	Operation    types.Operation      `json:"operation"`
 	Action       types.Action         `json:"action"`
 	UserID       types.NullableUserID `json:"user_id"`
-	OldValues    sql.NullString       `json:"old_values"`
-	NewValues    sql.NullString       `json:"new_values"`
-	Metadata     sql.NullString       `json:"metadata"`
+	OldValues    types.JSONData       `json:"old_values"`
+	NewValues    types.JSONData       `json:"new_values"`
+	Metadata     types.JSONData       `json:"metadata"`
 }
 
 func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventParams) (ChangeEvent, error) {
@@ -6799,9 +6799,9 @@ WHERE backup_id = ?
 `
 
 type UpdateBackupHLCParams struct {
-	HlcTimestamp   types.HLC      `json:"hlc_timestamp"`
-	ReplicationLsn sql.NullString `json:"replication_lsn"`
-	BackupID       types.BackupID `json:"backup_id"`
+	HlcTimestamp   types.HLC            `json:"hlc_timestamp"`
+	ReplicationLsn types.NullableString `json:"replication_lsn"`
+	BackupID       types.BackupID       `json:"backup_id"`
 }
 
 func (q *Queries) UpdateBackupHLC(ctx context.Context, arg UpdateBackupHLCParams) error {
@@ -6817,8 +6817,8 @@ WHERE backup_set_id = ?
 
 type UpdateBackupSetStatusParams struct {
 	Status         types.BackupSetStatus `json:"status"`
-	CompletedCount sql.NullInt64         `json:"completed_count"`
-	ErrorMessage   sql.NullString        `json:"error_message"`
+	CompletedCount types.NullableInt64   `json:"completed_count"`
+	ErrorMessage   types.NullableString  `json:"error_message"`
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
 }
 
@@ -6845,14 +6845,14 @@ WHERE backup_id = ?
 `
 
 type UpdateBackupStatusParams struct {
-	Status       types.BackupStatus `json:"status"`
-	CompletedAt  sql.NullString     `json:"completed_at"`
-	DurationMs   sql.NullInt64      `json:"duration_ms"`
-	RecordCount  sql.NullInt64      `json:"record_count"`
-	SizeBytes    sql.NullInt64      `json:"size_bytes"`
-	Checksum     sql.NullString     `json:"checksum"`
-	ErrorMessage sql.NullString     `json:"error_message"`
-	BackupID     types.BackupID     `json:"backup_id"`
+	Status       types.BackupStatus   `json:"status"`
+	CompletedAt  types.Timestamp      `json:"completed_at"`
+	DurationMs   types.NullableInt64  `json:"duration_ms"`
+	RecordCount  types.NullableInt64  `json:"record_count"`
+	SizeBytes    types.NullableInt64  `json:"size_bytes"`
+	Checksum     types.NullableString `json:"checksum"`
+	ErrorMessage types.NullableString `json:"error_message"`
+	BackupID     types.BackupID       `json:"backup_id"`
 }
 
 func (q *Queries) UpdateBackupStatus(ctx context.Context, arg UpdateBackupStatusParams) error {

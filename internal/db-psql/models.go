@@ -6,7 +6,6 @@ package mdbp
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -75,22 +74,22 @@ type AdminRoutes struct {
 }
 
 type Backup struct {
-	BackupID       types.BackupID        `json:"backup_id"`
-	NodeID         types.NodeID          `json:"node_id"`
-	BackupType     types.BackupType      `json:"backup_type"`
-	Status         types.BackupStatus    `json:"status"`
-	StartedAt      time.Time             `json:"started_at"`
-	CompletedAt    sql.NullTime          `json:"completed_at"`
-	DurationMs     sql.NullInt32         `json:"duration_ms"`
-	RecordCount    sql.NullInt64         `json:"record_count"`
-	SizeBytes      sql.NullInt64         `json:"size_bytes"`
-	ReplicationLsn sql.NullString        `json:"replication_lsn"`
-	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
-	StoragePath    string                `json:"storage_path"`
-	Checksum       sql.NullString        `json:"checksum"`
-	TriggeredBy    sql.NullString        `json:"triggered_by"`
-	ErrorMessage   sql.NullString        `json:"error_message"`
-	Metadata       pqtype.NullRawMessage `json:"metadata"`
+	BackupID       types.BackupID       `json:"backup_id"`
+	NodeID         types.NodeID         `json:"node_id"`
+	BackupType     types.BackupType     `json:"backup_type"`
+	Status         types.BackupStatus   `json:"status"`
+	StartedAt      types.Timestamp      `json:"started_at"`
+	CompletedAt    types.Timestamp      `json:"completed_at"`
+	DurationMs     types.NullableInt64  `json:"duration_ms"`
+	RecordCount    types.NullableInt64  `json:"record_count"`
+	SizeBytes      types.NullableInt64  `json:"size_bytes"`
+	ReplicationLsn types.NullableString `json:"replication_lsn"`
+	HlcTimestamp   types.HLC            `json:"hlc_timestamp"`
+	StoragePath    string               `json:"storage_path"`
+	Checksum       types.NullableString `json:"checksum"`
+	TriggeredBy    types.NullableString `json:"triggered_by"`
+	ErrorMessage   types.NullableString `json:"error_message"`
+	Metadata       types.JSONData       `json:"metadata"`
 }
 
 type BackupSet struct {
@@ -98,40 +97,40 @@ type BackupSet struct {
 	CreatedAt      types.Timestamp       `json:"created_at"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
-	BackupIds      json.RawMessage       `json:"backup_ids"`
+	BackupIds      types.JSONData        `json:"backup_ids"`
 	NodeCount      int32                 `json:"node_count"`
-	CompletedCount sql.NullInt32         `json:"completed_count"`
-	ErrorMessage   sql.NullString        `json:"error_message"`
+	CompletedCount types.NullableInt64   `json:"completed_count"`
+	ErrorMessage   types.NullableString  `json:"error_message"`
 }
 
 type BackupVerification struct {
 	VerificationID   types.VerificationID     `json:"verification_id"`
 	BackupID         types.BackupID           `json:"backup_id"`
-	VerifiedAt       time.Time                `json:"verified_at"`
-	VerifiedBy       sql.NullString           `json:"verified_by"`
-	RestoreTested    sql.NullBool             `json:"restore_tested"`
-	ChecksumValid    sql.NullBool             `json:"checksum_valid"`
-	RecordCountMatch sql.NullBool             `json:"record_count_match"`
+	VerifiedAt       types.Timestamp          `json:"verified_at"`
+	VerifiedBy       types.NullableString     `json:"verified_by"`
+	RestoreTested    types.NullableBool       `json:"restore_tested"`
+	ChecksumValid    types.NullableBool       `json:"checksum_valid"`
+	RecordCountMatch types.NullableBool       `json:"record_count_match"`
 	Status           types.VerificationStatus `json:"status"`
-	ErrorMessage     sql.NullString           `json:"error_message"`
-	DurationMs       sql.NullInt32            `json:"duration_ms"`
+	ErrorMessage     types.NullableString     `json:"error_message"`
+	DurationMs       types.NullableInt64      `json:"duration_ms"`
 }
 
 type ChangeEvent struct {
-	EventID       types.EventID         `json:"event_id"`
-	HlcTimestamp  types.HLC             `json:"hlc_timestamp"`
-	WallTimestamp time.Time             `json:"wall_timestamp"`
-	NodeID        types.NodeID          `json:"node_id"`
-	TableName     string                `json:"table_name"`
-	RecordID      string                `json:"record_id"`
-	Operation     types.Operation       `json:"operation"`
-	Action        types.Action          `json:"action"`
-	UserID        types.NullableUserID  `json:"user_id"`
-	OldValues     pqtype.NullRawMessage `json:"old_values"`
-	NewValues     pqtype.NullRawMessage `json:"new_values"`
-	Metadata      pqtype.NullRawMessage `json:"metadata"`
-	SyncedAt      sql.NullTime          `json:"synced_at"`
-	ConsumedAt    sql.NullTime          `json:"consumed_at"`
+	EventID       types.EventID        `json:"event_id"`
+	HlcTimestamp  types.HLC            `json:"hlc_timestamp"`
+	WallTimestamp types.Timestamp      `json:"wall_timestamp"`
+	NodeID        types.NodeID         `json:"node_id"`
+	TableName     string               `json:"table_name"`
+	RecordID      string               `json:"record_id"`
+	Operation     types.Operation      `json:"operation"`
+	Action        types.Action         `json:"action"`
+	UserID        types.NullableUserID `json:"user_id"`
+	OldValues     types.JSONData       `json:"old_values"`
+	NewValues     types.JSONData       `json:"new_values"`
+	Metadata      types.JSONData       `json:"metadata"`
+	SyncedAt      types.Timestamp      `json:"synced_at"`
+	ConsumedAt    types.Timestamp      `json:"consumed_at"`
 }
 
 type ContentData struct {

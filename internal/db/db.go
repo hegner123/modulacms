@@ -68,213 +68,277 @@ const (
 
 // DbDriver is the interface for all database drivers
 type DbDriver interface {
-	// Database Connection
+	// Connection
 	CreateAllTables() error
 	CreateBootstrapData() error
-	ValidateBootstrapData() error
-	Ping() error
-	GetConnection() (*sql.DB, context.Context, error)
-	ExecuteQuery(string, DBTable) (*sql.Rows, error)
-	Query(db *sql.DB, query string) (sql.Result, error)
-	SortTables() error
 	DumpSql(config.Config) error
+	ExecuteQuery(string, DBTable) (*sql.Rows, error)
+	GetConnection() (*sql.DB, context.Context, error)
 	GetForeignKeys(args []string) *sql.Rows
+	Ping() error
+	Query(db *sql.DB, query string) (sql.Result, error)
 	ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow
 	SelectColumnFromTable(table string, column string)
-	//RestoreDB() error
+	SortTables() error
+	ValidateBootstrapData() error
 
-	// Count operations
+	// AdminContentData
 	CountAdminContentData() (*int64, error)
-	CountAdminContentFields() (*int64, error)
-	CountAdminDatatypes() (*int64, error)
-	CountAdminDatatypeFields() (*int64, error)
-	CountAdminFields() (*int64, error)
-	CountAdminRoutes() (*int64, error)
-	CountContentData() (*int64, error)
-	CountContentFields() (*int64, error)
-	CountDatatypes() (*int64, error)
-	CountDatatypeFields() (*int64, error)
-	CountFields() (*int64, error)
-	CountMedia() (*int64, error)
-	CountMediaDimensions() (*int64, error)
-	CountPermissions() (*int64, error)
-	CountRoles() (*int64, error)
-	CountRoutes() (*int64, error)
-	CountSessions() (*int64, error)
-	CountTables() (*int64, error)
-	CountTokens() (*int64, error)
-	CountUsers() (*int64, error)
-	CountUserOauths() (*int64, error)
-	CountUserSshKeys() (*int64, error)
-
-	// Create operations
 	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
-	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
-	CreateAdminDatatype(CreateAdminDatatypeParams) AdminDatatypes
-	CreateAdminDatatypeField(CreateAdminDatatypeFieldParams) AdminDatatypeFields
-	CreateAdminField(CreateAdminFieldParams) AdminFields
-	CreateAdminRoute(CreateAdminRouteParams) AdminRoutes
-	CreateContentData(CreateContentDataParams) ContentData
-	CreateContentField(CreateContentFieldParams) ContentFields
-	CreateDatatype(CreateDatatypeParams) Datatypes
-	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
-	CreateField(CreateFieldParams) Fields
-	CreateMedia(CreateMediaParams) Media
-	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
-	CreatePermission(CreatePermissionParams) Permissions
-	CreateRole(CreateRoleParams) Roles
-	CreateRoute(CreateRouteParams) Routes
-	CreateSession(CreateSessionParams) (*Sessions, error)
-	CreateTable(CreateTableParams) Tables
-	CreateToken(CreateTokenParams) Tokens
-	CreateUser(CreateUserParams) (*Users, error)
-	CreateUserOauth(CreateUserOauthParams) (*UserOauth, error)
-	CreateUserSshKey(CreateUserSshKeyParams) (*UserSshKeys, error)
-
-	// Create table operations
 	CreateAdminContentDataTable() error
-	CreateAdminContentFieldTable() error
-	CreateAdminDatatypeTable() error
-	CreateAdminDatatypeFieldTable() error
-	CreateAdminFieldTable() error
-	CreateAdminRouteTable() error
-	CreateContentDataTable() error
-	CreateContentFieldTable() error
-	CreateDatatypeTable() error
-	CreateDatatypeFieldTable() error
-	CreateFieldTable() error
-	CreateMediaTable() error
-	CreateMediaDimensionTable() error
-	CreatePermissionTable() error
-	CreateRoleTable() error
-	CreateRouteTable() error
-	CreateSessionTable() error
-	CreateTableTable() error
-	CreateTokenTable() error
-	CreateUserTable() error
-	CreateUserOauthTable() error
-	CreateUserSshKeyTable() error
-
-	// Delete operations
 	DeleteAdminContentData(types.AdminContentID) error
-	DeleteAdminContentField(types.AdminContentFieldID) error
-	DeleteAdminDatatype(types.AdminDatatypeID) error
-	DeleteAdminDatatypeField(int64) error
-	DeleteAdminField(types.AdminFieldID) error
-	DeleteAdminRoute(types.AdminRouteID) error
-	DeleteContentData(types.ContentID) error
-	DeleteContentField(types.ContentFieldID) error
-	DeleteDatatype(types.DatatypeID) error
-	DeleteDatatypeField(int64) error
-	DeleteField(types.FieldID) error
-	DeleteMedia(types.MediaID) error
-	DeleteMediaDimension(int64) error
-	DeletePermission(types.PermissionID) error
-	DeleteRole(types.RoleID) error
-	DeleteRoute(types.RouteID) error
-	DeleteSession(types.SessionID) error
-	DeleteTable(int64) error
-	DeleteToken(int64) error
-	DeleteUser(types.UserID) error
-	DeleteUserOauth(types.UserOauthID) error
-
-	// Get operations
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
-	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
-	GetAdminDatatypeById(types.AdminDatatypeID) (*AdminDatatypes, error)
-	GetAdminField(types.AdminFieldID) (*AdminFields, error)
-	GetAdminRoute(types.Slug) (*AdminRoutes, error)
-	GetContentData(types.ContentID) (*ContentData, error)
-	GetContentField(types.ContentFieldID) (*ContentFields, error)
-	GetDatatype(types.DatatypeID) (*Datatypes, error)
-	GetField(types.FieldID) (*Fields, error)
-	GetMedia(types.MediaID) (*Media, error)
-	GetMediaByName(string) (*Media, error)
-	GetMediaByURL(types.URL) (*Media, error)
-	GetMediaDimension(int64) (*MediaDimensions, error)
-	GetPermission(types.PermissionID) (*Permissions, error)
-	GetRole(types.RoleID) (*Roles, error)
-	GetRoute(types.RouteID) (*Routes, error)
-	GetRouteID(string) (*types.RouteID, error)
-	GetSession(types.SessionID) (*Sessions, error)
-	GetSessionByUserId(types.NullableUserID) (*Sessions, error)
-	GetTable(int64) (*Tables, error)
-	GetToken(int64) (*Tokens, error)
-	GetTokenByUserId(types.NullableUserID) (*[]Tokens, error)
-	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)
-	GetContentTreeByRoute(types.NullableRouteID) (*[]GetContentTreeByRouteRow, error)
-	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
-	GetContentFieldsByRoute(types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error)
-	GetUser(types.UserID) (*Users, error)
-	GetUserOauth(types.UserOauthID) (*UserOauth, error)
-	GetUserByEmail(types.Email) (*Users, error)
-	GetUserOauthByUserId(types.NullableUserID) (*UserOauth, error)
-	GetUserOauthByProviderID(string, string) (*UserOauth, error)
-	GetUserSshKey(int64) (*UserSshKeys, error)
-	GetUserSshKeyByFingerprint(string) (*UserSshKeys, error)
-	GetUserBySSHFingerprint(string) (*Users, error)
-
-	// List operations
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentDataByRoute(int64) (*[]AdminContentData, error)
+	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
+
+	// AdminContentFields
+	CountAdminContentFields() (*int64, error)
+	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
+	CreateAdminContentFieldTable() error
+	DeleteAdminContentField(types.AdminContentFieldID) error
+	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoute(int64) (*[]AdminContentFields, error)
+	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
+
+	// AdminDatatypes
+	CountAdminDatatypes() (*int64, error)
+	CreateAdminDatatype(CreateAdminDatatypeParams) AdminDatatypes
+	CreateAdminDatatypeTable() error
+	DeleteAdminDatatype(types.AdminDatatypeID) error
+	GetAdminDatatypeById(types.AdminDatatypeID) (*AdminDatatypes, error)
 	ListAdminDatatypes() (*[]AdminDatatypes, error)
+	UpdateAdminDatatype(UpdateAdminDatatypeParams) (*string, error)
+
+	// AdminDatatypeFields
+	CountAdminDatatypeFields() (*int64, error)
+	CreateAdminDatatypeField(CreateAdminDatatypeFieldParams) AdminDatatypeFields
+	CreateAdminDatatypeFieldTable() error
+	DeleteAdminDatatypeField(int64) error
 	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByDatatypeID(types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByFieldID(types.NullableAdminFieldID) (*[]AdminDatatypeFields, error)
+	UpdateAdminDatatypeField(UpdateAdminDatatypeFieldParams) (*string, error)
+
+	// AdminFields
+	CountAdminFields() (*int64, error)
+	CreateAdminField(CreateAdminFieldParams) AdminFields
+	CreateAdminFieldTable() error
+	DeleteAdminField(types.AdminFieldID) error
+	GetAdminField(types.AdminFieldID) (*AdminFields, error)
 	ListAdminFields() (*[]AdminFields, error)
+	UpdateAdminField(UpdateAdminFieldParams) (*string, error)
+
+	// AdminRoutes
+	CountAdminRoutes() (*int64, error)
+	CreateAdminRoute(CreateAdminRouteParams) AdminRoutes
+	CreateAdminRouteTable() error
+	DeleteAdminRoute(types.AdminRouteID) error
+	GetAdminRoute(types.Slug) (*AdminRoutes, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
+	UpdateAdminRoute(UpdateAdminRouteParams) (*string, error)
+
+	// Backups
+	CountBackups() (*int64, error)
+	CreateBackup(CreateBackupParams) (*Backup, error)
+	CreateBackupTables() error
+	DeleteBackup(types.BackupID) error
+	DropBackupTables() error
+	GetBackup(types.BackupID) (*Backup, error)
+	GetLatestBackup(types.NodeID) (*Backup, error)
+	ListBackups(ListBackupsParams) (*[]Backup, error)
+	UpdateBackupStatus(UpdateBackupStatusParams) error
+
+	// BackupSets
+	CountBackupSets() (*int64, error)
+	CreateBackupSet(CreateBackupSetParams) (*BackupSet, error)
+	GetBackupSet(types.BackupSetID) (*BackupSet, error)
+	GetPendingBackupSets() (*[]BackupSet, error)
+
+	// BackupVerifications
+	CountVerifications() (*int64, error)
+	CreateVerification(CreateVerificationParams) (*BackupVerification, error)
+	GetLatestVerification(types.BackupID) (*BackupVerification, error)
+	GetVerification(types.VerificationID) (*BackupVerification, error)
+
+	// ChangeEvents
+	CountChangeEvents() (*int64, error)
+	CreateChangeEventsTable() error
+	DeleteChangeEvent(types.EventID) error
+	DropChangeEventsTable() error
+	GetChangeEvent(types.EventID) (*ChangeEvent, error)
+	GetChangeEventsByRecord(string, string) (*[]ChangeEvent, error)
+	GetUnconsumedEvents(int64) (*[]ChangeEvent, error)
+	GetUnsyncedEvents(int64) (*[]ChangeEvent, error)
+	ListChangeEvents(ListChangeEventsParams) (*[]ChangeEvent, error)
+	MarkEventConsumed(types.EventID) error
+	MarkEventSynced(types.EventID) error
+	RecordChangeEvent(RecordChangeEventParams) (*ChangeEvent, error)
+
+	// ContentData
+	CountContentData() (*int64, error)
+	CreateContentData(CreateContentDataParams) ContentData
+	CreateContentDataTable() error
+	DeleteContentData(types.ContentID) error
+	GetContentData(types.ContentID) (*ContentData, error)
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
+	UpdateContentData(UpdateContentDataParams) (*string, error)
+
+	// ContentFields
+	CountContentFields() (*int64, error)
+	CreateContentField(CreateContentFieldParams) ContentFields
+	CreateContentFieldTable() error
+	DeleteContentField(types.ContentFieldID) error
+	GetContentField(types.ContentFieldID) (*ContentFields, error)
+	GetContentFieldsByRoute(types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error)
 	ListContentFields() (*[]ContentFields, error)
 	ListContentFieldsByRoute(types.NullableRouteID) (*[]ContentFields, error)
+	UpdateContentField(UpdateContentFieldParams) (*string, error)
+
+	// Datatypes
+	CountDatatypes() (*int64, error)
+	CreateDatatype(CreateDatatypeParams) Datatypes
+	CreateDatatypeTable() error
+	DeleteDatatype(types.DatatypeID) error
+	GetDatatype(types.DatatypeID) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
+	UpdateDatatype(UpdateDatatypeParams) (*string, error)
+
+	// DatatypeFields
+	CountDatatypeFields() (*int64, error)
+	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
+	CreateDatatypeFieldTable() error
+	DeleteDatatypeField(int64) error
 	ListDatatypeField() (*[]DatatypeFields, error)
 	ListDatatypeFieldByDatatypeID(types.NullableDatatypeID) (*[]DatatypeFields, error)
 	ListDatatypeFieldByFieldID(types.NullableFieldID) (*[]DatatypeFields, error)
+	UpdateDatatypeField(UpdateDatatypeFieldParams) (*string, error)
+
+	// Fields
+	CountFields() (*int64, error)
+	CreateField(CreateFieldParams) Fields
+	CreateFieldTable() error
+	DeleteField(types.FieldID) error
+	GetField(types.FieldID) (*Fields, error)
+	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
 	ListFields() (*[]Fields, error)
 	ListFieldsByDatatypeID(types.NullableContentID) (*[]Fields, error)
-	ListMedia() (*[]Media, error)
-	ListMediaDimensions() (*[]MediaDimensions, error)
-	ListPermissions() (*[]Permissions, error)
-	ListRoles() (*[]Roles, error)
-	ListRoutes() (*[]Routes, error)
-	ListSessions() (*[]Sessions, error)
-	ListTables() (*[]Tables, error)
-	ListTokens() (*[]Tokens, error)
-	ListUsers() (*[]Users, error)
-	ListUserOauths() (*[]UserOauth, error)
-	ListUserSshKeys(types.NullableUserID) (*[]UserSshKeys, error)
-
-	// Update operations
-	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
-	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
-	UpdateAdminDatatype(UpdateAdminDatatypeParams) (*string, error)
-	UpdateAdminDatatypeField(UpdateAdminDatatypeFieldParams) (*string, error)
-	UpdateAdminField(UpdateAdminFieldParams) (*string, error)
-	UpdateAdminRoute(UpdateAdminRouteParams) (*string, error)
-	UpdateContentData(UpdateContentDataParams) (*string, error)
-	UpdateContentField(UpdateContentFieldParams) (*string, error)
-	UpdateDatatype(UpdateDatatypeParams) (*string, error)
-	UpdateDatatypeField(UpdateDatatypeFieldParams) (*string, error)
 	UpdateField(UpdateFieldParams) (*string, error)
-	UpdateMedia(UpdateMediaParams) (*string, error)
-	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
-	UpdatePermission(UpdatePermissionParams) (*string, error)
-	UpdateRole(UpdateRoleParams) (*string, error)
-	UpdateRoute(UpdateRouteParams) (*string, error)
-	UpdateSession(UpdateSessionParams) (*string, error)
-	UpdateTable(UpdateTableParams) (*string, error)
-	UpdateToken(UpdateTokenParams) (*string, error)
-	UpdateUser(UpdateUserParams) (*string, error)
-	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
-	UpdateUserSshKeyLastUsed(int64, string) error
-	UpdateUserSshKeyLabel(int64, string) error
 
-	// Delete operations
+	// Media
+	CountMedia() (*int64, error)
+	CreateMedia(CreateMediaParams) Media
+	CreateMediaTable() error
+	DeleteMedia(types.MediaID) error
+	GetMedia(types.MediaID) (*Media, error)
+	GetMediaByName(string) (*Media, error)
+	GetMediaByURL(types.URL) (*Media, error)
+	ListMedia() (*[]Media, error)
+	UpdateMedia(UpdateMediaParams) (*string, error)
+
+	// MediaDimensions
+	CountMediaDimensions() (*int64, error)
+	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
+	CreateMediaDimensionTable() error
+	DeleteMediaDimension(int64) error
+	GetMediaDimension(int64) (*MediaDimensions, error)
+	ListMediaDimensions() (*[]MediaDimensions, error)
+	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
+
+	// Permissions
+	CountPermissions() (*int64, error)
+	CreatePermission(CreatePermissionParams) Permissions
+	CreatePermissionTable() error
+	DeletePermission(types.PermissionID) error
+	GetPermission(types.PermissionID) (*Permissions, error)
+	ListPermissions() (*[]Permissions, error)
+	UpdatePermission(UpdatePermissionParams) (*string, error)
+
+	// Roles
+	CountRoles() (*int64, error)
+	CreateRole(CreateRoleParams) Roles
+	CreateRoleTable() error
+	DeleteRole(types.RoleID) error
+	GetRole(types.RoleID) (*Roles, error)
+	ListRoles() (*[]Roles, error)
+	UpdateRole(UpdateRoleParams) (*string, error)
+
+	// Routes
+	CountRoutes() (*int64, error)
+	CreateRoute(CreateRouteParams) Routes
+	CreateRouteTable() error
+	DeleteRoute(types.RouteID) error
+	GetContentTreeByRoute(types.NullableRouteID) (*[]GetContentTreeByRouteRow, error)
+	GetRoute(types.RouteID) (*Routes, error)
+	GetRouteID(string) (*types.RouteID, error)
+	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)
+	ListRoutes() (*[]Routes, error)
+	UpdateRoute(UpdateRouteParams) (*string, error)
+
+	// Sessions
+	CountSessions() (*int64, error)
+	CreateSession(CreateSessionParams) (*Sessions, error)
+	CreateSessionTable() error
+	DeleteSession(types.SessionID) error
+	GetSession(types.SessionID) (*Sessions, error)
+	GetSessionByUserId(types.NullableUserID) (*Sessions, error)
+	ListSessions() (*[]Sessions, error)
+	UpdateSession(UpdateSessionParams) (*string, error)
+
+	// Tables
+	CountTables() (*int64, error)
+	CreateTable(CreateTableParams) Tables
+	CreateTableTable() error
+	DeleteTable(int64) error
+	GetTable(int64) (*Tables, error)
+	ListTables() (*[]Tables, error)
+	UpdateTable(UpdateTableParams) (*string, error)
+
+	// Tokens
+	CountTokens() (*int64, error)
+	CreateToken(CreateTokenParams) Tokens
+	CreateTokenTable() error
+	DeleteToken(int64) error
+	GetToken(int64) (*Tokens, error)
+	GetTokenByUserId(types.NullableUserID) (*[]Tokens, error)
+	ListTokens() (*[]Tokens, error)
+	UpdateToken(UpdateTokenParams) (*string, error)
+
+	// Users
+	CountUsers() (*int64, error)
+	CreateUser(CreateUserParams) (*Users, error)
+	CreateUserTable() error
+	DeleteUser(types.UserID) error
+	GetUser(types.UserID) (*Users, error)
+	GetUserByEmail(types.Email) (*Users, error)
+	GetUserBySSHFingerprint(string) (*Users, error)
+	ListUsers() (*[]Users, error)
+	UpdateUser(UpdateUserParams) (*string, error)
+
+	// UserOauths
+	CountUserOauths() (*int64, error)
+	CreateUserOauth(CreateUserOauthParams) (*UserOauth, error)
+	CreateUserOauthTable() error
+	DeleteUserOauth(types.UserOauthID) error
+	GetUserOauth(types.UserOauthID) (*UserOauth, error)
+	GetUserOauthByProviderID(string, string) (*UserOauth, error)
+	GetUserOauthByUserId(types.NullableUserID) (*UserOauth, error)
+	ListUserOauths() (*[]UserOauth, error)
+	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
+
+	// UserSshKeys
+	CountUserSshKeys() (*int64, error)
+	CreateUserSshKey(CreateUserSshKeyParams) (*UserSshKeys, error)
+	CreateUserSshKeyTable() error
 	DeleteUserSshKey(int64) error
+	GetUserSshKey(int64) (*UserSshKeys, error)
+	GetUserSshKeyByFingerprint(string) (*UserSshKeys, error)
+	ListUserSshKeys(types.NullableUserID) (*[]UserSshKeys, error)
+	UpdateUserSshKeyLabel(int64, string) error
+	UpdateUserSshKeyLastUsed(int64, string) error
 }
 
 // GetConnection returns the database connection and context
