@@ -6,6 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -98,31 +99,31 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	var (
-		parentID int
+		parentID string
 		label    string
 		dType    string
 	)
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewSelect[int]().
+			huh.NewSelect[string]().
 				Title("Parent").
 				OptionsFunc(
-					func() []huh.Option[int] {
-						options := make([]huh.Option[int], 0)
+					func() []huh.Option[string] {
+						options := make([]huh.Option[string], 0)
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
 							utility.DefaultLogger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
-							option := huh.NewOption(v.Label, int(v.DatatypeID))
+							option := huh.NewOption(v.Label, string(v.DatatypeID))
 							options = append(options, option)
 						}
 						return options
 					},
 					nil,
 				).
-				Value(&parentID), // st
+				Value(&parentID),
 			huh.NewInput().
 				Title("Label").
 				Value(&label),
@@ -135,25 +136,25 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 }
 func CreateFieldForm(m Model) (*huh.Form, int) {
 	var (
-		parentID int
+		parentID string
 		label    string
 		data     *[]string
 		dType    string
 	)
 	form := huh.NewForm(
 		huh.NewGroup(
-			huh.NewSelect[int]().
+			huh.NewSelect[string]().
 				Title("Parent").
 				OptionsFunc(
-					func() []huh.Option[int] {
-						options := make([]huh.Option[int], 0)
+					func() []huh.Option[string] {
+						options := make([]huh.Option[string], 0)
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
 							utility.DefaultLogger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
-							option := huh.NewOption(v.Label, int(v.DatatypeID))
+							option := huh.NewOption(v.Label, string(v.DatatypeID))
 							options = append(options, option)
 						}
 						return options
@@ -357,25 +358,26 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 }
 
 // BuildContentFieldsForm creates a dynamic form for content creation based on datatype fields
-func (m Model) BuildContentFieldsForm(datatypeID int64, routeID int64) tea.Cmd {
+func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*m.Config)
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Building content form for datatype %d, route %d", datatypeID, routeID))
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
 
 		// Fetch fields for this datatype
-		fields, err := d.ListFieldsByDatatypeID(datatypeID)
+		nullableID := types.NullableContentID{ID: types.ContentID(datatypeID), Valid: true}
+		fields, err := d.ListFieldsByDatatypeID(nullableID)
 		if err != nil {
 			utility.DefaultLogger.Ferror("ListFieldsByDatatypeID error", err)
 			return FetchErrMsg{Error: err}
 		}
 
 		if fields == nil || len(*fields) == 0 {
-			utility.DefaultLogger.Finfo(fmt.Sprintf("No fields found for datatype %d", datatypeID))
-			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %d", datatypeID)}
+			utility.DefaultLogger.Finfo(fmt.Sprintf("No fields found for datatype %s", datatypeID))
+			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %s", datatypeID)}
 		}
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d fields for datatype %d", len(*fields), datatypeID))
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d fields for datatype %s", len(*fields), datatypeID))
 
 		// Build form inputs for each field
 		var formFields []huh.Field
@@ -407,7 +409,7 @@ func (m Model) BuildContentFieldsForm(datatypeID int64, routeID int64) tea.Cmd {
 
 		// Set submit handler to dispatch content creation
 		form.SubmitCmd = tea.Batch(
-			LogMessageCmd(fmt.Sprintf("Form submitted for content creation (Datatype: %d, Route: %d)", datatypeID, routeID)),
+			LogMessageCmd(fmt.Sprintf("Form submitted for content creation (Datatype: %s, Route: %s)", datatypeID, routeID)),
 			CmsAddNewContentDataCmd(datatypeID),
 			FocusSetCmd(PAGEFOCUS),
 			func() tea.Msg {

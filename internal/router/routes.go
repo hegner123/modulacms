@@ -3,10 +3,10 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,10 +48,10 @@ func apiGetRoute(w http.ResponseWriter, r *http.Request, c config.Config) error 
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	id, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	id := types.RouteID(q)
+	if err := id.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	route, err := d.GetRoute(id)
@@ -162,10 +162,10 @@ func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	id, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	id := types.RouteID(q)
+	if err := id.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteRoute(id)

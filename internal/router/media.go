@@ -5,10 +5,10 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -50,10 +50,10 @@ func apiGetMedia(w http.ResponseWriter, r *http.Request, c config.Config) error 
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	mID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	mID := types.MediaID(q)
+	if err := mID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	media, err := d.GetMedia(mID)
@@ -201,10 +201,10 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	mID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	mID := types.MediaID(q)
+	if err := mID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteMedia(mID)

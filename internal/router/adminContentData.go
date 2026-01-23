@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -139,8 +139,7 @@ func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	t := utility.TimestampReadable()
-	updateAdminContentData.DateModified = db.StringToNullString(t)
+	updateAdminContentData.DateModified = types.TimestampNow()
 
 	oldData, err := d.GetAdminContentData(updateAdminContentData.AdminContentDataID)
 	if err != nil {
@@ -186,10 +185,11 @@ func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	acdID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	acdID := types.AdminContentID(q)
+	if err := acdID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
 	}
 
 	err = d.DeleteAdminContentData(acdID)

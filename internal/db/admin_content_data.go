@@ -60,7 +60,7 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 		AdminContentDataID: a.AdminContentDataID.String(),
 		ParentID:           a.ParentID.String(),
 		AdminRouteID:       fmt.Sprintf("%d", a.AdminRouteID),
-		AdminDatatypeID:    fmt.Sprintf("%d", a.AdminDatatypeID),
+		AdminDatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:           a.AuthorID.String(),
 		DateCreated:        a.DateCreated.String(),
 		DateModified:       a.DateModified.String(),

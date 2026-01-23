@@ -51,8 +51,8 @@ func (m Model) Stringify() string {
 	bg := fmt.Sprintf("Bg: %s", b)
 	out = append(out, bg)
 
-	//PageRouteId int64
-	pri := fmt.Sprintf("PageRouteId: %d", m.PageRouteId)
+	//PageRouteId types.RouteID
+	pri := fmt.Sprintf("PageRouteId: %s", m.PageRouteId)
 	out = append(out, pri)
 
 	//TxtStyle     lipgloss.Style

@@ -1,6 +1,7 @@
 package router
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/media"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -97,11 +99,12 @@ func apiCreateMediaUpload(w http.ResponseWriter, r *http.Request, c config.Confi
 		http.Error(w, e.Error(), http.StatusInternalServerError)
 		return
 	}
-	forms := db.CreateMediaFormParams{
-		Name:     header.Filename,
-		AuthorID: "1", // TODO: Get from authenticated session
+	params := db.CreateMediaParams{
+		Name:         sql.NullString{String: header.Filename, Valid: true},
+		AuthorID:     types.NullableUserID{ID: types.UserID("1"), Valid: true}, // TODO: Get from authenticated session
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
 	}
-	params := db.MapCreateMediaParams(forms)
 
 	row := d.CreateMedia(params)
 

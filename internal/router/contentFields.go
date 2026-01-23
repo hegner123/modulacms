@@ -3,10 +3,10 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,10 +48,10 @@ func apiGetContentField(w http.ResponseWriter, r *http.Request, c config.Config)
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	cfID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	cfID := types.ContentFieldID(q)
+	if err := cfID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	contentField, err := d.GetContentField(cfID)
@@ -162,10 +162,10 @@ func apiDeleteContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	cfID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	cfID := types.ContentFieldID(q)
+	if err := cfID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteContentField(cfID)

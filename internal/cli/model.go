@@ -14,6 +14,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -58,7 +59,7 @@ type Model struct {
 	Width        int
 	Height       int
 	Bg           string
-	PageRouteId  int64
+	PageRouteId  types.RouteID
 	TxtStyle     lipgloss.Style
 	QuitStyle    lipgloss.Style
 	Loading      bool
@@ -155,7 +156,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		Focus:       PAGEFOCUS,
 		History:     []PageHistory{},
 		Verbose:     verbose,
-		PageRouteId: 1, // TODO: Implement route selection UI - using route 1 (Home) for testing
+		PageRouteId: types.RouteID(""), // TODO: Implement route selection UI
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

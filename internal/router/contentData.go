@@ -3,10 +3,10 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -50,10 +50,10 @@ func apiGetContentData(w http.ResponseWriter, r *http.Request, c config.Config) 
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	cdID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	cdID := types.ContentID(q)
+	if err := cdID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	contentData, err := d.GetContentData(cdID)
@@ -164,10 +164,10 @@ func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	cdID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	cdID := types.ContentID(q)
+	if err := cdID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteContentData(cdID)

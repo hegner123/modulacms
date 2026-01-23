@@ -243,7 +243,6 @@ func parseRoutes(rows *sql.Rows) ([]db.Routes, error) {
 			&route.AuthorID,
 			&route.DateCreated,
 			&route.DateModified,
-			&route.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan route: %v", err)
@@ -272,7 +271,6 @@ func parseAdminRoutes(rows *sql.Rows) ([]db.AdminRoutes, error) {
 			&route.AuthorID,
 			&route.DateCreated,
 			&route.DateModified,
-			&route.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan admin route: %v", err)
@@ -302,7 +300,6 @@ func parseFields(rows *sql.Rows) ([]db.Fields, error) {
 			&field.AuthorID,
 			&field.DateCreated,
 			&field.DateModified,
-			&field.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan field: %v", err)
@@ -332,7 +329,6 @@ func parseAdminFields(rows *sql.Rows) ([]db.AdminFields, error) {
 			&field.AuthorID,
 			&field.DateCreated,
 			&field.DateModified,
-			&field.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan admin field: %v", err)
@@ -361,7 +357,6 @@ func parseDatatypes(rows *sql.Rows) ([]db.Datatypes, error) {
 			&datatype.AuthorID,
 			&datatype.DateCreated,
 			&datatype.DateModified,
-			&datatype.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan datatype: %v", err)
@@ -390,7 +385,6 @@ func parseAdminDatatypes(rows *sql.Rows) ([]db.AdminDatatypes, error) {
 			&datatype.AuthorID,
 			&datatype.DateCreated,
 			&datatype.DateModified,
-			&datatype.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan admin datatype: %v", err)
@@ -467,7 +461,6 @@ func parseContentData(rows *sql.Rows) ([]db.ContentData, error) {
 			&content.AuthorID,
 			&content.DateCreated,
 			&content.DateModified,
-			&content.History,
 			&content.FirstChildID,
 			&content.NextSiblingID,
 			&content.PrevSiblingID,
@@ -499,7 +492,6 @@ func parseAdminContentData(rows *sql.Rows) ([]db.AdminContentData, error) {
 			&content.AuthorID,
 			&content.DateCreated,
 			&content.DateModified,
-			&content.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan admin content data: %v", err)
@@ -529,7 +521,6 @@ func parseContentFields(rows *sql.Rows) ([]db.ContentFields, error) {
 			&contentField.AuthorID,
 			&contentField.DateCreated,
 			&contentField.DateModified,
-			&contentField.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan content field: %v", err)
@@ -559,7 +550,6 @@ func parseAdminContentFields(rows *sql.Rows) ([]db.AdminContentFields, error) {
 			&contentField.AuthorID,
 			&contentField.DateCreated,
 			&contentField.DateModified,
-			&contentField.History,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan admin content field: %v", err)
@@ -590,7 +580,7 @@ func parseMedia(rows *sql.Rows) ([]db.Media, error) {
 			&media.Class,
 			&media.Mimetype,
 			&media.Dimensions,
-			&media.Url,
+			&media.URL,
 			&media.Srcset,
 			&media.AuthorID,
 			&media.DateCreated,

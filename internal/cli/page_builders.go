@@ -360,7 +360,7 @@ func (c *CMSPage) RenderColumn(width int, content string) string {
 }
 
 func (c CMSPage) ProcessTreeDatatypes(model Model) string {
-	if model.PageRouteId == 0 {
+	if model.PageRouteId.IsZero() {
 		return "No route selected\n\nPlease select a route to view content."
 	}
 	if model.Root.Root == nil {
@@ -453,13 +453,16 @@ func DecideNodeName(node TreeNode) string {
 	if index := slices.IndexFunc(node.Fields, FieldMatchesLabel); index > -1 {
 		id := node.Fields[index].FieldID
 		contentIndex := slices.IndexFunc(node.InstanceFields, func(cf db.ContentFields) bool {
-			return cf.FieldID == id
+			return cf.FieldID.Valid && cf.FieldID.ID == id
 		})
-		out += node.InstanceFields[contentIndex].FieldValue
-		out += "  ["
-		out += node.Datatype.Label
-		out += "]"
-
+		if contentIndex > -1 {
+			out += node.InstanceFields[contentIndex].FieldValue
+			out += "  ["
+			out += node.Datatype.Label
+			out += "]"
+		} else {
+			out += node.Datatype.Label
+		}
 	} else {
 		out += node.Datatype.Label
 	}
@@ -490,17 +493,19 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 	preview = append(preview, fmt.Sprintf("Type: %s", node.Datatype.Label))
 
 	// Content ID
-	preview = append(preview, fmt.Sprintf("ID: %d", node.Instance.ContentDataID))
+	preview = append(preview, fmt.Sprintf("ID: %s", node.Instance.ContentDataID))
 
 	// Author
-	preview = append(preview, fmt.Sprintf("Author ID: %d", node.Instance.AuthorID))
+	if node.Instance.AuthorID.Valid {
+		preview = append(preview, fmt.Sprintf("Author ID: %s", node.Instance.AuthorID.ID))
+	}
 
 	// Dates
 	if node.Instance.DateCreated.Valid {
-		preview = append(preview, fmt.Sprintf("Created: %s", node.Instance.DateCreated.String))
+		preview = append(preview, fmt.Sprintf("Created: %s", node.Instance.DateCreated.String()))
 	}
 	if node.Instance.DateModified.Valid {
-		preview = append(preview, fmt.Sprintf("Modified: %s", node.Instance.DateModified.String))
+		preview = append(preview, fmt.Sprintf("Modified: %s", node.Instance.DateModified.String()))
 	}
 
 	// Tree structure info
@@ -537,13 +542,13 @@ func (c CMSPage) ProcessFields(model Model) string {
 		// Find field definition
 		var fieldLabel string
 		for _, f := range node.Fields {
-			if f.FieldID == cf.FieldID {
+			if cf.FieldID.Valid && f.FieldID == cf.FieldID.ID {
 				fieldLabel = f.Label
 				break
 			}
 		}
 		if fieldLabel == "" {
-			fieldLabel = fmt.Sprintf("Field %d", cf.FieldID)
+			fieldLabel = fmt.Sprintf("Field %s", cf.FieldID)
 		}
 
 		// Truncate long values

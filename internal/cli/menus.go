@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 func (m Model) HomepageMenuInit() []Page {
@@ -50,10 +51,10 @@ func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []Page {
 	return out
 }
 
-func (m Model) BuildContentDataMenu(contentData []db.ContentData, root int) []Page {
+func (m Model) BuildContentDataMenu(contentData []db.ContentData, root types.ContentID) []Page {
 	out := make([]Page, 0)
 	for _, item := range contentData {
-		if int(item.ParentID.Int64) == root {
+		if item.ParentID.Valid && item.ParentID.ID == root {
 			out = append(out, NewDynamicPage(fmt.Sprint(item.ContentDataID)))
 
 		}

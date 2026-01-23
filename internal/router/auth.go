@@ -133,14 +133,11 @@ func OauthCallbackHandler(c config.Config) http.HandlerFunc {
 		}
 
 		dbc := db.ConfigDB(c)
-		expiresAt := time.Now().Add(24 * time.Hour).Format(time.RFC3339)
+		expiresAt := types.NewTimestamp(time.Now().Add(24 * time.Hour))
 
 		_, err = dbc.CreateSession(db.CreateSessionParams{
-			UserID: user.UserID,
-			ExpiresAt: sql.NullString{
-				String: expiresAt,
-				Valid:  true,
-			},
+			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
+			ExpiresAt: expiresAt,
 			SessionData: sql.NullString{
 				String: sessionToken,
 				Valid:  true,
@@ -282,13 +279,10 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 
 	// Create session in database
-	expiresAt := time.Now().Add(24 * time.Hour).Format(time.RFC3339)
+	expiresAt := types.NewTimestamp(time.Now().Add(24 * time.Hour))
 	_, err = dbc.CreateSession(db.CreateSessionParams{
-		UserID: user.UserID,
-		ExpiresAt: sql.NullString{
-			String: expiresAt,
-			Valid:  true,
-		},
+		UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
+		ExpiresAt: expiresAt,
 		SessionData: sql.NullString{
 			String: sessionToken,
 			Valid:  true,

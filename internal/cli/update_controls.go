@@ -200,9 +200,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			node := m.getSelectedNodeFromModel()
 			utility.DefaultLogger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
 			if node != nil {
-				utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %d (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
+				utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %s (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
 				// Use the datatype from the selected node
-				return m, BuildContentFormCmd(node.Datatype.DatatypeID, m.PageRouteId)
+				return m, m.BuildContentFieldsForm(node.Datatype.DatatypeID, m.PageRouteId)
 			}
 			// Fallback: if no node selected, we can't create content
 			utility.DefaultLogger.Finfo("No node selected")

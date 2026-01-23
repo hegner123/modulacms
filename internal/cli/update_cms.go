@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 type CmsUpdate struct{}
@@ -31,11 +32,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 
 		// Dispatch specialized command using typed methods
 		// TODO: Get actual authorID from authenticated user session
+		// Using a default UserID - in production this should come from the session
+		defaultAuthorID := types.UserID("01JTRBZ0000000000000000001") // Placeholder author ID
 		return m, CreateContentWithFieldsCmd(
 			m.Config,
 			msg.Datatype,
 			m.PageRouteId,
-			1, // authorID - using default for now
+			defaultAuthorID,
 			fieldValues,
 		)
 
@@ -48,7 +51,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 				fmt.Sprintf("✓ Created content with %d fields", msg.FieldCount),
 				false,
 			),
-			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%d, RouteID=%d", msg.ContentDataID, msg.RouteID)),
+			LogMessageCmd(fmt.Sprintf("ContentData created: ID=%s, RouteID=%s", msg.ContentDataID, msg.RouteID)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 			FormCompletedCmd(&contentPage), // Navigate back to content browser
 		)
@@ -77,7 +80,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Handle empty tree (route doesn't exist or has no content)
 		if msg.RootNode == nil {
 			newModel.Root = *NewTreeRoot()
-			return newModel, LogMessageCmd(fmt.Sprintf("No content tree found for route %d", msg.RouteID))
+			return newModel, LogMessageCmd(fmt.Sprintf("No content tree found for route %s", msg.RouteID))
 		}
 
 		newModel.Root = *msg.RootNode

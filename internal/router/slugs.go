@@ -5,6 +5,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/transform"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -36,7 +37,8 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
-	contentData, err := d.ListContentDataByRoute(*route)
+	nullableRoute := types.NullableRouteID{ID: *route, Valid: true}
+	contentData, err := d.ListContentDataByRoute(nullableRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -58,14 +60,17 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 
 		dt = append(dt, *datatype)
 	}
-	contentFields, err := d.ListContentFieldsByRoute(*route)
+	contentFields, err := d.ListContentFieldsByRoute(nullableRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 	for _, cf := range *contentFields {
-		field, err := d.GetField(cf.FieldID)
+		if !cf.FieldID.Valid {
+			continue
+		}
+		field, err := d.GetField(cf.FieldID.ID)
 		if err != nil {
 			utility.DefaultLogger.Error("", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

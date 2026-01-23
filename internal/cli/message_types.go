@@ -266,7 +266,7 @@ type CmsGetDatatypeParentOptionsMsg struct {
 }
 
 type CmsAddNewContentDataMsg struct {
-	Datatype int64
+	Datatype types.DatatypeID
 }
 type CmsAddNewContentFieldsMsg struct {
 	Datatype int64
@@ -286,12 +286,12 @@ type ContentCreatedWithErrorsMsg struct {
 }
 
 type TreeLoadedMsg struct {
-	RouteID  int64
+	RouteID  types.RouteID
 	Stats    *LoadStats
 	RootNode *TreeRoot
 }
 
 type BuildContentFormMsg struct {
-	DatatypeID int64
-	RouteID    int64
+	DatatypeID types.DatatypeID
+	RouteID    types.RouteID
 }

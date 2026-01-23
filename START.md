@@ -3,7 +3,7 @@
 ModulaCMS AI Agent Onboarding
 
 **Location:** /Users/home/Documents/Code/Go_dev/modulacms/START.md
-**Last Updated:** 2026-01-22
+**Last Updated:** 2026-01-23
 
 ---
 
@@ -61,7 +61,7 @@ This section tracks what the user is working on. It is for **user awareness only
 **ACTIVE — Work on this when asked:**
 | Project | Path | Status |
 |---------|------|--------|
-| SQLC Refactor | `/Users/home/Documents/Code/Go_dev/modulacms/ai/refactor/SQLC_REDUCTION/` | In progress |
+| (none) | | |
 
 **PAUSED — Do NOT resume unless user explicitly requests:**
 | Project | Path | Status | Notes |
@@ -71,6 +71,7 @@ This section tracks what the user is working on. It is for **user awareness only
 **COMPLETED — Historical reference only:**
 | Project | Path |
 |---------|------|
+| SQLC Type Unification | `/Users/home/Documents/Code/Go_dev/modulacms/ai/refactor/SQLC_REDUCTION/` |
 | CLI TableModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/TABLE_REFACTOR_PLAN.md` |
 | CLI FormModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/FORM_REFACTOR_PLAN.md` |
 

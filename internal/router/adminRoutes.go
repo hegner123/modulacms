@@ -3,10 +3,10 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,7 +48,13 @@ func apiGetAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) e
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	adminRoute, err := d.GetAdminRoute(q)
+	slug := types.Slug(q)
+	if err := slug.Validate(); err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+	adminRoute, err := d.GetAdminRoute(slug)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -156,10 +162,10 @@ func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	id, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	id := types.AdminRouteID(q)
+	if err := id.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteAdminRoute(id)

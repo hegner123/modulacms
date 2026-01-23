@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -50,10 +50,10 @@ func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	adtID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	adtID := types.AdminDatatypeID(q)
+	if err := adtID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	adminDatatype, err := d.GetAdminDatatypeById(adtID)
@@ -164,10 +164,10 @@ func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	adtID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	adtID := types.AdminDatatypeID(q)
+	if err := adtID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteAdminDatatype(adtID)

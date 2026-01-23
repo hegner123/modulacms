@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -169,10 +169,10 @@ func apiGetAdminContentField(w http.ResponseWriter, r *http.Request, c config.Co
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	acfID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	acfID := types.AdminContentFieldID(q)
+	if err := acfID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	adminContentField, err := d.GetAdminContentField(acfID)
@@ -205,10 +205,10 @@ func apiDeleteAdminContentField(w http.ResponseWriter, r *http.Request, c config
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	cfID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	cfID := types.AdminContentFieldID(q)
+	if err := cfID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteAdminContentField(cfID)

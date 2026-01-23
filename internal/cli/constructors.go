@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 )
 
@@ -404,7 +405,7 @@ func FormInitOptionsCmd(form, table string) tea.Cmd {
 		}
 	}
 }
-func CmsAddNewContentDataCmd(id int64) tea.Cmd {
+func CmsAddNewContentDataCmd(id types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return CmsAddNewContentDataMsg{
 			Datatype: id,
@@ -419,7 +420,7 @@ func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 	}
 }
 
-func BuildContentFormCmd(datatypeID int64, routeID int64) tea.Cmd {
+func BuildContentFormCmd(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		return BuildContentFormMsg{
 			DatatypeID: datatypeID,
@@ -430,10 +431,10 @@ func BuildContentFormCmd(datatypeID int64, routeID int64) tea.Cmd {
 
 func CreateContentWithFieldsCmd(
 	config *config.Config,
-	datatypeID int64,
-	routeID int64,
-	authorID int64,
-	fieldValues map[int64]string,
+	datatypeID types.DatatypeID,
+	routeID types.RouteID,
+	authorID types.UserID,
+	fieldValues map[types.FieldID]string,
 ) tea.Cmd {
 	return func() tea.Msg {
 		m := Model{Config: config}
@@ -441,7 +442,7 @@ func CreateContentWithFieldsCmd(
 	}
 }
 
-func ReloadContentTreeCmd(config *config.Config, routeID int64) tea.Cmd {
+func ReloadContentTreeCmd(config *config.Config, routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		m := Model{Config: config}
 		return m.ReloadContentTree(config, routeID)()

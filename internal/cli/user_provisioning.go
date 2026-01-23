@@ -154,7 +154,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 
 		// Register the SSH key
 		_, err = dbc.CreateUserSshKey(db.CreateUserSshKeyParams{
-			UserID:      user.UserID,
+			UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
 			PublicKey:   m.SSHPublicKey,
 			KeyType:     m.SSHKeyType,
 			Fingerprint: m.SSHFingerprint,

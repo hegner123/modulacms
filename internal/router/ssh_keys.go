@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -61,14 +61,13 @@ func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 
 	// Create SSH key record
-	dateCreated := time.Now().Format(time.RFC3339)
 	sshKey, err := dbc.CreateUserSshKey(db.CreateUserSshKeyParams{
-		UserID:      authUser.UserID,
+		UserID:      types.NullableUserID{ID: authUser.UserID, Valid: true},
 		PublicKey:   req.PublicKey,
 		KeyType:     keyType,
 		Fingerprint: fingerprint,
 		Label:       req.Label,
-		DateCreated: dateCreated,
+		DateCreated: types.TimestampNow(),
 	})
 
 	if err != nil {
@@ -104,7 +103,7 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 
 	// Get user's SSH keys
 	dbc := db.ConfigDB(c)
-	keys, err := dbc.ListUserSshKeys(authUser.UserID)
+	keys, err := dbc.ListUserSshKeys(types.NullableUserID{ID: authUser.UserID, Valid: true})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to list SSH keys", err)
 		http.Error(w, "Failed to retrieve SSH keys", http.StatusInternalServerError)
@@ -128,7 +127,7 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 			KeyType:     key.KeyType,
 			Fingerprint: key.Fingerprint,
 			Label:       key.Label,
-			DateCreated: key.DateCreated,
+			DateCreated: key.DateCreated.String(),
 			LastUsed:    key.LastUsed,
 		}
 	}
@@ -175,7 +174,7 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	if sshKey.UserID != authUser.UserID {
+	if !sshKey.UserID.Valid || sshKey.UserID.ID != authUser.UserID {
 		http.Error(w, "Forbidden", http.StatusForbidden)
 		return
 	}

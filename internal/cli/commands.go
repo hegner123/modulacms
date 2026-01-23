@@ -340,19 +340,20 @@ func (m Model) CreateContentWithFields(
 }
 
 // ReloadContentTree fetches tree data from database and loads it into the Root
-func (m Model) ReloadContentTree(c *config.Config, routeID int64) tea.Cmd {
+func (m Model) ReloadContentTree(c *config.Config, routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*c)
 
 		// Fetch tree data from database
-		rows, err := d.GetContentTreeByRoute(routeID)
+		nullableRouteID := types.NullableRouteID{ID: routeID, Valid: !routeID.IsZero()}
+		rows, err := d.GetContentTreeByRoute(nullableRouteID)
 		if err != nil {
-			utility.DefaultLogger.Ferror(fmt.Sprintf("GetContentTreeByRoute error for route %d", routeID), err)
+			utility.DefaultLogger.Ferror(fmt.Sprintf("GetContentTreeByRoute error for route %s", routeID), err)
 			return FetchErrMsg{Error: fmt.Errorf("failed to fetch content tree: %w", err)}
 		}
 
 		if rows == nil {
-			utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned nil rows for route %d", routeID))
+			utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned nil rows for route %s", routeID))
 			return TreeLoadedMsg{
 				RouteID:  routeID,
 				Stats:    &LoadStats{},
@@ -360,10 +361,10 @@ func (m Model) ReloadContentTree(c *config.Config, routeID int64) tea.Cmd {
 			}
 		}
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned %d rows for route %d", len(*rows), routeID))
+		utility.DefaultLogger.Finfo(fmt.Sprintf("GetContentTreeByRoute returned %d rows for route %s", len(*rows), routeID))
 
 		if len(*rows) == 0 {
-			utility.DefaultLogger.Finfo(fmt.Sprintf("No rows returned for route %d", routeID))
+			utility.DefaultLogger.Finfo(fmt.Sprintf("No rows returned for route %s", routeID))
 			return TreeLoadedMsg{
 				RouteID:  routeID,
 				Stats:    &LoadStats{},

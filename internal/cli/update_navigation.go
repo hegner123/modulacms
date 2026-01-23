@@ -113,7 +113,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, StatusSetCmd(OK))
 
 			// Load content tree if PageRouteId is set
-			if m.PageRouteId > 0 {
+			if !m.PageRouteId.IsZero() {
 				cmds = append(cmds, ReloadContentTreeCmd(m.Config, m.PageRouteId))
 			}
 
