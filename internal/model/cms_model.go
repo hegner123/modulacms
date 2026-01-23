@@ -11,7 +11,7 @@ func CreateRoot() Root {
 }
 
 // CreateNode creates a new Node with datatype and adds it to the tree
-func CreateNode(root Root, parentID, datatypeID, contentID int64) Root {
+func CreateNode(root Root, parentID, datatypeID, contentID string) Root {
 	datatype := Datatype{
 		Info: db.DatatypeJSON{
 			DatatypeID: datatypeID,
@@ -22,20 +22,20 @@ func CreateNode(root Root, parentID, datatypeID, contentID int64) Root {
 	}
 
 	node := NewNode(datatype)
-	
+
 	// If root is empty, add as root node
 	if root.Node == nil {
 		return AddChild(root, &node)
 	}
-	
+
 	// If parentID provided, find parent and add as child
-	if parentID > 0 {
+	if parentID != "" {
 		parentNode := root.Node.FindNodeByID(parentID)
 		if parentNode != nil {
 			parentNode.AddChild(&node)
 		}
 	}
-	
+
 	return root
 }
 

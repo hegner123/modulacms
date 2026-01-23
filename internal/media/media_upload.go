@@ -14,6 +14,7 @@ import (
 	bucket "github.com/hegner123/modulacms/internal/bucket"
 	config "github.com/hegner123/modulacms/internal/config"
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -136,14 +137,13 @@ func MapMediaParams(a db.Media) db.UpdateMediaParams {
 		Caption:      a.Caption,
 		Description:  a.Description,
 		Class:        a.Class,
-		Url:          a.Url,
+		URL:          a.URL,
 		Mimetype:     a.Mimetype,
 		Dimensions:   a.Dimensions,
 		Srcset:       a.Srcset,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
-		DateModified: db.StringToNullString(utility.TimestampReadable()),
+		DateModified: types.TimestampNow(),
 		MediaID:      a.MediaID,
 	}
-
 }

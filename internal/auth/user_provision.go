@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
 )
@@ -188,11 +188,11 @@ func (up *UserProvisioner) ProvisionUser(
 		}
 
 		// Return existing user
-		return up.driver.GetUser(existingOauth.UserID)
+		return up.driver.GetUser(existingOauth.UserID.ID)
 	}
 
 	// Check if user exists by email
-	existingUser, err := up.driver.GetUserByEmail(userInfo.Email)
+	existingUser, err := up.driver.GetUserByEmail(types.Email(userInfo.Email))
 	if err == nil && existingUser != nil {
 		utility.DefaultLogger.Info("Found existing user by email: %s", userInfo.Email)
 		// Link OAuth to existing user
@@ -224,21 +224,15 @@ func (up *UserProvisioner) createNewUser(
 	}
 
 	// Create user (no password for OAuth users)
-	now := time.Now().Format(time.RFC3339)
+	now := types.TimestampNow()
 	user, err := up.driver.CreateUser(db.CreateUserParams{
-		Username: username,
-		Name:     name,
-		Email:    userInfo.Email,
-		Hash:     "", // OAuth users don't have passwords
-		Role:     4,  // Default role
-		DateCreated: sql.NullString{
-			String: now,
-			Valid:  true,
-		},
-		DateModified: sql.NullString{
-			String: now,
-			Valid:  true,
-		},
+		Username:     username,
+		Name:         name,
+		Email:        types.Email(userInfo.Email),
+		Hash:         "", // OAuth users don't have passwords
+		Role:         4,  // Default role
+		DateCreated:  now,
+		DateModified: now,
 	})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to create user", err)
@@ -252,13 +246,13 @@ func (up *UserProvisioner) createNewUser(
 		expiresAt = token.Expiry.Format(time.RFC3339)
 	}
 	_, err = up.driver.CreateUserOauth(db.CreateUserOauthParams{
-		UserID:              user.UserID,
+		UserID:              types.NullableUserID{ID: user.UserID, Valid: true},
 		OauthProvider:       provider,
 		OauthProviderUserID: providerUserID,
 		AccessToken:         token.AccessToken,
 		RefreshToken:        token.RefreshToken,
 		TokenExpiresAt:      expiresAt,
-		DateCreated:         time.Now().Format(time.RFC3339),
+		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to link OAuth", err)
@@ -284,13 +278,13 @@ func (up *UserProvisioner) linkOAuthToUser(
 	}
 
 	_, err := up.driver.CreateUserOauth(db.CreateUserOauthParams{
-		UserID:              user.UserID,
+		UserID:              types.NullableUserID{ID: user.UserID, Valid: true},
 		OauthProvider:       provider,
 		OauthProviderUserID: providerUserID,
 		AccessToken:         token.AccessToken,
 		RefreshToken:        token.RefreshToken,
 		TokenExpiresAt:      expiresAt,
-		DateCreated:         time.Now().Format(time.RFC3339),
+		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to link OAuth to existing user", err)
@@ -302,7 +296,7 @@ func (up *UserProvisioner) linkOAuthToUser(
 }
 
 // updateTokens updates the OAuth tokens for an existing user_oauth record.
-func (up *UserProvisioner) updateTokens(userOauthID int64, token *oauth2.Token) error {
+func (up *UserProvisioner) updateTokens(userOauthID types.UserOauthID, token *oauth2.Token) error {
 	// Handle tokens without expiry (GitHub)
 	expiresAt := ""
 	if !token.Expiry.IsZero() {
@@ -320,6 +314,6 @@ func (up *UserProvisioner) updateTokens(userOauthID int64, token *oauth2.Token) 
 		return err
 	}
 
-	utility.DefaultLogger.Debug("Updated OAuth tokens for user_oauth_id: %d", userOauthID)
+	utility.DefaultLogger.Debug("Updated OAuth tokens for user_oauth_id: %s", userOauthID)
 	return nil
 }

@@ -35,7 +35,7 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 	}
 
 	// Helper function to find a node in the slice by ContentDataID.
-	findNode := func(id int64) *Node {
+	findNode := func(id string) *Node {
 		for _, node := range nodes {
 			if node.Datatype.Content.ContentDataID == id {
 				return node
@@ -55,8 +55,8 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 		}
 
 		// Avoid self-parenting.
-		if node.Datatype.Content.ParentID.Int64 != node.Datatype.Content.ContentDataID {
-			parent := findNode(node.Datatype.Content.ParentID.Int64)
+		if node.Datatype.Content.ParentID != node.Datatype.Content.ContentDataID {
+			parent := findNode(node.Datatype.Content.ParentID)
 			if parent != nil {
 				parent.Nodes = append(parent.Nodes, node)
 			}
@@ -65,7 +65,7 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 
 	// Associate fields with the corresponding nodes.
 	for _, field := range fields {
-		node := findNode(field.Info.ParentID.Int64)
+		node := findNode(field.Info.ParentID)
 		if node != nil {
 			node.Fields = append(node.Fields, field)
 		} else {

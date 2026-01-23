@@ -7,14 +7,15 @@ import (
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // MiddlewareCookie represents the structure of authentication cookies used by the middleware.
 // It contains session identifier and user ID information.
 type MiddlewareCookie struct {
-	Session string `json:"session"`
-	UserId  int64  `json:"userId"`
+	Session string       `json:"session"`
+	UserId  types.UserID `json:"userId"`
 }
 
 // UserIsAuth validates a user's authentication status based on the provided cookie.
@@ -31,7 +32,7 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 
 	utility.DefaultLogger.Fdebug("userCookie ID %v\n", userCookie.UserId)
 
-	session, err := dbc.GetSessionByUserId(userCookie.UserId)
+	session, err := dbc.GetSessionByUserId(types.NullableUserID{Valid: true, ID: userCookie.UserId})
 	utility.DefaultLogger.Fdebug("", session)
 	if err != nil || session == nil {
 		utility.DefaultLogger.Ferror("Error retrieving session or no sessions found:", err)
@@ -45,7 +46,7 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 		return nil, err
 	}
 
-	expired := utility.TimestampLessThan(session.ExpiresAt.String)
+	expired := utility.TimestampLessThan(session.ExpiresAt.String())
 	if expired {
 		err := fmt.Errorf("session is expired")
 		return nil, err

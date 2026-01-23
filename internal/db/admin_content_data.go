@@ -1,13 +1,13 @@
 package db
 
 import (
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/utility"
 )
 
 ///////////////////////////////
@@ -15,35 +15,58 @@ import (
 //////////////////////////////
 
 type AdminContentData struct {
-	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
-	ParentID           types.NullableContentID `json:"parent_id"`
-	AdminRouteID       int64                   `json:"admin_route_id"`
-	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID    `json:"author_id"`
-	DateCreated        types.Timestamp         `json:"date_created"`
-	DateModified       types.Timestamp         `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID       `json:"parent_id"`
+	FirstChildID       sql.NullInt64                 `json:"first_child_id"`
+	NextSiblingID      sql.NullInt64                 `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullInt64                 `json:"prev_sibling_id"`
+	AdminRouteID       int64                         `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
 }
 type CreateAdminContentDataParams struct {
-	ParentID        types.NullableContentID `json:"parent_id"`
-	AdminRouteID    int64                   `json:"admin_route_id"`
-	AdminDatatypeID int64                   `json:"admin_datatype_id"`
-	AuthorID        types.NullableUserID    `json:"author_id"`
-	DateCreated     types.Timestamp         `json:"date_created"`
-	DateModified    types.Timestamp         `json:"date_modified"`
+	ParentID        types.NullableContentID       `json:"parent_id"`
+	FirstChildID    sql.NullInt64                 `json:"first_child_id"`
+	NextSiblingID   sql.NullInt64                 `json:"next_sibling_id"`
+	PrevSiblingID   sql.NullInt64                 `json:"prev_sibling_id"`
+	AdminRouteID    int64                         `json:"admin_route_id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID        types.NullableUserID          `json:"author_id"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
 }
 type UpdateAdminContentDataParams struct {
-	ParentID           types.NullableContentID `json:"parent_id"`
-	AdminRouteID       int64                   `json:"admin_route_id"`
-	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID    `json:"author_id"`
-	DateCreated        types.Timestamp         `json:"date_created"`
-	DateModified       types.Timestamp         `json:"date_modified"`
-	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID       `json:"parent_id"`
+	FirstChildID       sql.NullInt64                 `json:"first_child_id"`
+	NextSiblingID      sql.NullInt64                 `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullInt64                 `json:"prev_sibling_id"`
+	AdminRouteID       int64                         `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 }
 // FormParams and JSON variants removed - use typed params directly
 
 // GENERIC section removed - FormParams and JSON variants deprecated
 // Use types package for direct type conversion
+
+// MapStringAdminContentData converts AdminContentData to StringAdminContentData for table display
+func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
+	return StringAdminContentData{
+		AdminContentDataID: a.AdminContentDataID.String(),
+		ParentID:           a.ParentID.String(),
+		AdminRouteID:       fmt.Sprintf("%d", a.AdminRouteID),
+		AdminDatatypeID:    fmt.Sprintf("%d", a.AdminDatatypeID),
+		AuthorID:           a.AuthorID.String(),
+		DateCreated:        a.DateCreated.String(),
+		DateModified:       a.DateModified.String(),
+		History:            "", // History field removed
+	}
+}
 
 ///////////////////////////////
 // SQLITE
@@ -55,6 +78,9 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 	return AdminContentData{
 		AdminContentDataID: a.AdminContentDataID,
 		ParentID:           a.ParentID,
+		FirstChildID:       a.FirstChildID,
+		NextSiblingID:      a.NextSiblingID,
+		PrevSiblingID:      a.PrevSiblingID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -66,6 +92,9 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdb.CreateAdminContentDataParams {
 	return mdb.CreateAdminContentDataParams{
 		ParentID:        a.ParentID,
+		FirstChildID:    a.FirstChildID,
+		NextSiblingID:   a.NextSiblingID,
+		PrevSiblingID:   a.PrevSiblingID,
 		AdminRouteID:    a.AdminRouteID,
 		AdminDatatypeID: a.AdminDatatypeID,
 		AuthorID:        a.AuthorID,
@@ -77,6 +106,9 @@ func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams
 func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdb.UpdateAdminContentDataParams {
 	return mdb.UpdateAdminContentDataParams{
 		ParentID:           a.ParentID,
+		FirstChildID:       a.FirstChildID,
+		NextSiblingID:      a.NextSiblingID,
+		PrevSiblingID:      a.PrevSiblingID,
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
@@ -177,8 +209,11 @@ func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContent
 	return AdminContentData{
 		AdminContentDataID: a.AdminContentDataID,
 		ParentID:           a.ParentID,
+		FirstChildID:       sql.NullInt64{Int64: int64(a.FirstChildID.Int32), Valid: a.FirstChildID.Valid},
+		NextSiblingID:      sql.NullInt64{Int64: int64(a.NextSiblingID.Int32), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:      sql.NullInt64{Int64: int64(a.PrevSiblingID.Int32), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:       int64(a.AdminRouteID),
-		AdminDatatypeID:    int64(a.AdminDatatypeID),
+		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
@@ -187,8 +222,11 @@ func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContent
 func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbm.CreateAdminContentDataParams {
 	return mdbm.CreateAdminContentDataParams{
 		ParentID:        a.ParentID,
+		FirstChildID:    sql.NullInt32{Int32: int32(a.FirstChildID.Int64), Valid: a.FirstChildID.Valid},
+		NextSiblingID:   sql.NullInt32{Int32: int32(a.NextSiblingID.Int64), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:   sql.NullInt32{Int32: int32(a.PrevSiblingID.Int64), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:    int32(a.AdminRouteID),
-		AdminDatatypeID: int32(a.AdminDatatypeID),
+		AdminDatatypeID: a.AdminDatatypeID,
 		AuthorID:        a.AuthorID,
 		DateCreated:     a.DateCreated,
 		DateModified:    a.DateModified,
@@ -197,8 +235,11 @@ func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataP
 func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbm.UpdateAdminContentDataParams {
 	return mdbm.UpdateAdminContentDataParams{
 		ParentID:           a.ParentID,
+		FirstChildID:       sql.NullInt32{Int32: int32(a.FirstChildID.Int64), Valid: a.FirstChildID.Valid},
+		NextSiblingID:      sql.NullInt32{Int32: int32(a.NextSiblingID.Int64), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:      sql.NullInt32{Int32: int32(a.PrevSiblingID.Int64), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:       int32(a.AdminRouteID),
-		AdminDatatypeID:    int32(a.AdminDatatypeID),
+		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
@@ -299,8 +340,11 @@ func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentD
 	return AdminContentData{
 		AdminContentDataID: a.AdminContentDataID,
 		ParentID:           a.ParentID,
+		FirstChildID:       sql.NullInt64{Int64: int64(a.FirstChildID.Int32), Valid: a.FirstChildID.Valid},
+		NextSiblingID:      sql.NullInt64{Int64: int64(a.NextSiblingID.Int32), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:      sql.NullInt64{Int64: int64(a.PrevSiblingID.Int32), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:       int64(a.AdminRouteID),
-		AdminDatatypeID:    int64(a.AdminDatatypeID),
+		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
@@ -309,8 +353,11 @@ func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentD
 func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbp.CreateAdminContentDataParams {
 	return mdbp.CreateAdminContentDataParams{
 		ParentID:        a.ParentID,
+		FirstChildID:    sql.NullInt32{Int32: int32(a.FirstChildID.Int64), Valid: a.FirstChildID.Valid},
+		NextSiblingID:   sql.NullInt32{Int32: int32(a.NextSiblingID.Int64), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:   sql.NullInt32{Int32: int32(a.PrevSiblingID.Int64), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:    int32(a.AdminRouteID),
-		AdminDatatypeID: int32(a.AdminDatatypeID),
+		AdminDatatypeID: a.AdminDatatypeID,
 		AuthorID:        a.AuthorID,
 		DateCreated:     a.DateCreated,
 		DateModified:    a.DateModified,
@@ -319,8 +366,11 @@ func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataPa
 func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbp.UpdateAdminContentDataParams {
 	return mdbp.UpdateAdminContentDataParams{
 		ParentID:           a.ParentID,
+		FirstChildID:       sql.NullInt32{Int32: int32(a.FirstChildID.Int64), Valid: a.FirstChildID.Valid},
+		NextSiblingID:      sql.NullInt32{Int32: int32(a.NextSiblingID.Int64), Valid: a.NextSiblingID.Valid},
+		PrevSiblingID:      sql.NullInt32{Int32: int32(a.PrevSiblingID.Int64), Valid: a.PrevSiblingID.Valid},
 		AdminRouteID:       int32(a.AdminRouteID),
-		AdminDatatypeID:    int32(a.AdminDatatypeID),
+		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,

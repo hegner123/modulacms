@@ -3,255 +3,144 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
 
 type ContentData struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	RouteID       int64          `json:"route_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	History       sql.NullString `json:"history"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
 type CreateContentDataParams struct {
-	RouteID       int64          `json:"route_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	History       sql.NullString `json:"history"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
 type UpdateContentDataParams struct {
-	RouteID       int64          `json:"route_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	History       sql.NullString `json:"history"`
-	ContentDataID int64          `json:"content_data_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
 }
 
-type ContentDataHistoryEntry struct {
-	ContentDataID int64          `json:"content_data_id"`
-	RouteID       int64          `json:"route_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-}
-
-type CreateContentDataFormParams struct {
-	RouteID       string `json:"route_id"`
-	ParentID      string `json:"parent_id"`
-	FirstChildID  string `json:"first_child_id"`
-	NextSiblingID string `json:"next_sibling_id"`
-	PrevSiblingID string `json:"prev_sibling_id"`
-	DatatypeID    string `json:"datatype_id"`
-	AuthorID      string `json:"author_id"`
-	DateCreated   string `json:"date_created"`
-	DateModified  string `json:"date_modified"`
-	History       string `json:"history"`
-}
-
-type UpdateContentDataFormParams struct {
-	RouteID       string `json:"route_id"`
-	ParentID      string `json:"parent_id"`
-	FirstChildID  string `json:"first_child_id"`
-	NextSiblingID string `json:"next_sibling_id"`
-	PrevSiblingID string `json:"prev_sibling_id"`
-	DatatypeID    string `json:"datatype_id"`
-	AuthorID      string `json:"author_id"`
-	DateCreated   string `json:"date_created"`
-	DateModified  string `json:"date_modified"`
-	History       string `json:"history"`
-	ContentDataID string `json:"content_data_id"`
-}
-
+// ContentDataJSON provides a string-based representation for JSON serialization
 type ContentDataJSON struct {
-	ContentDataID int64      `json:"content_data_id"`
-	ParentID      NullInt64  `json:"parent_id"`
-	FirstChildID  NullInt64  `json:"first_child_id"`
-	NextSiblingID NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID NullInt64  `json:"prev_sibling_id"`
-	RouteID       int64      `json:"route_id"`
-	DatatypeID    int64      `json:"datatype_id"`
-	AuthorID      int64      `json:"author_id"`
-	DateCreated   NullString `json:"date_created"`
-	DateModified  NullString `json:"date_modified"`
-	History       NullString `json:"history"`
-}
-type CreateContentDataParamsJSON struct {
-	RouteID       int64      `json:"route_id"`
-	ParentID      NullInt64  `json:"parent_id"`
-	FirstChildID  NullInt64  `json:"first_child_id"`
-	NextSiblingID NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64      `json:"datatype_id"`
-	AuthorID      int64      `json:"author_id"`
-	DateCreated   NullString `json:"date_created"`
-	DateModified  NullString `json:"date_modified"`
-	History       NullString `json:"history"`
+	ContentDataID string `json:"content_data_id"`
+	ParentID      string `json:"parent_id"`
+	FirstChildID  string `json:"first_child_id"`
+	NextSiblingID string `json:"next_sibling_id"`
+	PrevSiblingID string `json:"prev_sibling_id"`
+	RouteID       string `json:"route_id"`
+	DatatypeID    string `json:"datatype_id"`
+	AuthorID      string `json:"author_id"`
+	DateCreated   string `json:"date_created"`
+	DateModified  string `json:"date_modified"`
 }
 
-type UpdateContentDataParamsJSON struct {
-	RouteID       int64      `json:"route_id"`
-	ParentID      NullInt64  `json:"parent_id"`
-	FirstChildID  NullInt64  `json:"first_child_id"`
-	NextSiblingID NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64      `json:"datatype_id"`
-	AuthorID      int64      `json:"author_id"`
-	DateCreated   NullString `json:"date_created"`
-	DateModified  NullString `json:"date_modified"`
-	History       NullString `json:"history"`
-	ContentDataID int64      `json:"content_data_id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateContentDataParams(a CreateContentDataFormParams) CreateContentDataParams {
-	return CreateContentDataParams{
-		RouteID:       StringToInt64(a.RouteID),
-		ParentID:      StringToNullInt64(a.ParentID),
-		FirstChildID:  StringToNullInt64(a.FirstChildID),
-		NextSiblingID: StringToNullInt64(a.NextSiblingID),
-		PrevSiblingID: StringToNullInt64(a.PrevSiblingID),
-		DatatypeID:    StringToInt64(a.DatatypeID),
-		AuthorID:      StringToInt64(a.AuthorID),
-		DateCreated:   StringToNullString(a.DateCreated),
-		DateModified:  StringToNullString(a.DateModified),
-		History:       StringToNullString(a.History),
-	}
-}
-
-func MapUpdateContentDataParams(a UpdateContentDataFormParams) UpdateContentDataParams {
-	return UpdateContentDataParams{
-		RouteID:       StringToInt64(a.RouteID),
-		ParentID:      StringToNullInt64(a.ParentID),
-		FirstChildID:  StringToNullInt64(a.FirstChildID),
-		NextSiblingID: StringToNullInt64(a.NextSiblingID),
-		PrevSiblingID: StringToNullInt64(a.PrevSiblingID),
-		DatatypeID:    StringToInt64(a.DatatypeID),
-		AuthorID:      StringToInt64(a.AuthorID),
-		DateCreated:   StringToNullString(a.DateCreated),
-		DateModified:  StringToNullString(a.DateModified),
-		History:       StringToNullString(a.History),
-		ContentDataID: StringToInt64(a.ContentDataID),
-	}
-}
-
+// MapContentDataJSON converts ContentData to ContentDataJSON for JSON serialization
 func MapContentDataJSON(a ContentData) ContentDataJSON {
+	firstChildID := ""
+	if a.FirstChildID.Valid {
+		firstChildID = fmt.Sprintf("%d", a.FirstChildID.Int64)
+	}
+	nextSiblingID := ""
+	if a.NextSiblingID.Valid {
+		nextSiblingID = fmt.Sprintf("%d", a.NextSiblingID.Int64)
+	}
+	prevSiblingID := ""
+	if a.PrevSiblingID.Valid {
+		prevSiblingID = fmt.Sprintf("%d", a.PrevSiblingID.Int64)
+	}
 	return ContentDataJSON{
-		ContentDataID: a.ContentDataID,
-		ParentID:      NullInt64{a.ParentID},
-		FirstChildID:  NullInt64{a.FirstChildID},
-		NextSiblingID: NullInt64{a.NextSiblingID},
-		PrevSiblingID: NullInt64{a.PrevSiblingID},
-		RouteID:       a.RouteID,
-		DatatypeID:    a.DatatypeID,
-		AuthorID:      a.AuthorID,
-		DateCreated:   NullString{a.DateCreated},
-		DateModified:  NullString{a.DateModified},
-		History:       NullString{a.History},
+		ContentDataID: a.ContentDataID.String(),
+		ParentID:      a.ParentID.String(),
+		FirstChildID:  firstChildID,
+		NextSiblingID: nextSiblingID,
+		PrevSiblingID: prevSiblingID,
+		RouteID:       a.RouteID.String(),
+		DatatypeID:    a.DatatypeID.String(),
+		AuthorID:      a.AuthorID.String(),
+		DateCreated:   a.DateCreated.String(),
+		DateModified:  a.DateModified.String(),
 	}
 }
 
-func MapCreateContentDataJSONParams(a CreateContentDataParamsJSON) CreateContentDataParams {
-	return CreateContentDataParams{
-		RouteID:       a.RouteID,
-		ParentID:      a.ParentID.NullInt64,
-		FirstChildID:  a.FirstChildID.NullInt64,
-		NextSiblingID: a.NextSiblingID.NullInt64,
-		PrevSiblingID: a.PrevSiblingID.NullInt64,
-		DatatypeID:    a.DatatypeID,
-		AuthorID:      a.AuthorID,
-		DateCreated:   a.DateCreated.NullString,
-		DateModified:  a.DateModified.NullString,
-		History:       a.History.NullString,
-	}
-}
-
-func MapUpdateContentDataJSONParams(a UpdateContentDataParamsJSON) UpdateContentDataParams {
-	return UpdateContentDataParams{
-		RouteID:       a.RouteID,
-		ParentID:      a.ParentID.NullInt64,
-		FirstChildID:  a.FirstChildID.NullInt64,
-		NextSiblingID: a.NextSiblingID.NullInt64,
-		PrevSiblingID: a.PrevSiblingID.NullInt64,
-		DatatypeID:    a.DatatypeID,
-		AuthorID:      a.AuthorID,
-		DateCreated:   a.DateCreated.NullString,
-		DateModified:  a.DateModified.NullString,
-		History:       a.History.NullString,
-		ContentDataID: a.ContentDataID,
-	}
-}
-
+// MapStringContentData converts ContentData to StringContentData for table display
 func MapStringContentData(a ContentData) StringContentData {
+	firstChildID := ""
+	if a.FirstChildID.Valid {
+		firstChildID = fmt.Sprintf("%d", a.FirstChildID.Int64)
+	}
+	nextSiblingID := ""
+	if a.NextSiblingID.Valid {
+		nextSiblingID = fmt.Sprintf("%d", a.NextSiblingID.Int64)
+	}
+	prevSiblingID := ""
+	if a.PrevSiblingID.Valid {
+		prevSiblingID = fmt.Sprintf("%d", a.PrevSiblingID.Int64)
+	}
 	return StringContentData{
-		ContentDataID: strconv.FormatInt(a.ContentDataID, 10),
-		RouteID:       strconv.FormatInt(a.RouteID, 10),
-		ParentID:      utility.NullToString(a.ParentID),
-		FirstChildID:  utility.NullToString(a.FirstChildID),
-		NextSiblingID: utility.NullToString(a.NextSiblingID),
-		PrevSiblingID: utility.NullToString(a.PrevSiblingID),
-		DatatypeID:    strconv.FormatInt(a.DatatypeID, 10),
-		AuthorID:      strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:   utility.NullToString(a.DateCreated),
-		DateModified:  utility.NullToString(a.DateModified),
-		History:       utility.NullToString(a.History),
+		ContentDataID: a.ContentDataID.String(),
+		RouteID:       a.RouteID.String(),
+		ParentID:      a.ParentID.String(),
+		FirstChildID:  firstChildID,
+		NextSiblingID: nextSiblingID,
+		PrevSiblingID: prevSiblingID,
+		DatatypeID:    a.DatatypeID.String(),
+		AuthorID:      a.AuthorID.String(),
+		DateCreated:   a.DateCreated.String(),
+		DateModified:  a.DateModified.String(),
+		History:       "", // History field removed
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapContentData(a mdb.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
-		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
 		FirstChildID:  a.FirstChildID,
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
+		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
-		History:       a.History,
 	}
 }
 
@@ -263,10 +152,9 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 		NextSiblingID: a.NextSiblingID,
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
-		AuthorID:      a.AuthorID, // Was missing - caused FK constraint failure
+		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
-		History:       a.History,
 	}
 }
 
@@ -281,12 +169,12 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
-		History:       a.History,
 		ContentDataID: a.ContentDataID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountContentData() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -312,18 +200,18 @@ func (d Database) CreateContentData(s CreateContentDataParams) ContentData {
 	return d.MapContentData(row)
 }
 
-func (d Database) DeleteContentData(id int64) error {
+func (d Database) DeleteContentData(id types.ContentID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, int64(id))
+	err := queries.DeleteContentData(d.Context, mdb.DeleteContentDataParams{ContentDataID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete ContentData: %v ", id)
+		return fmt.Errorf("failed to delete content data: %v\n", id)
 	}
 	return nil
 }
 
-func (d Database) GetContentData(id int64) (*ContentData, error) {
+func (d Database) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetContentData(d.Context, id)
+	row, err := queries.GetContentData(d.Context, mdb.GetContentDataParams{ContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -345,9 +233,9 @@ func (d Database) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
-func (d Database) ListContentDataByRoute(routeID int64) (*[]ContentData, error) {
+func (d Database) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListContentDataByRoute(d.Context, routeID)
+	rows, err := queries.ListContentDataByRoute(d.Context, mdb.ListContentDataByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
 	}
@@ -371,58 +259,57 @@ func (d Database) UpdateContentData(s UpdateContentDataParams) (*string, error) 
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
-		ContentDataID: int64(a.ContentDataID),
-		RouteID:       int64(a.RouteID.Int32),
-		ParentID:      Int64ToNullInt64(int64(a.ParentID.Int32)),
-		FirstChildID:  Int64ToNullInt64(int64(a.FirstChildID.Int32)),
-		NextSiblingID: Int64ToNullInt64(int64(a.NextSiblingID.Int32)),
-		PrevSiblingID: Int64ToNullInt64(int64(a.PrevSiblingID.Int32)),
-		DatatypeID:    int64(a.DatatypeID.Int32),
-		AuthorID:      int64(a.AuthorID),
-		DateCreated:   StringToNullString(a.DateCreated.String()),
-		DateModified:  StringToNullString(a.DateModified.String()),
-		History:       a.History,
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
+		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
+		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 	}
 }
 
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
-		RouteID:       Int64ToNullInt32(a.RouteID),
-		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
-		FirstChildID:  Int64ToNullInt32(a.FirstChildID.Int64),
-		NextSiblingID: Int64ToNullInt32(a.NextSiblingID.Int64),
-		PrevSiblingID: Int64ToNullInt32(a.PrevSiblingID.Int64),
-		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
-		AuthorID:      int32(a.AuthorID),
-		DateCreated:   StringToNTime(a.DateCreated.String).Time,
-		DateModified:  StringToNTime(a.DateModified.String).Time,
-		History:       a.History,
+		RouteID:       a.RouteID,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
+		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
+		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbm.UpdateContentDataParams {
 	return mdbm.UpdateContentDataParams{
-		RouteID:       Int64ToNullInt32(a.RouteID),
-		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
-		FirstChildID:  Int64ToNullInt32(a.FirstChildID.Int64),
-		NextSiblingID: Int64ToNullInt32(a.NextSiblingID.Int64),
-		PrevSiblingID: Int64ToNullInt32(a.PrevSiblingID.Int64),
-		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
-		AuthorID:      int32(a.AuthorID),
-		DateCreated:   StringToNTime(a.DateCreated.String).Time,
-		DateModified:  StringToNTime(a.DateModified.String).Time,
-		History:       a.History,
-		ContentDataID: int32(a.ContentDataID),
+		RouteID:       a.RouteID,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
+		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
+		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		ContentDataID: a.ContentDataID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -452,18 +339,18 @@ func (d MysqlDatabase) CreateContentData(s CreateContentDataParams) ContentData 
 	return d.MapContentData(row)
 }
 
-func (d MysqlDatabase) DeleteContentData(id int64) error {
+func (d MysqlDatabase) DeleteContentData(id types.ContentID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, int32(id))
+	err := queries.DeleteContentData(d.Context, mdbm.DeleteContentDataParams{ContentDataID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete ContentData: %v ", id)
+		return fmt.Errorf("failed to delete content data: %v", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetContentData(id int64) (*ContentData, error) {
+func (d MysqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetContentData(d.Context, int32(id))
+	row, err := queries.GetContentData(d.Context, mdbm.GetContentDataParams{ContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -485,9 +372,9 @@ func (d MysqlDatabase) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListContentDataByRoute(routeID int64) (*[]ContentData, error) {
+func (d MysqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentDataByRoute(d.Context, Int64ToNullInt32(routeID))
+	rows, err := queries.ListContentDataByRoute(d.Context, mdbm.ListContentDataByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
 	}
@@ -511,58 +398,57 @@ func (d MysqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, er
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
-		ContentDataID: int64(a.ContentDataID),
-		RouteID:       int64(a.RouteID.Int32),
-		ParentID:      Int64ToNullInt64(int64(a.ParentID.Int32)),
-		FirstChildID:  Int64ToNullInt64(int64(a.FirstChildID.Int32)),
-		NextSiblingID: Int64ToNullInt64(int64(a.NextSiblingID.Int32)),
-		PrevSiblingID: Int64ToNullInt64(int64(a.PrevSiblingID.Int32)),
-		DatatypeID:    int64(a.DatatypeID.Int32),
-		AuthorID:      int64(a.AuthorID),
-		DateCreated:   StringToNullString(NullTimeToString(a.DateCreated)),
-		DateModified:  StringToNullString(NullTimeToString(a.DateModified)),
-		History:       a.History,
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
+		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
+		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 	}
 }
 
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
-		RouteID:       Int64ToNullInt32(a.RouteID),
-		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
-		FirstChildID:  Int64ToNullInt32(a.FirstChildID.Int64),
-		NextSiblingID: Int64ToNullInt32(a.NextSiblingID.Int64),
-		PrevSiblingID: Int64ToNullInt32(a.PrevSiblingID.Int64),
-		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
-		AuthorID:      int32(a.AuthorID),
-		DateCreated:   StringToNTime(a.DateCreated.String),
-		DateModified:  StringToNTime(a.DateModified.String),
-		History:       a.History,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
+		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
+		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 	}
 }
 
 func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp.UpdateContentDataParams {
 	return mdbp.UpdateContentDataParams{
-		RouteID:       Int64ToNullInt32(a.RouteID),
-		ParentID:      Int64ToNullInt32(a.ParentID.Int64),
-		FirstChildID:  Int64ToNullInt32(a.FirstChildID.Int64),
-		NextSiblingID: Int64ToNullInt32(a.NextSiblingID.Int64),
-		PrevSiblingID: Int64ToNullInt32(a.PrevSiblingID.Int64),
-		DatatypeID:    Int64ToNullInt32(a.DatatypeID),
-		AuthorID:      int32(a.AuthorID),
-		DateCreated:   StringToNTime(a.DateCreated.String),
-		DateModified:  StringToNTime(a.DateModified.String),
-		History:       a.History,
-		ContentDataID: int32(a.ContentDataID),
+		RouteID:       a.RouteID,
+		ParentID:      a.ParentID,
+		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
+		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
+		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		DatatypeID:    a.DatatypeID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+		ContentDataID: a.ContentDataID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -588,18 +474,18 @@ func (d PsqlDatabase) CreateContentData(s CreateContentDataParams) ContentData {
 	return d.MapContentData(row)
 }
 
-func (d PsqlDatabase) DeleteContentData(id int64) error {
+func (d PsqlDatabase) DeleteContentData(id types.ContentID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, int32(id))
+	err := queries.DeleteContentData(d.Context, mdbp.DeleteContentDataParams{ContentDataID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete ContentData: %v ", id)
+		return fmt.Errorf("failed to delete content data: %v", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetContentData(id int64) (*ContentData, error) {
+func (d PsqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetContentData(d.Context, int32(id))
+	row, err := queries.GetContentData(d.Context, mdbp.GetContentDataParams{ContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -621,9 +507,9 @@ func (d PsqlDatabase) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListContentDataByRoute(routeID int64) (*[]ContentData, error) {
+func (d PsqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentDataByRoute(d.Context, Int64ToNullInt32(routeID))
+	rows, err := queries.ListContentDataByRoute(d.Context, mdbp.ListContentDataByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
 	}

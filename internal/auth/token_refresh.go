@@ -7,6 +7,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
 )
@@ -31,9 +32,9 @@ func NewTokenRefresher(c *config.Config) *TokenRefresher {
 // Tokens are refreshed if they expire within 5 minutes.
 // Returns nil if refresh was successful or not needed.
 // Returns an error if the user doesn't have OAuth configured or if refresh fails.
-func (tr *TokenRefresher) RefreshIfNeeded(userID int64) error {
+func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 	// Get user's OAuth record
-	userOauth, err := tr.driver.GetUserOauthByUserId(userID)
+	userOauth, err := tr.driver.GetUserOauthByUserId(types.NullableUserID{Valid: true, ID: userID})
 	if err != nil {
 		// User doesn't use OAuth - this is not an error
 		utility.DefaultLogger.Debug("No OAuth record for user %d", userID)
@@ -121,7 +122,7 @@ func (tr *TokenRefresher) refreshToken(userOauth *db.UserOauth) (*oauth2.Token, 
 }
 
 // updateTokens updates the user_oauth record with new token information.
-func (tr *TokenRefresher) updateTokens(userOauthID int64, token *oauth2.Token) error {
+func (tr *TokenRefresher) updateTokens(userOauthID types.UserOauthID, token *oauth2.Token) error {
 	// Handle tokens without expiry (GitHub)
 	expiresAt := ""
 	if !token.Expiry.IsZero() {
@@ -141,6 +142,6 @@ func (tr *TokenRefresher) updateTokens(userOauthID int64, token *oauth2.Token) e
 		return err
 	}
 
-	utility.DefaultLogger.Debug("Updated tokens for user_oauth_id %d, new expiry: %s", userOauthID, expiresAt)
+	utility.DefaultLogger.Debug("Updated tokens for user_oauth_id %s, new expiry: %s", userOauthID, expiresAt)
 	return nil
 }

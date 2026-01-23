@@ -82,7 +82,7 @@ func (r Root) Render() string {
 }
 
 // FindNodeByID searches the tree for a node with the given ID
-func (n *Node) FindNodeByID(id int64) *Node {
+func (n *Node) FindNodeByID(id string) *Node {
 	if n.Datatype.Info.DatatypeID == id {
 		return n
 	}

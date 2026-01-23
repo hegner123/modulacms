@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -51,7 +52,7 @@ func ReadCookie(c *http.Cookie) (*MiddlewareCookie, error) {
 // It encodes the session data and user ID as base64-encoded JSON and applies security
 // settings from the configuration (HttpOnly, Secure, SameSite).
 // Returns an error if encoding or cookie creation fails.
-func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, userId int64) error {
+func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, userId types.UserID) error {
 	cookie := MiddlewareCookie{
 		Session: sessionData,
 		UserId:  userId,

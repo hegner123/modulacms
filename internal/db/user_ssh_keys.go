@@ -8,28 +8,29 @@ import (
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // UserSshKeys represents an SSH public key for a user
 type UserSshKeys struct {
 	SshKeyID    int64
-	UserID      int64
+	UserID      types.NullableUserID
 	PublicKey   string
 	KeyType     string
 	Fingerprint string
 	Label       string
-	DateCreated string
+	DateCreated types.Timestamp
 	LastUsed    string
 }
 
 // CreateUserSshKeyParams contains parameters for creating a new SSH key
 type CreateUserSshKeyParams struct {
-	UserID      int64
+	UserID      types.NullableUserID
 	PublicKey   string
 	KeyType     string
 	Fingerprint string
 	Label       string
-	DateCreated string
+	DateCreated types.Timestamp
 }
 
 // ============================================================================
@@ -55,7 +56,7 @@ func (d Database) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys,
 
 func (d Database) GetUserSshKey(id int64) (*UserSshKeys, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetUserSshKey(d.Context, id)
+	row, err := queries.GetUserSshKey(d.Context, mdb.GetUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +66,7 @@ func (d Database) GetUserSshKey(id int64) (*UserSshKeys, error) {
 
 func (d Database) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshKeys, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetUserSshKeyByFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserSshKeyByFingerprint(d.Context, mdb.GetUserSshKeyByFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +76,7 @@ func (d Database) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshKeys, 
 
 func (d Database) GetUserBySSHFingerprint(fingerprint string) (*Users, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetUserBySSHFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserBySSHFingerprint(d.Context, mdb.GetUserBySSHFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -83,9 +84,9 @@ func (d Database) GetUserBySSHFingerprint(fingerprint string) (*Users, error) {
 	return &res, nil
 }
 
-func (d Database) ListUserSshKeys(userID int64) (*[]UserSshKeys, error) {
+func (d Database) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshKeys, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListUserSshKeys(d.Context, userID)
+	rows, err := queries.ListUserSshKeys(d.Context, mdb.ListUserSshKeysParams{UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SSH keys: %v", err)
 	}
@@ -101,7 +102,7 @@ func (d Database) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdb.UpdateUserSshKeyLastUsedParams{
 		LastUsed: sql.NullString{String: lastUsed, Valid: lastUsed != ""},
-		SshKeyID: id,
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key last used: %v", err)
@@ -113,7 +114,7 @@ func (d Database) UpdateUserSshKeyLabel(id int64, label string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdb.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
-		SshKeyID: id,
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key label: %v", err)
@@ -123,7 +124,7 @@ func (d Database) UpdateUserSshKeyLabel(id int64, label string) error {
 
 func (d Database) DeleteUserSshKey(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, id)
+	err := queries.DeleteUserSshKey(d.Context, mdb.DeleteUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete SSH key: %v", err)
 	}
@@ -140,7 +141,7 @@ func (d Database) MapUserSshKeys(row mdb.UserSshKeys) UserSshKeys {
 		lastUsed = row.LastUsed.String
 	}
 	return UserSshKeys{
-		SshKeyID:    row.SshKeyID,
+		SshKeyID:    row.SSHKeyID,
 		UserID:      row.UserID,
 		PublicKey:   row.PublicKey,
 		KeyType:     row.KeyType,
@@ -173,19 +174,13 @@ func (d Database) CountUserSshKeys() (*int64, error) {
 func (d MysqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
 
-	// Parse date_created string to time.Time
-	dateCreated, err := time.Parse(time.RFC3339, params.DateCreated)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse date_created: %v", err)
-	}
-
 	result, err := queries.CreateUserSshKey(d.Context, mdbm.CreateUserSshKeyParams{
-		UserID:      int32(params.UserID),
+		UserID:      params.UserID,
 		PublicKey:   params.PublicKey,
 		KeyType:     params.KeyType,
 		Fingerprint: params.Fingerprint,
 		Label:       sql.NullString{String: params.Label, Valid: params.Label != ""},
-		DateCreated: dateCreated,
+		DateCreated: params.DateCreated,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSH key: %v", err)
@@ -201,7 +196,7 @@ func (d MysqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSsh
 
 func (d MysqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserSshKey(d.Context, int32(id))
+	row, err := queries.GetUserSshKey(d.Context, mdbm.GetUserSshKeyParams{SSHKeyID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +206,7 @@ func (d MysqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
 
 func (d MysqlDatabase) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserSshKeyByFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserSshKeyByFingerprint(d.Context, mdbm.GetUserSshKeyByFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +216,7 @@ func (d MysqlDatabase) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshK
 
 func (d MysqlDatabase) GetUserBySSHFingerprint(fingerprint string) (*Users, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserBySSHFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserBySSHFingerprint(d.Context, mdbm.GetUserBySSHFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -229,9 +224,9 @@ func (d MysqlDatabase) GetUserBySSHFingerprint(fingerprint string) (*Users, erro
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListUserSshKeys(userID int64) (*[]UserSshKeys, error) {
+func (d MysqlDatabase) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListUserSshKeys(d.Context, int32(userID))
+	rows, err := queries.ListUserSshKeys(d.Context, mdbm.ListUserSshKeysParams{UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SSH keys: %v", err)
 	}
@@ -258,7 +253,7 @@ func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error
 
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdbm.UpdateUserSshKeyLastUsedParams{
 		LastUsed: nullTime,
-		SshKeyID: int32(id),
+		SSHKeyID: int32(id),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key last used: %v", err)
@@ -270,7 +265,7 @@ func (d MysqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdbm.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
-		SshKeyID: int32(id),
+		SSHKeyID: int32(id),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key label: %v", err)
@@ -280,7 +275,7 @@ func (d MysqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 
 func (d MysqlDatabase) DeleteUserSshKey(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, int32(id))
+	err := queries.DeleteUserSshKey(d.Context, mdbm.DeleteUserSshKeyParams{SSHKeyID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("failed to delete SSH key: %v", err)
 	}
@@ -297,13 +292,13 @@ func (d MysqlDatabase) MapUserSshKeys(row mdbm.UserSshKeys) UserSshKeys {
 		lastUsed = row.LastUsed.Time.Format(time.RFC3339)
 	}
 	return UserSshKeys{
-		SshKeyID:    int64(row.SshKeyID),
-		UserID:      int64(row.UserID),
+		SshKeyID:    int64(row.SSHKeyID),
+		UserID:      row.UserID,
 		PublicKey:   row.PublicKey,
 		KeyType:     row.KeyType,
 		Fingerprint: row.Fingerprint,
 		Label:       label,
-		DateCreated: row.DateCreated.Format(time.RFC3339),
+		DateCreated: row.DateCreated,
 		LastUsed:    lastUsed,
 	}
 }
@@ -331,19 +326,13 @@ func (d MysqlDatabase) CountUserSshKeys() (*int64, error) {
 func (d PsqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
 	queries := mdbp.New(d.Connection)
 
-	// Parse date_created string to time.Time
-	dateCreated, err := time.Parse(time.RFC3339, params.DateCreated)
-	if err != nil {
-		return nil, fmt.Errorf("failed to parse date_created: %v", err)
-	}
-
 	row, err := queries.CreateUserSshKey(d.Context, mdbp.CreateUserSshKeyParams{
-		UserID:      int32(params.UserID),
+		UserID:      params.UserID,
 		PublicKey:   params.PublicKey,
 		KeyType:     params.KeyType,
 		Fingerprint: params.Fingerprint,
 		Label:       sql.NullString{String: params.Label, Valid: params.Label != ""},
-		DateCreated: dateCreated,
+		DateCreated: params.DateCreated,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create SSH key: %v", err)
@@ -354,7 +343,7 @@ func (d PsqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshK
 
 func (d PsqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserSshKey(d.Context, int32(id))
+	row, err := queries.GetUserSshKey(d.Context, mdbp.GetUserSshKeyParams{SSHKeyID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +353,7 @@ func (d PsqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
 
 func (d PsqlDatabase) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshKeys, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserSshKeyByFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserSshKeyByFingerprint(d.Context, mdbp.GetUserSshKeyByFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -374,7 +363,7 @@ func (d PsqlDatabase) GetUserSshKeyByFingerprint(fingerprint string) (*UserSshKe
 
 func (d PsqlDatabase) GetUserBySSHFingerprint(fingerprint string) (*Users, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserBySSHFingerprint(d.Context, fingerprint)
+	row, err := queries.GetUserBySSHFingerprint(d.Context, mdbp.GetUserBySSHFingerprintParams{Fingerprint: fingerprint})
 	if err != nil {
 		return nil, err
 	}
@@ -382,9 +371,9 @@ func (d PsqlDatabase) GetUserBySSHFingerprint(fingerprint string) (*Users, error
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListUserSshKeys(userID int64) (*[]UserSshKeys, error) {
+func (d PsqlDatabase) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshKeys, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListUserSshKeys(d.Context, int32(userID))
+	rows, err := queries.ListUserSshKeys(d.Context, mdbp.ListUserSshKeysParams{UserID: userID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list SSH keys: %v", err)
 	}
@@ -411,7 +400,7 @@ func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error 
 
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdbp.UpdateUserSshKeyLastUsedParams{
 		LastUsed: nullTime,
-		SshKeyID: int32(id),
+		SSHKeyID: int32(id),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key last used: %v", err)
@@ -423,7 +412,7 @@ func (d PsqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdbp.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
-		SshKeyID: int32(id),
+		SSHKeyID: int32(id),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key label: %v", err)
@@ -433,7 +422,7 @@ func (d PsqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 
 func (d PsqlDatabase) DeleteUserSshKey(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, int32(id))
+	err := queries.DeleteUserSshKey(d.Context, mdbp.DeleteUserSshKeyParams{SSHKeyID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("failed to delete SSH key: %v", err)
 	}
@@ -450,13 +439,13 @@ func (d PsqlDatabase) MapUserSshKeys(row mdbp.UserSshKeys) UserSshKeys {
 		lastUsed = row.LastUsed.Time.Format(time.RFC3339)
 	}
 	return UserSshKeys{
-		SshKeyID:    int64(row.SshKeyID),
-		UserID:      int64(row.UserID),
+		SshKeyID:    int64(row.SSHKeyID),
+		UserID:      row.UserID,
 		PublicKey:   row.PublicKey,
 		KeyType:     row.KeyType,
 		Fingerprint: row.Fingerprint,
 		Label:       label,
-		DateCreated: row.DateCreated.Format(time.RFC3339),
+		DateCreated: row.DateCreated,
 		LastUsed:    lastUsed,
 	}
 }

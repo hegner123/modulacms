@@ -3,6 +3,8 @@ package db
 import (
 	"fmt"
 	"strings"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 ///////////////////////////////
@@ -20,7 +22,7 @@ func LogRouteTree(title string, rows *[]GetRouteTreeByRouteIDRow)string {
 	s += fmt.Sprintf("\n=== %s ===\n", title)
 
 	// Group rows by ContentDataID for better readability
-	nodeMap := make(map[int64][]GetRouteTreeByRouteIDRow)
+	nodeMap := make(map[types.ContentID][]GetRouteTreeByRouteIDRow)
 	for _, row := range *rows {
 		nodeMap[row.ContentDataID] = append(nodeMap[row.ContentDataID], row)
 	}
@@ -34,10 +36,10 @@ func LogRouteTree(title string, rows *[]GetRouteTreeByRouteIDRow)string {
 		firstRow := nodeRows[0]
 		parentStr := "ROOT"
 		if firstRow.ParentID.Valid {
-			parentStr = fmt.Sprintf("Parent: %d", firstRow.ParentID.Int64)
+			parentStr = fmt.Sprintf("Parent: %s", firstRow.ParentID.ID)
 		}
 
-		s += fmt.Sprintf("┌─ Node ID: %d | %s | %s (%s)\n",
+		s += fmt.Sprintf("┌─ Node ID: %s | %s | %s (%s)\n",
 			contentID, parentStr, firstRow.DatatypeLabel, firstRow.DatatypeType)
 
 		// Display all fields for this node
@@ -80,7 +82,7 @@ func LogRouteTreeCompact(title string, rows *[]GetRouteTreeByRouteIDRow)string {
 	s += fmt.Sprintf("\n=== %s ===\n", title)
 
 	// Group rows by ContentDataID
-	nodeMap := make(map[int64][]GetRouteTreeByRouteIDRow)
+	nodeMap := make(map[types.ContentID][]GetRouteTreeByRouteIDRow)
 	for _, row := range *rows {
 		nodeMap[row.ContentDataID] = append(nodeMap[row.ContentDataID], row)
 	}
@@ -94,7 +96,7 @@ func LogRouteTreeCompact(title string, rows *[]GetRouteTreeByRouteIDRow)string {
 		firstRow := nodeRows[0]
 		parentStr := "ROOT"
 		if firstRow.ParentID.Valid {
-			parentStr = fmt.Sprintf("P:%d", firstRow.ParentID.Int64)
+			parentStr = fmt.Sprintf("P:%s", firstRow.ParentID.ID)
 		}
 
 		// Count non-empty fields
@@ -105,7 +107,7 @@ func LogRouteTreeCompact(title string, rows *[]GetRouteTreeByRouteIDRow)string {
 			}
 		}
 
-		s += fmt.Sprintf("• ID:%d %s %s (%d fields)\n",
+		s += fmt.Sprintf("• ID:%s %s %s (%d fields)\n",
 			contentID, parentStr, firstRow.DatatypeLabel, fieldCount)
 	}
 
@@ -124,14 +126,14 @@ func LogRouteTreeHierarchical(title string, rows *[]GetRouteTreeByRouteIDRow)str
 	s += fmt.Sprintf("\n=== %s ===\n", title)
 
 	// Group rows by ContentDataID
-	nodeMap := make(map[int64][]GetRouteTreeByRouteIDRow)
+	nodeMap := make(map[types.ContentID][]GetRouteTreeByRouteIDRow)
 	for _, row := range *rows {
 		nodeMap[row.ContentDataID] = append(nodeMap[row.ContentDataID], row)
 	}
 
 	// Find root nodes (those without parents)
-	var rootNodes []int64
-	childrenMap := make(map[int64][]int64)
+	var rootNodes []types.ContentID
+	childrenMap := make(map[types.ContentID][]types.ContentID)
 
 	for contentID, nodeRows := range nodeMap {
 		if len(nodeRows) == 0 {
@@ -142,14 +144,14 @@ func LogRouteTreeHierarchical(title string, rows *[]GetRouteTreeByRouteIDRow)str
 		if !firstRow.ParentID.Valid {
 			rootNodes = append(rootNodes, contentID)
 		} else {
-			parentID := firstRow.ParentID.Int64
+			parentID := firstRow.ParentID.ID
 			childrenMap[parentID] = append(childrenMap[parentID], contentID)
 		}
 	}
 
 	// Print hierarchy starting from root nodes
-	var printNode func(nodeID int64, prefix string, isLast bool)
-	printNode = func(nodeID int64, prefix string, isLast bool) {
+	var printNode func(nodeID types.ContentID, prefix string, isLast bool)
+	printNode = func(nodeID types.ContentID, prefix string, isLast bool) {
 		nodeRows, exists := nodeMap[nodeID]
 		if !exists || len(nodeRows) == 0 {
 			return
@@ -169,7 +171,7 @@ func LogRouteTreeHierarchical(title string, rows *[]GetRouteTreeByRouteIDRow)str
 			}
 		}
 
-		s += fmt.Sprintf("%s%s ID:%d %s (%d fields)\n",
+		s += fmt.Sprintf("%s%s ID:%s %s (%d fields)\n",
 			prefix, connector, nodeID, firstRow.DatatypeLabel, fieldCount)
 
 		// Print children
