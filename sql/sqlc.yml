@@ -1,29 +1,725 @@
 version: "2"
+
+# ============================================
+# SHARED OVERRIDES TEMPLATE (copied to each engine)
+# ============================================
+# Note: sqlc v2 requires overrides to be per-engine when using multiple engines.
+# The overrides below are duplicated in each engine section.
+
 sql:
+  # ---------- SQLite ----------
   - engine: "sqlite"
     schema: "schema/**/schema.sql"
     queries: "schema/**/queries.sql"
     gen:
       go:
         package: "mdb"
-        emit_json_tags: true
         out: "../internal/db-sqlite"
-        emit_exact_table_names: true
-  - engine: "postgresql"
-    schema: "schema/**/schema_psql.sql"
-    queries: "schema/**/queries_psql.sql"
-    gen:
-      go:
-        package: "mdbp"
         emit_json_tags: true
-        out: "../internal/db-psql"
-        emit_exact_table_names: true
+        emit_empty_slices: true
+        json_tags_case_style: "snake"
+        initialisms: ["ID", "URL", "OAuth", "SSH", "HTTP", "HTTPS", "API"]
+        query_parameter_limit: 0
+        rename:
+          id: "ID"
+          url: "URL"
+          oauth: "OAuth"
+          ssh: "SSH"
+          # Column name ID suffixes (explicit to get uppercase ID)
+          admin_content_data_id: "AdminContentDataID"
+          admin_content_field_id: "AdminContentFieldID"
+          admin_datatype_id: "AdminDatatypeID"
+          admin_datatype_field_id: "AdminDatatypeFieldID"
+          admin_field_id: "AdminFieldID"
+          admin_route_id: "AdminRouteID"
+          author_id: "AuthorID"
+          backup_id: "BackupID"
+          backup_set_id: "BackupSetID"
+          content_data_id: "ContentDataID"
+          content_field_id: "ContentFieldID"
+          datatype_id: "DatatypeID"
+          datatype_field_id: "DatatypeFieldID"
+          event_id: "EventID"
+          field_id: "FieldID"
+          first_child_id: "FirstChildID"
+          md_id: "MdID"
+          media_dimension_id: "MediaDimensionID"
+          media_id: "MediaID"
+          next_sibling_id: "NextSiblingID"
+          node_id: "NodeID"
+          oauth_provider_user_id: "OAuthProviderUserID"
+          parent_id: "ParentID"
+          permission_id: "PermissionID"
+          prev_sibling_id: "PrevSiblingID"
+          record_id: "RecordID"
+          role_id: "RoleID"
+          route_id: "RouteID"
+          session_id: "SessionID"
+          ssh_key_id: "SSHKeyID"
+          table_id: "TableID"
+          user_id: "UserID"
+          user_oauth_id: "UserOAuthID"
+          user_ssh_key_id: "UserSSHKeyID"
+          verification_id: "VerificationID"
+          # Table-to-struct names (sqlc singularizes first, then applies rename)
+          admin_content_datum: AdminContentData
+          admin_content_field: AdminContentFields
+          admin_datatype: AdminDatatypes
+          admin_datatypes_field: AdminDatatypesFields
+          admin_field: AdminFields
+          admin_route: AdminRoutes
+          content_datum: ContentData
+          content_field: ContentFields
+          datatype: Datatypes
+          datatypes_field: DatatypesFields
+          field: Fields
+          medium: Media
+          media_dimension: MediaDimensions
+          permission: Permissions
+          role: Roles
+          route: Routes
+          session: Sessions
+          table: Tables
+          token: Tokens
+          user: Users
+          user_ssh_key: UserSshKeys
+        overrides:
+          # PRIMARY ID COLUMNS
+          - column: "datatypes.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "users.user_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "roles.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "content_data.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_fields.content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentFieldID"}
+          - column: "media.media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "media_dimension.media_dimension_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaDimensionID"}
+          - column: "sessions.session_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SessionID"}
+          - column: "tokens.token_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TokenID"}
+          - column: "routes.route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "admin_routes.admin_route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "tables.table_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TableID"}
+          - column: "user_oauth.user_oauth_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserOauthID"}
+          - column: "user_ssh_keys.user_ssh_key_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserSshKeyID"}
+          - column: "admin_datatypes.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "admin_content_data.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_fields.admin_content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          - column: "datatypes_fields.datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FOREIGN KEY COLUMNS
+          - column: "*.datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          - column: "*.datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "*.user_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.user_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.author_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.author_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.role_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRoleID"}
+          - column: "*.role_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "*.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFieldID"}
+          - column: "*.field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "*.media_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaID"}
+          - column: "*.media_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "*.route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRouteID"}
+          - column: "*.route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          # TIMESTAMPS
+          - column: "*.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.date_modified"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.created_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.updated_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_activity"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # DISTRIBUTED SYSTEM
+          - column: "*.node_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NodeID"}
+          - column: "*.hlc_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "HLC"}
+          - column: "datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          - column: "admin_datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          # CHANGE EVENTS
+          - column: "change_events.event_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "EventID"}
+          - column: "change_events.operation"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Operation"}
+          - column: "change_events.action"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Action"}
+          # BACKUPS
+          - column: "backups.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backups.backup_type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
+          - column: "backups.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backup_verifications.verification_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
+          - column: "backup_verifications.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backup_verifications.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_sets.backup_set_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
+          - column: "backup_sets.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          # ENUMS
+          - column: "content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "admin_content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "admin_fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "routes.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
+          # VALIDATION
+          - column: "*.slug"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Slug"}
+          - column: "users.email"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
+          - column: "media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+
+  # ---------- MySQL ----------
   - engine: "mysql"
     schema: "schema/**/schema_mysql.sql"
     queries: "schema/**/queries_mysql.sql"
     gen:
       go:
         package: "mdbm"
-        emit_json_tags: true
         out: "../internal/db-mysql"
-        emit_exact_table_names: true
+        emit_json_tags: true
+        emit_empty_slices: true
+        json_tags_case_style: "snake"
+        initialisms: ["ID", "URL", "OAuth", "SSH", "HTTP", "HTTPS", "API"]
+        query_parameter_limit: 0
+        rename:
+          id: "ID"
+          url: "URL"
+          oauth: "OAuth"
+          ssh: "SSH"
+          # Column name ID suffixes (explicit to get uppercase ID)
+          admin_content_data_id: "AdminContentDataID"
+          admin_content_field_id: "AdminContentFieldID"
+          admin_datatype_id: "AdminDatatypeID"
+          admin_datatype_field_id: "AdminDatatypeFieldID"
+          admin_field_id: "AdminFieldID"
+          admin_route_id: "AdminRouteID"
+          author_id: "AuthorID"
+          backup_id: "BackupID"
+          backup_set_id: "BackupSetID"
+          content_data_id: "ContentDataID"
+          content_field_id: "ContentFieldID"
+          datatype_id: "DatatypeID"
+          datatype_field_id: "DatatypeFieldID"
+          event_id: "EventID"
+          field_id: "FieldID"
+          first_child_id: "FirstChildID"
+          md_id: "MdID"
+          media_dimension_id: "MediaDimensionID"
+          media_id: "MediaID"
+          next_sibling_id: "NextSiblingID"
+          node_id: "NodeID"
+          oauth_provider_user_id: "OAuthProviderUserID"
+          parent_id: "ParentID"
+          permission_id: "PermissionID"
+          prev_sibling_id: "PrevSiblingID"
+          record_id: "RecordID"
+          role_id: "RoleID"
+          route_id: "RouteID"
+          session_id: "SessionID"
+          ssh_key_id: "SSHKeyID"
+          table_id: "TableID"
+          user_id: "UserID"
+          user_oauth_id: "UserOAuthID"
+          user_ssh_key_id: "UserSSHKeyID"
+          verification_id: "VerificationID"
+          # Table-to-struct names (sqlc singularizes first, then applies rename)
+          admin_content_datum: AdminContentData
+          admin_content_field: AdminContentFields
+          admin_datatype: AdminDatatypes
+          admin_datatypes_field: AdminDatatypesFields
+          admin_field: AdminFields
+          admin_route: AdminRoutes
+          content_datum: ContentData
+          content_field: ContentFields
+          datatype: Datatypes
+          datatypes_field: DatatypesFields
+          field: Fields
+          medium: Media
+          media_dimension: MediaDimensions
+          permission: Permissions
+          role: Roles
+          route: Routes
+          session: Sessions
+          table: Tables
+          token: Tokens
+          user: Users
+          user_ssh_key: UserSshKeys
+        overrides:
+          # PRIMARY ID COLUMNS
+          - column: "datatypes.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "users.user_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "roles.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "content_data.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_fields.content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentFieldID"}
+          - column: "media.media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "media_dimension.media_dimension_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaDimensionID"}
+          - column: "sessions.session_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SessionID"}
+          - column: "tokens.token_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TokenID"}
+          - column: "routes.route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "admin_routes.admin_route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "tables.table_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TableID"}
+          - column: "user_oauth.user_oauth_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserOauthID"}
+          - column: "user_ssh_keys.user_ssh_key_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserSshKeyID"}
+          - column: "admin_datatypes.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "admin_content_data.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_fields.admin_content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          - column: "datatypes_fields.datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FOREIGN KEY COLUMNS
+          - column: "*.datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          - column: "*.datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "*.user_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.user_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.author_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.author_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.role_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRoleID"}
+          - column: "*.role_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "*.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFieldID"}
+          - column: "*.field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "*.media_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaID"}
+          - column: "*.media_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "*.route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRouteID"}
+          - column: "*.route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          # TIMESTAMPS
+          - column: "*.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.date_modified"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.created_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.updated_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_activity"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # DISTRIBUTED SYSTEM
+          - column: "*.node_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NodeID"}
+          - column: "*.hlc_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "HLC"}
+          - column: "datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          - column: "admin_datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          # CHANGE EVENTS
+          - column: "change_events.event_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "EventID"}
+          - column: "change_events.operation"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Operation"}
+          - column: "change_events.action"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Action"}
+          # BACKUPS
+          - column: "backups.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backups.backup_type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
+          - column: "backups.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backup_verifications.verification_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
+          - column: "backup_verifications.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backup_verifications.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_sets.backup_set_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
+          - column: "backup_sets.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          # ENUMS
+          - column: "content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "admin_content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "admin_fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "routes.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
+          # VALIDATION
+          - column: "*.slug"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Slug"}
+          - column: "users.email"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
+          - column: "media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+
+  # ---------- PostgreSQL ----------
+  - engine: "postgresql"
+    schema: "schema/**/schema_psql.sql"
+    queries: "schema/**/queries_psql.sql"
+    gen:
+      go:
+        package: "mdbp"
+        out: "../internal/db-psql"
+        emit_json_tags: true
+        emit_empty_slices: true
+        json_tags_case_style: "snake"
+        initialisms: ["ID", "URL", "OAuth", "SSH", "HTTP", "HTTPS", "API"]
+        query_parameter_limit: 0
+        rename:
+          id: "ID"
+          url: "URL"
+          oauth: "OAuth"
+          ssh: "SSH"
+          # Column name ID suffixes (explicit to get uppercase ID)
+          admin_content_data_id: "AdminContentDataID"
+          admin_content_field_id: "AdminContentFieldID"
+          admin_datatype_id: "AdminDatatypeID"
+          admin_datatype_field_id: "AdminDatatypeFieldID"
+          admin_field_id: "AdminFieldID"
+          admin_route_id: "AdminRouteID"
+          author_id: "AuthorID"
+          backup_id: "BackupID"
+          backup_set_id: "BackupSetID"
+          content_data_id: "ContentDataID"
+          content_field_id: "ContentFieldID"
+          datatype_id: "DatatypeID"
+          datatype_field_id: "DatatypeFieldID"
+          event_id: "EventID"
+          field_id: "FieldID"
+          first_child_id: "FirstChildID"
+          md_id: "MdID"
+          media_dimension_id: "MediaDimensionID"
+          media_id: "MediaID"
+          next_sibling_id: "NextSiblingID"
+          node_id: "NodeID"
+          oauth_provider_user_id: "OAuthProviderUserID"
+          parent_id: "ParentID"
+          permission_id: "PermissionID"
+          prev_sibling_id: "PrevSiblingID"
+          record_id: "RecordID"
+          role_id: "RoleID"
+          route_id: "RouteID"
+          session_id: "SessionID"
+          ssh_key_id: "SSHKeyID"
+          table_id: "TableID"
+          user_id: "UserID"
+          user_oauth_id: "UserOAuthID"
+          user_ssh_key_id: "UserSSHKeyID"
+          verification_id: "VerificationID"
+          # Table-to-struct names (sqlc singularizes first, then applies rename)
+          admin_content_datum: AdminContentData
+          admin_content_field: AdminContentFields
+          admin_datatype: AdminDatatypes
+          admin_datatypes_field: AdminDatatypesFields
+          admin_field: AdminFields
+          admin_route: AdminRoutes
+          content_datum: ContentData
+          content_field: ContentFields
+          datatype: Datatypes
+          datatypes_field: DatatypesFields
+          field: Fields
+          medium: Media
+          media_dimension: MediaDimensions
+          permission: Permissions
+          role: Roles
+          route: Routes
+          session: Sessions
+          table: Tables
+          token: Tokens
+          user: Users
+          user_ssh_key: UserSshKeys
+        overrides:
+          # PRIMARY ID COLUMNS
+          - column: "datatypes.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "users.user_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "roles.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "content_data.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_fields.content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentFieldID"}
+          - column: "media.media_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "media_dimension.media_dimension_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaDimensionID"}
+          - column: "sessions.session_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SessionID"}
+          - column: "tokens.token_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TokenID"}
+          - column: "routes.route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "admin_routes.admin_route_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "tables.table_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "TableID"}
+          - column: "user_oauth.user_oauth_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserOauthID"}
+          - column: "user_ssh_keys.user_ssh_key_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserSshKeyID"}
+          - column: "admin_datatypes.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "admin_content_data.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_fields.admin_content_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          - column: "datatypes_fields.datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FOREIGN KEY COLUMNS
+          - column: "*.datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          - column: "*.datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "*.user_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.user_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.author_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "*.author_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "*.role_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRoleID"}
+          - column: "*.role_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "*.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
+          - column: "*.field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFieldID"}
+          - column: "*.field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "*.media_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableMediaID"}
+          - column: "*.media_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "MediaID"}
+          - column: "*.route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableRouteID"}
+          - column: "*.route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          # TIMESTAMPS
+          - column: "*.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.date_modified"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.created_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.updated_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "*.expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_activity"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # DISTRIBUTED SYSTEM
+          - column: "*.node_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NodeID"}
+          - column: "*.hlc_timestamp"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "HLC"}
+          - column: "datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          - column: "admin_datatypes.conflict_policy"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ConflictPolicy"}
+          # CHANGE EVENTS
+          - column: "change_events.event_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "EventID"}
+          - column: "change_events.operation"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Operation"}
+          - column: "change_events.action"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Action"}
+          # BACKUPS
+          - column: "backups.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backups.backup_type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupType"}
+          - column: "backups.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupStatus"}
+          - column: "backup_verifications.verification_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationID"}
+          - column: "backup_verifications.backup_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupID"}
+          - column: "backup_verifications.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "VerificationStatus"}
+          - column: "backup_sets.backup_set_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetID"}
+          - column: "backup_sets.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "BackupSetStatus"}
+          # ENUMS
+          - column: "content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "admin_content_data.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
+          - column: "fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "admin_fields.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "routes.type"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
+          # VALIDATION
+          - column: "*.slug"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Slug"}
+          - column: "users.email"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
+          - column: "media.url"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}

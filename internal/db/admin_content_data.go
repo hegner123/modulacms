@@ -1,13 +1,12 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -16,33 +15,30 @@ import (
 //////////////////////////////
 
 type AdminContentData struct {
-	AdminContentDataID int64          `json:"admin_content_data_id"`
-	ParentID           sql.NullInt64  `json:"parent_id"`
-	AdminRouteID       int64          `json:"admin_route_id"`
-	AdminDatatypeID    int64          `json:"admin_datatype_id"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
-	History            sql.NullString `json:"history"`
+	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID `json:"parent_id"`
+	AdminRouteID       int64                   `json:"admin_route_id"`
+	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID    `json:"author_id"`
+	DateCreated        types.Timestamp         `json:"date_created"`
+	DateModified       types.Timestamp         `json:"date_modified"`
 }
 type CreateAdminContentDataParams struct {
-	ParentID        sql.NullInt64  `json:"parent_id"`
-	AdminRouteID    int64          `json:"admin_route_id"`
-	AdminDatatypeID int64          `json:"admin_datatype_id"`
-	AuthorID        int64          `json:"author_id"`
-	DateCreated     sql.NullString `json:"date_created"`
-	DateModified    sql.NullString `json:"date_modified"`
-	History         sql.NullString `json:"history"`
+	ParentID        types.NullableContentID `json:"parent_id"`
+	AdminRouteID    int64                   `json:"admin_route_id"`
+	AdminDatatypeID int64                   `json:"admin_datatype_id"`
+	AuthorID        types.NullableUserID    `json:"author_id"`
+	DateCreated     types.Timestamp         `json:"date_created"`
+	DateModified    types.Timestamp         `json:"date_modified"`
 }
 type UpdateAdminContentDataParams struct {
-	ParentID           sql.NullInt64  `json:"parent_id"`
-	AdminRouteID       int64          `json:"admin_route_id"`
-	AdminDatatypeID    int64          `json:"admin_datatype_id"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
-	History            sql.NullString `json:"history"`
-	AdminContentDataID int64          `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID `json:"parent_id"`
+	AdminRouteID       int64                   `json:"admin_route_id"`
+	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID    `json:"author_id"`
+	DateCreated        types.Timestamp         `json:"date_created"`
+	DateModified       types.Timestamp         `json:"date_modified"`
+	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
 }
 type AdminContentDataHistoryEntry struct {
 	AdminContentDataID int64          `json:"admin_content_data_id"`
@@ -181,7 +177,6 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
-		History:            a.History,
 	}
 }
 
@@ -193,7 +188,6 @@ func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams
 		AuthorID:        a.AuthorID,
 		DateCreated:     a.DateCreated,
 		DateModified:    a.DateModified,
-		History:         a.History,
 	}
 }
 
@@ -205,7 +199,6 @@ func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams
 		AuthorID:           a.AuthorID,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
-		History:            a.History,
 		AdminContentDataID: a.AdminContentDataID,
 	}
 }

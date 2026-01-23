@@ -8,40 +8,42 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 type AdminContentData struct {
-	AdminContentDataID int32         `json:"admin_content_data_id"`
-	ParentID           sql.NullInt32 `json:"parent_id"`
-	FirstChildID       sql.NullInt32 `json:"first_child_id"`
-	NextSiblingID      sql.NullInt32 `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullInt32 `json:"prev_sibling_id"`
-	AdminRouteID       int32         `json:"admin_route_id"`
-	AdminDatatypeID    int32         `json:"admin_datatype_id"`
-	AuthorID           int32         `json:"author_id"`
-	DateCreated        time.Time     `json:"date_created"`
-	DateModified       time.Time     `json:"date_modified"`
+	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID `json:"parent_id"`
+	FirstChildID       sql.NullInt32           `json:"first_child_id"`
+	NextSiblingID      sql.NullInt32           `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullInt32           `json:"prev_sibling_id"`
+	AdminRouteID       int32                   `json:"admin_route_id"`
+	AdminDatatypeID    int32                   `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID    `json:"author_id"`
+	DateCreated        types.Timestamp         `json:"date_created"`
+	DateModified       types.Timestamp         `json:"date_modified"`
 }
 
 type AdminContentFields struct {
-	AdminContentFieldID int32         `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt32 `json:"admin_route_id"`
-	AdminContentDataID  int32         `json:"admin_content_data_id"`
-	AdminFieldID        int32         `json:"admin_field_id"`
-	AdminFieldValue     string        `json:"admin_field_value"`
-	AuthorID            int32         `json:"author_id"`
-	DateCreated         time.Time     `json:"date_created"`
-	DateModified        time.Time     `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullInt32             `json:"admin_route_id"`
+	AdminContentDataID  int32                     `json:"admin_content_data_id"`
+	AdminFieldID        int32                     `json:"admin_field_id"`
+	AdminFieldValue     string                    `json:"admin_field_value"`
+	AuthorID            types.NullableUserID      `json:"author_id"`
+	DateCreated         types.Timestamp           `json:"date_created"`
+	DateModified        types.Timestamp           `json:"date_modified"`
 }
 
 type AdminDatatypes struct {
-	AdminDatatypeID int32         `json:"admin_datatype_id"`
-	ParentID        sql.NullInt32 `json:"parent_id"`
-	Label           string        `json:"label"`
-	Type            string        `json:"type"`
-	AuthorID        int32         `json:"author_id"`
-	DateCreated     time.Time     `json:"date_created"`
-	DateModified    time.Time     `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
+	ParentID        types.NullableContentID `json:"parent_id"`
+	Label           string                  `json:"label"`
+	Type            string                  `json:"type"`
+	AuthorID        types.NullableUserID    `json:"author_id"`
+	DateCreated     types.Timestamp         `json:"date_created"`
+	DateModified    types.Timestamp         `json:"date_modified"`
 }
 
 type AdminDatatypesFields struct {
@@ -51,152 +53,152 @@ type AdminDatatypesFields struct {
 }
 
 type AdminFields struct {
-	AdminFieldID int32         `json:"admin_field_id"`
-	ParentID     sql.NullInt32 `json:"parent_id"`
-	Label        string        `json:"label"`
-	Data         string        `json:"data"`
-	Type         string        `json:"type"`
-	AuthorID     int32         `json:"author_id"`
-	DateCreated  time.Time     `json:"date_created"`
-	DateModified time.Time     `json:"date_modified"`
+	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 type AdminRoutes struct {
-	AdminRouteID int32     `json:"admin_route_id"`
-	Slug         string    `json:"slug"`
-	Title        string    `json:"title"`
-	Status       int32     `json:"status"`
-	AuthorID     int32     `json:"author_id"`
-	DateCreated  time.Time `json:"date_created"`
-	DateModified time.Time `json:"date_modified"`
+	AdminRouteID types.AdminRouteID   `json:"admin_route_id"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int32                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
-type BackupSets struct {
-	BackupSetID    string          `json:"backup_set_id"`
-	CreatedAt      time.Time       `json:"created_at"`
-	HlcTimestamp   int64           `json:"hlc_timestamp"`
-	Status         string          `json:"status"`
-	BackupIds      json.RawMessage `json:"backup_ids"`
-	NodeCount      int32           `json:"node_count"`
-	CompletedCount sql.NullInt32   `json:"completed_count"`
-	ErrorMessage   sql.NullString  `json:"error_message"`
+type Backup struct {
+	BackupID       types.BackupID     `json:"backup_id"`
+	NodeID         types.NodeID       `json:"node_id"`
+	BackupType     types.BackupType   `json:"backup_type"`
+	Status         types.BackupStatus `json:"status"`
+	StartedAt      time.Time          `json:"started_at"`
+	CompletedAt    sql.NullTime       `json:"completed_at"`
+	DurationMs     sql.NullInt32      `json:"duration_ms"`
+	RecordCount    sql.NullInt64      `json:"record_count"`
+	SizeBytes      sql.NullInt64      `json:"size_bytes"`
+	ReplicationLsn sql.NullString     `json:"replication_lsn"`
+	HlcTimestamp   types.HLC          `json:"hlc_timestamp"`
+	StoragePath    string             `json:"storage_path"`
+	Checksum       sql.NullString     `json:"checksum"`
+	TriggeredBy    sql.NullString     `json:"triggered_by"`
+	ErrorMessage   sql.NullString     `json:"error_message"`
+	Metadata       json.RawMessage    `json:"metadata"`
 }
 
-type BackupVerifications struct {
-	VerificationID   string         `json:"verification_id"`
-	BackupID         string         `json:"backup_id"`
-	VerifiedAt       time.Time      `json:"verified_at"`
-	VerifiedBy       sql.NullString `json:"verified_by"`
-	RestoreTested    sql.NullBool   `json:"restore_tested"`
-	ChecksumValid    sql.NullBool   `json:"checksum_valid"`
-	RecordCountMatch sql.NullBool   `json:"record_count_match"`
-	Status           string         `json:"status"`
-	ErrorMessage     sql.NullString `json:"error_message"`
-	DurationMs       sql.NullInt32  `json:"duration_ms"`
+type BackupSet struct {
+	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
+	CreatedAt      types.Timestamp       `json:"created_at"`
+	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
+	Status         types.BackupSetStatus `json:"status"`
+	BackupIds      json.RawMessage       `json:"backup_ids"`
+	NodeCount      int32                 `json:"node_count"`
+	CompletedCount sql.NullInt32         `json:"completed_count"`
+	ErrorMessage   sql.NullString        `json:"error_message"`
 }
 
-type Backups struct {
-	BackupID       string          `json:"backup_id"`
-	NodeID         string          `json:"node_id"`
-	BackupType     string          `json:"backup_type"`
-	Status         string          `json:"status"`
-	StartedAt      time.Time       `json:"started_at"`
-	CompletedAt    sql.NullTime    `json:"completed_at"`
-	DurationMs     sql.NullInt32   `json:"duration_ms"`
-	RecordCount    sql.NullInt64   `json:"record_count"`
-	SizeBytes      sql.NullInt64   `json:"size_bytes"`
-	ReplicationLsn sql.NullString  `json:"replication_lsn"`
-	HlcTimestamp   sql.NullInt64   `json:"hlc_timestamp"`
-	StoragePath    string          `json:"storage_path"`
-	Checksum       sql.NullString  `json:"checksum"`
-	TriggeredBy    sql.NullString  `json:"triggered_by"`
-	ErrorMessage   sql.NullString  `json:"error_message"`
-	Metadata       json.RawMessage `json:"metadata"`
+type BackupVerification struct {
+	VerificationID   types.VerificationID     `json:"verification_id"`
+	BackupID         types.BackupID           `json:"backup_id"`
+	VerifiedAt       time.Time                `json:"verified_at"`
+	VerifiedBy       sql.NullString           `json:"verified_by"`
+	RestoreTested    sql.NullBool             `json:"restore_tested"`
+	ChecksumValid    sql.NullBool             `json:"checksum_valid"`
+	RecordCountMatch sql.NullBool             `json:"record_count_match"`
+	Status           types.VerificationStatus `json:"status"`
+	ErrorMessage     sql.NullString           `json:"error_message"`
+	DurationMs       sql.NullInt32            `json:"duration_ms"`
 }
 
-type ChangeEvents struct {
-	EventID       string          `json:"event_id"`
-	HlcTimestamp  int64           `json:"hlc_timestamp"`
-	WallTimestamp time.Time       `json:"wall_timestamp"`
-	NodeID        string          `json:"node_id"`
-	TableName     string          `json:"table_name"`
-	RecordID      string          `json:"record_id"`
-	Operation     string          `json:"operation"`
-	Action        sql.NullString  `json:"action"`
-	UserID        sql.NullString  `json:"user_id"`
-	OldValues     json.RawMessage `json:"old_values"`
-	NewValues     json.RawMessage `json:"new_values"`
-	Metadata      json.RawMessage `json:"metadata"`
-	SyncedAt      sql.NullTime    `json:"synced_at"`
-	ConsumedAt    sql.NullTime    `json:"consumed_at"`
+type ChangeEvent struct {
+	EventID       types.EventID        `json:"event_id"`
+	HlcTimestamp  types.HLC            `json:"hlc_timestamp"`
+	WallTimestamp time.Time            `json:"wall_timestamp"`
+	NodeID        types.NodeID         `json:"node_id"`
+	TableName     string               `json:"table_name"`
+	RecordID      string               `json:"record_id"`
+	Operation     types.Operation      `json:"operation"`
+	Action        types.Action         `json:"action"`
+	UserID        types.NullableUserID `json:"user_id"`
+	OldValues     json.RawMessage      `json:"old_values"`
+	NewValues     json.RawMessage      `json:"new_values"`
+	Metadata      json.RawMessage      `json:"metadata"`
+	SyncedAt      sql.NullTime         `json:"synced_at"`
+	ConsumedAt    sql.NullTime         `json:"consumed_at"`
 }
 
 type ContentData struct {
-	ContentDataID int32         `json:"content_data_id"`
-	ParentID      sql.NullInt32 `json:"parent_id"`
-	FirstChildID  sql.NullInt32 `json:"first_child_id"`
-	NextSiblingID sql.NullInt32 `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32 `json:"prev_sibling_id"`
-	RouteID       sql.NullInt32 `json:"route_id"`
-	DatatypeID    sql.NullInt32 `json:"datatype_id"`
-	AuthorID      int32         `json:"author_id"`
-	DateCreated   time.Time     `json:"date_created"`
-	DateModified  time.Time     `json:"date_modified"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt32            `json:"first_child_id"`
+	NextSiblingID sql.NullInt32            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt32            `json:"prev_sibling_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
 type ContentFields struct {
-	ContentFieldID int32         `json:"content_field_id"`
-	RouteID        sql.NullInt32 `json:"route_id"`
-	ContentDataID  int32         `json:"content_data_id"`
-	FieldID        int32         `json:"field_id"`
-	FieldValue     string        `json:"field_value"`
-	AuthorID       int32         `json:"author_id"`
-	DateCreated    time.Time     `json:"date_created"`
-	DateModified   time.Time     `json:"date_modified"`
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
 }
 
 type Datatypes struct {
-	DatatypeID   int32         `json:"datatype_id"`
-	ParentID     sql.NullInt32 `json:"parent_id"`
-	Label        string        `json:"label"`
-	Type         string        `json:"type"`
-	AuthorID     int32         `json:"author_id"`
-	DateCreated  time.Time     `json:"date_created"`
-	DateModified time.Time     `json:"date_modified"`
+	DatatypeID   types.DatatypeID        `json:"datatype_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Type         string                  `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 type DatatypesFields struct {
-	ID         int32 `json:"id"`
-	DatatypeID int32 `json:"datatype_id"`
-	FieldID    int32 `json:"field_id"`
+	ID         int32                    `json:"id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
 }
 
 type Fields struct {
-	FieldID      int32         `json:"field_id"`
-	ParentID     sql.NullInt32 `json:"parent_id"`
-	Label        string        `json:"label"`
-	Data         string        `json:"data"`
-	Type         string        `json:"type"`
-	AuthorID     int32         `json:"author_id"`
-	DateCreated  time.Time     `json:"date_created"`
-	DateModified time.Time     `json:"date_modified"`
+	FieldID      types.FieldID           `json:"field_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 type Media struct {
-	MediaID      int32          `json:"media_id"`
-	Name         sql.NullString `json:"name"`
-	DisplayName  sql.NullString `json:"display_name"`
-	Alt          sql.NullString `json:"alt"`
-	Caption      sql.NullString `json:"caption"`
-	Description  sql.NullString `json:"description"`
-	Class        sql.NullString `json:"class"`
-	Mimetype     sql.NullString `json:"mimetype"`
-	Dimensions   sql.NullString `json:"dimensions"`
-	Url          sql.NullString `json:"url"`
-	Srcset       sql.NullString `json:"srcset"`
-	AuthorID     int32          `json:"author_id"`
-	DateCreated  time.Time      `json:"date_created"`
-	DateModified time.Time      `json:"date_modified"`
+	MediaID      types.MediaID        `json:"media_id"`
+	Name         sql.NullString       `json:"name"`
+	DisplayName  sql.NullString       `json:"display_name"`
+	Alt          sql.NullString       `json:"alt"`
+	Caption      sql.NullString       `json:"caption"`
+	Description  sql.NullString       `json:"description"`
+	Class        sql.NullString       `json:"class"`
+	Mimetype     sql.NullString       `json:"mimetype"`
+	Dimensions   sql.NullString       `json:"dimensions"`
+	URL          types.URL            `json:"url"`
+	Srcset       sql.NullString       `json:"srcset"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 type MediaDimensions struct {
@@ -208,84 +210,84 @@ type MediaDimensions struct {
 }
 
 type Permissions struct {
-	PermissionID int32  `json:"permission_id"`
-	TableID      int32  `json:"table_id"`
-	Mode         int32  `json:"mode"`
-	Label        string `json:"label"`
+	PermissionID types.PermissionID `json:"permission_id"`
+	TableID      int32              `json:"table_id"`
+	Mode         int32              `json:"mode"`
+	Label        string             `json:"label"`
 }
 
 type Roles struct {
-	RoleID      int32          `json:"role_id"`
+	RoleID      types.RoleID   `json:"role_id"`
 	Label       string         `json:"label"`
 	Permissions sql.NullString `json:"permissions"`
 }
 
 type Routes struct {
-	RouteID      int32     `json:"route_id"`
-	Slug         string    `json:"slug"`
-	Title        string    `json:"title"`
-	Status       int32     `json:"status"`
-	AuthorID     int32     `json:"author_id"`
-	DateCreated  time.Time `json:"date_created"`
-	DateModified time.Time `json:"date_modified"`
+	RouteID      types.RouteID        `json:"route_id"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int32                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 type Sessions struct {
-	SessionID   int32          `json:"session_id"`
-	UserID      int32          `json:"user_id"`
-	CreatedAt   time.Time      `json:"created_at"`
-	ExpiresAt   time.Time      `json:"expires_at"`
-	LastAccess  time.Time      `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
+	SessionID   types.SessionID      `json:"session_id"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  time.Time            `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
 }
 
 type Tables struct {
-	ID       int32  `json:"id"`
-	Label    string `json:"label"`
-	AuthorID int32  `json:"author_id"`
+	ID       int32                `json:"id"`
+	Label    string               `json:"label"`
+	AuthorID types.NullableUserID `json:"author_id"`
 }
 
 type Tokens struct {
-	ID        int32     `json:"id"`
-	UserID    int32     `json:"user_id"`
-	TokenType string    `json:"token_type"`
-	Token     string    `json:"token"`
-	IssuedAt  time.Time `json:"issued_at"`
-	ExpiresAt time.Time `json:"expires_at"`
-	Revoked   bool      `json:"revoked"`
+	ID        int32                `json:"id"`
+	UserID    types.NullableUserID `json:"user_id"`
+	TokenType string               `json:"token_type"`
+	Tokens    string               `json:"token"`
+	IssuedAt  time.Time            `json:"issued_at"`
+	ExpiresAt types.Timestamp      `json:"expires_at"`
+	Revoked   bool                 `json:"revoked"`
 }
 
 type UserOauth struct {
-	UserOauthID         int32     `json:"user_oauth_id"`
-	UserID              int32     `json:"user_id"`
-	OauthProvider       string    `json:"oauth_provider"`
-	OauthProviderUserID string    `json:"oauth_provider_user_id"`
-	AccessToken         string    `json:"access_token"`
-	RefreshToken        string    `json:"refresh_token"`
-	TokenExpiresAt      time.Time `json:"token_expires_at"`
-	DateCreated         time.Time `json:"date_created"`
+	UserOAuthID         types.UserOauthID    `json:"user_oauth_id"`
+	UserID              types.NullableUserID `json:"user_id"`
+	OauthProvider       string               `json:"oauth_provider"`
+	OAuthProviderUserID string               `json:"oauth_provider_user_id"`
+	AccessToken         string               `json:"access_token"`
+	RefreshToken        string               `json:"refresh_token"`
+	TokenExpiresAt      time.Time            `json:"token_expires_at"`
+	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
 type UserSshKeys struct {
-	SshKeyID    int32          `json:"ssh_key_id"`
-	UserID      int32          `json:"user_id"`
-	PublicKey   string         `json:"public_key"`
-	KeyType     string         `json:"key_type"`
-	Fingerprint string         `json:"fingerprint"`
-	Label       sql.NullString `json:"label"`
-	DateCreated time.Time      `json:"date_created"`
-	LastUsed    sql.NullTime   `json:"last_used"`
+	SSHKeyID    int32                `json:"ssh_key_id"`
+	UserID      types.NullableUserID `json:"user_id"`
+	PublicKey   string               `json:"public_key"`
+	KeyType     string               `json:"key_type"`
+	Fingerprint string               `json:"fingerprint"`
+	Label       sql.NullString       `json:"label"`
+	DateCreated types.Timestamp      `json:"date_created"`
+	LastUsed    sql.NullTime         `json:"last_used"`
 }
 
 type Users struct {
-	UserID       int32     `json:"user_id"`
-	Username     string    `json:"username"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Hash         string    `json:"hash"`
-	Role         int32     `json:"role"`
-	DateCreated  time.Time `json:"date_created"`
-	DateModified time.Time `json:"date_modified"`
+	UserID       types.UserID    `json:"user_id"`
+	Username     string          `json:"username"`
+	Name         string          `json:"name"`
+	Email        types.Email     `json:"email"`
+	Hash         string          `json:"hash"`
+	Roles        int32           `json:"role"`
+	DateCreated  types.Timestamp `json:"date_created"`
+	DateModified types.Timestamp `json:"date_modified"`
 }

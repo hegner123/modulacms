@@ -1,11 +1,29 @@
 # Implementation Phases
 
+**Last Updated:** 2026-01-22
+
 ---
 
-## Phase 0: Baseline Validation (Step 0)
+## Status Summary
 
-### Step 0: Validate Current SQLC Works
+| Phase | Steps | Status |
+|-------|-------|--------|
+| Phase 0: Baseline | 0 | Complete |
+| Phase 0.5: Schema | 0a-0e | Complete |
+| Phase 1: Types | 5-12 | Complete |
+| Phase 2: Config | 13-16 | In Progress |
+| Phase 3: Wrapper | 17a-38 | Not Started |
+| Phase 4: Cleanup | 39-45 | Not Started |
+
+**Progress:** ~35% complete (foundational work done, wrapper refactoring remains)
+
+---
+
+## Phase 0: Baseline Validation (Step 0) - COMPLETE
+
+### Step 0: Validate Current SQLC Works ✅
 - **Scope:** validation
+- **Status:** Complete - `e9da301`
 - **Tasks:**
   - Run `make sqlc` on current configuration
   - Document any existing generation errors
@@ -19,12 +37,13 @@
 
 ---
 
-## Phase 0.5: Schema Improvements (Steps 0a-0e) **DO NOW - ZERO COST**
+## Phase 0.5: Schema Improvements (Steps 0a-0e) - COMPLETE
 
 These schema changes are free now but expensive with production data. Complete before type system work.
 
-### Step 0a: Create change_events Table
+### Step 0a: Create change_events Table ✅
 - **Scope:** schema
+- **Status:** Complete - `567755d`
 - **Depends on:** [0]
 - **Files:**
   - `sql/schema/0_change_events/schema.sql` (SQLite)
@@ -40,8 +59,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Run `make sqlc` to verify generation
 - **Commit message:** "feat(schema): add change_events table for audit, replication, and webhooks"
 
-### Step 0b: Define Schema Without history Columns
+### Step 0b: Define Schema Without history Columns ✅
 - **Scope:** schema
+- **Status:** Complete - `6263a5b`
 - **Depends on:** [0a]
 - **Files:** All schema files in `sql/schema/*/`
 - **Tasks:**
@@ -54,8 +74,9 @@ These schema changes are free now but expensive with production data. Complete b
 - **Note:** Wrapper layer will need updates to use change_events instead of history (handled in Phase 3)
 - **Commit message:** "refactor(schema): define schema without history TEXT columns (use change_events)"
 
-### Step 0c: Add Foreign Key Indexes
+### Step 0c: Add Foreign Key Indexes ✅
 - **Scope:** schema
+- **Status:** Complete - `aec5cf0`
 - **Depends on:** [0]
 - **Files:** All schema files
 - **Tasks:**
@@ -73,8 +94,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Run `make sqlc` to verify
 - **Commit message:** "perf(schema): add FK indexes for query optimization"
 
-### Step 0d: Add Database Constraints
+### Step 0d: Add Database Constraints ✅
 - **Scope:** schema
+- **Status:** Complete - `f8d4524`
 - **Depends on:** [0]
 - **Files:** All schema files
 - **Tasks:**
@@ -87,8 +109,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Run `make sqlc` to verify
 - **Commit message:** "feat(schema): add CHECK constraints matching Go validation types"
 
-### Step 0e: Create Backup Tables
+### Step 0e: Create Backup Tables ✅
 - **Scope:** schema
+- **Status:** Complete - `df8956d`
 - **Depends on:** [0]
 - **Files:**
   - `sql/schema/0_backups/schema.sql` (SQLite)
@@ -106,15 +129,17 @@ These schema changes are free now but expensive with production data. Complete b
 
 ---
 
-## Phase 1: Custom Type System (Steps 5-12)
+## Phase 1: Custom Type System (Steps 5-12) - COMPLETE
 
-### Step 5: Create Feature Branch
+### Step 5: Create Feature Branch ✅
 - **Scope:** setup
+- **Status:** Complete - branch `feature/sqlc-type-unification` exists
 - **Depends on:** [1, 2, 3, 4, 0e]
 - **Tasks:** Create `feature/sqlc-type-unification` branch from main (includes schema changes)
 
-### Step 6: Create Primary ID Types (ULID-based)
+### Step 6: Create Primary ID Types (ULID-based) ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/types_ids.go`
 - **Tasks:** Implement all primary ID types as ULID-based strings (26 characters) with validation, Scan, Value, JSON methods
@@ -133,21 +158,24 @@ These schema changes are free now but expensive with production data. Complete b
   - `Validate()` checks length (26) and ULID format
   - Thread-safe generation with sync.Mutex
 
-### Step 7: Create Nullable ID Types
+### Step 7: Create Nullable ID Types ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/types_nullable_ids.go`
 - **Tasks:** Implement nullable variants for all FK relationships
 - **Types to create:** NullableXID for each ID type that appears as a foreign key
 
-### Step 8: Create Timestamp Type
+### Step 8: Create Timestamp Type ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/types_timestamp.go`
 - **Tasks:** Implement unified Timestamp type (UTC only, strict RFC3339 input)
 
-### Step 9: Create Enum Types
+### Step 9: Create Enum Types ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/types_enums.go`
 - **Tasks:** Implement ContentStatus, FieldType, RouteType with validation
@@ -156,14 +184,16 @@ These schema changes are free now but expensive with production data. Complete b
   - **Action**: semantic action names (create_datatype, update_content, publish, etc.)
   - **ConflictPolicy**: lww, manual (per-datatype conflict resolution)
 
-### Step 10: Create Validation Types
+### Step 10: Create Validation Types ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/types_validation.go`
 - **Tasks:** Implement Slug, Email, URL, NullableSlug, NullableEmail, NullableURL
 
-### Step 11: Create Change Event and HLC Types
+### Step 11: Create Change Event and HLC Types ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **Files:**
   - `internal/db/types_hlc.go` - Hybrid Logical Clock
@@ -178,24 +208,27 @@ These schema changes are free now but expensive with production data. Complete b
   - ChangeEventLogger interface with RecordEvent(), GetByRecord(), GetUnsynced(), etc.
   - Helper functions for creating events from entity operations
 
-### Step 12: Create Transaction Helper
+### Step 12: Create Transaction Helper ✅
 - **Scope:** types
+- **Status:** Complete - `e663efe`
 - **Depends on:** [5]
 - **File:** `internal/db/transaction.go`
 - **Tasks:** Implement WithTransaction and WithTransactionResult
 
 ---
 
-## Phase 2: Configuration & Generation (Steps 13-16)
+## Phase 2: Configuration & Generation (Steps 13-16) - IN PROGRESS
 
-### Step 13: Update sqlc.yml
+### Step 13: Update sqlc.yml 🔄
 - **Scope:** config
+- **Status:** In Progress - uncommitted changes in `sql/sqlc.yml`
 - **Depends on:** [6, 7, 8, 9, 10, 11]
 - **File:** `sql/sqlc.yml`
 - **Tasks:** Replace with new configuration above
 
-### Step 14: Check for Circular Imports
+### Step 14: Check for Circular Imports ⬜
 - **Scope:** validation
+- **Status:** Not Started
 - **Depends on:** [13]
 - **Tasks:**
   - Verify `internal/db/` types can import `database/sql/driver` and `encoding/json`
@@ -204,8 +237,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Run `go build ./internal/db/...` to verify
 - **Contingency:** If circular imports exist, create `internal/db/types/` package and update sqlc.yml import paths
 
-### Step 15: Regenerate All SQLC Code
+### Step 15: Regenerate All SQLC Code 🔄
 - **Scope:** codegen
+- **Status:** In Progress - uncommitted regenerated files
 - **Depends on:** [14]
 - **Tasks:**
   - Run `make sqlc`
@@ -213,8 +247,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Verify all three packages generate: `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
   - Commit generated code
 
-### Step 16: Validate Type Usage
+### Step 16: Validate Type Usage ⬜
 - **Scope:** validation
+- **Status:** Not Started
 - **Depends on:** [15]
 - **Tasks:**
   - Create validation script to verify custom types are used
@@ -225,10 +260,11 @@ These schema changes are free now but expensive with production data. Complete b
 
 ---
 
-## Phase 3: Simplify Wrapper Layer (Steps 17a-38)
+## Phase 3: Simplify Wrapper Layer (Steps 17a-38) - NOT STARTED
 
-### Step 17a: Update Struct Definitions to Use Custom Types
+### Step 17a: Update Struct Definitions to Use Custom Types ⬜
 - **Scope:** wrapper
+- **Status:** Not Started
 - **Depends on:** [16]
 - **File:** `internal/db/` - all table files
 - **Tasks:**
@@ -255,8 +291,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Apply same transformation to all table structs
   - Run `make check` to verify compile
 
-### Step 17b: Remove *JSON Struct Variants
+### Step 17b: Remove *JSON Struct Variants ⬜
 - **Scope:** wrapper
+- **Status:** Not Started
 - **Depends on:** [17a]
 - **File:** `internal/db/` - all table files
 - **Tasks:**
@@ -265,8 +302,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Update any code referencing `*JSON` types
   - Run `make check` to verify compile
 
-### Step 17c: Remove *FormParams Struct Variants
+### Step 17c: Remove *FormParams Struct Variants ⬜
 - **Scope:** wrapper
+- **Status:** Not Started
 - **Depends on:** [17a]
 - **File:** `internal/db/` - all table files
 - **Tasks:**
@@ -277,42 +315,44 @@ These schema changes are free now but expensive with production data. Complete b
 
 **Note:** Steps 17b and 17c can run in parallel after 17a completes.
 
-### Steps 18-38: Simplify Each Table Wrapper (Parallel - 21 agents)
+### Steps 18-38: Simplify Each Table Wrapper (Parallel - 21 agents) ⬜
 - **Scope:** wrapper
+- **Status:** Not Started
 - **Depends on:** [17b, 17c]
 
 **Table-to-step mapping:**
 
-| Step | File | Table |
-|------|------|-------|
-| 18 | permission.go | permissions |
-| 19 | role.go | roles |
-| 20 | media_dimension.go | media_dimension |
-| 21 | user.go | users |
-| 22 | admin_route.go | admin_routes |
-| 23 | route.go | routes |
-| 24 | datatype.go | datatypes |
-| 25 | field.go | fields |
-| 26 | admin_datatype.go | admin_datatypes |
-| 27 | admin_field.go | admin_fields |
-| 28 | token.go | tokens |
-| 29 | user_oauth.go | user_oauth |
-| 30 | table.go | tables |
-| 31 | media.go | media |
-| 32 | session.go | sessions |
-| 33 | content_data.go | content_data |
-| 34 | content_field.go | content_fields |
-| 35 | admin_content_data.go | admin_content_data |
-| 36 | admin_content_field.go | admin_content_fields |
-| 37 | datatype_field.go | datatypes_fields |
-| 38 | admin_datatype_field.go | admin_datatypes_fields |
+| Step | File | Table | Status |
+|------|------|-------|--------|
+| 18 | permission.go | permissions | ⬜ |
+| 19 | role.go | roles | ⬜ |
+| 20 | media_dimension.go | media_dimension | ⬜ |
+| 21 | user.go | users | ⬜ |
+| 22 | admin_route.go | admin_routes | ⬜ |
+| 23 | route.go | routes | ⬜ |
+| 24 | datatype.go | datatypes | ⬜ |
+| 25 | field.go | fields | ⬜ |
+| 26 | admin_datatype.go | admin_datatypes | ⬜ |
+| 27 | admin_field.go | admin_fields | ⬜ |
+| 28 | token.go | tokens | ⬜ |
+| 29 | user_oauth.go | user_oauth | ⬜ |
+| 30 | table.go | tables | ⬜ |
+| 31 | media.go | media | ⬜ |
+| 32 | session.go | sessions | ⬜ |
+| 33 | content_data.go | content_data | ⬜ |
+| 34 | content_field.go | content_fields | ⬜ |
+| 35 | admin_content_data.go | admin_content_data | ⬜ |
+| 36 | admin_content_field.go | admin_content_fields | ⬜ |
+| 37 | datatype_field.go | datatypes_fields | ⬜ |
+| 38 | admin_datatype_field.go | admin_datatypes_fields | ⬜ |
 
 ---
 
-## Phase 4: Cleanup & Integration (Steps 39-45)
+## Phase 4: Cleanup & Integration (Steps 39-45) - NOT STARTED
 
-### Step 39: Remove Dead Code
+### Step 39: Remove Dead Code ⬜
 - **Scope:** cleanup
+- **Status:** Not Started
 - **Depends on:** [18-38]
 - **Tasks:**
   - Delete `internal/db/convert.go` - type conversion utilities
@@ -321,8 +361,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Remove all Map* functions
   - Remove any History-related code (replaced by AuditLogger)
 
-### Step 40: Update API Handlers
+### Step 40: Update API Handlers ⬜
 - **Scope:** integration
+- **Status:** Not Started
 - **Depends on:** [39]
 - **Tasks:**
   - Update handlers to use `ParseDatatypeID(r.PathValue("id"))`
@@ -331,16 +372,18 @@ These schema changes are free now but expensive with production data. Complete b
   - Validation now happens automatically via UnmarshalJSON
   - Add audit logging calls where entities are created/updated/deleted
 
-### Step 41: Update CLI Operations
+### Step 41: Update CLI Operations ⬜
 - **Scope:** integration
+- **Status:** Not Started
 - **Depends on:** [39]
 - **Tasks:**
   - Update CLI input parsing to use `ParseXID` functions
   - Error messages now include specific type information
   - Add audit logging for CLI operations
 
-### Step 42: Run Test Suite
+### Step 42: Run Test Suite ⬜
 - **Scope:** testing
+- **Status:** Not Started
 - **Depends on:** [40, 41]
 - **Tasks:**
   - `make test`
@@ -350,8 +393,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Test change_events operations
   - Test all three database engines
 
-### Step 43: Add Type Validation Tests
+### Step 43: Add Type Validation Tests ⬜
 - **Scope:** testing
+- **Status:** Not Started
 - **Depends on:** [42]
 - **Tasks:**
   - Unit tests for each custom type's Validate() method
@@ -359,8 +403,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Unit tests for edge cases (zero values, max values, invalid formats)
   - Unit tests for AuditLogger interface
 
-### Step 44: Update DbDriver Interface Comments
+### Step 44: Update DbDriver Interface Comments ⬜
 - **Scope:** docs
+- **Status:** Not Started
 - **Depends on:** [43]
 - **File:** `internal/db/db.go`
 - **Tasks:**
@@ -368,8 +413,9 @@ These schema changes are free now but expensive with production data. Complete b
   - Document type safety guarantees
   - Add AuditLogger to DbDriver interface (or separate interface)
 
-### Step 45: Final Documentation
+### Step 45: Final Documentation ⬜
 - **Scope:** docs
+- **Status:** Not Started
 - **Depends on:** [44]
 - **Tasks:**
   - Update CLAUDE.md database section

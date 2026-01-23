@@ -9,14 +9,20 @@ import (
 	"context"
 	"database/sql"
 	"strings"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 const checkAdminParentExists = `-- name: CheckAdminParentExists :one
 SELECT EXISTS(SELECT 1 FROM admin_datatypes WHERE admin_datatype_id =?)
 `
 
-func (q *Queries) CheckAdminParentExists(ctx context.Context, adminDatatypeID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkAdminParentExists, adminDatatypeID)
+type CheckAdminParentExistsParams struct {
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+}
+
+func (q *Queries) CheckAdminParentExists(ctx context.Context, arg CheckAdminParentExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkAdminParentExists, arg.AdminDatatypeID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -26,8 +32,12 @@ const checkAdminRouteExists = `-- name: CheckAdminRouteExists :one
 SELECT EXISTS(SELECT 1 FROM admin_routes WHERE admin_route_id=?)
 `
 
-func (q *Queries) CheckAdminRouteExists(ctx context.Context, adminRouteID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkAdminRouteExists, adminRouteID)
+type CheckAdminRouteExistsParams struct {
+	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
+}
+
+func (q *Queries) CheckAdminRouteExists(ctx context.Context, arg CheckAdminRouteExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkAdminRouteExists, arg.AdminRouteID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -37,8 +47,12 @@ const checkAuthorExists = `-- name: CheckAuthorExists :one
 SELECT EXISTS(SELECT 1 FROM users WHERE username=?)
 `
 
-func (q *Queries) CheckAuthorExists(ctx context.Context, username string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkAuthorExists, username)
+type CheckAuthorExistsParams struct {
+	Username string `json:"username"`
+}
+
+func (q *Queries) CheckAuthorExists(ctx context.Context, arg CheckAuthorExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkAuthorExists, arg.Username)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -48,8 +62,12 @@ const checkAuthorIdExists = `-- name: CheckAuthorIdExists :one
 SELECT EXISTS(SELECT 1 FROM users WHERE user_id=?)
 `
 
-func (q *Queries) CheckAuthorIdExists(ctx context.Context, userID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkAuthorIdExists, userID)
+type CheckAuthorIdExistsParams struct {
+	UserID types.UserID `json:"user_id"`
+}
+
+func (q *Queries) CheckAuthorIdExists(ctx context.Context, arg CheckAuthorIdExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkAuthorIdExists, arg.UserID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -59,8 +77,12 @@ const checkParentExists = `-- name: CheckParentExists :one
 SELECT EXISTS(SELECT 1 FROM datatypes WHERE datatype_id =?)
 `
 
-func (q *Queries) CheckParentExists(ctx context.Context, datatypeID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkParentExists, datatypeID)
+type CheckParentExistsParams struct {
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) CheckParentExists(ctx context.Context, arg CheckParentExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkParentExists, arg.DatatypeID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -70,8 +92,12 @@ const checkRouteExists = `-- name: CheckRouteExists :one
 SELECT EXISTS(SELECT 1 FROM routes WHERE route_id=?)
 `
 
-func (q *Queries) CheckRouteExists(ctx context.Context, routeID int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, checkRouteExists, routeID)
+type CheckRouteExistsParams struct {
+	RouteID types.RouteID `json:"route_id"`
+}
+
+func (q *Queries) CheckRouteExists(ctx context.Context, arg CheckRouteExistsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, checkRouteExists, arg.RouteID)
 	var column_1 int64
 	err := row.Scan(&column_1)
 	return column_1, err
@@ -176,8 +202,12 @@ SELECT COUNT(*) FROM backups
 WHERE node_id = ?
 `
 
-func (q *Queries) CountBackupsByNode(ctx context.Context, nodeID string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countBackupsByNode, nodeID)
+type CountBackupsByNodeParams struct {
+	NodeID types.NodeID `json:"node_id"`
+}
+
+func (q *Queries) CountBackupsByNode(ctx context.Context, arg CountBackupsByNodeParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countBackupsByNode, arg.NodeID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -432,12 +462,12 @@ INSERT INTO admin_content_data (
 `
 
 type CreateAdminContentDataParams struct {
-	ParentID        sql.NullInt64  `json:"parent_id"`
-	AdminRouteID    int64          `json:"admin_route_id"`
-	AdminDatatypeID int64          `json:"admin_datatype_id"`
-	AuthorID        int64          `json:"author_id"`
-	DateCreated     sql.NullString `json:"date_created"`
-	DateModified    sql.NullString `json:"date_modified"`
+	ParentID        types.NullableContentID `json:"parent_id"`
+	AdminRouteID    int64                   `json:"admin_route_id"`
+	AdminDatatypeID int64                   `json:"admin_datatype_id"`
+	AuthorID        types.NullableUserID    `json:"author_id"`
+	DateCreated     types.Timestamp         `json:"date_created"`
+	DateModified    types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminContentDataParams) (AdminContentData, error) {
@@ -514,13 +544,13 @@ INSERT INTO admin_content_fields (
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminRouteID       sql.NullInt64  `json:"admin_route_id"`
-	AdminContentDataID int64          `json:"admin_content_data_id"`
-	AdminFieldID       int64          `json:"admin_field_id"`
-	AdminFieldValue    string         `json:"admin_field_value"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
+	AdminRouteID       sql.NullInt64        `json:"admin_route_id"`
+	AdminContentDataID int64                `json:"admin_content_data_id"`
+	AdminFieldID       int64                `json:"admin_field_id"`
+	AdminFieldValue    string               `json:"admin_field_value"`
+	AuthorID           types.NullableUserID `json:"author_id"`
+	DateCreated        types.Timestamp      `json:"date_created"`
+	DateModified       types.Timestamp      `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) (AdminContentFields, error) {
@@ -594,12 +624,12 @@ INSERT INTO admin_datatypes (
 `
 
 type CreateAdminDatatypeParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Type         string                  `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) (AdminDatatypes, error) {
@@ -709,13 +739,13 @@ INSERT INTO admin_fields (
 `
 
 type CreateAdminFieldParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) (AdminFields, error) {
@@ -784,12 +814,12 @@ INSERT INTO admin_routes (
 `
 
 type CreateAdminRouteParams struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int64                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) (AdminRoutes, error) {
@@ -847,18 +877,18 @@ RETURNING backup_id, node_id, backup_type, status, started_at, completed_at, dur
 `
 
 type CreateBackupParams struct {
-	BackupID    string         `json:"backup_id"`
-	NodeID      string         `json:"node_id"`
-	BackupType  string         `json:"backup_type"`
-	Status      string         `json:"status"`
-	StartedAt   string         `json:"started_at"`
-	StoragePath string         `json:"storage_path"`
-	TriggeredBy sql.NullString `json:"triggered_by"`
-	Metadata    sql.NullString `json:"metadata"`
+	BackupID    types.BackupID     `json:"backup_id"`
+	NodeID      types.NodeID       `json:"node_id"`
+	BackupType  types.BackupType   `json:"backup_type"`
+	Status      types.BackupStatus `json:"status"`
+	StartedAt   string             `json:"started_at"`
+	StoragePath string             `json:"storage_path"`
+	TriggeredBy sql.NullString     `json:"triggered_by"`
+	Metadata    sql.NullString     `json:"metadata"`
 }
 
 // Backups CRUD
-func (q *Queries) CreateBackup(ctx context.Context, arg CreateBackupParams) (Backups, error) {
+func (q *Queries) CreateBackup(ctx context.Context, arg CreateBackupParams) (Backup, error) {
 	row := q.db.QueryRowContext(ctx, createBackup,
 		arg.BackupID,
 		arg.NodeID,
@@ -869,7 +899,7 @@ func (q *Queries) CreateBackup(ctx context.Context, arg CreateBackupParams) (Bac
 		arg.TriggeredBy,
 		arg.Metadata,
 	)
-	var i Backups
+	var i Backup
 	err := row.Scan(
 		&i.BackupID,
 		&i.NodeID,
@@ -903,18 +933,18 @@ RETURNING backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_cou
 `
 
 type CreateBackupSetParams struct {
-	BackupSetID    string         `json:"backup_set_id"`
-	CreatedAt      string         `json:"created_at"`
-	HlcTimestamp   int64          `json:"hlc_timestamp"`
-	Status         string         `json:"status"`
-	BackupIds      string         `json:"backup_ids"`
-	NodeCount      int64          `json:"node_count"`
-	CompletedCount sql.NullInt64  `json:"completed_count"`
-	ErrorMessage   sql.NullString `json:"error_message"`
+	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
+	CreatedAt      types.Timestamp       `json:"created_at"`
+	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
+	Status         types.BackupSetStatus `json:"status"`
+	BackupIds      string                `json:"backup_ids"`
+	NodeCount      int64                 `json:"node_count"`
+	CompletedCount sql.NullInt64         `json:"completed_count"`
+	ErrorMessage   sql.NullString        `json:"error_message"`
 }
 
 // Backup Sets CRUD
-func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams) (BackupSets, error) {
+func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams) (BackupSet, error) {
 	row := q.db.QueryRowContext(ctx, createBackupSet,
 		arg.BackupSetID,
 		arg.CreatedAt,
@@ -925,7 +955,7 @@ func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams
 		arg.CompletedCount,
 		arg.ErrorMessage,
 	)
-	var i BackupSets
+	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
 		&i.CreatedAt,
@@ -1014,15 +1044,15 @@ INSERT INTO content_data (
 `
 
 type CreateContentDataParams struct {
-	RouteID       int64          `json:"route_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
 func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataParams) (ContentData, error) {
@@ -1117,13 +1147,13 @@ INSERT INTO content_fields (
 `
 
 type CreateContentFieldParams struct {
-	RouteID       sql.NullInt64  `json:"route_id"`
-	ContentDataID int64          `json:"content_data_id"`
-	FieldID       int64          `json:"field_id"`
-	FieldValue    string         `json:"field_value"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
+	RouteID       types.NullableRouteID   `json:"route_id"`
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+	FieldID       types.NullableFieldID   `json:"field_id"`
+	FieldValue    string                  `json:"field_value"`
+	AuthorID      types.NullableUserID    `json:"author_id"`
+	DateCreated   types.Timestamp         `json:"date_created"`
+	DateModified  types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentFieldParams) (ContentFields, error) {
@@ -1196,12 +1226,12 @@ INSERT INTO datatypes (
 `
 
 type CreateDatatypeParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Type         string                  `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) (Datatypes, error) {
@@ -1238,8 +1268,8 @@ RETURNING id, datatype_id, field_id
 `
 
 type CreateDatatypeFieldParams struct {
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
 }
 
 func (q *Queries) CreateDatatypeField(ctx context.Context, arg CreateDatatypeFieldParams) (DatatypesFields, error) {
@@ -1313,13 +1343,13 @@ INSERT INTO fields  (
 `
 
 type CreateFieldParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Fields, error) {
@@ -1403,19 +1433,19 @@ RETURNING media_id, name, display_name, alt, caption, description, class, mimety
 `
 
 type CreateMediaParams struct {
-	Name         sql.NullString `json:"name"`
-	DisplayName  sql.NullString `json:"display_name"`
-	Alt          sql.NullString `json:"alt"`
-	Caption      sql.NullString `json:"caption"`
-	Description  sql.NullString `json:"description"`
-	Class        sql.NullString `json:"class"`
-	Mimetype     sql.NullString `json:"mimetype"`
-	Dimensions   sql.NullString `json:"dimensions"`
-	Url          sql.NullString `json:"url"`
-	Srcset       sql.NullString `json:"srcset"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	Name         sql.NullString       `json:"name"`
+	DisplayName  sql.NullString       `json:"display_name"`
+	Alt          sql.NullString       `json:"alt"`
+	Caption      sql.NullString       `json:"caption"`
+	Description  sql.NullString       `json:"description"`
+	Class        sql.NullString       `json:"class"`
+	Mimetype     sql.NullString       `json:"mimetype"`
+	Dimensions   sql.NullString       `json:"dimensions"`
+	URL          types.URL            `json:"url"`
+	Srcset       sql.NullString       `json:"srcset"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media, error) {
@@ -1428,7 +1458,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		arg.Class,
 		arg.Mimetype,
 		arg.Dimensions,
-		arg.Url,
+		arg.URL,
 		arg.Srcset,
 		arg.AuthorID,
 		arg.DateCreated,
@@ -1445,7 +1475,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) (Media
 		&i.Class,
 		&i.Mimetype,
 		&i.Dimensions,
-		&i.Url,
+		&i.URL,
 		&i.Srcset,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -1646,12 +1676,12 @@ RETURNING route_id, slug, title, status, author_id, date_created, date_modified
 `
 
 type CreateRouteParams struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int64                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }
 
 func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) (Routes, error) {
@@ -1718,13 +1748,13 @@ INSERT INTO sessions (
 `
 
 type CreateSessionParams struct {
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  sql.NullString       `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
 }
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (Sessions, error) {
@@ -1781,8 +1811,12 @@ INSERT INTO tables (
 RETURNING id, label, author_id
 `
 
-func (q *Queries) CreateTable(ctx context.Context, label string) (Tables, error) {
-	row := q.db.QueryRowContext(ctx, createTable, label)
+type CreateTableParams struct {
+	Label string `json:"label"`
+}
+
+func (q *Queries) CreateTable(ctx context.Context, arg CreateTableParams) (Tables, error) {
+	row := q.db.QueryRowContext(ctx, createTable, arg.Label)
 	var i Tables
 	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
 	return i, err
@@ -1825,19 +1859,19 @@ RETURNING id, user_id, token_type, token, issued_at, expires_at, revoked
 `
 
 type CreateTokenParams struct {
-	UserID    int64  `json:"user_id"`
-	TokenType string `json:"token_type"`
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
+	UserID    types.NullableUserID `json:"user_id"`
+	TokenType string               `json:"token_type"`
+	Tokens    string               `json:"token"`
+	IssuedAt  string               `json:"issued_at"`
+	ExpiresAt types.Timestamp      `json:"expires_at"`
+	Revoked   bool                 `json:"revoked"`
 }
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Tokens, error) {
 	row := q.db.QueryRowContext(ctx, createToken,
 		arg.UserID,
 		arg.TokenType,
-		arg.Token,
+		arg.Tokens,
 		arg.IssuedAt,
 		arg.ExpiresAt,
 		arg.Revoked,
@@ -1847,7 +1881,7 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) (Token
 		&i.ID,
 		&i.UserID,
 		&i.TokenType,
-		&i.Token,
+		&i.Tokens,
 		&i.IssuedAt,
 		&i.ExpiresAt,
 		&i.Revoked,
@@ -1900,13 +1934,13 @@ RETURNING user_id, username, name, email, hash, role, date_created, date_modifie
 `
 
 type CreateUserParams struct {
-	Username     string         `json:"username"`
-	Name         string         `json:"name"`
-	Email        string         `json:"email"`
-	Hash         string         `json:"hash"`
-	Role         int64          `json:"role"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
+	Username     string          `json:"username"`
+	Name         string          `json:"name"`
+	Email        types.Email     `json:"email"`
+	Hash         string          `json:"hash"`
+	Roles        int64           `json:"role"`
+	DateCreated  types.Timestamp `json:"date_created"`
+	DateModified types.Timestamp `json:"date_modified"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, error) {
@@ -1915,7 +1949,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		arg.Name,
 		arg.Email,
 		arg.Hash,
-		arg.Role,
+		arg.Roles,
 		arg.DateCreated,
 		arg.DateModified,
 	)
@@ -1926,7 +1960,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (Users, 
 		&i.Name,
 		&i.Email,
 		&i.Hash,
-		&i.Role,
+		&i.Roles,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -1955,20 +1989,20 @@ RETURNING user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access
 `
 
 type CreateUserOauthParams struct {
-	UserID              int64  `json:"user_id"`
-	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
-	AccessToken         string `json:"access_token"`
-	RefreshToken        string `json:"refresh_token"`
-	TokenExpiresAt      string `json:"token_expires_at"`
-	DateCreated         string `json:"date_created"`
+	UserID              types.NullableUserID `json:"user_id"`
+	OauthProvider       string               `json:"oauth_provider"`
+	OAuthProviderUserID string               `json:"oauth_provider_user_id"`
+	AccessToken         string               `json:"access_token"`
+	RefreshToken        string               `json:"refresh_token"`
+	TokenExpiresAt      string               `json:"token_expires_at"`
+	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
 func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) (UserOauth, error) {
 	row := q.db.QueryRowContext(ctx, createUserOauth,
 		arg.UserID,
 		arg.OauthProvider,
-		arg.OauthProviderUserID,
+		arg.OAuthProviderUserID,
 		arg.AccessToken,
 		arg.RefreshToken,
 		arg.TokenExpiresAt,
@@ -1976,10 +2010,10 @@ func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams
 	)
 	var i UserOauth
 	err := row.Scan(
-		&i.UserOauthID,
+		&i.UserOAuthID,
 		&i.UserID,
 		&i.OauthProvider,
-		&i.OauthProviderUserID,
+		&i.OAuthProviderUserID,
 		&i.AccessToken,
 		&i.RefreshToken,
 		&i.TokenExpiresAt,
@@ -2022,12 +2056,12 @@ RETURNING ssh_key_id, user_id, public_key, key_type, fingerprint, label, date_cr
 `
 
 type CreateUserSshKeyParams struct {
-	UserID      int64          `json:"user_id"`
-	PublicKey   string         `json:"public_key"`
-	KeyType     string         `json:"key_type"`
-	Fingerprint string         `json:"fingerprint"`
-	Label       sql.NullString `json:"label"`
-	DateCreated string         `json:"date_created"`
+	UserID      types.NullableUserID `json:"user_id"`
+	PublicKey   string               `json:"public_key"`
+	KeyType     string               `json:"key_type"`
+	Fingerprint string               `json:"fingerprint"`
+	Label       sql.NullString       `json:"label"`
+	DateCreated types.Timestamp      `json:"date_created"`
 }
 
 func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyParams) (UserSshKeys, error) {
@@ -2041,7 +2075,7 @@ func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyPara
 	)
 	var i UserSshKeys
 	err := row.Scan(
-		&i.SshKeyID,
+		&i.SSHKeyID,
 		&i.UserID,
 		&i.PublicKey,
 		&i.KeyType,
@@ -2107,20 +2141,20 @@ RETURNING verification_id, backup_id, verified_at, verified_by, restore_tested, 
 `
 
 type CreateVerificationParams struct {
-	VerificationID   string         `json:"verification_id"`
-	BackupID         string         `json:"backup_id"`
-	VerifiedAt       string         `json:"verified_at"`
-	VerifiedBy       sql.NullString `json:"verified_by"`
-	RestoreTested    sql.NullInt64  `json:"restore_tested"`
-	ChecksumValid    sql.NullInt64  `json:"checksum_valid"`
-	RecordCountMatch sql.NullInt64  `json:"record_count_match"`
-	Status           string         `json:"status"`
-	ErrorMessage     sql.NullString `json:"error_message"`
-	DurationMs       sql.NullInt64  `json:"duration_ms"`
+	VerificationID   types.VerificationID     `json:"verification_id"`
+	BackupID         types.BackupID           `json:"backup_id"`
+	VerifiedAt       string                   `json:"verified_at"`
+	VerifiedBy       sql.NullString           `json:"verified_by"`
+	RestoreTested    sql.NullInt64            `json:"restore_tested"`
+	ChecksumValid    sql.NullInt64            `json:"checksum_valid"`
+	RecordCountMatch sql.NullInt64            `json:"record_count_match"`
+	Status           types.VerificationStatus `json:"status"`
+	ErrorMessage     sql.NullString           `json:"error_message"`
+	DurationMs       sql.NullInt64            `json:"duration_ms"`
 }
 
 // Backup Verifications CRUD
-func (q *Queries) CreateVerification(ctx context.Context, arg CreateVerificationParams) (BackupVerifications, error) {
+func (q *Queries) CreateVerification(ctx context.Context, arg CreateVerificationParams) (BackupVerification, error) {
 	row := q.db.QueryRowContext(ctx, createVerification,
 		arg.VerificationID,
 		arg.BackupID,
@@ -2133,7 +2167,7 @@ func (q *Queries) CreateVerification(ctx context.Context, arg CreateVerification
 		arg.ErrorMessage,
 		arg.DurationMs,
 	)
-	var i BackupVerifications
+	var i BackupVerification
 	err := row.Scan(
 		&i.VerificationID,
 		&i.BackupID,
@@ -2154,8 +2188,12 @@ DELETE FROM admin_content_data
 WHERE admin_content_data_id = ?
 `
 
-func (q *Queries) DeleteAdminContentData(ctx context.Context, adminContentDataID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminContentData, adminContentDataID)
+type DeleteAdminContentDataParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) DeleteAdminContentData(ctx context.Context, arg DeleteAdminContentDataParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminContentData, arg.AdminContentDataID)
 	return err
 }
 
@@ -2164,8 +2202,12 @@ DELETE FROM admin_content_fields
 WHERE admin_content_field_id = ?
 `
 
-func (q *Queries) DeleteAdminContentField(ctx context.Context, adminContentFieldID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminContentField, adminContentFieldID)
+type DeleteAdminContentFieldParams struct {
+	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
+}
+
+func (q *Queries) DeleteAdminContentField(ctx context.Context, arg DeleteAdminContentFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminContentField, arg.AdminContentFieldID)
 	return err
 }
 
@@ -2174,8 +2216,12 @@ DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?
 `
 
-func (q *Queries) DeleteAdminDatatype(ctx context.Context, adminDatatypeID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminDatatype, adminDatatypeID)
+type DeleteAdminDatatypeParams struct {
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+}
+
+func (q *Queries) DeleteAdminDatatype(ctx context.Context, arg DeleteAdminDatatypeParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminDatatype, arg.AdminDatatypeID)
 	return err
 }
 
@@ -2184,8 +2230,12 @@ DELETE FROM admin_datatypes_fields
 WHERE id = ?
 `
 
-func (q *Queries) DeleteAdminDatatypeField(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminDatatypeField, id)
+type DeleteAdminDatatypeFieldParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) DeleteAdminDatatypeField(ctx context.Context, arg DeleteAdminDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminDatatypeField, arg.ID)
 	return err
 }
 
@@ -2194,8 +2244,12 @@ DELETE FROM admin_fields
 WHERE admin_field_id = ?
 `
 
-func (q *Queries) DeleteAdminField(ctx context.Context, adminFieldID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminField, adminFieldID)
+type DeleteAdminFieldParams struct {
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+}
+
+func (q *Queries) DeleteAdminField(ctx context.Context, arg DeleteAdminFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminField, arg.AdminFieldID)
 	return err
 }
 
@@ -2204,8 +2258,12 @@ DELETE FROM admin_routes
 WHERE admin_route_id = ?
 `
 
-func (q *Queries) DeleteAdminRoute(ctx context.Context, adminRouteID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteAdminRoute, adminRouteID)
+type DeleteAdminRouteParams struct {
+	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
+}
+
+func (q *Queries) DeleteAdminRoute(ctx context.Context, arg DeleteAdminRouteParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminRoute, arg.AdminRouteID)
 	return err
 }
 
@@ -2214,8 +2272,12 @@ DELETE FROM backups
 WHERE backup_id = ?
 `
 
-func (q *Queries) DeleteBackup(ctx context.Context, backupID string) error {
-	_, err := q.db.ExecContext(ctx, deleteBackup, backupID)
+type DeleteBackupParams struct {
+	BackupID types.BackupID `json:"backup_id"`
+}
+
+func (q *Queries) DeleteBackup(ctx context.Context, arg DeleteBackupParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBackup, arg.BackupID)
 	return err
 }
 
@@ -2224,8 +2286,12 @@ DELETE FROM backup_sets
 WHERE backup_set_id = ?
 `
 
-func (q *Queries) DeleteBackupSet(ctx context.Context, backupSetID string) error {
-	_, err := q.db.ExecContext(ctx, deleteBackupSet, backupSetID)
+type DeleteBackupSetParams struct {
+	BackupSetID types.BackupSetID `json:"backup_set_id"`
+}
+
+func (q *Queries) DeleteBackupSet(ctx context.Context, arg DeleteBackupSetParams) error {
+	_, err := q.db.ExecContext(ctx, deleteBackupSet, arg.BackupSetID)
 	return err
 }
 
@@ -2234,8 +2300,12 @@ DELETE FROM change_events
 WHERE event_id = ?
 `
 
-func (q *Queries) DeleteChangeEvent(ctx context.Context, eventID string) error {
-	_, err := q.db.ExecContext(ctx, deleteChangeEvent, eventID)
+type DeleteChangeEventParams struct {
+	EventID types.EventID `json:"event_id"`
+}
+
+func (q *Queries) DeleteChangeEvent(ctx context.Context, arg DeleteChangeEventParams) error {
+	_, err := q.db.ExecContext(ctx, deleteChangeEvent, arg.EventID)
 	return err
 }
 
@@ -2246,8 +2316,12 @@ AND synced_at IS NOT NULL
 AND consumed_at IS NOT NULL
 `
 
-func (q *Queries) DeleteChangeEventsOlderThan(ctx context.Context, wallTimestamp string) error {
-	_, err := q.db.ExecContext(ctx, deleteChangeEventsOlderThan, wallTimestamp)
+type DeleteChangeEventsOlderThanParams struct {
+	WallTimestamp string `json:"wall_timestamp"`
+}
+
+func (q *Queries) DeleteChangeEventsOlderThan(ctx context.Context, arg DeleteChangeEventsOlderThanParams) error {
+	_, err := q.db.ExecContext(ctx, deleteChangeEventsOlderThan, arg.WallTimestamp)
 	return err
 }
 
@@ -2256,8 +2330,12 @@ DELETE FROM content_data
 WHERE content_data_id = ?
 `
 
-func (q *Queries) DeleteContentData(ctx context.Context, contentDataID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteContentData, contentDataID)
+type DeleteContentDataParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) DeleteContentData(ctx context.Context, arg DeleteContentDataParams) error {
+	_, err := q.db.ExecContext(ctx, deleteContentData, arg.ContentDataID)
 	return err
 }
 
@@ -2266,8 +2344,12 @@ DELETE FROM content_fields
 WHERE content_field_id = ?
 `
 
-func (q *Queries) DeleteContentField(ctx context.Context, contentFieldID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteContentField, contentFieldID)
+type DeleteContentFieldParams struct {
+	ContentFieldID types.ContentFieldID `json:"content_field_id"`
+}
+
+func (q *Queries) DeleteContentField(ctx context.Context, arg DeleteContentFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteContentField, arg.ContentFieldID)
 	return err
 }
 
@@ -2276,8 +2358,12 @@ DELETE FROM datatypes
 WHERE datatype_id = ?
 `
 
-func (q *Queries) DeleteDatatype(ctx context.Context, datatypeID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteDatatype, datatypeID)
+type DeleteDatatypeParams struct {
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) DeleteDatatype(ctx context.Context, arg DeleteDatatypeParams) error {
+	_, err := q.db.ExecContext(ctx, deleteDatatype, arg.DatatypeID)
 	return err
 }
 
@@ -2286,8 +2372,12 @@ DELETE FROM datatypes_fields
 WHERE id = ?
 `
 
-func (q *Queries) DeleteDatatypeField(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteDatatypeField, id)
+type DeleteDatatypeFieldParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) DeleteDatatypeField(ctx context.Context, arg DeleteDatatypeFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteDatatypeField, arg.ID)
 	return err
 }
 
@@ -2296,8 +2386,12 @@ DELETE FROM fields
 WHERE field_id = ?
 `
 
-func (q *Queries) DeleteField(ctx context.Context, fieldID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteField, fieldID)
+type DeleteFieldParams struct {
+	FieldID types.FieldID `json:"field_id"`
+}
+
+func (q *Queries) DeleteField(ctx context.Context, arg DeleteFieldParams) error {
+	_, err := q.db.ExecContext(ctx, deleteField, arg.FieldID)
 	return err
 }
 
@@ -2306,8 +2400,12 @@ DELETE FROM media
 WHERE media_id = ?
 `
 
-func (q *Queries) DeleteMedia(ctx context.Context, mediaID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMedia, mediaID)
+type DeleteMediaParams struct {
+	MediaID types.MediaID `json:"media_id"`
+}
+
+func (q *Queries) DeleteMedia(ctx context.Context, arg DeleteMediaParams) error {
+	_, err := q.db.ExecContext(ctx, deleteMedia, arg.MediaID)
 	return err
 }
 
@@ -2316,8 +2414,12 @@ DELETE FROM media_dimensions
 WHERE md_id = ?
 `
 
-func (q *Queries) DeleteMediaDimension(ctx context.Context, mdID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteMediaDimension, mdID)
+type DeleteMediaDimensionParams struct {
+	MdID int64 `json:"md_id"`
+}
+
+func (q *Queries) DeleteMediaDimension(ctx context.Context, arg DeleteMediaDimensionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteMediaDimension, arg.MdID)
 	return err
 }
 
@@ -2326,8 +2428,12 @@ DELETE FROM backups
 WHERE started_at < ? AND status IN ('completed', 'verified')
 `
 
-func (q *Queries) DeleteOldBackups(ctx context.Context, startedAt string) error {
-	_, err := q.db.ExecContext(ctx, deleteOldBackups, startedAt)
+type DeleteOldBackupsParams struct {
+	StartedAt string `json:"started_at"`
+}
+
+func (q *Queries) DeleteOldBackups(ctx context.Context, arg DeleteOldBackupsParams) error {
+	_, err := q.db.ExecContext(ctx, deleteOldBackups, arg.StartedAt)
 	return err
 }
 
@@ -2336,8 +2442,12 @@ DELETE FROM permissions
 WHERE permission_id = ?
 `
 
-func (q *Queries) DeletePermission(ctx context.Context, permissionID int64) error {
-	_, err := q.db.ExecContext(ctx, deletePermission, permissionID)
+type DeletePermissionParams struct {
+	PermissionID types.PermissionID `json:"permission_id"`
+}
+
+func (q *Queries) DeletePermission(ctx context.Context, arg DeletePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, deletePermission, arg.PermissionID)
 	return err
 }
 
@@ -2346,8 +2456,12 @@ DELETE FROM roles
 WHERE role_id = ?
 `
 
-func (q *Queries) DeleteRole(ctx context.Context, roleID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteRole, roleID)
+type DeleteRoleParams struct {
+	RoleID types.RoleID `json:"role_id"`
+}
+
+func (q *Queries) DeleteRole(ctx context.Context, arg DeleteRoleParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRole, arg.RoleID)
 	return err
 }
 
@@ -2356,8 +2470,12 @@ DELETE FROM routes
 WHERE route_id = ?
 `
 
-func (q *Queries) DeleteRoute(ctx context.Context, routeID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteRoute, routeID)
+type DeleteRouteParams struct {
+	RouteID types.RouteID `json:"route_id"`
+}
+
+func (q *Queries) DeleteRoute(ctx context.Context, arg DeleteRouteParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRoute, arg.RouteID)
 	return err
 }
 
@@ -2366,8 +2484,12 @@ DELETE FROM sessions
 WHERE session_id = ?
 `
 
-func (q *Queries) DeleteSession(ctx context.Context, sessionID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteSession, sessionID)
+type DeleteSessionParams struct {
+	SessionID types.SessionID `json:"session_id"`
+}
+
+func (q *Queries) DeleteSession(ctx context.Context, arg DeleteSessionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteSession, arg.SessionID)
 	return err
 }
 
@@ -2376,8 +2498,12 @@ DELETE FROM tables
 WHERE id = ?
 `
 
-func (q *Queries) DeleteTable(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteTable, id)
+type DeleteTableParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) DeleteTable(ctx context.Context, arg DeleteTableParams) error {
+	_, err := q.db.ExecContext(ctx, deleteTable, arg.ID)
 	return err
 }
 
@@ -2386,8 +2512,12 @@ DELETE FROM tokens
 WHERE id = ?
 `
 
-func (q *Queries) DeleteToken(ctx context.Context, id int64) error {
-	_, err := q.db.ExecContext(ctx, deleteToken, id)
+type DeleteTokenParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) DeleteToken(ctx context.Context, arg DeleteTokenParams) error {
+	_, err := q.db.ExecContext(ctx, deleteToken, arg.ID)
 	return err
 }
 
@@ -2396,8 +2526,12 @@ DELETE FROM users
 WHERE user_id = ?
 `
 
-func (q *Queries) DeleteUser(ctx context.Context, userID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUser, userID)
+type DeleteUserParams struct {
+	UserID types.UserID `json:"user_id"`
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) error {
+	_, err := q.db.ExecContext(ctx, deleteUser, arg.UserID)
 	return err
 }
 
@@ -2406,8 +2540,12 @@ DELETE FROM user_oauth
 WHERE user_oauth_id = ?
 `
 
-func (q *Queries) DeleteUserOauth(ctx context.Context, userOauthID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUserOauth, userOauthID)
+type DeleteUserOauthParams struct {
+	UserOAuthID types.UserOauthID `json:"user_oauth_id"`
+}
+
+func (q *Queries) DeleteUserOauth(ctx context.Context, arg DeleteUserOauthParams) error {
+	_, err := q.db.ExecContext(ctx, deleteUserOauth, arg.UserOAuthID)
 	return err
 }
 
@@ -2416,8 +2554,12 @@ DELETE FROM user_ssh_keys
 WHERE ssh_key_id = ?
 `
 
-func (q *Queries) DeleteUserSshKey(ctx context.Context, sshKeyID int64) error {
-	_, err := q.db.ExecContext(ctx, deleteUserSshKey, sshKeyID)
+type DeleteUserSshKeyParams struct {
+	SSHKeyID int64 `json:"ssh_key_id"`
+}
+
+func (q *Queries) DeleteUserSshKey(ctx context.Context, arg DeleteUserSshKeyParams) error {
+	_, err := q.db.ExecContext(ctx, deleteUserSshKey, arg.SSHKeyID)
 	return err
 }
 
@@ -2426,8 +2568,12 @@ DELETE FROM backup_verifications
 WHERE verification_id = ?
 `
 
-func (q *Queries) DeleteVerification(ctx context.Context, verificationID string) error {
-	_, err := q.db.ExecContext(ctx, deleteVerification, verificationID)
+type DeleteVerificationParams struct {
+	VerificationID types.VerificationID `json:"verification_id"`
+}
+
+func (q *Queries) DeleteVerification(ctx context.Context, arg DeleteVerificationParams) error {
+	_, err := q.db.ExecContext(ctx, deleteVerification, arg.VerificationID)
 	return err
 }
 
@@ -2652,8 +2798,12 @@ SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_s
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminContentData(ctx context.Context, adminContentDataID int64) (AdminContentData, error) {
-	row := q.db.QueryRowContext(ctx, getAdminContentData, adminContentDataID)
+type GetAdminContentDataParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDataParams) (AdminContentData, error) {
+	row := q.db.QueryRowContext(ctx, getAdminContentData, arg.AdminContentDataID)
 	var i AdminContentData
 	err := row.Scan(
 		&i.AdminContentDataID,
@@ -2675,8 +2825,12 @@ SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_fiel
 WHERE admin_content_field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminContentField(ctx context.Context, adminContentFieldID int64) (AdminContentFields, error) {
-	row := q.db.QueryRowContext(ctx, getAdminContentField, adminContentFieldID)
+type GetAdminContentFieldParams struct {
+	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
+}
+
+func (q *Queries) GetAdminContentField(ctx context.Context, arg GetAdminContentFieldParams) (AdminContentFields, error) {
+	row := q.db.QueryRowContext(ctx, getAdminContentField, arg.AdminContentFieldID)
 	var i AdminContentFields
 	err := row.Scan(
 		&i.AdminContentFieldID,
@@ -2696,8 +2850,12 @@ SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_
 WHERE admin_datatype_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminDatatype(ctx context.Context, adminDatatypeID int64) (AdminDatatypes, error) {
-	row := q.db.QueryRowContext(ctx, getAdminDatatype, adminDatatypeID)
+type GetAdminDatatypeParams struct {
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+}
+
+func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypeParams) (AdminDatatypes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminDatatype, arg.AdminDatatypeID)
 	var i AdminDatatypes
 	err := row.Scan(
 		&i.AdminDatatypeID,
@@ -2716,8 +2874,12 @@ SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, da
 WHERE admin_field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminField(ctx context.Context, adminFieldID int64) (AdminFields, error) {
-	row := q.db.QueryRowContext(ctx, getAdminField, adminFieldID)
+type GetAdminFieldParams struct {
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+}
+
+func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (AdminFields, error) {
+	row := q.db.QueryRowContext(ctx, getAdminField, arg.AdminFieldID)
 	var i AdminFields
 	err := row.Scan(
 		&i.AdminFieldID,
@@ -2737,8 +2899,12 @@ SELECT admin_route_id, slug, title, status, author_id, date_created, date_modifi
 WHERE admin_route_id = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteById(ctx context.Context, adminRouteID int64) (AdminRoutes, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRouteById, adminRouteID)
+type GetAdminRouteByIdParams struct {
+	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
+}
+
+func (q *Queries) GetAdminRouteById(ctx context.Context, arg GetAdminRouteByIdParams) (AdminRoutes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteById, arg.AdminRouteID)
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
@@ -2757,8 +2923,12 @@ SELECT admin_route_id, slug, title, status, author_id, date_created, date_modifi
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteBySlug(ctx context.Context, slug string) (AdminRoutes, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRouteBySlug, slug)
+type GetAdminRouteBySlugParams struct {
+	Slug types.Slug `json:"slug"`
+}
+
+func (q *Queries) GetAdminRouteBySlug(ctx context.Context, arg GetAdminRouteBySlugParams) (AdminRoutes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteBySlug, arg.Slug)
 	var i AdminRoutes
 	err := row.Scan(
 		&i.AdminRouteID,
@@ -2777,9 +2947,13 @@ SELECT admin_route_id FROM admin_routes
 WHERE slug = ? LIMIT 1
 `
 
-func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, slug string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getAdminRouteIdBySlug, slug)
-	var admin_route_id int64
+type GetAdminRouteIdBySlugParams struct {
+	Slug types.Slug `json:"slug"`
+}
+
+func (q *Queries) GetAdminRouteIdBySlug(ctx context.Context, arg GetAdminRouteIdBySlugParams) (types.AdminRouteID, error) {
+	row := q.db.QueryRowContext(ctx, getAdminRouteIdBySlug, arg.Slug)
+	var admin_route_id types.AdminRouteID
 	err := row.Scan(&admin_route_id)
 	return admin_route_id, err
 }
@@ -2789,9 +2963,13 @@ SELECT backup_id, node_id, backup_type, status, started_at, completed_at, durati
 WHERE backup_id = ? LIMIT 1
 `
 
-func (q *Queries) GetBackup(ctx context.Context, backupID string) (Backups, error) {
-	row := q.db.QueryRowContext(ctx, getBackup, backupID)
-	var i Backups
+type GetBackupParams struct {
+	BackupID types.BackupID `json:"backup_id"`
+}
+
+func (q *Queries) GetBackup(ctx context.Context, arg GetBackupParams) (Backup, error) {
+	row := q.db.QueryRowContext(ctx, getBackup, arg.BackupID)
+	var i Backup
 	err := row.Scan(
 		&i.BackupID,
 		&i.NodeID,
@@ -2818,9 +2996,13 @@ SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count,
 WHERE backup_set_id = ? LIMIT 1
 `
 
-func (q *Queries) GetBackupSet(ctx context.Context, backupSetID string) (BackupSets, error) {
-	row := q.db.QueryRowContext(ctx, getBackupSet, backupSetID)
-	var i BackupSets
+type GetBackupSetParams struct {
+	BackupSetID types.BackupSetID `json:"backup_set_id"`
+}
+
+func (q *Queries) GetBackupSet(ctx context.Context, arg GetBackupSetParams) (BackupSet, error) {
+	row := q.db.QueryRowContext(ctx, getBackupSet, arg.BackupSetID)
+	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
 		&i.CreatedAt,
@@ -2841,9 +3023,13 @@ ORDER BY created_at DESC
 LIMIT 1
 `
 
-func (q *Queries) GetBackupSetByHLC(ctx context.Context, hlcTimestamp int64) (BackupSets, error) {
-	row := q.db.QueryRowContext(ctx, getBackupSetByHLC, hlcTimestamp)
-	var i BackupSets
+type GetBackupSetByHLCParams struct {
+	HlcTimestamp types.HLC `json:"hlc_timestamp"`
+}
+
+func (q *Queries) GetBackupSetByHLC(ctx context.Context, arg GetBackupSetByHLCParams) (BackupSet, error) {
+	row := q.db.QueryRowContext(ctx, getBackupSetByHLC, arg.HlcTimestamp)
+	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
 		&i.CreatedAt,
@@ -2864,19 +3050,19 @@ ORDER BY hlc_timestamp ASC
 `
 
 type GetBackupsByHLCRangeParams struct {
-	HlcTimestamp   sql.NullInt64 `json:"hlc_timestamp"`
-	HlcTimestamp_2 sql.NullInt64 `json:"hlc_timestamp_2"`
+	HlcTimestamp   types.HLC `json:"hlc_timestamp"`
+	HlcTimestamp_2 types.HLC `json:"hlc_timestamp_2"`
 }
 
-func (q *Queries) GetBackupsByHLCRange(ctx context.Context, arg GetBackupsByHLCRangeParams) ([]Backups, error) {
+func (q *Queries) GetBackupsByHLCRange(ctx context.Context, arg GetBackupsByHLCRangeParams) ([]Backup, error) {
 	rows, err := q.db.QueryContext(ctx, getBackupsByHLCRange, arg.HlcTimestamp, arg.HlcTimestamp_2)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Backups
+	items := []Backup{}
 	for rows.Next() {
-		var i Backups
+		var i Backup
 		if err := rows.Scan(
 			&i.BackupID,
 			&i.NodeID,
@@ -2916,20 +3102,20 @@ LIMIT ? OFFSET ?
 `
 
 type GetBackupsByNodeParams struct {
-	NodeID string `json:"node_id"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	NodeID types.NodeID `json:"node_id"`
+	Limit  int64        `json:"limit"`
+	Offset int64        `json:"offset"`
 }
 
-func (q *Queries) GetBackupsByNode(ctx context.Context, arg GetBackupsByNodeParams) ([]Backups, error) {
+func (q *Queries) GetBackupsByNode(ctx context.Context, arg GetBackupsByNodeParams) ([]Backup, error) {
 	rows, err := q.db.QueryContext(ctx, getBackupsByNode, arg.NodeID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Backups
+	items := []Backup{}
 	for rows.Next() {
-		var i Backups
+		var i Backup
 		if err := rows.Scan(
 			&i.BackupID,
 			&i.NodeID,
@@ -2969,20 +3155,20 @@ LIMIT ? OFFSET ?
 `
 
 type GetBackupsByStatusParams struct {
-	Status string `json:"status"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
+	Status types.BackupStatus `json:"status"`
+	Limit  int64              `json:"limit"`
+	Offset int64              `json:"offset"`
 }
 
-func (q *Queries) GetBackupsByStatus(ctx context.Context, arg GetBackupsByStatusParams) ([]Backups, error) {
+func (q *Queries) GetBackupsByStatus(ctx context.Context, arg GetBackupsByStatusParams) ([]Backup, error) {
 	rows, err := q.db.QueryContext(ctx, getBackupsByStatus, arg.Status, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Backups
+	items := []Backup{}
 	for rows.Next() {
-		var i Backups
+		var i Backup
 		if err := rows.Scan(
 			&i.BackupID,
 			&i.NodeID,
@@ -3019,9 +3205,13 @@ SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, 
 WHERE event_id = ? LIMIT 1
 `
 
-func (q *Queries) GetChangeEvent(ctx context.Context, eventID string) (ChangeEvents, error) {
-	row := q.db.QueryRowContext(ctx, getChangeEvent, eventID)
-	var i ChangeEvents
+type GetChangeEventParams struct {
+	EventID types.EventID `json:"event_id"`
+}
+
+func (q *Queries) GetChangeEvent(ctx context.Context, arg GetChangeEventParams) (ChangeEvent, error) {
+	row := q.db.QueryRowContext(ctx, getChangeEvent, arg.EventID)
+	var i ChangeEvent
 	err := row.Scan(
 		&i.EventID,
 		&i.HlcTimestamp,
@@ -3052,15 +3242,15 @@ type GetChangeEventsByRecordParams struct {
 	RecordID  string `json:"record_id"`
 }
 
-func (q *Queries) GetChangeEventsByRecord(ctx context.Context, arg GetChangeEventsByRecordParams) ([]ChangeEvents, error) {
+func (q *Queries) GetChangeEventsByRecord(ctx context.Context, arg GetChangeEventsByRecordParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, getChangeEventsByRecord, arg.TableName, arg.RecordID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -3104,7 +3294,7 @@ type GetChangeEventsByRecordPaginatedParams struct {
 	Offset    int64  `json:"offset"`
 }
 
-func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetChangeEventsByRecordPaginatedParams) ([]ChangeEvents, error) {
+func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetChangeEventsByRecordPaginatedParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, getChangeEventsByRecordPaginated,
 		arg.TableName,
 		arg.RecordID,
@@ -3115,9 +3305,9 @@ func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetC
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -3152,8 +3342,12 @@ SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling
 WHERE content_data_id = ? LIMIT 1
 `
 
-func (q *Queries) GetContentData(ctx context.Context, contentDataID int64) (ContentData, error) {
-	row := q.db.QueryRowContext(ctx, getContentData, contentDataID)
+type GetContentDataParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) GetContentData(ctx context.Context, arg GetContentDataParams) (ContentData, error) {
+	row := q.db.QueryRowContext(ctx, getContentData, arg.ContentDataID)
 	var i ContentData
 	err := row.Scan(
 		&i.ContentDataID,
@@ -3175,8 +3369,12 @@ SELECT content_field_id, route_id, content_data_id, field_id, field_value, autho
 WHERE content_field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetContentField(ctx context.Context, contentFieldID int64) (ContentFields, error) {
-	row := q.db.QueryRowContext(ctx, getContentField, contentFieldID)
+type GetContentFieldParams struct {
+	ContentFieldID types.ContentFieldID `json:"content_field_id"`
+}
+
+func (q *Queries) GetContentField(ctx context.Context, arg GetContentFieldParams) (ContentFields, error) {
+	row := q.db.QueryRowContext(ctx, getContentField, arg.ContentFieldID)
 	var i ContentFields
 	err := row.Scan(
 		&i.ContentFieldID,
@@ -3199,19 +3397,23 @@ WHERE cd.route_id = ?
 ORDER BY cf.content_data_id, cf.field_id
 `
 
-type GetContentFieldsByRouteRow struct {
-	ContentDataID int64  `json:"content_data_id"`
-	FieldID       int64  `json:"field_id"`
-	FieldValue    string `json:"field_value"`
+type GetContentFieldsByRouteParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
 }
 
-func (q *Queries) GetContentFieldsByRoute(ctx context.Context, routeID int64) ([]GetContentFieldsByRouteRow, error) {
-	rows, err := q.db.QueryContext(ctx, getContentFieldsByRoute, routeID)
+type GetContentFieldsByRouteRow struct {
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+	FieldID       types.NullableFieldID   `json:"field_id"`
+	FieldValue    string                  `json:"field_value"`
+}
+
+func (q *Queries) GetContentFieldsByRoute(ctx context.Context, arg GetContentFieldsByRouteParams) ([]GetContentFieldsByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContentFieldsByRoute, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetContentFieldsByRouteRow
+	items := []GetContentFieldsByRouteRow{}
 	for rows.Next() {
 		var i GetContentFieldsByRouteRow
 		if err := rows.Scan(&i.ContentDataID, &i.FieldID, &i.FieldValue); err != nil {
@@ -3246,28 +3448,32 @@ WHERE cd.route_id = ?
 ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id
 `
 
-type GetContentTreeByRouteRow struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	RouteID       int64          `json:"route_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	DatatypeLabel string         `json:"datatype_label"`
-	DatatypeType  string         `json:"datatype_type"`
+type GetContentTreeByRouteParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
 }
 
-func (q *Queries) GetContentTreeByRoute(ctx context.Context, routeID int64) ([]GetContentTreeByRouteRow, error) {
-	rows, err := q.db.QueryContext(ctx, getContentTreeByRoute, routeID)
+type GetContentTreeByRouteRow struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
+}
+
+func (q *Queries) GetContentTreeByRoute(ctx context.Context, arg GetContentTreeByRouteParams) ([]GetContentTreeByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getContentTreeByRoute, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetContentTreeByRouteRow
+	items := []GetContentTreeByRouteRow{}
 	for rows.Next() {
 		var i GetContentTreeByRouteRow
 		if err := rows.Scan(
@@ -3302,8 +3508,12 @@ SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modifi
 WHERE datatype_id = ? LIMIT 1
 `
 
-func (q *Queries) GetDatatype(ctx context.Context, datatypeID int64) (Datatypes, error) {
-	row := q.db.QueryRowContext(ctx, getDatatype, datatypeID)
+type GetDatatypeParams struct {
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datatypes, error) {
+	row := q.db.QueryRowContext(ctx, getDatatype, arg.DatatypeID)
 	var i Datatypes
 	err := row.Scan(
 		&i.DatatypeID,
@@ -3324,8 +3534,12 @@ SELECT field_id, parent_id, label, data, type, author_id, date_created, date_mod
 WHERE field_id = ? LIMIT 1
 `
 
-func (q *Queries) GetField(ctx context.Context, fieldID int64) (Fields, error) {
-	row := q.db.QueryRowContext(ctx, getField, fieldID)
+type GetFieldParams struct {
+	FieldID types.FieldID `json:"field_id"`
+}
+
+func (q *Queries) GetField(ctx context.Context, arg GetFieldParams) (Fields, error) {
+	row := q.db.QueryRowContext(ctx, getField, arg.FieldID)
 	var i Fields
 	err := row.Scan(
 		&i.FieldID,
@@ -3349,20 +3563,24 @@ WHERE cd.route_id = ?
 ORDER BY df.datatype_id, f.field_id
 `
 
-type GetFieldDefinitionsByRouteRow struct {
-	FieldID    int64  `json:"field_id"`
-	Label      string `json:"label"`
-	Type       string `json:"type"`
-	DatatypeID int64  `json:"datatype_id"`
+type GetFieldDefinitionsByRouteParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
 }
 
-func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, routeID int64) ([]GetFieldDefinitionsByRouteRow, error) {
-	rows, err := q.db.QueryContext(ctx, getFieldDefinitionsByRoute, routeID)
+type GetFieldDefinitionsByRouteRow struct {
+	FieldID    types.FieldID            `json:"field_id"`
+	Label      string                   `json:"label"`
+	Type       types.FieldType          `json:"type"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDefinitionsByRouteParams) ([]GetFieldDefinitionsByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, getFieldDefinitionsByRoute, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetFieldDefinitionsByRouteRow
+	items := []GetFieldDefinitionsByRouteRow{}
 	for rows.Next() {
 		var i GetFieldDefinitionsByRouteRow
 		if err := rows.Scan(
@@ -3391,9 +3609,13 @@ ORDER BY started_at DESC
 LIMIT 1
 `
 
-func (q *Queries) GetLatestBackup(ctx context.Context, nodeID string) (Backups, error) {
-	row := q.db.QueryRowContext(ctx, getLatestBackup, nodeID)
-	var i Backups
+type GetLatestBackupParams struct {
+	NodeID types.NodeID `json:"node_id"`
+}
+
+func (q *Queries) GetLatestBackup(ctx context.Context, arg GetLatestBackupParams) (Backup, error) {
+	row := q.db.QueryRowContext(ctx, getLatestBackup, arg.NodeID)
+	var i Backup
 	err := row.Scan(
 		&i.BackupID,
 		&i.NodeID,
@@ -3423,13 +3645,13 @@ LIMIT 1
 `
 
 type GetLatestBackupByTypeParams struct {
-	NodeID     string `json:"node_id"`
-	BackupType string `json:"backup_type"`
+	NodeID     types.NodeID     `json:"node_id"`
+	BackupType types.BackupType `json:"backup_type"`
 }
 
-func (q *Queries) GetLatestBackupByType(ctx context.Context, arg GetLatestBackupByTypeParams) (Backups, error) {
+func (q *Queries) GetLatestBackupByType(ctx context.Context, arg GetLatestBackupByTypeParams) (Backup, error) {
 	row := q.db.QueryRowContext(ctx, getLatestBackupByType, arg.NodeID, arg.BackupType)
-	var i Backups
+	var i Backup
 	err := row.Scan(
 		&i.BackupID,
 		&i.NodeID,
@@ -3458,9 +3680,13 @@ ORDER BY verified_at DESC
 LIMIT 1
 `
 
-func (q *Queries) GetLatestVerification(ctx context.Context, backupID string) (BackupVerifications, error) {
-	row := q.db.QueryRowContext(ctx, getLatestVerification, backupID)
-	var i BackupVerifications
+type GetLatestVerificationParams struct {
+	BackupID types.BackupID `json:"backup_id"`
+}
+
+func (q *Queries) GetLatestVerification(ctx context.Context, arg GetLatestVerificationParams) (BackupVerification, error) {
+	row := q.db.QueryRowContext(ctx, getLatestVerification, arg.BackupID)
+	var i BackupVerification
 	err := row.Scan(
 		&i.VerificationID,
 		&i.BackupID,
@@ -3481,8 +3707,12 @@ SELECT media_id, name, display_name, alt, caption, description, class, mimetype,
 WHERE media_id = ? LIMIT 1
 `
 
-func (q *Queries) GetMedia(ctx context.Context, mediaID int64) (Media, error) {
-	row := q.db.QueryRowContext(ctx, getMedia, mediaID)
+type GetMediaParams struct {
+	MediaID types.MediaID `json:"media_id"`
+}
+
+func (q *Queries) GetMedia(ctx context.Context, arg GetMediaParams) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMedia, arg.MediaID)
 	var i Media
 	err := row.Scan(
 		&i.MediaID,
@@ -3494,7 +3724,7 @@ func (q *Queries) GetMedia(ctx context.Context, mediaID int64) (Media, error) {
 		&i.Class,
 		&i.Mimetype,
 		&i.Dimensions,
-		&i.Url,
+		&i.URL,
 		&i.Srcset,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -3508,8 +3738,12 @@ SELECT media_id, name, display_name, alt, caption, description, class, mimetype,
 WHERE name = ? LIMIT 1
 `
 
-func (q *Queries) GetMediaByName(ctx context.Context, name sql.NullString) (Media, error) {
-	row := q.db.QueryRowContext(ctx, getMediaByName, name)
+type GetMediaByNameParams struct {
+	Name sql.NullString `json:"name"`
+}
+
+func (q *Queries) GetMediaByName(ctx context.Context, arg GetMediaByNameParams) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMediaByName, arg.Name)
 	var i Media
 	err := row.Scan(
 		&i.MediaID,
@@ -3521,7 +3755,7 @@ func (q *Queries) GetMediaByName(ctx context.Context, name sql.NullString) (Medi
 		&i.Class,
 		&i.Mimetype,
 		&i.Dimensions,
-		&i.Url,
+		&i.URL,
 		&i.Srcset,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -3535,8 +3769,12 @@ SELECT media_id, name, display_name, alt, caption, description, class, mimetype,
 WHERE url = ? LIMIT 1
 `
 
-func (q *Queries) GetMediaByUrl(ctx context.Context, url sql.NullString) (Media, error) {
-	row := q.db.QueryRowContext(ctx, getMediaByUrl, url)
+type GetMediaByUrlParams struct {
+	URL types.URL `json:"url"`
+}
+
+func (q *Queries) GetMediaByUrl(ctx context.Context, arg GetMediaByUrlParams) (Media, error) {
+	row := q.db.QueryRowContext(ctx, getMediaByUrl, arg.URL)
 	var i Media
 	err := row.Scan(
 		&i.MediaID,
@@ -3548,7 +3786,7 @@ func (q *Queries) GetMediaByUrl(ctx context.Context, url sql.NullString) (Media,
 		&i.Class,
 		&i.Mimetype,
 		&i.Dimensions,
-		&i.Url,
+		&i.URL,
 		&i.Srcset,
 		&i.AuthorID,
 		&i.DateCreated,
@@ -3562,8 +3800,12 @@ SELECT md_id, label, width, height, aspect_ratio FROM media_dimensions
 WHERE md_id = ? LIMIT 1
 `
 
-func (q *Queries) GetMediaDimension(ctx context.Context, mdID int64) (MediaDimensions, error) {
-	row := q.db.QueryRowContext(ctx, getMediaDimension, mdID)
+type GetMediaDimensionParams struct {
+	MdID int64 `json:"md_id"`
+}
+
+func (q *Queries) GetMediaDimension(ctx context.Context, arg GetMediaDimensionParams) (MediaDimensions, error) {
+	row := q.db.QueryRowContext(ctx, getMediaDimension, arg.MdID)
 	var i MediaDimensions
 	err := row.Scan(
 		&i.MdID,
@@ -3581,15 +3823,15 @@ WHERE status = 'pending'
 ORDER BY created_at ASC
 `
 
-func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSets, error) {
+func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSet, error) {
 	rows, err := q.db.QueryContext(ctx, getPendingBackupSets)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BackupSets
+	items := []BackupSet{}
 	for rows.Next() {
-		var i BackupSets
+		var i BackupSet
 		if err := rows.Scan(
 			&i.BackupSetID,
 			&i.CreatedAt,
@@ -3618,8 +3860,12 @@ SELECT permission_id, table_id, mode, label FROM permissions
 WHERE permission_id = ? LIMIT 1
 `
 
-func (q *Queries) GetPermission(ctx context.Context, permissionID int64) (Permissions, error) {
-	row := q.db.QueryRowContext(ctx, getPermission, permissionID)
+type GetPermissionParams struct {
+	PermissionID types.PermissionID `json:"permission_id"`
+}
+
+func (q *Queries) GetPermission(ctx context.Context, arg GetPermissionParams) (Permissions, error) {
+	row := q.db.QueryRowContext(ctx, getPermission, arg.PermissionID)
 	var i Permissions
 	err := row.Scan(
 		&i.PermissionID,
@@ -3637,8 +3883,12 @@ WHERE role_id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetRole(ctx context.Context, roleID int64) (Roles, error) {
-	row := q.db.QueryRowContext(ctx, getRole, roleID)
+type GetRoleParams struct {
+	RoleID types.RoleID `json:"role_id"`
+}
+
+func (q *Queries) GetRole(ctx context.Context, arg GetRoleParams) (Roles, error) {
+	row := q.db.QueryRowContext(ctx, getRole, arg.RoleID)
 	var i Roles
 	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
 	return i, err
@@ -3651,8 +3901,12 @@ WHERE route_id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetRoute(ctx context.Context, routeID int64) (Routes, error) {
-	row := q.db.QueryRowContext(ctx, getRoute, routeID)
+type GetRouteParams struct {
+	RouteID types.RouteID `json:"route_id"`
+}
+
+func (q *Queries) GetRoute(ctx context.Context, arg GetRouteParams) (Routes, error) {
+	row := q.db.QueryRowContext(ctx, getRoute, arg.RouteID)
 	var i Routes
 	err := row.Scan(
 		&i.RouteID,
@@ -3673,9 +3927,13 @@ WHERE slug = ?
 LIMIT 1
 `
 
-func (q *Queries) GetRouteIDBySlug(ctx context.Context, slug string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getRouteIDBySlug, slug)
-	var route_id int64
+type GetRouteIDBySlugParams struct {
+	Slug types.Slug `json:"slug"`
+}
+
+func (q *Queries) GetRouteIDBySlug(ctx context.Context, arg GetRouteIDBySlugParams) (types.RouteID, error) {
+	row := q.db.QueryRowContext(ctx, getRouteIDBySlug, arg.Slug)
+	var route_id types.RouteID
 	err := row.Scan(&route_id)
 	return route_id, err
 }
@@ -3702,26 +3960,30 @@ WHERE cd.route_id = ?
 ORDER BY cd.content_data_id, f.field_id
 `
 
-type GetRouteTreeByRouteIDRow struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeLabel string         `json:"datatype_label"`
-	DatatypeType  string         `json:"datatype_type"`
-	FieldLabel    string         `json:"field_label"`
-	FieldType     string         `json:"field_type"`
-	FieldValue    sql.NullString `json:"field_value"`
+type GetRouteTreeByRouteIDParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
 }
 
-func (q *Queries) GetRouteTreeByRouteID(ctx context.Context, routeID int64) ([]GetRouteTreeByRouteIDRow, error) {
-	rows, err := q.db.QueryContext(ctx, getRouteTreeByRouteID, routeID)
+type GetRouteTreeByRouteIDRow struct {
+	ContentDataID types.ContentID         `json:"content_data_id"`
+	ParentID      types.NullableContentID `json:"parent_id"`
+	FirstChildID  sql.NullInt64           `json:"first_child_id"`
+	NextSiblingID sql.NullInt64           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64           `json:"prev_sibling_id"`
+	DatatypeLabel string                  `json:"datatype_label"`
+	DatatypeType  string                  `json:"datatype_type"`
+	FieldLabel    string                  `json:"field_label"`
+	FieldType     types.FieldType         `json:"field_type"`
+	FieldValue    sql.NullString          `json:"field_value"`
+}
+
+func (q *Queries) GetRouteTreeByRouteID(ctx context.Context, arg GetRouteTreeByRouteIDParams) ([]GetRouteTreeByRouteIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRouteTreeByRouteID, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetRouteTreeByRouteIDRow
+	items := []GetRouteTreeByRouteIDRow{}
 	for rows.Next() {
 		var i GetRouteTreeByRouteIDRow
 		if err := rows.Scan(
@@ -3754,8 +4016,12 @@ SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, use
 WHERE session_id = ? LIMIT 1
 `
 
-func (q *Queries) GetSession(ctx context.Context, sessionID int64) (Sessions, error) {
-	row := q.db.QueryRowContext(ctx, getSession, sessionID)
+type GetSessionParams struct {
+	SessionID types.SessionID `json:"session_id"`
+}
+
+func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSession, arg.SessionID)
 	var i Sessions
 	err := row.Scan(
 		&i.SessionID,
@@ -3777,8 +4043,12 @@ ORDER BY session_id DESC
 LIMIT 1
 `
 
-func (q *Queries) GetSessionByUserId(ctx context.Context, userID int64) (Sessions, error) {
-	row := q.db.QueryRowContext(ctx, getSessionByUserId, userID)
+type GetSessionByUserIdParams struct {
+	UserID types.NullableUserID `json:"user_id"`
+}
+
+func (q *Queries) GetSessionByUserId(ctx context.Context, arg GetSessionByUserIdParams) (Sessions, error) {
+	row := q.db.QueryRowContext(ctx, getSessionByUserId, arg.UserID)
 	var i Sessions
 	err := row.Scan(
 		&i.SessionID,
@@ -3806,23 +4076,23 @@ const getShallowTreeByRouteId = `-- name: GetShallowTreeByRouteId :many
 `
 
 type GetShallowTreeByRouteIdParams struct {
-	RouteID   int64 `json:"route_id"`
-	RouteID_2 int64 `json:"route_id_2"`
+	RouteID   types.NullableRouteID `json:"route_id"`
+	RouteID_2 types.NullableRouteID `json:"route_id_2"`
 }
 
 type GetShallowTreeByRouteIdRow struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	RouteID       int64          `json:"route_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	DatatypeLabel string         `json:"datatype_label"`
-	DatatypeType  string         `json:"datatype_type"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
 }
 
 func (q *Queries) GetShallowTreeByRouteId(ctx context.Context, arg GetShallowTreeByRouteIdParams) ([]GetShallowTreeByRouteIdRow, error) {
@@ -3831,7 +4101,7 @@ func (q *Queries) GetShallowTreeByRouteId(ctx context.Context, arg GetShallowTre
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetShallowTreeByRouteIdRow
+	items := []GetShallowTreeByRouteIdRow{}
 	for rows.Next() {
 		var i GetShallowTreeByRouteIdRow
 		if err := rows.Scan(
@@ -3866,8 +4136,12 @@ SELECT id, label, author_id FROM tables
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetTable(ctx context.Context, id int64) (Tables, error) {
-	row := q.db.QueryRowContext(ctx, getTable, id)
+type GetTableParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) GetTable(ctx context.Context, arg GetTableParams) (Tables, error) {
+	row := q.db.QueryRowContext(ctx, getTable, arg.ID)
 	var i Tables
 	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
 	return i, err
@@ -3878,8 +4152,13 @@ SELECT id FROM tables
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetTableId(ctx context.Context, id int64) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getTableId, id)
+type GetTableIdParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) GetTableId(ctx context.Context, arg GetTableIdParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, getTableId, arg.ID)
+	var id int64
 	err := row.Scan(&id)
 	return id, err
 }
@@ -3889,14 +4168,18 @@ SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
 WHERE id = ? LIMIT 1
 `
 
-func (q *Queries) GetToken(ctx context.Context, id int64) (Tokens, error) {
-	row := q.db.QueryRowContext(ctx, getToken, id)
+type GetTokenParams struct {
+	ID int64 `json:"id"`
+}
+
+func (q *Queries) GetToken(ctx context.Context, arg GetTokenParams) (Tokens, error) {
+	row := q.db.QueryRowContext(ctx, getToken, arg.ID)
 	var i Tokens
 	err := row.Scan(
 		&i.ID,
 		&i.UserID,
 		&i.TokenType,
-		&i.Token,
+		&i.Tokens,
 		&i.IssuedAt,
 		&i.ExpiresAt,
 		&i.Revoked,
@@ -3909,20 +4192,24 @@ SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM token
 WHERE user_id = ?
 `
 
-func (q *Queries) GetTokenByUserId(ctx context.Context, userID int64) ([]Tokens, error) {
-	rows, err := q.db.QueryContext(ctx, getTokenByUserId, userID)
+type GetTokenByUserIdParams struct {
+	UserID types.NullableUserID `json:"user_id"`
+}
+
+func (q *Queries) GetTokenByUserId(ctx context.Context, arg GetTokenByUserIdParams) ([]Tokens, error) {
+	rows, err := q.db.QueryContext(ctx, getTokenByUserId, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tokens
+	items := []Tokens{}
 	for rows.Next() {
 		var i Tokens
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.TokenType,
-			&i.Token,
+			&i.Tokens,
 			&i.IssuedAt,
 			&i.ExpiresAt,
 			&i.Revoked,
@@ -3947,15 +4234,19 @@ ORDER BY hlc_timestamp ASC
 LIMIT ?
 `
 
-func (q *Queries) GetUnconsumedEvents(ctx context.Context, limit int64) ([]ChangeEvents, error) {
-	rows, err := q.db.QueryContext(ctx, getUnconsumedEvents, limit)
+type GetUnconsumedEventsParams struct {
+	Limit int64 `json:"limit"`
+}
+
+func (q *Queries) GetUnconsumedEvents(ctx context.Context, arg GetUnconsumedEventsParams) ([]ChangeEvent, error) {
+	rows, err := q.db.QueryContext(ctx, getUnconsumedEvents, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -3992,15 +4283,19 @@ ORDER BY hlc_timestamp ASC
 LIMIT ?
 `
 
-func (q *Queries) GetUnsyncedEvents(ctx context.Context, limit int64) ([]ChangeEvents, error) {
-	rows, err := q.db.QueryContext(ctx, getUnsyncedEvents, limit)
+type GetUnsyncedEventsParams struct {
+	Limit int64 `json:"limit"`
+}
+
+func (q *Queries) GetUnsyncedEvents(ctx context.Context, arg GetUnsyncedEventsParams) ([]ChangeEvent, error) {
+	rows, err := q.db.QueryContext(ctx, getUnsyncedEvents, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -4038,19 +4333,19 @@ LIMIT ?
 `
 
 type GetUnsyncedEventsByNodeParams struct {
-	NodeID string `json:"node_id"`
-	Limit  int64  `json:"limit"`
+	NodeID types.NodeID `json:"node_id"`
+	Limit  int64        `json:"limit"`
 }
 
-func (q *Queries) GetUnsyncedEventsByNode(ctx context.Context, arg GetUnsyncedEventsByNodeParams) ([]ChangeEvents, error) {
+func (q *Queries) GetUnsyncedEventsByNode(ctx context.Context, arg GetUnsyncedEventsByNodeParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, getUnsyncedEventsByNode, arg.NodeID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -4085,8 +4380,12 @@ SELECT user_id, username, name, email, hash, role, date_created, date_modified F
 WHERE user_id = ? LIMIT 1
 `
 
-func (q *Queries) GetUser(ctx context.Context, userID int64) (Users, error) {
-	row := q.db.QueryRowContext(ctx, getUser, userID)
+type GetUserParams struct {
+	UserID types.UserID `json:"user_id"`
+}
+
+func (q *Queries) GetUser(ctx context.Context, arg GetUserParams) (Users, error) {
+	row := q.db.QueryRowContext(ctx, getUser, arg.UserID)
 	var i Users
 	err := row.Scan(
 		&i.UserID,
@@ -4094,7 +4393,7 @@ func (q *Queries) GetUser(ctx context.Context, userID int64) (Users, error) {
 		&i.Name,
 		&i.Email,
 		&i.Hash,
-		&i.Role,
+		&i.Roles,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -4106,8 +4405,12 @@ SELECT user_id, username, name, email, hash, role, date_created, date_modified F
 WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+type GetUserByEmailParams struct {
+	Email types.Email `json:"email"`
+}
+
+func (q *Queries) GetUserByEmail(ctx context.Context, arg GetUserByEmailParams) (Users, error) {
+	row := q.db.QueryRowContext(ctx, getUserByEmail, arg.Email)
 	var i Users
 	err := row.Scan(
 		&i.UserID,
@@ -4115,7 +4418,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (Users, erro
 		&i.Name,
 		&i.Email,
 		&i.Hash,
-		&i.Role,
+		&i.Roles,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -4129,8 +4432,12 @@ WHERE k.fingerprint = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserBySSHFingerprint(ctx context.Context, fingerprint string) (Users, error) {
-	row := q.db.QueryRowContext(ctx, getUserBySSHFingerprint, fingerprint)
+type GetUserBySSHFingerprintParams struct {
+	Fingerprint string `json:"fingerprint"`
+}
+
+func (q *Queries) GetUserBySSHFingerprint(ctx context.Context, arg GetUserBySSHFingerprintParams) (Users, error) {
+	row := q.db.QueryRowContext(ctx, getUserBySSHFingerprint, arg.Fingerprint)
 	var i Users
 	err := row.Scan(
 		&i.UserID,
@@ -4138,7 +4445,7 @@ func (q *Queries) GetUserBySSHFingerprint(ctx context.Context, fingerprint strin
 		&i.Name,
 		&i.Email,
 		&i.Hash,
-		&i.Role,
+		&i.Roles,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -4150,9 +4457,13 @@ SELECT user_id FROM users
 WHERE email = ? LIMIT 1
 `
 
-func (q *Queries) GetUserId(ctx context.Context, email string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getUserId, email)
-	var user_id int64
+type GetUserIdParams struct {
+	Email types.Email `json:"email"`
+}
+
+func (q *Queries) GetUserId(ctx context.Context, arg GetUserIdParams) (types.UserID, error) {
+	row := q.db.QueryRowContext(ctx, getUserId, arg.Email)
+	var user_id types.UserID
 	err := row.Scan(&user_id)
 	return user_id, err
 }
@@ -4164,14 +4475,18 @@ WHERE user_oauth_id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserOauth(ctx context.Context, userOauthID int64) (UserOauth, error) {
-	row := q.db.QueryRowContext(ctx, getUserOauth, userOauthID)
+type GetUserOauthParams struct {
+	UserOAuthID types.UserOauthID `json:"user_oauth_id"`
+}
+
+func (q *Queries) GetUserOauth(ctx context.Context, arg GetUserOauthParams) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauth, arg.UserOAuthID)
 	var i UserOauth
 	err := row.Scan(
-		&i.UserOauthID,
+		&i.UserOAuthID,
 		&i.UserID,
 		&i.OauthProvider,
-		&i.OauthProviderUserID,
+		&i.OAuthProviderUserID,
 		&i.AccessToken,
 		&i.RefreshToken,
 		&i.TokenExpiresAt,
@@ -4188,14 +4503,18 @@ WHERE u.email = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserOauthByEmail(ctx context.Context, email string) (UserOauth, error) {
-	row := q.db.QueryRowContext(ctx, getUserOauthByEmail, email)
+type GetUserOauthByEmailParams struct {
+	Email types.Email `json:"email"`
+}
+
+func (q *Queries) GetUserOauthByEmail(ctx context.Context, arg GetUserOauthByEmailParams) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauthByEmail, arg.Email)
 	var i UserOauth
 	err := row.Scan(
-		&i.UserOauthID,
+		&i.UserOAuthID,
 		&i.UserID,
 		&i.OauthProvider,
-		&i.OauthProviderUserID,
+		&i.OAuthProviderUserID,
 		&i.AccessToken,
 		&i.RefreshToken,
 		&i.TokenExpiresAt,
@@ -4213,17 +4532,17 @@ LIMIT 1
 
 type GetUserOauthByProviderIDParams struct {
 	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
+	OAuthProviderUserID string `json:"oauth_provider_user_id"`
 }
 
 func (q *Queries) GetUserOauthByProviderID(ctx context.Context, arg GetUserOauthByProviderIDParams) (UserOauth, error) {
-	row := q.db.QueryRowContext(ctx, getUserOauthByProviderID, arg.OauthProvider, arg.OauthProviderUserID)
+	row := q.db.QueryRowContext(ctx, getUserOauthByProviderID, arg.OauthProvider, arg.OAuthProviderUserID)
 	var i UserOauth
 	err := row.Scan(
-		&i.UserOauthID,
+		&i.UserOAuthID,
 		&i.UserID,
 		&i.OauthProvider,
-		&i.OauthProviderUserID,
+		&i.OAuthProviderUserID,
 		&i.AccessToken,
 		&i.RefreshToken,
 		&i.TokenExpiresAt,
@@ -4239,14 +4558,18 @@ WHERE user_id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserOauthByUserId(ctx context.Context, userID int64) (UserOauth, error) {
-	row := q.db.QueryRowContext(ctx, getUserOauthByUserId, userID)
+type GetUserOauthByUserIdParams struct {
+	UserID types.NullableUserID `json:"user_id"`
+}
+
+func (q *Queries) GetUserOauthByUserId(ctx context.Context, arg GetUserOauthByUserIdParams) (UserOauth, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauthByUserId, arg.UserID)
 	var i UserOauth
 	err := row.Scan(
-		&i.UserOauthID,
+		&i.UserOAuthID,
 		&i.UserID,
 		&i.OauthProvider,
-		&i.OauthProviderUserID,
+		&i.OAuthProviderUserID,
 		&i.AccessToken,
 		&i.RefreshToken,
 		&i.TokenExpiresAt,
@@ -4263,9 +4586,13 @@ WHERE u.email = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserOauthId(ctx context.Context, email string) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getUserOauthId, email)
-	var user_id int64
+type GetUserOauthIdParams struct {
+	Email types.Email `json:"email"`
+}
+
+func (q *Queries) GetUserOauthId(ctx context.Context, arg GetUserOauthIdParams) (types.NullableUserID, error) {
+	row := q.db.QueryRowContext(ctx, getUserOauthId, arg.Email)
+	var user_id types.NullableUserID
 	err := row.Scan(&user_id)
 	return user_id, err
 }
@@ -4276,11 +4603,15 @@ WHERE ssh_key_id = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserSshKey(ctx context.Context, sshKeyID int64) (UserSshKeys, error) {
-	row := q.db.QueryRowContext(ctx, getUserSshKey, sshKeyID)
+type GetUserSshKeyParams struct {
+	SSHKeyID int64 `json:"ssh_key_id"`
+}
+
+func (q *Queries) GetUserSshKey(ctx context.Context, arg GetUserSshKeyParams) (UserSshKeys, error) {
+	row := q.db.QueryRowContext(ctx, getUserSshKey, arg.SSHKeyID)
 	var i UserSshKeys
 	err := row.Scan(
-		&i.SshKeyID,
+		&i.SSHKeyID,
 		&i.UserID,
 		&i.PublicKey,
 		&i.KeyType,
@@ -4298,11 +4629,15 @@ WHERE fingerprint = ?
 LIMIT 1
 `
 
-func (q *Queries) GetUserSshKeyByFingerprint(ctx context.Context, fingerprint string) (UserSshKeys, error) {
-	row := q.db.QueryRowContext(ctx, getUserSshKeyByFingerprint, fingerprint)
+type GetUserSshKeyByFingerprintParams struct {
+	Fingerprint string `json:"fingerprint"`
+}
+
+func (q *Queries) GetUserSshKeyByFingerprint(ctx context.Context, arg GetUserSshKeyByFingerprintParams) (UserSshKeys, error) {
+	row := q.db.QueryRowContext(ctx, getUserSshKeyByFingerprint, arg.Fingerprint)
 	var i UserSshKeys
 	err := row.Scan(
-		&i.SshKeyID,
+		&i.SSHKeyID,
 		&i.UserID,
 		&i.PublicKey,
 		&i.KeyType,
@@ -4319,9 +4654,13 @@ SELECT verification_id, backup_id, verified_at, verified_by, restore_tested, che
 WHERE verification_id = ? LIMIT 1
 `
 
-func (q *Queries) GetVerification(ctx context.Context, verificationID string) (BackupVerifications, error) {
-	row := q.db.QueryRowContext(ctx, getVerification, verificationID)
-	var i BackupVerifications
+type GetVerificationParams struct {
+	VerificationID types.VerificationID `json:"verification_id"`
+}
+
+func (q *Queries) GetVerification(ctx context.Context, arg GetVerificationParams) (BackupVerification, error) {
+	row := q.db.QueryRowContext(ctx, getVerification, arg.VerificationID)
+	var i BackupVerification
 	err := row.Scan(
 		&i.VerificationID,
 		&i.BackupID,
@@ -4343,15 +4682,19 @@ WHERE backup_id = ?
 ORDER BY verified_at DESC
 `
 
-func (q *Queries) GetVerificationsByBackup(ctx context.Context, backupID string) ([]BackupVerifications, error) {
-	rows, err := q.db.QueryContext(ctx, getVerificationsByBackup, backupID)
+type GetVerificationsByBackupParams struct {
+	BackupID types.BackupID `json:"backup_id"`
+}
+
+func (q *Queries) GetVerificationsByBackup(ctx context.Context, arg GetVerificationsByBackupParams) ([]BackupVerification, error) {
+	rows, err := q.db.QueryContext(ctx, getVerificationsByBackup, arg.BackupID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BackupVerifications
+	items := []BackupVerification{}
 	for rows.Next() {
-		var i BackupVerifications
+		var i BackupVerification
 		if err := rows.Scan(
 			&i.VerificationID,
 			&i.BackupID,
@@ -4383,8 +4726,12 @@ SET completed_count = completed_count + 1
 WHERE backup_set_id = ?
 `
 
-func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, backupSetID string) error {
-	_, err := q.db.ExecContext(ctx, incrementBackupSetCompleted, backupSetID)
+type IncrementBackupSetCompletedParams struct {
+	BackupSetID types.BackupSetID `json:"backup_set_id"`
+}
+
+func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, arg IncrementBackupSetCompletedParams) error {
+	_, err := q.db.ExecContext(ctx, incrementBackupSetCompleted, arg.BackupSetID)
 	return err
 }
 
@@ -4399,7 +4746,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminContentData
+	items := []AdminContentData{}
 	for rows.Next() {
 		var i AdminContentData
 		if err := rows.Scan(
@@ -4433,13 +4780,17 @@ WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
 
-func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, adminRouteID int64) ([]AdminContentData, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoute, adminRouteID)
+type ListAdminContentDataByRouteParams struct {
+	AdminRouteID int64 `json:"admin_route_id"`
+}
+
+func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdminContentDataByRouteParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoute, arg.AdminRouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminContentData
+	items := []AdminContentData{}
 	for rows.Next() {
 		var i AdminContentData
 		if err := rows.Scan(
@@ -4478,7 +4829,7 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminContentFields
+	items := []AdminContentFields{}
 	for rows.Next() {
 		var i AdminContentFields
 		if err := rows.Scan(
@@ -4510,13 +4861,17 @@ WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 `
 
-func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, adminRouteID sql.NullInt64) ([]AdminContentFields, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRoute, adminRouteID)
+type ListAdminContentFieldsByRouteParams struct {
+	AdminRouteID sql.NullInt64 `json:"admin_route_id"`
+}
+
+func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdminContentFieldsByRouteParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRoute, arg.AdminRouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminContentFields
+	items := []AdminContentFields{}
 	for rows.Next() {
 		var i AdminContentFields
 		if err := rows.Scan(
@@ -4553,7 +4908,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypes
+	items := []AdminDatatypes{}
 	for rows.Next() {
 		var i AdminDatatypes
 		if err := rows.Scan(
@@ -4583,13 +4938,17 @@ SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_
 WHERE parent_id = ?
 `
 
-func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, parentID sql.NullInt64) ([]AdminDatatypes, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildren, parentID)
+type ListAdminDatatypeChildrenParams struct {
+	ParentID types.NullableContentID `json:"parent_id"`
+}
+
+func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDatatypeChildrenParams) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildren, arg.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypes
+	items := []AdminDatatypes{}
 	for rows.Next() {
 		var i AdminDatatypes
 		if err := rows.Scan(
@@ -4625,7 +4984,7 @@ func (q *Queries) ListAdminDatatypeField(ctx context.Context) ([]AdminDatatypesF
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypesFields
+	items := []AdminDatatypesFields{}
 	for rows.Next() {
 		var i AdminDatatypesFields
 		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
@@ -4648,13 +5007,17 @@ WHERE admin_datatype_id = ?
 ORDER BY id
 `
 
-func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, adminDatatypeID int64) ([]AdminDatatypesFields, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByDatatypeID, adminDatatypeID)
+type ListAdminDatatypeFieldByDatatypeIDParams struct {
+	AdminDatatypeID int64 `json:"admin_datatype_id"`
+}
+
+func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, arg ListAdminDatatypeFieldByDatatypeIDParams) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByDatatypeID, arg.AdminDatatypeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypesFields
+	items := []AdminDatatypesFields{}
 	for rows.Next() {
 		var i AdminDatatypesFields
 		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
@@ -4677,13 +5040,17 @@ WHERE admin_field_id = ?
 ORDER BY id
 `
 
-func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, adminFieldID int64) ([]AdminDatatypesFields, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByFieldID, adminFieldID)
+type ListAdminDatatypeFieldByFieldIDParams struct {
+	AdminFieldID int64 `json:"admin_field_id"`
+}
+
+func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, arg ListAdminDatatypeFieldByFieldIDParams) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByFieldID, arg.AdminFieldID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypesFields
+	items := []AdminDatatypesFields{}
 	for rows.Next() {
 		var i AdminDatatypesFields
 		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
@@ -4713,7 +5080,7 @@ func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypes
+	items := []AdminDatatypes{}
 	for rows.Next() {
 		var i AdminDatatypes
 		if err := rows.Scan(
@@ -4749,7 +5116,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypes
+	items := []AdminDatatypes{}
 	for rows.Next() {
 		var i AdminDatatypes
 		if err := rows.Scan(
@@ -4785,7 +5152,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminFields
+	items := []AdminFields{}
 	for rows.Next() {
 		var i AdminFields
 		if err := rows.Scan(
@@ -4818,13 +5185,17 @@ WHERE parent_id = ?
 ORDER BY admin_field_id
 `
 
-func (q *Queries) ListAdminFieldByParentID(ctx context.Context, parentID sql.NullInt64) ([]AdminFields, error) {
-	rows, err := q.db.QueryContext(ctx, listAdminFieldByParentID, parentID)
+type ListAdminFieldByParentIDParams struct {
+	ParentID types.NullableContentID `json:"parent_id"`
+}
+
+func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFieldByParentIDParams) ([]AdminFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldByParentID, arg.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminFields
+	items := []AdminFields{}
 	for rows.Next() {
 		var i AdminFields
 		if err := rows.Scan(
@@ -4861,7 +5232,7 @@ func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminRoutes
+	items := []AdminRoutes{}
 	for rows.Next() {
 		var i AdminRoutes
 		if err := rows.Scan(
@@ -4897,15 +5268,15 @@ type ListBackupSetsParams struct {
 	Offset int64 `json:"offset"`
 }
 
-func (q *Queries) ListBackupSets(ctx context.Context, arg ListBackupSetsParams) ([]BackupSets, error) {
+func (q *Queries) ListBackupSets(ctx context.Context, arg ListBackupSetsParams) ([]BackupSet, error) {
 	rows, err := q.db.QueryContext(ctx, listBackupSets, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BackupSets
+	items := []BackupSet{}
 	for rows.Next() {
-		var i BackupSets
+		var i BackupSet
 		if err := rows.Scan(
 			&i.BackupSetID,
 			&i.CreatedAt,
@@ -4940,15 +5311,15 @@ type ListBackupsParams struct {
 	Offset int64 `json:"offset"`
 }
 
-func (q *Queries) ListBackups(ctx context.Context, arg ListBackupsParams) ([]Backups, error) {
+func (q *Queries) ListBackups(ctx context.Context, arg ListBackupsParams) ([]Backup, error) {
 	rows, err := q.db.QueryContext(ctx, listBackups, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Backups
+	items := []Backup{}
 	for rows.Next() {
-		var i Backups
+		var i Backup
 		if err := rows.Scan(
 			&i.BackupID,
 			&i.NodeID,
@@ -4991,15 +5362,15 @@ type ListChangeEventsParams struct {
 	Offset int64 `json:"offset"`
 }
 
-func (q *Queries) ListChangeEvents(ctx context.Context, arg ListChangeEventsParams) ([]ChangeEvents, error) {
+func (q *Queries) ListChangeEvents(ctx context.Context, arg ListChangeEventsParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, listChangeEvents, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -5037,20 +5408,20 @@ LIMIT ? OFFSET ?
 `
 
 type ListChangeEventsByActionParams struct {
-	Action sql.NullString `json:"action"`
-	Limit  int64          `json:"limit"`
-	Offset int64          `json:"offset"`
+	Action types.Action `json:"action"`
+	Limit  int64        `json:"limit"`
+	Offset int64        `json:"offset"`
 }
 
-func (q *Queries) ListChangeEventsByAction(ctx context.Context, arg ListChangeEventsByActionParams) ([]ChangeEvents, error) {
+func (q *Queries) ListChangeEventsByAction(ctx context.Context, arg ListChangeEventsByActionParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, listChangeEventsByAction, arg.Action, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -5088,20 +5459,20 @@ LIMIT ? OFFSET ?
 `
 
 type ListChangeEventsByUserParams struct {
-	UserID sql.NullString `json:"user_id"`
-	Limit  int64          `json:"limit"`
-	Offset int64          `json:"offset"`
+	UserID types.NullableUserID `json:"user_id"`
+	Limit  int64                `json:"limit"`
+	Offset int64                `json:"offset"`
 }
 
-func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEventsByUserParams) ([]ChangeEvents, error) {
+func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEventsByUserParams) ([]ChangeEvent, error) {
 	rows, err := q.db.QueryContext(ctx, listChangeEventsByUser, arg.UserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ChangeEvents
+	items := []ChangeEvent{}
 	for rows.Next() {
-		var i ChangeEvents
+		var i ChangeEvent
 		if err := rows.Scan(
 			&i.EventID,
 			&i.HlcTimestamp,
@@ -5142,7 +5513,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ContentData
+	items := []ContentData{}
 	for rows.Next() {
 		var i ContentData
 		if err := rows.Scan(
@@ -5176,13 +5547,17 @@ WHERE route_id = ?
 ORDER BY content_data_id
 `
 
-func (q *Queries) ListContentDataByRoute(ctx context.Context, routeID int64) ([]ContentData, error) {
-	rows, err := q.db.QueryContext(ctx, listContentDataByRoute, routeID)
+type ListContentDataByRouteParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
+}
+
+func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDataByRouteParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataByRoute, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ContentData
+	items := []ContentData{}
 	for rows.Next() {
 		var i ContentData
 		if err := rows.Scan(
@@ -5221,7 +5596,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ContentFields
+	items := []ContentFields{}
 	for rows.Next() {
 		var i ContentFields
 		if err := rows.Scan(
@@ -5253,13 +5628,17 @@ WHERE route_id = ?
 ORDER BY content_field_id
 `
 
-func (q *Queries) ListContentFieldsByRoute(ctx context.Context, routeID sql.NullInt64) ([]ContentFields, error) {
-	rows, err := q.db.QueryContext(ctx, listContentFieldsByRoute, routeID)
+type ListContentFieldsByRouteParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
+}
+
+func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentFieldsByRouteParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByRoute, arg.RouteID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ContentFields
+	items := []ContentFields{}
 	for rows.Next() {
 		var i ContentFields
 		if err := rows.Scan(
@@ -5296,7 +5675,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Datatypes
+	items := []Datatypes{}
 	for rows.Next() {
 		var i Datatypes
 		if err := rows.Scan(
@@ -5327,13 +5706,17 @@ WHERE parent_id = ?
 ORDER BY datatype_id
 `
 
-func (q *Queries) ListDatatypeChildren(ctx context.Context, parentID sql.NullInt64) ([]AdminDatatypes, error) {
-	rows, err := q.db.QueryContext(ctx, listDatatypeChildren, parentID)
+type ListDatatypeChildrenParams struct {
+	ParentID types.NullableContentID `json:"parent_id"`
+}
+
+func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChildrenParams) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeChildren, arg.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AdminDatatypes
+	items := []AdminDatatypes{}
 	for rows.Next() {
 		var i AdminDatatypes
 		if err := rows.Scan(
@@ -5369,7 +5752,7 @@ func (q *Queries) ListDatatypeField(ctx context.Context) ([]DatatypesFields, err
 		return nil, err
 	}
 	defer rows.Close()
-	var items []DatatypesFields
+	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
 		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
@@ -5393,13 +5776,17 @@ WHERE datatype_id = ?
 ORDER BY id
 `
 
-func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, datatypeID int64) ([]DatatypesFields, error) {
-	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByDatatypeID, datatypeID)
+type ListDatatypeFieldByDatatypeIDParams struct {
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, arg ListDatatypeFieldByDatatypeIDParams) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByDatatypeID, arg.DatatypeID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []DatatypesFields
+	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
 		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
@@ -5423,13 +5810,17 @@ WHERE field_id = ?
 ORDER BY id
 `
 
-func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, fieldID int64) ([]DatatypesFields, error) {
-	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByFieldID, fieldID)
+type ListDatatypeFieldByFieldIDParams struct {
+	FieldID types.NullableFieldID `json:"field_id"`
+}
+
+func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, arg ListDatatypeFieldByFieldIDParams) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByFieldID, arg.FieldID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []DatatypesFields
+	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
 		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
@@ -5458,7 +5849,7 @@ func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Datatypes
+	items := []Datatypes{}
 	for rows.Next() {
 		var i Datatypes
 		if err := rows.Scan(
@@ -5495,7 +5886,7 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Datatypes
+	items := []Datatypes{}
 	for rows.Next() {
 		var i Datatypes
 		if err := rows.Scan(
@@ -5531,7 +5922,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Fields
+	items := []Fields{}
 	for rows.Next() {
 		var i Fields
 		if err := rows.Scan(
@@ -5563,13 +5954,17 @@ WHERE parent_id = ?
 ORDER BY field_id
 `
 
-func (q *Queries) ListFieldByDatatypeID(ctx context.Context, parentID sql.NullInt64) ([]Fields, error) {
-	rows, err := q.db.QueryContext(ctx, listFieldByDatatypeID, parentID)
+type ListFieldByDatatypeIDParams struct {
+	ParentID types.NullableContentID `json:"parent_id"`
+}
+
+func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByDatatypeIDParams) ([]Fields, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldByDatatypeID, arg.ParentID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Fields
+	items := []Fields{}
 	for rows.Next() {
 		var i Fields
 		if err := rows.Scan(
@@ -5606,7 +6001,7 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Media
+	items := []Media{}
 	for rows.Next() {
 		var i Media
 		if err := rows.Scan(
@@ -5619,7 +6014,7 @@ func (q *Queries) ListMedia(ctx context.Context) ([]Media, error) {
 			&i.Class,
 			&i.Mimetype,
 			&i.Dimensions,
-			&i.Url,
+			&i.URL,
 			&i.Srcset,
 			&i.AuthorID,
 			&i.DateCreated,
@@ -5649,7 +6044,7 @@ func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimensions, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []MediaDimensions
+	items := []MediaDimensions{}
 	for rows.Next() {
 		var i MediaDimensions
 		if err := rows.Scan(
@@ -5683,7 +6078,7 @@ func (q *Queries) ListPermission(ctx context.Context) ([]Permissions, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Permissions
+	items := []Permissions{}
 	for rows.Next() {
 		var i Permissions
 		if err := rows.Scan(
@@ -5717,7 +6112,7 @@ func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Roles
+	items := []Roles{}
 	for rows.Next() {
 		var i Roles
 		if err := rows.Scan(&i.RoleID, &i.Label, &i.Permissions); err != nil {
@@ -5746,7 +6141,7 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Routes
+	items := []Routes{}
 	for rows.Next() {
 		var i Routes
 		if err := rows.Scan(
@@ -5781,7 +6176,7 @@ func (q *Queries) ListSession(ctx context.Context) ([]Sessions, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Sessions
+	items := []Sessions{}
 	for rows.Next() {
 		var i Sessions
 		if err := rows.Scan(
@@ -5818,7 +6213,7 @@ func (q *Queries) ListTable(ctx context.Context) ([]Tables, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tables
+	items := []Tables{}
 	for rows.Next() {
 		var i Tables
 		if err := rows.Scan(&i.ID, &i.Label, &i.AuthorID); err != nil {
@@ -5845,14 +6240,14 @@ func (q *Queries) ListToken(ctx context.Context) ([]Tokens, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Tokens
+	items := []Tokens{}
 	for rows.Next() {
 		var i Tokens
 		if err := rows.Scan(
 			&i.ID,
 			&i.UserID,
 			&i.TokenType,
-			&i.Token,
+			&i.Tokens,
 			&i.IssuedAt,
 			&i.ExpiresAt,
 			&i.Revoked,
@@ -5881,7 +6276,7 @@ func (q *Queries) ListUser(ctx context.Context) ([]Users, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Users
+	items := []Users{}
 	for rows.Next() {
 		var i Users
 		if err := rows.Scan(
@@ -5890,7 +6285,7 @@ func (q *Queries) ListUser(ctx context.Context) ([]Users, error) {
 			&i.Name,
 			&i.Email,
 			&i.Hash,
-			&i.Role,
+			&i.Roles,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -5919,14 +6314,14 @@ func (q *Queries) ListUserOauth(ctx context.Context) ([]UserOauth, error) {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UserOauth
+	items := []UserOauth{}
 	for rows.Next() {
 		var i UserOauth
 		if err := rows.Scan(
-			&i.UserOauthID,
+			&i.UserOAuthID,
 			&i.UserID,
 			&i.OauthProvider,
-			&i.OauthProviderUserID,
+			&i.OAuthProviderUserID,
 			&i.AccessToken,
 			&i.RefreshToken,
 			&i.TokenExpiresAt,
@@ -5951,17 +6346,21 @@ WHERE user_id = ?
 ORDER BY date_created DESC
 `
 
-func (q *Queries) ListUserSshKeys(ctx context.Context, userID int64) ([]UserSshKeys, error) {
-	rows, err := q.db.QueryContext(ctx, listUserSshKeys, userID)
+type ListUserSshKeysParams struct {
+	UserID types.NullableUserID `json:"user_id"`
+}
+
+func (q *Queries) ListUserSshKeys(ctx context.Context, arg ListUserSshKeysParams) ([]UserSshKeys, error) {
+	rows, err := q.db.QueryContext(ctx, listUserSshKeys, arg.UserID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UserSshKeys
+	items := []UserSshKeys{}
 	for rows.Next() {
 		var i UserSshKeys
 		if err := rows.Scan(
-			&i.SshKeyID,
+			&i.SSHKeyID,
 			&i.UserID,
 			&i.PublicKey,
 			&i.KeyType,
@@ -5994,15 +6393,15 @@ type ListVerificationsParams struct {
 	Offset int64 `json:"offset"`
 }
 
-func (q *Queries) ListVerifications(ctx context.Context, arg ListVerificationsParams) ([]BackupVerifications, error) {
+func (q *Queries) ListVerifications(ctx context.Context, arg ListVerificationsParams) ([]BackupVerification, error) {
 	rows, err := q.db.QueryContext(ctx, listVerifications, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []BackupVerifications
+	items := []BackupVerification{}
 	for rows.Next() {
-		var i BackupVerifications
+		var i BackupVerification
 		if err := rows.Scan(
 			&i.VerificationID,
 			&i.BackupID,
@@ -6034,8 +6433,12 @@ SET consumed_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE event_id = ?
 `
 
-func (q *Queries) MarkEventConsumed(ctx context.Context, eventID string) error {
-	_, err := q.db.ExecContext(ctx, markEventConsumed, eventID)
+type MarkEventConsumedParams struct {
+	EventID types.EventID `json:"event_id"`
+}
+
+func (q *Queries) MarkEventConsumed(ctx context.Context, arg MarkEventConsumedParams) error {
+	_, err := q.db.ExecContext(ctx, markEventConsumed, arg.EventID)
 	return err
 }
 
@@ -6045,8 +6448,12 @@ SET synced_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE event_id = ?
 `
 
-func (q *Queries) MarkEventSynced(ctx context.Context, eventID string) error {
-	_, err := q.db.ExecContext(ctx, markEventSynced, eventID)
+type MarkEventSyncedParams struct {
+	EventID types.EventID `json:"event_id"`
+}
+
+func (q *Queries) MarkEventSynced(ctx context.Context, arg MarkEventSyncedParams) error {
+	_, err := q.db.ExecContext(ctx, markEventSynced, arg.EventID)
 	return err
 }
 
@@ -6056,14 +6463,18 @@ SET consumed_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE event_id IN (/*SLICE:event_ids*/?)
 `
 
-func (q *Queries) MarkEventsConsumedBatch(ctx context.Context, eventIds []string) error {
+type MarkEventsConsumedBatchParams struct {
+	EventIds []types.EventID `json:"event_ids"`
+}
+
+func (q *Queries) MarkEventsConsumedBatch(ctx context.Context, arg MarkEventsConsumedBatchParams) error {
 	query := markEventsConsumedBatch
 	var queryParams []interface{}
-	if len(eventIds) > 0 {
-		for _, v := range eventIds {
+	if len(arg.EventIds) > 0 {
+		for _, v := range arg.EventIds {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(eventIds))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(arg.EventIds))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:event_ids*/?", "NULL", 1)
 	}
@@ -6077,14 +6488,18 @@ SET synced_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
 WHERE event_id IN (/*SLICE:event_ids*/?)
 `
 
-func (q *Queries) MarkEventsSyncedBatch(ctx context.Context, eventIds []string) error {
+type MarkEventsSyncedBatchParams struct {
+	EventIds []types.EventID `json:"event_ids"`
+}
+
+func (q *Queries) MarkEventsSyncedBatch(ctx context.Context, arg MarkEventsSyncedBatchParams) error {
 	query := markEventsSyncedBatch
 	var queryParams []interface{}
-	if len(eventIds) > 0 {
-		for _, v := range eventIds {
+	if len(arg.EventIds) > 0 {
+		for _, v := range arg.EventIds {
 			queryParams = append(queryParams, v)
 		}
-		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(eventIds))[1:], 1)
+		query = strings.Replace(query, "/*SLICE:event_ids*/?", strings.Repeat(",?", len(arg.EventIds))[1:], 1)
 	} else {
 		query = strings.Replace(query, "/*SLICE:event_ids*/?", "NULL", 1)
 	}
@@ -6112,20 +6527,20 @@ RETURNING event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_i
 `
 
 type RecordChangeEventParams struct {
-	EventID      string         `json:"event_id"`
-	HlcTimestamp int64          `json:"hlc_timestamp"`
-	NodeID       string         `json:"node_id"`
-	TableName    string         `json:"table_name"`
-	RecordID     string         `json:"record_id"`
-	Operation    string         `json:"operation"`
-	Action       sql.NullString `json:"action"`
-	UserID       sql.NullString `json:"user_id"`
-	OldValues    sql.NullString `json:"old_values"`
-	NewValues    sql.NullString `json:"new_values"`
-	Metadata     sql.NullString `json:"metadata"`
+	EventID      types.EventID        `json:"event_id"`
+	HlcTimestamp types.HLC            `json:"hlc_timestamp"`
+	NodeID       types.NodeID         `json:"node_id"`
+	TableName    string               `json:"table_name"`
+	RecordID     string               `json:"record_id"`
+	Operation    types.Operation      `json:"operation"`
+	Action       types.Action         `json:"action"`
+	UserID       types.NullableUserID `json:"user_id"`
+	OldValues    sql.NullString       `json:"old_values"`
+	NewValues    sql.NullString       `json:"new_values"`
+	Metadata     sql.NullString       `json:"metadata"`
 }
 
-func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventParams) (ChangeEvents, error) {
+func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventParams) (ChangeEvent, error) {
 	row := q.db.QueryRowContext(ctx, recordChangeEvent,
 		arg.EventID,
 		arg.HlcTimestamp,
@@ -6139,7 +6554,7 @@ func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventPa
 		arg.NewValues,
 		arg.Metadata,
 	)
-	var i ChangeEvents
+	var i ChangeEvent
 	err := row.Scan(
 		&i.EventID,
 		&i.HlcTimestamp,
@@ -6171,13 +6586,13 @@ WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
-	ParentID           sql.NullInt64  `json:"parent_id"`
-	AdminRouteID       int64          `json:"admin_route_id"`
-	AdminDatatypeID    int64          `json:"admin_datatype_id"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
-	AdminContentDataID int64          `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID `json:"parent_id"`
+	AdminRouteID       int64                   `json:"admin_route_id"`
+	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID    `json:"author_id"`
+	DateCreated        types.Timestamp         `json:"date_created"`
+	DateModified       types.Timestamp         `json:"date_modified"`
+	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
 }
 
 func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminContentDataParams) error {
@@ -6206,14 +6621,14 @@ WHERE admin_content_field_id = ?
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullInt64  `json:"admin_route_id"`
-	AdminContentDataID  int64          `json:"admin_content_data_id"`
-	AdminFieldID        int64          `json:"admin_field_id"`
-	AdminFieldValue     string         `json:"admin_field_value"`
-	AuthorID            int64          `json:"author_id"`
-	DateCreated         sql.NullString `json:"date_created"`
-	DateModified        sql.NullString `json:"date_modified"`
-	AdminContentFieldID int64          `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullInt64             `json:"admin_route_id"`
+	AdminContentDataID  int64                     `json:"admin_content_data_id"`
+	AdminFieldID        int64                     `json:"admin_field_id"`
+	AdminFieldValue     string                    `json:"admin_field_value"`
+	AuthorID            types.NullableUserID      `json:"author_id"`
+	DateCreated         types.Timestamp           `json:"date_created"`
+	DateModified        types.Timestamp           `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
 }
 
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
@@ -6243,13 +6658,13 @@ SET parent_id = ?,
 `
 
 type UpdateAdminDatatypeParams struct {
-	ParentID        sql.NullInt64  `json:"parent_id"`
-	Label           string         `json:"label"`
-	Type            string         `json:"type"`
-	AuthorID        int64          `json:"author_id"`
-	DateCreated     sql.NullString `json:"date_created"`
-	DateModified    sql.NullString `json:"date_modified"`
-	AdminDatatypeID int64          `json:"admin_datatype_id"`
+	ParentID        types.NullableContentID `json:"parent_id"`
+	Label           string                  `json:"label"`
+	Type            string                  `json:"type"`
+	AuthorID        types.NullableUserID    `json:"author_id"`
+	DateCreated     types.Timestamp         `json:"date_created"`
+	DateModified    types.Timestamp         `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
 }
 
 func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDatatypeParams) error {
@@ -6297,14 +6712,14 @@ SET parent_id = ?,
 `
 
 type UpdateAdminFieldParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	AdminFieldID int64          `json:"admin_field_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
+	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
 }
 
 func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldParams) error {
@@ -6334,13 +6749,13 @@ SET slug = ?,
 `
 
 type UpdateAdminRouteParams struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	Slug_2       string         `json:"slug_2"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int64                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+	Slug_2       types.Slug           `json:"slug_2"`
 }
 
 func (q *Queries) UpdateAdminRoute(ctx context.Context, arg UpdateAdminRouteParams) error {
@@ -6363,9 +6778,9 @@ WHERE backup_id = ?
 `
 
 type UpdateBackupHLCParams struct {
-	HlcTimestamp   sql.NullInt64  `json:"hlc_timestamp"`
+	HlcTimestamp   types.HLC      `json:"hlc_timestamp"`
 	ReplicationLsn sql.NullString `json:"replication_lsn"`
-	BackupID       string         `json:"backup_id"`
+	BackupID       types.BackupID `json:"backup_id"`
 }
 
 func (q *Queries) UpdateBackupHLC(ctx context.Context, arg UpdateBackupHLCParams) error {
@@ -6380,10 +6795,10 @@ WHERE backup_set_id = ?
 `
 
 type UpdateBackupSetStatusParams struct {
-	Status         string         `json:"status"`
-	CompletedCount sql.NullInt64  `json:"completed_count"`
-	ErrorMessage   sql.NullString `json:"error_message"`
-	BackupSetID    string         `json:"backup_set_id"`
+	Status         types.BackupSetStatus `json:"status"`
+	CompletedCount sql.NullInt64         `json:"completed_count"`
+	ErrorMessage   sql.NullString        `json:"error_message"`
+	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
 }
 
 func (q *Queries) UpdateBackupSetStatus(ctx context.Context, arg UpdateBackupSetStatusParams) error {
@@ -6409,14 +6824,14 @@ WHERE backup_id = ?
 `
 
 type UpdateBackupStatusParams struct {
-	Status       string         `json:"status"`
-	CompletedAt  sql.NullString `json:"completed_at"`
-	DurationMs   sql.NullInt64  `json:"duration_ms"`
-	RecordCount  sql.NullInt64  `json:"record_count"`
-	SizeBytes    sql.NullInt64  `json:"size_bytes"`
-	Checksum     sql.NullString `json:"checksum"`
-	ErrorMessage sql.NullString `json:"error_message"`
-	BackupID     string         `json:"backup_id"`
+	Status       types.BackupStatus `json:"status"`
+	CompletedAt  sql.NullString     `json:"completed_at"`
+	DurationMs   sql.NullInt64      `json:"duration_ms"`
+	RecordCount  sql.NullInt64      `json:"record_count"`
+	SizeBytes    sql.NullInt64      `json:"size_bytes"`
+	Checksum     sql.NullString     `json:"checksum"`
+	ErrorMessage sql.NullString     `json:"error_message"`
+	BackupID     types.BackupID     `json:"backup_id"`
 }
 
 func (q *Queries) UpdateBackupStatus(ctx context.Context, arg UpdateBackupStatusParams) error {
@@ -6448,16 +6863,16 @@ WHERE content_data_id = ?
 `
 
 type UpdateContentDataParams struct {
-	RouteID       int64          `json:"route_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	ContentDataID int64          `json:"content_data_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
 }
 
 func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataParams) error {
@@ -6489,14 +6904,14 @@ WHERE content_field_id = ?
 `
 
 type UpdateContentFieldParams struct {
-	RouteID        sql.NullInt64  `json:"route_id"`
-	ContentDataID  int64          `json:"content_data_id"`
-	FieldID        int64          `json:"field_id"`
-	FieldValue     string         `json:"field_value"`
-	AuthorID       int64          `json:"author_id"`
-	DateCreated    sql.NullString `json:"date_created"`
-	DateModified   sql.NullString `json:"date_modified"`
-	ContentFieldID int64          `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 }
 
 func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentFieldParams) error {
@@ -6526,13 +6941,13 @@ SET parent_id = ?,
 `
 
 type UpdateDatatypeParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	DatatypeID   int64          `json:"datatype_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Type         string                  `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
+	DatatypeID   types.DatatypeID        `json:"datatype_id"`
 }
 
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
@@ -6556,9 +6971,9 @@ WHERE id = ?
 `
 
 type UpdateDatatypeFieldParams struct {
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
-	ID         int64 `json:"id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
+	ID         int64                    `json:"id"`
 }
 
 func (q *Queries) UpdateDatatypeField(ctx context.Context, arg UpdateDatatypeFieldParams) error {
@@ -6580,14 +6995,14 @@ SET parent_id = ?,
 `
 
 type UpdateFieldParams struct {
-	ParentID     sql.NullInt64  `json:"parent_id"`
-	Label        string         `json:"label"`
-	Data         string         `json:"data"`
-	Type         string         `json:"type"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	FieldID      int64          `json:"field_id"`
+	ParentID     types.NullableContentID `json:"parent_id"`
+	Label        string                  `json:"label"`
+	Data         string                  `json:"data"`
+	Type         types.FieldType         `json:"type"`
+	AuthorID     types.NullableUserID    `json:"author_id"`
+	DateCreated  types.Timestamp         `json:"date_created"`
+	DateModified types.Timestamp         `json:"date_modified"`
+	FieldID      types.FieldID           `json:"field_id"`
 }
 
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
@@ -6623,20 +7038,20 @@ WHERE media_id = ?
 `
 
 type UpdateMediaParams struct {
-	Name         sql.NullString `json:"name"`
-	DisplayName  sql.NullString `json:"display_name"`
-	Alt          sql.NullString `json:"alt"`
-	Caption      sql.NullString `json:"caption"`
-	Description  sql.NullString `json:"description"`
-	Class        sql.NullString `json:"class"`
-	Mimetype     sql.NullString `json:"mimetype"`
-	Dimensions   sql.NullString `json:"dimensions"`
-	Url          sql.NullString `json:"url"`
-	Srcset       sql.NullString `json:"srcset"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	MediaID      int64          `json:"media_id"`
+	Name         sql.NullString       `json:"name"`
+	DisplayName  sql.NullString       `json:"display_name"`
+	Alt          sql.NullString       `json:"alt"`
+	Caption      sql.NullString       `json:"caption"`
+	Description  sql.NullString       `json:"description"`
+	Class        sql.NullString       `json:"class"`
+	Mimetype     sql.NullString       `json:"mimetype"`
+	Dimensions   sql.NullString       `json:"dimensions"`
+	URL          types.URL            `json:"url"`
+	Srcset       sql.NullString       `json:"srcset"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+	MediaID      types.MediaID        `json:"media_id"`
 }
 
 func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error {
@@ -6649,7 +7064,7 @@ func (q *Queries) UpdateMedia(ctx context.Context, arg UpdateMediaParams) error 
 		arg.Class,
 		arg.Mimetype,
 		arg.Dimensions,
-		arg.Url,
+		arg.URL,
 		arg.Srcset,
 		arg.AuthorID,
 		arg.DateCreated,
@@ -6696,10 +7111,10 @@ WHERE permission_id = ?
 `
 
 type UpdatePermissionParams struct {
-	TableID      int64  `json:"table_id"`
-	Mode         int64  `json:"mode"`
-	Label        string `json:"label"`
-	PermissionID int64  `json:"permission_id"`
+	TableID      int64              `json:"table_id"`
+	Mode         int64              `json:"mode"`
+	Label        string             `json:"label"`
+	PermissionID types.PermissionID `json:"permission_id"`
 }
 
 func (q *Queries) UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error {
@@ -6720,9 +7135,9 @@ WHERE role_id = ?
 `
 
 type UpdateRoleParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-	RoleID      int64  `json:"role_id"`
+	Label       string       `json:"label"`
+	Permissions string       `json:"permissions"`
+	RoleID      types.RoleID `json:"role_id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
@@ -6743,13 +7158,13 @@ RETURNING route_id, slug, title, status, author_id, date_created, date_modified
 `
 
 type UpdateRouteParams struct {
-	Slug         string         `json:"slug"`
-	Title        string         `json:"title"`
-	Status       int64          `json:"status"`
-	AuthorID     int64          `json:"author_id"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	Slug_2       string         `json:"slug_2"`
+	Slug         types.Slug           `json:"slug"`
+	Title        string               `json:"title"`
+	Status       int64                `json:"status"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+	Slug_2       types.Slug           `json:"slug_2"`
 }
 
 func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error {
@@ -6778,14 +7193,14 @@ WHERE session_id = ?
 `
 
 type UpdateSessionParams struct {
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
-	SessionID   int64          `json:"session_id"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  sql.NullString       `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
+	SessionID   types.SessionID      `json:"session_id"`
 }
 
 func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) error {
@@ -6828,16 +7243,16 @@ WHERE id = ?
 `
 
 type UpdateTokenParams struct {
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
-	ID        int64  `json:"id"`
+	Tokens    string          `json:"token"`
+	IssuedAt  string          `json:"issued_at"`
+	ExpiresAt types.Timestamp `json:"expires_at"`
+	Revoked   bool            `json:"revoked"`
+	ID        int64           `json:"id"`
 }
 
 func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
 	_, err := q.db.ExecContext(ctx, updateToken,
-		arg.Token,
+		arg.Tokens,
 		arg.IssuedAt,
 		arg.ExpiresAt,
 		arg.Revoked,
@@ -6859,14 +7274,14 @@ WHERE user_id = ?
 `
 
 type UpdateUserParams struct {
-	Username     string         `json:"username"`
-	Name         string         `json:"name"`
-	Email        string         `json:"email"`
-	Hash         string         `json:"hash"`
-	Role         int64          `json:"role"`
-	DateCreated  sql.NullString `json:"date_created"`
-	DateModified sql.NullString `json:"date_modified"`
-	UserID       int64          `json:"user_id"`
+	Username     string          `json:"username"`
+	Name         string          `json:"name"`
+	Email        types.Email     `json:"email"`
+	Hash         string          `json:"hash"`
+	Roles        int64           `json:"role"`
+	DateCreated  types.Timestamp `json:"date_created"`
+	DateModified types.Timestamp `json:"date_modified"`
+	UserID       types.UserID    `json:"user_id"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
@@ -6875,7 +7290,7 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) error {
 		arg.Name,
 		arg.Email,
 		arg.Hash,
-		arg.Role,
+		arg.Roles,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.UserID,
@@ -6892,10 +7307,10 @@ WHERE user_oauth_id = ?
 `
 
 type UpdateUserOauthParams struct {
-	AccessToken    string `json:"access_token"`
-	RefreshToken   string `json:"refresh_token"`
-	TokenExpiresAt string `json:"token_expires_at"`
-	UserOauthID    int64  `json:"user_oauth_id"`
+	AccessToken    string            `json:"access_token"`
+	RefreshToken   string            `json:"refresh_token"`
+	TokenExpiresAt string            `json:"token_expires_at"`
+	UserOAuthID    types.UserOauthID `json:"user_oauth_id"`
 }
 
 func (q *Queries) UpdateUserOauth(ctx context.Context, arg UpdateUserOauthParams) error {
@@ -6903,7 +7318,7 @@ func (q *Queries) UpdateUserOauth(ctx context.Context, arg UpdateUserOauthParams
 		arg.AccessToken,
 		arg.RefreshToken,
 		arg.TokenExpiresAt,
-		arg.UserOauthID,
+		arg.UserOAuthID,
 	)
 	return err
 }
@@ -6916,11 +7331,11 @@ WHERE ssh_key_id = ?
 
 type UpdateUserSshKeyLabelParams struct {
 	Label    sql.NullString `json:"label"`
-	SshKeyID int64          `json:"ssh_key_id"`
+	SSHKeyID int64          `json:"ssh_key_id"`
 }
 
 func (q *Queries) UpdateUserSshKeyLabel(ctx context.Context, arg UpdateUserSshKeyLabelParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserSshKeyLabel, arg.Label, arg.SshKeyID)
+	_, err := q.db.ExecContext(ctx, updateUserSshKeyLabel, arg.Label, arg.SSHKeyID)
 	return err
 }
 
@@ -6932,11 +7347,11 @@ WHERE ssh_key_id = ?
 
 type UpdateUserSshKeyLastUsedParams struct {
 	LastUsed sql.NullString `json:"last_used"`
-	SshKeyID int64          `json:"ssh_key_id"`
+	SSHKeyID int64          `json:"ssh_key_id"`
 }
 
 func (q *Queries) UpdateUserSshKeyLastUsed(ctx context.Context, arg UpdateUserSshKeyLastUsedParams) error {
-	_, err := q.db.ExecContext(ctx, updateUserSshKeyLastUsed, arg.LastUsed, arg.SshKeyID)
+	_, err := q.db.ExecContext(ctx, updateUserSshKeyLastUsed, arg.LastUsed, arg.SSHKeyID)
 	return err
 }
 
@@ -6945,8 +7360,8 @@ SELECT admin_datatype_id, label FROM admin_datatypes
 `
 
 type UtilityGetAdminDatatypesRow struct {
-	AdminDatatypeID int64  `json:"admin_datatype_id"`
-	Label           string `json:"label"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	Label           string                `json:"label"`
 }
 
 func (q *Queries) UtilityGetAdminDatatypes(ctx context.Context) ([]UtilityGetAdminDatatypesRow, error) {
@@ -6955,7 +7370,7 @@ func (q *Queries) UtilityGetAdminDatatypes(ctx context.Context) ([]UtilityGetAdm
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetAdminDatatypesRow
+	items := []UtilityGetAdminDatatypesRow{}
 	for rows.Next() {
 		var i UtilityGetAdminDatatypesRow
 		if err := rows.Scan(&i.AdminDatatypeID, &i.Label); err != nil {
@@ -6977,8 +7392,8 @@ SELECT admin_route_id, slug FROM admin_routes
 `
 
 type UtilityGetAdminRoutesRow struct {
-	AdminRouteID int64  `json:"admin_route_id"`
-	Slug         string `json:"slug"`
+	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
+	Slug         types.Slug         `json:"slug"`
 }
 
 func (q *Queries) UtilityGetAdminRoutes(ctx context.Context) ([]UtilityGetAdminRoutesRow, error) {
@@ -6987,7 +7402,7 @@ func (q *Queries) UtilityGetAdminRoutes(ctx context.Context) ([]UtilityGetAdminR
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetAdminRoutesRow
+	items := []UtilityGetAdminRoutesRow{}
 	for rows.Next() {
 		var i UtilityGetAdminRoutesRow
 		if err := rows.Scan(&i.AdminRouteID, &i.Slug); err != nil {
@@ -7009,8 +7424,8 @@ SELECT admin_field_id, label FROM admin_fields
 `
 
 type UtilityGetAdminfieldsRow struct {
-	AdminFieldID int64  `json:"admin_field_id"`
-	Label        string `json:"label"`
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+	Label        string             `json:"label"`
 }
 
 func (q *Queries) UtilityGetAdminfields(ctx context.Context) ([]UtilityGetAdminfieldsRow, error) {
@@ -7019,7 +7434,7 @@ func (q *Queries) UtilityGetAdminfields(ctx context.Context) ([]UtilityGetAdminf
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetAdminfieldsRow
+	items := []UtilityGetAdminfieldsRow{}
 	for rows.Next() {
 		var i UtilityGetAdminfieldsRow
 		if err := rows.Scan(&i.AdminFieldID, &i.Label); err != nil {
@@ -7041,8 +7456,8 @@ SELECT datatype_id, label FROM datatypes
 `
 
 type UtilityGetDatatypesRow struct {
-	DatatypeID int64  `json:"datatype_id"`
-	Label      string `json:"label"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	Label      string           `json:"label"`
 }
 
 func (q *Queries) UtilityGetDatatypes(ctx context.Context) ([]UtilityGetDatatypesRow, error) {
@@ -7051,7 +7466,7 @@ func (q *Queries) UtilityGetDatatypes(ctx context.Context) ([]UtilityGetDatatype
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetDatatypesRow
+	items := []UtilityGetDatatypesRow{}
 	for rows.Next() {
 		var i UtilityGetDatatypesRow
 		if err := rows.Scan(&i.DatatypeID, &i.Label); err != nil {
@@ -7073,8 +7488,8 @@ SELECT field_id, label FROM fields
 `
 
 type UtilityGetFieldsRow struct {
-	FieldID int64  `json:"field_id"`
-	Label   string `json:"label"`
+	FieldID types.FieldID `json:"field_id"`
+	Label   string        `json:"label"`
 }
 
 func (q *Queries) UtilityGetFields(ctx context.Context) ([]UtilityGetFieldsRow, error) {
@@ -7083,7 +7498,7 @@ func (q *Queries) UtilityGetFields(ctx context.Context) ([]UtilityGetFieldsRow, 
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetFieldsRow
+	items := []UtilityGetFieldsRow{}
 	for rows.Next() {
 		var i UtilityGetFieldsRow
 		if err := rows.Scan(&i.FieldID, &i.Label); err != nil {
@@ -7105,7 +7520,7 @@ SELECT media_id, name FROM media
 `
 
 type UtilityGetMediaRow struct {
-	MediaID int64          `json:"media_id"`
+	MediaID types.MediaID  `json:"media_id"`
 	Name    sql.NullString `json:"name"`
 }
 
@@ -7115,7 +7530,7 @@ func (q *Queries) UtilityGetMedia(ctx context.Context) ([]UtilityGetMediaRow, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetMediaRow
+	items := []UtilityGetMediaRow{}
 	for rows.Next() {
 		var i UtilityGetMediaRow
 		if err := rows.Scan(&i.MediaID, &i.Name); err != nil {
@@ -7147,7 +7562,7 @@ func (q *Queries) UtilityGetMediaDimension(ctx context.Context) ([]UtilityGetMed
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetMediaDimensionRow
+	items := []UtilityGetMediaDimensionRow{}
 	for rows.Next() {
 		var i UtilityGetMediaDimensionRow
 		if err := rows.Scan(&i.MdID, &i.Label); err != nil {
@@ -7169,8 +7584,8 @@ SELECT route_id, slug FROM routes
 `
 
 type UtilityGetRouteRow struct {
-	RouteID int64  `json:"route_id"`
-	Slug    string `json:"slug"`
+	RouteID types.RouteID `json:"route_id"`
+	Slug    types.Slug    `json:"slug"`
 }
 
 func (q *Queries) UtilityGetRoute(ctx context.Context) ([]UtilityGetRouteRow, error) {
@@ -7179,7 +7594,7 @@ func (q *Queries) UtilityGetRoute(ctx context.Context) ([]UtilityGetRouteRow, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetRouteRow
+	items := []UtilityGetRouteRow{}
 	for rows.Next() {
 		var i UtilityGetRouteRow
 		if err := rows.Scan(&i.RouteID, &i.Slug); err != nil {
@@ -7211,7 +7626,7 @@ func (q *Queries) UtilityGetTables(ctx context.Context) ([]UtilityGetTablesRow, 
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetTablesRow
+	items := []UtilityGetTablesRow{}
 	for rows.Next() {
 		var i UtilityGetTablesRow
 		if err := rows.Scan(&i.ID, &i.Label); err != nil {
@@ -7233,8 +7648,8 @@ SELECT id, user_id  FROM tokens
 `
 
 type UtilityGetTokenRow struct {
-	ID     int64 `json:"id"`
-	UserID int64 `json:"user_id"`
+	ID     int64                `json:"id"`
+	UserID types.NullableUserID `json:"user_id"`
 }
 
 func (q *Queries) UtilityGetToken(ctx context.Context) ([]UtilityGetTokenRow, error) {
@@ -7243,7 +7658,7 @@ func (q *Queries) UtilityGetToken(ctx context.Context) ([]UtilityGetTokenRow, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetTokenRow
+	items := []UtilityGetTokenRow{}
 	for rows.Next() {
 		var i UtilityGetTokenRow
 		if err := rows.Scan(&i.ID, &i.UserID); err != nil {
@@ -7265,8 +7680,8 @@ SELECT user_id, username FROM users
 `
 
 type UtilityGetUsersRow struct {
-	UserID   int64  `json:"user_id"`
-	Username string `json:"username"`
+	UserID   types.UserID `json:"user_id"`
+	Username string       `json:"username"`
 }
 
 func (q *Queries) UtilityGetUsers(ctx context.Context) ([]UtilityGetUsersRow, error) {
@@ -7275,7 +7690,7 @@ func (q *Queries) UtilityGetUsers(ctx context.Context) ([]UtilityGetUsersRow, er
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityGetUsersRow
+	items := []UtilityGetUsersRow{}
 	for rows.Next() {
 		var i UtilityGetUsersRow
 		if err := rows.Scan(&i.UserID, &i.Username); err != nil {
@@ -7327,7 +7742,7 @@ func (q *Queries) UtilityRecordCOUNT(ctx context.Context) ([]UtilityRecordCOUNTR
 		return nil, err
 	}
 	defer rows.Close()
-	var items []UtilityRecordCOUNTRow
+	items := []UtilityRecordCOUNTRow{}
 	for rows.Next() {
 		var i UtilityRecordCOUNTRow
 		if err := rows.Scan(&i.TableName, &i.RowCount); err != nil {
