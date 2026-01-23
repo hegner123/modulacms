@@ -40,127 +40,10 @@ type UpdateAdminContentDataParams struct {
 	DateModified       types.Timestamp         `json:"date_modified"`
 	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
 }
-type AdminContentDataHistoryEntry struct {
-	AdminContentDataID int64          `json:"admin_content_data_id"`
-	ParentID           sql.NullInt64  `json:"parent_id"`
-	AdminRouteID       int64          `json:"admin_route_id"`
-	AdminDatatypeID    int64          `json:"admin_datatype_id"`
-	AuthorID           int64          `json:"author_id"`
-	DateCreated        sql.NullString `json:"date_created"`
-	DateModified       sql.NullString `json:"date_modified"`
-}
-type CreateAdminContentDataFormParams struct {
-	ParentID        string `json:"parent_id"`
-	AdminRouteID    string `json:"admin_route_id"`
-	AdminDatatypeID string `json:"admin_datatype_id"`
-	AuthorID        string `json:"author_id"`
-	DateCreated     string `json:"date_created"`
-	DateModified    string `json:"date_modified"`
-	History         string `json:"history"`
-}
-type UpdateAdminContentDataFormParams struct {
-	ParentID           string `json:"parent_id"`
-	AdminRouteID       string `json:"admin_route_id"`
-	AdminDatatypeID    string `json:"admin_datatype_id"`
-	AuthorID           string `json:"author_id"`
-	DateCreated        string `json:"date_created"`
-	DateModified       string `json:"date_modified"`
-	History            string `json:"history"`
-	AdminContentDataID string `json:"admin_content_data_id"`
-}
-type AdminContentDataJSON struct {
-	AdminContentDataID int64      `json:"admin_content_data_id"`
-	ParentID           NullInt64  `json:"parent_id"`
-	AdminRouteID       int64      `json:"admin_route_id"`
-	AdminDatatypeID    int64      `json:"admin_datatype_id"`
-	AuthorID           int64      `json:"author_id"`
-	DateCreated        NullString `json:"date_created"`
-	DateModified       NullString `json:"date_modified"`
-	History            NullString `json:"history"`
-}
-type CreateAdminContentDataParamsJSON struct {
-	ParentID        NullInt64  `json:"parent_id"`
-	AdminRouteID    int64      `json:"admin_route_id"`
-	AdminDatatypeID int64      `json:"admin_datatype_id"`
-	AuthorID        int64      `json:"author_id"`
-	DateCreated     NullString `json:"date_created"`
-	DateModified    NullString `json:"date_modified"`
-	History         NullString `json:"history"`
-}
-type UpdateAdminContentDataParamsJSON struct {
-	ParentID           NullInt64  `json:"parent_id"`
-	AdminRouteID       int64      `json:"admin_route_id"`
-	AdminDatatypeID    int64      `json:"admin_datatype_id"`
-	AuthorID           int64      `json:"author_id"`
-	DateCreated        NullString `json:"date_created"`
-	DateModified       NullString `json:"date_modified"`
-	History            NullString `json:"history"`
-	AdminContentDataID int64      `json:"admin_content_data_id"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-// /////////////////////////////
-// GENERIC
-// ////////////////////////////
-
-func MapCreateAdminContentDataParams(a CreateAdminContentDataFormParams) CreateAdminContentDataParams {
-	return CreateAdminContentDataParams{
-		ParentID:        StringToNullInt64(a.ParentID),
-		AdminRouteID:    StringToInt64(a.AdminRouteID),
-		AdminDatatypeID: StringToInt64(a.AdminDatatypeID),
-		AuthorID:        StringToInt64(a.AuthorID),
-		DateCreated:     StringToNullString(a.DateCreated),
-		DateModified:    StringToNullString(a.DateModified),
-		History:         StringToNullString(a.History),
-	}
-}
-func MapUpdateAdminContentDataParams(a UpdateAdminContentDataFormParams) UpdateAdminContentDataParams {
-	return UpdateAdminContentDataParams{
-		ParentID:           StringToNullInt64(a.ParentID),
-		AdminRouteID:       StringToInt64(a.AdminRouteID),
-		AdminDatatypeID:    StringToInt64(a.AdminDatatypeID),
-		AuthorID:           StringToInt64(a.AuthorID),
-		DateCreated:        StringToNullString(a.DateCreated),
-		DateModified:       StringToNullString(a.DateModified),
-		History:            StringToNullString(a.History),
-		AdminContentDataID: StringToInt64(a.AdminContentDataID),
-	}
-}
-func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
-	return StringAdminContentData{
-		AdminContentDataID: strconv.FormatInt(a.AdminContentDataID, 10),
-		ParentID:           utility.NullToString(a.ParentID),
-		AdminRouteID:       strconv.FormatInt(a.AdminRouteID, 10),
-		AdminDatatypeID:    strconv.FormatInt(a.AdminDatatypeID, 10),
-		AuthorID:           strconv.FormatInt(a.AuthorID, 10),
-		DateCreated:        utility.NullToString(a.DateCreated),
-		DateModified:       utility.NullToString(a.DateModified),
-		History:            utility.NullToString(a.History),
-	}
-}
-
-func CreateAdminContentJSONParams(a CreateAdminContentDataParamsJSON) CreateAdminContentDataParams {
-	return CreateAdminContentDataParams{
-		ParentID:        a.ParentID.NullInt64,
-		AdminRouteID:    a.AdminRouteID,
-		AdminDatatypeID: a.AdminDatatypeID,
-		AuthorID:        a.AuthorID,
-		DateCreated:     a.DateCreated.NullString,
-		DateModified:    a.DateModified.NullString,
-		History:         a.History.NullString,
-	}
-}
-
-func UpdateAdminContentDataJSONParams(a UpdateAdminContentDataParamsJSON) UpdateAdminContentDataParams {
-	return UpdateAdminContentDataParams{
-		ParentID:        a.ParentID.NullInt64,
-		AdminRouteID:    a.AdminRouteID,
-		AdminDatatypeID: a.AdminDatatypeID,
-		AuthorID:        a.AuthorID,
-		DateCreated:     a.DateCreated.NullString,
-		DateModified:    a.DateModified.NullString,
-		History:         a.History.NullString,
-	}
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
 ///////////////////////////////
 // SQLITE
@@ -229,18 +112,18 @@ func (d Database) CreateAdminContentDataTable() error {
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d Database) DeleteAdminContentData(id int64) error {
+func (d Database) DeleteAdminContentData(id types.AdminContentID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, id)
+	err := queries.DeleteAdminContentData(d.Context, mdb.DeleteAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete admin content data: %v\n ", id)
 	}
 
 	return nil
 }
-func (d Database) GetAdminContentData(id int64) (*AdminContentData, error) {
+func (d Database) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetAdminContentData(d.Context, id)
+	row, err := queries.GetAdminContentData(d.Context, mdb.GetAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -262,7 +145,7 @@ func (d Database) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d Database) ListAdminContentDataByRoute(id int64) (*[]AdminContentData, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, id)
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdb.ListAdminContentDataByRouteParams{AdminRouteID: id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
 	}
@@ -292,37 +175,34 @@ func (d Database) UpdateAdminContentData(s UpdateAdminContentDataParams) (*strin
 
 func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContentData {
 	return AdminContentData{
-		ParentID:           NullInt32ToNullInt64(a.ParentID),
-		AdminContentDataID: int64(a.AdminContentDataID),
+		AdminContentDataID: a.AdminContentDataID,
+		ParentID:           a.ParentID,
 		AdminRouteID:       int64(a.AdminRouteID),
 		AdminDatatypeID:    int64(a.AdminDatatypeID),
-		AuthorID:           int64(a.AuthorID),
-		DateCreated:        StringToNullString(a.DateCreated.String()),
-		DateModified:       StringToNullString(a.DateModified.String()),
-		History:            a.History,
+		AuthorID:           a.AuthorID,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
 	}
 }
 func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbm.CreateAdminContentDataParams {
 	return mdbm.CreateAdminContentDataParams{
-		ParentID:        NullInt64ToNullInt32(a.ParentID),
+		ParentID:        a.ParentID,
 		AdminRouteID:    int32(a.AdminRouteID),
 		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AuthorID:        int32(a.AuthorID),
-		DateCreated:     StringToNTime(a.DateCreated.String).Time,
-		DateModified:    StringToNTime(a.DateModified.String).Time,
-		History:         a.History,
+		AuthorID:        a.AuthorID,
+		DateCreated:     a.DateCreated,
+		DateModified:    a.DateModified,
 	}
 }
 func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbm.UpdateAdminContentDataParams {
 	return mdbm.UpdateAdminContentDataParams{
-		ParentID:           NullInt64ToNullInt32(a.ParentID),
+		ParentID:           a.ParentID,
 		AdminRouteID:       int32(a.AdminRouteID),
 		AdminDatatypeID:    int32(a.AdminDatatypeID),
-		AuthorID:           int32(a.AuthorID),
-		DateCreated:        StringToNTime(a.DateCreated.String).Time,
-		DateModified:       StringToNTime(a.DateModified.String).Time,
-		History:            a.History,
-		AdminContentDataID: int32(a.AdminContentDataID),
+		AuthorID:           a.AuthorID,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
+		AdminContentDataID: a.AdminContentDataID,
 	}
 }
 
@@ -354,18 +234,18 @@ func (d MysqlDatabase) CreateAdminContentDataTable() error {
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d MysqlDatabase) DeleteAdminContentData(id int64) error {
+func (d MysqlDatabase) DeleteAdminContentData(id types.AdminContentID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, int32(id))
+	err := queries.DeleteAdminContentData(d.Context, mdbm.DeleteAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete admin content data: %v ", id)
 	}
 
 	return nil
 }
-func (d MysqlDatabase) GetAdminContentData(id int64) (*AdminContentData, error) {
+func (d MysqlDatabase) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetAdminContentData(d.Context, int32(id))
+	row, err := queries.GetAdminContentData(d.Context, mdbm.GetAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -387,7 +267,7 @@ func (d MysqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d MysqlDatabase) ListAdminContentDataByRoute(id int64) (*[]AdminContentData, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, int32(id))
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbm.ListAdminContentDataByRouteParams{AdminRouteID: int32(id)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
 	}
@@ -417,37 +297,34 @@ func (d MysqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*
 
 func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentData {
 	return AdminContentData{
-		AdminContentDataID: int64(a.AdminContentDataID),
-		ParentID:           NullInt32ToNullInt64(a.ParentID),
+		AdminContentDataID: a.AdminContentDataID,
+		ParentID:           a.ParentID,
 		AdminRouteID:       int64(a.AdminRouteID),
 		AdminDatatypeID:    int64(a.AdminDatatypeID),
-		AuthorID:           int64(a.AuthorID),
-		DateCreated:        StringToNullString(NullTimeToString(a.DateCreated)),
-		DateModified:       StringToNullString(NullTimeToString(a.DateModified)),
-		History:            a.History,
+		AuthorID:           a.AuthorID,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
 	}
 }
 func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataParams) mdbp.CreateAdminContentDataParams {
 	return mdbp.CreateAdminContentDataParams{
-		ParentID:        NullInt64ToNullInt32(a.ParentID),
+		ParentID:        a.ParentID,
 		AdminRouteID:    int32(a.AdminRouteID),
 		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AuthorID:        int32(a.AuthorID),
-		DateCreated:     StringToNTime(a.DateCreated.String),
-		DateModified:    StringToNTime(a.DateModified.String),
-		History:         a.History,
+		AuthorID:        a.AuthorID,
+		DateCreated:     a.DateCreated,
+		DateModified:    a.DateModified,
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams) mdbp.UpdateAdminContentDataParams {
 	return mdbp.UpdateAdminContentDataParams{
-		ParentID:           NullInt64ToNullInt32(a.ParentID),
+		ParentID:           a.ParentID,
 		AdminRouteID:       int32(a.AdminRouteID),
 		AdminDatatypeID:    int32(a.AdminDatatypeID),
-		AuthorID:           int32(a.AuthorID),
-		DateCreated:        StringToNTime(a.DateCreated.String),
-		DateModified:       StringToNTime(a.DateModified.String),
-		History:            a.History,
-		AdminContentDataID: int32(a.AdminContentDataID),
+		AuthorID:           a.AuthorID,
+		DateCreated:        a.DateCreated,
+		DateModified:       a.DateModified,
+		AdminContentDataID: a.AdminContentDataID,
 	}
 }
 
@@ -476,18 +353,18 @@ func (d PsqlDatabase) CreateAdminContentDataTable() error {
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d PsqlDatabase) DeleteAdminContentData(id int64) error {
+func (d PsqlDatabase) DeleteAdminContentData(id types.AdminContentID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, int32(id))
+	err := queries.DeleteAdminContentData(d.Context, mdbp.DeleteAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete admin content data: %v ", id)
 	}
 
 	return nil
 }
-func (d PsqlDatabase) GetAdminContentData(id int64) (*AdminContentData, error) {
+func (d PsqlDatabase) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetAdminContentData(d.Context, int32(id))
+	row, err := queries.GetAdminContentData(d.Context, mdbp.GetAdminContentDataParams{AdminContentDataID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -509,7 +386,7 @@ func (d PsqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d PsqlDatabase) ListAdminContentDataByRoute(id int64) (*[]AdminContentData, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, int32(id))
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbp.ListAdminContentDataByRouteParams{AdminRouteID: int32(id)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
 	}
