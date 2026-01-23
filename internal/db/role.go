@@ -3,21 +3,22 @@ package db
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/sqlc-dev/pqtype"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
+
 type Roles struct {
-	RoleID      int64  `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	RoleID      types.RoleID `json:"role_id"`
+	Label       string       `json:"label"`
+	Permissions string       `json:"permissions"`
 }
 
 type CreateRoleParams struct {
@@ -26,60 +27,22 @@ type CreateRoleParams struct {
 }
 
 type UpdateRoleParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-	RoleID      int64  `json:"role_id"`
+	Label       string       `json:"label"`
+	Permissions string       `json:"permissions"`
+	RoleID      types.RoleID `json:"role_id"`
 }
 
-type RolesHistoryEntry struct {
-	RoleID      int64  `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-type CreateRoleFormParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-}
-
-type UpdateRoleFormParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
-	RoleID      string `json:"role_id"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
 ///////////////////////////////
-//GENERIC
+// SQLITE
 //////////////////////////////
 
-func MapCreateRoleParams(a CreateRoleFormParams) CreateRoleParams {
-	return CreateRoleParams{
-		Label:       a.Label,
-		Permissions: a.Permissions,
-	}
-}
+// MAPS
 
-func MapUpdateRoleParams(a UpdateRoleFormParams) UpdateRoleParams {
-	return UpdateRoleParams{
-		Label:       a.Label,
-		Permissions: a.Permissions,
-		RoleID:      StringToInt64(a.RoleID),
-	}
-}
-
-func MapStringRole(a Roles) StringRoles {
-	return StringRoles{
-		RoleID:      strconv.FormatInt(a.RoleID, 10),
-		Label:       a.Label,
-		Permissions: a.Permissions,
-	}
-}
-
-///////////////////////////////
-//SQLITE
-//////////////////////////////
-
-// /MAPS
 func (d Database) MapRole(a mdb.Roles) Roles {
 	return Roles{
 		RoleID:      a.RoleID,
@@ -103,7 +66,8 @@ func (d Database) MapUpdateRoleParams(a UpdateRoleParams) mdb.UpdateRoleParams {
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountRoles() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountRole(d.Context)
@@ -129,18 +93,18 @@ func (d Database) CreateRole(s CreateRoleParams) Roles {
 	return d.MapRole(row)
 }
 
-func (d Database) DeleteRole(id int64) error {
+func (d Database) DeleteRole(id types.RoleID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteRole(d.Context, int64(id))
+	err := queries.DeleteRole(d.Context, mdb.DeleteRoleParams{RoleID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Role: %v ", id)
+		return fmt.Errorf("failed to delete role: %v", id)
 	}
 	return nil
 }
 
-func (d Database) GetRole(id int64) (*Roles, error) {
+func (d Database) GetRole(id types.RoleID) (*Roles, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetRole(d.Context, id)
+	row, err := queries.GetRole(d.Context, mdb.GetRoleParams{RoleID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +116,7 @@ func (d Database) ListRoles() (*[]Roles, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Roles: %v\n", err)
+		return nil, fmt.Errorf("failed to get roles: %v", err)
 	}
 	res := []Roles{}
 	for _, v := range rows {
@@ -174,13 +138,14 @@ func (d Database) UpdateRole(s UpdateRoleParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 	return Roles{
-		RoleID:      int64(a.RoleID),
+		RoleID:      a.RoleID,
 		Label:       a.Label,
 		Permissions: a.Permissions.String,
 	}
@@ -197,11 +162,12 @@ func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRolePa
 	return mdbm.UpdateRoleParams{
 		Label:       a.Label,
 		Permissions: StringToNullString(a.Permissions),
-		RoleID:      int32(a.RoleID),
+		RoleID:      a.RoleID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountRoles() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountRole(d.Context)
@@ -231,18 +197,18 @@ func (d MysqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	return d.MapRole(row)
 }
 
-func (d MysqlDatabase) DeleteRole(id int64) error {
+func (d MysqlDatabase) DeleteRole(id types.RoleID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteRole(d.Context, int32(id))
+	err := queries.DeleteRole(d.Context, mdbm.DeleteRoleParams{RoleID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Role: %v ", id)
+		return fmt.Errorf("failed to delete role: %v", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetRole(id int64) (*Roles, error) {
+func (d MysqlDatabase) GetRole(id types.RoleID) (*Roles, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetRole(d.Context, int32(id))
+	row, err := queries.GetRole(d.Context, mdbm.GetRoleParams{RoleID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -254,7 +220,7 @@ func (d MysqlDatabase) ListRoles() (*[]Roles, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Roles: %v\n", err)
+		return nil, fmt.Errorf("failed to get roles: %v", err)
 	}
 	res := []Roles{}
 	for _, v := range rows {
@@ -276,13 +242,14 @@ func (d MysqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapRole(a mdbp.Roles) Roles {
 	return Roles{
-		RoleID:      int64(a.RoleID),
+		RoleID:      a.RoleID,
 		Label:       a.Label,
 		Permissions: string(a.Permissions.RawMessage),
 	}
@@ -299,11 +266,12 @@ func (d PsqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbp.UpdateRolePar
 	return mdbp.UpdateRoleParams{
 		Label:       a.Label,
 		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(a.Permissions)},
-		RoleID:      int32(a.RoleID),
+		RoleID:      a.RoleID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountRoles() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountRole(d.Context)
@@ -329,18 +297,18 @@ func (d PsqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	return d.MapRole(row)
 }
 
-func (d PsqlDatabase) DeleteRole(id int64) error {
+func (d PsqlDatabase) DeleteRole(id types.RoleID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteRole(d.Context, int32(id))
+	err := queries.DeleteRole(d.Context, mdbp.DeleteRoleParams{RoleID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Role: %v ", id)
+		return fmt.Errorf("failed to delete role: %v", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetRole(id int64) (*Roles, error) {
+func (d PsqlDatabase) GetRole(id types.RoleID) (*Roles, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetRole(d.Context, int32(id))
+	row, err := queries.GetRole(d.Context, mdbp.GetRoleParams{RoleID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +320,7 @@ func (d PsqlDatabase) ListRoles() (*[]Roles, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListRole(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get Roles: %v\n", err)
+		return nil, fmt.Errorf("failed to get roles: %v", err)
 	}
 	res := []Roles{}
 	for _, v := range rows {

@@ -564,3 +564,115 @@ func (n *NullableRoleID) UnmarshalJSON(data []byte) error {
 	n.Valid = true
 	return json.Unmarshal(data, &n.ID)
 }
+
+// NullableAdminDatatypeID represents a nullable foreign key to admin datatypes
+type NullableAdminDatatypeID struct {
+	ID    AdminDatatypeID
+	Valid bool
+}
+
+func (n NullableAdminDatatypeID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+func (n NullableAdminDatatypeID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+func (n NullableAdminDatatypeID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+func (n NullableAdminDatatypeID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+func (n *NullableAdminDatatypeID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+func (n NullableAdminDatatypeID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+func (n *NullableAdminDatatypeID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}
+
+// NullableAdminFieldID represents a nullable foreign key to admin fields
+type NullableAdminFieldID struct {
+	ID    AdminFieldID
+	Valid bool
+}
+
+func (n NullableAdminFieldID) Validate() error {
+	if n.Valid {
+		return n.ID.Validate()
+	}
+	return nil
+}
+
+func (n NullableAdminFieldID) String() string {
+	if !n.Valid {
+		return "null"
+	}
+	return n.ID.String()
+}
+
+func (n NullableAdminFieldID) IsZero() bool { return !n.Valid || n.ID == "" }
+
+func (n NullableAdminFieldID) Value() (driver.Value, error) {
+	if !n.Valid {
+		return nil, nil
+	}
+	return string(n.ID), nil
+}
+
+func (n *NullableAdminFieldID) Scan(value any) error {
+	if value == nil {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return n.ID.Scan(value)
+}
+
+func (n NullableAdminFieldID) MarshalJSON() ([]byte, error) {
+	if !n.Valid {
+		return []byte("null"), nil
+	}
+	return json.Marshal(n.ID)
+}
+
+func (n *NullableAdminFieldID) UnmarshalJSON(data []byte) error {
+	if string(data) == "null" {
+		n.Valid = false
+		n.ID = ""
+		return nil
+	}
+	n.Valid = true
+	return json.Unmarshal(data, &n.ID)
+}

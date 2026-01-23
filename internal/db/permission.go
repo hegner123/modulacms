@@ -2,21 +2,22 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 ///////////////////////////////
-//STRUCTS
+// STRUCTS
 //////////////////////////////
+
 type Permissions struct {
-	PermissionID int64  `json:"permission_id"`
-	TableID      int64  `json:"table_id"`
-	Mode         int64  `json:"mode"`
-	Label        string `json:"label"`
+	PermissionID types.PermissionID `json:"permission_id"`
+	TableID      int64              `json:"table_id"`
+	Mode         int64              `json:"mode"`
+	Label        string             `json:"label"`
 }
 
 type CreatePermissionParams struct {
@@ -26,67 +27,33 @@ type CreatePermissionParams struct {
 }
 
 type UpdatePermissionParams struct {
-	TableID      int64  `json:"table_id"`
-	Mode         int64  `json:"mode"`
-	Label        string `json:"label"`
-	PermissionID int64  `json:"permission_id"`
+	TableID      int64              `json:"table_id"`
+	Mode         int64              `json:"mode"`
+	Label        string             `json:"label"`
+	PermissionID types.PermissionID `json:"permission_id"`
 }
 
-type PermissionsHistoryEntry struct {
-	PermissionID int64  `json:"permission_id"`
-	TableID      int64  `json:"table_id"`
-	Mode         int64  `json:"mode"`
-	Label        string `json:"label"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-type CreatePermissionFormParams struct {
-	TableID string `json:"table_id"`
-	Mode    string `json:"mode"`
-	Label   string `json:"label"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
-type UpdatePermissionFormParams struct {
-	TableID      string `json:"table_id"`
-	Mode         string `json:"mode"`
-	Label        string `json:"label"`
-	PermissionID string `json:"permission_id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreatePermissionParams(a CreatePermissionFormParams) CreatePermissionParams {
-	return CreatePermissionParams{
-		TableID: StringToInt64(a.TableID),
-		Mode:    StringToInt64(a.Mode),
-		Label:   a.Label,
-	}
-}
-
-func MapUpdatePermissionParams(a UpdatePermissionFormParams) UpdatePermissionParams {
-	return UpdatePermissionParams{
-		TableID:      StringToInt64(a.TableID),
-		Mode:         StringToInt64(a.Mode),
-		Label:        a.Label,
-		PermissionID: StringToInt64(a.PermissionID),
-	}
-}
-
+// MapStringPermission converts Permissions to StringPermissions for table display
 func MapStringPermission(a Permissions) StringPermissions {
 	return StringPermissions{
-		PermissionID: strconv.FormatInt(a.PermissionID, 10),
-		TableID:      strconv.FormatInt(a.TableID, 10),
-		Mode:         strconv.FormatInt(a.Mode, 10),
+		PermissionID: a.PermissionID.String(),
+		TableID:      fmt.Sprintf("%d", a.TableID),
+		Mode:         fmt.Sprintf("%d", a.Mode),
 		Label:        a.Label,
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-///MAPS
+// MAPS
+
 func (d Database) MapPermission(a mdb.Permissions) Permissions {
 	return Permissions{
 		PermissionID: a.PermissionID,
@@ -113,7 +80,8 @@ func (d Database) MapUpdatePermissionParams(a UpdatePermissionParams) mdb.Update
 	}
 }
 
-///QUERIES
+// QUERIES
+
 func (d Database) CountPermissions() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountPermission(d.Context)
@@ -139,18 +107,18 @@ func (d Database) CreatePermission(s CreatePermissionParams) Permissions {
 	return d.MapPermission(row)
 }
 
-func (d Database) DeletePermission(id int64) error {
+func (d Database) DeletePermission(id types.PermissionID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeletePermission(d.Context, int64(id))
+	err := queries.DeletePermission(d.Context, mdb.DeletePermissionParams{PermissionID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Permission: %v ", id)
+		return fmt.Errorf("failed to delete permission: %v", id)
 	}
 	return nil
 }
 
-func (d Database) GetPermission(id int64) (*Permissions, error) {
+func (d Database) GetPermission(id types.PermissionID) (*Permissions, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetPermission(d.Context, id)
+	row, err := queries.GetPermission(d.Context, mdb.GetPermissionParams{PermissionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -184,13 +152,14 @@ func (d Database) UpdatePermission(s UpdatePermissionParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-///MAPS
+// MAPS
+
 func (d MysqlDatabase) MapPermission(a mdbm.Permissions) Permissions {
 	return Permissions{
-		PermissionID: int64(a.PermissionID),
+		PermissionID: a.PermissionID,
 		TableID:      int64(a.TableID),
 		Mode:         int64(a.Mode),
 		Label:        a.Label,
@@ -210,11 +179,12 @@ func (d MysqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbm.
 		TableID:      int32(a.TableID),
 		Mode:         int32(a.Mode),
 		Label:        a.Label,
-		PermissionID: int32(a.PermissionID),
+		PermissionID: a.PermissionID,
 	}
 }
 
-///QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountPermissions() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountPermission(d.Context)
@@ -244,18 +214,18 @@ func (d MysqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
 	return d.MapPermission(row)
 }
 
-func (d MysqlDatabase) DeletePermission(id int64) error {
+func (d MysqlDatabase) DeletePermission(id types.PermissionID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeletePermission(d.Context, int32(id))
+	err := queries.DeletePermission(d.Context, mdbm.DeletePermissionParams{PermissionID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Permission: %v ", id)
+		return fmt.Errorf("failed to delete permission: %v", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetPermission(id int64) (*Permissions, error) {
+func (d MysqlDatabase) GetPermission(id types.PermissionID) (*Permissions, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetPermission(d.Context, int32(id))
+	row, err := queries.GetPermission(d.Context, mdbm.GetPermissionParams{PermissionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -289,13 +259,14 @@ func (d MysqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, erro
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-///MAPS
+// MAPS
+
 func (d PsqlDatabase) MapPermission(a mdbp.Permissions) Permissions {
 	return Permissions{
-		PermissionID: int64(a.PermissionID),
+		PermissionID: a.PermissionID,
 		TableID:      int64(a.TableID),
 		Mode:         int64(a.Mode),
 		Label:        a.Label,
@@ -315,11 +286,12 @@ func (d PsqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbp.U
 		TableID:      int32(a.TableID),
 		Mode:         int32(a.Mode),
 		Label:        a.Label,
-		PermissionID: int32(a.PermissionID),
+		PermissionID: a.PermissionID,
 	}
 }
 
-///QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountPermissions() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountPermission(d.Context)
@@ -345,18 +317,18 @@ func (d PsqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
 	return d.MapPermission(row)
 }
 
-func (d PsqlDatabase) DeletePermission(id int64) error {
+func (d PsqlDatabase) DeletePermission(id types.PermissionID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeletePermission(d.Context, int32(id))
+	err := queries.DeletePermission(d.Context, mdbp.DeletePermissionParams{PermissionID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Permission: %v ", id)
+		return fmt.Errorf("failed to delete permission: %v", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetPermission(id int64) (*Permissions, error) {
+func (d PsqlDatabase) GetPermission(id types.PermissionID) (*Permissions, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetPermission(d.Context, int32(id))
+	row, err := queries.GetPermission(d.Context, mdbp.GetPermissionParams{PermissionID: id})
 	if err != nil {
 		return nil, err
 	}

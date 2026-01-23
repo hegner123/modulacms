@@ -3,183 +3,90 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
-	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
+
 type Sessions struct {
-	SessionID   int64          `json:"session_id"`
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
+	SessionID   types.SessionID      `json:"session_id"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  sql.NullString       `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
 }
 
 type CreateSessionParams struct {
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  sql.NullString       `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
 }
 
 type UpdateSessionParams struct {
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
-	SessionID   string         `json:"session_id"`
+	UserID      types.NullableUserID `json:"user_id"`
+	CreatedAt   types.Timestamp      `json:"created_at"`
+	ExpiresAt   types.Timestamp      `json:"expires_at"`
+	LastAccess  sql.NullString       `json:"last_access"`
+	IpAddress   sql.NullString       `json:"ip_address"`
+	UserAgent   sql.NullString       `json:"user_agent"`
+	SessionData sql.NullString       `json:"session_data"`
+	SessionID   types.SessionID      `json:"session_id"`
 }
 
-type SessionsHistoryEntry struct {
-	SessionID   int64          `json:"session_id"`
-	UserID      int64          `json:"user_id"`
-	CreatedAt   sql.NullString `json:"created_at"`
-	ExpiresAt   sql.NullString `json:"expires_at"`
-	LastAccess  sql.NullString `json:"last_access"`
-	IpAddress   sql.NullString `json:"ip_address"`
-	UserAgent   sql.NullString `json:"user_agent"`
-	SessionData sql.NullString `json:"session_data"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-type CreateSessionFormParams struct {
-	UserID      string `json:"user_id"`
-	CreatedAt   string `json:"created_at"`
-	ExpiresAt   string `json:"expires_at"`
-	LastAccess  string `json:"last_access"`
-	IpAddress   string `json:"ip_address"`
-	UserAgent   string `json:"user_agent"`
-	SessionData string `json:"session_data"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
-type UpdateSessionFormParams struct {
-	UserID      string `json:"user_id"`
-	CreatedAt   string `json:"created_at"`
-	ExpiresAt   string `json:"expires_at"`
-	LastAccess  string `json:"last_access"`
-	IpAddress   string `json:"ip_address"`
-	UserAgent   string `json:"user_agent"`
-	SessionData string `json:"session_data"`
-	SessionID   string `json:"session_id"`
-}
-type SessionsJSON struct {
-	SessionID   int64      `json:"session_id"`
-	UserID      int64      `json:"user_id"`
-	CreatedAt   NullString `json:"created_at"`
-	ExpiresAt   NullString `json:"expires_at"`
-	LastAccess  NullString `json:"last_access"`
-	IpAddress   NullString `json:"ip_address"`
-	UserAgent   NullString `json:"user_agent"`
-	SessionData NullString `json:"session_data"`
-}
-
-type CreateSessionParamsJSON struct {
-	UserID      int64      `json:"user_id"`
-	CreatedAt   NullString `json:"created_at"`
-	ExpiresAt   NullString `json:"expires_at"`
-	LastAccess  NullString `json:"last_access"`
-	IpAddress   NullString `json:"ip_address"`
-	UserAgent   NullString `json:"user_agent"`
-	SessionData NullString `json:"session_data"`
-}
-
-type UpdateSessionParamsJSON struct {
-	UserID      int64      `json:"user_id"`
-	CreatedAt   NullString `json:"created_at"`
-	ExpiresAt   NullString `json:"expires_at"`
-	LastAccess  NullString `json:"last_access"`
-	IpAddress   NullString `json:"ip_address"`
-	UserAgent   NullString `json:"user_agent"`
-	SessionData NullString `json:"session_data"`
-	SessionID   string     `json:"session_id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateSessionParams(a CreateSessionFormParams) CreateSessionParams {
-	return CreateSessionParams{
-		UserID:      StringToInt64(a.UserID),
-		CreatedAt:   StringToNullString(a.CreatedAt),
-		ExpiresAt:   StringToNullString(a.ExpiresAt),
-		LastAccess:  StringToNullString(a.LastAccess),
-		IpAddress:   StringToNullString(a.IpAddress),
-		UserAgent:   StringToNullString(a.UserAgent),
-		SessionData: StringToNullString(a.SessionData),
-	}
-}
-
-func MapUpdateSessionParams(a UpdateSessionFormParams) UpdateSessionParams {
-	return UpdateSessionParams{
-		UserID:      StringToInt64(a.UserID),
-		CreatedAt:   StringToNullString(a.CreatedAt),
-		ExpiresAt:   StringToNullString(a.ExpiresAt),
-		LastAccess:  StringToNullString(a.LastAccess),
-		IpAddress:   StringToNullString(a.IpAddress),
-		UserAgent:   StringToNullString(a.UserAgent),
-		SessionData: StringToNullString(a.SessionData),
-		SessionID:   a.SessionID,
-	}
-}
-
+// MapStringSession converts Sessions to StringSessions for table display
 func MapStringSession(a Sessions) StringSessions {
+	lastAccess := ""
+	if a.LastAccess.Valid {
+		lastAccess = a.LastAccess.String
+	}
+	ipAddress := ""
+	if a.IpAddress.Valid {
+		ipAddress = a.IpAddress.String
+	}
+	userAgent := ""
+	if a.UserAgent.Valid {
+		userAgent = a.UserAgent.String
+	}
+	sessionData := ""
+	if a.SessionData.Valid {
+		sessionData = a.SessionData.String
+	}
 	return StringSessions{
-		SessionID:   strconv.FormatInt(a.SessionID, 10),
-		UserID:      strconv.FormatInt(a.UserID, 10),
-		CreatedAt:   utility.NullToString(a.CreatedAt),
-		ExpiresAt:   utility.NullToString(a.ExpiresAt),
-		LastAccess:  utility.NullToString(a.LastAccess),
-		IpAddress:   utility.NullToString(a.IpAddress),
-		UserAgent:   utility.NullToString(a.UserAgent),
-		SessionData: utility.NullToString(a.SessionData),
-	}
-}
-func MapCreateSessionJSONParams(a CreateSessionParamsJSON) CreateSessionParams {
-	return CreateSessionParams{
-		UserID:      a.UserID,
-		CreatedAt:   a.CreatedAt.NullString,
-		ExpiresAt:   a.ExpiresAt.NullString,
-		LastAccess:  a.LastAccess.NullString,
-		IpAddress:   a.IpAddress.NullString,
-		UserAgent:   a.UserAgent.NullString,
-		SessionData: a.SessionData.NullString,
-	}
-}
-
-func MapUpdateSessionJSONParams(a UpdateSessionParamsJSON) UpdateSessionParams {
-	return UpdateSessionParams{
-		UserID:      a.UserID,
-		CreatedAt:   a.CreatedAt.NullString,
-		ExpiresAt:   a.ExpiresAt.NullString,
-		LastAccess:  a.LastAccess.NullString,
-		IpAddress:   a.IpAddress.NullString,
-		UserAgent:   a.UserAgent.NullString,
-		SessionData: a.SessionData.NullString,
-		SessionID:   a.SessionID,
+		SessionID:   a.SessionID.String(),
+		UserID:      a.UserID.String(),
+		CreatedAt:   a.CreatedAt.String(),
+		ExpiresAt:   a.ExpiresAt.String(),
+		LastAccess:  lastAccess,
+		IpAddress:   ipAddress,
+		UserAgent:   userAgent,
+		SessionData: sessionData,
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapSession(a mdb.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
@@ -214,11 +121,12 @@ func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessio
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   StringToInt64(a.SessionID),
+		SessionID:   a.SessionID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountSessions() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -246,18 +154,18 @@ func (d Database) CreateSession(s CreateSessionParams) (*Sessions, error) {
 	return &session, nil
 }
 
-func (d Database) DeleteSession(id int64) error {
+func (d Database) DeleteSession(id types.SessionID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteSession(d.Context, int64(id))
+	err := queries.DeleteSession(d.Context, mdb.DeleteSessionParams{SessionID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Session: %v ", id)
 	}
 	return nil
 }
 
-func (d Database) GetSession(id int64) (*Sessions, error) {
+func (d Database) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetSession(d.Context, id)
+	row, err := queries.GetSession(d.Context, mdb.GetSessionParams{SessionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -265,9 +173,9 @@ func (d Database) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d Database) GetSessionByUserId(userID int64) (*Sessions, error) {
+func (d Database) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetSessionByUserId(d.Context, userID)
+	rows, err := queries.GetSessionByUserId(d.Context, mdb.GetSessionByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -301,16 +209,17 @@ func (d Database) UpdateSession(s UpdateSessionParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	return Sessions{
-		SessionID:   int64(a.SessionID),
-		UserID:      int64(a.UserID),
-		CreatedAt:   StringToNullString(a.CreatedAt.String()),
-		ExpiresAt:   StringToNullString(a.ExpiresAt.String()),
+		SessionID:   a.SessionID,
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNullString(a.LastAccess.String()),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
@@ -320,9 +229,9 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 
 func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
 	return mdbm.CreateSessionParams{
-		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String).Time,
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String).Time,
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String).Time,
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
@@ -332,18 +241,19 @@ func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.Create
 
 func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.UpdateSessionParams {
 	return mdbm.UpdateSessionParams{
-		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String).Time,
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String).Time,
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String).Time,
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   int32(StringToInt64(a.SessionID)),
+		SessionID:   a.SessionID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountSessions() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -375,18 +285,18 @@ func (d MysqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
 	return &session, nil
 }
 
-func (d MysqlDatabase) DeleteSession(id int64) error {
+func (d MysqlDatabase) DeleteSession(id types.SessionID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteSession(d.Context, int32(id))
+	err := queries.DeleteSession(d.Context, mdbm.DeleteSessionParams{SessionID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Session: %v ", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetSession(id int64) (*Sessions, error) {
+func (d MysqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetSession(d.Context, int32(id))
+	row, err := queries.GetSession(d.Context, mdbm.GetSessionParams{SessionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -394,9 +304,9 @@ func (d MysqlDatabase) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) GetSessionByUserId(userID int64) (*Sessions, error) {
+func (d MysqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetSessionByUserId(d.Context, int32(userID))
+	rows, err := queries.GetSessionByUserId(d.Context, mdbm.GetSessionByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -430,16 +340,17 @@ func (d MysqlDatabase) UpdateSession(s UpdateSessionParams) (*string, error) {
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 	return Sessions{
-		SessionID:   int64(a.SessionID),
-		UserID:      int64(a.UserID),
-		CreatedAt:   StringToNullString(NullTimeToString(a.CreatedAt)),
-		ExpiresAt:   StringToNullString(NullTimeToString(a.ExpiresAt)),
+		SessionID:   a.SessionID,
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNullString(NullTimeToString(a.LastAccess)),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
@@ -449,9 +360,9 @@ func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 
 func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateSessionParams {
 	return mdbp.CreateSessionParams{
-		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String),
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String),
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
@@ -461,18 +372,19 @@ func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateS
 
 func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateSessionParams {
 	return mdbp.UpdateSessionParams{
-		UserID:      int32(a.UserID),
-		CreatedAt:   StringToNTime(a.CreatedAt.String),
-		ExpiresAt:   StringToNTime(a.ExpiresAt.String),
+		UserID:      a.UserID,
+		CreatedAt:   a.CreatedAt,
+		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String),
 		IpAddress:   a.IpAddress,
 		UserAgent:   a.UserAgent,
 		SessionData: a.SessionData,
-		SessionID:   int32(StringToInt64(a.SessionID)),
+		SessionID:   a.SessionID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountSessions() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -500,18 +412,18 @@ func (d PsqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
 	return &session, nil
 }
 
-func (d PsqlDatabase) DeleteSession(id int64) error {
+func (d PsqlDatabase) DeleteSession(id types.SessionID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteSession(d.Context, int32(id))
+	err := queries.DeleteSession(d.Context, mdbp.DeleteSessionParams{SessionID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Session: %v ", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetSession(id int64) (*Sessions, error) {
+func (d PsqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetSession(d.Context, int32(id))
+	row, err := queries.GetSession(d.Context, mdbp.GetSessionParams{SessionID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -519,9 +431,9 @@ func (d PsqlDatabase) GetSession(id int64) (*Sessions, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) GetSessionByUserId(userID int64) (*Sessions, error) {
+func (d PsqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetSessionByUserId(d.Context, int32(userID))
+	rows, err := queries.GetSessionByUserId(d.Context, mdbp.GetSessionByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}

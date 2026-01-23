@@ -59,12 +59,18 @@ ORDER BY admin_content_data_id;
 -- name: CreateAdminContentData :exec
 INSERT INTO admin_content_data (
     parent_id,
+    first_child_id,
+    next_sibling_id,
+    prev_sibling_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -79,6 +85,9 @@ SELECT * FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID();
 -- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
 SET parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,

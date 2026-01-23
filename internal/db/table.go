@@ -2,25 +2,25 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
+
 type Tables struct {
-	ID       int64  `json:"id"`
-	Label    string `json:"label"`
-	AuthorID int64  `json:"author_id"`
+	ID       int64                `json:"id"`
+	Label    string               `json:"label"`
+	AuthorID types.NullableUserID `json:"author_id"`
 }
 
 type CreateTableParams struct {
-	Label    string `json:"label"`
-	AuthorID int64  `json:"author_id"`
+	Label string `json:"label"`
 }
 
 type UpdateTableParams struct {
@@ -28,58 +28,37 @@ type UpdateTableParams struct {
 	ID    int64  `json:"id"`
 }
 
-type TablesHistoryEntry struct {
-	ID       int64  `json:"id"`
-	Label    string `json:"label"`
-	AuthorID int64  `json:"author_id"`
-}
+// FormParams and HistoryEntry variants removed - use typed params directly
 
-type CreateTableFormParams struct {
-	Label    string `json:"label"`
-	AuthorID string `json:"author_id"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
-type UpdateTableFormParams struct {
-	Label string `json:"label"`
-	ID    string `json:"id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateTableParams(a CreateTableFormParams) CreateTableParams {
-	return CreateTableParams{
-		Label:    a.Label,
-		AuthorID: StringToInt64(a.AuthorID),
-	}
-}
-
-func MapUpdateTableParams(a UpdateTableFormParams) UpdateTableParams {
-	return UpdateTableParams{
-		Label: a.Label,
-		ID:    StringToInt64(a.ID),
-	}
-}
-
+// MapStringTable converts Tables to StringTables for table display
 func MapStringTable(a Tables) StringTables {
 	return StringTables{
-		ID:       strconv.FormatInt(a.ID, 10),
+		ID:       fmt.Sprintf("%d", a.ID),
 		Label:    a.Label,
-		AuthorID: strconv.FormatInt(a.AuthorID, 10),
+		AuthorID: a.AuthorID.String(),
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapTable(a mdb.Tables) Tables {
 	return Tables{
 		ID:       a.ID,
 		Label:    a.Label,
 		AuthorID: a.AuthorID,
+	}
+}
+
+func (d Database) MapCreateTableParams(a CreateTableParams) mdb.CreateTableParams {
+	return mdb.CreateTableParams{
+		Label: a.Label,
 	}
 }
 
@@ -90,7 +69,8 @@ func (d Database) MapUpdateTableParams(a UpdateTableParams) mdb.UpdateTableParam
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountTables() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -103,15 +83,13 @@ func (d Database) CountTables() (*int64, error) {
 func (d Database) CreateTableTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateTablesTable(d.Context)
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
-func (d Database) CreateTable(label string) Tables {
+func (d Database) CreateTable(s CreateTableParams) Tables {
+	params := d.MapCreateTableParams(s)
 	queries := mdb.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, label)
+	row, err := queries.CreateTable(d.Context, params)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
@@ -124,16 +102,16 @@ func (d Database) CreateTable(label string) Tables {
 
 func (d Database) DeleteTable(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteTable(d.Context, int64(id))
+	err := queries.DeleteTable(d.Context, mdb.DeleteTableParams{ID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Table: %v ", id)
+		return fmt.Errorf("failed to delete table: %v", id)
 	}
 	return nil
 }
 
 func (d Database) GetTable(id int64) (*Tables, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetTable(d.Context, id)
+	row, err := queries.GetTable(d.Context, mdb.GetTableParams{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -167,15 +145,22 @@ func (d Database) UpdateTable(s UpdateTableParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapTable(a mdbm.Tables) Tables {
 	return Tables{
 		ID:       int64(a.ID),
 		Label:    a.Label,
-		AuthorID: int64(a.AuthorID),
+		AuthorID: a.AuthorID,
+	}
+}
+
+func (d MysqlDatabase) MapCreateTableParams(a CreateTableParams) mdbm.CreateTableParams {
+	return mdbm.CreateTableParams{
+		Label: a.Label,
 	}
 }
 
@@ -186,7 +171,8 @@ func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTabl
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountTables() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -202,9 +188,10 @@ func (d MysqlDatabase) CreateTableTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateTable(label string) Tables {
+func (d MysqlDatabase) CreateTable(s CreateTableParams) Tables {
+	params := d.MapCreateTableParams(s)
 	queries := mdbm.New(d.Connection)
-	err := queries.CreateTable(d.Context, label)
+	err := queries.CreateTable(d.Context, params)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
@@ -221,16 +208,16 @@ func (d MysqlDatabase) CreateTable(label string) Tables {
 
 func (d MysqlDatabase) DeleteTable(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteTable(d.Context, int32(id))
+	err := queries.DeleteTable(d.Context, mdbm.DeleteTableParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Table: %v ", id)
+		return fmt.Errorf("failed to delete table: %v", id)
 	}
 	return nil
 }
 
 func (d MysqlDatabase) GetTable(id int64) (*Tables, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetTable(d.Context, int32(id))
+	row, err := queries.GetTable(d.Context, mdbm.GetTableParams{ID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -264,15 +251,22 @@ func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapTable(a mdbp.Tables) Tables {
 	return Tables{
 		ID:       int64(a.ID),
 		Label:    a.Label,
-		AuthorID: int64(a.AuthorID),
+		AuthorID: a.AuthorID,
+	}
+}
+
+func (d PsqlDatabase) MapCreateTableParams(a CreateTableParams) mdbp.CreateTableParams {
+	return mdbp.CreateTableParams{
+		Label: a.Label,
 	}
 }
 
@@ -283,7 +277,8 @@ func (d PsqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbp.UpdateTable
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountTables() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountTables(d.Context)
@@ -299,9 +294,10 @@ func (d PsqlDatabase) CreateTableTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateTable(label string) Tables {
+func (d PsqlDatabase) CreateTable(s CreateTableParams) Tables {
+	params := d.MapCreateTableParams(s)
 	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, label)
+	row, err := queries.CreateTable(d.Context, params)
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
@@ -314,16 +310,16 @@ func (d PsqlDatabase) CreateTable(label string) Tables {
 
 func (d PsqlDatabase) DeleteTable(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteTable(d.Context, int32(id))
+	err := queries.DeleteTable(d.Context, mdbp.DeleteTableParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete Table: %v ", id)
+		return fmt.Errorf("failed to delete table: %v", id)
 	}
 	return nil
 }
 
 func (d PsqlDatabase) GetTable(id int64) (*Tables, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetTable(d.Context, int32(id))
+	row, err := queries.GetTable(d.Context, mdbp.GetTableParams{ID: int32(id)})
 	if err != nil {
 		return nil, err
 	}

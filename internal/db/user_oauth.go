@@ -2,121 +2,76 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
+
 type UserOauth struct {
-	UserOauthID         int64  `json:"user_oauth_id"`
-	UserID              int64  `json:"user_id"`
-	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
-	AccessToken         string `json:"access_token"`
-	RefreshToken        string `json:"refresh_token"`
-	TokenExpiresAt      string `json:"token_expires_at"`
-	DateCreated         string `json:"date_created"`
+	UserOauthID         types.UserOauthID    `json:"user_oauth_id"`
+	UserID              types.NullableUserID `json:"user_id"`
+	OauthProvider       string               `json:"oauth_provider"`
+	OauthProviderUserID string               `json:"oauth_provider_user_id"`
+	AccessToken         string               `json:"access_token"`
+	RefreshToken        string               `json:"refresh_token"`
+	TokenExpiresAt      string               `json:"token_expires_at"`
+	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
 type CreateUserOauthParams struct {
-	UserID              int64  `json:"user_id"`
-	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
-	AccessToken         string `json:"access_token"`
-	RefreshToken        string `json:"refresh_token"`
-	TokenExpiresAt      string `json:"token_expires_at"`
-	DateCreated         string `json:"date_created"`
+	UserID              types.NullableUserID `json:"user_id"`
+	OauthProvider       string               `json:"oauth_provider"`
+	OauthProviderUserID string               `json:"oauth_provider_user_id"`
+	AccessToken         string               `json:"access_token"`
+	RefreshToken        string               `json:"refresh_token"`
+	TokenExpiresAt      string               `json:"token_expires_at"`
+	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
 type UpdateUserOauthParams struct {
-	AccessToken    string `json:"access_token"`
-	RefreshToken   string `json:"refresh_token"`
-	TokenExpiresAt string `json:"token_expires_at"`
-	UserOauthID    int64  `json:"user_oauth_id"`
+	AccessToken    string            `json:"access_token"`
+	RefreshToken   string            `json:"refresh_token"`
+	TokenExpiresAt string            `json:"token_expires_at"`
+	UserOauthID    types.UserOauthID `json:"user_oauth_id"`
 }
 
-type UserOauthHistoryEntry struct {
-	UserOauthID         int64  `json:"user_oauth_id"`
-	UserID              int64  `json:"user_id"`
-	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
-	AccessToken         string `json:"access_token"`
-	RefreshToken        string `json:"refresh_token"`
-	TokenExpiresAt      string `json:"token_expires_at"`
-	DateCreated         string `json:"date_created"`
-}
+// FormParams and HistoryEntry variants removed - use typed params directly
 
-type CreateUserOauthFormParams struct {
-	UserID              string `json:"user_id"`
-	OauthProvider       string `json:"oauth_provider"`
-	OauthProviderUserID string `json:"oauth_provider_user_id"`
-	AccessToken         string `json:"access_token"`
-	RefreshToken        string `json:"refresh_token"`
-	TokenExpiresAt      string `json:"token_expires_at"`
-	DateCreated         string `json:"date_created"`
-}
+// GENERIC section removed - FormParams deprecated
+// Use types package for direct type conversion
 
-type UpdateUserOauthFormParams struct {
-	AccessToken    string `json:"access_token"`
-	RefreshToken   string `json:"refresh_token"`
-	TokenExpiresAt string `json:"token_expires_at"`
-	UserOauthID    string `json:"user_oauth_id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateUserOauthParams(a CreateUserOauthFormParams) CreateUserOauthParams {
-	return CreateUserOauthParams{
-		UserID:              StringToInt64(a.UserID),
-		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
-		AccessToken:         a.AccessToken,
-		RefreshToken:        a.RefreshToken,
-		TokenExpiresAt:      a.TokenExpiresAt,
-		DateCreated:         a.DateCreated,
-	}
-}
-
-func MapUpdateUserOauthParams(a UpdateUserOauthFormParams) UpdateUserOauthParams {
-	return UpdateUserOauthParams{
-		AccessToken:    a.AccessToken,
-		RefreshToken:   a.RefreshToken,
-		TokenExpiresAt: a.TokenExpiresAt,
-		UserOauthID:    StringToInt64(a.UserOauthID),
-	}
-}
-
+// MapStringUserOauth converts UserOauth to StringUserOauth for table display
 func MapStringUserOauth(a UserOauth) StringUserOauth {
 	return StringUserOauth{
-		UserOauthID:         strconv.FormatInt(a.UserOauthID, 10),
-		UserID:              strconv.FormatInt(a.UserID, 10),
+		UserOauthID:         a.UserOauthID.String(),
+		UserID:              a.UserID.String(),
 		OauthProvider:       a.OauthProvider,
 		OauthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      a.TokenExpiresAt,
-		DateCreated:         a.DateCreated,
+		DateCreated:         a.DateCreated.String(),
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
 	return UserOauth{
-		UserOauthID:         a.UserOauthID,
+		UserOauthID:         a.UserOAuthID,
 		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OauthProviderUserID: a.OAuthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      a.TokenExpiresAt,
@@ -128,7 +83,7 @@ func (d Database) MapCreateUserOauthParams(a CreateUserOauthParams) mdb.CreateUs
 	return mdb.CreateUserOauthParams{
 		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OAuthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      a.TokenExpiresAt,
@@ -141,11 +96,12 @@ func (d Database) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdb.UpdateUs
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
 		TokenExpiresAt: a.TokenExpiresAt,
-		UserOauthID:    a.UserOauthID,
+		UserOAuthID:    a.UserOauthID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountUserOauths() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -173,18 +129,18 @@ func (d Database) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
 	return &userOauth, nil
 }
 
-func (d Database) DeleteUserOauth(id int64) error {
+func (d Database) DeleteUserOauth(id types.UserOauthID) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, int64(id))
+	err := queries.DeleteUserOauth(d.Context, mdb.DeleteUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
 	}
 	return nil
 }
 
-func (d Database) GetUserOauth(id int64) (*UserOauth, error) {
+func (d Database) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetUserOauth(d.Context, id)
+	row, err := queries.GetUserOauth(d.Context, mdb.GetUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -192,9 +148,9 @@ func (d Database) GetUserOauth(id int64) (*UserOauth, error) {
 	return &res, nil
 }
 
-func (d Database) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+func (d Database) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetUserOauthByUserId(d.Context, userID)
+	row, err := queries.GetUserOauthByUserId(d.Context, mdb.GetUserOauthByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -206,7 +162,7 @@ func (d Database) GetUserOauthByProviderID(provider string, providerUserID strin
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdb.GetUserOauthByProviderIDParams{
 		OauthProvider:       provider,
-		OauthProviderUserID: providerUserID,
+		OAuthProviderUserID: providerUserID,
 	})
 	if err != nil {
 		return nil, err
@@ -241,32 +197,33 @@ func (d Database) UpdateUserOauth(s UpdateUserOauthParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 	return UserOauth{
-		UserOauthID:         int64(a.UserOauthID),
-		UserID:              int64(a.UserID),
+		UserOauthID:         a.UserOAuthID,
+		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OauthProviderUserID: a.OAuthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      a.TokenExpiresAt.String(),
-		DateCreated:         a.DateCreated.String(),
+		DateCreated:         a.DateCreated,
 	}
 }
 
 func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.CreateUserOauthParams {
 	return mdbm.CreateUserOauthParams{
-		UserID:              int32(a.UserID),
+		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OAuthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      ParseTime(a.TokenExpiresAt),
-		DateCreated:         ParseTime(a.DateCreated),
+		DateCreated:         a.DateCreated,
 	}
 }
 
@@ -275,11 +232,12 @@ func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.Up
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
 		TokenExpiresAt: ParseTime(a.TokenExpiresAt),
-		UserOauthID:    int32(a.UserOauthID),
+		UserOAuthID:    a.UserOauthID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountUserOauths() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -311,18 +269,18 @@ func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, err
 	return &userOauth, nil
 }
 
-func (d MysqlDatabase) DeleteUserOauth(id int64) error {
+func (d MysqlDatabase) DeleteUserOauth(id types.UserOauthID) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, int32(id))
+	err := queries.DeleteUserOauth(d.Context, mdbm.DeleteUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
+func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserOauth(d.Context, int32(id))
+	row, err := queries.GetUserOauth(d.Context, mdbm.GetUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -330,9 +288,9 @@ func (d MysqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+func (d MysqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserOauthByUserId(d.Context, int32(userID))
+	row, err := queries.GetUserOauthByUserId(d.Context, mdbm.GetUserOauthByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +302,7 @@ func (d MysqlDatabase) GetUserOauthByProviderID(provider string, providerUserID 
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdbm.GetUserOauthByProviderIDParams{
 		OauthProvider:       provider,
-		OauthProviderUserID: providerUserID,
+		OAuthProviderUserID: providerUserID,
 	})
 	if err != nil {
 		return nil, err
@@ -379,32 +337,33 @@ func (d MysqlDatabase) UpdateUserOauth(s UpdateUserOauthParams) (*string, error)
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 	return UserOauth{
-		UserOauthID:         int64(a.UserOauthID),
-		UserID:              int64(a.UserID),
+		UserOauthID:         a.UserOAuthID,
+		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OauthProviderUserID: a.OAuthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      a.TokenExpiresAt.String(),
-		DateCreated:         a.DateCreated.String(),
+		DateCreated:         a.DateCreated,
 	}
 }
 
 func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.CreateUserOauthParams {
 	return mdbp.CreateUserOauthParams{
-		UserID:              int32(a.UserID),
+		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
-		OauthProviderUserID: a.OauthProviderUserID,
+		OAuthProviderUserID: a.OauthProviderUserID,
 		AccessToken:         a.AccessToken,
 		RefreshToken:        a.RefreshToken,
 		TokenExpiresAt:      ParseTime(a.TokenExpiresAt),
-		DateCreated:         ParseTime(a.DateCreated),
+		DateCreated:         a.DateCreated,
 	}
 }
 
@@ -413,11 +372,12 @@ func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.Upd
 		AccessToken:    a.AccessToken,
 		RefreshToken:   a.RefreshToken,
 		TokenExpiresAt: ParseTime(a.TokenExpiresAt),
-		UserOauthID:    int32(a.UserOauthID),
+		UserOAuthID:    a.UserOauthID,
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountUserOauths() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -445,18 +405,18 @@ func (d PsqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, erro
 	return &userOauth, nil
 }
 
-func (d PsqlDatabase) DeleteUserOauth(id int64) error {
+func (d PsqlDatabase) DeleteUserOauth(id types.UserOauthID) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, int32(id))
+	err := queries.DeleteUserOauth(d.Context, mdbp.DeleteUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
+func (d PsqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserOauth(d.Context, int32(id))
+	row, err := queries.GetUserOauth(d.Context, mdbp.GetUserOauthParams{UserOAuthID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -464,9 +424,9 @@ func (d PsqlDatabase) GetUserOauth(id int64) (*UserOauth, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) GetUserOauthByUserId(userID int64) (*UserOauth, error) {
+func (d PsqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserOauthByUserId(d.Context, int32(userID))
+	row, err := queries.GetUserOauthByUserId(d.Context, mdbp.GetUserOauthByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -478,7 +438,7 @@ func (d PsqlDatabase) GetUserOauthByProviderID(provider string, providerUserID s
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdbp.GetUserOauthByProviderIDParams{
 		OauthProvider:       provider,
-		OauthProviderUserID: providerUserID,
+		OAuthProviderUserID: providerUserID,
 	})
 	if err != nil {
 		return nil, err

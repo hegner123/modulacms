@@ -58,29 +58,38 @@ ORDER BY admin_content_data_id;
 -- name: CreateAdminContentData :one
 INSERT INTO admin_content_data (
     parent_id,
+    first_child_id,
+    next_sibling_id,
+    prev_sibling_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
     date_created,
     date_modified
-) VALUES (    
+) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7,
+    $8,
+    $9
 ) RETURNING *;
 
 -- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
 SET parent_id = $1,
-    admin_route_id = $2,
-    admin_datatype_id =$3,
-    author_id = $4,
-    date_created = $5,
-    date_modified = $6
-WHERE admin_content_data_id = $7;
+    first_child_id = $2,
+    next_sibling_id = $3,
+    prev_sibling_id = $4,
+    admin_route_id = $5,
+    admin_datatype_id = $6,
+    author_id = $7,
+    date_created = $8,
+    date_modified = $9
+WHERE admin_content_data_id = $10;
 
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data

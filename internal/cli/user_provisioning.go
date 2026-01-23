@@ -7,13 +7,14 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/crypto/bcrypt"
 )
 
 // UserProvisioningCompleteMsg is sent when user provisioning is complete
 type UserProvisioningCompleteMsg struct {
-	UserID int64
+	UserID types.UserID
 	Error  error
 }
 
@@ -126,7 +127,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 		}
 
 		// Check if user already exists
-		existingUser, _ := dbc.GetUserByEmail(email)
+		existingUser, _ := dbc.GetUserByEmail(types.Email(email))
 		if existingUser != nil {
 			return UserProvisioningCompleteMsg{
 				Error: fmt.Errorf("user with email %s already exists", email),
@@ -134,15 +135,15 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 		}
 
 		// Create the user
-		now := time.Now().Format(time.RFC3339)
+		now := types.TimestampNow()
 		user, err := dbc.CreateUser(db.CreateUserParams{
 			Username:     username,
 			Name:         name,
-			Email:        email,
+			Email:        types.Email(email),
 			Hash:         string(hashedPassword),
 			Role:         2, // Default role (adjust as needed)
-			DateCreated:  db.StringToNullString(now),
-			DateModified: db.StringToNullString(now),
+			DateCreated:  now,
+			DateModified: now,
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("Failed to create user", err)

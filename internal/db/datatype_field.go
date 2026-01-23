@@ -2,81 +2,54 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 ///////////////////////////////
-//STRUCTS
+// STRUCTS
 //////////////////////////////
 
 type DatatypeFields struct {
-	ID         int64 `json:"id"`
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
+	ID         int64                   `json:"id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
 }
 
 type CreateDatatypeFieldParams struct {
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
 }
 
 type UpdateDatatypeFieldParams struct {
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
-	ID         int64 `json:"id"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.NullableFieldID    `json:"field_id"`
+	ID         int64                    `json:"id"`
 }
 
-type DatatypeFieldHistoryEntry struct {
-	DatatypeID int64 `json:"datatype_id"`
-	FieldID    int64 `json:"field_id"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-type CreateDatatypeFieldFormParams struct {
-	DatatypeID string `json:"datatype_id"`
-	FieldID    string `json:"field_id"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
-type UpdateDatatypeFieldFormParams struct {
-	DatatypeID string `json:"datatype_id"`
-	FieldID    string `json:"field_id"`
-	ID         string `json:"id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateDatatypeFieldParams(a CreateDatatypeFieldFormParams) CreateDatatypeFieldParams {
-	return CreateDatatypeFieldParams{
-		DatatypeID: StringToInt64(a.DatatypeID),
-		FieldID:    StringToInt64(a.FieldID),
-	}
-}
-
-func MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldFormParams) UpdateDatatypeFieldParams {
-	return UpdateDatatypeFieldParams{
-		DatatypeID: StringToInt64(a.DatatypeID),
-		FieldID:    StringToInt64(a.FieldID),
-	}
-}
-
+// MapStringDatatypeField converts DatatypeFields to StringDatatypeFields for table display
 func MapStringDatatypeField(a DatatypeFields) StringDatatypeFields {
 	return StringDatatypeFields{
-		ID:         strconv.FormatInt(a.ID, 10),
-		DatatypeID: strconv.FormatInt(a.DatatypeID, 10),
-		FieldID:    strconv.FormatInt(a.FieldID, 10),
+		ID:         fmt.Sprintf("%d", a.ID),
+		DatatypeID: a.DatatypeID.String(),
+		FieldID:    a.FieldID.String(),
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapDatatypeField(a mdb.DatatypesFields) DatatypeFields {
 	return DatatypeFields{
 		ID:         a.ID,
@@ -100,7 +73,8 @@ func (d Database) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) mdb.
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountDatatypeFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountDatatypeField(d.Context)
@@ -128,9 +102,9 @@ func (d Database) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeField
 
 func (d Database) DeleteDatatypeField(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, int64(id))
+	err := queries.DeleteDatatypeField(d.Context, mdb.DeleteDatatypeFieldParams{ID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete DatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete DatatypeField: %v", id)
 	}
 	return nil
 }
@@ -139,20 +113,7 @@ func (d Database) ListDatatypeField() (*[]DatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
-	}
-	res := []DatatypeFields{}
-	for _, v := range rows {
-		m := d.MapDatatypeField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-func (d Database) ListDatatypeFieldByDatatypeID(id int64) (*[]DatatypeFields, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -162,11 +123,25 @@ func (d Database) ListDatatypeFieldByDatatypeID(id int64) (*[]DatatypeFields, er
 	return &res, nil
 }
 
-func (d Database) ListDatatypeFieldByFieldID(id int64) (*[]DatatypeFields, error) {
+func (d Database) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, id)
+	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdb.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdb.ListDatatypeFieldByFieldIDParams{FieldID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -188,35 +163,36 @@ func (d Database) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, err
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapDatatypeField(a mdbm.DatatypesFields) DatatypeFields {
 	return DatatypeFields{
 		ID:         int64(a.ID),
-		DatatypeID: int64(a.DatatypeID),
-		FieldID:    int64(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 	}
 }
 
 func (d MysqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbm.CreateDatatypeFieldParams {
 	return mdbm.CreateDatatypeFieldParams{
-
-		DatatypeID: int32(a.DatatypeID),
-		FieldID:    int32(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) mdbm.UpdateDatatypeFieldParams {
 	return mdbm.UpdateDatatypeFieldParams{
-		DatatypeID: int32(a.DatatypeID),
-		FieldID:    int32(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 		ID:         int32(a.ID),
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountDatatypeFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountDatatypeField(d.Context)
@@ -248,9 +224,9 @@ func (d MysqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) Datatype
 
 func (d MysqlDatabase) DeleteDatatypeField(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, int32(id))
+	err := queries.DeleteDatatypeField(d.Context, mdbm.DeleteDatatypeFieldParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete DatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete DatatypeField: %v", id)
 	}
 	return nil
 }
@@ -259,7 +235,7 @@ func (d MysqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -269,11 +245,11 @@ func (d MysqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListDatatypeFieldByFieldID(id int64) (*[]DatatypeFields, error) {
+func (d MysqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, int32(id))
+	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdbm.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -283,11 +259,11 @@ func (d MysqlDatabase) ListDatatypeFieldByFieldID(id int64) (*[]DatatypeFields, 
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id int64) (*[]DatatypeFields, error) {
+func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, int32(id))
+	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdbm.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -309,35 +285,36 @@ func (d MysqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapDatatypeField(a mdbp.DatatypesFields) DatatypeFields {
 	return DatatypeFields{
 		ID:         int64(a.ID),
-		DatatypeID: int64(a.DatatypeID),
-		FieldID:    int64(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 	}
 }
 
 func (d PsqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbp.CreateDatatypeFieldParams {
 	return mdbp.CreateDatatypeFieldParams{
-
-		DatatypeID: int32(a.DatatypeID),
-		FieldID:    int32(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 	}
 }
 
 func (d PsqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) mdbp.UpdateDatatypeFieldParams {
 	return mdbp.UpdateDatatypeFieldParams{
-		DatatypeID: int32(a.DatatypeID),
-		FieldID:    int32(a.FieldID),
+		DatatypeID: a.DatatypeID,
+		FieldID:    a.FieldID,
 		ID:         int32(a.ID),
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountDatatypeFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountDatatypeField(d.Context)
@@ -365,9 +342,9 @@ func (d PsqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeF
 
 func (d PsqlDatabase) DeleteDatatypeField(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, int32(id))
+	err := queries.DeleteDatatypeField(d.Context, mdbp.DeleteDatatypeFieldParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete DatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete DatatypeField: %v", id)
 	}
 	return nil
 }
@@ -376,7 +353,7 @@ func (d PsqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -386,11 +363,11 @@ func (d PsqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id int64) (*[]DatatypeFields, error) {
+func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, int32(id))
+	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdbp.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -400,11 +377,11 @@ func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id int64) (*[]DatatypeFields
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListDatatypeFieldByFieldID(id int64) (*[]DatatypeFields, error) {
+func (d PsqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, int32(id))
+	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdbp.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get DatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {

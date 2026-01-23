@@ -7,6 +7,7 @@ import (
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 ///////////////////////////////
@@ -14,43 +15,43 @@ import (
 //////////////////////////////
 
 type GetRouteTreeByRouteIDRow struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeLabel string         `json:"datatype_label"`
-	DatatypeType  string         `json:"datatype_type"`
-	FieldLabel    string         `json:"field_label"`
-	FieldType     string         `json:"field_type"`
-	FieldValue    sql.NullString `json:"field_value"`
+	ContentDataID types.ContentID         `json:"content_data_id"`
+	ParentID      types.NullableContentID `json:"parent_id"`
+	FirstChildID  sql.NullInt64           `json:"first_child_id"`
+	NextSiblingID sql.NullInt64           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64           `json:"prev_sibling_id"`
+	DatatypeLabel string                  `json:"datatype_label"`
+	DatatypeType  string                  `json:"datatype_type"`
+	FieldLabel    string                  `json:"field_label"`
+	FieldType     types.FieldType         `json:"field_type"`
+	FieldValue    sql.NullString          `json:"field_value"`
 }
 type GetContentTreeByRouteRow struct {
-	ContentDataID int64          `json:"content_data_id"`
-	ParentID      sql.NullInt64  `json:"parent_id"`
-	FirstChildID  sql.NullInt64  `json:"first_child_id"`
-	NextSiblingID sql.NullInt64  `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64  `json:"prev_sibling_id"`
-	DatatypeID    int64          `json:"datatype_id"`
-	RouteID       int64          `json:"route_id"`
-	AuthorID      int64          `json:"author_id"`
-	DateCreated   sql.NullString `json:"date_created"`
-	DateModified  sql.NullString `json:"date_modified"`
-	DatatypeLabel string         `json:"datatype_label"`
-	DatatypeType  string         `json:"datatype_type"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  sql.NullInt64            `json:"first_child_id"`
+	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
+	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
 }
 
 type GetContentFieldsByRouteRow struct {
-	ContentDataID int64  `json:"content_data_id"`
-	FieldID       int64  `json:"field_id"`
-	FieldValue    string `json:"field_value"`
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+	FieldID       types.NullableFieldID   `json:"field_id"`
+	FieldValue    string                  `json:"field_value"`
 }
 
 type GetFieldDefinitionsByRouteRow struct {
-	FieldID    int64  `json:"field_id"`
-	Label      string `json:"label"`
-	Type       string `json:"type"`
-	DatatypeID int64  `json:"datatype_id"`
+	FieldID    types.FieldID            `json:"field_id"`
+	Label      string                   `json:"label"`
+	Type       types.FieldType          `json:"type"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 }
 
 ///////////////////////////////
@@ -109,9 +110,9 @@ func (d Database) MapGetContentFieldsByRouteRow(a mdb.GetContentFieldsByRouteRow
 	}
 }
 
-func (d Database) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRouteIDRow, error) {
+func (d Database) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetRouteTreeByRouteID(d.Context, routeID)
+	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdb.GetRouteTreeByRouteIDParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get route tree: %v", err)
 	}
@@ -123,9 +124,9 @@ func (d Database) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRouteID
 	return &res, nil
 }
 
-func (d Database) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRouteRow, error) {
+func (d Database) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetContentTreeByRoute(d.Context, id)
+	rows, err := queries.GetContentTreeByRoute(d.Context, mdb.GetContentTreeByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content tree: %v", err)
 	}
@@ -137,9 +138,9 @@ func (d Database) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRouteRow, 
 	return &res, nil
 }
 
-func (d Database) GetFieldDefinitionsByRoute(id int64) (*[]GetFieldDefinitionsByRouteRow, error) {
+func (d Database) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, id)
+	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdb.GetFieldDefinitionsByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get field definitions: %v", err)
 	}
@@ -151,9 +152,9 @@ func (d Database) GetFieldDefinitionsByRoute(id int64) (*[]GetFieldDefinitionsBy
 	return &res, nil
 }
 
-func (d Database) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByRouteRow, error) {
+func (d Database) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetContentFieldsByRoute(d.Context, id)
+	rows, err := queries.GetContentFieldsByRoute(d.Context, mdb.GetContentFieldsByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
 	}
@@ -171,8 +172,8 @@ func (d Database) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByRouteR
 
 func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDRow) GetRouteTreeByRouteIDRow {
 	return GetRouteTreeByRouteIDRow{
-		ContentDataID: int64(a.ContentDataID),
-		ParentID:      NullInt32ToNullInt64(a.ParentID),
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
 		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
 		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
 		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
@@ -187,16 +188,16 @@ func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDR
 // GetContentTreeByRouteRow
 func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
 	return GetContentTreeByRouteRow{
-		ContentDataID: int64(a.ContentDataID),
-		ParentID:      NullInt32ToNullInt64(a.ParentID),
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
 		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
 		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
 		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
-		DatatypeID:    int64(a.DatatypeID.Int32),
-		RouteID:       int64(a.RouteID.Int32),
-		AuthorID:      int64(a.AuthorID),
-		DateCreated:   TimeToNullString(a.DateCreated),
-		DateModified:  TimeToNullString(a.DateModified),
+		DatatypeID:    a.DatatypeID,
+		RouteID:       a.RouteID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}
@@ -205,25 +206,25 @@ func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteR
 // GetFieldDefinitionsByRouteRow
 func (d MysqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbm.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
 	return GetFieldDefinitionsByRouteRow{
+		FieldID:    a.FieldID,
 		Label:      a.Label,
-		FieldID:    int64(a.FieldID),
 		Type:       a.Type,
-		DatatypeID: int64(a.DatatypeID),
+		DatatypeID: a.DatatypeID,
 	}
 }
 
 // GetContentFieldsByRouteRow
 func (d MysqlDatabase) MapGetContentFieldsByRouteRow(a mdbm.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
 	return GetContentFieldsByRouteRow{
-		ContentDataID: int64(a.ContentDataID),
-		FieldID:       int64(a.FieldID),
+		ContentDataID: a.ContentDataID,
+		FieldID:       a.FieldID,
 		FieldValue:    a.FieldValue,
 	}
 }
 
-func (d MysqlDatabase) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRouteIDRow, error) {
+func (d MysqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetRouteTreeByRouteID(d.Context, Int64ToNullInt32(routeID))
+	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdbm.GetRouteTreeByRouteIDParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get route tree: %v", err)
 	}
@@ -234,9 +235,9 @@ func (d MysqlDatabase) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRo
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRouteRow, error) {
+func (d MysqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetContentTreeByRoute(d.Context, Int64ToNullInt32(id))
+	rows, err := queries.GetContentTreeByRoute(d.Context, mdbm.GetContentTreeByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get route tree: %v", err)
 	}
@@ -246,15 +247,32 @@ func (d MysqlDatabase) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRoute
 		res = append(res, m)
 	}
 	return &res, nil
-
 }
-func (d MysqlDatabase) GetFieldDefinitionsByRoute(id int64) (*[]GetFieldDefinitionsByRouteRow, error) {
-
-	return nil, nil
+func (d MysqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdbm.GetFieldDefinitionsByRouteParams{RouteID: routeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get field definitions: %v", err)
+	}
+	res := []GetFieldDefinitionsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetFieldDefinitionsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
-func (d MysqlDatabase) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByRouteRow, error) {
-
-	return nil, nil
+func (d MysqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetContentFieldsByRoute(d.Context, mdbm.GetContentFieldsByRouteParams{RouteID: routeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []GetContentFieldsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetContentFieldsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
 
 ///////////////////////////////
@@ -263,8 +281,8 @@ func (d MysqlDatabase) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByR
 
 func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRow) GetRouteTreeByRouteIDRow {
 	return GetRouteTreeByRouteIDRow{
-		ContentDataID: int64(a.ContentDataID),
-		ParentID:      NullInt32ToNullInt64(a.ParentID),
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
 		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
 		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
 		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
@@ -275,45 +293,45 @@ func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRo
 		FieldValue:    a.FieldValue,
 	}
 }
-func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
+func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
 	return GetContentTreeByRouteRow{
-		ContentDataID: int64(a.ContentDataID),
-		ParentID:      NullInt32ToNullInt64(a.ParentID),
+		ContentDataID: a.ContentDataID,
+		ParentID:      a.ParentID,
 		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
 		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
 		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
-		DatatypeID:    int64(a.DatatypeID.Int32),
-		RouteID:       int64(a.RouteID.Int32),
-		AuthorID:      int64(a.AuthorID),
-		DateCreated:   TimeToNullString(a.DateCreated),
-		DateModified:  TimeToNullString(a.DateModified),
+		DatatypeID:    a.DatatypeID,
+		RouteID:       a.RouteID,
+		AuthorID:      a.AuthorID,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}
 }
 
 // GetFieldDefinitionsByRouteRow
-func (d PsqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbm.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
+func (d PsqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbp.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
 	return GetFieldDefinitionsByRouteRow{
+		FieldID:    a.FieldID,
 		Label:      a.Label,
-		FieldID:    int64(a.FieldID),
 		Type:       a.Type,
-		DatatypeID: int64(a.DatatypeID),
+		DatatypeID: a.DatatypeID,
 	}
 }
 
 // GetContentFieldsByRouteRow
-func (d PsqlDatabase) MapGetContentFieldsByRouteRow(a mdbm.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
+func (d PsqlDatabase) MapGetContentFieldsByRouteRow(a mdbp.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
 	return GetContentFieldsByRouteRow{
-		ContentDataID: int64(a.ContentDataID),
-		FieldID:       int64(a.FieldID),
+		ContentDataID: a.ContentDataID,
+		FieldID:       a.FieldID,
 		FieldValue:    a.FieldValue,
 	}
 }
 
-func (d PsqlDatabase) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRouteIDRow, error) {
+func (d PsqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetRouteTreeByRouteID(d.Context, Int64ToNullInt32(routeID))
+	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdbp.GetRouteTreeByRouteIDParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get route tree: %v", err)
 	}
@@ -324,15 +342,42 @@ func (d PsqlDatabase) GetRouteTreeByRouteID(routeID int64) (*[]GetRouteTreeByRou
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) GetContentTreeByRoute(id int64) (*[]GetContentTreeByRouteRow, error) {
-	return nil, nil
-
+func (d PsqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetContentTreeByRoute(d.Context, mdbp.GetContentTreeByRouteParams{RouteID: routeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content tree: %v", err)
+	}
+	res := []GetContentTreeByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetContentTreeByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
-func (d PsqlDatabase) GetFieldDefinitionsByRoute(id int64) (*[]GetFieldDefinitionsByRouteRow, error) {
-	return nil, nil
-
+func (d PsqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdbp.GetFieldDefinitionsByRouteParams{RouteID: routeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get field definitions: %v", err)
+	}
+	res := []GetFieldDefinitionsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetFieldDefinitionsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }
-func (d PsqlDatabase) GetContentFieldsByRoute(id int64) (*[]GetContentFieldsByRouteRow, error) {
-
-	return nil, nil
+func (d PsqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetContentFieldsByRoute(d.Context, mdbp.GetContentFieldsByRouteParams{RouteID: routeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []GetContentFieldsByRouteRow{}
+	for _, v := range rows {
+		m := d.MapGetContentFieldsByRouteRow(v)
+		res = append(res, m)
+	}
+	return &res, nil
 }

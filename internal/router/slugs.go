@@ -46,7 +46,10 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 	dt := []db.Datatypes{}
 	fd := []db.Fields{}
 	for _, da := range dataSlice {
-		datatype, err := d.GetDatatype(da.DatatypeID)
+		if !da.DatatypeID.Valid {
+			continue
+		}
+		datatype, err := d.GetDatatype(da.DatatypeID.ID)
 		if err != nil {
 			utility.DefaultLogger.Error("", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

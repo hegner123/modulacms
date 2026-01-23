@@ -2,82 +2,49 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-
 ///////////////////////////////
-//STRUCTS
+// STRUCTS
 //////////////////////////////
 
 type AdminDatatypeFields struct {
-	ID              int64 `json:"id"`
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
+	ID              int64                        `json:"id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
 
 type CreateAdminDatatypeFieldParams struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
 
 type UpdateAdminDatatypeFieldParams struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
-	ID              int64 `json:"id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	ID              int64                         `json:"id"`
 }
 
-type AdminDatatypeFieldHistoryEntry struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
-}
-
-type CreateAdminDatatypeFieldFormParams struct {
-	AdminDatatypeID string `json:"admin_datatype_id"`
-	AdminFieldID    string `json:"admin_field_id"`
-}
-
-type UpdateAdminDatatypeFieldFormParams struct {
-	AdminDatatypeID string `json:"admin_datatype_id"`
-	AdminFieldID    string `json:"admin_field_id"`
-	ID              string `json:"id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateAdminDatatypeFieldParams(a CreateAdminDatatypeFieldFormParams) CreateAdminDatatypeFieldParams {
-	return CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: StringToInt64(a.AdminDatatypeID),
-		AdminFieldID:    StringToInt64(a.AdminFieldID),
-	}
-}
-
-func MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFieldFormParams) UpdateAdminDatatypeFieldParams {
-	return UpdateAdminDatatypeFieldParams{
-		AdminDatatypeID: StringToInt64(a.AdminDatatypeID),
-		AdminFieldID:    StringToInt64(a.AdminFieldID),
-	}
-}
-
+// MapStringAdminDatatypeField converts AdminDatatypeFields to StringAdminDatatypeFields for display purposes
 func MapStringAdminDatatypeField(a AdminDatatypeFields) StringAdminDatatypeFields {
 	return StringAdminDatatypeFields{
-		ID:              strconv.FormatInt(a.ID, 10),
-		AdminDatatypeID: strconv.FormatInt(a.AdminDatatypeID, 10),
-		AdminFieldID:    strconv.FormatInt(a.AdminFieldID, 10),
+		ID:              fmt.Sprintf("%d", a.ID),
+		AdminDatatypeID: a.AdminDatatypeID.String(),
+		AdminFieldID:    a.AdminFieldID.String(),
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
 // MAPS
+
 func (d Database) MapAdminDatatypeField(a mdb.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              a.ID,
@@ -102,6 +69,7 @@ func (d Database) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFieldPa
 }
 
 // QUERIES
+
 func (d Database) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)
@@ -129,31 +97,33 @@ func (d Database) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams) Adm
 
 func (d Database) DeleteAdminDatatypeField(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, int64(id))
+	err := queries.DeleteAdminDatatypeField(d.Context, mdb.DeleteAdminDatatypeFieldParams{ID: id})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete AdminDatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
 	}
 	return nil
+}
+
+func (d Database) GetAdminDatatypeField(id int64) (*AdminDatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypeField: %v", err)
+	}
+	for _, v := range rows {
+		if v.ID == id {
+			m := d.MapAdminDatatypeField(v)
+			return &m, nil
+		}
+	}
+	return nil, fmt.Errorf("AdminDatatypeField not found: %v", id)
 }
 
 func (d Database) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
-	}
-	res := []AdminDatatypeFields{}
-	for _, v := range rows {
-		m := d.MapAdminDatatypeField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-func (d Database) ListAdminDatatypeFieldByDatatypeID(id int64) (*[]AdminDatatypeFields, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -163,11 +133,25 @@ func (d Database) ListAdminDatatypeFieldByDatatypeID(id int64) (*[]AdminDatatype
 	return &res, nil
 }
 
-func (d Database) ListAdminDatatypeFieldByFieldID(id int64) (*[]AdminDatatypeFields, error) {
+func (d Database) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, id)
+	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdb.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
+	}
+	res := []AdminDatatypeFields{}
+	for _, v := range rows {
+		m := d.MapAdminDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdb.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -189,35 +173,36 @@ func (d Database) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams) (*s
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
 // MAPS
+
 func (d MysqlDatabase) MapAdminDatatypeField(a mdbm.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              int64(a.ID),
-		AdminDatatypeID: int64(a.AdminDatatypeID),
-		AdminFieldID:    int64(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 	}
 }
 
 func (d MysqlDatabase) MapCreateAdminDatatypeFieldParams(a CreateAdminDatatypeFieldParams) mdbm.CreateAdminDatatypeFieldParams {
 	return mdbm.CreateAdminDatatypeFieldParams{
-
-		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AdminFieldID:    int32(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFieldParams) mdbm.UpdateAdminDatatypeFieldParams {
 	return mdbm.UpdateAdminDatatypeFieldParams{
-		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AdminFieldID:    int32(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 		ID:              int32(a.ID),
 	}
 }
 
 // QUERIES
+
 func (d MysqlDatabase) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)
@@ -249,18 +234,33 @@ func (d MysqlDatabase) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams
 
 func (d MysqlDatabase) DeleteAdminDatatypeField(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, int32(id))
+	err := queries.DeleteAdminDatatypeField(d.Context, mdbm.DeleteAdminDatatypeFieldParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete AdminDatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
 	}
 	return nil
+}
+
+func (d MysqlDatabase) GetAdminDatatypeField(id int64) (*AdminDatatypeFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypeField: %v", err)
+	}
+	for _, v := range rows {
+		if int64(v.ID) == id {
+			m := d.MapAdminDatatypeField(v)
+			return &m, nil
+		}
+	}
+	return nil, fmt.Errorf("AdminDatatypeField not found: %v", id)
 }
 
 func (d MysqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -270,11 +270,11 @@ func (d MysqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) 
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id int64) (*[]AdminDatatypeFields, error) {
+func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, int32(id))
+	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdbm.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -284,11 +284,11 @@ func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id int64) (*[]AdminDataty
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListAdminDatatypeFieldByDatatypeID(id int64) (*[]AdminDatatypeFields, error) {
+func (d MysqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, int32(id))
+	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdbm.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -310,35 +310,36 @@ func (d MysqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
 // MAPS
+
 func (d PsqlDatabase) MapAdminDatatypeField(a mdbp.AdminDatatypesFields) AdminDatatypeFields {
 	return AdminDatatypeFields{
 		ID:              int64(a.ID),
-		AdminDatatypeID: int64(a.AdminDatatypeID),
-		AdminFieldID:    int64(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 	}
 }
 
 func (d PsqlDatabase) MapCreateAdminDatatypeFieldParams(a CreateAdminDatatypeFieldParams) mdbp.CreateAdminDatatypeFieldParams {
 	return mdbp.CreateAdminDatatypeFieldParams{
-
-		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AdminFieldID:    int32(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 	}
 }
 
 func (d PsqlDatabase) MapUpdateAdminDatatypeFieldParams(a UpdateAdminDatatypeFieldParams) mdbp.UpdateAdminDatatypeFieldParams {
 	return mdbp.UpdateAdminDatatypeFieldParams{
-		AdminDatatypeID: int32(a.AdminDatatypeID),
-		AdminFieldID:    int32(a.AdminFieldID),
+		AdminDatatypeID: a.AdminDatatypeID,
+		AdminFieldID:    a.AdminFieldID,
 		ID:              int32(a.ID),
 	}
 }
 
 // QUERIES
+
 func (d PsqlDatabase) CountAdminDatatypeFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountAdminDatatypeField(d.Context)
@@ -366,18 +367,33 @@ func (d PsqlDatabase) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams)
 
 func (d PsqlDatabase) DeleteAdminDatatypeField(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, int32(id))
+	err := queries.DeleteAdminDatatypeField(d.Context, mdbp.DeleteAdminDatatypeFieldParams{ID: int32(id)})
 	if err != nil {
-		return fmt.Errorf("Failed to Delete AdminDatatypeField: %v ", id)
+		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
 	}
 	return nil
+}
+
+func (d PsqlDatabase) GetAdminDatatypeField(id int64) (*AdminDatatypeFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeField(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypeField: %v", err)
+	}
+	for _, v := range rows {
+		if int64(v.ID) == id {
+			m := d.MapAdminDatatypeField(v)
+			return &m, nil
+		}
+	}
+	return nil, fmt.Errorf("AdminDatatypeField not found: %v", id)
 }
 
 func (d PsqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeField(d.Context)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -387,11 +403,11 @@ func (d PsqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id int64) (*[]AdminDatatypeFields, error) {
+func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, int32(id))
+	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdbp.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {
@@ -401,11 +417,11 @@ func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id int64) (*[]AdminData
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListAdminDatatypeFieldByFieldID(id int64) (*[]AdminDatatypeFields, error) {
+func (d PsqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, int32(id))
+	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdbp.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
 	if err != nil {
-		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v\n", err)
+		return nil, fmt.Errorf("failed to get AdminDatatypeFields: %v", err)
 	}
 	res := []AdminDatatypeFields{}
 	for _, v := range rows {

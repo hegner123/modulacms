@@ -195,7 +195,7 @@ func (d Database) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimens
 
 func (d Database) DeleteMediaDimension(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, int64(id))
+	err := queries.DeleteMediaDimension(d.Context, mdb.DeleteMediaDimensionParams{MdID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
 	}
@@ -204,7 +204,7 @@ func (d Database) DeleteMediaDimension(id int64) error {
 
 func (d Database) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetMediaDimension(d.Context, id)
+	row, err := queries.GetMediaDimension(d.Context, mdb.GetMediaDimensionParams{MdID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -303,7 +303,7 @@ func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaD
 
 func (d MysqlDatabase) DeleteMediaDimension(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, int32(id))
+	err := queries.DeleteMediaDimension(d.Context, mdbm.DeleteMediaDimensionParams{MdID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
 	}
@@ -312,7 +312,7 @@ func (d MysqlDatabase) DeleteMediaDimension(id int64) error {
 
 func (d MysqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetMediaDimension(d.Context, int32(id))
+	row, err := queries.GetMediaDimension(d.Context, mdbm.GetMediaDimensionParams{MdID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ func (d PsqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaDi
 
 func (d PsqlDatabase) DeleteMediaDimension(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, int32(id))
+	err := queries.DeleteMediaDimension(d.Context, mdbp.DeleteMediaDimensionParams{MdID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
 	}
@@ -416,7 +416,7 @@ func (d PsqlDatabase) DeleteMediaDimension(id int64) error {
 
 func (d PsqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetMediaDimension(d.Context, int32(id))
+	row, err := queries.GetMediaDimension(d.Context, mdbp.GetMediaDimensionParams{MdID: int32(id)})
 	if err != nil {
 		return nil, err
 	}

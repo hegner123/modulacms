@@ -446,12 +446,18 @@ func (q *Queries) CountVerifications(ctx context.Context) (int64, error) {
 const createAdminContentData = `-- name: CreateAdminContentData :one
 INSERT INTO admin_content_data (
     parent_id,
+    first_child_id,
+    next_sibling_id,
+    prev_sibling_id,
     admin_route_id,
     admin_datatype_id,
     author_id,
     date_created,
     date_modified
-) VALUES ( 
+) VALUES (
+    ?,
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -462,17 +468,23 @@ INSERT INTO admin_content_data (
 `
 
 type CreateAdminContentDataParams struct {
-	ParentID        types.NullableContentID `json:"parent_id"`
-	AdminRouteID    int64                   `json:"admin_route_id"`
-	AdminDatatypeID int64                   `json:"admin_datatype_id"`
-	AuthorID        types.NullableUserID    `json:"author_id"`
-	DateCreated     types.Timestamp         `json:"date_created"`
-	DateModified    types.Timestamp         `json:"date_modified"`
+	ParentID        types.NullableContentID       `json:"parent_id"`
+	FirstChildID    sql.NullInt64                 `json:"first_child_id"`
+	NextSiblingID   sql.NullInt64                 `json:"next_sibling_id"`
+	PrevSiblingID   sql.NullInt64                 `json:"prev_sibling_id"`
+	AdminRouteID    int64                         `json:"admin_route_id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID        types.NullableUserID          `json:"author_id"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminContentDataParams) (AdminContentData, error) {
 	row := q.db.QueryRowContext(ctx, createAdminContentData,
 		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
@@ -544,13 +556,13 @@ INSERT INTO admin_content_fields (
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminRouteID       sql.NullInt64        `json:"admin_route_id"`
-	AdminContentDataID int64                `json:"admin_content_data_id"`
-	AdminFieldID       int64                `json:"admin_field_id"`
-	AdminFieldValue    string               `json:"admin_field_value"`
-	AuthorID           types.NullableUserID `json:"author_id"`
-	DateCreated        types.Timestamp      `json:"date_created"`
-	DateModified       types.Timestamp      `json:"date_modified"`
+	AdminRouteID       sql.NullInt64              `json:"admin_route_id"`
+	AdminContentDataID int64                      `json:"admin_content_data_id"`
+	AdminFieldID       types.NullableAdminFieldID `json:"admin_field_id"`
+	AdminFieldValue    string                     `json:"admin_field_value"`
+	AuthorID           types.NullableUserID       `json:"author_id"`
+	DateCreated        types.Timestamp            `json:"date_created"`
+	DateModified       types.Timestamp            `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) (AdminContentFields, error) {
@@ -665,8 +677,8 @@ INSERT INTO admin_datatypes_fields (
 `
 
 type CreateAdminDatatypeFieldParams struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
 
 func (q *Queries) CreateAdminDatatypeField(ctx context.Context, arg CreateAdminDatatypeFieldParams) (AdminDatatypesFields, error) {
@@ -5008,7 +5020,7 @@ ORDER BY id
 `
 
 type ListAdminDatatypeFieldByDatatypeIDParams struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 }
 
 func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, arg ListAdminDatatypeFieldByDatatypeIDParams) ([]AdminDatatypesFields, error) {
@@ -5041,7 +5053,7 @@ ORDER BY id
 `
 
 type ListAdminDatatypeFieldByFieldIDParams struct {
-	AdminFieldID int64 `json:"admin_field_id"`
+	AdminFieldID types.NullableAdminFieldID `json:"admin_field_id"`
 }
 
 func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, arg ListAdminDatatypeFieldByFieldIDParams) ([]AdminDatatypesFields, error) {
@@ -6577,6 +6589,9 @@ func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventPa
 const updateAdminContentData = `-- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
 SET parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
@@ -6586,18 +6601,24 @@ WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
-	ParentID           types.NullableContentID `json:"parent_id"`
-	AdminRouteID       int64                   `json:"admin_route_id"`
-	AdminDatatypeID    int64                   `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID    `json:"author_id"`
-	DateCreated        types.Timestamp         `json:"date_created"`
-	DateModified       types.Timestamp         `json:"date_modified"`
-	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID       `json:"parent_id"`
+	FirstChildID       sql.NullInt64                 `json:"first_child_id"`
+	NextSiblingID      sql.NullInt64                 `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullInt64                 `json:"prev_sibling_id"`
+	AdminRouteID       int64                         `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 }
 
 func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminContentData,
 		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
@@ -6621,14 +6642,14 @@ WHERE admin_content_field_id = ?
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullInt64             `json:"admin_route_id"`
-	AdminContentDataID  int64                     `json:"admin_content_data_id"`
-	AdminFieldID        int64                     `json:"admin_field_id"`
-	AdminFieldValue     string                    `json:"admin_field_value"`
-	AuthorID            types.NullableUserID      `json:"author_id"`
-	DateCreated         types.Timestamp           `json:"date_created"`
-	DateModified        types.Timestamp           `json:"date_modified"`
-	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullInt64              `json:"admin_route_id"`
+	AdminContentDataID  int64                      `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
+	AdminFieldValue     string                     `json:"admin_field_value"`
+	AuthorID            types.NullableUserID       `json:"author_id"`
+	DateCreated         types.Timestamp            `json:"date_created"`
+	DateModified        types.Timestamp            `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
 }
 
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
@@ -6688,9 +6709,9 @@ WHERE id = ?
 `
 
 type UpdateAdminDatatypeFieldParams struct {
-	AdminDatatypeID int64 `json:"admin_datatype_id"`
-	AdminFieldID    int64 `json:"admin_field_id"`
-	ID              int64 `json:"id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	ID              int64                         `json:"id"`
 }
 
 func (q *Queries) UpdateAdminDatatypeField(ctx context.Context, arg UpdateAdminDatatypeFieldParams) error {

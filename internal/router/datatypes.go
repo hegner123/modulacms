@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -49,10 +49,10 @@ func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) err
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	dId, err := strconv.ParseInt(q, 10, 64)
+	dId, err := types.ParseDatatypeID(q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	datatype, err := d.GetDatatype(dId)
@@ -103,16 +103,15 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 	}
 	defer con.Close()
 
-	var newDatatype db.CreateDatatypeParamsJSON
+	var newDatatype db.CreateDatatypeParams
 	err = json.NewDecoder(r.Body).Decode(&newDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	mapped := db.MapCreateDatatypeJSONParams(newDatatype)
 
-	createdDatatype := d.CreateDatatype(mapped)
+	createdDatatype := d.CreateDatatype(newDatatype)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -169,10 +168,10 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 	defer con.Close()
 
 	q := r.URL.Query().Get("id")
-	dtID, err := strconv.ParseInt(q, 10, 64)
+	dtID, err := types.ParseDatatypeID(q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteDatatype(dtID)
@@ -181,7 +180,7 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
-	res := fmt.Sprintf("Deleted %d", dtID)
+	res := fmt.Sprintf("Deleted %s", dtID)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

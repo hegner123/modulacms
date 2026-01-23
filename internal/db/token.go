@@ -2,118 +2,74 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// /////////////////////////////
+///////////////////////////////
 // STRUCTS
-// ////////////////////////////
+//////////////////////////////
+
 type Tokens struct {
-	ID        int64  `json:"id"`
-	UserID    int64  `json:"user_id"`
-	TokenType string `json:"token_type"`
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
+	ID        int64                `json:"id"`
+	UserID    types.NullableUserID `json:"user_id"`
+	TokenType string               `json:"token_type"`
+	Token     string               `json:"token"`
+	IssuedAt  string               `json:"issued_at"`
+	ExpiresAt types.Timestamp      `json:"expires_at"`
+	Revoked   bool                 `json:"revoked"`
 }
 
 type CreateTokenParams struct {
-	UserID    int64  `json:"user_id"`
-	TokenType string `json:"token_type"`
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
+	UserID    types.NullableUserID `json:"user_id"`
+	TokenType string               `json:"token_type"`
+	Token     string               `json:"token"`
+	IssuedAt  string               `json:"issued_at"`
+	ExpiresAt types.Timestamp      `json:"expires_at"`
+	Revoked   bool                 `json:"revoked"`
 }
 
 type UpdateTokenParams struct {
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
-	ID        int64  `json:"id"`
+	Token     string          `json:"token"`
+	IssuedAt  string          `json:"issued_at"`
+	ExpiresAt types.Timestamp `json:"expires_at"`
+	Revoked   bool            `json:"revoked"`
+	ID        int64           `json:"id"`
 }
 
-type TokensHistoryEntry struct {
-	ID        int64  `json:"id"`
-	UserID    int64  `json:"user_id"`
-	TokenType string `json:"token_type"`
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   bool   `json:"revoked"`
-}
+// FormParams and JSON variants removed - use typed params directly
 
-type CreateTokenFormParams struct {
-	UserID    string `json:"user_id"`
-	TokenType string `json:"token_type"`
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   string `json:"revoked"`
-}
+// GENERIC section removed - FormParams and JSON variants deprecated
+// Use types package for direct type conversion
 
-type UpdateTokenFormParams struct {
-	Token     string `json:"token"`
-	IssuedAt  string `json:"issued_at"`
-	ExpiresAt string `json:"expires_at"`
-	Revoked   string `json:"revoked"`
-	ID        string `json:"id"`
-}
-
-///////////////////////////////
-//GENERIC
-//////////////////////////////
-
-func MapCreateTokenParams(a CreateTokenFormParams) CreateTokenParams {
-	return CreateTokenParams{
-		UserID:    StringToInt64(a.UserID),
-		TokenType: a.TokenType,
-		Token:     a.Token,
-		IssuedAt:  a.IssuedAt,
-		ExpiresAt: a.ExpiresAt,
-		Revoked:   ParseBool(a.Revoked),
-	}
-}
-
-func MapUpdateTokenParams(a UpdateTokenFormParams) UpdateTokenParams {
-	return UpdateTokenParams{
-		Token:     a.Token,
-		IssuedAt:  a.IssuedAt,
-		ExpiresAt: a.ExpiresAt,
-		Revoked:   ParseBool(a.Revoked),
-		ID:        StringToInt64(a.ID),
-	}
-}
-
+// MapStringToken converts Tokens to StringTokens for table display
 func MapStringToken(a Tokens) StringTokens {
 	return StringTokens{
-		ID:        strconv.FormatInt(a.ID, 10),
-		UserID:    strconv.FormatInt(a.UserID, 10),
+		ID:        fmt.Sprintf("%d", a.ID),
+		UserID:    a.UserID.String(),
 		TokenType: a.TokenType,
 		Token:     a.Token,
 		IssuedAt:  a.IssuedAt,
-		ExpiresAt: a.ExpiresAt,
-		Revoked:   strconv.FormatBool(a.Revoked),
+		ExpiresAt: a.ExpiresAt.String(),
+		Revoked:   fmt.Sprintf("%t", a.Revoked),
 	}
 }
 
 ///////////////////////////////
-//SQLITE
+// SQLITE
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d Database) MapToken(a mdb.Tokens) Tokens {
 	return Tokens{
 		ID:        a.ID,
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Token:     a.Tokens,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
@@ -124,7 +80,7 @@ func (d Database) MapCreateTokenParams(a CreateTokenParams) mdb.CreateTokenParam
 	return mdb.CreateTokenParams{
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
@@ -133,7 +89,7 @@ func (d Database) MapCreateTokenParams(a CreateTokenParams) mdb.CreateTokenParam
 
 func (d Database) MapUpdateTokenParams(a UpdateTokenParams) mdb.UpdateTokenParams {
 	return mdb.UpdateTokenParams{
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  a.IssuedAt,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
@@ -141,7 +97,8 @@ func (d Database) MapUpdateTokenParams(a UpdateTokenParams) mdb.UpdateTokenParam
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d Database) CountTokens() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountToken(d.Context)
@@ -169,7 +126,7 @@ func (d Database) CreateToken(s CreateTokenParams) Tokens {
 
 func (d Database) DeleteToken(id int64) error {
 	queries := mdb.New(d.Connection)
-	err := queries.DeleteToken(d.Context, int64(id))
+	err := queries.DeleteToken(d.Context, mdb.DeleteTokenParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Token: %v ", id)
 	}
@@ -178,7 +135,7 @@ func (d Database) DeleteToken(id int64) error {
 
 func (d Database) GetToken(id int64) (*Tokens, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetToken(d.Context, id)
+	row, err := queries.GetToken(d.Context, mdb.GetTokenParams{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -186,9 +143,9 @@ func (d Database) GetToken(id int64) (*Tokens, error) {
 	return &res, nil
 }
 
-func (d Database) GetTokenByUserId(userID int64) (*[]Tokens, error) {
+func (d Database) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.GetTokenByUserId(d.Context, userID)
+	rows, err := queries.GetTokenByUserId(d.Context, mdb.GetTokenByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -226,44 +183,46 @@ func (d Database) UpdateToken(s UpdateTokenParams) (*string, error) {
 }
 
 ///////////////////////////////
-//MYSQL
+// MYSQL
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d MysqlDatabase) MapToken(a mdbm.Tokens) Tokens {
 	return Tokens{
 		ID:        int64(a.ID),
-		UserID:    int64(a.UserID),
+		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Token:     a.Tokens,
 		IssuedAt:  a.IssuedAt.String(),
-		ExpiresAt: a.ExpiresAt.String(),
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 	}
 }
 
 func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateTokenParams {
 	return mdbm.CreateTokenParams{
-		UserID:    int32(a.UserID),
+		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
-		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 	}
 }
 
 func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateTokenParams {
 	return mdbm.UpdateTokenParams{
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
-		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 		ID:        int32(a.ID),
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d MysqlDatabase) CountTokens() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountToken(d.Context)
@@ -295,7 +254,7 @@ func (d MysqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 
 func (d MysqlDatabase) DeleteToken(id int64) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteToken(d.Context, int32(id))
+	err := queries.DeleteToken(d.Context, mdbm.DeleteTokenParams{ID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Token: %v ", id)
 	}
@@ -304,7 +263,7 @@ func (d MysqlDatabase) DeleteToken(id int64) error {
 
 func (d MysqlDatabase) GetToken(id int64) (*Tokens, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetToken(d.Context, int32(id))
+	row, err := queries.GetToken(d.Context, mdbm.GetTokenParams{ID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -312,9 +271,9 @@ func (d MysqlDatabase) GetToken(id int64) (*Tokens, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) GetTokenByUserId(userID int64) (*[]Tokens, error) {
+func (d MysqlDatabase) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetTokenByUserId(d.Context, int32(userID))
+	rows, err := queries.GetTokenByUserId(d.Context, mdbm.GetTokenByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}
@@ -352,44 +311,46 @@ func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
 }
 
 ///////////////////////////////
-//POSTGRES
+// POSTGRES
 //////////////////////////////
 
-// /MAPS
+// MAPS
+
 func (d PsqlDatabase) MapToken(a mdbp.Tokens) Tokens {
 	return Tokens{
 		ID:        int64(a.ID),
-		UserID:    int64(a.UserID),
+		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Token:     a.Tokens,
 		IssuedAt:  a.IssuedAt.String(),
-		ExpiresAt: a.ExpiresAt.String(),
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 	}
 }
 
 func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateTokenParams {
 	return mdbp.CreateTokenParams{
-		UserID:    int32(a.UserID),
+		UserID:    a.UserID,
 		TokenType: a.TokenType,
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
-		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 	}
 }
 
 func (d PsqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbp.UpdateTokenParams {
 	return mdbp.UpdateTokenParams{
-		Token:     a.Token,
+		Tokens:    a.Token,
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
-		ExpiresAt: StringToNTime(a.ExpiresAt).Time,
+		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
 		ID:        int32(a.ID),
 	}
 }
 
-// /QUERIES
+// QUERIES
+
 func (d PsqlDatabase) CountTokens() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountToken(d.Context)
@@ -417,7 +378,7 @@ func (d PsqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 
 func (d PsqlDatabase) DeleteToken(id int64) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteToken(d.Context, int32(id))
+	err := queries.DeleteToken(d.Context, mdbp.DeleteTokenParams{ID: int32(id)})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Token: %v ", id)
 	}
@@ -426,7 +387,7 @@ func (d PsqlDatabase) DeleteToken(id int64) error {
 
 func (d PsqlDatabase) GetToken(id int64) (*Tokens, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetToken(d.Context, int32(id))
+	row, err := queries.GetToken(d.Context, mdbp.GetTokenParams{ID: int32(id)})
 	if err != nil {
 		return nil, err
 	}
@@ -434,9 +395,9 @@ func (d PsqlDatabase) GetToken(id int64) (*Tokens, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) GetTokenByUserId(userID int64) (*[]Tokens, error) {
+func (d PsqlDatabase) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetTokenByUserId(d.Context, int32(userID))
+	rows, err := queries.GetTokenByUserId(d.Context, mdbp.GetTokenByUserIdParams{UserID: userID})
 	if err != nil {
 		return nil, err
 	}

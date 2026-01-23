@@ -11,6 +11,7 @@ import (
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
@@ -257,7 +258,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	dbc := db.ConfigDB(c)
 
 	// Retrieve user by email
-	user, err := dbc.GetUserByEmail(credentials.Email)
+	user, err := dbc.GetUserByEmail(types.Email(credentials.Email))
 	if err != nil {
 		utility.DefaultLogger.Error("User not found", err)
 		// Don't reveal whether user exists

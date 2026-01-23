@@ -14,27 +14,27 @@ import (
 )
 
 type AdminContentData struct {
-	AdminContentDataID types.AdminContentID    `json:"admin_content_data_id"`
-	ParentID           types.NullableContentID `json:"parent_id"`
-	FirstChildID       sql.NullInt32           `json:"first_child_id"`
-	NextSiblingID      sql.NullInt32           `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullInt32           `json:"prev_sibling_id"`
-	AdminRouteID       int32                   `json:"admin_route_id"`
-	AdminDatatypeID    int32                   `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID    `json:"author_id"`
-	DateCreated        types.Timestamp         `json:"date_created"`
-	DateModified       types.Timestamp         `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID       `json:"parent_id"`
+	FirstChildID       sql.NullInt32                 `json:"first_child_id"`
+	NextSiblingID      sql.NullInt32                 `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullInt32                 `json:"prev_sibling_id"`
+	AdminRouteID       int32                         `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
 }
 
 type AdminContentFields struct {
-	AdminContentFieldID types.AdminContentFieldID `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt32             `json:"admin_route_id"`
-	AdminContentDataID  int32                     `json:"admin_content_data_id"`
-	AdminFieldID        int32                     `json:"admin_field_id"`
-	AdminFieldValue     string                    `json:"admin_field_value"`
-	AuthorID            types.NullableUserID      `json:"author_id"`
-	DateCreated         types.Timestamp           `json:"date_created"`
-	DateModified        types.Timestamp           `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullInt32              `json:"admin_route_id"`
+	AdminContentDataID  int32                      `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
+	AdminFieldValue     string                     `json:"admin_field_value"`
+	AuthorID            types.NullableUserID       `json:"author_id"`
+	DateCreated         types.Timestamp            `json:"date_created"`
+	DateModified        types.Timestamp            `json:"date_modified"`
 }
 
 type AdminDatatypes struct {
@@ -48,9 +48,9 @@ type AdminDatatypes struct {
 }
 
 type AdminDatatypesFields struct {
-	ID              int32 `json:"id"`
-	AdminDatatypeID int32 `json:"admin_datatype_id"`
-	AdminFieldID    int32 `json:"admin_field_id"`
+	ID              int32                         `json:"id"`
+	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
 
 type AdminFields struct {

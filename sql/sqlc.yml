@@ -181,6 +181,18 @@ sql:
           - column: "*.route_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "*.admin_datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          - column: "*.admin_datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "*.admin_field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminFieldID"}
+          - column: "*.admin_field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
@@ -420,6 +432,18 @@ sql:
           - column: "*.route_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "*.admin_datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          - column: "*.admin_datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "*.admin_field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminFieldID"}
+          - column: "*.admin_field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
@@ -659,6 +683,18 @@ sql:
           - column: "*.route_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteID"}
+          - column: "*.admin_datatype_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          - column: "*.admin_datatype_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "*.admin_field_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminFieldID"}
+          - column: "*.admin_field_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}

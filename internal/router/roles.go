@@ -3,10 +3,10 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,10 +48,10 @@ func apiGetRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	rID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	rID := types.RoleID(q)
+	if err := rID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	role, err := d.GetRole(rID)
@@ -162,10 +162,10 @@ func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	rID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
+	rID := types.RoleID(q)
+	if err := rID.Validate(); err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteRole(rID)

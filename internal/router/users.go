@@ -3,11 +3,11 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 
-	 "github.com/hegner123/modulacms/internal/config"
-	 "github.com/hegner123/modulacms/internal/db"
-	 "github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // UsersHandler handles CRUD operations that do not require a specific user ID.
@@ -48,10 +48,10 @@ func ApiGetUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	uId, err := strconv.ParseInt(q, 10, 64)
+	uId, err := types.ParseUserID(q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	user, err := d.GetUser(uId)
@@ -167,10 +167,10 @@ func ApiDeleteUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 	defer con.Close()
 
 	q := r.URL.Query().Get("q")
-	uId, err := strconv.ParseInt(q, 10, 64)
+	uId, err := types.ParseUserID(q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	err = d.DeleteUser(uId)
