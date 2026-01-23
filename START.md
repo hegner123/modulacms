@@ -11,32 +11,29 @@ ModulaCMS AI Agent Onboarding
 
 When the onboarding skill triggers, execute these steps in order:
 
-### Step 1: Check Team-Memory for Cached Paths
+### Step 1: Check Memory for Cached Paths
 
-Search team-memory for previously stored documentation paths:
-
-```
-mcp__team-memory__search_memories
-  query: "modulacms documentation paths"
-  category: "workflow"
-```
-
-If results exist and timestamp is within 7 days, use cached paths but verify files still exist. If files are missing or timestamp is stale, proceed to Step 2.
-
-**Freshness rule:** Team-memory is a cache, not truth. Filesystem state is authoritative. When conflicts occur, trust the filesystem and update team-memory.
-
-### Step 2: Store Documentation Paths in Team-Memory
-
-Store the following paths using the team-memory MCP tool. This enables faster onboarding in future sessions.
+Search mem MCP for previously stored documentation paths:
 
 ```
-mcp__team-memory__add_memory
-  content: "ModulaCMS documentation paths stored [DATE]. Primary: /Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md (dev guidelines), /Users/home/Documents/Code/Go_dev/modulacms/ai/ (documentation root). Active project: See START.md Project Status section."
-  category: "workflow"
-  tags: ["modulacms", "paths", "documentation"]
+mcp__mem__recall
+  key: "modulacms-paths"
 ```
 
-Replace [DATE] with current date in YYYY-MM-DD format.
+If results exist, use cached paths but verify files still exist. If files are missing, proceed to Step 2.
+
+**Freshness rule:** Memory is a cache, not truth. Filesystem state is authoritative.
+
+### Step 2: Store Documentation Paths in Memory
+
+Store paths using the mem MCP tool for faster onboarding in future sessions.
+
+```
+mcp__mem__store
+  key: "modulacms-paths"
+  content: "Primary: /Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md (dev guidelines), /Users/home/Documents/Code/Go_dev/modulacms/ai/ (documentation root). Active project: See START.md Project Status section."
+  tags: ["paths", "documentation"]
+```
 
 ### Step 3: Read Required Context
 
