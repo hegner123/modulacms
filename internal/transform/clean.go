@@ -1,7 +1,6 @@
 package transform
 
 import (
-	"database/sql"
 	"encoding/json"
 	"strconv"
 
@@ -16,15 +15,15 @@ type CleanTransformer struct {
 
 // CleanDocument represents a clean ModulaCMS document
 type CleanDocument struct {
-	ID   int64                  `json:"id"`
+	ID   string                 `json:"id"`
 	Type string                 `json:"type"`
 	Meta CleanMeta              `json:"_meta"`
 	Data map[string]any         `json:"-"` // Flattened fields
 }
 
 type CleanMeta struct {
-	AuthorID     int64  `json:"authorId"`
-	RouteID      int64  `json:"routeId"`
+	AuthorID     string `json:"authorId"`
+	RouteID      string `json:"routeId"`
 	DateCreated  string `json:"dateCreated,omitempty"`
 	DateModified string `json:"dateModified,omitempty"`
 }
@@ -59,18 +58,18 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 		RouteID:  node.Datatype.Content.RouteID,
 	}
 
-	if node.Datatype.Content.DateCreated.Valid {
-		meta.DateCreated = node.Datatype.Content.DateCreated.String
+	if node.Datatype.Content.DateCreated != "" {
+		meta.DateCreated = node.Datatype.Content.DateCreated
 	}
-	if node.Datatype.Content.DateModified.Valid {
-		meta.DateModified = node.Datatype.Content.DateModified.String
+	if node.Datatype.Content.DateModified != "" {
+		meta.DateModified = node.Datatype.Content.DateModified
 	}
 
 	doc["_meta"] = meta
 
 	// Transform fields to flat properties
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label.(string))
+		key := fieldLabelToKey(field.Info.Label)
 		value := c.parseFieldValue(field.Content.FieldValue, field.Info.Type)
 		doc[key] = value
 	}
@@ -147,10 +146,12 @@ func (c *CleanTransformer) parseDocument(doc map[string]any) *model.Node {
 
 	// Extract ID
 	if id, ok := doc["id"]; ok {
-		if idFloat, ok := id.(float64); ok {
-			node.Datatype.Content.ContentDataID = int64(idFloat)
+		if idStr, ok := id.(string); ok {
+			node.Datatype.Content.ContentDataID = idStr
+		} else if idFloat, ok := id.(float64); ok {
+			node.Datatype.Content.ContentDataID = strconv.FormatInt(int64(idFloat), 10)
 		} else if idInt, ok := id.(int); ok {
-			node.Datatype.Content.ContentDataID = int64(idInt)
+			node.Datatype.Content.ContentDataID = strconv.FormatInt(int64(idInt), 10)
 		}
 	}
 
@@ -166,23 +167,27 @@ func (c *CleanTransformer) parseDocument(doc map[string]any) *model.Node {
 	if meta, ok := doc["_meta"]; ok {
 		if metaMap, ok := meta.(map[string]any); ok {
 			if authorID, ok := metaMap["authorId"]; ok {
-				if authorFloat, ok := authorID.(float64); ok {
-					node.Datatype.Content.AuthorID = int64(authorFloat)
+				if authorStr, ok := authorID.(string); ok {
+					node.Datatype.Content.AuthorID = authorStr
+				} else if authorFloat, ok := authorID.(float64); ok {
+					node.Datatype.Content.AuthorID = strconv.FormatInt(int64(authorFloat), 10)
 				}
 			}
 			if routeID, ok := metaMap["routeId"]; ok {
-				if routeFloat, ok := routeID.(float64); ok {
-					node.Datatype.Content.RouteID = int64(routeFloat)
+				if routeStr, ok := routeID.(string); ok {
+					node.Datatype.Content.RouteID = routeStr
+				} else if routeFloat, ok := routeID.(float64); ok {
+					node.Datatype.Content.RouteID = strconv.FormatInt(int64(routeFloat), 10)
 				}
 			}
 			if dateCreated, ok := metaMap["dateCreated"]; ok {
 				if dateStr, ok := dateCreated.(string); ok {
-					node.Datatype.Content.DateCreated = db.NullString{NullString: sql.NullString{String: dateStr, Valid: true}}
+					node.Datatype.Content.DateCreated = dateStr
 				}
 			}
 			if dateModified, ok := metaMap["dateModified"]; ok {
 				if dateStr, ok := dateModified.(string); ok {
-					node.Datatype.Content.DateModified = db.NullString{NullString: sql.NullString{String: dateStr, Valid: true}}
+					node.Datatype.Content.DateModified = dateStr
 				}
 			}
 		}
@@ -213,9 +218,10 @@ func (c *CleanTransformer) parseDocument(doc map[string]any) *model.Node {
 		}
 
 		// It's a regular field
+		fieldIDStr := strconv.FormatInt(fieldID, 10)
 		field := model.Field{
 			Info: db.FieldsJSON{
-				FieldID: fieldID,
+				FieldID: fieldIDStr,
 				Label:   c.keyToLabel(key),
 				Type:    c.detectFieldType(value),
 			},
@@ -233,7 +239,7 @@ func (c *CleanTransformer) parseDocument(doc map[string]any) *model.Node {
 	return node
 }
 
-func (c *CleanTransformer) keyToLabel(key string) any {
+func (c *CleanTransformer) keyToLabel(key string) string {
 	// Convert camelCase to "Title Case"
 	if key == "" {
 		return ""

@@ -6,6 +6,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 )
 
@@ -272,16 +273,16 @@ type CmsAddNewContentFieldsMsg struct {
 }
 
 type ContentCreatedMsg struct {
-	ContentDataID int64
-	RouteID       int64
+	ContentDataID types.ContentID
+	RouteID       types.RouteID
 	FieldCount    int
 }
 
 type ContentCreatedWithErrorsMsg struct {
-	ContentDataID int64
-	RouteID       int64
+	ContentDataID types.ContentID
+	RouteID       types.RouteID
 	CreatedFields int
-	FailedFields  []int64
+	FailedFields  []types.FieldID
 }
 
 type TreeLoadedMsg struct {

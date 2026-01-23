@@ -5,12 +5,13 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 type TreeRoot struct {
 	Root      *TreeNode
-	NodeIndex map[int64]*TreeNode
-	Orphans   map[int64]*TreeNode
+	NodeIndex map[types.ContentID]*TreeNode
+	Orphans   map[types.ContentID]*TreeNode
 	MaxRetry  int
 }
 
@@ -18,8 +19,8 @@ type LoadStats struct {
 	NodesCount      int
 	OrphansResolved int
 	RetryAttempts   int
-	CircularRefs    []int64
-	FinalOrphans    []int64
+	CircularRefs    []types.ContentID
+	FinalOrphans    []types.ContentID
 }
 
 func (stats LoadStats) String() string {
@@ -49,8 +50,8 @@ type TreeNode struct {
 
 func NewTreeRoot() *TreeRoot {
 	return &TreeRoot{
-		NodeIndex: make(map[int64]*TreeNode),
-		Orphans:   make(map[int64]*TreeNode),
+		NodeIndex: make(map[types.ContentID]*TreeNode),
+		Orphans:   make(map[types.ContentID]*TreeNode),
 		MaxRetry:  100,
 	}
 }
@@ -72,8 +73,8 @@ func (page *TreeRoot) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadSt
 		NodesCount:      0,
 		OrphansResolved: 0,
 		RetryAttempts:   0,
-		CircularRefs:    make([]int64, 0),
-		FinalOrphans:    make([]int64, 0),
+		CircularRefs:    make([]types.ContentID, 0),
+		FinalOrphans:    make([]types.ContentID, 0),
 	}
 
 	// Phase 1: Create all nodes and populate indexes
@@ -116,7 +117,7 @@ func (page *TreeRoot) assignImmediateHierarchy(stats *LoadStats) error {
 			continue // Skip root
 		}
 
-		parentID := node.Instance.ParentID.Int64
+		parentID := node.Instance.ParentID.ID
 		parent := page.NodeIndex[parentID]
 
 		if parent != nil {
@@ -138,7 +139,7 @@ func (page *TreeRoot) resolveOrphans(stats *LoadStats) error {
 
 		// Try to resolve each orphan
 		for id, orphan := range page.Orphans {
-			parentID := orphan.Instance.ParentID.Int64
+			parentID := orphan.Instance.ParentID.ID
 			parent := page.NodeIndex[parentID]
 
 			if parent != nil && parent.Parent != nil { // Parent now exists and is connected
@@ -163,10 +164,10 @@ func (page *TreeRoot) resolveOrphans(stats *LoadStats) error {
 
 // Detect circular reference chains
 func (page *TreeRoot) detectCircularReferences(stats *LoadStats) bool {
-	circularRefs := []int64{}
+	circularRefs := []types.ContentID{}
 
 	for id, orphan := range page.Orphans {
-		if page.hasCircularReference(orphan, make(map[int64]bool)) {
+		if page.hasCircularReference(orphan, make(map[types.ContentID]bool)) {
 			circularRefs = append(circularRefs, id)
 		}
 	}
@@ -176,7 +177,7 @@ func (page *TreeRoot) detectCircularReferences(stats *LoadStats) bool {
 }
 
 // Check if node creates circular reference
-func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[int64]bool) bool {
+func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[types.ContentID]bool) bool {
 	nodeID := node.Instance.ContentDataID
 
 	if visited[nodeID] {
@@ -188,7 +189,7 @@ func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[int64]boo
 	}
 
 	visited[nodeID] = true
-	parentID := node.Instance.ParentID.Int64
+	parentID := node.Instance.ParentID.ID
 	parent := page.NodeIndex[parentID]
 
 	if parent == nil {
@@ -251,7 +252,7 @@ func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
 	}
 
 	dt := db.Datatypes{
-		DatatypeID: row.DatatypeID,
+		DatatypeID: row.DatatypeID.ID,
 		Label:      row.DatatypeLabel,
 		Type:       row.DatatypeType,
 	}

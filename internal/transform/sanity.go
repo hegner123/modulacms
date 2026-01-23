@@ -67,7 +67,7 @@ func (s *SanityTransformer) transformNode(node *model.Node) map[string]any {
 	doc := make(map[string]any)
 
 	// System fields
-	doc["_id"] = int64ToString(node.Datatype.Content.ContentDataID)
+	doc["_id"] = node.Datatype.Content.ContentDataID
 	doc["_type"] = s.toSanityType(node.Datatype.Info.Label)
 	doc["_createdAt"] = s.getDateCreated(node)
 	doc["_updatedAt"] = s.getDateModified(node)
@@ -75,7 +75,7 @@ func (s *SanityTransformer) transformNode(node *model.Node) map[string]any {
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label.(string))
+		key := fieldLabelToKey(field.Info.Label)
 		value := s.transformField(field)
 		doc[key] = value
 	}
@@ -96,7 +96,7 @@ func (s *SanityTransformer) transformNode(node *model.Node) map[string]any {
 }
 
 func (s *SanityTransformer) transformField(field model.Field) any {
-	label := field.Info.Label.(string)
+	label := field.Info.Label
 	fieldType := field.Info.Type
 	value := field.Content.FieldValue
 
@@ -205,15 +205,12 @@ func (s *SanityTransformer) extractAssetRef(url string) string {
 }
 
 func (s *SanityTransformer) getDateCreated(node *model.Node) string {
-	if node.Datatype.Content.DateCreated.Valid {
-		return node.Datatype.Content.DateCreated.String
-	}
-	return ""
+	return node.Datatype.Content.DateCreated
 }
 
 func (s *SanityTransformer) getDateModified(node *model.Node) string {
-	if node.Datatype.Content.DateModified.Valid {
-		return node.Datatype.Content.DateModified.String
+	if node.Datatype.Content.DateModified != "" {
+		return node.Datatype.Content.DateModified
 	}
 	return s.getDateCreated(node)
 }

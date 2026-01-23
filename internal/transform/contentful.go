@@ -1,9 +1,9 @@
 package transform
 
 import (
-	"database/sql"
 	"encoding/json"
 	"hash/fnv"
+	"strconv"
 
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/model"
@@ -68,7 +68,7 @@ func (c *ContentfulTransformer) TransformToJSON(root model.Root) ([]byte, error)
 func (c *ContentfulTransformer) transformNode(node *model.Node) ContentfulEntry {
 	entry := ContentfulEntry{
 		Sys: ContentfulSys{
-			ID:   int64ToString(node.Datatype.Content.ContentDataID),
+			ID:   node.Datatype.Content.ContentDataID,
 			Type: "Entry",
 			ContentType: ContentfulContentType{
 				Sys: ContentfulLink{
@@ -97,7 +97,7 @@ func (c *ContentfulTransformer) transformNode(node *model.Node) ContentfulEntry 
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label.(string))
+		key := fieldLabelToKey(field.Info.Label)
 		value := c.transformField(field)
 		entry.Fields[key] = value
 	}
@@ -179,15 +179,12 @@ func (c *ContentfulTransformer) extractAssetID(url string) string {
 }
 
 func (c *ContentfulTransformer) getDateCreated(node *model.Node) string {
-	if node.Datatype.Content.DateCreated.Valid {
-		return node.Datatype.Content.DateCreated.String
-	}
-	return ""
+	return node.Datatype.Content.DateCreated
 }
 
 func (c *ContentfulTransformer) getDateModified(node *model.Node) string {
-	if node.Datatype.Content.DateModified.Valid {
-		return node.Datatype.Content.DateModified.String
+	if node.Datatype.Content.DateModified != "" {
+		return node.Datatype.Content.DateModified
 	}
 	return c.getDateCreated(node)
 }
@@ -281,14 +278,14 @@ func (c *ContentfulTransformer) parseEntry(entry ContentfulEntry) *model.Node {
 	node := &model.Node{
 		Datatype: model.Datatype{
 			Info: db.DatatypeJSON{
-				DatatypeID: stringToInt64(entry.Sys.ContentType.Sys.ID),
+				DatatypeID: entry.Sys.ContentType.Sys.ID,
 				Label:      entry.Sys.ContentType.Sys.ID,
 				Type:       entry.Sys.Type,
 			},
 			Content: db.ContentDataJSON{
-				ContentDataID: stringToInt64(entry.Sys.ID),
-				DateCreated:   db.NullString{NullString: sql.NullString{String: entry.Sys.CreatedAt, Valid: entry.Sys.CreatedAt != ""}},
-				DateModified:  db.NullString{NullString: sql.NullString{String: entry.Sys.UpdatedAt, Valid: entry.Sys.UpdatedAt != ""}},
+				ContentDataID: entry.Sys.ID,
+				DateCreated:   entry.Sys.CreatedAt,
+				DateModified:  entry.Sys.UpdatedAt,
 			},
 		},
 		Fields: []model.Field{},
@@ -333,9 +330,10 @@ func (c *ContentfulTransformer) parseEntry(entry ContentfulEntry) *model.Node {
 			}
 		}
 
+		fieldIDStr := strconv.FormatInt(fieldID, 10)
 		field := model.Field{
 			Info: db.FieldsJSON{
-				FieldID: fieldID,
+				FieldID: fieldIDStr,
 				Label:   c.camelCaseToLabel(key),
 				Type:    c.detectFieldType(value),
 			},

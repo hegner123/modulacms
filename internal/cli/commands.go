@@ -8,6 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -236,10 +237,11 @@ func (m Model) GetContentField(node *string) []byte {
 	return j
 }
 
-func (m Model) GetFullTree(c *config.Config, id int64) tea.Cmd {
+func (m Model) GetFullTree(c *config.Config, id types.RouteID) tea.Cmd {
 	// TODO: Implement tree retrieval logic
 	d := db.ConfigDB(*c)
-	res, err := d.GetRouteTreeByRouteID(1)
+	routeID := types.NullableRouteID{ID: id, Valid: true}
+	res, err := d.GetRouteTreeByRouteID(routeID)
 	if err != nil {
 		return ErrorSetCmd(err)
 	}
@@ -260,40 +262,39 @@ func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
 // This solves the ID-passing problem that the generic query builder pattern couldn't handle.
 func (m Model) CreateContentWithFields(
 	c *config.Config,
-	datatypeID int64,
-	routeID int64,
-	authorID int64,
-	fieldValues map[int64]string,
+	datatypeID types.DatatypeID,
+	routeID types.RouteID,
+	authorID types.UserID,
+	fieldValues map[types.FieldID]string,
 ) tea.Cmd {
 	return func() tea.Msg {
 		d := db.ConfigDB(*c)
 
 		// Debug logging
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%d, RouteID=%d, AuthorID=%d", datatypeID, routeID, authorID))
+		utility.DefaultLogger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%s, RouteID=%s, AuthorID=%s", datatypeID, routeID, authorID))
 
 		// Step 1: Create ContentData using typed DbDriver method
 		contentData := d.CreateContentData(db.CreateContentDataParams{
-			DatatypeID:    datatypeID,
-			RouteID:       routeID,
-			AuthorID:      authorID,
-			DateCreated:   db.StringToNullString(utility.TimestampS()),
-			DateModified:  db.StringToNullString(utility.TimestampS()),
-			ParentID:      sql.NullInt64{}, // NULL - no parent initially
-			FirstChildID:  sql.NullInt64{}, // NULL - no children initially
-			NextSiblingID: sql.NullInt64{}, // NULL - no siblings initially
-			PrevSiblingID: sql.NullInt64{}, // NULL - no siblings initially
-			History:       db.StringToNullString(""),
+			DatatypeID:    types.NullableDatatypeID{ID: datatypeID, Valid: true},
+			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
+			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+			DateCreated:   types.TimestampNow(),
+			DateModified:  types.TimestampNow(),
+			ParentID:      types.NullableContentID{}, // NULL - no parent initially
+			FirstChildID:  sql.NullInt64{},           // NULL - no children initially
+			NextSiblingID: sql.NullInt64{},           // NULL - no siblings initially
+			PrevSiblingID: sql.NullInt64{},           // NULL - no siblings initially
 		})
 
 		// Check if creation succeeded
-		if contentData.ContentDataID == 0 {
+		if contentData.ContentDataID.IsZero() {
 			return DbErrMsg{
 				Error: fmt.Errorf("failed to create content data"),
 			}
 		}
 
 		// Step 2: Create ContentFields (we have the ID now!)
-		var failedFields []int64
+		var failedFields []types.FieldID
 		createdFields := 0
 
 		for fieldID, value := range fieldValues {
@@ -303,19 +304,17 @@ func (m Model) CreateContentWithFields(
 			}
 
 			fieldResult := d.CreateContentField(db.CreateContentFieldParams{
-				ContentDataID:  contentData.ContentDataID,
-				FieldID:        fieldID,
-				FieldValue:     value,
-				RouteID:        db.Int64ToNullInt64(routeID),
-				AuthorID:       authorID,
-				DateCreated:    db.StringToNullString(utility.TimestampS()),
-				DateModified:   db.StringToNullString(utility.TimestampS()),
-				History:        db.StringToNullString(""),
-				ContentFieldID: 0, // Auto-generated
+				ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
+				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
+				FieldValue:    value,
+				RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
+				AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+				DateCreated:   types.TimestampNow(),
+				DateModified:  types.TimestampNow(),
 			})
 
 			// Track failures
-			if fieldResult.ContentFieldID == 0 {
+			if fieldResult.ContentFieldID.IsZero() {
 				failedFields = append(failedFields, fieldID)
 			} else {
 				createdFields++

@@ -18,7 +18,7 @@ type StrapiResponse struct {
 }
 
 type StrapiEntry struct {
-	ID         int64          `json:"id"`
+	ID         string         `json:"id"`
 	Attributes map[string]any `json:"attributes"`
 }
 
@@ -76,7 +76,7 @@ func (s *StrapiTransformer) transformNode(node *model.Node) StrapiEntry {
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label.(string))
+		key := fieldLabelToKey(field.Info.Label)
 		value := s.transformField(field)
 		entry.Attributes[key] = value
 	}
@@ -112,7 +112,7 @@ func (s *StrapiTransformer) transformField(field model.Field) any {
 				Attributes: StrapiMediaAttributes{
 					URL:             value,
 					Name:            filename,
-					AlternativeText: field.Info.Label.(string),
+					AlternativeText: field.Info.Label,
 				},
 			},
 		}
@@ -142,15 +142,12 @@ func (s *StrapiTransformer) parseFieldValue(value string, fieldType string) any 
 }
 
 func (s *StrapiTransformer) getDateCreated(node *model.Node) string {
-	if node.Datatype.Content.DateCreated.Valid {
-		return node.Datatype.Content.DateCreated.String
-	}
-	return ""
+	return node.Datatype.Content.DateCreated
 }
 
 func (s *StrapiTransformer) getDateModified(node *model.Node) string {
-	if node.Datatype.Content.DateModified.Valid {
-		return node.Datatype.Content.DateModified.String
+	if node.Datatype.Content.DateModified != "" {
+		return node.Datatype.Content.DateModified
 	}
 	return s.getDateCreated(node)
 }
