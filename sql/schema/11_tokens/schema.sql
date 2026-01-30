@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS tokens (
-    id INTEGER
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(id) = 26),
+    user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
     token_type TEXT NOT NULL,

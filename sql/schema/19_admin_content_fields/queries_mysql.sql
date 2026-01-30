@@ -3,13 +3,12 @@ DROP TABLE admin_content_fields;
 
 -- name: CreateAdminContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_fields (
-    admin_content_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    admin_route_id INT NULL,
-    admin_content_data_id INT NOT NULL,
-    admin_field_id INT NOT NULL,
+    admin_content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    admin_route_id VARCHAR(26) NULL,
+    admin_content_data_id VARCHAR(26) NOT NULL,
+    admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -46,14 +45,16 @@ ORDER BY admin_content_field_id;
 
 -- name: CreateAdminContentField :exec
 INSERT INTO admin_content_fields (
+    admin_content_field_id,
     admin_route_id,
     admin_content_data_id,
     admin_field_id,
-    admin_field_value, 
+    admin_field_value,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

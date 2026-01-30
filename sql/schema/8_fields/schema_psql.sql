@@ -1,17 +1,16 @@
 CREATE TABLE IF NOT EXISTS fields (
-    field_id SERIAL
-        PRIMARY KEY,
-    parent_id INTEGER
+    field_id TEXT PRIMARY KEY NOT NULL,
+    parent_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

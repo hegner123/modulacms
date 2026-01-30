@@ -71,6 +71,21 @@ type UtilityGetAdminfieldsRow struct {
 // GENERIC section removed - FormParams and JSON variants deprecated
 // Use types package for direct type conversion
 
+// MapAdminFieldJSON converts AdminFields to FieldsJSON for tree building.
+// Maps admin field ID into the public FieldsJSON shape so BuildNodes works unchanged.
+func MapAdminFieldJSON(a AdminFields) FieldsJSON {
+	return FieldsJSON{
+		FieldID:      a.AdminFieldID.String(),
+		ParentID:     a.ParentID.String(),
+		Label:        a.Label,
+		Data:         a.Data,
+		Type:         a.Type.String(),
+		AuthorID:     a.AuthorID.String(),
+		DateCreated:  a.DateCreated.String(),
+		DateModified: a.DateModified.String(),
+	}
+}
+
 // MapStringAdminField converts AdminFields to StringAdminFields for table display
 func MapStringAdminField(a AdminFields) StringAdminFields {
 	return StringAdminFields{
@@ -107,6 +122,7 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 
 func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.CreateAdminFieldParams {
 	return mdb.CreateAdminFieldParams{
+		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -224,6 +240,7 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 
 func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.CreateAdminFieldParams {
 	return mdbm.CreateAdminFieldParams{
+		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -344,6 +361,7 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 
 func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.CreateAdminFieldParams {
 	return mdbp.CreateAdminFieldParams{
+		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,

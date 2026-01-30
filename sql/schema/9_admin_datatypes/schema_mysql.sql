@@ -1,10 +1,9 @@
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_datatype_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
 

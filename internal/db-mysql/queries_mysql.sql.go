@@ -444,6 +444,7 @@ func (q *Queries) CountVerifications(ctx context.Context) (int64, error) {
 
 const createAdminContentData = `-- name: CreateAdminContentData :exec
 INSERT INTO admin_content_data (
+    admin_content_data_id,
     parent_id,
     first_child_id,
     next_sibling_id,
@@ -462,24 +463,27 @@ INSERT INTO admin_content_data (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateAdminContentDataParams struct {
-	ParentID        types.NullableContentID       `json:"parent_id"`
-	FirstChildID    sql.NullInt32                 `json:"first_child_id"`
-	NextSiblingID   sql.NullInt32                 `json:"next_sibling_id"`
-	PrevSiblingID   sql.NullInt32                 `json:"prev_sibling_id"`
-	AdminRouteID    int32                         `json:"admin_route_id"`
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
-	DateCreated     types.Timestamp               `json:"date_created"`
-	DateModified    types.Timestamp               `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	ParentID           types.NullableContentID       `json:"parent_id"`
+	FirstChildID       sql.NullString                `json:"first_child_id"`
+	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminContentData,
+		arg.AdminContentDataID,
 		arg.ParentID,
 		arg.FirstChildID,
 		arg.NextSiblingID,
@@ -495,15 +499,14 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 
 const createAdminContentDataTable = `-- name: CreateAdminContentDataTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_data (
-    admin_content_data_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
-    first_child_id INT NULL,
-    next_sibling_id INT NULL,
-    prev_sibling_id INT NULL,
-    admin_route_id INT NOT NULL,
-    admin_datatype_id INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    admin_content_data_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
+    first_child_id VARCHAR(26) NULL,
+    next_sibling_id VARCHAR(26) NULL,
+    prev_sibling_id VARCHAR(26) NULL,
+    admin_route_id VARCHAR(26) NOT NULL,
+    admin_datatype_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -538,14 +541,16 @@ func (q *Queries) CreateAdminContentDataTable(ctx context.Context) error {
 
 const createAdminContentField = `-- name: CreateAdminContentField :exec
 INSERT INTO admin_content_fields (
+    admin_content_field_id,
     admin_route_id,
     admin_content_data_id,
     admin_field_id,
-    admin_field_value, 
+    admin_field_value,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -557,17 +562,19 @@ INSERT INTO admin_content_fields (
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminRouteID       sql.NullInt32              `json:"admin_route_id"`
-	AdminContentDataID int32                      `json:"admin_content_data_id"`
-	AdminFieldID       types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue    string                     `json:"admin_field_value"`
-	AuthorID           types.NullableUserID       `json:"author_id"`
-	DateCreated        types.Timestamp            `json:"date_created"`
-	DateModified       types.Timestamp            `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
+	AdminRouteID        sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID  string                     `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
+	AdminFieldValue     string                     `json:"admin_field_value"`
+	AuthorID            types.NullableUserID       `json:"author_id"`
+	DateCreated         types.Timestamp            `json:"date_created"`
+	DateModified        types.Timestamp            `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminContentField,
+		arg.AdminContentFieldID,
 		arg.AdminRouteID,
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
@@ -581,13 +588,12 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 
 const createAdminContentFieldTable = `-- name: CreateAdminContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_fields (
-    admin_content_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    admin_route_id INT NULL,
-    admin_content_data_id INT NOT NULL,
-    admin_field_id INT NOT NULL,
+    admin_content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    admin_route_id VARCHAR(26) NULL,
+    admin_content_data_id VARCHAR(26) NOT NULL,
+    admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -613,6 +619,7 @@ func (q *Queries) CreateAdminContentFieldTable(ctx context.Context) error {
 
 const createAdminDatatype = `-- name: CreateAdminDatatype :exec
 INSERT INTO admin_datatypes (
+    admin_datatype_id,
     parent_id,
     label,
     type,
@@ -625,21 +632,24 @@ INSERT INTO admin_datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateAdminDatatypeParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
-	Label        string                  `json:"label"`
-	Type         string                  `json:"type"`
-	AuthorID     types.NullableUserID    `json:"author_id"`
-	DateCreated  types.Timestamp         `json:"date_created"`
-	DateModified types.Timestamp         `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
+	ParentID        types.NullableContentID `json:"parent_id"`
+	Label           string                  `json:"label"`
+	Type            string                  `json:"type"`
+	AuthorID        types.NullableUserID    `json:"author_id"`
+	DateCreated     types.Timestamp         `json:"date_created"`
+	DateModified    types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminDatatype,
+		arg.AdminDatatypeID,
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
@@ -652,32 +662,34 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 
 const createAdminDatatypeField = `-- name: CreateAdminDatatypeField :exec
 INSERT INTO admin_datatypes_fields (
+    id,
     admin_datatype_id,
     admin_field_id
 ) VALUES (
+    ?,
     ?,
     ?
 )
 `
 
 type CreateAdminDatatypeFieldParams struct {
+	ID              string                        `json:"id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
 
 func (q *Queries) CreateAdminDatatypeField(ctx context.Context, arg CreateAdminDatatypeFieldParams) error {
-	_, err := q.db.ExecContext(ctx, createAdminDatatypeField, arg.AdminDatatypeID, arg.AdminFieldID)
+	_, err := q.db.ExecContext(ctx, createAdminDatatypeField, arg.ID, arg.AdminDatatypeID, arg.AdminFieldID)
 	return err
 }
 
 const createAdminDatatypeTable = `-- name: CreateAdminDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes (
-    admin_datatype_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
@@ -697,10 +709,10 @@ func (q *Queries) CreateAdminDatatypeTable(ctx context.Context) error {
 
 const createAdminDatatypesFieldsTable = `-- name: CreateAdminDatatypesFieldsTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
-    id INT NOT NULL
+    id VARCHAR(26) NOT NULL
         PRIMARY KEY,
-    admin_datatype_id INT NOT NULL,
-    admin_field_id INT NOT NULL,
+    admin_datatype_id VARCHAR(26) NOT NULL,
+    admin_field_id VARCHAR(26) NOT NULL,
     CONSTRAINT fk_df_admin_datatype
         FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -716,7 +728,8 @@ func (q *Queries) CreateAdminDatatypesFieldsTable(ctx context.Context) error {
 }
 
 const createAdminField = `-- name: CreateAdminField :exec
-INSERT INTO admin_fields (    
+INSERT INTO admin_fields (
+    admin_field_id,
     parent_id,
     label,
     data,
@@ -731,11 +744,13 @@ INSERT INTO admin_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateAdminFieldParams struct {
+	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
 	ParentID     types.NullableContentID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
@@ -747,6 +762,7 @@ type CreateAdminFieldParams struct {
 
 func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminField,
+		arg.AdminFieldID,
 		arg.ParentID,
 		arg.Label,
 		arg.Data,
@@ -760,13 +776,12 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 
 const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
-    admin_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    admin_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     type VARCHAR(255) DEFAULT 'text' NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -786,6 +801,7 @@ func (q *Queries) CreateAdminFieldTable(ctx context.Context) error {
 
 const createAdminRoute = `-- name: CreateAdminRoute :exec
 INSERT INTO admin_routes (
+    admin_route_id,
     slug,
     title,
     status,
@@ -798,11 +814,13 @@ INSERT INTO admin_routes (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateAdminRouteParams struct {
+	AdminRouteID types.AdminRouteID   `json:"admin_route_id"`
 	Slug         types.Slug           `json:"slug"`
 	Title        string               `json:"title"`
 	Status       int32                `json:"status"`
@@ -813,6 +831,7 @@ type CreateAdminRouteParams struct {
 
 func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRouteParams) error {
 	_, err := q.db.ExecContext(ctx, createAdminRoute,
+		arg.AdminRouteID,
 		arg.Slug,
 		arg.Title,
 		arg.Status,
@@ -825,12 +844,11 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 
 const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
 CREATE TABLE admin_routes (
-    admin_route_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    admin_route_id VARCHAR(26) PRIMARY KEY NOT NULL,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
 
@@ -974,6 +992,7 @@ func (q *Queries) CreateChangeEventsTable(ctx context.Context) error {
 
 const createContentData = `-- name: CreateContentData :exec
 INSERT INTO content_data (
+    content_data_id,
     route_id,
     parent_id,
     first_child_id,
@@ -992,16 +1011,18 @@ INSERT INTO content_data (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateContentDataParams struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt32            `json:"first_child_id"`
-	NextSiblingID sql.NullInt32            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
@@ -1010,6 +1031,7 @@ type CreateContentDataParams struct {
 
 func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataParams) error {
 	_, err := q.db.ExecContext(ctx, createContentData,
+		arg.ContentDataID,
 		arg.RouteID,
 		arg.ParentID,
 		arg.FirstChildID,
@@ -1025,15 +1047,14 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 
 const createContentDataTable = `-- name: CreateContentDataTable :exec
 CREATE TABLE IF NOT EXISTS content_data (
-    content_data_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
-    first_child_id INT NULL,
-    next_sibling_id INT NULL,
-    prev_sibling_id  INT NULL,
-    route_id INT NULL,
-    datatype_id INT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    content_data_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
+    first_child_id VARCHAR(26) NULL,
+    next_sibling_id VARCHAR(26) NULL,
+    prev_sibling_id VARCHAR(26) NULL,
+    route_id VARCHAR(26) NULL,
+    datatype_id VARCHAR(26) NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1103,13 +1124,12 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 
 const createContentFieldTable = `-- name: CreateContentFieldTable :exec
 CREATE TABLE content_fields (
-    content_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    route_id INT NULL,
-    content_data_id INT NOT NULL,
-    field_id INT NOT NULL,
+    content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    route_id VARCHAR(26) NULL,
+    content_data_id VARCHAR(26) NOT NULL,
+    field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1134,7 +1154,8 @@ func (q *Queries) CreateContentFieldTable(ctx context.Context) error {
 }
 
 const createDatatype = `-- name: CreateDatatype :exec
-INSERT INTO datatypes (    
+INSERT INTO datatypes (
+    datatype_id,
     parent_id,
     label,
     type,
@@ -1143,19 +1164,22 @@ INSERT INTO datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
     )
 `
 
 type CreateDatatypeParams struct {
-	ParentID types.NullableContentID `json:"parent_id"`
-	Label    string                  `json:"label"`
-	Type     string                  `json:"type"`
-	AuthorID types.NullableUserID    `json:"author_id"`
+	DatatypeID types.DatatypeID        `json:"datatype_id"`
+	ParentID   types.NullableContentID `json:"parent_id"`
+	Label      string                  `json:"label"`
+	Type       string                  `json:"type"`
+	AuthorID   types.NullableUserID    `json:"author_id"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, createDatatype,
+		arg.DatatypeID,
 		arg.ParentID,
 		arg.Label,
 		arg.Type,
@@ -1166,32 +1190,34 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 
 const createDatatypeField = `-- name: CreateDatatypeField :exec
 INSERT INTO datatypes_fields (
+    id,
     datatype_id,
     field_id
 ) VALUES (
+    ?,
     ?,
     ?
 )
 `
 
 type CreateDatatypeFieldParams struct {
+	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
 }
 
 func (q *Queries) CreateDatatypeField(ctx context.Context, arg CreateDatatypeFieldParams) error {
-	_, err := q.db.ExecContext(ctx, createDatatypeField, arg.DatatypeID, arg.FieldID)
+	_, err := q.db.ExecContext(ctx, createDatatypeField, arg.ID, arg.DatatypeID, arg.FieldID)
 	return err
 }
 
 const createDatatypeTable = `-- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes (
-    datatype_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
 
@@ -1211,10 +1237,10 @@ func (q *Queries) CreateDatatypeTable(ctx context.Context) error {
 
 const createDatatypesFieldsTable = `-- name: CreateDatatypesFieldsTable :exec
 CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id INT NOT NULL
+    id VARCHAR(26) NOT NULL
         PRIMARY KEY,
-    datatype_id INT NOT NULL,
-    field_id INT NOT NULL,
+    datatype_id VARCHAR(26) NOT NULL,
+    field_id VARCHAR(26) NOT NULL,
     CONSTRAINT fk_df_datatype
         FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -1230,7 +1256,8 @@ func (q *Queries) CreateDatatypesFieldsTable(ctx context.Context) error {
 }
 
 const createField = `-- name: CreateField :exec
-INSERT INTO fields  (    
+INSERT INTO fields  (
+    field_id,
     parent_id,
     label,
     data,
@@ -1245,11 +1272,13 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateFieldParams struct {
+	FieldID      types.FieldID           `json:"field_id"`
 	ParentID     types.NullableContentID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
@@ -1261,6 +1290,7 @@ type CreateFieldParams struct {
 
 func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createField,
+		arg.FieldID,
 		arg.ParentID,
 		arg.Label,
 		arg.Data,
@@ -1274,13 +1304,12 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) error 
 
 const createFieldTable = `-- name: CreateFieldTable :exec
 CREATE TABLE IF NOT EXISTS fields (
-    field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1300,6 +1329,7 @@ func (q *Queries) CreateFieldTable(ctx context.Context) error {
 
 const createMedia = `-- name: CreateMedia :exec
 INSERT INTO media (
+    media_id,
     name,
     display_name,
     alt,
@@ -1326,11 +1356,13 @@ INSERT INTO media (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateMediaParams struct {
+	MediaID      types.MediaID        `json:"media_id"`
 	Name         sql.NullString       `json:"name"`
 	DisplayName  sql.NullString       `json:"display_name"`
 	Alt          sql.NullString       `json:"alt"`
@@ -1348,6 +1380,7 @@ type CreateMediaParams struct {
 
 func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) error {
 	_, err := q.db.ExecContext(ctx, createMedia,
+		arg.MediaID,
 		arg.Name,
 		arg.DisplayName,
 		arg.Alt,
@@ -1367,6 +1400,7 @@ func (q *Queries) CreateMedia(ctx context.Context, arg CreateMediaParams) error 
 
 const createMediaDimension = `-- name: CreateMediaDimension :exec
 INSERT INTO media_dimensions(
+    md_id,
     label,
     width,
     height,
@@ -1375,11 +1409,13 @@ INSERT INTO media_dimensions(
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateMediaDimensionParams struct {
+	MdID        string         `json:"md_id"`
 	Label       sql.NullString `json:"label"`
 	Width       sql.NullInt32  `json:"width"`
 	Height      sql.NullInt32  `json:"height"`
@@ -1388,6 +1424,7 @@ type CreateMediaDimensionParams struct {
 
 func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimensionParams) error {
 	_, err := q.db.ExecContext(ctx, createMediaDimension,
+		arg.MdID,
 		arg.Label,
 		arg.Width,
 		arg.Height,
@@ -1398,8 +1435,7 @@ func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimen
 
 const createMediaDimensionTable = `-- name: CreateMediaDimensionTable :exec
 CREATE TABLE IF NOT EXISTS media_dimensions (
-    md_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    md_id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NULL,
     width INT NULL,
     height INT NULL,
@@ -1416,8 +1452,7 @@ func (q *Queries) CreateMediaDimensionTable(ctx context.Context) error {
 
 const createMediaTable = `-- name: CreateMediaTable :exec
 CREATE TABLE IF NOT EXISTS media (
-    media_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    media_id VARCHAR(26) PRIMARY KEY NOT NULL,
     name TEXT NULL,
     display_name TEXT NULL,
     alt TEXT NULL,
@@ -1428,7 +1463,7 @@ CREATE TABLE IF NOT EXISTS media (
     dimensions TEXT NULL,
     url VARCHAR(255) NULL,
     srcset TEXT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT url
@@ -1446,10 +1481,12 @@ func (q *Queries) CreateMediaTable(ctx context.Context) error {
 
 const createPermission = `-- name: CreatePermission :exec
 INSERT INTO permissions(
+    permission_id,
     table_id,
     mode,
     label
 ) VALUES (
+    ?,
     ?,
     ?,
     ?
@@ -1457,21 +1494,26 @@ INSERT INTO permissions(
 `
 
 type CreatePermissionParams struct {
-	TableID int32  `json:"table_id"`
-	Mode    int32  `json:"mode"`
-	Label   string `json:"label"`
+	PermissionID types.PermissionID `json:"permission_id"`
+	TableID      string             `json:"table_id"`
+	Mode         int32              `json:"mode"`
+	Label        string             `json:"label"`
 }
 
 func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
-	_, err := q.db.ExecContext(ctx, createPermission, arg.TableID, arg.Mode, arg.Label)
+	_, err := q.db.ExecContext(ctx, createPermission,
+		arg.PermissionID,
+		arg.TableID,
+		arg.Mode,
+		arg.Label,
+	)
 	return err
 }
 
 const createPermissionTable = `-- name: CreatePermissionTable :exec
 CREATE TABLE IF NOT EXISTS permissions (
-    permission_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    table_id INT NOT NULL,
+    permission_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    table_id VARCHAR(26) NOT NULL,
     mode INT NOT NULL,
     label VARCHAR(255) NOT NULL
 )
@@ -1483,23 +1525,23 @@ func (q *Queries) CreatePermissionTable(ctx context.Context) error {
 }
 
 const createRole = `-- name: CreateRole :exec
-INSERT INTO roles (label, permissions) VALUES (?,?)
+INSERT INTO roles (role_id, label, permissions) VALUES (?,?,?)
 `
 
 type CreateRoleParams struct {
+	RoleID      types.RoleID   `json:"role_id"`
 	Label       string         `json:"label"`
 	Permissions sql.NullString `json:"permissions"`
 }
 
 func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) error {
-	_, err := q.db.ExecContext(ctx, createRole, arg.Label, arg.Permissions)
+	_, err := q.db.ExecContext(ctx, createRole, arg.RoleID, arg.Label, arg.Permissions)
 	return err
 }
 
 const createRoleTable = `-- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
-    role_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    role_id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NOT NULL,
     permissions LONGTEXT COLLATE utf8mb4_bin NULL
         CHECK (JSON_VALID(` + "`" + `permissions` + "`" + `)),
@@ -1515,6 +1557,7 @@ func (q *Queries) CreateRoleTable(ctx context.Context) error {
 
 const createRoute = `-- name: CreateRoute :exec
 INSERT INTO routes (
+    route_id,
     slug,
     title,
     status,
@@ -1527,11 +1570,13 @@ INSERT INTO routes (
     ?,
     ?,
     ?,
+    ?,
     ?
  )
 `
 
 type CreateRouteParams struct {
+	RouteID      types.RouteID        `json:"route_id"`
 	Slug         types.Slug           `json:"slug"`
 	Title        string               `json:"title"`
 	Status       int32                `json:"status"`
@@ -1542,6 +1587,7 @@ type CreateRouteParams struct {
 
 func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) error {
 	_, err := q.db.ExecContext(ctx, createRoute,
+		arg.RouteID,
 		arg.Slug,
 		arg.Title,
 		arg.Status,
@@ -1554,12 +1600,11 @@ func (q *Queries) CreateRoute(ctx context.Context, arg CreateRouteParams) error 
 
 const createRouteTable = `-- name: CreateRouteTable :exec
 CREATE TABLE IF NOT EXISTS routes (
-    route_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    route_id VARCHAR(26) PRIMARY KEY NOT NULL,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1578,6 +1623,7 @@ func (q *Queries) CreateRouteTable(ctx context.Context) error {
 
 const createSession = `-- name: CreateSession :exec
 INSERT INTO sessions (
+    session_id,
     user_id,
     created_at,
     expires_at,
@@ -1585,7 +1631,8 @@ INSERT INTO sessions (
     ip_address,
     user_agent,
     session_data
-) VALUES( 
+) VALUES(
+    ?,
     ?,
     ?,
     ?,
@@ -1597,6 +1644,7 @@ INSERT INTO sessions (
 `
 
 type CreateSessionParams struct {
+	SessionID   types.SessionID      `json:"session_id"`
 	UserID      types.NullableUserID `json:"user_id"`
 	CreatedAt   types.Timestamp      `json:"created_at"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
@@ -1608,6 +1656,7 @@ type CreateSessionParams struct {
 
 func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) error {
 	_, err := q.db.ExecContext(ctx, createSession,
+		arg.SessionID,
 		arg.UserID,
 		arg.CreatedAt,
 		arg.ExpiresAt,
@@ -1621,9 +1670,8 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 
 const createSessionTable = `-- name: CreateSessionTable :exec
 CREATE TABLE sessions (
-    session_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    session_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -1643,27 +1691,29 @@ func (q *Queries) CreateSessionTable(ctx context.Context) error {
 
 const createTable = `-- name: CreateTable :exec
 INSERT INTO tables (
+    id,
     label
 ) VALUES (
+    ?,
     ?
 )
 `
 
 type CreateTableParams struct {
+	ID    string `json:"id"`
 	Label string `json:"label"`
 }
 
 func (q *Queries) CreateTable(ctx context.Context, arg CreateTableParams) error {
-	_, err := q.db.ExecContext(ctx, createTable, arg.Label)
+	_, err := q.db.ExecContext(ctx, createTable, arg.ID, arg.Label)
 	return err
 }
 
 const createTablesTable = `-- name: CreateTablesTable :exec
 CREATE TABLE IF NOT EXISTS tables (
-    id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26),
     CONSTRAINT label
         UNIQUE (label),
     CONSTRAINT fk_tables_author_id
@@ -1679,13 +1729,15 @@ func (q *Queries) CreateTablesTable(ctx context.Context) error {
 
 const createToken = `-- name: CreateToken :exec
 INSERT INTO tokens (
+    id,
     user_id,
     token_type,
     token,
     issued_at,
     expires_at,
     revoked
-) VALUES( 
+) VALUES(
+    ?,
     ?,
     ?,
     ?,
@@ -1696,6 +1748,7 @@ INSERT INTO tokens (
 `
 
 type CreateTokenParams struct {
+	ID        string               `json:"id"`
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Tokens    string               `json:"token"`
@@ -1706,6 +1759,7 @@ type CreateTokenParams struct {
 
 func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error {
 	_, err := q.db.ExecContext(ctx, createToken,
+		arg.ID,
 		arg.UserID,
 		arg.TokenType,
 		arg.Tokens,
@@ -1718,9 +1772,8 @@ func (q *Queries) CreateToken(ctx context.Context, arg CreateTokenParams) error 
 
 const createTokenTable = `-- name: CreateTokenTable :exec
 CREATE TABLE IF NOT EXISTS tokens (
-    id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     token_type VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL,
     issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -1741,6 +1794,7 @@ func (q *Queries) CreateTokenTable(ctx context.Context) error {
 
 const createUser = `-- name: CreateUser :exec
 INSERT INTO users (
+    user_id,
     username,
     name,
     email,
@@ -1755,22 +1809,25 @@ INSERT INTO users (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateUserParams struct {
+	UserID       types.UserID    `json:"user_id"`
 	Username     string          `json:"username"`
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Roles        int32           `json:"role"`
+	Roles        string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 	_, err := q.db.ExecContext(ctx, createUser,
+		arg.UserID,
 		arg.Username,
 		arg.Name,
 		arg.Email,
@@ -1784,6 +1841,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) error {
 
 const createUserOauth = `-- name: CreateUserOauth :exec
 INSERT INTO user_oauth (
+    user_oauth_id,
     user_id,
     oauth_provider,
     oauth_provider_user_id,
@@ -1798,11 +1856,13 @@ INSERT INTO user_oauth (
     ?,
     ?,
     ?,
+    ?,
     ?
 )
 `
 
 type CreateUserOauthParams struct {
+	UserOAuthID         types.UserOauthID    `json:"user_oauth_id"`
 	UserID              types.NullableUserID `json:"user_id"`
 	OauthProvider       string               `json:"oauth_provider"`
 	OAuthProviderUserID string               `json:"oauth_provider_user_id"`
@@ -1814,6 +1874,7 @@ type CreateUserOauthParams struct {
 
 func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams) error {
 	_, err := q.db.ExecContext(ctx, createUserOauth,
+		arg.UserOAuthID,
 		arg.UserID,
 		arg.OauthProvider,
 		arg.OAuthProviderUserID,
@@ -1827,9 +1888,8 @@ func (q *Queries) CreateUserOauth(ctx context.Context, arg CreateUserOauthParams
 
 const createUserOauthTable = `-- name: CreateUserOauthTable :exec
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_oauth_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     oauth_provider VARCHAR(255) NOT NULL,
     oauth_provider_user_id VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,
@@ -1849,16 +1909,18 @@ func (q *Queries) CreateUserOauthTable(ctx context.Context) error {
 
 const createUserSshKey = `-- name: CreateUserSshKey :execresult
 INSERT INTO user_ssh_keys (
+    ssh_key_id,
     user_id,
     public_key,
     key_type,
     fingerprint,
     label,
     date_created
-) VALUES (?, ?, ?, ?, ?, ?)
+) VALUES (?, ?, ?, ?, ?, ?, ?)
 `
 
 type CreateUserSshKeyParams struct {
+	SSHKeyID    string               `json:"ssh_key_id"`
 	UserID      types.NullableUserID `json:"user_id"`
 	PublicKey   string               `json:"public_key"`
 	KeyType     string               `json:"key_type"`
@@ -1869,6 +1931,7 @@ type CreateUserSshKeyParams struct {
 
 func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyParams) (sql.Result, error) {
 	return q.db.ExecContext(ctx, createUserSshKey,
+		arg.SSHKeyID,
 		arg.UserID,
 		arg.PublicKey,
 		arg.KeyType,
@@ -1880,8 +1943,8 @@ func (q *Queries) CreateUserSshKey(ctx context.Context, arg CreateUserSshKeyPara
 
 const createUserSshKeyTable = `-- name: CreateUserSshKeyTable :exec
 CREATE TABLE IF NOT EXISTS user_ssh_keys (
-    ssh_key_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    ssh_key_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     public_key TEXT NOT NULL,
     key_type VARCHAR(50) NOT NULL,
     fingerprint VARCHAR(255) NOT NULL UNIQUE,
@@ -1899,13 +1962,12 @@ func (q *Queries) CreateUserSshKeyTable(ctx context.Context) error {
 
 const createUserTable = `-- name: CreateUserTable :exec
 CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    user_id VARCHAR(26) PRIMARY KEY NOT NULL,
     username VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     hash TEXT NOT NULL,
-    role INT NOT NULL DEFAULT 4,
+    role VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
     CONSTRAINT username
@@ -2010,7 +2072,7 @@ WHERE id = ?
 `
 
 type DeleteAdminDatatypeFieldParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 func (q *Queries) DeleteAdminDatatypeField(ctx context.Context, arg DeleteAdminDatatypeFieldParams) error {
@@ -2152,7 +2214,7 @@ WHERE id = ?
 `
 
 type DeleteDatatypeFieldParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 func (q *Queries) DeleteDatatypeField(ctx context.Context, arg DeleteDatatypeFieldParams) error {
@@ -2194,7 +2256,7 @@ WHERE md_id = ?
 `
 
 type DeleteMediaDimensionParams struct {
-	MdID int32 `json:"md_id"`
+	MdID string `json:"md_id"`
 }
 
 func (q *Queries) DeleteMediaDimension(ctx context.Context, arg DeleteMediaDimensionParams) error {
@@ -2279,7 +2341,7 @@ WHERE id = ?
 `
 
 type DeleteTableParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 // If needed, run a separate SELECT to fetch the updated row.
@@ -2294,7 +2356,7 @@ WHERE id = ?
 `
 
 type DeleteTokenParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 func (q *Queries) DeleteToken(ctx context.Context, arg DeleteTokenParams) error {
@@ -2336,7 +2398,7 @@ WHERE ssh_key_id = ?
 `
 
 type DeleteUserSshKeyParams struct {
-	SSHKeyID int32 `json:"ssh_key_id"`
+	SSHKeyID string `json:"ssh_key_id"`
 }
 
 func (q *Queries) DeleteUserSshKey(ctx context.Context, arg DeleteUserSshKeyParams) error {
@@ -3237,9 +3299,9 @@ type GetContentTreeByRouteParams struct {
 type GetContentTreeByRouteRow struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt32            `json:"first_child_id"`
-	NextSiblingID sql.NullInt32            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -3965,7 +4027,7 @@ WHERE md_id = ? LIMIT 1
 `
 
 type GetMediaDimensionParams struct {
-	MdID int32 `json:"md_id"`
+	MdID string `json:"md_id"`
 }
 
 func (q *Queries) GetMediaDimension(ctx context.Context, arg GetMediaDimensionParams) (MediaDimensions, error) {
@@ -4128,9 +4190,9 @@ type GetRouteTreeByRouteIDParams struct {
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID types.ContentID         `json:"content_data_id"`
 	ParentID      types.NullableContentID `json:"parent_id"`
-	FirstChildID  sql.NullInt32           `json:"first_child_id"`
-	NextSiblingID sql.NullInt32           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32           `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString          `json:"first_child_id"`
+	NextSiblingID sql.NullString          `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString          `json:"prev_sibling_id"`
 	DatatypeLabel string                  `json:"datatype_label"`
 	DatatypeType  string                  `json:"datatype_type"`
 	FieldLabel    string                  `json:"field_label"`
@@ -4231,7 +4293,7 @@ LIMIT 1
 `
 
 type GetTableParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 func (q *Queries) GetTable(ctx context.Context, arg GetTableParams) (Tables, error) {
@@ -4248,12 +4310,12 @@ LIMIT 1
 `
 
 type GetTableIdParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
-func (q *Queries) GetTableId(ctx context.Context, arg GetTableIdParams) (int32, error) {
+func (q *Queries) GetTableId(ctx context.Context, arg GetTableIdParams) (string, error) {
 	row := q.db.QueryRowContext(ctx, getTableId, arg.ID)
-	var id int32
+	var id string
 	err := row.Scan(&id)
 	return id, err
 }
@@ -4264,11 +4326,35 @@ WHERE id = ? LIMIT 1
 `
 
 type GetTokenParams struct {
-	ID int32 `json:"id"`
+	ID string `json:"id"`
 }
 
 func (q *Queries) GetToken(ctx context.Context, arg GetTokenParams) (Tokens, error) {
 	row := q.db.QueryRowContext(ctx, getToken, arg.ID)
+	var i Tokens
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.TokenType,
+		&i.Tokens,
+		&i.IssuedAt,
+		&i.ExpiresAt,
+		&i.Revoked,
+	)
+	return i, err
+}
+
+const getTokenByTokenValue = `-- name: GetTokenByTokenValue :one
+SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens
+WHERE token = ? LIMIT 1
+`
+
+type GetTokenByTokenValueParams struct {
+	Tokens string `json:"token"`
+}
+
+func (q *Queries) GetTokenByTokenValue(ctx context.Context, arg GetTokenByTokenValueParams) (Tokens, error) {
+	row := q.db.QueryRowContext(ctx, getTokenByTokenValue, arg.Tokens)
 	var i Tokens
 	err := row.Scan(
 		&i.ID,
@@ -4699,7 +4785,7 @@ LIMIT 1
 `
 
 type GetUserSshKeyParams struct {
-	SSHKeyID int32 `json:"ssh_key_id"`
+	SSHKeyID string `json:"ssh_key_id"`
 }
 
 func (q *Queries) GetUserSshKey(ctx context.Context, arg GetUserSshKeyParams) (UserSshKeys, error) {
@@ -4876,7 +4962,7 @@ ORDER BY admin_content_data_id
 `
 
 type ListAdminContentDataByRouteParams struct {
-	AdminRouteID int32 `json:"admin_route_id"`
+	AdminRouteID string `json:"admin_route_id"`
 }
 
 func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdminContentDataByRouteParams) ([]AdminContentData, error) {
@@ -4957,7 +5043,7 @@ ORDER BY admin_content_field_id
 `
 
 type ListAdminContentFieldsByRouteParams struct {
-	AdminRouteID sql.NullInt32 `json:"admin_route_id"`
+	AdminRouteID sql.NullString `json:"admin_route_id"`
 }
 
 func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdminContentFieldsByRouteParams) ([]AdminContentFields, error) {
@@ -6659,10 +6745,10 @@ WHERE admin_content_data_id = ?
 
 type UpdateAdminContentDataParams struct {
 	ParentID           types.NullableContentID       `json:"parent_id"`
-	FirstChildID       sql.NullInt32                 `json:"first_child_id"`
-	NextSiblingID      sql.NullInt32                 `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullInt32                 `json:"prev_sibling_id"`
-	AdminRouteID       int32                         `json:"admin_route_id"`
+	FirstChildID       sql.NullString                `json:"first_child_id"`
+	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	DateCreated        types.Timestamp               `json:"date_created"`
@@ -6699,8 +6785,8 @@ WHERE admin_content_field_id = ?
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullInt32              `json:"admin_route_id"`
-	AdminContentDataID  int32                      `json:"admin_content_data_id"`
+	AdminRouteID        sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID  string                     `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue     string                     `json:"admin_field_value"`
 	AuthorID            types.NullableUserID       `json:"author_id"`
@@ -6767,7 +6853,7 @@ WHERE id = ?
 type UpdateAdminDatatypeFieldParams struct {
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
-	ID              int32                         `json:"id"`
+	ID              string                        `json:"id"`
 }
 
 func (q *Queries) UpdateAdminDatatypeField(ctx context.Context, arg UpdateAdminDatatypeFieldParams) error {
@@ -6940,9 +7026,9 @@ WHERE content_data_id = ?
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt32            `json:"first_child_id"`
-	NextSiblingID sql.NullInt32            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
@@ -7036,7 +7122,7 @@ WHERE id = ?
 type UpdateDatatypeFieldParams struct {
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
-	ID         int32                    `json:"id"`
+	ID         string                   `json:"id"`
 }
 
 func (q *Queries) UpdateDatatypeField(ctx context.Context, arg UpdateDatatypeFieldParams) error {
@@ -7151,7 +7237,7 @@ type UpdateMediaDimensionParams struct {
 	Width       sql.NullInt32  `json:"width"`
 	Height      sql.NullInt32  `json:"height"`
 	AspectRatio sql.NullString `json:"aspect_ratio"`
-	MdID        int32          `json:"md_id"`
+	MdID        string         `json:"md_id"`
 }
 
 func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimensionParams) error {
@@ -7174,7 +7260,7 @@ WHERE permission_id = ?
 `
 
 type UpdatePermissionParams struct {
-	TableID      int32              `json:"table_id"`
+	TableID      string             `json:"table_id"`
 	Mode         int32              `json:"mode"`
 	Label        string             `json:"label"`
 	PermissionID types.PermissionID `json:"permission_id"`
@@ -7288,7 +7374,7 @@ WHERE id = ?
 
 type UpdateTableParams struct {
 	Label string `json:"label"`
-	ID    int32  `json:"id"`
+	ID    string `json:"id"`
 }
 
 func (q *Queries) UpdateTable(ctx context.Context, arg UpdateTableParams) error {
@@ -7310,7 +7396,7 @@ type UpdateTokenParams struct {
 	IssuedAt  time.Time       `json:"issued_at"`
 	ExpiresAt types.Timestamp `json:"expires_at"`
 	Revoked   bool            `json:"revoked"`
-	ID        int32           `json:"id"`
+	ID        string          `json:"id"`
 }
 
 func (q *Queries) UpdateToken(ctx context.Context, arg UpdateTokenParams) error {
@@ -7341,7 +7427,7 @@ type UpdateUserParams struct {
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Roles        int32           `json:"role"`
+	Roles        string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 	UserID       types.UserID    `json:"user_id"`
@@ -7394,7 +7480,7 @@ WHERE ssh_key_id = ?
 
 type UpdateUserSshKeyLabelParams struct {
 	Label    sql.NullString `json:"label"`
-	SSHKeyID int32          `json:"ssh_key_id"`
+	SSHKeyID string         `json:"ssh_key_id"`
 }
 
 func (q *Queries) UpdateUserSshKeyLabel(ctx context.Context, arg UpdateUserSshKeyLabelParams) error {
@@ -7410,7 +7496,7 @@ WHERE ssh_key_id = ?
 
 type UpdateUserSshKeyLastUsedParams struct {
 	LastUsed sql.NullTime `json:"last_used"`
-	SSHKeyID int32        `json:"ssh_key_id"`
+	SSHKeyID string       `json:"ssh_key_id"`
 }
 
 func (q *Queries) UpdateUserSshKeyLastUsed(ctx context.Context, arg UpdateUserSshKeyLastUsedParams) error {

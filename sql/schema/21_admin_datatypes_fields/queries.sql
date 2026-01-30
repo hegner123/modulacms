@@ -3,13 +3,12 @@ DROP TABLE admin_datatypes_fields;
 
 -- name: CreateAdminDatatypesFieldsTable :exec
 CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
-    id INTEGER
-        PRIMARY KEY,
-    admin_datatype_id INTEGER NOT NULL
+    id TEXT PRIMARY KEY NOT NULL CHECK (length(id) = 26),
+    admin_datatype_id TEXT NOT NULL
         CONSTRAINT fk_df_admin_datatype
             REFERENCES admin_datatypes
             ON DELETE CASCADE,
-    admin_field_id INTEGER NOT NULL
+    admin_field_id TEXT NOT NULL
         CONSTRAINT fk_df_admin_field
             REFERENCES admin_fields
             ON DELETE CASCADE
@@ -35,9 +34,11 @@ ORDER BY id;
 
 -- name: CreateAdminDatatypeField :one
 INSERT INTO admin_datatypes_fields (
+    id,
     admin_datatype_id,
     admin_field_id
 ) VALUES (
+    ?,
     ?,
     ?
 ) RETURNING *;

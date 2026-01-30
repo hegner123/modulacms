@@ -55,13 +55,6 @@ func AdminContentFieldHandler(w http.ResponseWriter, r *http.Request, c config.C
 // apiListAdminContentFields handles GET requests for listing admin content fields
 func apiListAdminContentFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 	if r == nil {
 		err := fmt.Errorf("request error")
 		utility.DefaultLogger.Error("", err)
@@ -91,16 +84,9 @@ func apiListAdminContentFields(w http.ResponseWriter, r *http.Request, c config.
 // apiCreateAdminContentField handles POST requests to create a new admin content field
 func apiCreateAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newAdminContentField db.CreateAdminContentFieldParams
-	err = json.NewDecoder(r.Body).Decode(&newAdminContentField)
+	err := json.NewDecoder(r.Body).Decode(&newAdminContentField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,16 +109,9 @@ func apiCreateAdminContentField(w http.ResponseWriter, r *http.Request, c config
 // apiUpdateAdminContentField handles PUT requests to update an existing admin content field
 func apiUpdateAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateAdminContentField db.UpdateAdminContentFieldParams
-	err = json.NewDecoder(r.Body).Decode(&updateAdminContentField)
+	err := json.NewDecoder(r.Body).Decode(&updateAdminContentField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -160,13 +139,6 @@ func apiUpdateAdminContentField(w http.ResponseWriter, r *http.Request, c config
 // apiGetAdminContentField handles GET requests for a single admin content field
 func apiGetAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	acfID := types.AdminContentFieldID(q)
@@ -196,13 +168,6 @@ func apiGetAdminContentField(w http.ResponseWriter, r *http.Request, c config.Co
 // apiDeleteAdminContentField handles DELETE requests for admin content fields
 func apiDeleteAdminContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	cfID := types.AdminContentFieldID(q)
@@ -211,7 +176,7 @@ func apiDeleteAdminContentField(w http.ResponseWriter, r *http.Request, c config
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteAdminContentField(cfID)
+	err := d.DeleteAdminContentField(cfID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

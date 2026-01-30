@@ -54,13 +54,6 @@ func AdminContentDataHandler(w http.ResponseWriter, r *http.Request, c config.Co
 // apiListAdminContentData handles GET requests for listing admin content data
 func apiListAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	if r == nil {
 		err := fmt.Errorf("request error")
@@ -91,16 +84,9 @@ func apiListAdminContentData(w http.ResponseWriter, r *http.Request, c config.Co
 // apiCreateAdminContentData handles POST requests to create new admin content data
 func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newAdminContentData db.CreateAdminContentDataParams
-	err = json.NewDecoder(r.Body).Decode(&newAdminContentData)
+	err := json.NewDecoder(r.Body).Decode(&newAdminContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,16 +109,9 @@ func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 // apiUpdateAdminContentData handles PUT requests to update existing admin content data
 func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateAdminContentData db.UpdateAdminContentDataParams
-	err = json.NewDecoder(r.Body).Decode(&updateAdminContentData)
+	err := json.NewDecoder(r.Body).Decode(&updateAdminContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -176,13 +155,6 @@ func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 // apiDeleteAdminContentData handles DELETE requests for admin content data
 func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	acdID := types.AdminContentID(q)
@@ -192,7 +164,7 @@ func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	err = d.DeleteAdminContentData(acdID)
+	err := d.DeleteAdminContentData(acdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

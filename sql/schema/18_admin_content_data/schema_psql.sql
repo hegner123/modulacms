@@ -1,34 +1,33 @@
 CREATE TABLE IF NOT EXISTS admin_content_data (
-    admin_content_data_id SERIAL
-        PRIMARY KEY,
-    parent_id INTEGER
+    admin_content_data_id TEXT PRIMARY KEY NOT NULL,
+    parent_id TEXT
         CONSTRAINT fk_parent_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    first_child_id INTEGER
+    first_child_id TEXT
         CONSTRAINT fk_first_child_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    next_sibling_id INTEGER
-        CONSTRAINT fk_first_child_id
+    next_sibling_id TEXT
+        CONSTRAINT fk_next_sibling_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    prev_sibling_id INTEGER
-        CONSTRAINT fk_first_child_id
+    prev_sibling_id TEXT
+        CONSTRAINT fk_prev_sibling_id
             REFERENCES admin_content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    admin_route_id INTEGER NOT NULL
+    admin_route_id TEXT NOT NULL
         CONSTRAINT fk_admin_routes
             REFERENCES admin_routes
             ON UPDATE CASCADE,
-    admin_datatype_id INTEGER NOT NULL
+    admin_datatype_id TEXT NOT NULL
         CONSTRAINT fk_admin_datatypes
             REFERENCES admin_datatypes
             ON UPDATE CASCADE,
-    author_id INTEGER DEFAULT '1' NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

@@ -5,12 +5,20 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"sync"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	config "github.com/hegner123/modulacms/internal/config"
 	utility "github.com/hegner123/modulacms/internal/utility"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
+)
+
+var (
+	dbInstance DbDriver
+	dbOnce    sync.Once
+	dbInitErr error
 )
 
 
@@ -43,6 +51,10 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 		d.Err = errWithContext
 		return d
 	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	d.Connection = db
 	d.Context = ctx
@@ -79,6 +91,10 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 		d.Err = errWithContext
 		return d
 	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
 
 	utility.DefaultLogger.Info("MySQL database connected successfully", "database", d.Config.Db_Name)
 	d.Connection = db
@@ -119,6 +135,10 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 		return d
 	}
 
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(10)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
 	utility.DefaultLogger.Info("PostgreSQL database connected successfully", "database", d.Config.Db_Name)
 	d.Connection = db
 	d.Context = ctx
@@ -126,23 +146,81 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	return d
 }
 
+// InitDB initializes the singleton database connection pool.
+// Call once at application startup before any handlers execute.
+func InitDB(env config.Config) (DbDriver, error) {
+	dbOnce.Do(func() {
+		verbose := true
+		switch env.Db_Driver {
+		case config.Sqlite:
+			d := Database{Src: env.Db_URL, Config: env}
+			dbInstance = d.GetDb(&verbose)
+		case config.Mysql:
+			d := MysqlDatabase{Src: env.Db_Name, Config: env}
+			dbInstance = d.GetDb(&verbose)
+		case config.Psql:
+			d := PsqlDatabase{Src: env.Db_Name, Config: env}
+			dbInstance = d.GetDb(&verbose)
+		default:
+			dbInitErr = fmt.Errorf("unsupported database driver: %s", env.Db_Driver)
+			return
+		}
+
+		if dbInstance == nil {
+			dbInitErr = fmt.Errorf("failed to initialize database: nil driver returned")
+			return
+		}
+
+		// Verify the connection is alive
+		if err := dbInstance.Ping(); err != nil {
+			dbInitErr = fmt.Errorf("database ping failed after init: %w", err)
+			return
+		}
+
+		utility.DefaultLogger.Info("Database pool initialized", "driver", string(env.Db_Driver))
+	})
+
+	return dbInstance, dbInitErr
+}
+
+// ConfigDB returns the singleton database driver.
+// If InitDB has not been called, it falls back to creating a new connection
+// (backward-compatible for CLI/install paths that run before the server starts).
 func ConfigDB(env config.Config) DbDriver {
+	if dbInstance != nil {
+		return dbInstance
+	}
+
+	// Fallback: create a one-off connection for CLI/install usage
 	verbose := false
 	switch env.Db_Driver {
 	case config.Sqlite:
 		d := Database{Src: env.Db_URL, Config: env}
-		dbc := d.GetDb(&verbose)
-		return dbc
+		return d.GetDb(&verbose)
 	case config.Mysql:
 		d := MysqlDatabase{Src: env.Db_Name, Config: env}
-		dbc := d.GetDb(&verbose)
-		return dbc
+		return d.GetDb(&verbose)
 	case config.Psql:
 		d := PsqlDatabase{Src: env.Db_Name, Config: env}
-		dbc := d.GetDb(&verbose)
-		return dbc
+		return d.GetDb(&verbose)
 	}
 	return nil
+}
+
+// CloseDB closes the singleton database connection pool.
+// Call during graceful shutdown.
+func CloseDB() error {
+	if dbInstance == nil {
+		return nil
+	}
+
+	con, _, err := dbInstance.GetConnection()
+	if err != nil {
+		return fmt.Errorf("failed to get connection for close: %w", err)
+	}
+
+	utility.DefaultLogger.Info("Closing database connection pool")
+	return con.Close()
 }
 
 

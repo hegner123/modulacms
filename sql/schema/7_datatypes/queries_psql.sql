@@ -3,18 +3,17 @@ DROP TABLE datatypes;
 
 -- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes (
-    datatype_id SERIAL
-        PRIMARY KEY,
-    parent_id INTEGER
+    datatype_id TEXT PRIMARY KEY NOT NULL,
+    parent_id TEXT
         CONSTRAINT fk_datatypes_parent
             REFERENCES datatypes
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -47,20 +46,22 @@ WHERE parent_id = $1
 ORDER BY datatype_id;
 
 -- name: CreateDatatype :one
-INSERT INTO datatypes (    
+INSERT INTO datatypes (
+    datatype_id,
     parent_id,
     label,
     type,
     author_id,
     date_created,
     date_modified
-    ) VALUES (    
+    ) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
     ) RETURNING *;
 
 -- name: UpdateDatatype :exec

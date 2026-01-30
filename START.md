@@ -15,9 +15,17 @@ When the onboarding skill triggers, execute these steps in order:
 
 Search mem MCP for previously stored documentation paths:
 
-```
-mcp__mem__recall
-  key: "modulacms-paths"
+```json
+// Step 1: Load the deferred tool first
+ToolSearch: {
+  "query": "select:mcp__mem__recall",
+  "max_results": 1
+}
+
+// Step 2: Call the tool
+mcp__mem__recall: {
+  "key": "modulacms-paths"
+}
 ```
 
 If results exist, use cached paths but verify files still exist. If files are missing, proceed to Step 2.

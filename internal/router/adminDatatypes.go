@@ -41,13 +41,6 @@ func AdminDatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 // apiGetAdminDatatype handles GET requests for a single admin datatype
 func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	adtID := types.AdminDatatypeID(q)
@@ -72,13 +65,6 @@ func apiGetAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config
 // apiListAdminDatatypes handles GET requests for listing admin datatypes
 func apiListAdminDatatypes(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	adminDatatypes, err := d.ListAdminDatatypes()
 	if err != nil {
@@ -96,16 +82,9 @@ func apiListAdminDatatypes(w http.ResponseWriter, c config.Config) error {
 // apiCreateAdminDatatype handles POST requests to create a new admin datatype
 func apiCreateAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newAdminDatatype db.CreateAdminDatatypeParams
-	err = json.NewDecoder(r.Body).Decode(&newAdminDatatype)
+	err := json.NewDecoder(r.Body).Decode(&newAdminDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,16 +102,9 @@ func apiCreateAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 // apiUpdateAdminDatatype handles PUT requests to update an existing admin datatype
 func apiUpdateAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateAdminDatatype db.UpdateAdminDatatypeParams
-	err = json.NewDecoder(r.Body).Decode(&updateAdminDatatype)
+	err := json.NewDecoder(r.Body).Decode(&updateAdminDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -155,13 +127,6 @@ func apiUpdateAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 // apiDeleteAdminDatatype handles DELETE requests for admin datatypes
 func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	adtID := types.AdminDatatypeID(q)
@@ -170,7 +135,7 @@ func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteAdminDatatype(adtID)
+	err := d.DeleteAdminDatatype(adtID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -3,8 +3,7 @@ DROP TABLE roles;
 
 -- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
-    role_id INTEGER
-        PRIMARY KEY,
+    role_id TEXT PRIMARY KEY NOT NULL CHECK (length(role_id) = 26),
     label TEXT NOT NULL
         UNIQUE,
     permissions TEXT NOT NULL
@@ -28,9 +27,11 @@ ORDER BY role_id;
 
 -- name: CreateRole :one
 INSERT INTO roles (
+    role_id,
     label,
     permissions
 ) VALUES (
+    ?,
     ?,
     ?
 )

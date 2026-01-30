@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id INT NOT NULL
+    id VARCHAR(26) NOT NULL
         PRIMARY KEY,
-    datatype_id INT NOT NULL,
-    field_id INT NOT NULL,
+    datatype_id VARCHAR(26) NOT NULL,
+    field_id VARCHAR(26) NOT NULL,
     CONSTRAINT fk_df_datatype
         FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE ON DELETE CASCADE,

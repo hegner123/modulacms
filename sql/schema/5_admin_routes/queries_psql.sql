@@ -3,15 +3,14 @@ DROP TABLE admin_routes;
 
 -- name: CreateAdminRouteTable :exec
 CREATE TABLE admin_routes (
-    admin_route_id SERIAL
-        PRIMARY KEY,
+    admin_route_id TEXT PRIMARY KEY NOT NULL,
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -42,20 +41,22 @@ SELECT * FROM admin_routes
 ORDER BY slug;
 
 -- name: CreateAdminRoute :one
-INSERT INTO admin_routes (    
+INSERT INTO admin_routes (
+    admin_route_id,
     slug,
     title,
     status,
     author_id,
     date_created,
     date_modified
-    ) VALUES ( 
+    ) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
-    $6
+    $6,
+    $7
     ) RETURNING *;
 
 -- name: UpdateAdminRoute :exec

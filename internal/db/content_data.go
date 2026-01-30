@@ -17,9 +17,9 @@ import (
 type ContentData struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt64            `json:"first_child_id"`
-	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -30,9 +30,9 @@ type ContentData struct {
 type CreateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt64            `json:"first_child_id"`
-	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
@@ -42,9 +42,9 @@ type CreateContentDataParams struct {
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt64            `json:"first_child_id"`
-	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
@@ -70,15 +70,15 @@ type ContentDataJSON struct {
 func MapContentDataJSON(a ContentData) ContentDataJSON {
 	firstChildID := ""
 	if a.FirstChildID.Valid {
-		firstChildID = fmt.Sprintf("%d", a.FirstChildID.Int64)
+		firstChildID = a.FirstChildID.String
 	}
 	nextSiblingID := ""
 	if a.NextSiblingID.Valid {
-		nextSiblingID = fmt.Sprintf("%d", a.NextSiblingID.Int64)
+		nextSiblingID = a.NextSiblingID.String
 	}
 	prevSiblingID := ""
 	if a.PrevSiblingID.Valid {
-		prevSiblingID = fmt.Sprintf("%d", a.PrevSiblingID.Int64)
+		prevSiblingID = a.PrevSiblingID.String
 	}
 	return ContentDataJSON{
 		ContentDataID: a.ContentDataID.String(),
@@ -98,15 +98,15 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 func MapStringContentData(a ContentData) StringContentData {
 	firstChildID := ""
 	if a.FirstChildID.Valid {
-		firstChildID = fmt.Sprintf("%d", a.FirstChildID.Int64)
+		firstChildID = a.FirstChildID.String
 	}
 	nextSiblingID := ""
 	if a.NextSiblingID.Valid {
-		nextSiblingID = fmt.Sprintf("%d", a.NextSiblingID.Int64)
+		nextSiblingID = a.NextSiblingID.String
 	}
 	prevSiblingID := ""
 	if a.PrevSiblingID.Valid {
-		prevSiblingID = fmt.Sprintf("%d", a.PrevSiblingID.Int64)
+		prevSiblingID = a.PrevSiblingID.String
 	}
 	return StringContentData{
 		ContentDataID: a.ContentDataID.String(),
@@ -146,6 +146,7 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 
 func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.CreateContentDataParams {
 	return mdb.CreateContentDataParams{
+		ContentDataID: types.NewContentID(),
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
 		FirstChildID:  a.FirstChildID,
@@ -268,9 +269,9 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -281,11 +282,12 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
+		ContentDataID: types.NewContentID(),
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
-		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
-		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
@@ -297,9 +299,9 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 	return mdbm.UpdateContentDataParams{
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
-		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
-		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
@@ -407,9 +409,9 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -420,10 +422,11 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
+		ContentDataID: types.NewContentID(),
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
-		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
-		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
@@ -436,9 +439,9 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 	return mdbp.UpdateContentDataParams{
 		RouteID:       a.RouteID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt64ToNullInt32(a.FirstChildID),
-		NextSiblingID: NullInt64ToNullInt32(a.NextSiblingID),
-		PrevSiblingID: NullInt64ToNullInt32(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,

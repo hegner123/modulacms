@@ -3,8 +3,7 @@ DROP TABLE media;
 
 -- name: CreateMediaTable :exec
 CREATE TABLE IF NOT EXISTS media (
-    media_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    media_id VARCHAR(26) PRIMARY KEY NOT NULL,
     name TEXT NULL,
     display_name TEXT NULL,
     alt TEXT NULL,
@@ -15,7 +14,7 @@ CREATE TABLE IF NOT EXISTS media (
     dimensions TEXT NULL,
     url VARCHAR(255) NULL,
     srcset TEXT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT url
@@ -48,6 +47,7 @@ ORDER BY name;
 
 -- name: CreateMedia :exec
 INSERT INTO media (
+    media_id,
     name,
     display_name,
     alt,
@@ -62,6 +62,7 @@ INSERT INTO media (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

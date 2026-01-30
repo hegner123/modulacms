@@ -1,19 +1,18 @@
 CREATE TABLE IF NOT EXISTS content_fields (
-    content_field_id INTEGER
-        PRIMARY KEY,
-    route_id INTEGER
+    content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_field_id) = 26),
+    route_id TEXT
         REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
-    content_data_id INTEGER NOT NULL
+    content_data_id TEXT NOT NULL
         REFERENCES content_data
             ON UPDATE CASCADE ON DELETE CASCADE,
-    field_id INTEGER NOT NULL
+    field_id TEXT NOT NULL
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id INTEGER NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

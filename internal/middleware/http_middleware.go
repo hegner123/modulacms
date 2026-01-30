@@ -41,7 +41,9 @@ func HTTPAuthenticationMiddleware(c *config.Config) func(http.Handler) http.Hand
 			authCtx, user := AuthRequest(w, r, c)
 			if authCtx != nil && user != nil {
 				// Inject authenticated user into context
-				ctx := context.WithValue(r.Context(), authCtx, user)
+				// Use the dereferenced value as key so other middleware
+				// can look it up with authcontext("authenticated")
+				ctx := context.WithValue(r.Context(), *authCtx, user)
 				next.ServeHTTP(w, r.WithContext(ctx))
 				return
 			}

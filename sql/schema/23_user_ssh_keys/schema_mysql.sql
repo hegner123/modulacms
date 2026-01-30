@@ -1,7 +1,7 @@
 -- user_ssh_keys table for storing SSH public keys linked to user accounts
 CREATE TABLE IF NOT EXISTS user_ssh_keys (
-    ssh_key_id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
+    ssh_key_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     public_key TEXT NOT NULL,
     key_type VARCHAR(50) NOT NULL, -- "ssh-rsa", "ssh-ed25519", "ecdsa-sha2-nistp256", etc.
     fingerprint VARCHAR(255) NOT NULL UNIQUE,

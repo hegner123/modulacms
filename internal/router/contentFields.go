@@ -39,13 +39,6 @@ func ContentFieldHandler(w http.ResponseWriter, r *http.Request, c config.Config
 // apiGetContentField handles GET requests for a single content field
 func apiGetContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	cfID := types.ContentFieldID(q)
@@ -70,13 +63,6 @@ func apiGetContentField(w http.ResponseWriter, r *http.Request, c config.Config)
 // apiListContentFields handles GET requests for listing content fields
 func apiListContentFields(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	contentFields, err := d.ListContentFields()
 	if err != nil {
@@ -94,16 +80,9 @@ func apiListContentFields(w http.ResponseWriter, c config.Config) error {
 // apiCreateContentField handles POST requests to create a new content field
 func apiCreateContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newContentField db.CreateContentFieldParams
-	err = json.NewDecoder(r.Body).Decode(&newContentField)
+	err := json.NewDecoder(r.Body).Decode(&newContentField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +100,9 @@ func apiCreateContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 // apiUpdateContentField handles PUT requests to update an existing content field
 func apiUpdateContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateContentField db.UpdateContentFieldParams
-	err = json.NewDecoder(r.Body).Decode(&updateContentField)
+	err := json.NewDecoder(r.Body).Decode(&updateContentField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,13 +125,6 @@ func apiUpdateContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 // apiDeleteContentField handles DELETE requests for content fields
 func apiDeleteContentField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	cfID := types.ContentFieldID(q)
@@ -168,7 +133,7 @@ func apiDeleteContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteContentField(cfID)
+	err := d.DeleteContentField(cfID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

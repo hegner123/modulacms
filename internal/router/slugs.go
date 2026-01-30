@@ -23,13 +23,6 @@ func SlugHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 
 func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	route, err := d.GetRouteID(r.URL.Path)
 	if err != nil {

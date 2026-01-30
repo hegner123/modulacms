@@ -3,9 +3,8 @@ DROP TABLE sessions;
 
 -- name: CreateSessionTable :exec
 CREATE TABLE sessions (
-    session_id SERIAL
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    session_id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL
         CONSTRAINT fk_sessions_user_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,
@@ -36,6 +35,7 @@ SELECT * FROM sessions;
 
 -- name: CreateSession :one
 INSERT INTO sessions (
+    session_id,
     user_id,
     created_at,
     expires_at,
@@ -43,14 +43,15 @@ INSERT INTO sessions (
     ip_address,
     user_agent,
     session_data
-) VALUES( 
+) VALUES(
     $1,
     $2,
     $3,
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8
 ) RETURNING *;
 
 -- name: UpdateSession :exec

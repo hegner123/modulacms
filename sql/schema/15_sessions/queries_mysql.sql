@@ -3,9 +3,8 @@ DROP TABLE sessions;
 
 -- name: CreateSessionTable :exec
 CREATE TABLE sessions (
-    session_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    session_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -36,6 +35,7 @@ SELECT * FROM sessions;
 
 -- name: CreateSession :exec
 INSERT INTO sessions (
+    session_id,
     user_id,
     created_at,
     expires_at,
@@ -43,7 +43,8 @@ INSERT INTO sessions (
     ip_address,
     user_agent,
     session_data
-) VALUES( 
+) VALUES(
+    ?,
     ?,
     ?,
     ?,

@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS tokens (
-    id SERIAL
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL
         CONSTRAINT fk_tokens_users
             REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,

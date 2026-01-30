@@ -14,7 +14,7 @@ import (
 //////////////////////////////
 
 type Tables struct {
-	ID       int64                `json:"id"`
+	ID       string               `json:"id"`
 	Label    string               `json:"label"`
 	AuthorID types.NullableUserID `json:"author_id"`
 }
@@ -25,7 +25,7 @@ type CreateTableParams struct {
 
 type UpdateTableParams struct {
 	Label string `json:"label"`
-	ID    int64  `json:"id"`
+	ID    string `json:"id"`
 }
 
 // FormParams and HistoryEntry variants removed - use typed params directly
@@ -36,7 +36,7 @@ type UpdateTableParams struct {
 // MapStringTable converts Tables to StringTables for table display
 func MapStringTable(a Tables) StringTables {
 	return StringTables{
-		ID:       fmt.Sprintf("%d", a.ID),
+		ID:       a.ID,
 		Label:    a.Label,
 		AuthorID: a.AuthorID.String(),
 	}
@@ -58,6 +58,7 @@ func (d Database) MapTable(a mdb.Tables) Tables {
 
 func (d Database) MapCreateTableParams(a CreateTableParams) mdb.CreateTableParams {
 	return mdb.CreateTableParams{
+		ID:    string(types.NewTableID()),
 		Label: a.Label,
 	}
 }
@@ -93,14 +94,10 @@ func (d Database) CreateTable(s CreateTableParams) Tables {
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
-	err = d.SortTables()
-	if err != nil {
-		fmt.Println("SORTING FAILED")
-	}
 	return d.MapTable(row)
 }
 
-func (d Database) DeleteTable(id int64) error {
+func (d Database) DeleteTable(id string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteTable(d.Context, mdb.DeleteTableParams{ID: id})
 	if err != nil {
@@ -109,7 +106,7 @@ func (d Database) DeleteTable(id int64) error {
 	return nil
 }
 
-func (d Database) GetTable(id int64) (*Tables, error) {
+func (d Database) GetTable(id string) (*Tables, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetTable(d.Context, mdb.GetTableParams{ID: id})
 	if err != nil {
@@ -152,7 +149,7 @@ func (d Database) UpdateTable(s UpdateTableParams) (*string, error) {
 
 func (d MysqlDatabase) MapTable(a mdbm.Tables) Tables {
 	return Tables{
-		ID:       int64(a.ID),
+		ID:       a.ID,
 		Label:    a.Label,
 		AuthorID: a.AuthorID,
 	}
@@ -160,6 +157,7 @@ func (d MysqlDatabase) MapTable(a mdbm.Tables) Tables {
 
 func (d MysqlDatabase) MapCreateTableParams(a CreateTableParams) mdbm.CreateTableParams {
 	return mdbm.CreateTableParams{
+		ID:    string(types.NewTableID()),
 		Label: a.Label,
 	}
 }
@@ -167,7 +165,7 @@ func (d MysqlDatabase) MapCreateTableParams(a CreateTableParams) mdbm.CreateTabl
 func (d MysqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbm.UpdateTableParams {
 	return mdbm.UpdateTableParams{
 		Label: a.Label,
-		ID:    int32(a.ID),
+		ID:    a.ID,
 	}
 }
 
@@ -199,25 +197,21 @@ func (d MysqlDatabase) CreateTable(s CreateTableParams) Tables {
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Table: %v\n", err)
 	}
-	err = d.SortTables()
-	if err != nil {
-		fmt.Println("SORTING FAILED")
-	}
 	return d.MapTable(row)
 }
 
-func (d MysqlDatabase) DeleteTable(id int64) error {
+func (d MysqlDatabase) DeleteTable(id string) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteTable(d.Context, mdbm.DeleteTableParams{ID: int32(id)})
+	err := queries.DeleteTable(d.Context, mdbm.DeleteTableParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete table: %v", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetTable(id int64) (*Tables, error) {
+func (d MysqlDatabase) GetTable(id string) (*Tables, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetTable(d.Context, mdbm.GetTableParams{ID: int32(id)})
+	row, err := queries.GetTable(d.Context, mdbm.GetTableParams{ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +252,7 @@ func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
 
 func (d PsqlDatabase) MapTable(a mdbp.Tables) Tables {
 	return Tables{
-		ID:       int64(a.ID),
+		ID:       a.ID,
 		Label:    a.Label,
 		AuthorID: a.AuthorID,
 	}
@@ -266,6 +260,7 @@ func (d PsqlDatabase) MapTable(a mdbp.Tables) Tables {
 
 func (d PsqlDatabase) MapCreateTableParams(a CreateTableParams) mdbp.CreateTableParams {
 	return mdbp.CreateTableParams{
+		ID:    string(types.NewTableID()),
 		Label: a.Label,
 	}
 }
@@ -273,7 +268,7 @@ func (d PsqlDatabase) MapCreateTableParams(a CreateTableParams) mdbp.CreateTable
 func (d PsqlDatabase) MapUpdateTableParams(a UpdateTableParams) mdbp.UpdateTableParams {
 	return mdbp.UpdateTableParams{
 		Label: a.Label,
-		ID:    int32(a.ID),
+		ID:    a.ID,
 	}
 }
 
@@ -301,25 +296,21 @@ func (d PsqlDatabase) CreateTable(s CreateTableParams) Tables {
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
-	err = d.SortTables()
-	if err != nil {
-		fmt.Println("SORTING FAILED")
-	}
 	return d.MapTable(row)
 }
 
-func (d PsqlDatabase) DeleteTable(id int64) error {
+func (d PsqlDatabase) DeleteTable(id string) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteTable(d.Context, mdbp.DeleteTableParams{ID: int32(id)})
+	err := queries.DeleteTable(d.Context, mdbp.DeleteTableParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete table: %v", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetTable(id int64) (*Tables, error) {
+func (d PsqlDatabase) GetTable(id string) (*Tables, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetTable(d.Context, mdbp.GetTableParams{ID: int32(id)})
+	row, err := queries.GetTable(d.Context, mdbp.GetTableParams{ID: id})
 	if err != nil {
 		return nil, err
 	}

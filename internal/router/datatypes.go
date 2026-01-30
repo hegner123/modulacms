@@ -40,13 +40,6 @@ func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetDatatype handles GET requests for a single datatype
 func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	dId, err := types.ParseDatatypeID(q)
@@ -71,13 +64,6 @@ func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiListDatatypes handles GET requests for listing datatypes
 func apiListDatatypes(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	datatypes, err := d.ListDatatypes()
 	if err != nil {
@@ -95,16 +81,9 @@ func apiListDatatypes(w http.ResponseWriter, c config.Config) error {
 // apiCreateDatatype handles POST requests to create a new datatype
 func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newDatatype db.CreateDatatypeParams
-	err = json.NewDecoder(r.Body).Decode(&newDatatype)
+	err := json.NewDecoder(r.Body).Decode(&newDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -127,16 +106,9 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiUpdateDatatype handles PUT requests to update an existing datatype
 func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateDatatype db.UpdateDatatypeParams
-	err = json.NewDecoder(r.Body).Decode(&updateDatatype)
+	err := json.NewDecoder(r.Body).Decode(&updateDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -159,13 +131,6 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiDeleteDatatype handles DELETE requests for datatypes
 func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("id")
 	dtID, err := types.ParseDatatypeID(q)

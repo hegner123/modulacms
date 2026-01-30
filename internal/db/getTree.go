@@ -17,9 +17,9 @@ import (
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID types.ContentID         `json:"content_data_id"`
 	ParentID      types.NullableContentID `json:"parent_id"`
-	FirstChildID  sql.NullInt64           `json:"first_child_id"`
-	NextSiblingID sql.NullInt64           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64           `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString          `json:"first_child_id"`
+	NextSiblingID sql.NullString          `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString          `json:"prev_sibling_id"`
 	DatatypeLabel string                  `json:"datatype_label"`
 	DatatypeType  string                  `json:"datatype_type"`
 	FieldLabel    string                  `json:"field_label"`
@@ -29,9 +29,9 @@ type GetRouteTreeByRouteIDRow struct {
 type GetContentTreeByRouteRow struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt64            `json:"first_child_id"`
-	NextSiblingID sql.NullInt64            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt64            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -174,9 +174,9 @@ func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDR
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 		FieldLabel:    a.FieldLabel,
@@ -190,9 +190,9 @@ func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteR
 	return GetContentTreeByRouteRow{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		RouteID:       a.RouteID,
 		AuthorID:      a.AuthorID,
@@ -283,9 +283,9 @@ func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRo
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 		FieldLabel:    a.FieldLabel,
@@ -297,9 +297,9 @@ func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRo
 	return GetContentTreeByRouteRow{
 		ContentDataID: a.ContentDataID,
 		ParentID:      a.ParentID,
-		FirstChildID:  NullInt32ToNullInt64(a.FirstChildID),
-		NextSiblingID: NullInt32ToNullInt64(a.NextSiblingID),
-		PrevSiblingID: NullInt32ToNullInt64(a.PrevSiblingID),
+		FirstChildID:  a.FirstChildID,
+		NextSiblingID: a.NextSiblingID,
+		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		RouteID:       a.RouteID,
 		AuthorID:      a.AuthorID,

@@ -81,6 +81,7 @@ func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
 
 func (d Database) MapCreateUserOauthParams(a CreateUserOauthParams) mdb.CreateUserOauthParams {
 	return mdb.CreateUserOauthParams{
+		UserOAuthID:         types.NewUserOauthID(),
 		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
 		OAuthProviderUserID: a.OauthProviderUserID,
@@ -217,6 +218,7 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 
 func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.CreateUserOauthParams {
 	return mdbm.CreateUserOauthParams{
+		UserOAuthID:         types.NewUserOauthID(),
 		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
 		OAuthProviderUserID: a.OauthProviderUserID,
@@ -357,6 +359,7 @@ func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 
 func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.CreateUserOauthParams {
 	return mdbp.CreateUserOauthParams{
+		UserOAuthID:         types.NewUserOauthID(),
 		UserID:              a.UserID,
 		OauthProvider:       a.OauthProvider,
 		OAuthProviderUserID: a.OauthProviderUserID,

@@ -39,13 +39,6 @@ func FieldHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetField handles GET requests for a single field
 func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	fID := types.FieldID(q)
@@ -70,13 +63,6 @@ func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error 
 // apiListFields handles GET requests for listing fields
 func apiListFields(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	fields, err := d.ListFields()
 	if err != nil {
@@ -94,16 +80,9 @@ func apiListFields(w http.ResponseWriter, c config.Config) error {
 // apiCreateField handles POST requests to create a new field
 func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newField db.CreateFieldParams
-	err = json.NewDecoder(r.Body).Decode(&newField)
+	err := json.NewDecoder(r.Body).Decode(&newField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +100,9 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiUpdateField handles PUT requests to update an existing field
 func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateField db.UpdateFieldParams
-	err = json.NewDecoder(r.Body).Decode(&updateField)
+	err := json.NewDecoder(r.Body).Decode(&updateField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,13 +125,6 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiDeleteField handles DELETE requests for fields
 func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	fID := types.FieldID(q)
@@ -168,7 +133,7 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteField(fID)
+	err := d.DeleteField(fID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

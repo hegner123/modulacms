@@ -3,13 +3,12 @@ DROP TABLE datatypes_fields;
 
 -- name: CreateDatatypesFieldsTable :exec
 CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id SERIAL
-        PRIMARY KEY,
-    datatype_id INTEGER NOT NULL
+    id TEXT PRIMARY KEY NOT NULL,
+    datatype_id TEXT NOT NULL
         CONSTRAINT fk_df_datatype
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE CASCADE,
-    field_id INTEGER NOT NULL
+    field_id TEXT NOT NULL
         CONSTRAINT fk_df_field
             REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE
@@ -35,11 +34,13 @@ ORDER BY id;
 
 -- name: CreateDatatypeField :one
 INSERT INTO datatypes_fields (
+    id,
     datatype_id,
     field_id
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 ) RETURNING *;
 
 -- name: UpdateDatatypeField :exec

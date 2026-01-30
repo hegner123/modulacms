@@ -1,13 +1,12 @@
 CREATE TABLE IF NOT EXISTS admin_routes (
-    admin_route_id SERIAL
-        PRIMARY KEY,
+    admin_route_id TEXT PRIMARY KEY NOT NULL,
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

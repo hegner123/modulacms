@@ -1,9 +1,8 @@
 CREATE TABLE IF NOT EXISTS tables (
-    id SERIAL
-        PRIMARY KEY,
+    id TEXT PRIMARY KEY NOT NULL,
     label TEXT NOT NULL
         UNIQUE,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT
         REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT
+            ON UPDATE CASCADE ON DELETE SET NULL
 );

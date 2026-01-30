@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS media (
-    media_id INTEGER
-        PRIMARY KEY,
+    media_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(media_id) = 26),
     name TEXT,
     display_name TEXT,
     alt TEXT,
@@ -12,9 +12,9 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
     REFERENCES users
-    ON DELETE SET DEFAULT,
+    ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

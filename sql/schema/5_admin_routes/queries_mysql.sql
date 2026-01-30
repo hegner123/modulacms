@@ -3,12 +3,11 @@ DROP TABLE admin_routes;
 
 -- name: CreateAdminRouteTable :exec
 CREATE TABLE admin_routes (
-    admin_route_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    admin_route_id VARCHAR(26) PRIMARY KEY NOT NULL,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
 
@@ -44,6 +43,7 @@ ORDER BY slug;
 
 -- name: CreateAdminRoute :exec
 INSERT INTO admin_routes (
+    admin_route_id,
     slug,
     title,
     status,
@@ -51,6 +51,7 @@ INSERT INTO admin_routes (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

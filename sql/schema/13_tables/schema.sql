@@ -1,10 +1,10 @@
 CREATE TABLE IF NOT EXISTS tables (
-    id INTEGER
-        PRIMARY KEY,
+    id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(id) = 26),
     label TEXT NOT NULL
         UNIQUE,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT
         REFERENCES users
-            ON DELETE SET DEFAULT
+            ON DELETE SET NULL
 );
 

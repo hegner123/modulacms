@@ -89,7 +89,7 @@ type DbDriver interface {
 	DeleteAdminContentData(types.AdminContentID) error
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
 	ListAdminContentData() (*[]AdminContentData, error)
-	ListAdminContentDataByRoute(int64) (*[]AdminContentData, error)
+	ListAdminContentDataByRoute(string) (*[]AdminContentData, error)
 	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
 
 	// AdminContentFields
@@ -99,7 +99,7 @@ type DbDriver interface {
 	DeleteAdminContentField(types.AdminContentFieldID) error
 	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
-	ListAdminContentFieldsByRoute(int64) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
 	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminDatatypes
@@ -115,7 +115,7 @@ type DbDriver interface {
 	CountAdminDatatypeFields() (*int64, error)
 	CreateAdminDatatypeField(CreateAdminDatatypeFieldParams) AdminDatatypeFields
 	CreateAdminDatatypeFieldTable() error
-	DeleteAdminDatatypeField(int64) error
+	DeleteAdminDatatypeField(string) error
 	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByDatatypeID(types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByFieldID(types.NullableAdminFieldID) (*[]AdminDatatypeFields, error)
@@ -211,7 +211,7 @@ type DbDriver interface {
 	CountDatatypeFields() (*int64, error)
 	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
 	CreateDatatypeFieldTable() error
-	DeleteDatatypeField(int64) error
+	DeleteDatatypeField(string) error
 	ListDatatypeField() (*[]DatatypeFields, error)
 	ListDatatypeFieldByDatatypeID(types.NullableDatatypeID) (*[]DatatypeFields, error)
 	ListDatatypeFieldByFieldID(types.NullableFieldID) (*[]DatatypeFields, error)
@@ -243,8 +243,8 @@ type DbDriver interface {
 	CountMediaDimensions() (*int64, error)
 	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
 	CreateMediaDimensionTable() error
-	DeleteMediaDimension(int64) error
-	GetMediaDimension(int64) (*MediaDimensions, error)
+	DeleteMediaDimension(string) error
+	GetMediaDimension(string) (*MediaDimensions, error)
 	ListMediaDimensions() (*[]MediaDimensions, error)
 	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
 
@@ -292,8 +292,8 @@ type DbDriver interface {
 	CountTables() (*int64, error)
 	CreateTable(CreateTableParams) Tables
 	CreateTableTable() error
-	DeleteTable(int64) error
-	GetTable(int64) (*Tables, error)
+	DeleteTable(string) error
+	GetTable(string) (*Tables, error)
 	ListTables() (*[]Tables, error)
 	UpdateTable(UpdateTableParams) (*string, error)
 
@@ -301,8 +301,9 @@ type DbDriver interface {
 	CountTokens() (*int64, error)
 	CreateToken(CreateTokenParams) Tokens
 	CreateTokenTable() error
-	DeleteToken(int64) error
-	GetToken(int64) (*Tokens, error)
+	DeleteToken(string) error
+	GetToken(string) (*Tokens, error)
+	GetTokenByTokenValue(string) (*Tokens, error)
 	GetTokenByUserId(types.NullableUserID) (*[]Tokens, error)
 	ListTokens() (*[]Tokens, error)
 	UpdateToken(UpdateTokenParams) (*string, error)
@@ -333,12 +334,12 @@ type DbDriver interface {
 	CountUserSshKeys() (*int64, error)
 	CreateUserSshKey(CreateUserSshKeyParams) (*UserSshKeys, error)
 	CreateUserSshKeyTable() error
-	DeleteUserSshKey(int64) error
-	GetUserSshKey(int64) (*UserSshKeys, error)
+	DeleteUserSshKey(string) error
+	GetUserSshKey(string) (*UserSshKeys, error)
 	GetUserSshKeyByFingerprint(string) (*UserSshKeys, error)
 	ListUserSshKeys(types.NullableUserID) (*[]UserSshKeys, error)
-	UpdateUserSshKeyLabel(int64, string) error
-	UpdateUserSshKeyLastUsed(int64, string) error
+	UpdateUserSshKeyLabel(string, string) error
+	UpdateUserSshKeyLastUsed(string, string) error
 }
 
 // GetConnection returns the database connection and context
@@ -521,7 +522,7 @@ func (d Database) CreateAllTables() error {
 func (d Database) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
 	permission := d.CreatePermission(CreatePermissionParams{
-		TableID: 0,
+		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
@@ -553,7 +554,7 @@ func (d Database) CreateBootstrapData() error {
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
 		Hash:         "",
-		Role:         1,
+		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -566,7 +567,7 @@ func (d Database) CreateBootstrapData() error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute := d.CreateRoute(CreateRouteParams{
-		Slug:         types.Slug("/"),
+		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -592,7 +593,7 @@ func (d Database) CreateBootstrapData() error {
 
 	// 7. Create default admin route (admin_route_id = 1)
 	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
-		Slug:         types.Slug("/admin"),
+		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -648,9 +649,9 @@ func (d Database) CreateBootstrapData() error {
 	contentData := d.CreateContentData(CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullInt64{},
-		NextSiblingID: sql.NullInt64{},
-		PrevSiblingID: sql.NullInt64{},
+		FirstChildID:  sql.NullString{},
+		NextSiblingID: sql.NullString{},
+		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:   types.TimestampNow(),
@@ -663,10 +664,10 @@ func (d Database) CreateBootstrapData() error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
-		FirstChildID:    sql.NullInt64{},
-		NextSiblingID:   sql.NullInt64{},
-		PrevSiblingID:   sql.NullInt64{},
-		AdminRouteID:    1,
+		FirstChildID:    sql.NullString{},
+		NextSiblingID:   sql.NullString{},
+		PrevSiblingID:   sql.NullString{},
+		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:     types.TimestampNow(),
@@ -692,8 +693,8 @@ func (d Database) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullInt64{},
-		AdminContentDataID: 1,
+		AdminRouteID:       sql.NullString{},
+		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -711,7 +712,7 @@ func (d Database) CreateBootstrapData() error {
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
-	if mediaDimension.MdID == 0 {
+	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
@@ -723,7 +724,7 @@ func (d Database) CreateBootstrapData() error {
 		Caption:      sql.NullString{},
 		Description:  sql.NullString{},
 		Class:        sql.NullString{},
-		URL:          types.URL(""),
+		URL:          types.URL("https://placeholder.local/default"),
 		Mimetype:     sql.NullString{},
 		Dimensions:   sql.NullString{},
 		Srcset:       sql.NullString{},
@@ -744,7 +745,7 @@ func (d Database) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
-	if token.ID == 0 {
+	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
@@ -794,8 +795,8 @@ func (d Database) CreateBootstrapData() error {
 	if err != nil {
 		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
 	}
-	if userSshKey.SshKeyID == 0 {
-		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	if userSshKey.SshKeyID == "" {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
 	// 20. Register all 22 ModulaCMS tables in the tables registry
@@ -827,7 +828,7 @@ func (d Database) CreateBootstrapData() error {
 
 	for _, tableName := range tableNames {
 		table := d.CreateTable(CreateTableParams{Label: tableName})
-		if table.ID == 0 {
+		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
@@ -837,7 +838,7 @@ func (d Database) CreateBootstrapData() error {
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
-	if datatypeField.ID == 0 {
+	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
@@ -846,7 +847,7 @@ func (d Database) CreateBootstrapData() error {
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 	})
-	if adminDatatypeField.ID == 0 {
+	if adminDatatypeField.ID == "" {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
 
@@ -1135,7 +1136,7 @@ func (d MysqlDatabase) CreateAllTables() error {
 func (d MysqlDatabase) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
 	permission := d.CreatePermission(CreatePermissionParams{
-		TableID: 0,
+		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
@@ -1167,7 +1168,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
 		Hash:         "",
-		Role:         1,
+		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -1180,7 +1181,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute := d.CreateRoute(CreateRouteParams{
-		Slug:         types.Slug("/"),
+		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1206,7 +1207,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 7. Create default admin route (admin_route_id = 1)
 	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
-		Slug:         types.Slug("/admin"),
+		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1262,9 +1263,9 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	contentData := d.CreateContentData(CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullInt64{},
-		NextSiblingID: sql.NullInt64{},
-		PrevSiblingID: sql.NullInt64{},
+		FirstChildID:  sql.NullString{},
+		NextSiblingID: sql.NullString{},
+		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:   types.TimestampNow(),
@@ -1277,10 +1278,10 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
-		FirstChildID:    sql.NullInt64{},
-		NextSiblingID:   sql.NullInt64{},
-		PrevSiblingID:   sql.NullInt64{},
-		AdminRouteID:    1,
+		FirstChildID:    sql.NullString{},
+		NextSiblingID:   sql.NullString{},
+		PrevSiblingID:   sql.NullString{},
+		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:     types.TimestampNow(),
@@ -1306,8 +1307,8 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullInt64{},
-		AdminContentDataID: 1,
+		AdminRouteID:       sql.NullString{},
+		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1325,7 +1326,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
-	if mediaDimension.MdID == 0 {
+	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
@@ -1337,7 +1338,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		Caption:      sql.NullString{},
 		Description:  sql.NullString{},
 		Class:        sql.NullString{},
-		URL:          types.URL(""),
+		URL:          types.URL("https://placeholder.local/default"),
 		Mimetype:     sql.NullString{},
 		Dimensions:   sql.NullString{},
 		Srcset:       sql.NullString{},
@@ -1358,7 +1359,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
-	if token.ID == 0 {
+	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
@@ -1408,8 +1409,8 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	if err != nil {
 		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
 	}
-	if userSshKey.SshKeyID == 0 {
-		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	if userSshKey.SshKeyID == "" {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
 	// 20. Register all 22 ModulaCMS tables in the tables registry
@@ -1441,7 +1442,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	for _, tableName := range tableNames {
 		table := d.CreateTable(CreateTableParams{Label: tableName})
-		if table.ID == 0 {
+		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
@@ -1451,23 +1452,18 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
-	if datatypeField.ID == 0 {
+	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
-	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
-	// TODO: SQLC types for admin_datatypes_fields still use int64, need to update sqlc.yml overrides
-	// to use typed IDs (AdminDatatypeID, AdminFieldID) like datatypes_fields
-	// For now, skip this junction record creation until SQLC is regenerated
-	_ = adminDatatype // suppress unused variable warning
-	_ = adminField    // suppress unused variable warning
-	// adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
-	// 	AdminDatatypeID: adminDatatype.AdminDatatypeID,
-	// 	AdminFieldID:    adminField.AdminFieldID,
-	// })
-	// if adminDatatypeField.ID == 0 {
-	// 	return fmt.Errorf("failed to create default admin_datatypes_fields")
-	// }
+	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
+	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
+		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
+	})
+	if adminDatatypeField.ID == "" {
+		return fmt.Errorf("failed to create default admin_datatypes_fields")
+	}
 
 	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
 	return nil
@@ -1727,7 +1723,7 @@ func (d PsqlDatabase) CreateAllTables() error {
 func (d PsqlDatabase) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
 	permission := d.CreatePermission(CreatePermissionParams{
-		TableID: 0,
+		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
@@ -1759,7 +1755,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
 		Hash:         "",
-		Role:         1,
+		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -1772,7 +1768,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute := d.CreateRoute(CreateRouteParams{
-		Slug:         types.Slug("/"),
+		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1798,7 +1794,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 7. Create default admin route (admin_route_id = 1)
 	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
-		Slug:         types.Slug("/admin"),
+		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1854,9 +1850,9 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	contentData := d.CreateContentData(CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullInt64{},
-		NextSiblingID: sql.NullInt64{},
-		PrevSiblingID: sql.NullInt64{},
+		FirstChildID:  sql.NullString{},
+		NextSiblingID: sql.NullString{},
+		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:   types.TimestampNow(),
@@ -1869,10 +1865,10 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
-		FirstChildID:    sql.NullInt64{},
-		NextSiblingID:   sql.NullInt64{},
-		PrevSiblingID:   sql.NullInt64{},
-		AdminRouteID:    1,
+		FirstChildID:    sql.NullString{},
+		NextSiblingID:   sql.NullString{},
+		PrevSiblingID:   sql.NullString{},
+		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:     types.TimestampNow(),
@@ -1898,8 +1894,8 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullInt64{},
-		AdminContentDataID: 1,
+		AdminRouteID:       sql.NullString{},
+		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1917,7 +1913,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
-	if mediaDimension.MdID == 0 {
+	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
@@ -1929,7 +1925,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		Caption:      sql.NullString{},
 		Description:  sql.NullString{},
 		Class:        sql.NullString{},
-		URL:          types.URL(""),
+		URL:          types.URL("https://placeholder.local/default"),
 		Mimetype:     sql.NullString{},
 		Dimensions:   sql.NullString{},
 		Srcset:       sql.NullString{},
@@ -1950,7 +1946,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
-	if token.ID == 0 {
+	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
@@ -2000,8 +1996,8 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	if err != nil {
 		return fmt.Errorf("failed to create default user_ssh_key: %v", err)
 	}
-	if userSshKey.SshKeyID == 0 {
-		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is 0")
+	if userSshKey.SshKeyID == "" {
+		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
 	// 20. Register all 22 ModulaCMS tables in the tables registry
@@ -2033,7 +2029,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	for _, tableName := range tableNames {
 		table := d.CreateTable(CreateTableParams{Label: tableName})
-		if table.ID == 0 {
+		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
@@ -2043,23 +2039,18 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
-	if datatypeField.ID == 0 {
+	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
-	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
-	// TODO: SQLC types for admin_datatypes_fields still use int64, need to update sqlc.yml overrides
-	// to use typed IDs (AdminDatatypeID, AdminFieldID) like datatypes_fields
-	// For now, skip this junction record creation until SQLC is regenerated
-	_ = adminDatatype // suppress unused variable warning
-	_ = adminField    // suppress unused variable warning
-	// adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
-	// 	AdminDatatypeID: adminDatatype.AdminDatatypeID,
-	// 	AdminFieldID:    adminField.AdminFieldID,
-	// })
-	// if adminDatatypeField.ID == 0 {
-	// 	return fmt.Errorf("failed to create default admin_datatypes_fields")
-	// }
+	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
+	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
+		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
+	})
+	if adminDatatypeField.ID == "" {
+		return fmt.Errorf("failed to create default admin_datatypes_fields")
+	}
 
 	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
 	return nil

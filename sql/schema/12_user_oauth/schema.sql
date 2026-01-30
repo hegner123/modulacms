@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id INTEGER
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    user_oauth_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(user_oauth_id) = 26),
+    user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
     oauth_provider TEXT NOT NULL,

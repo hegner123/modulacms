@@ -3,17 +3,16 @@ DROP TABLE users;
 
 -- name: CreateUserTable :exec
 CREATE TABLE IF NOT EXISTS users (
-    user_id SERIAL
-        PRIMARY KEY,
+    user_id TEXT PRIMARY KEY NOT NULL,
     username TEXT NOT NULL
         UNIQUE,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     hash TEXT NOT NULL,
-    role INTEGER NOT NULL DEFAULT 4
+    role TEXT NOT NULL
         CONSTRAINT fk_users_role
             REFERENCES roles
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -44,21 +43,23 @@ ORDER BY user_id ;
 
 -- name: CreateUser :one
 INSERT INTO users (
-    username, 
-    name, 
-    email, 
-    hash, 
+    user_id,
+    username,
+    name,
+    email,
+    hash,
     role,
-    date_created, 
+    date_created,
     date_modified
-) VALUES ( 
+) VALUES (
     $1,
     $2,
     $3,
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8
 )
 RETURNING *;
 

@@ -1,15 +1,14 @@
 CREATE TABLE IF NOT EXISTS admin_fields (
-    admin_field_id SERIAL
-        PRIMARY KEY,
-    parent_id INTEGER
+    admin_field_id TEXT PRIMARY KEY NOT NULL,
+    parent_id TEXT
         REFERENCES admin_datatypes
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
     type TEXT DEFAULT 'text'::TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

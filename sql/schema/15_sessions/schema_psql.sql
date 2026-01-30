@@ -1,7 +1,6 @@
 CREATE TABLE sessions (
-    session_id SERIAL
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    session_id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL
         CONSTRAINT fk_sessions_user_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,

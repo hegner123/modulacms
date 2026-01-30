@@ -1,15 +1,15 @@
 CREATE TABLE admin_fields (
-    admin_field_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER DEFAULT NULL
+    admin_field_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
+    parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

@@ -53,6 +53,20 @@ type UtilityGetAdminDatatypesRow struct {
 
 // FormParams and JSON variants removed - use typed params directly
 
+// MapAdminDatatypeJSON converts AdminDatatypes to DatatypeJSON for tree building.
+// Maps admin datatype ID into the public DatatypeJSON shape so BuildNodes works unchanged.
+func MapAdminDatatypeJSON(a AdminDatatypes) DatatypeJSON {
+	return DatatypeJSON{
+		DatatypeID:   a.AdminDatatypeID.String(),
+		ParentID:     a.ParentID.String(),
+		Label:        a.Label,
+		Type:         a.Type,
+		AuthorID:     a.AuthorID.String(),
+		DateCreated:  a.DateCreated.String(),
+		DateModified: a.DateModified.String(),
+	}
+}
+
 // MapStringAdminDatatype converts AdminDatatypes to StringAdminDatatypes for table display
 func MapStringAdminDatatype(a AdminDatatypes) StringAdminDatatypes {
 	return StringAdminDatatypes{
@@ -87,7 +101,8 @@ func (d Database) MapAdminDatatype(a mdb.AdminDatatypes) AdminDatatypes {
 
 func (d Database) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdb.CreateAdminDatatypeParams {
 	return mdb.CreateAdminDatatypeParams{
-		ParentID:     a.ParentID,
+		AdminDatatypeID: types.NewAdminDatatypeID(),
+		ParentID:        a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
@@ -214,7 +229,8 @@ func (d MysqlDatabase) MapAdminDatatype(a mdbm.AdminDatatypes) AdminDatatypes {
 
 func (d MysqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdbm.CreateAdminDatatypeParams {
 	return mdbm.CreateAdminDatatypeParams{
-		ParentID:     a.ParentID,
+		AdminDatatypeID: types.NewAdminDatatypeID(),
+		ParentID:        a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
@@ -331,7 +347,8 @@ func (d PsqlDatabase) MapAdminDatatype(a mdbp.AdminDatatypes) AdminDatatypes {
 
 func (d PsqlDatabase) MapCreateAdminDatatypeParams(a CreateAdminDatatypeParams) mdbp.CreateAdminDatatypeParams {
 	return mdbp.CreateAdminDatatypeParams{
-		ParentID:     a.ParentID,
+		AdminDatatypeID: types.NewAdminDatatypeID(),
+		ParentID:        a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,

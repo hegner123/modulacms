@@ -3,25 +3,24 @@ DROP TABLE content_fields;
 
 -- name: CreateContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS content_fields (
-    content_field_id SERIAL
-        PRIMARY KEY,
-    route_id INTEGER
+    content_field_id TEXT PRIMARY KEY NOT NULL,
+    route_id TEXT
         CONSTRAINT fk_route_id
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
-    content_data_id INTEGER NOT NULL
+    content_data_id TEXT NOT NULL
         CONSTRAINT fk_content_data
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE CASCADE,
-    field_id INTEGER NOT NULL
+    field_id TEXT NOT NULL
         CONSTRAINT fk_fields_field
             REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id INTEGER NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

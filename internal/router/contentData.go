@@ -41,13 +41,6 @@ func ContentDataHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 // apiGetContentData handles GET requests for a single content data
 func apiGetContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	cdID := types.ContentID(q)
@@ -72,13 +65,6 @@ func apiGetContentData(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiListContentData handles GET requests for listing content data
 func apiListContentData(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	contentDataList, err := d.ListContentData()
 	if err != nil {
@@ -96,16 +82,9 @@ func apiListContentData(w http.ResponseWriter, c config.Config) error {
 // apiCreateContentData handles POST requests to create new content data
 func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newContentData db.CreateContentDataParams
-	err = json.NewDecoder(r.Body).Decode(&newContentData)
+	err := json.NewDecoder(r.Body).Decode(&newContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -123,16 +102,9 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 // apiUpdateContentData handles PUT requests to update existing content data
 func apiUpdateContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateContentData db.UpdateContentDataParams
-	err = json.NewDecoder(r.Body).Decode(&updateContentData)
+	err := json.NewDecoder(r.Body).Decode(&updateContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -155,13 +127,6 @@ func apiUpdateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 // apiDeleteContentData handles DELETE requests for content data
 func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	cdID := types.ContentID(q)
@@ -170,7 +135,7 @@ func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteContentData(cdID)
+	err := d.DeleteContentData(cdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

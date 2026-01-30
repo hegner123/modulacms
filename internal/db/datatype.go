@@ -100,6 +100,7 @@ func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 
 func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateDatatypeParams {
 	return mdb.CreateDatatypeParams{
+		DatatypeID:   types.NewDatatypeID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -226,7 +227,8 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
 	return mdbm.CreateDatatypeParams{
-		ParentID: a.ParentID,
+		DatatypeID: types.NewDatatypeID(),
+		ParentID:   a.ParentID,
 		Label:    a.Label,
 		Type:     a.Type,
 		AuthorID: a.AuthorID,
@@ -352,6 +354,7 @@ func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 
 func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.CreateDatatypeParams {
 	return mdbp.CreateDatatypeParams{
+		DatatypeID:   types.NewDatatypeID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,

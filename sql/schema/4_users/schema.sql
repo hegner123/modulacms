@@ -1,14 +1,13 @@
 CREATE TABLE IF NOT EXISTS users (
-    user_id INTEGER
-        PRIMARY KEY,
+    user_id TEXT PRIMARY KEY NOT NULL CHECK (length(user_id) = 26),
     username TEXT NOT NULL
         UNIQUE,
     name TEXT NOT NULL,
     email TEXT NOT NULL,
     hash TEXT NOT NULL,
-    role INTEGER NOT NULL DEFAULT 4
+    role TEXT NOT NULL
         REFERENCES roles
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

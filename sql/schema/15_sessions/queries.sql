@@ -3,9 +3,9 @@ DROP TABLE sessions;
 
 -- name: CreateSessionTable :exec
 CREATE TABLE sessions (
-    session_id INTEGER
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    session_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(session_id) = 26),
+    user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -35,6 +35,7 @@ SELECT * FROM sessions;
 
 -- name: CreateSession :one
 INSERT INTO sessions (
+    session_id,
     user_id,
     created_at,
     expires_at,
@@ -42,7 +43,8 @@ INSERT INTO sessions (
     ip_address,
     user_agent,
     session_data
-) VALUES( 
+) VALUES(
+    ?,
     ?,
     ?,
     ?,

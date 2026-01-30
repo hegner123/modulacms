@@ -3,13 +3,12 @@ DROP TABLE users;
 
 -- name: CreateUserTable :exec
 CREATE TABLE IF NOT EXISTS users (
-    user_id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    user_id VARCHAR(26) PRIMARY KEY NOT NULL,
     username VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL,
     hash TEXT NOT NULL,
-    role INT NOT NULL DEFAULT 4,
+    role VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
     CONSTRAINT username
@@ -45,6 +44,7 @@ ORDER BY user_id ;
 
 -- name: CreateUser :exec
 INSERT INTO users (
+    user_id,
     username,
     name,
     email,
@@ -53,6 +53,7 @@ INSERT INTO users (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

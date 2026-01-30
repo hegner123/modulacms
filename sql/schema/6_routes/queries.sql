@@ -3,11 +3,10 @@ DROP TABLE routes;
 
 -- name: CreateRouteTable :exec
 CREATE TABLE IF NOT EXISTS routes (
-    route_id INTEGER
-        PRIMARY KEY,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    route_id TEXT PRIMARY KEY NOT NULL CHECK (length(route_id) = 26),
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
@@ -40,6 +39,7 @@ ORDER BY slug;
 
 -- name: CreateRoute :one
 INSERT INTO routes (
+    route_id,
     slug,
     title,
     status,
@@ -53,8 +53,9 @@ INSERT INTO routes (
     ?,
     ?,
     ?,
+    ?,
     ?
-) 
+)
 RETURNING *;
 
 -- name: UpdateRoute :exec

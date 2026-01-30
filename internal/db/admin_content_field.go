@@ -16,8 +16,8 @@ import (
 
 type AdminContentFields struct {
 	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt64              `json:"admin_route_id"`
-	AdminContentDataID  int64                      `json:"admin_content_data_id"`
+	AdminRouteID        sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID  string                     `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue     string                     `json:"admin_field_value"`
 	AuthorID            types.NullableUserID       `json:"author_id"`
@@ -25,8 +25,8 @@ type AdminContentFields struct {
 	DateModified        types.Timestamp            `json:"date_modified"`
 }
 type CreateAdminContentFieldParams struct {
-	AdminRouteID       sql.NullInt64              `json:"admin_route_id"`
-	AdminContentDataID int64                      `json:"admin_content_data_id"`
+	AdminRouteID       sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID string                     `json:"admin_content_data_id"`
 	AdminFieldID       types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue    string                     `json:"admin_field_value"`
 	AuthorID           types.NullableUserID       `json:"author_id"`
@@ -34,8 +34,8 @@ type CreateAdminContentFieldParams struct {
 	DateModified       types.Timestamp            `json:"date_modified"`
 }
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullInt64              `json:"admin_route_id"`
-	AdminContentDataID  int64                      `json:"admin_content_data_id"`
+	AdminRouteID        sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID  string                     `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue     string                     `json:"admin_field_value"`
 	AuthorID            types.NullableUserID       `json:"author_id"`
@@ -49,16 +49,31 @@ type UpdateAdminContentFieldParams struct {
 // GENERIC section removed - FormParams and JSON variants deprecated
 // Use types package for direct type conversion
 
+// MapAdminContentFieldJSON converts AdminContentFields to ContentFieldsJSON for tree building.
+// Maps admin field value into the public ContentFieldsJSON shape so BuildNodes works unchanged.
+func MapAdminContentFieldJSON(a AdminContentFields) ContentFieldsJSON {
+	return ContentFieldsJSON{
+		ContentFieldID: 0,
+		RouteID:        0,
+		ContentDataID:  0,
+		FieldID:        0,
+		FieldValue:     a.AdminFieldValue,
+		AuthorID:       0,
+		DateCreated:    a.DateCreated.String(),
+		DateModified:   a.DateModified.String(),
+	}
+}
+
 // MapStringAdminContentField converts AdminContentFields to StringAdminContentFields for table display
 func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
 	adminRouteID := ""
 	if a.AdminRouteID.Valid {
-		adminRouteID = fmt.Sprintf("%d", a.AdminRouteID.Int64)
+		adminRouteID = a.AdminRouteID.String
 	}
 	return StringAdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID.String(),
 		AdminRouteID:        adminRouteID,
-		AdminContentDataID:  fmt.Sprintf("%d", a.AdminContentDataID),
+		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID.String(),
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID.String(),
@@ -89,13 +104,14 @@ func (d Database) MapAdminContentField(a mdb.AdminContentFields) AdminContentFie
 
 func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdb.CreateAdminContentFieldParams {
 	return mdb.CreateAdminContentFieldParams{
-		AdminRouteID:       a.AdminRouteID,
-		AdminContentDataID: a.AdminContentDataID,
-		AdminFieldID:       a.AdminFieldID,
-		AdminFieldValue:    a.AdminFieldValue,
-		AuthorID:           a.AuthorID,
-		DateCreated:        a.DateCreated,
-		DateModified:       a.DateModified,
+		AdminContentFieldID: types.NewAdminContentFieldID(),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
 	}
 }
 
@@ -166,9 +182,9 @@ func (d Database) ListAdminContentFields() (*[]AdminContentFields, error) {
 	}
 	return &res, nil
 }
-func (d Database) ListAdminContentFieldsByRoute(id int64) (*[]AdminContentFields, error) {
+func (d Database) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdb.ListAdminContentFieldsByRouteParams{AdminRouteID: Int64ToNullInt64(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdb.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
 	}
@@ -199,8 +215,8 @@ func (d Database) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*str
 func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminContentFields {
 	return AdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID,
-		AdminRouteID:        NullInt32ToNullInt64(a.AdminRouteID),
-		AdminContentDataID:  int64(a.AdminContentDataID),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID,
@@ -210,19 +226,20 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 }
 func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbm.CreateAdminContentFieldParams {
 	return mdbm.CreateAdminContentFieldParams{
-		AdminRouteID:       NullInt64ToNullInt32(a.AdminRouteID),
-		AdminContentDataID: int32(a.AdminContentDataID),
-		AdminFieldID:       a.AdminFieldID,
-		AdminFieldValue:    a.AdminFieldValue,
-		AuthorID:           a.AuthorID,
-		DateCreated:        a.DateCreated,
-		DateModified:       a.DateModified,
+		AdminContentFieldID: types.NewAdminContentFieldID(),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
 	}
 }
 func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbm.UpdateAdminContentFieldParams {
 	return mdbm.UpdateAdminContentFieldParams{
-		AdminRouteID:        NullInt64ToNullInt32(a.AdminRouteID),
-		AdminContentDataID:  int32(a.AdminContentDataID),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID,
@@ -292,9 +309,9 @@ func (d MysqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) ListAdminContentFieldsByRoute(id int64) (*[]AdminContentFields, error) {
+func (d MysqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbm.ListAdminContentFieldsByRouteParams{AdminRouteID: Int64ToNullInt32(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbm.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
 	}
@@ -325,8 +342,8 @@ func (d MysqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) 
 func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminContentFields {
 	return AdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID,
-		AdminRouteID:        NullInt32ToNullInt64(a.AdminRouteID),
-		AdminContentDataID:  int64(a.AdminContentDataID),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID,
@@ -336,19 +353,20 @@ func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminConte
 }
 func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFieldParams) mdbp.CreateAdminContentFieldParams {
 	return mdbp.CreateAdminContentFieldParams{
-		AdminRouteID:       NullInt64ToNullInt32(a.AdminRouteID),
-		AdminContentDataID: int32(a.AdminContentDataID),
-		AdminFieldID:       a.AdminFieldID,
-		AdminFieldValue:    a.AdminFieldValue,
-		AuthorID:           a.AuthorID,
-		DateCreated:        a.DateCreated,
-		DateModified:       a.DateModified,
+		AdminContentFieldID: types.NewAdminContentFieldID(),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
+		AdminFieldID:        a.AdminFieldID,
+		AdminFieldValue:     a.AdminFieldValue,
+		AuthorID:            a.AuthorID,
+		DateCreated:         a.DateCreated,
+		DateModified:        a.DateModified,
 	}
 }
 func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldParams) mdbp.UpdateAdminContentFieldParams {
 	return mdbp.UpdateAdminContentFieldParams{
-		AdminRouteID:        NullInt64ToNullInt32(a.AdminRouteID),
-		AdminContentDataID:  int32(a.AdminContentDataID),
+		AdminRouteID:        a.AdminRouteID,
+		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID,
@@ -414,9 +432,9 @@ func (d PsqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) ListAdminContentFieldsByRoute(id int64) (*[]AdminContentFields, error) {
+func (d PsqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbp.ListAdminContentFieldsByRouteParams{AdminRouteID: Int64ToNullInt32(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbp.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
 	}

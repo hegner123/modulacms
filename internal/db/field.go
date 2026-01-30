@@ -104,6 +104,7 @@ func (d Database) MapField(a mdb.Fields) Fields {
 
 func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParams {
 	return mdb.CreateFieldParams{
+		FieldID:      types.NewFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -233,6 +234,7 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 
 func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFieldParams {
 	return mdbm.CreateFieldParams{
+		FieldID:      types.NewFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -360,6 +362,7 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 
 func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateFieldParams {
 	return mdbp.CreateFieldParams{
+		FieldID:      types.NewFieldID(),
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,

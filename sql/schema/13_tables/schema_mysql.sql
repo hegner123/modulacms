@@ -1,8 +1,7 @@
 CREATE TABLE IF NOT EXISTS tables (
-    id INT AUTO_INCREMENT
-        PRIMARY KEY,
+    id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26),
     CONSTRAINT label
         UNIQUE (label),
     CONSTRAINT fk_tables_author_id

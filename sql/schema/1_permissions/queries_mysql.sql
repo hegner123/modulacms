@@ -3,9 +3,8 @@ DROP TABLE permissions;
 
 -- name: CreatePermissionTable :exec
 CREATE TABLE IF NOT EXISTS permissions (
-    permission_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    table_id INT NOT NULL,
+    permission_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    table_id VARCHAR(26) NOT NULL,
     mode INT NOT NULL,
     label VARCHAR(255) NOT NULL
 );
@@ -24,10 +23,12 @@ ORDER BY table_id;
 
 -- name: CreatePermission :exec
 INSERT INTO permissions(
+    permission_id,
     table_id,
     mode,
     label
 ) VALUES (
+    ?,
     ?,
     ?,
     ?

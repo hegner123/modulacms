@@ -281,9 +281,9 @@ func (m Model) CreateContentWithFields(
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      types.NullableContentID{}, // NULL - no parent initially
-			FirstChildID:  sql.NullInt64{},           // NULL - no children initially
-			NextSiblingID: sql.NullInt64{},           // NULL - no siblings initially
-			PrevSiblingID: sql.NullInt64{},           // NULL - no siblings initially
+			FirstChildID:  sql.NullString{},          // NULL - no children initially
+			NextSiblingID: sql.NullString{},          // NULL - no siblings initially
+			PrevSiblingID: sql.NullString{},          // NULL - no siblings initially
 		})
 
 		// Check if creation succeeded

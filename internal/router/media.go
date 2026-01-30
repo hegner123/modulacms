@@ -41,13 +41,6 @@ func MediaHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetMedia handles GET requests for a single media item
 func apiGetMedia(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	mID := types.MediaID(q)
@@ -72,13 +65,6 @@ func apiGetMedia(w http.ResponseWriter, r *http.Request, c config.Config) error 
 // apiListMedia handles GET requests for listing media items
 func apiListMedia(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	mediaList, err := d.ListMedia()
 	if err != nil {
@@ -96,15 +82,9 @@ func apiListMedia(w http.ResponseWriter, c config.Config) error {
 // apiCreateMedia handles POST requests to create a new media item
 func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
+
 	// Parse the multipart form with a max memory of 10 MB
-	err = r.ParseMultipartForm(10 << 20) // 10 MB
+	err := r.ParseMultipartForm(10 << 20) // 10 MB
 	if err != nil {
 		http.Error(w, "Error parsing multipart form", http.StatusBadRequest)
 		return err
@@ -160,16 +140,9 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiUpdateMedia handles PUT requests to update an existing media item
 func apiUpdateMedia(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateMedia db.UpdateMediaParams
-	err = json.NewDecoder(r.Body).Decode(&updateMedia)
+	err := json.NewDecoder(r.Body).Decode(&updateMedia)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -192,13 +165,6 @@ func apiUpdateMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiDeleteMedia handles DELETE requests for media items
 func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	mID := types.MediaID(q)
@@ -207,7 +173,7 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteMedia(mID)
+	err := d.DeleteMedia(mID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

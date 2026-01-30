@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_oauth_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     oauth_provider VARCHAR(255) NOT NULL,
     oauth_provider_user_id VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,

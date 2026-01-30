@@ -45,6 +45,9 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 	// OAuth endpoints with CORS and rate limiting (PUBLIC - no auth required)
 	mux.Handle("GET /api/v1/auth/oauth/login", corsMiddleware(authLimiter.Middleware(OauthInitiateHandler(c))))
 	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(c))))
+	mux.HandleFunc("/api/v1/admin/tree/", func(w http.ResponseWriter, r *http.Request) {
+		AdminTreeHandler(w, r, c)
+	})
 	mux.HandleFunc("/api/v1/admincontentdatas", func(w http.ResponseWriter, r *http.Request) {
 		AdminContentDatasHandler(w, r, c)
 	})

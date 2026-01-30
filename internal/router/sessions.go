@@ -39,16 +39,9 @@ func SessionHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiUpdateSession handles PUT requests to update an existing session
 func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateSession db.UpdateSessionParams
-	err = json.NewDecoder(r.Body).Decode(&updateSession)
+	err := json.NewDecoder(r.Body).Decode(&updateSession)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -71,13 +64,6 @@ func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 // apiDeleteSession handles DELETE requests for sessions
 func apiDeleteSession(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	sID := types.SessionID(q)
@@ -86,7 +72,7 @@ func apiDeleteSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteSession(sID)
+	err := d.DeleteSession(sID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

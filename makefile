@@ -74,13 +74,6 @@ build: ## Build your project and put the output binary in out/bin/
 		-X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$(COMMIT)' \
 		-X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$(BUILD_DATE)'" \
 		-o out/bin/$(X86_BINARY_NAME) ./cmd
-	CC=x86_64-unknown-linux-gnu-gcc CXX=x86_64-unknown-linux-gnu-g++ CGO_ENABLED=1 GOOS=linux GOARCH=amd64 GO111MODULE=on $(GOCMD) build -mod vendor \
-		-ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$(VERSION)' \
-		-X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$(COMMIT)' \
-		-X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$(BUILD_DATE)'" \
-		-o out/bin/$(AMD_BINARY_NAME) ./cmd
-	rsync -av out/bin/$(AMD_BINARY_NAME) modula:/root/app/modula/$(AMD_BINARY_NAME)
-	rsync -av modula.db  modula:/root/app/modula/modula.db
 
 ## Dump:
 dump: ## Dump sqlite db to sql
@@ -137,14 +130,39 @@ endif
 
 ## Docker:
 docker-build: ## Use the dockerfile to build the container
-	docker build --rm --tag $(BINARY_NAME) .
+	docker build --rm --tag modulacms .
+
+docker-rebuild: ## Full rebuild (no cache) and run the container
+	-docker stop modulacms 2>/dev/null
+	-docker container prune -f 2>/dev/null
+	docker build --no-cache --tag modulacms .
+	docker run -d --name modulacms \
+		-p 8080:8080 -p 4000:4000 -p 2233:2233 \
+		-v modulacms-data:/app/data \
+		-v $(shell pwd)/config.docker.json:/app/config.json:ro \
+		-v $(shell pwd)/certs:/app/certs:ro \
+		-v modulacms-ssh:/app/.ssh \
+		-v modulacms-backups:/app/backups \
+		modulacms
+
+docker-run: docker-build ## Build and run the container
+	-docker stop modulacms 2>/dev/null
+	-docker container prune -f 2>/dev/null
+	docker run -d --name modulacms \
+		-p 8080:8080 -p 4000:4000 -p 2233:2233 \
+		-v modulacms-data:/app/data \
+		-v $(shell pwd)/config.docker.json:/app/config.json:ro \
+		-v $(shell pwd)/certs:/app/certs:ro \
+		-v modulacms-ssh:/app/.ssh \
+		-v modulacms-backups:/app/backups \
+		modulacms
 
 docker-release: ## Release the container with tag latest and version
-	docker tag $(BINARY_NAME) $(DOCKER_REGISTRY)$(BINARY_NAME):latest
-	docker tag $(BINARY_NAME) $(DOCKER_REGISTRY)$(BINARY_NAME):$(VERSION)
+	docker tag modulacms $(DOCKER_REGISTRY)modulacms:latest
+	docker tag modulacms $(DOCKER_REGISTRY)modulacms:$(VERSION)
 	# Push the docker images
-	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):latest
-	docker push $(DOCKER_REGISTRY)$(BINARY_NAME):$(VERSION)
+	docker push $(DOCKER_REGISTRY)modulacms:latest
+	docker push $(DOCKER_REGISTRY)modulacms:$(VERSION)
 
 ## Docker:
 docker-db:

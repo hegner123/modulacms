@@ -3,8 +3,7 @@ DROP TABLE media;
 
 -- name: CreateMediaTable :exec
 CREATE TABLE IF NOT EXISTS media (
-    media_id SERIAL
-        PRIMARY KEY,
+    media_id TEXT PRIMARY KEY NOT NULL,
     name TEXT,
     display_name TEXT,
     alt TEXT,
@@ -16,10 +15,10 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -46,6 +45,7 @@ ORDER BY name;
 
 -- name: CreateMedia :one
 INSERT INTO media (
+    media_id,
     name,
     display_name,
     alt,
@@ -72,7 +72,8 @@ INSERT INTO media (
     $10,
     $11,
     $12,
-    $13
+    $13,
+    $14
 )
 RETURNING *;
 

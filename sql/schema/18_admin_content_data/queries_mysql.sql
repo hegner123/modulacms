@@ -3,15 +3,14 @@ DROP TABLE admin_content_data;
 
 -- name: CreateAdminContentDataTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_data (
-    admin_content_data_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
-    first_child_id INT NULL,
-    next_sibling_id INT NULL,
-    prev_sibling_id INT NULL,
-    admin_route_id INT NOT NULL,
-    admin_datatype_id INT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    admin_content_data_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
+    first_child_id VARCHAR(26) NULL,
+    next_sibling_id VARCHAR(26) NULL,
+    prev_sibling_id VARCHAR(26) NULL,
+    admin_route_id VARCHAR(26) NOT NULL,
+    admin_datatype_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -58,6 +57,7 @@ ORDER BY admin_content_data_id;
 
 -- name: CreateAdminContentData :exec
 INSERT INTO admin_content_data (
+    admin_content_data_id,
     parent_id,
     first_child_id,
     next_sibling_id,
@@ -68,6 +68,7 @@ INSERT INTO admin_content_data (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

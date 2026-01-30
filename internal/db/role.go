@@ -53,6 +53,7 @@ func (d Database) MapRole(a mdb.Roles) Roles {
 
 func (d Database) MapCreateRoleParams(a CreateRoleParams) mdb.CreateRoleParams {
 	return mdb.CreateRoleParams{
+		RoleID:      types.NewRoleID(),
 		Label:       a.Label,
 		Permissions: a.Permissions,
 	}
@@ -153,6 +154,7 @@ func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 
 func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
 	return mdbm.CreateRoleParams{
+		RoleID:      types.NewRoleID(),
 		Label:       a.Label,
 		Permissions: StringToNullString(a.Permissions),
 	}
@@ -257,6 +259,7 @@ func (d PsqlDatabase) MapRole(a mdbp.Roles) Roles {
 
 func (d PsqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbp.CreateRoleParams {
 	return mdbp.CreateRoleParams{
+		RoleID:      types.NewRoleID(),
 		Label:       a.Label,
 		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(a.Permissions)},
 	}

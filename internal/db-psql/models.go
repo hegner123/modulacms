@@ -15,10 +15,10 @@ import (
 type AdminContentData struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 	ParentID           types.NullableContentID       `json:"parent_id"`
-	FirstChildID       sql.NullInt32                 `json:"first_child_id"`
-	NextSiblingID      sql.NullInt32                 `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullInt32                 `json:"prev_sibling_id"`
-	AdminRouteID       int32                         `json:"admin_route_id"`
+	FirstChildID       sql.NullString                `json:"first_child_id"`
+	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
+	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	DateCreated        types.Timestamp               `json:"date_created"`
@@ -27,8 +27,8 @@ type AdminContentData struct {
 
 type AdminContentFields struct {
 	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullInt32              `json:"admin_route_id"`
-	AdminContentDataID  int32                      `json:"admin_content_data_id"`
+	AdminRouteID        sql.NullString             `json:"admin_route_id"`
+	AdminContentDataID  string                     `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue     string                     `json:"admin_field_value"`
 	AuthorID            types.NullableUserID       `json:"author_id"`
@@ -47,7 +47,7 @@ type AdminDatatypes struct {
 }
 
 type AdminDatatypesFields struct {
-	ID              int32                         `json:"id"`
+	ID              string                        `json:"id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
 }
@@ -136,9 +136,9 @@ type ChangeEvent struct {
 type ContentData struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullInt32            `json:"first_child_id"`
-	NextSiblingID sql.NullInt32            `json:"next_sibling_id"`
-	PrevSiblingID sql.NullInt32            `json:"prev_sibling_id"`
+	FirstChildID  sql.NullString           `json:"first_child_id"`
+	NextSiblingID sql.NullString           `json:"next_sibling_id"`
+	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -168,7 +168,7 @@ type Datatypes struct {
 }
 
 type DatatypesFields struct {
-	ID         int32                    `json:"id"`
+	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
 }
@@ -202,7 +202,7 @@ type Media struct {
 }
 
 type MediaDimensions struct {
-	MdID        int32          `json:"md_id"`
+	MdID        string         `json:"md_id"`
 	Label       sql.NullString `json:"label"`
 	Width       sql.NullInt32  `json:"width"`
 	Height      sql.NullInt32  `json:"height"`
@@ -211,7 +211,7 @@ type MediaDimensions struct {
 
 type Permissions struct {
 	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      int32              `json:"table_id"`
+	TableID      string             `json:"table_id"`
 	Mode         int32              `json:"mode"`
 	Label        string             `json:"label"`
 }
@@ -244,13 +244,13 @@ type Sessions struct {
 }
 
 type Tables struct {
-	ID       int32                `json:"id"`
+	ID       string               `json:"id"`
 	Label    string               `json:"label"`
 	AuthorID types.NullableUserID `json:"author_id"`
 }
 
 type Tokens struct {
-	ID        int32                `json:"id"`
+	ID        string               `json:"id"`
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Tokens    string               `json:"token"`
@@ -271,7 +271,7 @@ type UserOauth struct {
 }
 
 type UserSshKeys struct {
-	SSHKeyID    int32                `json:"ssh_key_id"`
+	SSHKeyID    string               `json:"ssh_key_id"`
 	UserID      types.NullableUserID `json:"user_id"`
 	PublicKey   string               `json:"public_key"`
 	KeyType     string               `json:"key_type"`
@@ -287,7 +287,7 @@ type Users struct {
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Roles        int32           `json:"role"`
+	Roles        string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 }

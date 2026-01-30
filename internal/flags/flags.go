@@ -12,6 +12,7 @@ type AppFlags struct {
 	ResetFlag    *bool
 	InstallFlag  *bool
 	GenCertsFlag *bool
+	InitDbFlag   *bool
 	ConfigPath   *string
 }
 
@@ -26,6 +27,7 @@ func ParseFlags() AppFlags {
 		ResetFlag:    new(bool),
 		InstallFlag:  new(bool),
 		GenCertsFlag: new(bool),
+		InitDbFlag:   new(bool),
 		ConfigPath:   new(string),
 	}
 	flag.BoolVar(app.AuthFlag, "auth", false, "Run oauth tests")
@@ -37,6 +39,7 @@ func ParseFlags() AppFlags {
 	flag.BoolVar(app.ResetFlag, "reset", false, "Delete Database and reinitialize")
 	flag.BoolVar(app.InstallFlag, "i", false, "Run Installation UI")
 	flag.BoolVar(app.GenCertsFlag, "gen-certs", false, "Generate self-signed SSL certificates for local development")
+	flag.BoolVar(app.InitDbFlag, "init-db", false, "Create database tables and bootstrap data, then exit")
 	flag.StringVar(app.ConfigPath, "config", "config.json", "Path to configuration file")
 	flag.Parse()
 	return *app

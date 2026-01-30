@@ -3,9 +3,8 @@ DROP TABLE user_oauth;
 
 -- name: CreateUserOauthTable :exec
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    user_oauth_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     oauth_provider VARCHAR(255) NOT NULL,
     oauth_provider_user_id VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,
@@ -60,6 +59,7 @@ ORDER BY user_oauth_id;
 
 -- name: CreateUserOauth :exec
 INSERT INTO user_oauth (
+    user_oauth_id,
     user_id,
     oauth_provider,
     oauth_provider_user_id,
@@ -68,6 +68,7 @@ INSERT INTO user_oauth (
     token_expires_at,
     date_created
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

@@ -14,7 +14,7 @@ import (
 //////////////////////////////
 
 type DatatypeFields struct {
-	ID         int64                   `json:"id"`
+	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
 }
@@ -27,7 +27,7 @@ type CreateDatatypeFieldParams struct {
 type UpdateDatatypeFieldParams struct {
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
-	ID         int64                    `json:"id"`
+	ID         string                   `json:"id"`
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -38,7 +38,7 @@ type UpdateDatatypeFieldParams struct {
 // MapStringDatatypeField converts DatatypeFields to StringDatatypeFields for table display
 func MapStringDatatypeField(a DatatypeFields) StringDatatypeFields {
 	return StringDatatypeFields{
-		ID:         fmt.Sprintf("%d", a.ID),
+		ID:         a.ID,
 		DatatypeID: a.DatatypeID.String(),
 		FieldID:    a.FieldID.String(),
 	}
@@ -60,6 +60,7 @@ func (d Database) MapDatatypeField(a mdb.DatatypesFields) DatatypeFields {
 
 func (d Database) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdb.CreateDatatypeFieldParams {
 	return mdb.CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -100,7 +101,7 @@ func (d Database) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeField
 	return d.MapDatatypeField(row)
 }
 
-func (d Database) DeleteDatatypeField(id int64) error {
+func (d Database) DeleteDatatypeField(id string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteDatatypeField(d.Context, mdb.DeleteDatatypeFieldParams{ID: id})
 	if err != nil {
@@ -170,7 +171,7 @@ func (d Database) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, err
 
 func (d MysqlDatabase) MapDatatypeField(a mdbm.DatatypesFields) DatatypeFields {
 	return DatatypeFields{
-		ID:         int64(a.ID),
+		ID:         a.ID,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -178,6 +179,7 @@ func (d MysqlDatabase) MapDatatypeField(a mdbm.DatatypesFields) DatatypeFields {
 
 func (d MysqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbm.CreateDatatypeFieldParams {
 	return mdbm.CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -187,7 +189,7 @@ func (d MysqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams)
 	return mdbm.UpdateDatatypeFieldParams{
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
-		ID:         int32(a.ID),
+		ID:         a.ID,
 	}
 }
 
@@ -222,9 +224,9 @@ func (d MysqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) Datatype
 	return d.MapDatatypeField(row)
 }
 
-func (d MysqlDatabase) DeleteDatatypeField(id int64) error {
+func (d MysqlDatabase) DeleteDatatypeField(id string) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, mdbm.DeleteDatatypeFieldParams{ID: int32(id)})
+	err := queries.DeleteDatatypeField(d.Context, mdbm.DeleteDatatypeFieldParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete DatatypeField: %v", id)
 	}
@@ -292,7 +294,7 @@ func (d MysqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string
 
 func (d PsqlDatabase) MapDatatypeField(a mdbp.DatatypesFields) DatatypeFields {
 	return DatatypeFields{
-		ID:         int64(a.ID),
+		ID:         a.ID,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -300,6 +302,7 @@ func (d PsqlDatabase) MapDatatypeField(a mdbp.DatatypesFields) DatatypeFields {
 
 func (d PsqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbp.CreateDatatypeFieldParams {
 	return mdbp.CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -309,7 +312,7 @@ func (d PsqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) 
 	return mdbp.UpdateDatatypeFieldParams{
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
-		ID:         int32(a.ID),
+		ID:         a.ID,
 	}
 }
 
@@ -340,9 +343,9 @@ func (d PsqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeF
 	return d.MapDatatypeField(row)
 }
 
-func (d PsqlDatabase) DeleteDatatypeField(id int64) error {
+func (d PsqlDatabase) DeleteDatatypeField(id string) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, mdbp.DeleteDatatypeFieldParams{ID: int32(id)})
+	err := queries.DeleteDatatypeField(d.Context, mdbp.DeleteDatatypeFieldParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete DatatypeField: %v", id)
 	}

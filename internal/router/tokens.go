@@ -3,7 +3,7 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
+	"fmt"
 
 	 "github.com/hegner123/modulacms/internal/config"
 	 "github.com/hegner123/modulacms/internal/db"
@@ -39,19 +39,11 @@ func TokenHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetToken handles GET requests for a single token
 func apiGetToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	tID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	tID := r.URL.Query().Get("q")
+	if tID == "" {
+		err := fmt.Errorf("missing token ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	token, err := d.GetToken(tID)
@@ -70,16 +62,9 @@ func apiGetToken(w http.ResponseWriter, r *http.Request, c config.Config) error 
 // apiCreateToken handles POST requests to create a new token
 func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newToken db.CreateTokenParams
-	err = json.NewDecoder(r.Body).Decode(&newToken)
+	err := json.NewDecoder(r.Body).Decode(&newToken)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -97,16 +82,9 @@ func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiUpdateToken handles PUT requests to update an existing token
 func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateToken db.UpdateTokenParams
-	err = json.NewDecoder(r.Body).Decode(&updateToken)
+	err := json.NewDecoder(r.Body).Decode(&updateToken)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -129,22 +107,14 @@ func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiDeleteToken handles DELETE requests for tokens
 func apiDeleteToken(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	tId, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	tId := r.URL.Query().Get("q")
+	if tId == "" {
+		err := fmt.Errorf("missing token ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteToken(tId)
+	err := d.DeleteToken(tId)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

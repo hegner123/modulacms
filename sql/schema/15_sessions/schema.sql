@@ -1,7 +1,7 @@
 CREATE TABLE sessions (
-    session_id INTEGER
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    session_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(session_id) = 26),
+    user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
     created_at TEXT DEFAULT CURRENT_TIMESTAMP,

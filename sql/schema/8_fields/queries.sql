@@ -3,17 +3,16 @@ DROP TABLE fields;
 
 -- name: CreateFieldTable :exec
 CREATE TABLE IF NOT EXISTS fields(
-    field_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER DEFAULT NULL
+    field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
+    parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -37,6 +36,7 @@ ORDER BY field_id;
 
 -- name: CreateField :one
 INSERT INTO fields  (
+    field_id,
     parent_id,
     label,
     data,
@@ -45,6 +45,7 @@ INSERT INTO fields  (
     date_created,
     date_modified
     ) VALUES (
+    ?,
     ?,
     ?,
     ?,

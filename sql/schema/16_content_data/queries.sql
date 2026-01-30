@@ -3,29 +3,28 @@ DROP TABLE content_data;
 
 -- name: CreateContentDataTable :exec
 CREATE TABLE IF NOT EXISTS content_data (
-    content_data_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER
+    content_data_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_data_id) = 26),
+    parent_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    first_child_id INTEGER
+    first_child_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    next_sibling_id INTEGER
+    next_sibling_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    prev_sibling_id INTEGER
+    prev_sibling_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    route_id INTEGER NOT NULL
+    route_id TEXT NOT NULL
         REFERENCES routes
             ON DELETE CASCADE,
-    datatype_id INTEGER NOT NULL
+    datatype_id TEXT NOT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
-    author_id INTEGER NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -35,7 +34,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
-    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET DEFAULT
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
 );
 
 
@@ -59,6 +58,7 @@ ORDER BY content_data_id;
 
 -- name: CreateContentData :one
 INSERT INTO content_data (
+    content_data_id,
     route_id,
     parent_id,
     first_child_id,
@@ -68,7 +68,8 @@ INSERT INTO content_data (
     author_id,
     date_created,
     date_modified
-) VALUES ( 
+) VALUES (
+    ?,
     ?,
     ?,
     ?,

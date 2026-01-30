@@ -39,13 +39,6 @@ func RouteHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetRoute handles GET requests for a single route
 func apiGetRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	id := types.RouteID(q)
@@ -70,13 +63,6 @@ func apiGetRoute(w http.ResponseWriter, r *http.Request, c config.Config) error 
 // apiListRoutes handles GET requests for listing routes
 func apiListRoutes(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	routes, err := d.ListRoutes()
 	if err != nil {
@@ -94,16 +80,9 @@ func apiListRoutes(w http.ResponseWriter, c config.Config) error {
 // apiCreateRoute handles POST requests to create a new route
 func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newRoute db.CreateRouteParams
-	err = json.NewDecoder(r.Body).Decode(&newRoute)
+	err := json.NewDecoder(r.Body).Decode(&newRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +100,9 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiUpdateRoute handles PUT requests to update an existing route
 func apiUpdateRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateRoute db.UpdateRouteParams
-	err = json.NewDecoder(r.Body).Decode(&updateRoute)
+	err := json.NewDecoder(r.Body).Decode(&updateRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,13 +125,6 @@ func apiUpdateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiDeleteRoute handles DELETE requests for routes
 func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	id := types.RouteID(q)
@@ -168,7 +133,7 @@ func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteRoute(id)
+	err := d.DeleteRoute(id)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

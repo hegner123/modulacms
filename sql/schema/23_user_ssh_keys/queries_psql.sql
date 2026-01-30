@@ -3,8 +3,8 @@ DROP TABLE user_ssh_keys;
 
 -- name: CreateUserSshKeyTable :exec
 CREATE TABLE IF NOT EXISTS user_ssh_keys (
-    ssh_key_id SERIAL PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    ssh_key_id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL,
     public_key TEXT NOT NULL,
     key_type VARCHAR(50) NOT NULL,
     fingerprint VARCHAR(255) NOT NULL UNIQUE,
@@ -16,13 +16,14 @@ CREATE TABLE IF NOT EXISTS user_ssh_keys (
 
 -- name: CreateUserSshKey :one
 INSERT INTO user_ssh_keys (
+    ssh_key_id,
     user_id,
     public_key,
     key_type,
     fingerprint,
     label,
     date_created
-) VALUES ($1, $2, $3, $4, $5, $6)
+) VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING *;
 
 -- name: GetUserSshKey :one

@@ -23,6 +23,29 @@ func BuildTree(cd []db.ContentData, dt []db.Datatypes, cf []db.ContentFields, df
 
 	return root
 }
+func BuildAdminTree(cd []db.AdminContentData, dt []db.AdminDatatypes, cf []db.AdminContentFields, df []db.AdminFields) Root {
+	d := make([]Datatype, len(cd))
+	f := make([]Field, len(cf))
+	for i, v := range cd {
+		d[i].Info = db.MapAdminDatatypeJSON(dt[i])
+		d[i].Content = db.MapAdminContentDataJSON(v)
+	}
+	for i, v := range cf {
+		info := db.MapAdminFieldJSON(df[i])
+		// BuildNodes matches fields to nodes via Info.ParentID == Content.ContentDataID.
+		// AdminFields.ParentID is a datatype ID (field definition owner), not a content node.
+		// The actual content node link is AdminContentFields.AdminContentDataID.
+		info.ParentID = v.AdminContentDataID
+		f[i].Info = info
+		f[i].Content = db.MapAdminContentFieldJSON(v)
+	}
+	nodes := BuildNodes(d, f)
+	root := NewRoot()
+	root.Node = nodes
+
+	return root
+}
+
 func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 	// Build a slice of nodes from the datatypes.
 	nodes := make([]*Node, len(datatypes))

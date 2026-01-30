@@ -3,9 +3,9 @@ DROP TABLE tokens;
 
 -- name: CreateTokenTable :exec
 CREATE TABLE IF NOT EXISTS tokens (
-    id INTEGER
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(id) = 26),
+    user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
     token_type TEXT NOT NULL,
@@ -33,20 +33,22 @@ SELECT * FROM tokens;
 
 -- name: CreateToken :one
 INSERT INTO tokens (
+    id,
     user_id,
     token_type,
     token,
     issued_at,
     expires_at,
     revoked
-) VALUES ( 
+) VALUES (
+    ?,
     ?,
     ?,
     ?,
     ?,
     ?,
     ?
-) 
+)
 RETURNING *;
 
 -- name: UpdateToken :exec
@@ -60,3 +62,7 @@ WHERE id = ?;
 -- name: DeleteToken :exec
 DELETE FROM tokens
 WHERE id = ?;
+
+-- name: GetTokenByTokenValue :one
+SELECT * FROM tokens
+WHERE token = ? LIMIT 1;

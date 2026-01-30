@@ -15,19 +15,19 @@ import (
 
 type Permissions struct {
 	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      int64              `json:"table_id"`
+	TableID      string             `json:"table_id"`
 	Mode         int64              `json:"mode"`
 	Label        string             `json:"label"`
 }
 
 type CreatePermissionParams struct {
-	TableID int64  `json:"table_id"`
+	TableID string `json:"table_id"`
 	Mode    int64  `json:"mode"`
 	Label   string `json:"label"`
 }
 
 type UpdatePermissionParams struct {
-	TableID      int64              `json:"table_id"`
+	TableID      string             `json:"table_id"`
 	Mode         int64              `json:"mode"`
 	Label        string             `json:"label"`
 	PermissionID types.PermissionID `json:"permission_id"`
@@ -42,7 +42,7 @@ type UpdatePermissionParams struct {
 func MapStringPermission(a Permissions) StringPermissions {
 	return StringPermissions{
 		PermissionID: a.PermissionID.String(),
-		TableID:      fmt.Sprintf("%d", a.TableID),
+		TableID:      a.TableID,
 		Mode:         fmt.Sprintf("%d", a.Mode),
 		Label:        a.Label,
 	}
@@ -65,9 +65,10 @@ func (d Database) MapPermission(a mdb.Permissions) Permissions {
 
 func (d Database) MapCreatePermissionParams(a CreatePermissionParams) mdb.CreatePermissionParams {
 	return mdb.CreatePermissionParams{
-		TableID: a.TableID,
-		Mode:    a.Mode,
-		Label:   a.Label,
+		PermissionID: types.NewPermissionID(),
+		TableID:      a.TableID,
+		Mode:         a.Mode,
+		Label:        a.Label,
 	}
 }
 
@@ -160,7 +161,7 @@ func (d Database) UpdatePermission(s UpdatePermissionParams) (*string, error) {
 func (d MysqlDatabase) MapPermission(a mdbm.Permissions) Permissions {
 	return Permissions{
 		PermissionID: a.PermissionID,
-		TableID:      int64(a.TableID),
+		TableID:      a.TableID,
 		Mode:         int64(a.Mode),
 		Label:        a.Label,
 	}
@@ -168,15 +169,16 @@ func (d MysqlDatabase) MapPermission(a mdbm.Permissions) Permissions {
 
 func (d MysqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbm.CreatePermissionParams {
 	return mdbm.CreatePermissionParams{
-		TableID: int32(a.TableID),
-		Mode:    int32(a.Mode),
-		Label:   a.Label,
+		PermissionID: types.NewPermissionID(),
+		TableID:      a.TableID,
+		Mode:         int32(a.Mode),
+		Label:        a.Label,
 	}
 }
 
 func (d MysqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbm.UpdatePermissionParams {
 	return mdbm.UpdatePermissionParams{
-		TableID:      int32(a.TableID),
+		TableID:      a.TableID,
 		Mode:         int32(a.Mode),
 		Label:        a.Label,
 		PermissionID: a.PermissionID,
@@ -267,7 +269,7 @@ func (d MysqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, erro
 func (d PsqlDatabase) MapPermission(a mdbp.Permissions) Permissions {
 	return Permissions{
 		PermissionID: a.PermissionID,
-		TableID:      int64(a.TableID),
+		TableID:      a.TableID,
 		Mode:         int64(a.Mode),
 		Label:        a.Label,
 	}
@@ -275,15 +277,16 @@ func (d PsqlDatabase) MapPermission(a mdbp.Permissions) Permissions {
 
 func (d PsqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbp.CreatePermissionParams {
 	return mdbp.CreatePermissionParams{
-		TableID: int32(a.TableID),
-		Mode:    int32(a.Mode),
-		Label:   a.Label,
+		PermissionID: types.NewPermissionID(),
+		TableID:      a.TableID,
+		Mode:         int32(a.Mode),
+		Label:        a.Label,
 	}
 }
 
 func (d PsqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbp.UpdatePermissionParams {
 	return mdbp.UpdatePermissionParams{
-		TableID:      int32(a.TableID),
+		TableID:      a.TableID,
 		Mode:         int32(a.Mode),
 		Label:        a.Label,
 		PermissionID: a.PermissionID,

@@ -16,10 +16,13 @@ var strictTimestampFormats = []string{
 // Legacy formats for database reads only (historical data compatibility)
 // These are NOT accepted for API input
 var legacyTimestampFormats = []string{
-	"2006-01-02 15:04:05",  // MySQL without TZ (assume UTC)
-	"2006-01-02T15:04:05Z", // UTC shorthand
-	"2006-01-02T15:04:05",  // No TZ (assume UTC)
-	"2006-01-02",           // Date only (assume 00:00:00 UTC)
+	"2006-01-02 15:04:05.999999Z",  // PostgreSQL TEXT with fractional seconds and Z
+	"2006-01-02 15:04:05.999999",   // PostgreSQL TEXT with fractional seconds
+	"2006-01-02 15:04:05Z",         // PostgreSQL TEXT with Z
+	"2006-01-02 15:04:05",          // MySQL without TZ (assume UTC)
+	"2006-01-02T15:04:05Z",         // UTC shorthand
+	"2006-01-02T15:04:05",          // No TZ (assume UTC)
+	"2006-01-02",                   // Date only (assume 00:00:00 UTC)
 }
 
 // Timestamp handles datetime columns across SQLite (TEXT), MySQL (DATETIME), PostgreSQL (TIMESTAMP)

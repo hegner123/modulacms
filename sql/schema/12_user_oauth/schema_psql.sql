@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS user_oauth (
-    user_oauth_id SERIAL
-        PRIMARY KEY,
-    user_id INTEGER NOT NULL
+    user_oauth_id TEXT PRIMARY KEY NOT NULL,
+    user_id TEXT NOT NULL
         REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,
     oauth_provider VARCHAR(255) NOT NULL,

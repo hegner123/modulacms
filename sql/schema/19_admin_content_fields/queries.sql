@@ -3,12 +3,12 @@ DROP TABLE admin_content_fields;
 
 -- name: CreateAdminContentFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_content_fields (
-    admin_content_field_id INTEGER,
-    admin_route_id INTEGER,
-    admin_content_data_id INTEGER NOT NULL,
-    admin_field_id INTEGER NOT NULL,
+    admin_content_field_id TEXT NOT NULL CHECK (length(admin_content_field_id) = 26),
+    admin_route_id TEXT,
+    admin_content_data_id TEXT NOT NULL,
+    admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id INTEGER NOT NULL DEFAULT 0,
+    author_id TEXT NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
         ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(user_id)
-        ON DELETE SET DEFAULT
+        ON DELETE SET NULL
 );
 
 
@@ -43,14 +43,16 @@ ORDER BY admin_content_field_id;
 
 -- name: CreateAdminContentField :one
 INSERT INTO admin_content_fields (
-    admin_route_id, 
-    admin_content_data_id, 
+    admin_content_field_id,
+    admin_route_id,
+    admin_content_data_id,
     admin_field_id,
     admin_field_value,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

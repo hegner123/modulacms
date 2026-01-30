@@ -3,36 +3,35 @@ DROP TABLE content_data;
 
 -- name: CreateContentDataTable :exec
 CREATE TABLE IF NOT EXISTS content_data (
-    content_data_id SERIAL
-        PRIMARY KEY,
-    parent_id INTEGER
+    content_data_id TEXT PRIMARY KEY NOT NULL,
+    parent_id TEXT
         CONSTRAINT fk_parent_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    first_child_id INTEGER
+    first_child_id TEXT
         CONSTRAINT fk_first_child_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    next_sibling_id INTEGER
+    next_sibling_id TEXT
         CONSTRAINT fk_next_sibling_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    prev_sibling_id INTEGER
+    prev_sibling_id TEXT
         CONSTRAINT fk_prev_sibling_id
             REFERENCES content_data
             ON UPDATE CASCADE ON DELETE SET NULL,
-    route_id INTEGER
+    route_id TEXT
         CONSTRAINT fk_routes
             REFERENCES routes
             ON UPDATE CASCADE ON DELETE SET NULL,
-    datatype_id INTEGER
+    datatype_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
-    author_id INTEGER NOT NULL
+    author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET DEFAULT,
+            ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -56,6 +55,7 @@ ORDER BY content_data_id;
 
 -- name: CreateContentData :one
 INSERT INTO content_data (
+    content_data_id,
     parent_id,
     first_child_id,
     next_sibling_id,
@@ -74,7 +74,8 @@ INSERT INTO content_data (
     $6,
     $7,
     $8,
-    $9
+    $9,
+    $10
 ) RETURNING *;
 
 -- name: UpdateContentData :exec

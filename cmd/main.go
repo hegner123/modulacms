@@ -29,17 +29,6 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
-type AppFlags struct {
-	AuthFlag    *bool
-	UpdateFlag  *bool
-	CliFlag     *bool
-	VersionFlag *bool
-	AlphaFlag   *bool
-	VerboseFlag *bool
-	ResetFlag   *bool
-	InstallFlag *bool
-	ConfigPath  *string
-}
 type ReturnCode int16
 
 const (
@@ -110,6 +99,10 @@ func run() (ReturnCode, error) {
 		utility.DefaultLogger.Info("Storage", "endpoint", configuration.Bucket_Endpoint, "media", configuration.Bucket_Media, "backup", configuration.Bucket_Backup)
 	}
 	utility.DefaultLogger.Info("CORS", "origins", configuration.Cors_Origins, "credentials", configuration.Cors_Credentials)
+
+	if *app.InitDbFlag {
+		HandleFlagInitDb(*app.ConfigPath, configuration)
+	}
 
 	// Initialize observability (metrics and error tracking)
 	if configuration.Observability_Enabled {
@@ -190,14 +183,16 @@ func run() (ReturnCode, error) {
 		}
 	}
 
-	if !InitStatus.DbFileExists || *app.ResetFlag {
-		databaseConnection, dbDriver, err := db.ConfigDB(*configuration).GetConnection()
-		if err != nil {
-			utility.DefaultLogger.Fatal("Failed to connect to database", err)
-		}
-		utility.DefaultLogger.Info("Database connected", "driver", dbDriver)
-		defer utility.HandleConnectionCloseDeferErr(databaseConnection)
+	// Initialize the singleton database connection pool.
+	// This must happen before any handlers or middleware use db.ConfigDB().
+	if _, err := db.InitDB(*configuration); err != nil {
+		utility.DefaultLogger.Fatal("Failed to initialize database pool", err)
 	}
+	defer func() {
+		if cerr := db.CloseDB(); cerr != nil {
+			utility.DefaultLogger.Error("Database pool close error", cerr)
+		}
+	}()
 
 	var host = configuration.SSH_Host
 	sshServer, err := wish.NewServer(
@@ -384,6 +379,15 @@ func HandleFlagGenCerts() {
 
 	utility.DefaultLogger.Info("")
 	utility.DefaultLogger.Info("To use HTTPS locally, set environment to 'local' in config.json")
+	os.Exit(0)
+}
+
+func HandleFlagInitDb(configPath string, c *config.Config) {
+	utility.DefaultLogger.Info("Initializing database tables and bootstrap data...")
+	if err := install.CreateDbSimple(configPath, c); err != nil {
+		utility.DefaultLogger.Fatal("Database initialization failed", err)
+	}
+	utility.DefaultLogger.Info("Database initialization complete")
 	os.Exit(0)
 }
 

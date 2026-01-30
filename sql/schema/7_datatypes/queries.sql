@@ -4,16 +4,15 @@ DROP TABLE datatypes;
 -- name: CreateDatatypeTable :exec
 CREATE TABLE IF NOT EXISTS datatypes
 (
-    datatype_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER DEFAULT NULL
+    datatype_id TEXT PRIMARY KEY NOT NULL CHECK (length(datatype_id) = 26),
+    parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -51,6 +50,7 @@ ORDER BY datatype_id;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (
+    datatype_id,
     parent_id,
     label,
     type,
@@ -58,6 +58,7 @@ INSERT INTO datatypes (
     date_created,
     date_modified
     ) VALUES (
+    ?,
     ?,
     ?,
     ?,

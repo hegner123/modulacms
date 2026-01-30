@@ -134,6 +134,21 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 			}
 		}
 
+		// Look up the viewer role by label
+		viewerRoleID := ""
+		roles, rolesErr := dbc.ListRoles()
+		if rolesErr == nil && roles != nil {
+			for _, r := range *roles {
+				if r.Label == "viewer" {
+					viewerRoleID = r.RoleID.String()
+					break
+				}
+			}
+		}
+		if viewerRoleID == "" {
+			return UserProvisioningCompleteMsg{Error: fmt.Errorf("failed to find viewer role")}
+		}
+
 		// Create the user
 		now := types.TimestampNow()
 		user, err := dbc.CreateUser(db.CreateUserParams{
@@ -141,7 +156,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 			Name:         name,
 			Email:        types.Email(email),
 			Hash:         string(hashedPassword),
-			Role:         2, // Default role (adjust as needed)
+			Role:         viewerRoleID,
 			DateCreated:  now,
 			DateModified: now,
 		})
@@ -150,7 +165,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 			return UserProvisioningCompleteMsg{Error: fmt.Errorf("failed to create user: %v", err)}
 		}
 
-		utility.DefaultLogger.Info("Created user: %s (ID: %d)", user.Email, user.UserID)
+		utility.DefaultLogger.Info("Created user: %s (ID: %s)", user.Email, user.UserID)
 
 		// Register the SSH key
 		_, err = dbc.CreateUserSshKey(db.CreateUserSshKeyParams{

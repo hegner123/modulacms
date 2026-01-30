@@ -2,7 +2,10 @@ package router
 
 import (
 	"encoding/json"
+	"math"
 	"net/http"
+	"sort"
+	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -14,7 +17,11 @@ import (
 func AdminRoutesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListAdminRoutes(w, c)
+		if r.URL.Query().Get("ordered") == "true" {
+			apiListOrderedAdminRoutes(w, r, c)
+		} else {
+			apiListAdminRoutes(w, c)
+		}
 	case http.MethodPost:
 		apiCreateAdminRoute(w, r, c)
 	default:
@@ -39,13 +46,6 @@ func AdminRouteHandler(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiGetAdminRoute handles GET requests for a single admin route
 func apiGetAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	slug := types.Slug(q)
@@ -70,13 +70,6 @@ func apiGetAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) e
 // apiListAdminRoutes handles GET requests for listing admin routes
 func apiListAdminRoutes(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	adminRoutes, err := d.ListAdminRoutes()
 	if err != nil {
@@ -91,19 +84,113 @@ func apiListAdminRoutes(w http.ResponseWriter, c config.Config) error {
 	return nil
 }
 
-// apiCreateAdminRoute handles POST requests to create a new admin route
-func apiCreateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
+// apiListOrderedAdminRoutes handles GET requests for listing admin routes sorted by the "Order" field
+// on each route's root admin content node. Routes without an Order value appear last.
+func apiListOrderedAdminRoutes(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
+
+	routes, err := d.ListAdminRoutes()
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
-	defer con.Close()
+
+	// Find the "Order" admin field ID
+	allFields, err := d.ListAdminFields()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	var orderFieldID types.AdminFieldID
+	for _, f := range *allFields {
+		if f.Label == "Order" {
+			orderFieldID = f.AdminFieldID
+			break
+		}
+	}
+
+	// If no Order field exists, return routes unsorted
+	if orderFieldID.IsZero() {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(routes)
+		return nil
+	}
+
+	type orderedRoute struct {
+		Route db.AdminRoutes
+		Order int
+	}
+	ordered := make([]orderedRoute, 0, len(*routes))
+
+	for _, route := range *routes {
+		routeIDStr := route.AdminRouteID.String()
+		order := math.MaxInt32
+
+		contentData, err := d.ListAdminContentDataByRoute(routeIDStr)
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list admin content data for route", err)
+			ordered = append(ordered, orderedRoute{Route: route, Order: order})
+			continue
+		}
+
+		// Find root node (null parent)
+		var rootContentDataID string
+		for _, cd := range *contentData {
+			if !cd.ParentID.Valid {
+				rootContentDataID = cd.AdminContentDataID.String()
+				break
+			}
+		}
+
+		if rootContentDataID != "" {
+			contentFields, err := d.ListAdminContentFieldsByRoute(routeIDStr)
+			if err != nil {
+				utility.DefaultLogger.Error("failed to list admin content fields for route", err)
+				ordered = append(ordered, orderedRoute{Route: route, Order: order})
+				continue
+			}
+
+			for _, cf := range *contentFields {
+				if cf.AdminContentDataID == rootContentDataID &&
+					cf.AdminFieldID.Valid &&
+					cf.AdminFieldID.ID == orderFieldID {
+					parsed, parseErr := strconv.Atoi(cf.AdminFieldValue)
+					if parseErr == nil {
+						order = parsed
+					}
+					break
+				}
+			}
+		}
+
+		ordered = append(ordered, orderedRoute{Route: route, Order: order})
+	}
+
+	sort.Slice(ordered, func(i, j int) bool {
+		return ordered[i].Order < ordered[j].Order
+	})
+
+	result := make([]db.AdminRoutes, len(ordered))
+	for i, o := range ordered {
+		result[i] = o.Route
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(result)
+	return nil
+}
+
+// apiCreateAdminRoute handles POST requests to create a new admin route
+func apiCreateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
 
 	var newAdminRoute db.CreateAdminRouteParams
-	err = json.NewDecoder(r.Body).Decode(&newAdminRoute)
+	err := json.NewDecoder(r.Body).Decode(&newAdminRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +208,9 @@ func apiCreateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 // apiUpdateAdminRoute handles PUT requests to update an existing admin route
 func apiUpdateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateAdminRoute db.UpdateAdminRouteParams
-	err = json.NewDecoder(r.Body).Decode(&updateAdminRoute)
+	err := json.NewDecoder(r.Body).Decode(&updateAdminRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,13 +233,6 @@ func apiUpdateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 // apiDeleteAdminRoute handles DELETE requests for admin routes
 func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	id := types.AdminRouteID(q)
@@ -168,7 +241,7 @@ func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteAdminRoute(id)
+	err := d.DeleteAdminRoute(id)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

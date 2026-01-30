@@ -39,13 +39,6 @@ func UserHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // ApiGetUser handles GET requests for a single user
 func ApiGetUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	uId, err := types.ParseUserID(q)
@@ -70,13 +63,6 @@ func ApiGetUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 // ApiListUsers handles GET requests for listing users
 func ApiListUsers(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	users, err := d.ListUsers()
 	if err != nil {
@@ -94,16 +80,9 @@ func ApiListUsers(w http.ResponseWriter, r *http.Request, c config.Config) error
 // ApiCreateUser handles POST requests to create a new user
 func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newUser db.CreateUserParams
-	err = json.NewDecoder(r.Body).Decode(&newUser)
+	err := json.NewDecoder(r.Body).Decode(&newUser)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -126,16 +105,9 @@ func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 // ApiUpdateUser handles PUT requests to update an existing user
 func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateUser db.UpdateUserParams
-	err = json.NewDecoder(r.Body).Decode(&updateUser)
+	err := json.NewDecoder(r.Body).Decode(&updateUser)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -158,13 +130,6 @@ func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 // ApiDeleteUser handles DELETE requests for users
 func ApiDeleteUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	uId, err := types.ParseUserID(q)

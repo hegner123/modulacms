@@ -3,9 +3,8 @@ DROP TABLE tokens;
 
 -- name: CreateTokenTable :exec
 CREATE TABLE IF NOT EXISTS tokens (
-    id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    user_id INT NOT NULL,
+    id VARCHAR(26) PRIMARY KEY NOT NULL,
+    user_id VARCHAR(26) NOT NULL,
     token_type VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL,
     issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -36,13 +35,15 @@ SELECT * FROM tokens;
 
 -- name: CreateToken :exec
 INSERT INTO tokens (
+    id,
     user_id,
     token_type,
     token,
     issued_at,
     expires_at,
     revoked
-) VALUES( 
+) VALUES(
+    ?,
     ?,
     ?,
     ?,
@@ -65,3 +66,7 @@ WHERE id = ?;
 -- name: DeleteToken :exec
 DELETE FROM tokens
 WHERE id = ?;
+
+-- name: GetTokenByTokenValue :one
+SELECT * FROM tokens
+WHERE token = ? LIMIT 1;

@@ -3,13 +3,12 @@ DROP TABLE content_fields;
 
 -- name: CreateContentFieldTable :exec
 CREATE TABLE content_fields (
-    content_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    route_id INT NULL,
-    content_data_id INT NOT NULL,
-    field_id INT NOT NULL,
+    content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    route_id VARCHAR(26) NULL,
+    content_data_id VARCHAR(26) NOT NULL,
+    field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 

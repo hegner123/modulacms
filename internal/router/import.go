@@ -87,13 +87,6 @@ func ImportBulkHandler(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiImportContent handles the core import logic
 func apiImportContent(w http.ResponseWriter, r *http.Request, c config.Config, format config.OutputFormat) {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("Database connection error", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	defer con.Close()
 
 	// Read request body
 	body, err := io.ReadAll(r.Body)

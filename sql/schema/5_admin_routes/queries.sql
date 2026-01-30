@@ -2,15 +2,14 @@
 DROP TABLE admin_routes;
 -- name: CreateAdminRouteTable :exec
 CREATE TABLE admin_routes (
-    admin_route_id INTEGER
-        PRIMARY KEY,
+    admin_route_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_route_id) = 26),
     slug TEXT NOT NULL
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    author_id INTEGER DEFAULT 1 NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -41,13 +40,15 @@ ORDER BY slug;
 
 -- name: CreateAdminRoute :one
 INSERT INTO admin_routes (
+    admin_route_id,
     slug,
     title,
     status,
     author_id,
     date_created,
     date_modified
-    ) VALUES (    
+    ) VALUES (
+    ?,
     ?,
     ?,
     ?,

@@ -83,6 +83,7 @@ func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
 
 func (d Database) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdb.CreateAdminRouteParams {
 	return mdb.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
@@ -197,6 +198,7 @@ func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
 
 func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.CreateAdminRouteParams {
 	return mdbm.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
@@ -314,6 +316,7 @@ func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
 
 func (d PsqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbp.CreateAdminRouteParams {
 	return mdbp.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),

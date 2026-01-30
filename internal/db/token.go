@@ -14,7 +14,7 @@ import (
 //////////////////////////////
 
 type Tokens struct {
-	ID        int64                `json:"id"`
+	ID        string               `json:"id"`
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Token     string               `json:"token"`
@@ -37,7 +37,7 @@ type UpdateTokenParams struct {
 	IssuedAt  string          `json:"issued_at"`
 	ExpiresAt types.Timestamp `json:"expires_at"`
 	Revoked   bool            `json:"revoked"`
-	ID        int64           `json:"id"`
+	ID        string          `json:"id"`
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -48,7 +48,7 @@ type UpdateTokenParams struct {
 // MapStringToken converts Tokens to StringTokens for table display
 func MapStringToken(a Tokens) StringTokens {
 	return StringTokens{
-		ID:        fmt.Sprintf("%d", a.ID),
+		ID:        a.ID,
 		UserID:    a.UserID.String(),
 		TokenType: a.TokenType,
 		Token:     a.Token,
@@ -78,6 +78,7 @@ func (d Database) MapToken(a mdb.Tokens) Tokens {
 
 func (d Database) MapCreateTokenParams(a CreateTokenParams) mdb.CreateTokenParams {
 	return mdb.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
 		Tokens:    a.Token,
@@ -124,7 +125,7 @@ func (d Database) CreateToken(s CreateTokenParams) Tokens {
 	return d.MapToken(row)
 }
 
-func (d Database) DeleteToken(id int64) error {
+func (d Database) DeleteToken(id string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteToken(d.Context, mdb.DeleteTokenParams{ID: id})
 	if err != nil {
@@ -133,9 +134,19 @@ func (d Database) DeleteToken(id int64) error {
 	return nil
 }
 
-func (d Database) GetToken(id int64) (*Tokens, error) {
+func (d Database) GetToken(id string) (*Tokens, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetToken(d.Context, mdb.GetTokenParams{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapToken(row)
+	return &res, nil
+}
+
+func (d Database) GetTokenByTokenValue(tokenValue string) (*Tokens, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetTokenByTokenValue(d.Context, mdb.GetTokenByTokenValueParams{Tokens: tokenValue})
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +201,7 @@ func (d Database) UpdateToken(s UpdateTokenParams) (*string, error) {
 
 func (d MysqlDatabase) MapToken(a mdbm.Tokens) Tokens {
 	return Tokens{
-		ID:        int64(a.ID),
+		ID:        a.ID,
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
 		Token:     a.Tokens,
@@ -202,6 +213,7 @@ func (d MysqlDatabase) MapToken(a mdbm.Tokens) Tokens {
 
 func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateTokenParams {
 	return mdbm.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
 		Tokens:    a.Token,
@@ -217,7 +229,7 @@ func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateToke
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
-		ID:        int32(a.ID),
+		ID:        a.ID,
 	}
 }
 
@@ -252,18 +264,28 @@ func (d MysqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 	return d.MapToken(row)
 }
 
-func (d MysqlDatabase) DeleteToken(id int64) error {
+func (d MysqlDatabase) DeleteToken(id string) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteToken(d.Context, mdbm.DeleteTokenParams{ID: int32(id)})
+	err := queries.DeleteToken(d.Context, mdbm.DeleteTokenParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Token: %v ", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetToken(id int64) (*Tokens, error) {
+func (d MysqlDatabase) GetToken(id string) (*Tokens, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetToken(d.Context, mdbm.GetTokenParams{ID: int32(id)})
+	row, err := queries.GetToken(d.Context, mdbm.GetTokenParams{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapToken(row)
+	return &res, nil
+}
+
+func (d MysqlDatabase) GetTokenByTokenValue(tokenValue string) (*Tokens, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetTokenByTokenValue(d.Context, mdbm.GetTokenByTokenValueParams{Tokens: tokenValue})
 	if err != nil {
 		return nil, err
 	}
@@ -318,7 +340,7 @@ func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
 
 func (d PsqlDatabase) MapToken(a mdbp.Tokens) Tokens {
 	return Tokens{
-		ID:        int64(a.ID),
+		ID:        a.ID,
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
 		Token:     a.Tokens,
@@ -330,6 +352,7 @@ func (d PsqlDatabase) MapToken(a mdbp.Tokens) Tokens {
 
 func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateTokenParams {
 	return mdbp.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
 		UserID:    a.UserID,
 		TokenType: a.TokenType,
 		Tokens:    a.Token,
@@ -345,7 +368,7 @@ func (d PsqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbp.UpdateToken
 		IssuedAt:  StringToNTime(a.IssuedAt).Time,
 		ExpiresAt: a.ExpiresAt,
 		Revoked:   a.Revoked,
-		ID:        int32(a.ID),
+		ID:        a.ID,
 	}
 }
 
@@ -376,18 +399,28 @@ func (d PsqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 	return d.MapToken(row)
 }
 
-func (d PsqlDatabase) DeleteToken(id int64) error {
+func (d PsqlDatabase) DeleteToken(id string) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteToken(d.Context, mdbp.DeleteTokenParams{ID: int32(id)})
+	err := queries.DeleteToken(d.Context, mdbp.DeleteTokenParams{ID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete Token: %v ", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetToken(id int64) (*Tokens, error) {
+func (d PsqlDatabase) GetToken(id string) (*Tokens, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetToken(d.Context, mdbp.GetTokenParams{ID: int32(id)})
+	row, err := queries.GetToken(d.Context, mdbp.GetTokenParams{ID: id})
+	if err != nil {
+		return nil, err
+	}
+	res := d.MapToken(row)
+	return &res, nil
+}
+
+func (d PsqlDatabase) GetTokenByTokenValue(tokenValue string) (*Tokens, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetTokenByTokenValue(d.Context, mdbp.GetTokenByTokenValueParams{Tokens: tokenValue})
 	if err != nil {
 		return nil, err
 	}

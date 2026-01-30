@@ -39,16 +39,9 @@ func UserOauthHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // ApiCreateUserOauth handles POST requests to create a new user OAuth connection
 func ApiCreateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newUserOauth db.CreateUserOauthParams
-	err = json.NewDecoder(r.Body).Decode(&newUserOauth)
+	err := json.NewDecoder(r.Body).Decode(&newUserOauth)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -71,16 +64,9 @@ func ApiCreateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 // ApiUpdateUserOauth handles PUT requests to update an existing user OAuth connection
 func ApiUpdateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateUserOauth db.UpdateUserOauthParams
-	err = json.NewDecoder(r.Body).Decode(&updateUserOauth)
+	err := json.NewDecoder(r.Body).Decode(&updateUserOauth)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -103,13 +89,6 @@ func ApiUpdateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 // ApiDeleteUserOauth handles DELETE requests for user OAuth connections
 func ApiDeleteUserOauth(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	uoID := types.UserOauthID(q)
@@ -118,7 +97,7 @@ func ApiDeleteUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteUserOauth(uoID)
+	err := d.DeleteUserOauth(uoID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

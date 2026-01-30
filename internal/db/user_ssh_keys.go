@@ -13,7 +13,7 @@ import (
 
 // UserSshKeys represents an SSH public key for a user
 type UserSshKeys struct {
-	SshKeyID    int64
+	SshKeyID    string
 	UserID      types.NullableUserID
 	PublicKey   string
 	KeyType     string
@@ -40,6 +40,7 @@ type CreateUserSshKeyParams struct {
 func (d Database) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.CreateUserSshKey(d.Context, mdb.CreateUserSshKeyParams{
+		SSHKeyID:    string(types.NewUserSshKeyID()),
 		UserID:      params.UserID,
 		PublicKey:   params.PublicKey,
 		KeyType:     params.KeyType,
@@ -54,7 +55,7 @@ func (d Database) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys,
 	return &res, nil
 }
 
-func (d Database) GetUserSshKey(id int64) (*UserSshKeys, error) {
+func (d Database) GetUserSshKey(id string) (*UserSshKeys, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetUserSshKey(d.Context, mdb.GetUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
@@ -98,7 +99,7 @@ func (d Database) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshKeys, 
 	return &res, nil
 }
 
-func (d Database) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error {
+func (d Database) UpdateUserSshKeyLastUsed(id string, lastUsed string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdb.UpdateUserSshKeyLastUsedParams{
 		LastUsed: sql.NullString{String: lastUsed, Valid: lastUsed != ""},
@@ -110,7 +111,7 @@ func (d Database) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error {
 	return nil
 }
 
-func (d Database) UpdateUserSshKeyLabel(id int64, label string) error {
+func (d Database) UpdateUserSshKeyLabel(id string, label string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdb.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
@@ -122,7 +123,7 @@ func (d Database) UpdateUserSshKeyLabel(id int64, label string) error {
 	return nil
 }
 
-func (d Database) DeleteUserSshKey(id int64) error {
+func (d Database) DeleteUserSshKey(id string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteUserSshKey(d.Context, mdb.DeleteUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
@@ -174,7 +175,9 @@ func (d Database) CountUserSshKeys() (*int64, error) {
 func (d MysqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
 
-	result, err := queries.CreateUserSshKey(d.Context, mdbm.CreateUserSshKeyParams{
+	sshKeyID := types.NewUserSshKeyID()
+	_, err := queries.CreateUserSshKey(d.Context, mdbm.CreateUserSshKeyParams{
+		SSHKeyID:    string(sshKeyID),
 		UserID:      params.UserID,
 		PublicKey:   params.PublicKey,
 		KeyType:     params.KeyType,
@@ -186,17 +189,12 @@ func (d MysqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSsh
 		return nil, fmt.Errorf("failed to create SSH key: %v", err)
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	return d.GetUserSshKey(id)
+	return d.GetUserSshKeyByFingerprint(params.Fingerprint)
 }
 
-func (d MysqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
+func (d MysqlDatabase) GetUserSshKey(id string) (*UserSshKeys, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetUserSshKey(d.Context, mdbm.GetUserSshKeyParams{SSHKeyID: int32(id)})
+	row, err := queries.GetUserSshKey(d.Context, mdbm.GetUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +236,7 @@ func (d MysqlDatabase) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshK
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error {
+func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id string, lastUsed string) error {
 	queries := mdbm.New(d.Connection)
 
 	// Parse lastUsed string to time.Time for sql.NullTime
@@ -253,7 +251,7 @@ func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error
 
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdbm.UpdateUserSshKeyLastUsedParams{
 		LastUsed: nullTime,
-		SSHKeyID: int32(id),
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key last used: %v", err)
@@ -261,11 +259,11 @@ func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error
 	return nil
 }
 
-func (d MysqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
+func (d MysqlDatabase) UpdateUserSshKeyLabel(id string, label string) error {
 	queries := mdbm.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdbm.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
-		SSHKeyID: int32(id),
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key label: %v", err)
@@ -273,9 +271,9 @@ func (d MysqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 	return nil
 }
 
-func (d MysqlDatabase) DeleteUserSshKey(id int64) error {
+func (d MysqlDatabase) DeleteUserSshKey(id string) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, mdbm.DeleteUserSshKeyParams{SSHKeyID: int32(id)})
+	err := queries.DeleteUserSshKey(d.Context, mdbm.DeleteUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete SSH key: %v", err)
 	}
@@ -292,7 +290,7 @@ func (d MysqlDatabase) MapUserSshKeys(row mdbm.UserSshKeys) UserSshKeys {
 		lastUsed = row.LastUsed.Time.Format(time.RFC3339)
 	}
 	return UserSshKeys{
-		SshKeyID:    int64(row.SSHKeyID),
+		SshKeyID:    row.SSHKeyID,
 		UserID:      row.UserID,
 		PublicKey:   row.PublicKey,
 		KeyType:     row.KeyType,
@@ -315,8 +313,7 @@ func (d MysqlDatabase) CountUserSshKeys() (*int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	countInt64 := int64(count)
-	return &countInt64, nil
+	return &count, nil
 }
 
 // ============================================================================
@@ -327,6 +324,7 @@ func (d PsqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshK
 	queries := mdbp.New(d.Connection)
 
 	row, err := queries.CreateUserSshKey(d.Context, mdbp.CreateUserSshKeyParams{
+		SSHKeyID:    string(types.NewUserSshKeyID()),
 		UserID:      params.UserID,
 		PublicKey:   params.PublicKey,
 		KeyType:     params.KeyType,
@@ -341,9 +339,9 @@ func (d PsqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshK
 	return &res, nil
 }
 
-func (d PsqlDatabase) GetUserSshKey(id int64) (*UserSshKeys, error) {
+func (d PsqlDatabase) GetUserSshKey(id string) (*UserSshKeys, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetUserSshKey(d.Context, mdbp.GetUserSshKeyParams{SSHKeyID: int32(id)})
+	row, err := queries.GetUserSshKey(d.Context, mdbp.GetUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +383,7 @@ func (d PsqlDatabase) ListUserSshKeys(userID types.NullableUserID) (*[]UserSshKe
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error {
+func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id string, lastUsed string) error {
 	queries := mdbp.New(d.Connection)
 
 	// Parse lastUsed string to time.Time for sql.NullTime
@@ -400,7 +398,7 @@ func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error 
 
 	err := queries.UpdateUserSshKeyLastUsed(d.Context, mdbp.UpdateUserSshKeyLastUsedParams{
 		LastUsed: nullTime,
-		SSHKeyID: int32(id),
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key last used: %v", err)
@@ -408,11 +406,11 @@ func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id int64, lastUsed string) error 
 	return nil
 }
 
-func (d PsqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
+func (d PsqlDatabase) UpdateUserSshKeyLabel(id string, label string) error {
 	queries := mdbp.New(d.Connection)
 	err := queries.UpdateUserSshKeyLabel(d.Context, mdbp.UpdateUserSshKeyLabelParams{
 		Label:    sql.NullString{String: label, Valid: label != ""},
-		SSHKeyID: int32(id),
+		SSHKeyID: id,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to update SSH key label: %v", err)
@@ -420,9 +418,9 @@ func (d PsqlDatabase) UpdateUserSshKeyLabel(id int64, label string) error {
 	return nil
 }
 
-func (d PsqlDatabase) DeleteUserSshKey(id int64) error {
+func (d PsqlDatabase) DeleteUserSshKey(id string) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, mdbp.DeleteUserSshKeyParams{SSHKeyID: int32(id)})
+	err := queries.DeleteUserSshKey(d.Context, mdbp.DeleteUserSshKeyParams{SSHKeyID: id})
 	if err != nil {
 		return fmt.Errorf("failed to delete SSH key: %v", err)
 	}
@@ -439,7 +437,7 @@ func (d PsqlDatabase) MapUserSshKeys(row mdbp.UserSshKeys) UserSshKeys {
 		lastUsed = row.LastUsed.Time.Format(time.RFC3339)
 	}
 	return UserSshKeys{
-		SshKeyID:    int64(row.SSHKeyID),
+		SshKeyID:    row.SSHKeyID,
 		UserID:      row.UserID,
 		PublicKey:   row.PublicKey,
 		KeyType:     row.KeyType,

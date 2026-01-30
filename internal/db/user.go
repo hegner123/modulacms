@@ -2,7 +2,6 @@ package db
 
 import (
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
@@ -20,7 +19,7 @@ type Users struct {
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Role         int64           `json:"role"`
+	Role         string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 }
@@ -30,7 +29,7 @@ type CreateUserParams struct {
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Role         int64           `json:"role"`
+	Role         string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 }
@@ -40,7 +39,7 @@ type UpdateUserParams struct {
 	Name         string          `json:"name"`
 	Email        types.Email     `json:"email"`
 	Hash         string          `json:"hash"`
-	Role         int64           `json:"role"`
+	Role         string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
 	UserID       types.UserID    `json:"user_id"`
@@ -59,7 +58,7 @@ func MapStringUser(a Users) StringUsers {
 		Name:         a.Name,
 		Email:        a.Email.String(),
 		Hash:         a.Hash,
-		Role:         strconv.FormatInt(a.Role, 10),
+		Role:         a.Role,
 		DateCreated:  a.DateCreated.String(),
 		DateModified: a.DateModified.String(),
 	}
@@ -86,6 +85,7 @@ func (d Database) MapUser(a mdb.Users) Users {
 
 func (d Database) MapCreateUserParams(a CreateUserParams) mdb.CreateUserParams {
 	return mdb.CreateUserParams{
+		UserID:       types.NewUserID(),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
@@ -205,7 +205,7 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         int64(a.Roles),
+		Role:         a.Roles,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -213,11 +213,12 @@ func (d MysqlDatabase) MapUser(a mdbm.Users) Users {
 
 func (d MysqlDatabase) MapCreateUserParams(a CreateUserParams) mdbm.CreateUserParams {
 	return mdbm.CreateUserParams{
+		UserID:       types.NewUserID(),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Roles:        int32(a.Role),
+		Roles:        a.Role,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -229,7 +230,7 @@ func (d MysqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbm.UpdateUserPa
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Roles:        int32(a.Role),
+		Roles:        a.Role,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		UserID:       a.UserID,
@@ -336,7 +337,7 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Role:         int64(a.Roles),
+		Role:         a.Roles,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -344,11 +345,12 @@ func (d PsqlDatabase) MapUser(a mdbp.Users) Users {
 
 func (d PsqlDatabase) MapCreateUserParams(a CreateUserParams) mdbp.CreateUserParams {
 	return mdbp.CreateUserParams{
+		UserID:       types.NewUserID(),
 		Username:     a.Username,
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Roles:        int32(a.Role),
+		Roles:        a.Role,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 	}
@@ -360,7 +362,7 @@ func (d PsqlDatabase) MapUpdateUserParams(a UpdateUserParams) mdbp.UpdateUserPar
 		Name:         a.Name,
 		Email:        a.Email,
 		Hash:         a.Hash,
-		Roles:        int32(a.Role),
+		Roles:        a.Role,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
 		UserID:       a.UserID,

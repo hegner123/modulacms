@@ -3,8 +3,7 @@ DROP TABLE roles;
 
 -- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
-    role_id SERIAL
-        PRIMARY KEY,
+    role_id TEXT PRIMARY KEY NOT NULL,
     label TEXT NOT NULL
         UNIQUE,
     permissions jsonb
@@ -29,11 +28,13 @@ ORDER BY role_id;
 
 -- name: CreateRole :one
 INSERT INTO roles (
+    role_id,
     label,
     permissions
 ) VALUES (
     $1,
-    $2
+    $2,
+    $3
 )
 RETURNING *;
 

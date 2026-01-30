@@ -3,7 +3,6 @@ package router
 import (
 	"encoding/json"
 	"net/http"
-	"strconv"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/config"
@@ -76,7 +75,7 @@ func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return
 	}
 
-	utility.DefaultLogger.Info("SSH key added for user %d: %s", authUser.UserID, fingerprint)
+	utility.DefaultLogger.Info("SSH key added for user %s: %s", authUser.UserID, fingerprint)
 
 	// Return created SSH key
 	w.Header().Set("Content-Type", "application/json")
@@ -112,7 +111,7 @@ func ListSSHKeysHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 
 	// Return SSH keys (without full public key for security)
 	type SSHKeyResponse struct {
-		SSHKEY_ID   int64  `json:"ssh_key_id"`
+		SSHKEY_ID   string `json:"ssh_key_id"`
 		KeyType     string `json:"key_type"`
 		Fingerprint string `json:"fingerprint"`
 		Label       string `json:"label"`
@@ -160,8 +159,8 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	keyID, err := strconv.ParseInt(pathParts[3], 10, 64)
-	if err != nil {
+	keyID := pathParts[3]
+	if keyID == "" {
 		http.Error(w, "Invalid SSH key ID", http.StatusBadRequest)
 		return
 	}
@@ -187,7 +186,7 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	utility.DefaultLogger.Info("SSH key deleted for user %d: %d", authUser.UserID, keyID)
+	utility.DefaultLogger.Info("SSH key deleted for user %s: %s", authUser.UserID, keyID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

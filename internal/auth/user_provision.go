@@ -223,6 +223,21 @@ func (up *UserProvisioner) createNewUser(
 		name = username
 	}
 
+	// Look up the viewer role by label
+	viewerRoleID := ""
+	roles, err := up.driver.ListRoles()
+	if err == nil && roles != nil {
+		for _, r := range *roles {
+			if r.Label == "viewer" {
+				viewerRoleID = r.RoleID.String()
+				break
+			}
+		}
+	}
+	if viewerRoleID == "" {
+		return nil, fmt.Errorf("failed to find viewer role")
+	}
+
 	// Create user (no password for OAuth users)
 	now := types.TimestampNow()
 	user, err := up.driver.CreateUser(db.CreateUserParams{
@@ -230,7 +245,7 @@ func (up *UserProvisioner) createNewUser(
 		Name:         name,
 		Email:        types.Email(userInfo.Email),
 		Hash:         "", // OAuth users don't have passwords
-		Role:         4,  // Default role
+		Role:         viewerRoleID,
 		DateCreated:  now,
 		DateModified: now,
 	})

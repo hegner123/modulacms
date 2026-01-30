@@ -2,8 +2,8 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -39,19 +39,11 @@ func MediaDimensionHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 // apiGetMediaDimension handles GET requests for a single media dimension
 func apiGetMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	mdID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	mdID := r.URL.Query().Get("q")
+	if mdID == "" {
+		err := fmt.Errorf("missing media dimension ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	mediaDimension, err := d.GetMediaDimension(mdID)
@@ -70,13 +62,6 @@ func apiGetMediaDimension(w http.ResponseWriter, r *http.Request, c config.Confi
 // apiListMediaDimensions handles GET requests for listing media dimensions
 func apiListMediaDimensions(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	mediaDimensionsList, err := d.ListMediaDimensions()
 	if err != nil {
@@ -94,16 +79,9 @@ func apiListMediaDimensions(w http.ResponseWriter, c config.Config) error {
 // apiCreateMediaDimension handles POST requests to create a new media dimension
 func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newMediaDimension db.CreateMediaDimensionParams
-	err = json.NewDecoder(r.Body).Decode(&newMediaDimension)
+	err := json.NewDecoder(r.Body).Decode(&newMediaDimension)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +99,9 @@ func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 // apiUpdateMediaDimension handles PUT requests to update an existing media dimension
 func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateMediaDimension db.UpdateMediaDimensionParams
-	err = json.NewDecoder(r.Body).Decode(&updateMediaDimension)
+	err := json.NewDecoder(r.Body).Decode(&updateMediaDimension)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,22 +124,14 @@ func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 // apiDeleteMediaDimension handles DELETE requests for media dimensions
 func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	mdID, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	mdID := r.URL.Query().Get("q")
+	if mdID == "" {
+		err := fmt.Errorf("missing media dimension ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteMediaDimension(mdID)
+	err := d.DeleteMediaDimension(mdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -1,14 +1,14 @@
 CREATE TABLE admin_datatypes (
-    admin_datatype_id INTEGER
-        PRIMARY KEY,
-    parent_id INTEGER DEFAULT NULL
+    admin_datatype_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(admin_datatype_id) = 26),
+    parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id INTEGER NOT NULL
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET DEFAULT,
+            ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

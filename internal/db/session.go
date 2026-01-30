@@ -102,6 +102,7 @@ func (d Database) MapSession(a mdb.Sessions) Sessions {
 
 func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessionParams {
 	return mdb.CreateSessionParams{
+		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
 		CreatedAt:   a.CreatedAt,
 		ExpiresAt:   a.ExpiresAt,
@@ -229,6 +230,7 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 
 func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
 	return mdbm.CreateSessionParams{
+		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
 		CreatedAt:   a.CreatedAt,
 		ExpiresAt:   a.ExpiresAt,
@@ -360,6 +362,7 @@ func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 
 func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateSessionParams {
 	return mdbp.CreateSessionParams{
+		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
 		CreatedAt:   a.CreatedAt,
 		ExpiresAt:   a.ExpiresAt,

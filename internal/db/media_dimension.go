@@ -3,11 +3,11 @@ package db
 import (
 	"database/sql"
 	"fmt"
-	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -15,7 +15,7 @@ import (
 // STRUCTS
 // ////////////////////////////
 type MediaDimensions struct {
-	MdID        int64          `json:"md_id"`
+	MdID        string         `json:"md_id"`
 	Label       sql.NullString `json:"label"`
 	Width       sql.NullInt64  `json:"width"`
 	Height      sql.NullInt64  `json:"height"`
@@ -34,11 +34,11 @@ type UpdateMediaDimensionParams struct {
 	Width       sql.NullInt64  `json:"width"`
 	Height      sql.NullInt64  `json:"height"`
 	AspectRatio sql.NullString `json:"aspect_ratio"`
-	MdID        int64          `json:"md_id"`
+	MdID        string         `json:"md_id"`
 }
 
 type MediaDimensionsHistoryEntry struct {
-	MdID        int64          `json:"md_id"`
+	MdID        string         `json:"md_id"`
 	Label       sql.NullString `json:"label"`
 	Width       sql.NullInt64  `json:"width"`
 	Height      sql.NullInt64  `json:"height"`
@@ -60,7 +60,7 @@ type UpdateMediaDimensionFormParams struct {
 	MdID        string `json:"md_id"`
 }
 type MediaDimensionsJSON struct {
-	MdID        int64      `json:"md_id"`
+	MdID        string     `json:"md_id"`
 	Label       NullString `json:"label"`
 	Width       NullInt64  `json:"width"`
 	Height      NullInt64  `json:"height"`
@@ -79,7 +79,7 @@ type UpdateMediaDimensionParamsJSON struct {
 	Width       NullInt64  `json:"width"`
 	Height      NullInt64  `json:"height"`
 	AspectRatio NullString `json:"aspect_ratio"`
-	MdID        int64      `json:"md_id"`
+	MdID        string     `json:"md_id"`
 }
 
 ///////////////////////////////
@@ -101,13 +101,13 @@ func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMedia
 		Width:       StringToNullInt64(a.Width),
 		Height:      StringToNullInt64(a.Height),
 		AspectRatio: StringToNullString(a.AspectRatio),
-		MdID:        StringToInt64(a.MdID),
+		MdID:        a.MdID,
 	}
 }
 
 func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 	return StringMediaDimensions{
-		MdID:        strconv.FormatInt(a.MdID, 10),
+		MdID:        a.MdID,
 		Label:       utility.NullToString(a.Label),
 		Width:       utility.NullToString(a.Width),
 		Height:      utility.NullToString(a.Height),
@@ -150,6 +150,7 @@ func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
 
 func (d Database) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdb.CreateMediaDimensionParams {
 	return mdb.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
 		Label:       a.Label,
 		Width:       a.Width,
 		Height:      a.Height,
@@ -193,7 +194,7 @@ func (d Database) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimens
 	return d.MapMediaDimension(row)
 }
 
-func (d Database) DeleteMediaDimension(id int64) error {
+func (d Database) DeleteMediaDimension(id string) error {
 	queries := mdb.New(d.Connection)
 	err := queries.DeleteMediaDimension(d.Context, mdb.DeleteMediaDimensionParams{MdID: id})
 	if err != nil {
@@ -202,7 +203,7 @@ func (d Database) DeleteMediaDimension(id int64) error {
 	return nil
 }
 
-func (d Database) GetMediaDimension(id int64) (*MediaDimensions, error) {
+func (d Database) GetMediaDimension(id string) (*MediaDimensions, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetMediaDimension(d.Context, mdb.GetMediaDimensionParams{MdID: id})
 	if err != nil {
@@ -244,7 +245,7 @@ func (d Database) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, e
 // /MAPS
 func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
-		MdID:        int64(a.MdID),
+		MdID:        a.MdID,
 		Label:       a.Label,
 		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
 		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
@@ -254,6 +255,7 @@ func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions
 
 func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbm.CreateMediaDimensionParams {
 	return mdbm.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
 		Label:       a.Label,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
@@ -267,7 +269,7 @@ func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParam
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
-		MdID:        int32(a.MdID),
+		MdID:        a.MdID,
 	}
 }
 
@@ -301,18 +303,18 @@ func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaD
 	return d.MapMediaDimension(row)
 }
 
-func (d MysqlDatabase) DeleteMediaDimension(id int64) error {
+func (d MysqlDatabase) DeleteMediaDimension(id string) error {
 	queries := mdbm.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, mdbm.DeleteMediaDimensionParams{MdID: int32(id)})
+	err := queries.DeleteMediaDimension(d.Context, mdbm.DeleteMediaDimensionParams{MdID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
 	}
 	return nil
 }
 
-func (d MysqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
+func (d MysqlDatabase) GetMediaDimension(id string) (*MediaDimensions, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetMediaDimension(d.Context, mdbm.GetMediaDimensionParams{MdID: int32(id)})
+	row, err := queries.GetMediaDimension(d.Context, mdbm.GetMediaDimensionParams{MdID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -352,7 +354,7 @@ func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*stri
 // /MAPS
 func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
-		MdID:        int64(a.MdID),
+		MdID:        a.MdID,
 		Label:       a.Label,
 		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
 		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
@@ -362,6 +364,7 @@ func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions 
 
 func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbp.CreateMediaDimensionParams {
 	return mdbp.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
 		Label:       a.Label,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
@@ -375,7 +378,7 @@ func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
 		AspectRatio: a.AspectRatio,
-		MdID:        int32(a.MdID),
+		MdID:        a.MdID,
 	}
 }
 
@@ -405,18 +408,18 @@ func (d PsqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaDi
 	return d.MapMediaDimension(row)
 }
 
-func (d PsqlDatabase) DeleteMediaDimension(id int64) error {
+func (d PsqlDatabase) DeleteMediaDimension(id string) error {
 	queries := mdbp.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, mdbp.DeleteMediaDimensionParams{MdID: int32(id)})
+	err := queries.DeleteMediaDimension(d.Context, mdbp.DeleteMediaDimensionParams{MdID: id})
 	if err != nil {
 		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
 	}
 	return nil
 }
 
-func (d PsqlDatabase) GetMediaDimension(id int64) (*MediaDimensions, error) {
+func (d PsqlDatabase) GetMediaDimension(id string) (*MediaDimensions, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetMediaDimension(d.Context, mdbp.GetMediaDimensionParams{MdID: int32(id)})
+	row, err := queries.GetMediaDimension(d.Context, mdbp.GetMediaDimensionParams{MdID: id})
 	if err != nil {
 		return nil, err
 	}

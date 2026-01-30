@@ -114,6 +114,7 @@ func (d Database) MapMedia(a mdb.Media) Media {
 
 func (d Database) MapCreateMediaParams(a CreateMediaParams) mdb.CreateMediaParams {
 	return mdb.CreateMediaParams{
+		MediaID:      types.NewMediaID(),
 		Name:         a.Name,
 		DisplayName:  a.DisplayName,
 		Alt:          a.Alt,
@@ -267,6 +268,7 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 
 func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMediaParams {
 	return mdbm.CreateMediaParams{
+		MediaID:      types.NewMediaID(),
 		Name:         a.Name,
 		DisplayName:  a.DisplayName,
 		Alt:          a.Alt,
@@ -424,6 +426,7 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 
 func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMediaParams {
 	return mdbp.CreateMediaParams{
+		MediaID:      types.NewMediaID(),
 		Name:         a.Name,
 		DisplayName:  a.DisplayName,
 		Alt:          a.Alt,

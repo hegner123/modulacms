@@ -3,13 +3,12 @@ DROP TABLE admin_fields;
 
 -- name: CreateAdminFieldTable :exec
 CREATE TABLE IF NOT EXISTS admin_fields (
-    admin_field_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
+    admin_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     type VARCHAR(255) DEFAULT 'text' NOT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -38,7 +37,8 @@ WHERE parent_id = ?
 ORDER BY admin_field_id;
 
 -- name: CreateAdminField :exec
-INSERT INTO admin_fields (    
+INSERT INTO admin_fields (
+    admin_field_id,
     parent_id,
     label,
     data,
@@ -47,6 +47,7 @@ INSERT INTO admin_fields (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

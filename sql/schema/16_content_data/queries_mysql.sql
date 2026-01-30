@@ -3,15 +3,14 @@ DROP TABLE content_data;
 
 -- name: CreateContentDataTable :exec
 CREATE TABLE IF NOT EXISTS content_data (
-    content_data_id INT AUTO_INCREMENT
-        PRIMARY KEY,
-    parent_id INT NULL,
-    first_child_id INT NULL,
-    next_sibling_id INT NULL,
-    prev_sibling_id  INT NULL,
-    route_id INT NULL,
-    datatype_id INT NULL,
-    author_id INT DEFAULT 1 NOT NULL,
+    content_data_id VARCHAR(26) PRIMARY KEY NOT NULL,
+    parent_id VARCHAR(26) NULL,
+    first_child_id VARCHAR(26) NULL,
+    next_sibling_id VARCHAR(26) NULL,
+    prev_sibling_id VARCHAR(26) NULL,
+    route_id VARCHAR(26) NULL,
+    datatype_id VARCHAR(26) NULL,
+    author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -57,6 +56,7 @@ ORDER BY content_data_id;
 
 -- name: CreateContentData :exec
 INSERT INTO content_data (
+    content_data_id,
     route_id,
     parent_id,
     first_child_id,
@@ -67,6 +67,7 @@ INSERT INTO content_data (
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

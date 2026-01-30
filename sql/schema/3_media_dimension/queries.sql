@@ -4,8 +4,7 @@ DROP TABLE media_dimensions;
 -- name: CreateMediaDimensionTable :exec
 CREATE TABLE IF NOT EXISTS media_dimensions
 (
-    md_id INTEGER
-        PRIMARY KEY,
+    md_id TEXT PRIMARY KEY NOT NULL CHECK (length(md_id) = 26),
     label TEXT
         UNIQUE,
     width INTEGER,
@@ -27,11 +26,13 @@ ORDER BY label;
 
 -- name: CreateMediaDimension :one
 INSERT INTO media_dimensions(
-    label,    
-    width, 
-    height, 
+    md_id,
+    label,
+    width,
+    height,
     aspect_ratio
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

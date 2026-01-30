@@ -2,8 +2,8 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -39,19 +39,11 @@ func TableHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetTable handles GET requests for a single table
 func apiGetTable(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	tId, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	tId := r.URL.Query().Get("q")
+	if tId == "" {
+		err := fmt.Errorf("missing table ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 	table, err := d.GetTable(tId)
@@ -70,13 +62,6 @@ func apiGetTable(w http.ResponseWriter, r *http.Request, c config.Config) error 
 // apiListTables handles GET requests for listing tables
 func apiListTables(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	tables, err := d.ListTables()
 	if err != nil {
@@ -128,16 +113,9 @@ func apiCreateTable(w http.ResponseWriter, r *http.Request, c config.Config) err
 // apiUpdateTables handles PUT requests to update an existing table
 func apiUpdateTables(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateTable db.UpdateTableParams
-	err = json.NewDecoder(r.Body).Decode(&updateTable)
+	err := json.NewDecoder(r.Body).Decode(&updateTable)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -160,22 +138,14 @@ func apiUpdateTables(w http.ResponseWriter, r *http.Request, c config.Config) er
 // apiDeleteTable handles DELETE requests for tables
 func apiDeleteTable(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
-	q := r.URL.Query().Get("q")
-	tId, err := strconv.ParseInt(q, 10, 64)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	tId := r.URL.Query().Get("q")
+	if tId == "" {
+		err := fmt.Errorf("missing table ID")
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteTable(tId)
+	err := d.DeleteTable(tId)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

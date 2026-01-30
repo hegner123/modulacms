@@ -39,13 +39,6 @@ func RoleHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 // apiGetRole handles GET requests for a single role
 func apiGetRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	rID := types.RoleID(q)
@@ -70,13 +63,6 @@ func apiGetRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 // apiListRoles handles GET requests for listing roles
 func apiListRoles(w http.ResponseWriter, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	roles, err := d.ListRoles()
 	if err != nil {
@@ -94,16 +80,9 @@ func apiListRoles(w http.ResponseWriter, c config.Config) error {
 // apiCreateRole handles POST requests to create a new role
 func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var newRole db.CreateRoleParams
-	err = json.NewDecoder(r.Body).Decode(&newRole)
+	err := json.NewDecoder(r.Body).Decode(&newRole)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -121,16 +100,9 @@ func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 // apiUpdateRole handles PUT requests to update an existing role
 func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	var updateRole db.UpdateRoleParams
-	err = json.NewDecoder(r.Body).Decode(&updateRole)
+	err := json.NewDecoder(r.Body).Decode(&updateRole)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -153,13 +125,6 @@ func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 // apiDeleteRole handles DELETE requests for roles
 func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
-	con, _, err := d.GetConnection()
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
-	}
-	defer con.Close()
 
 	q := r.URL.Query().Get("q")
 	rID := types.RoleID(q)
@@ -168,7 +133,7 @@ func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteRole(rID)
+	err := d.DeleteRole(rID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
