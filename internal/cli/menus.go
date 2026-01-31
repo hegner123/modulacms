@@ -23,12 +23,20 @@ func (m Model) HomepageMenuInit() []Page {
 
 func (m Model) CmsMenuInit() []Page {
 	CmsMenu := []Page{
-		m.PageMap[DATATYPES],
 		m.PageMap[CONTENT],
+		m.PageMap[DATATYPES],
+		m.PageMap[ROUTES],
 		m.PageMap[MEDIA],
 		m.PageMap[USERSADMIN],
 	}
 	return CmsMenu
+}
+
+func (m Model) ContentMenuInit() []Page {
+	ContentMenu := []Page{
+		m.PageMap[ROUTES],
+	}
+	return ContentMenu
 }
 
 func (m Model) DatabaseMenuInit() []Page {

@@ -39,6 +39,11 @@ func (m Model) View() string {
 		str := fmt.Sprintf("\n\n   %s Loading forever...press q to quit\n\n", m.Spinner.View())
 		return str
 	}
+
+	if isCMSPanelPage(m.Page.Index) {
+		return renderCMSPanelLayout(m)
+	}
+
 	switch m.Page.Index {
 	case HOMEPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
@@ -58,28 +63,6 @@ func (m Model) View() string {
 		p := NewMenuPage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Tables")
-		p.AddMenu(menu)
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case CMSPAGE:
-		menu := make([]string, 0, len(m.PageMenu))
-		for _, v := range m.PageMenu {
-			menu = append(menu, v.Label)
-		}
-		p := NewMenuPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader("CMS")
-		p.AddMenu(menu)
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case ADMINCMSPAGE:
-		menu := make([]string, 0, len(m.PageMenu))
-		for _, v := range m.PageMenu {
-			menu = append(menu, v.Label)
-		}
-		p := NewMenuPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader("Admin CMS")
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
@@ -220,19 +203,6 @@ func (m Model) View() string {
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Dynamic")
 		p.AddControls("q quit")
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case CONTENT:
-		p := NewCMSPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader("Content Browser")
-		p.AddControls("↑↓:Navigate │ Enter:Expand/Collapse │ e:Edit │ n:New │ d:Delete │ /:Search │ q:Back")
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case MEDIA:
-		p := NewStaticPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddHeader("Content")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case ACTIONSPAGE:

@@ -23,12 +23,14 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
+			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
 		case ADMINCMSPAGE:
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
+			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
 		case DATABASEPAGE:
@@ -108,9 +110,15 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 
 		case CONTENT:
 			page := m.PageMap[CONTENT]
-			cmds = append(cmds, DatatypesFetchCmd())
+			cmds = append(cmds, RootDatatypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			// If a datatype is already selected, fetch its routes
+			if !m.SelectedDatatype.IsZero() {
+				cmds = append(cmds, RoutesByDatatypeFetchCmd(m.SelectedDatatype))
+			}
 
 			// Load content tree if PageRouteId is set
 			if !m.PageRouteId.IsZero() {
@@ -134,12 +142,14 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			page := m.PageMap[MEDIA]
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
 		case USERSADMIN:
 			page := m.PageMap[USERSADMIN]
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
 		case CONFIGPAGE:
@@ -151,6 +161,14 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			cmds = append(cmds, ReadyTrueCmd())
 			cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
+
+			return m, tea.Batch(cmds...)
+		case ROUTES:
+			page := m.PageMap[ROUTES]
+			cmds = append(cmds, RoutesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
 		case ACTIONSPAGE:

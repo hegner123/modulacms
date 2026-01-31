@@ -6270,6 +6270,49 @@ func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 	return items, nil
 }
 
+const listRoutesByDatatype = `-- name: ListRoutesByDatatype :many
+SELECT DISTINCT r.route_id, r.slug, r.title, r.status, r.author_id, r.date_created, r.date_modified
+FROM routes r
+INNER JOIN content_data cd ON r.route_id = cd.route_id
+WHERE cd.datatype_id = $1
+ORDER BY r.title
+`
+
+type ListRoutesByDatatypeParams struct {
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) ListRoutesByDatatype(ctx context.Context, arg ListRoutesByDatatypeParams) ([]Routes, error) {
+	rows, err := q.db.QueryContext(ctx, listRoutesByDatatype, arg.DatatypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Routes{}
+	for rows.Next() {
+		var i Routes
+		if err := rows.Scan(
+			&i.RouteID,
+			&i.Slug,
+			&i.Title,
+			&i.Status,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listSession = `-- name: ListSession :many
 SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 `

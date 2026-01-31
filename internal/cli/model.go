@@ -14,8 +14,10 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -50,6 +52,7 @@ type ModelInterface interface {
 }
 
 type Model struct {
+	DB           db.DbDriver
 	Config       *config.Config
 	Status       ApplicationState
 	TitleFont    int
@@ -90,6 +93,10 @@ type Model struct {
 	Dialog       *DialogModel
 	DialogActive bool
 	Root         TreeRoot
+	PanelFocus        tui.FocusPanel
+	Routes            []db.Routes
+	RootDatatypes     []db.Datatypes
+	SelectedDatatype  types.DatatypeID
 
 	// SSH User Provisioning
 	NeedsProvisioning bool
@@ -111,7 +118,7 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 	}
 }
 
-func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
+func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd) {
 
 	verbose := false
 	if v != nil {
@@ -137,6 +144,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
 	m := Model{
+		DB:          driver,
 		Config:      c,
 		Status:      OK,
 		TitleFont:   0,
@@ -154,6 +162,7 @@ func InitialModel(v *bool, c *config.Config) (Model, tea.Cmd) {
 		FormState:   NewFormModel(),
 		TableState:  NewTableModel(),
 		Focus:       PAGEFOCUS,
+		PanelFocus:  tui.TreePanel,
 		History:     []PageHistory{},
 		Verbose:     verbose,
 		PageRouteId: types.RouteID(""), // TODO: Implement route selection UI

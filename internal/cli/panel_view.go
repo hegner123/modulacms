@@ -1,0 +1,305 @@
+package cli
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/charmbracelet/lipgloss"
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/tui"
+)
+
+// isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
+func isCMSPanelPage(idx PageIndex) bool {
+	switch idx {
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES:
+		return true
+	default:
+		return false
+	}
+}
+
+// renderCMSPanelLayout renders the full panel layout: header, 3 bordered panels, status bar.
+func renderCMSPanelLayout(m Model) string {
+	header := renderCMSHeader(m)
+	statusBar := renderCMSPanelStatusBar(m)
+
+	headerH := lipgloss.Height(header)
+	statusH := lipgloss.Height(statusBar)
+
+	bodyH := m.Height - headerH - statusH
+	if bodyH < 3 {
+		bodyH = 3
+	}
+
+	leftW := m.Width / 4
+	centerW := m.Width / 2
+	rightW := m.Width - leftW - centerW
+
+	left, center, right := cmsPanelContent(m)
+
+	treePanel := tui.Panel{
+		Title:   "Tree",
+		Width:   leftW,
+		Height:  bodyH,
+		Content: left,
+		Focused: m.PanelFocus == tui.TreePanel,
+	}
+
+	contentPanel := tui.Panel{
+		Title:   "Content",
+		Width:   centerW,
+		Height:  bodyH,
+		Content: center,
+		Focused: m.PanelFocus == tui.ContentPanel,
+	}
+
+	routePanel := tui.Panel{
+		Title:   "Route",
+		Width:   rightW,
+		Height:  bodyH,
+		Content: right,
+		Focused: m.PanelFocus == tui.RoutePanel,
+	}
+
+	body := lipgloss.JoinHorizontal(lipgloss.Top,
+		treePanel.Render(),
+		contentPanel.Render(),
+		routePanel.Render(),
+	)
+
+	ui := lipgloss.JoinVertical(lipgloss.Left, header, body, statusBar)
+
+	if m.DialogActive && m.Dialog != nil {
+		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
+	}
+
+	return ui
+}
+
+// cmsPanelContent returns the left, center, and right panel content strings
+// based on the current page.
+func cmsPanelContent(m Model) (left, center, right string) {
+	switch m.Page.Index {
+	case CMSPAGE, ADMINCMSPAGE:
+		left = renderCMSMenuContent(m)
+		center = "Select an item"
+		right = "Route\n\n  (none)"
+
+	case CONTENT:
+		if m.PageRouteId.IsZero() {
+			// Content selection flow: ROOT types -> routes
+			left = renderRootDatatypesList(m)
+			if m.SelectedDatatype.IsZero() {
+				center = "Select a root type"
+				right = fmt.Sprintf("Root Types: %d", len(m.RootDatatypes))
+			} else {
+				center = renderRoutesList(m)
+				right = renderRouteActions(m)
+			}
+		} else {
+			// Content browsing: tree view
+			cms := CMSPage{}
+			left = cms.ProcessTreeDatatypes(m)
+			center = cms.ProcessContentPreview(m)
+			right = cms.ProcessFields(m)
+		}
+
+	case ROUTES:
+		left = renderRoutesList(m)
+		center = renderRouteDetail(m)
+		right = renderRouteActions(m)
+
+	case MEDIA:
+		left = "Media Library"
+		center = "Select media"
+		right = "Details"
+
+	case USERSADMIN:
+		left = "Users"
+		center = "Select a user"
+		right = "Permissions"
+
+	default:
+		left = ""
+		center = ""
+		right = ""
+	}
+	return left, center, right
+}
+
+// renderCMSMenuContent renders the menu list for the left panel on CMSPAGE/ADMINCMSPAGE.
+func renderCMSMenuContent(m Model) string {
+	if len(m.PageMenu) == 0 {
+		return "(no items)"
+	}
+
+	lines := make([]string, 0, len(m.PageMenu))
+	for i, item := range m.PageMenu {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s", cursor, item.Label))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderCMSHeader renders the top bar with the app title and action buttons.
+func renderCMSHeader(m Model) string {
+	titleStyle := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(config.DefaultStyle.Accent).
+		PaddingRight(2)
+
+	actions := []string{"New", "Save", "Copy", "Duplicate", "Export"}
+	buttons := make([]string, len(actions))
+	for i, a := range actions {
+		buttons[i] = RenderButton(a)
+	}
+
+	title := titleStyle.Render(RenderTitle(m.Titles[m.TitleFont]))
+	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, buttons...)
+
+	row := lipgloss.JoinHorizontal(lipgloss.Center, title, buttonBar)
+
+	container := lipgloss.NewStyle().
+		Width(m.Width).
+		BorderBottom(true).
+		BorderStyle(lipgloss.NormalBorder()).
+		BorderForeground(config.DefaultStyle.Tertiary).
+		Padding(0, 1).
+		Render(row)
+
+	return container
+}
+
+// renderCMSPanelStatusBar renders the bottom status bar with status badge,
+// panel focus indicator, and key hints.
+func renderCMSPanelStatusBar(m Model) string {
+	barStyle := lipgloss.NewStyle().
+		Background(config.DefaultStyle.Status2BG).
+		Foreground(config.DefaultStyle.Status1)
+
+	// Left: status badge
+	statusBadge := m.GetStatus()
+
+	// Center: panel focus indicator
+	panels := []tui.FocusPanel{tui.TreePanel, tui.ContentPanel, tui.RoutePanel}
+	focusParts := make([]string, len(panels))
+	for i, p := range panels {
+		label := p.String()
+		if m.PanelFocus == p {
+			focusParts[i] = barStyle.Bold(true).Padding(0, 1).Render("[" + label + "]")
+		} else {
+			focusParts[i] = barStyle.Padding(0, 1).Render(" " + label + " ")
+		}
+	}
+	focusIndicator := lipgloss.JoinHorizontal(lipgloss.Center, focusParts...)
+
+	// Right: key hints
+	hints := barStyle.Padding(0, 1).Render("tab:panel  h:back  q:quit")
+
+	// Calculate spacing
+	statusW := lipgloss.Width(statusBadge)
+	focusW := lipgloss.Width(focusIndicator)
+	hintsW := lipgloss.Width(hints)
+
+	leftGap := (m.Width - statusW - focusW - hintsW) / 2
+	if leftGap < 1 {
+		leftGap = 1
+	}
+	rightGap := m.Width - statusW - leftGap - focusW - hintsW
+	if rightGap < 0 {
+		rightGap = 0
+	}
+
+	leftSpacer := barStyle.Render(strings.Repeat(" ", leftGap))
+	rightSpacer := barStyle.Render(strings.Repeat(" ", rightGap))
+
+	return statusBadge + leftSpacer + focusIndicator + rightSpacer + hints
+}
+
+// renderRootDatatypesList renders ROOT datatypes for the left panel on the CONTENT page.
+func renderRootDatatypesList(m Model) string {
+	if len(m.RootDatatypes) == 0 {
+		return "(no root types)"
+	}
+
+	lines := make([]string, 0, len(m.RootDatatypes))
+	for i, dt := range m.RootDatatypes {
+		cursor := "   "
+		if m.SelectedDatatype.IsZero() && m.Cursor == i {
+			cursor = " ->"
+		}
+		active := ""
+		if dt.DatatypeID == m.SelectedDatatype {
+			active = " *"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s%s", cursor, dt.Label, active))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderRoutesList renders the route list with cursor and active route indicator.
+func renderRoutesList(m Model) string {
+	if len(m.Routes) == 0 {
+		return "(no routes)"
+	}
+
+	lines := make([]string, 0, len(m.Routes))
+	for i, route := range m.Routes {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		active := ""
+		if route.RouteID == m.PageRouteId {
+			active = " *"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s /%s%s", cursor, route.Title, route.Slug, active))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderRouteDetail renders the selected route details for the center panel.
+func renderRouteDetail(m Model) string {
+	if len(m.Routes) == 0 || m.Cursor >= len(m.Routes) {
+		return "No route selected"
+	}
+
+	route := m.Routes[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Title:    %s", route.Title),
+		fmt.Sprintf("Slug:     /%s", route.Slug),
+		fmt.Sprintf("Status:   %d", route.Status),
+		fmt.Sprintf("Author:   %s", route.AuthorID.String()),
+		fmt.Sprintf("Created:  %s", route.DateCreated.String()),
+		fmt.Sprintf("Modified: %s", route.DateModified.String()),
+	}
+
+	if route.RouteID == m.PageRouteId {
+		lines = append(lines, "", "  (active route)")
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderRouteActions renders available actions for the right panel.
+func renderRouteActions(m Model) string {
+	lines := []string{
+		"Actions",
+		"",
+		"  n: New",
+		"  e: Edit",
+		"  d: Delete",
+		"",
+		fmt.Sprintf("Routes: %d", len(m.Routes)),
+	}
+
+	if !m.PageRouteId.IsZero() {
+		lines = append(lines, fmt.Sprintf("Active:  %s", m.PageRouteId))
+	}
+
+	return strings.Join(lines, "\n")
+}

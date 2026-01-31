@@ -2,6 +2,7 @@ package cli
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -137,6 +138,22 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case DatatypeMenuSet:
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
+		return newModel, NewStateUpdate()
+	case RoutesSet:
+		newModel := m
+		newModel.Routes = msg.Routes
+		return newModel, NewStateUpdate()
+	case RootDatatypesSet:
+		newModel := m
+		newModel.RootDatatypes = msg.RootDatatypes
+		return newModel, NewStateUpdate()
+	case SelectedDatatypeSet:
+		newModel := m
+		newModel.SelectedDatatype = msg.DatatypeID
+		return newModel, NewStateUpdate()
+	case PanelFocusReset:
+		newModel := m
+		newModel.PanelFocus = tui.TreePanel
 		return newModel, NewStateUpdate()
 	case PageMenuSet:
 		newModel := m

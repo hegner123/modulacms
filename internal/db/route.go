@@ -168,6 +168,21 @@ func (d Database) ListRoutes() (*[]Routes, error) {
 	return &res, nil
 }
 
+func (d Database) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListRoutesByDatatype(d.Context, mdb.ListRoutesByDatatypeParams{
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
+	}
+	res := make([]Routes, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapRoute(v))
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateRoute(s UpdateRouteParams) (*string, error) {
 	params := d.MapUpdateRouteParams(s)
 	queries := mdb.New(d.Connection)
@@ -292,6 +307,21 @@ func (d MysqlDatabase) ListRoutes() (*[]Routes, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListRoutesByDatatype(d.Context, mdbm.ListRoutesByDatatypeParams{
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
+	}
+	res := make([]Routes, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapRoute(v))
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
 	params := d.MapUpdateRouteParams(s)
 	queries := mdbm.New(d.Connection)
@@ -408,6 +438,21 @@ func (d PsqlDatabase) ListRoutes() (*[]Routes, error) {
 	for _, v := range rows {
 		m := d.MapRoute(v)
 		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListRoutesByDatatype(d.Context, mdbp.ListRoutesByDatatypeParams{
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get routes by datatype: %w", err)
+	}
+	res := make([]Routes, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapRoute(v))
 	}
 	return &res, nil
 }

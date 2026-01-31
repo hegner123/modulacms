@@ -32,6 +32,13 @@ JOIN content_fields cf ON cd.content_data_id = cf.content_data_id
 WHERE cd.route_id = ?
 ORDER BY cf.content_data_id, cf.field_id;
 
+-- name: ListRoutesByDatatype :many
+SELECT DISTINCT r.route_id, r.slug, r.title, r.status, r.author_id, r.date_created, r.date_modified
+FROM routes r
+INNER JOIN content_data cd ON r.route_id = cd.route_id
+WHERE cd.datatype_id = ?
+ORDER BY r.title;
+
 -- name: GetRouteTreeByRouteID :many
 SELECT 
     cd.content_data_id,

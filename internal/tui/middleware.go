@@ -1,4 +1,4 @@
-package cli
+package tui
 
 import (
 	"time"
@@ -8,14 +8,14 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/muesli/termenv"
 )
 
 type timeMsg time.Time
 
-// Wish Middleware launches CLI program
-func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver) wish.Middleware {
+// TuiMiddleware returns a wish.Middleware that launches the new TUI
+// for SSH sessions.
+func TuiMiddleware(v *bool, c *config.Config) wish.Middleware {
 	newProg := func(m tea.Model, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)
 		go func() {
@@ -26,28 +26,22 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver) wish.Middlewar
 		}()
 		return p
 	}
+
 	teaHandler := func(s ssh.Session) *tea.Program {
 		pty, _, active := s.Pty()
 		if !active {
 			wish.Fatalln(s, "no active terminal, skipping")
 			return nil
 		}
-		m, _ := InitialModel(v, c, driver)
+
+		m, _ := InitialModel(v, c)
 		m.Term = pty.Term
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height
 		m.Time = time.Now()
 
-		// Check if user needs provisioning
-		ctx := s.Context()
-		if needsProvisioning, ok := ctx.Value("needs_provisioning").(bool); ok && needsProvisioning {
-			m.NeedsProvisioning = true
-			m.SSHFingerprint = ctx.Value("ssh_fingerprint").(string)
-			m.SSHKeyType = ctx.Value("ssh_key_type").(string)
-			m.SSHPublicKey = ctx.Value("ssh_public_key").(string)
-		}
-
 		return newProg(&m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)
 	}
+
 	return bubbletea.MiddlewareWithProgramHandler(teaHandler, termenv.ANSI256)
 }

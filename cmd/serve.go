@@ -15,11 +15,11 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
-	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/router"
+	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/acme/autocert"
@@ -83,7 +83,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				cli.CliMiddleware(&verbose, cfg),
+				tui.TuiMiddleware(&verbose, cfg),
 				logging.Middleware(),
 			),
 		)

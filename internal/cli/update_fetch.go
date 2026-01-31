@@ -111,6 +111,52 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			ColumnTypesSetCmd(msg.ColumnTypes),
 			ColumnsSetCmd(msg.Columns),
 		)
+	case RoutesFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			routes, err := d.ListRoutes()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if routes == nil {
+				return RoutesFetchResultsMsg{Data: []db.Routes{}}
+			}
+			return RoutesFetchResultsMsg{Data: *routes}
+		}
+
+	case RoutesFetchResultsMsg:
+		return m, RoutesSetCmd(msg.Data)
+
+	case RootDatatypesFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			datatypes, err := d.ListDatatypesRoot()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if datatypes == nil {
+				return RootDatatypesFetchResultsMsg{Data: []db.Datatypes{}}
+			}
+			return RootDatatypesFetchResultsMsg{Data: *datatypes}
+		}
+
+	case RootDatatypesFetchResultsMsg:
+		return m, RootDatatypesSetCmd(msg.Data)
+
+	case RoutesByDatatypeFetchMsg:
+		d := m.DB
+		datatypeID := msg.DatatypeID
+		return m, func() tea.Msg {
+			routes, err := d.ListRoutesByDatatype(datatypeID)
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if routes == nil {
+				return RoutesFetchResultsMsg{Data: []db.Routes{}}
+			}
+			return RoutesFetchResultsMsg{Data: *routes}
+		}
+
 	case FetchErrMsg:
 		// Handle an error from data fetching.
 		return m, tea.Batch(

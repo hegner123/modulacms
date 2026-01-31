@@ -68,7 +68,8 @@ func SetViewportContentCmd(content string) tea.Cmd {
 }
 
 // Focus control constructors
-func FocusSetCmd(focus FocusKey) tea.Cmd { return func() tea.Msg { return FocusSet{Focus: focus} } }
+func FocusSetCmd(focus FocusKey) tea.Cmd    { return func() tea.Msg { return FocusSet{Focus: focus} } }
+func PanelFocusResetCmd() tea.Cmd           { return func() tea.Msg { return PanelFocusReset{} } }
 
 // Form control constructors
 
@@ -418,6 +419,34 @@ func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 			Datatype: id,
 		}
 	}
+}
+
+// Route constructors
+func RoutesFetchCmd() tea.Cmd { return func() tea.Msg { return RoutesFetchMsg{} } }
+func RoutesFetchResultCmd(data []db.Routes) tea.Cmd {
+	return func() tea.Msg { return RoutesFetchResultsMsg{Data: data} }
+}
+func RouteSelectedCmd(route db.Routes) tea.Cmd {
+	return func() tea.Msg { return RouteSelectedMsg{Route: route} }
+}
+func RoutesSetCmd(routes []db.Routes) tea.Cmd {
+	return func() tea.Msg { return RoutesSet{Routes: routes} }
+}
+
+// Root datatypes constructors
+func RootDatatypesFetchCmd() tea.Cmd {
+	return func() tea.Msg { return RootDatatypesFetchMsg{} }
+}
+func RootDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
+	return func() tea.Msg { return RootDatatypesSet{RootDatatypes: datatypes} }
+}
+
+// Routes by datatype constructors
+func RoutesByDatatypeFetchCmd(datatypeID types.DatatypeID) tea.Cmd {
+	return func() tea.Msg { return RoutesByDatatypeFetchMsg{DatatypeID: datatypeID} }
+}
+func SelectedDatatypeSetCmd(datatypeID types.DatatypeID) tea.Cmd {
+	return func() tea.Msg { return SelectedDatatypeSet{DatatypeID: datatypeID} }
 }
 
 func BuildContentFormCmd(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {

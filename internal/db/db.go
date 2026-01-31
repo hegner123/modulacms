@@ -277,6 +277,7 @@ type DbDriver interface {
 	GetRouteID(string) (*types.RouteID, error)
 	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)
 	ListRoutes() (*[]Routes, error)
+	ListRoutesByDatatype(types.DatatypeID) (*[]Routes, error)
 	UpdateRoute(UpdateRouteParams) (*string, error)
 
 	// Sessions

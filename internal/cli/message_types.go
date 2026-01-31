@@ -295,3 +295,31 @@ type BuildContentFormMsg struct {
 	DatatypeID types.DatatypeID
 	RouteID    types.RouteID
 }
+
+type RoutesFetchMsg struct{}
+type RoutesFetchResultsMsg struct {
+	Data []db.Routes
+}
+type RouteSelectedMsg struct {
+	Route db.Routes
+}
+type RoutesSet struct {
+	Routes []db.Routes
+}
+
+type RootDatatypesFetchMsg struct{}
+type RootDatatypesFetchResultsMsg struct {
+	Data []db.Datatypes
+}
+type RootDatatypesSet struct {
+	RootDatatypes []db.Datatypes
+}
+
+type RoutesByDatatypeFetchMsg struct {
+	DatatypeID types.DatatypeID
+}
+type SelectedDatatypeSet struct {
+	DatatypeID types.DatatypeID
+}
+
+type PanelFocusReset struct{}

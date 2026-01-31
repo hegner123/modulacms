@@ -7,6 +7,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -53,6 +54,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.ConfigControls(msg)
 	case ACTIONSPAGE:
 		return m.ActionsControls(msg)
+	case ROUTES:
+		return m.RoutesControls(msg)
 	case CONTENT:
 		return m.ContentBrowserControls(msg)
 	case USERSADMIN:
@@ -112,6 +115,13 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 
+		case "tab":
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		case "shift+tab":
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+
 		case "shift+left":
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
@@ -128,7 +138,7 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "shift+tab", "backspace":
+		case "h", "left", "backspace":
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
@@ -136,6 +146,8 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			// Only proceed if we have menu items
 			page := m.PageMenu[m.Cursor]
 			switch page.Index {
+			case ROUTES:
+				return m, NavigateToPageCmd(m.PageMap[ROUTES])
 			case DATATYPES:
 				return m, tea.Batch(
 					CmsDefineDatatypeLoadCmd(),
@@ -159,64 +171,172 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// ContentBrowserControls handles keyboard navigation for the content browser
-func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
+// RoutesControls handles keyboard navigation for the routes page
+func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		// Exit / Back
-		case "q", "esc", "h", "left", "backspace":
-			if len(m.History) > 0 {
-				return m, HistoryPopCmd()
-			}
+		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
-		case "ctrl+c":
-			return m, tea.Quit
-
-		// Navigation
+		case "tab":
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		case "shift+tab":
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
 		case "up", "k":
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
 		case "down", "j":
-			// Count visible nodes
-			maxCursor := m.countVisibleNodes()
-			if m.Cursor < maxCursor-1 {
+			if m.Cursor < len(m.Routes)-1 {
 				return m, CursorDownCmd()
 			}
+		case "h", "left", "backspace":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		case "enter", "l", "right":
+			if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
+				route := m.Routes[m.Cursor]
+				m.PageRouteId = route.RouteID
+				return m, LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID))
+			}
+		}
+	}
+	return m, nil
+}
 
-		// Expand/Collapse
-		case "enter", "space":
-			node := m.getSelectedNodeFromModel()
-			if node != nil && node.FirstChild != nil {
-				node.Expand = !node.Expand
+// ContentBrowserControls handles keyboard navigation for the content browser.
+// The Content page has a multi-step flow:
+//   - Left panel: ROOT datatypes list
+//   - Center panel: routes for selected ROOT type (or content tree if route active)
+//   - Right panel: details/actions
+func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		// Panel focus cycling
+		case "tab":
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		case "shift+tab":
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+
+		// Exit / Back
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		case "esc", "h", "left", "backspace":
+			// Step back through content flow states
+			if !m.PageRouteId.IsZero() {
+				// Clear route, go back to route list
+				m.PageRouteId = types.RouteID("")
+				m.Root = TreeRoot{}
+				m.Cursor = 0
 				return m, nil
 			}
-
-		// Actions
-		case "e":
-			// Edit selected content
-			return m, NavigateToPageCmd(m.PageMap[EDITCONTENT])
-		case "n":
-			// Create new content - build form based on selected datatype
-			node := m.getSelectedNodeFromModel()
-			utility.DefaultLogger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
-			if node != nil {
-				utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %s (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
-				// Use the datatype from the selected node
-				return m, m.BuildContentFieldsForm(node.Datatype.DatatypeID, m.PageRouteId)
+			if !m.SelectedDatatype.IsZero() {
+				// Clear datatype, go back to ROOT type list
+				m.SelectedDatatype = types.DatatypeID("")
+				m.Routes = nil
+				m.Cursor = 0
+				return m, nil
 			}
-			// Fallback: if no node selected, we can't create content
-			utility.DefaultLogger.Finfo("No node selected")
-			return m, ShowDialog("Error", "Please select a content type first", false)
-		case "d":
-			// Delete content (with confirmation)
-			return m, ShowDialog("Confirm Delete", "Delete this content? This cannot be undone.", true)
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
 
-		// Search
-		case "/":
-			// TODO: Implement search
-			return m, nil
+		// Navigation
+		case "up", "k":
+			if m.PageRouteId.IsZero() {
+				// Navigating ROOT types or routes list
+				if m.Cursor > 0 {
+					return m, CursorUpCmd()
+				}
+			} else {
+				// Navigating content tree
+				if m.Cursor > 0 {
+					return m, CursorUpCmd()
+				}
+			}
+		case "down", "j":
+			if m.PageRouteId.IsZero() {
+				if m.SelectedDatatype.IsZero() {
+					// Navigating ROOT types
+					if m.Cursor < len(m.RootDatatypes)-1 {
+						return m, CursorDownCmd()
+					}
+				} else {
+					// Navigating routes list
+					if m.Cursor < len(m.Routes)-1 {
+						return m, CursorDownCmd()
+					}
+				}
+			} else {
+				// Navigating content tree
+				maxCursor := m.countVisibleNodes()
+				if m.Cursor < maxCursor-1 {
+					return m, CursorDownCmd()
+				}
+			}
+
+		// Selection
+		case "enter", "l", "right":
+			if m.PageRouteId.IsZero() {
+				if m.SelectedDatatype.IsZero() {
+					// Select a ROOT datatype -> fetch routes for it
+					if len(m.RootDatatypes) > 0 && m.Cursor < len(m.RootDatatypes) {
+						dt := m.RootDatatypes[m.Cursor]
+						m.SelectedDatatype = dt.DatatypeID
+						m.Cursor = 0
+						return m, tea.Batch(
+							SelectedDatatypeSetCmd(dt.DatatypeID),
+							RoutesByDatatypeFetchCmd(dt.DatatypeID),
+						)
+					}
+				} else {
+					// Select a route -> set PageRouteId and load content tree
+					if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
+						route := m.Routes[m.Cursor]
+						m.PageRouteId = route.RouteID
+						m.Cursor = 0
+						return m, tea.Batch(
+							LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID)),
+							ReloadContentTreeCmd(m.Config, route.RouteID),
+						)
+					}
+				}
+			} else {
+				// Content tree: expand/collapse
+				node := m.getSelectedNodeFromModel()
+				if node != nil && node.FirstChild != nil {
+					node.Expand = !node.Expand
+					return m, nil
+				}
+			}
+
+		// Actions (only when browsing content tree)
+		case "e":
+			if !m.PageRouteId.IsZero() {
+				return m, NavigateToPageCmd(m.PageMap[EDITCONTENT])
+			}
+		case "n":
+			if !m.PageRouteId.IsZero() {
+				node := m.getSelectedNodeFromModel()
+				utility.DefaultLogger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
+				if node != nil {
+					utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %s (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
+					return m, m.BuildContentFieldsForm(node.Datatype.DatatypeID, m.PageRouteId)
+				}
+				utility.DefaultLogger.Finfo("No node selected")
+				return m, ShowDialog("Error", "Please select a content type first", false)
+			}
+		case "d":
+			if !m.PageRouteId.IsZero() {
+				return m, ShowDialog("Confirm Delete", "Delete this content? This cannot be undone.", true)
+			}
 
 		// Title font change
 		case "shift+left":
