@@ -14,11 +14,16 @@ import (
 type Metadata map[string]string
 
 func (cs S3Credentials) GetBucket() (*s3.S3, error) {
+	region := cs.Region
+	if region == "" {
+		region = "us-east-1"
+	}
+
 	sess, err := session.NewSession(&aws.Config{
 		Credentials:      credentials.NewStaticCredentials(cs.AccessKey, cs.SecretKey, ""),
 		Endpoint:         aws.String(cs.URL),
-		Region:           aws.String("us-southeast-1"), // Use any valid AWS region
-		S3ForcePathStyle: aws.Bool(true),               // Required for Linode Object Storage
+		Region:           aws.String(region),
+		S3ForcePathStyle: aws.Bool(cs.ForcePathStyle),
 	})
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to create session: %v", err)

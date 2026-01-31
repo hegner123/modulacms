@@ -45,9 +45,11 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 		return "Not configured", nil
 	}
 	creds := bucket.S3Credentials{
-		AccessKey: c.Bucket_Access_Key,
-		SecretKey: c.Bucket_Secret_Key,
-		URL:       c.Bucket_Endpoint,
+		AccessKey:      c.Bucket_Access_Key,
+		SecretKey:      c.Bucket_Secret_Key,
+		URL:            c.BucketEndpointURL(),
+		Region:         c.Bucket_Region,
+		ForcePathStyle: c.Bucket_Force_Path_Style,
 	}
 	_, err := creds.GetBucket()
 	if err != nil {

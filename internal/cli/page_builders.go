@@ -130,7 +130,7 @@ func (m *MenuPage) RenderBody(model Model) string {
 
 		fs := fmt.Sprintf("%s%s   ", cursor, choice)
 		column = append(column, fs)
-		if (i+1)%6 == 0 || i == len(m.Menu)-1 {
+		if (i+1)%8 == 0 || i == len(m.Menu)-1 {
 			c := NewVerticalGroup(lipgloss.Left, column)
 			row = append(row, c)
 			column = []string{}

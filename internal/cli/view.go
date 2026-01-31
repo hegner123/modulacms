@@ -104,10 +104,23 @@ func (m Model) View() string {
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case CONFIGPAGE:
-		p := NewMenuPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
+		docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+		body := lipgloss.JoinVertical(
+			lipgloss.Left,
+			RenderTitle(m.Titles[m.TitleFont]),
+			m.headerView(),
+			m.Viewport.View(),
+			m.footerView(),
+		)
+		controls := RenderFooter("↑↓/pgup/pgdn:Scroll │ h/backspace:Back │ q:Quit")
+		h := m.RenderSpace(docStyle.Render(body) + controls)
+		ui = lipgloss.JoinVertical(
+			lipgloss.Left,
+			docStyle.Render(body),
+			h,
+			controls,
+			m.RenderStatusBar(),
+		)
 	case TABLEPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
 		for _, v := range m.PageMenu {
@@ -222,6 +235,14 @@ func (m Model) View() string {
 		p.AddHeader("Content")
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
+	case ACTIONSPAGE:
+		menu := ActionsMenuLabels()
+		p := NewMenuPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Actions")
+		p.AddMenu(menu)
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
 	default:
 		ui = m.RenderUI()
 	}
@@ -254,11 +275,9 @@ func (m Model) RenderUI() string {
 }
 
 func formatJSON(b *config.Config) (string, error) {
-	formatted, err := json.MarshalIndent(*b, "", "    ")
+	formatted, err := json.MarshalIndent(*b, "", "  ")
 	if err != nil {
 		return "", err
 	}
-	nulled := strings.ReplaceAll(string(formatted), "\"\",", "null")
-	trimmed := strings.ReplaceAll(nulled, "\"", "")
-	return string(trimmed), nil
+	return string(formatted), nil
 }

@@ -42,6 +42,8 @@ func DefaultConfig() Config {
 	c.Db_Password = ""
 	c.Backup_Option = "./"
 	c.Backup_Paths = []string{""}
+	c.Bucket_Force_Path_Style = true
+	c.Bucket_Region = "us-east-1"
 
 	// Default CORS settings
 	c.Cors_Origins = []string{"http://localhost:3000"}

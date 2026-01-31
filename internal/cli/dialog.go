@@ -13,8 +13,9 @@ import (
 type DialogAction string
 
 const (
-	DIALOGGENERIC DialogAction = "generic"
-	DIALOGDELETE  DialogAction = "delete"
+	DIALOGGENERIC       DialogAction = "generic"
+	DIALOGDELETE        DialogAction = "delete"
+	DIALOGACTIONCONFIRM DialogAction = "action_confirm"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -28,6 +29,7 @@ type DialogModel struct {
 	ShowCancel  bool
 	ReadyOK     bool
 	Action      DialogAction
+	ActionIndex int // Stores the pending action index for DIALOGACTIONCONFIRM
 	help        help.Model
 	borderStyle lipgloss.Style
 	titleStyle  lipgloss.Style
@@ -75,11 +77,19 @@ func (d *DialogModel) SetButtons(okText, cancelText string) {
 // Update handles user input for the dialog
 func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch d.Action {
-	case DIALOGDELETE:
+	case DIALOGDELETE, DIALOGACTIONCONFIRM:
 		return d.ToggleControls(msg)
+	case DIALOGGENERIC:
+		// Generic dialog dismisses on enter or esc
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			switch keyMsg.String() {
+			case "enter", "esc":
+				return *d, func() tea.Msg { return DialogCancelMsg{} }
+			}
+		}
+		return *d, nil
 	default:
 		return *d, nil
-
 	}
 }
 

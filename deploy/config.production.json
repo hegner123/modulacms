@@ -25,7 +25,6 @@
   "db_name": "modula.db",
   "db_username": "",
   "db_password": "",
-  "bucket_url": "",
   "bucket_region": "",
   "bucket_media": "",
   "bucket_backup": "",

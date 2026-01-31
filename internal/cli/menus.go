@@ -15,6 +15,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[BUCKETPAGE],
 		m.PageMap[OAUTHPAGE],
 		m.PageMap[CONFIGPAGE],
+		m.PageMap[ACTIONSPAGE],
 	}
 
 	return HomepageMenu

@@ -14,7 +14,7 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test build vendor test-development check
+.PHONY: all test build vendor test-development check docker-up docker-dev docker-infra docker-down docker-reset docker-destroy docker-logs docker-build docker-release
 
 all: help
 
@@ -129,44 +129,37 @@ endif
 	docker run --rm -it -v $(shell pwd):/data cytopia/yamllint -f parsable $(shell git ls-files '*.yml' '*.yaml') $(OUTPUT_OPTIONS)
 
 ## Docker:
-docker-build: ## Use the dockerfile to build the container
-	docker build --rm --tag modulacms .
+COMPOSE_FILE=deploy/docker/docker-compose.yml
 
-docker-rebuild: ## Full rebuild (no cache) and run the container
-	-docker stop modulacms 2>/dev/null
-	-docker container prune -f 2>/dev/null
-	docker build --no-cache --tag modulacms .
-	docker run -d --name modulacms \
-		-p 8080:8080 -p 4000:4000 -p 2233:2233 \
-		-v modulacms-data:/app/data \
-		-v $(shell pwd)/config.docker.json:/app/config.json:ro \
-		-v $(shell pwd)/certs:/app/certs:ro \
-		-v modulacms-ssh:/app/.ssh \
-		-v modulacms-backups:/app/backups \
-		modulacms
+docker-up: ## Start full stack (CMS + databases + MinIO)
+	DOCKER_BUILDKIT=1 docker compose -f $(COMPOSE_FILE) up -d --build
 
-docker-run: docker-build ## Build and run the container
-	-docker stop modulacms 2>/dev/null
-	-docker container prune -f 2>/dev/null
-	docker run -d --name modulacms \
-		-p 8080:8080 -p 4000:4000 -p 2233:2233 \
-		-v modulacms-data:/app/data \
-		-v $(shell pwd)/config.docker.json:/app/config.json:ro \
-		-v $(shell pwd)/certs:/app/certs:ro \
-		-v modulacms-ssh:/app/.ssh \
-		-v modulacms-backups:/app/backups \
-		modulacms
+docker-dev: ## Rebuild and restart CMS only (incremental via BuildKit cache)
+	DOCKER_BUILDKIT=1 docker compose -f $(COMPOSE_FILE) up -d --build modulacms
+
+docker-infra: ## Start infrastructure only (postgres, mysql, minio)
+	docker compose -f $(COMPOSE_FILE) up -d postgres mysql minio
+
+docker-down: ## Stop all containers, keep volumes
+	docker compose -f $(COMPOSE_FILE) down
+
+docker-reset: ## Stop all containers and delete volumes
+	docker compose -f $(COMPOSE_FILE) down -v
+
+docker-destroy: ## Remove all project containers, volumes, and images
+	docker compose -f $(COMPOSE_FILE) down -v --rmi all
+
+docker-logs: ## Tail CMS container logs
+	docker compose -f $(COMPOSE_FILE) logs -f modulacms
+
+docker-build: ## Build standalone CMS image (for CI)
+	DOCKER_BUILDKIT=1 docker build --rm --tag modulacms .
 
 docker-release: ## Release the container with tag latest and version
 	docker tag modulacms $(DOCKER_REGISTRY)modulacms:latest
 	docker tag modulacms $(DOCKER_REGISTRY)modulacms:$(VERSION)
-	# Push the docker images
 	docker push $(DOCKER_REGISTRY)modulacms:latest
 	docker push $(DOCKER_REGISTRY)modulacms:$(VERSION)
-
-## Docker:
-docker-db:
-	cd ./sql && docker-compose 
 
 ## Help:
 help: ## Show this help.

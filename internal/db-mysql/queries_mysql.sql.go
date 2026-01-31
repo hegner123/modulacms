@@ -2478,6 +2478,15 @@ func (q *Queries) DropAdminRouteTable(ctx context.Context) error {
 	return err
 }
 
+const dropAllTables = `-- name: DropAllTables :exec
+DROP TABLE IF EXISTS admin_datatypes_fields
+`
+
+func (q *Queries) DropAllTables(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAllTables)
+	return err
+}
+
 const dropBackupTables = `-- name: DropBackupTables :exec
 DROP TABLE IF EXISTS backup_sets
 `

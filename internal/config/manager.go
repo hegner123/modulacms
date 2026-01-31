@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -29,6 +30,11 @@ func (m *Manager) Load() error {
 	if err != nil {
 		return fmt.Errorf("loading configuration: %w", err)
 	}
+
+	// Normalize bucket endpoint: strip scheme so BucketEndpointURL() controls it.
+	// Accepts "http://host:port", "https://host:port", or bare "host:port".
+	config.Bucket_Endpoint = strings.TrimPrefix(config.Bucket_Endpoint, "https://")
+	config.Bucket_Endpoint = strings.TrimPrefix(config.Bucket_Endpoint, "http://")
 
 	m.config = config
 	m.loaded = true

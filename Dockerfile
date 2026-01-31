@@ -27,15 +27,23 @@ ARG BUILD_DATE=unknown
 
 WORKDIR /build
 
-# Copy vendored source (no go mod download needed)
-COPY . .
+# Layer 1: vendor (large, rarely changes — cached)
+COPY vendor/ vendor/
+COPY go.mod go.sum ./
+
+# Layer 2: source (small, changes frequently)
+COPY cmd/ cmd/
+COPY internal/ internal/
+COPY sql/ sql/
 
 # Build with CGO enabled (required for sqlite3)
+# BuildKit cache mount preserves Go build cache across Docker builds
 ENV CGO_ENABLED=1
 ENV GOOS=linux
 ENV GOARCH=amd64
 
-RUN go build -mod vendor \
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    go build -mod vendor \
     -ldflags="-s -w \
         -X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
         -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \

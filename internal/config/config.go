@@ -52,14 +52,14 @@ type Config struct {
 	Db_Name             string              `json:"db_name"`
 	Db_User             string              `json:"db_username"`
 	Db_Password         string              `json:"db_password"`
-	Bucket_Url          string              `json:"bucket_url"`
 	Bucket_Region       string              `json:"bucket_region"`
 	Bucket_Media        string              `json:"bucket_media"`
 	Bucket_Backup       string              `json:"bucket_backup"`
 	Bucket_Endpoint     string              `json:"bucket_endpoint"`
 	Bucket_Access_Key   string              `json:"bucket_access_key"`
 	Bucket_Secret_Key   string              `json:"bucket_secret_key"`
-	Bucket_Default_ACL  string              `json:"bucket_default_acl"`
+	Bucket_Default_ACL       string `json:"bucket_default_acl"`
+	Bucket_Force_Path_Style  bool   `json:"bucket_force_path_style"`
 	Backup_Option       string              `json:"backup_option"`
 	Backup_Paths        []string            `json:"backup_paths"`
 	Oauth_Client_Id        string              `json:"oauth_client_id"`
@@ -97,6 +97,19 @@ type Config struct {
 }
 
 var DisableSystemTables ConfigOption = "disableSystemTables"
+
+// BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme
+// determined by Environment. Non-TLS environments get http, all others https.
+func (c Config) BucketEndpointURL() string {
+	if c.Bucket_Endpoint == "" {
+		return ""
+	}
+	scheme := "https"
+	if c.Environment == "http-only" || c.Environment == "docker" {
+		scheme = "http"
+	}
+	return scheme + "://" + c.Bucket_Endpoint
+}
 
 // IsValidOutputFormat checks if the given format string is valid
 func IsValidOutputFormat(format string) bool {

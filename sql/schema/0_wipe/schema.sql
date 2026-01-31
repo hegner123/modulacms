@@ -1,0 +1,1 @@
+-- Empty schema file required by sqlc glob pattern

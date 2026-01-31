@@ -38,9 +38,11 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 
 	// Step 2: Setup S3 session
 	s3Creds := bucket.S3Credentials{
-		AccessKey: c.Bucket_Access_Key,
-		SecretKey: c.Bucket_Secret_Key,
-		URL:       c.Bucket_Endpoint,
+		AccessKey:      c.Bucket_Access_Key,
+		SecretKey:      c.Bucket_Secret_Key,
+		URL:            c.BucketEndpointURL(),
+		Region:         c.Bucket_Region,
+		ForcePathStyle: c.Bucket_Force_Path_Style,
 	}
 
 	s3Session, err := s3Creds.GetBucket()
@@ -67,7 +69,7 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 
 		filename := filepath.Base(fullPath)
 		s3Key := fmt.Sprintf("%s/%d/%d/%s", bucketDir, year, month, filename)
-		uploadPath := fmt.Sprintf("https://%s/%s", c.Bucket_Endpoint, s3Key)
+		uploadPath := fmt.Sprintf("%s/%s", c.BucketEndpointURL(), s3Key)
 
 		prep, err := bucket.UploadPrep(s3Key, c.Bucket_Media, file, acl)
 		if err != nil {

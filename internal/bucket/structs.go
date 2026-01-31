@@ -5,16 +5,20 @@ import (
 )
 
 type S3Credentials struct {
-	AccessKey string
-	SecretKey string
-	URL       string
+	AccessKey      string
+	SecretKey      string
+	URL            string
+	Region         string
+	ForcePathStyle bool
 }
 
 func GetS3Creds(c *config.Config) *S3Credentials {
 	var S3Creds = S3Credentials{
-		AccessKey: c.Bucket_Access_Key,
-		SecretKey: c.Bucket_Secret_Key,
-		URL:       c.Bucket_Url,
+		AccessKey:      c.Bucket_Access_Key,
+		SecretKey:      c.Bucket_Secret_Key,
+		URL:            c.BucketEndpointURL(),
+		Region:         c.Bucket_Region,
+		ForcePathStyle: c.Bucket_Force_Path_Style,
 	}
 	return &S3Creds
 }

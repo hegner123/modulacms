@@ -30,6 +30,11 @@ func (ep *EnvProvider) Get() (*Config, error) {
 		config.Cors_Origins = strings.Split(corsOrigins, ",")
 	}
 
+	// Bucket settings
+	if forcePathStyle := os.Getenv(ep.prefix + "BUCKET_FORCE_PATH_STYLE"); forcePathStyle != "" {
+		config.Bucket_Force_Path_Style = forcePathStyle == "true"
+	}
+
 	// Update settings
 	if autoUpdate := os.Getenv(ep.prefix + "UPDATE_AUTO_ENABLED"); autoUpdate != "" {
 		config.Update_Auto_Enabled = autoUpdate == "true"

@@ -148,13 +148,13 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 				cmds = append(cmds, SetViewportContentCmd(content))
 			} else {
 				cmds = append(cmds, SetViewportContentCmd(m.Content))
-
 			}
 			cmds = append(cmds, ReadyTrueCmd())
+			cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
 
-			if len(m.PageMenu) > 0 && m.Cursor < len(m.PageMenu) {
-				cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
-			}
+			return m, tea.Batch(cmds...)
+		case ACTIONSPAGE:
+			cmds = append(cmds, PageSetCmd(m.PageMap[ACTIONSPAGE]))
 
 			return m, tea.Batch(cmds...)
 		}

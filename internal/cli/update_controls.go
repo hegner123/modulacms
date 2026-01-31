@@ -51,6 +51,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.DefineDatatypeControls(msg)
 	case CONFIGPAGE:
 		return m.ConfigControls(msg)
+	case ACTIONSPAGE:
+		return m.ActionsControls(msg)
 	case CONTENT:
 		return m.ContentBrowserControls(msg)
 	case USERSADMIN:
@@ -657,17 +659,63 @@ func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 
 }
 
+func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
+	actions := ActionsMenu()
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		case "h", "left", "backspace", "esc":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
+		case "up", "k":
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		case "down", "j":
+			if m.Cursor < len(actions)-1 {
+				return m, CursorDownCmd()
+			}
+		case "enter", "l", "right":
+			if m.Cursor >= len(actions) {
+				return m, nil
+			}
+			action := actions[m.Cursor]
+			if action.Destructive {
+				return m, func() tea.Msg {
+					return ActionConfirmMsg{ActionIndex: m.Cursor}
+				}
+			}
+			return m, tea.Batch(
+				LoadingStartCmd(),
+				RunActionCmd(m.Config, m.Cursor),
+			)
+		}
+	}
+	return m, nil
+}
+
 func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
-	newModel:=m
-	var (
-		cmd  tea.Cmd
-		cmds []tea.Cmd
-	)
+	newModel := m
 
-	// Handle keyboard and mouse events in the viewport
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			return newModel, tea.Quit
+		case "h", "backspace", "esc":
+			if len(newModel.History) > 0 {
+				return newModel, HistoryPopCmd()
+			}
+			return newModel, tea.Quit
+		}
+	}
+
+	// Forward all other events to the viewport for scrolling
+	var cmd tea.Cmd
 	newModel.Viewport, cmd = newModel.Viewport.Update(msg)
-	cmds = append(cmds, cmd)
-
-	return newModel, tea.Batch(cmds...)
-
+	return newModel, cmd
 }

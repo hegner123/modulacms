@@ -1,4 +1,30 @@
+# Version control
+.git/
+.gitignore
 
+# Build artifacts
+out/
+modulacms-x86
+modulacms-amd
+
+# Test and debug
+testdb/
+debug.log
+*.db
+
+# Backups
+backups/
+*.zip
+
+# Deploy configs (not needed in CMS build context)
+deploy/
+
+# Editor and AI metadata
+.claude/
+.vscode/
+.idea/
+
+# Legacy exclusions
 references/
 *.drawio
 router/
@@ -6,6 +32,5 @@ api/
 node_modules/
 *.test
 tests/
-backups/
 legacydb/
 ignore/

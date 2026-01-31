@@ -1,0 +1,42 @@
+services:
+  mysql:
+    build:
+      context: .
+      dockerfile: mysql.Dockerfile
+    container_name: modula_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-modula}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-modula_db}
+      MYSQL_USER: ${MYSQL_USER:-modula}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-modula}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: modula_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-modulacms}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-modulacms_secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mysql_data:
+  minio_data:

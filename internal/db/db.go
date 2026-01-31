@@ -71,6 +71,7 @@ type DbDriver interface {
 	// Connection
 	CreateAllTables() error
 	CreateBootstrapData() error
+	DropAllTables() error
 	DumpSql(config.Config) error
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)
 	GetConnection() (*sql.DB, context.Context, error)
@@ -359,16 +360,25 @@ func (d PsqlDatabase) GetConnection() (*sql.DB, context.Context, error) {
 
 // Ping checks if the database connection is still alive
 func (d Database) Ping() error {
+	if d.Connection == nil {
+		return fmt.Errorf("SQLite connection not established")
+	}
 	return d.Connection.Ping()
 }
 
 // Ping checks if the MySQL database connection is still alive
 func (d MysqlDatabase) Ping() error {
+	if d.Connection == nil {
+		return fmt.Errorf("MySQL connection not established")
+	}
 	return d.Connection.Ping()
 }
 
 // Ping checks if the PostgreSQL database connection is still alive
 func (d PsqlDatabase) Ping() error {
+	if d.Connection == nil {
+		return fmt.Errorf("PostgreSQL connection not established")
+	}
 	return d.Connection.Ping()
 }
 

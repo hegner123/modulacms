@@ -1,0 +1,27 @@
+-- name: DropAllTables :exec
+DROP TABLE IF EXISTS admin_datatypes_fields;
+DROP TABLE IF EXISTS datatypes_fields;
+DROP TABLE IF EXISTS admin_content_fields;
+DROP TABLE IF EXISTS content_fields;
+DROP TABLE IF EXISTS admin_content_data;
+DROP TABLE IF EXISTS content_data;
+DROP TABLE IF EXISTS admin_fields;
+DROP TABLE IF EXISTS fields;
+DROP TABLE IF EXISTS admin_datatypes;
+DROP TABLE IF EXISTS datatypes;
+DROP TABLE IF EXISTS routes;
+DROP TABLE IF EXISTS admin_routes;
+DROP TABLE IF EXISTS media;
+DROP TABLE IF EXISTS tables;
+DROP TABLE IF EXISTS sessions;
+DROP TABLE IF EXISTS user_ssh_keys;
+DROP TABLE IF EXISTS user_oauth;
+DROP TABLE IF EXISTS tokens;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS media_dimensions;
+DROP TABLE IF EXISTS roles;
+DROP TABLE IF EXISTS permissions;
+DROP TABLE IF EXISTS backup_sets;
+DROP TABLE IF EXISTS backup_verifications;
+DROP TABLE IF EXISTS backups;
+DROP TABLE IF EXISTS change_events;

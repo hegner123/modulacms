@@ -213,8 +213,8 @@ func printInstallSummary(iarg *InstallArguments, bucketStatus string) {
 	}
 
 	b.WriteString("\n--- Next Steps ---\n")
-	b.WriteString("  Gen certs:     ./modulacms-x86 --gen-certs\n")
-	b.WriteString("  Start server:  ./modulacms-x86\n")
+	b.WriteString("  Gen certs:     ./modulacms-x86 cert generate\n")
+	b.WriteString("  Start server:  ./modulacms-x86 serve\n")
 	b.WriteString(fmt.Sprintf("  SSH access:    ssh localhost -p %s\n", iarg.Config.SSH_Port))
 	b.WriteString("---\n")
 

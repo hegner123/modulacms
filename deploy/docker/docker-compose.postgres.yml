@@ -1,0 +1,41 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres.Dockerfile
+    container_name: modula_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-modula}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modula}
+      POSTGRES_DB: ${POSTGRES_DB:-modula_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-modula}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: modula_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-modulacms}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-modulacms_secret}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
+  minio_data:

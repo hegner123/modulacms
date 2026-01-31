@@ -279,6 +279,7 @@ func GetBuckets(i *InstallArguments) error {
 	bEndpoint := ""
 	bMedia := ""
 	bBackup := ""
+	bForcePathStyle := true
 
 	f1 := huh.NewInput().Title("S3 Bucket Access Key (leave empty to skip)").Value(&bAccess)
 	f2 := huh.NewInput().Title("S3 Bucket Secret Key").Value(&bSecret).EchoMode(huh.EchoModePassword)
@@ -286,8 +287,9 @@ func GetBuckets(i *InstallArguments) error {
 	f4 := huh.NewInput().Title("S3 Bucket Endpoint").Value(&bEndpoint)
 	f5 := huh.NewInput().Title("S3 Bucket Media Path").Value(&bMedia)
 	f6 := huh.NewInput().Title("S3 Bucket Backup Path").Value(&bBackup)
+	f7 := huh.NewConfirm().Title("Force S3 path-style addressing? (required for MinIO/Linode)").Value(&bForcePathStyle)
 
-	g := huh.NewGroup(f1, f2, f3, f4, f5, f6)
+	g := huh.NewGroup(f1, f2, f3, f4, f5, f6, f7)
 	f := huh.NewForm(g)
 	err := f.Run()
 	if err != nil {
@@ -303,6 +305,7 @@ func GetBuckets(i *InstallArguments) error {
 	i.Config.Bucket_Endpoint = bEndpoint
 	i.Config.Bucket_Media = bMedia
 	i.Config.Bucket_Backup = bBackup
+	i.Config.Bucket_Force_Path_Style = bForcePathStyle
 	return nil
 }
 

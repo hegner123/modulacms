@@ -174,6 +174,7 @@ func InitDB(env config.Config) (DbDriver, error) {
 		// Verify the connection is alive
 		if err := dbInstance.Ping(); err != nil {
 			dbInitErr = fmt.Errorf("database ping failed after init: %w", err)
+			dbInstance = nil
 			return
 		}
 
