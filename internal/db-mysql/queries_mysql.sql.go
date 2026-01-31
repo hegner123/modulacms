@@ -843,7 +843,7 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 }
 
 const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id VARCHAR(26) PRIMARY KEY NOT NULL,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -1089,12 +1089,14 @@ func (q *Queries) CreateContentDataTable(ctx context.Context) error {
 
 const createContentField = `-- name: CreateContentField :exec
 INSERT INTO content_fields (
+    content_field_id,
     route_id,
     content_data_id,
     field_id,
-    field_value, 
+    field_value,
     author_id
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -1104,15 +1106,17 @@ INSERT INTO content_fields (
 `
 
 type CreateContentFieldParams struct {
-	RouteID       types.NullableRouteID   `json:"route_id"`
-	ContentDataID types.NullableContentID `json:"content_data_id"`
-	FieldID       types.NullableFieldID   `json:"field_id"`
-	FieldValue    string                  `json:"field_value"`
-	AuthorID      types.NullableUserID    `json:"author_id"`
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
 }
 
 func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, createContentField,
+		arg.ContentFieldID,
 		arg.RouteID,
 		arg.ContentDataID,
 		arg.FieldID,
@@ -1123,7 +1127,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 }
 
 const createContentFieldTable = `-- name: CreateContentFieldTable :exec
-CREATE TABLE content_fields (
+CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     route_id VARCHAR(26) NULL,
     content_data_id VARCHAR(26) NOT NULL,
@@ -1669,7 +1673,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 }
 
 const createSessionTable = `-- name: CreateSessionTable :exec
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     session_id VARCHAR(26) PRIMARY KEY NOT NULL,
     user_id VARCHAR(26) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,

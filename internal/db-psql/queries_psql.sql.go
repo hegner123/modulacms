@@ -908,7 +908,7 @@ func (q *Queries) CreateAdminRouteSlugIndex(ctx context.Context) error {
 }
 
 const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id TEXT PRIMARY KEY NOT NULL,
     slug TEXT NOT NULL
         UNIQUE,
@@ -1903,7 +1903,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 }
 
 const createSessionTable = `-- name: CreateSessionTable :exec
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT PRIMARY KEY NOT NULL,
     user_id TEXT NOT NULL
         CONSTRAINT fk_sessions_user_id

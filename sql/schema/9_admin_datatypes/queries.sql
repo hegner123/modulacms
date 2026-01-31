@@ -2,7 +2,7 @@
 DROP TABLE admin_datatypes;
 
 -- name: CreateAdminDatatypeTable :exec
-CREATE TABLE admin_datatypes (
+CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(admin_datatype_id) = 26),
     parent_id TEXT DEFAULT NULL

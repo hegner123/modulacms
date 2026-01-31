@@ -2,7 +2,7 @@
 DROP TABLE sessions;
 
 -- name: CreateSessionTable :exec
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(session_id) = 26),
     user_id TEXT NOT NULL

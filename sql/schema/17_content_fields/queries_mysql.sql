@@ -2,7 +2,7 @@
 DROP TABLE content_fields;
 
 -- name: CreateContentFieldTable :exec
-CREATE TABLE content_fields (
+CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     route_id VARCHAR(26) NULL,
     content_data_id VARCHAR(26) NOT NULL,
@@ -45,12 +45,14 @@ ORDER BY content_field_id;
 
 -- name: CreateContentField :exec
 INSERT INTO content_fields (
+    content_field_id,
     route_id,
     content_data_id,
     field_id,
-    field_value, 
+    field_value,
     author_id
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

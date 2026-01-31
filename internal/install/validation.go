@@ -122,3 +122,34 @@ func ValidateDBName(s string) error {
 	}
 	return nil
 }
+
+// ValidateDirPath checks that a directory path exists and is accessible
+func ValidateDirPath(s string) error {
+	if s == "" {
+		return fmt.Errorf("directory path cannot be empty")
+	}
+	info, err := os.Stat(s)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return fmt.Errorf("directory %q does not exist", s)
+		}
+		return fmt.Errorf("cannot access %q: %v", s, err)
+	}
+	if !info.IsDir() {
+		return fmt.Errorf("%q is not a directory", s)
+	}
+	return nil
+}
+
+// ValidateCookieName checks that a cookie name contains only alphanumeric, underscore, and hyphen characters
+func ValidateCookieName(s string) error {
+	if s == "" {
+		return fmt.Errorf("cookie name cannot be empty")
+	}
+	for _, c := range s {
+		if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '_' || c == '-') {
+			return fmt.Errorf("cookie name can only contain letters, numbers, underscores, and hyphens")
+		}
+	}
+	return nil
+}

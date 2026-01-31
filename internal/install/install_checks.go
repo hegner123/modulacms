@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/hegner123/modulacms/internal/bucket"
 	"github.com/hegner123/modulacms/internal/config"
@@ -68,14 +69,14 @@ func CheckOauth(v *bool, c *config.Config) (string, error) {
 		verbose = *v
 	}
 	if c.Oauth_Client_Id == "" || c.Oauth_Client_Secret == "" || c.Oauth_Endpoint["oauth_auth_url"] == "" || c.Oauth_Endpoint["oauth_token_url"] == "" {
-		err := fmt.Errorf("oauth fields not completed")
+		// Empty OAuth credentials - this is a non-fatal condition (OAuth is optional)
 		if verbose {
-			utility.DefaultLogger.Error("CheckOauth: ", err)
+			utility.DefaultLogger.Warn("OAuth fields not completed - OAuth will be unavailable", nil)
 		}
-		return "Oauth fields not completed", err
+		return "Not configured", nil
 	}
 	if verbose {
-		utility.DefaultLogger.Info("Oauth, no missing fields in config")
+		utility.DefaultLogger.Info("OAuth, no missing fields in config")
 	}
 	return "Connected", nil
 }
@@ -110,6 +111,9 @@ func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 }
 
 func CheckCerts(path string) bool {
-	b := true
-	return b
+	certPath := filepath.Join(path, "localhost.crt")
+	keyPath := filepath.Join(path, "localhost.key")
+	_, certErr := os.Stat(certPath)
+	_, keyErr := os.Stat(keyPath)
+	return certErr == nil && keyErr == nil
 }

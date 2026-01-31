@@ -1,7 +1,7 @@
 -- name: DropAdminRouteTable :exec
 DROP TABLE admin_routes;
 -- name: CreateAdminRouteTable :exec
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_route_id) = 26),
     slug TEXT NOT NULL
         UNIQUE,

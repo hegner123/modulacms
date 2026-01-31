@@ -2,7 +2,7 @@
 DROP TABLE content_fields;
 
 -- name: CreateContentFieldTable :exec
-CREATE TABLE content_fields (
+CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_field_id) = 26),
     route_id TEXT
         REFERENCES routes
@@ -40,14 +40,16 @@ ORDER BY content_field_id;
 
 -- name: CreateContentField :one
 INSERT INTO content_fields (
+    content_field_id,
     route_id,
     content_data_id,
     field_id,
     field_value,
-    author_id, 
+    author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,

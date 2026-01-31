@@ -74,6 +74,14 @@ func run() (ReturnCode, error) {
 		HandleFlagGenCerts()
 	}
 
+	// Install flag bypasses all pre-launch checks (config, DB, etc.)
+	if *app.InstallFlag {
+		if installErr := install.RunInstall(app.VerboseFlag, app.YesFlag); installErr != nil {
+			utility.DefaultLogger.Fatal("Installation failed", installErr)
+		}
+		os.Exit(0)
+	}
+
 	configProvider := config.NewFileProvider(*app.ConfigPath)
 	configManager := config.NewManager(configProvider)
 
@@ -144,11 +152,8 @@ func run() (ReturnCode, error) {
 
 	InitStatus, err = install.CheckInstall(configuration, app.VerboseFlag)
 	if err != nil {
-		if *app.InstallFlag {
-			*app.InstallFlag = false
-		}
 		utility.DefaultLogger.Error("Installation check failed", err)
-		if installErr := install.RunInstall(app.VerboseFlag); installErr != nil {
+		if installErr := install.RunInstall(app.VerboseFlag, nil); installErr != nil {
 			utility.DefaultLogger.Fatal("Installation failed", installErr)
 		}
 	}
@@ -175,12 +180,6 @@ func run() (ReturnCode, error) {
 			utility.DefaultLogger.Fatal("Error deleting database file", err)
 		}
 		utility.DefaultLogger.Info("Database reset complete")
-	}
-
-	if *app.InstallFlag {
-		if installErr := install.RunInstall(app.VerboseFlag); installErr != nil {
-			utility.DefaultLogger.Fatal("Installation failed", installErr)
-		}
 	}
 
 	// Initialize the singleton database connection pool.

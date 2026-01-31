@@ -395,8 +395,19 @@ func (d Database) CreateAllTables() error {
 	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
 	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
+	// Infrastructure tables (no dependencies on application tables)
+	err := d.CreateChangeEventsTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateBackupTables()
+	if err != nil {
+		return err
+	}
+
 	// Tier 0: Foundation tables (no dependencies)
-	err := d.CreatePermissionTable()
+	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -517,7 +528,7 @@ func (d Database) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d Database) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
@@ -799,9 +810,13 @@ func (d Database) CreateBootstrapData() error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// 20. Register all 26 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
+		"change_events",
+		"backups",
+		"backup_verifications",
+		"backup_sets",
 		"permissions",
 		"roles",
 		"media_dimensions",
@@ -851,7 +866,7 @@ func (d Database) CreateBootstrapData() error {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 22 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 26 tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -975,10 +990,14 @@ func (d Database) ValidateBootstrapData() error {
 		errors = append(errors, "user_ssh_keys table: expected ≥1 records, validation failed")
 	}
 
-	// Validate tables table (should have EXACTLY 22 records - all core tables)
+	// Validate tables table (should have EXACTLY 26 records - all core tables)
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 22 {
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 22 records (table registry), got %v", tableCount))
+	if err != nil || tableCount == nil || *tableCount != 26 {
+		actual := int64(0)
+		if tableCount != nil {
+			actual = *tableCount
+		}
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	// Validate datatypes_fields junction table (should have at least 1 record)
@@ -1000,7 +1019,7 @@ func (d Database) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
 	return nil
 }
 
@@ -1009,8 +1028,19 @@ func (d MysqlDatabase) CreateAllTables() error {
 	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
 	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
+	// Infrastructure tables (no dependencies on application tables)
+	err := d.CreateChangeEventsTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateBackupTables()
+	if err != nil {
+		return err
+	}
+
 	// Tier 0: Foundation tables (no dependencies)
-	err := d.CreatePermissionTable()
+	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -1131,7 +1161,7 @@ func (d MysqlDatabase) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d MysqlDatabase) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
@@ -1413,9 +1443,13 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// 20. Register all 26 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
+		"change_events",
+		"backups",
+		"backup_verifications",
+		"backup_sets",
 		"permissions",
 		"roles",
 		"media_dimensions",
@@ -1475,7 +1509,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 func (d MysqlDatabase) ValidateBootstrapData() error {
 	var errors []string
 
-	// Validate all 21 tables have expected record counts
+	// Validate all 26 tables have expected record counts
 	permCount, err := d.CountPermissions()
 	if err != nil || permCount == nil || *permCount < 1 {
 		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
@@ -1567,8 +1601,12 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 21 {
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 21 records (table registry), got %v", tableCount))
+	if err != nil || tableCount == nil || *tableCount != 26 {
+		actual := int64(0)
+		if tableCount != nil {
+			actual = *tableCount
+		}
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	datatypeFieldCount, err := d.CountDatatypeFields()
@@ -1587,7 +1625,7 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
 	return nil
 }
 
@@ -1596,8 +1634,19 @@ func (d PsqlDatabase) CreateAllTables() error {
 	// CRITICAL: Tables must be created in dependency order to satisfy FK constraints
 	// See: ai/reference/TABLE_CREATION_ORDER.md for complete dependency graph
 
+	// Infrastructure tables (no dependencies on application tables)
+	err := d.CreateChangeEventsTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateBackupTables()
+	if err != nil {
+		return err
+	}
+
 	// Tier 0: Foundation tables (no dependencies)
-	err := d.CreatePermissionTable()
+	err = d.CreatePermissionTable()
 	if err != nil {
 		return err
 	}
@@ -1718,7 +1767,7 @@ func (d PsqlDatabase) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 22 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d PsqlDatabase) CreateBootstrapData() error {
 	// 1. Create system admin permission (permission_id = 1)
@@ -2000,9 +2049,13 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 22 ModulaCMS tables in the tables registry
+	// 20. Register all 26 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
+		"change_events",
+		"backups",
+		"backup_verifications",
+		"backup_sets",
 		"permissions",
 		"roles",
 		"media_dimensions",
@@ -2062,7 +2115,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 func (d PsqlDatabase) ValidateBootstrapData() error {
 	var errors []string
 
-	// Validate all 21 tables have expected record counts
+	// Validate all 26 tables have expected record counts
 	permCount, err := d.CountPermissions()
 	if err != nil || permCount == nil || *permCount < 1 {
 		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
@@ -2154,8 +2207,12 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 21 {
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 21 records (table registry), got %v", tableCount))
+	if err != nil || tableCount == nil || *tableCount != 26 {
+		actual := int64(0)
+		if tableCount != nil {
+			actual = *tableCount
+		}
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	datatypeFieldCount, err := d.CountDatatypeFields()
@@ -2174,7 +2231,7 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 22 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
 	return nil
 }
 

@@ -11,6 +11,7 @@ type AppFlags struct {
 	VerboseFlag  *bool
 	ResetFlag    *bool
 	InstallFlag  *bool
+	YesFlag      *bool
 	GenCertsFlag *bool
 	InitDbFlag   *bool
 	ConfigPath   *string
@@ -26,6 +27,7 @@ func ParseFlags() AppFlags {
 		VerboseFlag:  new(bool),
 		ResetFlag:    new(bool),
 		InstallFlag:  new(bool),
+		YesFlag:      new(bool),
 		GenCertsFlag: new(bool),
 		InitDbFlag:   new(bool),
 		ConfigPath:   new(string),
@@ -38,6 +40,9 @@ func ParseFlags() AppFlags {
 	flag.BoolVar(app.VerboseFlag, "v", false, "Enable verbose mode")
 	flag.BoolVar(app.ResetFlag, "reset", false, "Delete Database and reinitialize")
 	flag.BoolVar(app.InstallFlag, "i", false, "Run Installation UI")
+	flag.BoolVar(app.InstallFlag, "install", false, "Run Installation UI")
+	flag.BoolVar(app.YesFlag, "y", false, "Accept all defaults (use with --install)")
+	flag.BoolVar(app.YesFlag, "yes", false, "Accept all defaults (use with --install)")
 	flag.BoolVar(app.GenCertsFlag, "gen-certs", false, "Generate self-signed SSL certificates for local development")
 	flag.BoolVar(app.InitDbFlag, "init-db", false, "Create database tables and bootstrap data, then exit")
 	flag.StringVar(app.ConfigPath, "config", "config.json", "Path to configuration file")

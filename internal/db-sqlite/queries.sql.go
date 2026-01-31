@@ -704,7 +704,7 @@ func (q *Queries) CreateAdminDatatypeField(ctx context.Context, arg CreateAdminD
 }
 
 const createAdminDatatypeTable = `-- name: CreateAdminDatatypeTable :exec
-CREATE TABLE admin_datatypes (
+CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(admin_datatype_id) = 26),
     parent_id TEXT DEFAULT NULL
@@ -803,7 +803,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 }
 
 const createAdminFieldTable = `-- name: CreateAdminFieldTable :exec
-CREATE TABLE admin_fields (
+CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
     parent_id TEXT DEFAULT NULL
@@ -879,7 +879,7 @@ func (q *Queries) CreateAdminRoute(ctx context.Context, arg CreateAdminRoutePara
 }
 
 const createAdminRouteTable = `-- name: CreateAdminRouteTable :exec
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_route_id) = 26),
     slug TEXT NOT NULL
         UNIQUE,
@@ -1164,14 +1164,16 @@ func (q *Queries) CreateContentDataTable(ctx context.Context) error {
 
 const createContentField = `-- name: CreateContentField :one
 INSERT INTO content_fields (
+    content_field_id,
     route_id,
     content_data_id,
     field_id,
     field_value,
-    author_id, 
+    author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -1183,17 +1185,19 @@ INSERT INTO content_fields (
 `
 
 type CreateContentFieldParams struct {
-	RouteID       types.NullableRouteID   `json:"route_id"`
-	ContentDataID types.NullableContentID `json:"content_data_id"`
-	FieldID       types.NullableFieldID   `json:"field_id"`
-	FieldValue    string                  `json:"field_value"`
-	AuthorID      types.NullableUserID    `json:"author_id"`
-	DateCreated   types.Timestamp         `json:"date_created"`
-	DateModified  types.Timestamp         `json:"date_modified"`
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentFieldParams) (ContentFields, error) {
 	row := q.db.QueryRowContext(ctx, createContentField,
+		arg.ContentFieldID,
 		arg.RouteID,
 		arg.ContentDataID,
 		arg.FieldID,
@@ -1217,7 +1221,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 }
 
 const createContentFieldTable = `-- name: CreateContentFieldTable :exec
-CREATE TABLE content_fields (
+CREATE TABLE IF NOT EXISTS content_fields (
     content_field_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_field_id) = 26),
     route_id TEXT
         REFERENCES routes
@@ -1848,7 +1852,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 }
 
 const createSessionTable = `-- name: CreateSessionTable :exec
-CREATE TABLE sessions (
+CREATE TABLE IF NOT EXISTS sessions (
     session_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(session_id) = 26),
     user_id TEXT NOT NULL

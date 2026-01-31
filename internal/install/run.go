@@ -3,16 +3,65 @@ package install
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
 const maxRetries = 3
 
-// RunInstall runs the interactive installation process with retry support
-func RunInstall(v *bool) error {
+// RunInstall runs the interactive installation process with retry support.
+// When yes is non-nil and true, all prompts are skipped and defaults are used.
+func RunInstall(v *bool, yes *bool) error {
+	if yes != nil && *yes {
+		return runInstallDefaults(v)
+	}
 	return runInstallWithRetry(v, maxRetries)
+}
+
+func runInstallDefaults(v *bool) error {
+	iarg := &InstallArguments{
+		UseDefaultConfig: true,
+		ConfigPath:       "config.json",
+		Config:           config.DefaultConfig(),
+		DB_Driver:        SQLITE,
+		Create_Tables:    true,
+	}
+
+	err := writeConfigFile(iarg)
+	if err != nil {
+		PrintError(err.Error())
+		return err
+	}
+
+	progress := NewInstallProgress()
+
+	progress.AddStep("Database connection", "Checking database connection", func() error {
+		_, checkErr := CheckDb(v, iarg.Config)
+		return checkErr
+	})
+
+	progress.AddStep("Database setup", "Setting up database tables", func() error {
+		return CreateDbSimple(iarg.ConfigPath, &iarg.Config)
+	})
+
+	var bucketStatus string
+	progress.AddStep("Bucket connection", "Checking S3 bucket connection", func() error {
+		bucketStatus, _ = CheckBucket(v, &iarg.Config)
+		return nil
+	})
+
+	err = progress.Run()
+	if err != nil {
+		PrintError(err.Error())
+		return err
+	}
+
+	PrintSuccess("Installation completed successfully!")
+	printInstallSummary(iarg, bucketStatus)
+	return nil
 }
 
 func runInstallWithRetry(v *bool, retriesLeft int) error {
@@ -96,10 +145,24 @@ func runInstallWithRetry(v *bool, retriesLeft int) error {
 		PrintWarning(fmt.Sprintf("S3 bucket: %s (media storage will be unavailable)", bucketStatus))
 	}
 
+	printInstallSummary(iarg, bucketStatus)
+
 	return nil
 }
 
 func writeConfigFile(iarg *InstallArguments) error {
+	// Back up existing config file before overwriting
+	if _, statErr := os.Stat(iarg.ConfigPath); statErr == nil {
+		existing, readErr := os.ReadFile(iarg.ConfigPath)
+		if readErr == nil {
+			bakPath := iarg.ConfigPath + ".bak"
+			writeErr := os.WriteFile(bakPath, existing, 0644)
+			if writeErr != nil {
+				utility.DefaultLogger.Warn("Failed to create config backup: "+bakPath, writeErr)
+			}
+		}
+	}
+
 	f, err := os.OpenFile(iarg.ConfigPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
 	if err != nil {
 		return ErrConfigWrite(err, iarg.ConfigPath)
@@ -117,4 +180,43 @@ func writeConfigFile(iarg *InstallArguments) error {
 	}
 
 	return nil
+}
+
+func printInstallSummary(iarg *InstallArguments, bucketStatus string) {
+	var b strings.Builder
+	b.WriteString("\n--- Installation Summary ---\n")
+	b.WriteString(fmt.Sprintf("  Config file:   %s\n", iarg.ConfigPath))
+	b.WriteString(fmt.Sprintf("  DB driver:     %s\n", iarg.Config.Db_Driver))
+	b.WriteString(fmt.Sprintf("  DB URL:        %s\n", iarg.Config.Db_URL))
+	b.WriteString(fmt.Sprintf("  DB name:       %s\n", iarg.Config.Db_Name))
+	b.WriteString(fmt.Sprintf("  HTTP port:     %s\n", iarg.Config.Port))
+	b.WriteString(fmt.Sprintf("  HTTPS port:    %s\n", iarg.Config.SSL_Port))
+	b.WriteString(fmt.Sprintf("  SSH port:      %s\n", iarg.Config.SSH_Port))
+
+	if iarg.Config.Client_Site != "" {
+		b.WriteString(fmt.Sprintf("  Client site:   %s\n", iarg.Config.Client_Site))
+	}
+	if iarg.Config.Admin_Site != "" {
+		b.WriteString(fmt.Sprintf("  Admin site:    %s\n", iarg.Config.Admin_Site))
+	}
+
+	if bucketStatus == "Connected" {
+		b.WriteString("  S3 storage:    Configured\n")
+	} else {
+		b.WriteString("  S3 storage:    Not configured\n")
+	}
+
+	if iarg.Config.Oauth_Client_Id != "" {
+		b.WriteString("  OAuth:         Configured\n")
+	} else {
+		b.WriteString("  OAuth:         Not configured\n")
+	}
+
+	b.WriteString("\n--- Next Steps ---\n")
+	b.WriteString("  Gen certs:     ./modulacms-x86 --gen-certs\n")
+	b.WriteString("  Start server:  ./modulacms-x86\n")
+	b.WriteString(fmt.Sprintf("  SSH access:    ssh localhost -p %s\n", iarg.Config.SSH_Port))
+	b.WriteString("---\n")
+
+	fmt.Print(b.String())
 }

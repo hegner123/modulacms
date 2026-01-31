@@ -2,7 +2,7 @@
 DROP TABLE admin_fields;
 
 -- name: CreateAdminFieldTable :exec
-CREATE TABLE admin_fields (
+CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id TEXT
         PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
     parent_id TEXT DEFAULT NULL

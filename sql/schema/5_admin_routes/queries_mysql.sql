@@ -2,7 +2,7 @@
 DROP TABLE admin_routes;
 
 -- name: CreateAdminRouteTable :exec
-CREATE TABLE admin_routes (
+CREATE TABLE IF NOT EXISTS admin_routes (
     admin_route_id VARCHAR(26) PRIMARY KEY NOT NULL,
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,

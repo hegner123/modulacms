@@ -114,13 +114,14 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 
 func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.CreateContentFieldParams {
 	return mdb.CreateContentFieldParams{
-		RouteID:       a.RouteID,
-		ContentDataID: a.ContentDataID,
-		FieldID:       a.FieldID,
-		FieldValue:    a.FieldValue,
-		AuthorID:      a.AuthorID,
-		DateCreated:   a.DateCreated,
-		DateModified:  a.DateModified,
+		ContentFieldID: types.NewContentFieldID(),
+		RouteID:        a.RouteID,
+		ContentDataID:  a.ContentDataID,
+		FieldID:        a.FieldID,
+		FieldValue:     a.FieldValue,
+		AuthorID:       a.AuthorID,
+		DateCreated:    a.DateCreated,
+		DateModified:   a.DateModified,
 	}
 }
 
@@ -243,11 +244,12 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 
 func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) mdbm.CreateContentFieldParams {
 	return mdbm.CreateContentFieldParams{
-		RouteID:       a.RouteID,
-		ContentDataID: a.ContentDataID,
-		FieldID:       a.FieldID,
-		FieldValue:    a.FieldValue,
-		AuthorID:      a.AuthorID,
+		ContentFieldID: types.NewContentFieldID(),
+		RouteID:        a.RouteID,
+		ContentDataID:  a.ContentDataID,
+		FieldID:        a.FieldID,
+		FieldValue:     a.FieldValue,
+		AuthorID:       a.AuthorID,
 	}
 }
 
