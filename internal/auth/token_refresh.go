@@ -8,7 +8,6 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
 )
 
@@ -18,13 +17,15 @@ import (
 type TokenRefresher struct {
 	config *config.Config
 	driver db.DbDriver
+	log    Logger
 }
 
-// NewTokenRefresher creates a new TokenRefresher with the given configuration.
-func NewTokenRefresher(c *config.Config) *TokenRefresher {
+// NewTokenRefresher creates a new TokenRefresher with the given configuration and logger.
+func NewTokenRefresher(log Logger, c *config.Config) *TokenRefresher {
 	return &TokenRefresher{
 		config: c,
 		driver: db.ConfigDB(*c),
+		log:    log,
 	}
 }
 
@@ -37,7 +38,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 	userOauth, err := tr.driver.GetUserOauthByUserId(types.NullableUserID{Valid: true, ID: userID})
 	if err != nil {
 		// User doesn't use OAuth - this is not an error
-		utility.DefaultLogger.Debug("No OAuth record for user %d", userID)
+		tr.log.Debug("No OAuth record for user %d", userID)
 		return nil
 	}
 
@@ -47,14 +48,14 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 
 	// Check if token has no expiry (GitHub tokens don't expire)
 	if userOauth.TokenExpiresAt == "" {
-		utility.DefaultLogger.Debug("Token for user %d has no expiry (long-lived token)", userID)
+		tr.log.Debug("Token for user %d has no expiry (long-lived token)", userID)
 		return nil // No refresh needed for long-lived tokens
 	}
 
 	// Parse expiration time
 	expiresAt, err := time.Parse(time.RFC3339, userOauth.TokenExpiresAt)
 	if err != nil {
-		utility.DefaultLogger.Warn("Failed to parse token expiration for user", err, userID)
+		tr.log.Warn("Failed to parse token expiration for user", err, userID)
 		// Try parsing as alternative formats
 		expiresAt, err = time.Parse("2006-01-02 15:04:05", userOauth.TokenExpiresAt)
 		if err != nil {
@@ -64,17 +65,17 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 
 	// Double-check if token has no expiry
 	if expiresAt.IsZero() || expiresAt.Year() == 1 {
-		utility.DefaultLogger.Debug("Token for user %d has no expiry (long-lived token)", userID)
+		tr.log.Debug("Token for user %d has no expiry (long-lived token)", userID)
 		return nil // No refresh needed for long-lived tokens
 	}
 
 	// Check if token expires within 5 minutes
 	if time.Until(expiresAt) > 5*time.Minute {
-		utility.DefaultLogger.Debug("Token for user %d still valid for %s", userID, time.Until(expiresAt))
+		tr.log.Debug("Token for user %d still valid for %s", userID, time.Until(expiresAt))
 		return nil // Token still valid
 	}
 
-	utility.DefaultLogger.Info("Token for user %d expiring soon, refreshing...", userID)
+	tr.log.Info("Token for user %d expiring soon, refreshing...", userID)
 
 	// Refresh the token
 	newToken, err := tr.refreshToken(userOauth)
@@ -88,7 +89,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 		return fmt.Errorf("failed to update tokens: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Token refreshed successfully for user %d", userID)
+	tr.log.Info("Token refreshed successfully for user %d", userID)
 	return nil
 }
 
@@ -114,7 +115,7 @@ func (tr *TokenRefresher) refreshToken(userOauth *db.UserOauth) (*oauth2.Token, 
 	tokenSource := conf.TokenSource(ctx, token)
 	newToken, err := tokenSource.Token()
 	if err != nil {
-		utility.DefaultLogger.Error("Token refresh API call failed", err)
+		tr.log.Error("Token refresh API call failed", err)
 		return nil, err
 	}
 
@@ -138,10 +139,10 @@ func (tr *TokenRefresher) updateTokens(userOauthID types.UserOauthID, token *oau
 	})
 
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to update tokens in database", err)
+		tr.log.Error("Failed to update tokens in database", err)
 		return err
 	}
 
-	utility.DefaultLogger.Debug("Updated tokens for user_oauth_id %s, new expiry: %s", userOauthID, expiresAt)
+	tr.log.Debug("Updated tokens for user_oauth_id %s, new expiry: %s", userOauthID, expiresAt)
 	return nil
 }

@@ -53,7 +53,7 @@ func UserIsAuth(r *http.Request, cookie *http.Cookie, c *config.Config) (*db.Use
 	}
 
 	// Check and refresh OAuth tokens if needed
-	refresher := auth.NewTokenRefresher(c)
+	refresher := auth.NewTokenRefresher(utility.DefaultLogger, c)
 	if err := refresher.RefreshIfNeeded(userCookie.UserId); err != nil {
 		utility.DefaultLogger.Fwarn("Token refresh warning: %v", err)
 		// Don't fail auth if refresh fails - token might still be valid

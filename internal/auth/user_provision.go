@@ -10,7 +10,6 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
 )
 
@@ -31,13 +30,15 @@ type UserInfo struct {
 type UserProvisioner struct {
 	config *config.Config
 	driver db.DbDriver
+	log    Logger
 }
 
-// NewUserProvisioner creates a new UserProvisioner with the given configuration.
-func NewUserProvisioner(c *config.Config) *UserProvisioner {
+// NewUserProvisioner creates a new UserProvisioner with the given configuration and logger.
+func NewUserProvisioner(log Logger, c *config.Config) *UserProvisioner {
 	return &UserProvisioner{
 		config: c,
 		driver: db.ConfigDB(*c),
+		log:    log,
 	}
 }
 
@@ -49,7 +50,7 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 		return nil, fmt.Errorf("oauth_userinfo_url not configured")
 	}
 
-	utility.DefaultLogger.Info("Fetching user info from: %s", userInfoURL)
+	up.log.Info("Fetching user info from: %s", userInfoURL)
 
 	resp, err := client.Get(userInfoURL)
 	if err != nil {
@@ -60,7 +61,7 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		err := fmt.Errorf("userinfo request failed: %s - %s", resp.Status, body)
-		utility.DefaultLogger.Error("Userinfo request failed", err)
+		up.log.Error("Userinfo request failed", err)
 		return nil, err
 	}
 
@@ -81,15 +82,15 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 		userInfo.ProviderUserID = fmt.Sprintf("%d", userInfo.ID)
 	}
 
-	utility.DefaultLogger.Info("Fetched user info - Email: %s, Username: %s, ProviderID: %s",
+	up.log.Info("Fetched user info - Email: %s, Username: %s, ProviderID: %s",
 		userInfo.Email, userInfo.Username, userInfo.ProviderUserID)
 
 	// If email is missing, try to fetch from GitHub's /user/emails endpoint
 	if userInfo.Email == "" {
-		utility.DefaultLogger.Info("Email not in user info, fetching from /user/emails endpoint")
+		up.log.Info("Email not in user info, fetching from /user/emails endpoint")
 		email, err := up.fetchGitHubEmail(client)
 		if err != nil {
-			utility.DefaultLogger.Warn("Failed to fetch email from /user/emails", err)
+			up.log.Warn("Failed to fetch email from /user/emails", err)
 		} else {
 			userInfo.Email = email
 		}
@@ -132,7 +133,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	// Find primary verified email
 	for _, email := range emails {
 		if email.Primary && email.Verified {
-			utility.DefaultLogger.Info("Found primary verified email: %s", email.Email)
+			up.log.Info("Found primary verified email: %s", email.Email)
 			return email.Email, nil
 		}
 	}
@@ -140,7 +141,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	// Fallback to first verified email
 	for _, email := range emails {
 		if email.Verified {
-			utility.DefaultLogger.Info("Using first verified email: %s", email.Email)
+			up.log.Info("Using first verified email: %s", email.Email)
 			return email.Email, nil
 		}
 	}
@@ -158,12 +159,12 @@ func (up *UserProvisioner) ProvisionUser(
 	token *oauth2.Token,
 	provider string,
 ) (*db.Users, error) {
-	utility.DefaultLogger.Info("Starting user provisioning for provider: %s", provider)
+	up.log.Info("Starting user provisioning for provider: %s", provider)
 
 	// Validate required fields
 	if userInfo.Email == "" {
 		err := fmt.Errorf("email is required from OAuth provider")
-		utility.DefaultLogger.Error("Provisioning failed: no email", err)
+		up.log.Error("Provisioning failed: no email", err)
 		return nil, err
 	}
 
@@ -171,20 +172,20 @@ func (up *UserProvisioner) ProvisionUser(
 	providerUserID := userInfo.ProviderUserID
 	if providerUserID == "" {
 		providerUserID = userInfo.Email
-		utility.DefaultLogger.Warn("OAuth provider didn't provide 'sub', using email as provider ID", nil)
+		up.log.Warn("OAuth provider didn't provide 'sub', using email as provider ID", nil)
 	}
 
-	utility.DefaultLogger.Info("Provisioning user - Email: %s, ProviderUserID: %s", userInfo.Email, providerUserID)
+	up.log.Info("Provisioning user - Email: %s, ProviderUserID: %s", userInfo.Email, providerUserID)
 
 	// Check if user already linked via OAuth
 	existingOauth, err := up.driver.GetUserOauthByProviderID(provider, providerUserID)
 	if err == nil && existingOauth != nil {
-		utility.DefaultLogger.Info("Existing OAuth link found for %s:%s", provider, providerUserID)
+		up.log.Info("Existing OAuth link found for %s:%s", provider, providerUserID)
 
 		// User exists, update tokens
 		err = up.updateTokens(existingOauth.UserOauthID, token)
 		if err != nil {
-			utility.DefaultLogger.Warn("Failed to update tokens: %v", err)
+			up.log.Warn("Failed to update tokens: %v", err)
 		}
 
 		// Return existing user
@@ -194,13 +195,13 @@ func (up *UserProvisioner) ProvisionUser(
 	// Check if user exists by email
 	existingUser, err := up.driver.GetUserByEmail(types.Email(userInfo.Email))
 	if err == nil && existingUser != nil {
-		utility.DefaultLogger.Info("Found existing user by email: %s", userInfo.Email)
+		up.log.Info("Found existing user by email: %s", userInfo.Email)
 		// Link OAuth to existing user
 		return up.linkOAuthToUser(existingUser, userInfo, token, provider, providerUserID)
 	}
 
 	// Create new user
-	utility.DefaultLogger.Info("Creating new user for: %s", userInfo.Email)
+	up.log.Info("Creating new user for: %s", userInfo.Email)
 	return up.createNewUser(userInfo, token, provider, providerUserID)
 }
 
@@ -250,7 +251,7 @@ func (up *UserProvisioner) createNewUser(
 		DateModified: now,
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to create user", err)
+		up.log.Error("Failed to create user", err)
 		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 
@@ -270,11 +271,11 @@ func (up *UserProvisioner) createNewUser(
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to link OAuth", err)
+		up.log.Error("Failed to link OAuth", err)
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Created new user via OAuth: %s (user_id: %d)", userInfo.Email, user.UserID)
+	up.log.Info("Created new user via OAuth: %s (user_id: %d)", userInfo.Email, user.UserID)
 	return user, nil
 }
 
@@ -302,11 +303,11 @@ func (up *UserProvisioner) linkOAuthToUser(
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to link OAuth to existing user", err)
+		up.log.Error("Failed to link OAuth to existing user", err)
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Linked OAuth to existing user: %s (user_id: %d)", userInfo.Email, user.UserID)
+	up.log.Info("Linked OAuth to existing user: %s (user_id: %d)", userInfo.Email, user.UserID)
 	return user, nil
 }
 
@@ -329,6 +330,6 @@ func (up *UserProvisioner) updateTokens(userOauthID types.UserOauthID, token *oa
 		return err
 	}
 
-	utility.DefaultLogger.Debug("Updated OAuth tokens for user_oauth_id: %s", userOauthID)
+	up.log.Debug("Updated OAuth tokens for user_oauth_id: %s", userOauthID)
 	return nil
 }

@@ -72,7 +72,12 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 
 		fd = append(fd, *field)
 	}
-	root := model.BuildTree(*contentData, dt, *contentFields, fd)
+	root, err := model.BuildTree(utility.DefaultLogger, *contentData, dt, *contentFields, fd)
+	if err != nil {
+		utility.DefaultLogger.Error("BuildTree error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	// Allow format override via query parameter
 	format := c.Output_Format

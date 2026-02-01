@@ -96,7 +96,12 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, c config.Con
 		fd = append(fd, *field)
 	}
 
-	root := model.BuildAdminTree(filteredData, dt, filteredFields, fd)
+	root, err := model.BuildAdminTree(utility.DefaultLogger, filteredData, dt, filteredFields, fd)
+	if err != nil {
+		utility.DefaultLogger.Error("BuildAdminTree error", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	// Allow format override via query parameter
 	format := c.Output_Format
