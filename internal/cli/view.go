@@ -216,6 +216,11 @@ func (m Model) View() string {
 	default:
 		ui = m.RenderUI()
 	}
+
+	if m.DialogActive && m.Dialog != nil {
+		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 

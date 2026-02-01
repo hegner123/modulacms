@@ -140,6 +140,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		case MEDIA:
 			page := m.PageMap[MEDIA]
+			cmds = append(cmds, MediaFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, PanelFocusResetCmd())

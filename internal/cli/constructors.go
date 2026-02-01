@@ -421,6 +421,12 @@ func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 	}
 }
 
+// Media constructors
+func MediaFetchCmd() tea.Cmd       { return func() tea.Msg { return MediaFetchMsg{} } }
+func MediaListSetCmd(media []db.Media) tea.Cmd {
+	return func() tea.Msg { return MediaListSet{MediaList: media} }
+}
+
 // Route constructors
 func RoutesFetchCmd() tea.Cmd { return func() tea.Msg { return RoutesFetchMsg{} } }
 func RoutesFetchResultCmd(data []db.Routes) tea.Cmd {

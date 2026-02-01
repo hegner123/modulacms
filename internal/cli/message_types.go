@@ -322,4 +322,12 @@ type SelectedDatatypeSet struct {
 	DatatypeID types.DatatypeID
 }
 
+type MediaFetchMsg struct{}
+type MediaFetchResultsMsg struct {
+	Data []db.Media
+}
+type MediaListSet struct {
+	MediaList []db.Media
+}
+
 type PanelFocusReset struct{}

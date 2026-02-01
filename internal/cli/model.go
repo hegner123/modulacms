@@ -97,6 +97,7 @@ type Model struct {
 	Routes            []db.Routes
 	RootDatatypes     []db.Datatypes
 	SelectedDatatype  types.DatatypeID
+	MediaList         []db.Media
 
 	// SSH User Provisioning
 	NeedsProvisioning bool

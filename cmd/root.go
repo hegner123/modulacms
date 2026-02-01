@@ -13,10 +13,6 @@ var rootCmd = &cobra.Command{
 	Use:   "modulacms",
 	Short: "ModulaCMS - A headless CMS written in Go",
 	Long:  "ModulaCMS serves content over HTTP/HTTPS and provides SSH access for backend management.",
-	// Default action (no subcommand) starts the server
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return serveCmd.RunE(cmd, args)
-	},
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }

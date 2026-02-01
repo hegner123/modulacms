@@ -61,7 +61,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case USERSADMIN:
 		return m.BasicCMSControls(msg)
 	case MEDIA:
-		return m.BasicCMSControls(msg)
+		return m.MediaControls(msg)
 
 	}
 	return m, nil
@@ -409,6 +409,44 @@ func (m Model) findNodeAtIndex(node *TreeNode, targetIndex int, currentIndex *in
 	}
 
 	return nil
+}
+
+// MediaControls handles keyboard navigation for the media library page.
+func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "esc", "ctrl+c":
+			return m, tea.Quit
+		case "tab":
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		case "shift+tab":
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		case "up", "k":
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		case "down", "j":
+			if m.Cursor < len(m.MediaList)-1 {
+				return m, CursorDownCmd()
+			}
+		case "h", "left", "backspace":
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		case "shift+left":
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		case "shift+right":
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
 }
 
 func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {

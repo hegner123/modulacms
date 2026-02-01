@@ -157,6 +157,22 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			return RoutesFetchResultsMsg{Data: *routes}
 		}
 
+	case MediaFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			media, err := d.ListMedia()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if media == nil {
+				return MediaFetchResultsMsg{Data: []db.Media{}}
+			}
+			return MediaFetchResultsMsg{Data: *media}
+		}
+
+	case MediaFetchResultsMsg:
+		return m, MediaListSetCmd(msg.Data)
+
 	case FetchErrMsg:
 		// Handle an error from data fetching.
 		return m, tea.Batch(

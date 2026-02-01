@@ -6,6 +6,7 @@ import (
 	"image/gif"
 	"image/jpeg"
 	"image/png"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 
 	config "github.com/hegner123/modulacms/internal/config"
 	db "github.com/hegner123/modulacms/internal/db"
+	webpenc "github.com/kolesa-team/go-webp/encoder"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
@@ -64,30 +66,53 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 
 	// Validate image dimensions to prevent memory exhaustion attacks
 	bounds := decodedImg.Bounds()
-	width := bounds.Dx()
-	height := bounds.Dy()
-	pixels := width * height
+	srcWidth := bounds.Dx()
+	srcHeight := bounds.Dy()
+	pixels := srcWidth * srcHeight
 
-	if width > MaxImageWidth {
-		return nil, fmt.Errorf("image width %d exceeds maximum %d", width, MaxImageWidth)
+	if srcWidth > MaxImageWidth {
+		return nil, fmt.Errorf("image width %d exceeds maximum %d", srcWidth, MaxImageWidth)
 	}
-	if height > MaxImageHeight {
-		return nil, fmt.Errorf("image height %d exceeds maximum %d", height, MaxImageHeight)
+	if srcHeight > MaxImageHeight {
+		return nil, fmt.Errorf("image height %d exceeds maximum %d", srcHeight, MaxImageHeight)
 	}
 	if pixels > MaxImagePixels {
 		return nil, fmt.Errorf("image size %d pixels exceeds maximum %d", pixels, MaxImagePixels)
 	}
 
+	// Copy the original file to dstPath
+	files := []string{}
+	originalDst := filepath.Join(dstPath, filepath.Base(srcFile))
+	if err := copyFile(srcFile, originalDst); err != nil {
+		return nil, fmt.Errorf("failed to copy original file: %w", err)
+	}
+	files = append(files, originalDst)
+
 	// Initialize scaler.
 	var scaler draw.Scaler = draw.BiLinear
 	images := []draw.Image{}
+	validDimensions := []db.MediaDimensions{}
 	centerX := (bounds.Min.X + bounds.Max.X) / 2
 	centerY := (bounds.Min.Y + bounds.Max.Y) / 2
 
 	// Crop and scale images.
 	for _, dim := range *dimensions {
+		if !dim.Width.Valid || !dim.Height.Valid {
+			continue
+		}
+
 		cropWidth := int(dim.Width.Int64)
 		cropHeight := int(dim.Height.Int64)
+
+		if cropWidth <= 0 || cropHeight <= 0 {
+			continue
+		}
+
+		// Skip dimensions larger than the source to avoid upscaling
+		if cropWidth > srcWidth || cropHeight > srcHeight {
+			continue
+		}
+
 		x0 := centerX - cropWidth/2
 		y0 := centerY - cropHeight/2
 		cropRect := image.Rect(x0, y0, x0+cropWidth, y0+cropHeight)
@@ -97,15 +122,15 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 		img := image.NewRGBA(dstRect)
 		scaler.Scale(img, dstRect, decodedImg, cropRect, draw.Over, nil)
 		images = append(images, img)
+		validDimensions = append(validDimensions, dim)
 	}
 
-	files := []string{}
 	var optimizationErr error
 
 	// Encode and save images.
 	for i, img := range images {
-		widthString := strconv.FormatInt((*dimensions)[i].Width.Int64, 10)
-		heightString := strconv.FormatInt((*dimensions)[i].Height.Int64, 10)
+		widthString := strconv.FormatInt(validDimensions[i].Width.Int64, 10)
+		heightString := strconv.FormatInt(validDimensions[i].Height.Int64, 10)
 		size := widthString + "x" + heightString
 		filename := fmt.Sprintf("%s-%v%s", baseName, size, ext)
 		fullPath := filepath.Join(dstPath, filename)
@@ -124,6 +149,14 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 			err = jpeg.Encode(f, img, nil)
 		case ".gif":
 			err = gif.Encode(f, img, nil)
+		case ".webp":
+			if opts, optErr := webpenc.NewLossyEncoderOptions(webpenc.PresetDefault, 80); optErr != nil {
+				err = fmt.Errorf("webp options: %w", optErr)
+			} else if enc, encErr := webpenc.NewEncoder(img, opts); encErr != nil {
+				err = fmt.Errorf("webp encoder: %w", encErr)
+			} else {
+				err = enc.Encode(f)
+			}
 		default:
 			err = fmt.Errorf("unsupported encoding for extension: %s", ext)
 		}
@@ -149,4 +182,26 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 	}
 
 	return &files, nil
+}
+
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) (err error) {
+	srcF, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("failed to open source: %w", err)
+	}
+	defer srcF.Close()
+
+	dstF, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("failed to create destination: %w", err)
+	}
+	defer func() {
+		if cerr := dstF.Close(); cerr != nil && err == nil {
+			err = cerr
+		}
+	}()
+
+	_, err = io.Copy(dstF, srcF)
+	return err
 }

@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -111,9 +112,9 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		right = renderRouteActions(m)
 
 	case MEDIA:
-		left = "Media Library"
-		center = "Select media"
-		right = "Details"
+		left = renderMediaList(m)
+		center = renderMediaDetail(m)
+		right = renderMediaInfo(m)
 
 	case USERSADMIN:
 		left = "Users"
@@ -299,6 +300,85 @@ func renderRouteActions(m Model) string {
 
 	if !m.PageRouteId.IsZero() {
 		lines = append(lines, fmt.Sprintf("Active:  %s", m.PageRouteId))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderMediaList renders the media list for the left panel.
+func renderMediaList(m Model) string {
+	if len(m.MediaList) == 0 {
+		return "(no media)"
+	}
+
+	lines := make([]string, 0, len(m.MediaList))
+	for i, media := range m.MediaList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		name := media.MediaID.String()
+		if media.DisplayName.Valid && media.DisplayName.String != "" {
+			name = media.DisplayName.String
+		} else if media.Name.Valid && media.Name.String != "" {
+			name = media.Name.String
+		}
+		mime := ""
+		if media.Mimetype.Valid && media.Mimetype.String != "" {
+			mime = " [" + media.Mimetype.String + "]"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s%s", cursor, name, mime))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderMediaDetail renders the selected media details for the center panel.
+func renderMediaDetail(m Model) string {
+	if len(m.MediaList) == 0 || m.Cursor >= len(m.MediaList) {
+		return "No media selected"
+	}
+
+	media := m.MediaList[m.Cursor]
+
+	nullStr := func(ns sql.NullString) string {
+		if ns.Valid {
+			return ns.String
+		}
+		return "(none)"
+	}
+
+	lines := []string{
+		fmt.Sprintf("Name:        %s", nullStr(media.Name)),
+		fmt.Sprintf("Display:     %s", nullStr(media.DisplayName)),
+		fmt.Sprintf("Alt:         %s", nullStr(media.Alt)),
+		fmt.Sprintf("Caption:     %s", nullStr(media.Caption)),
+		fmt.Sprintf("Description: %s", nullStr(media.Description)),
+		"",
+		fmt.Sprintf("Mimetype:    %s", nullStr(media.Mimetype)),
+		fmt.Sprintf("Dimensions:  %s", nullStr(media.Dimensions)),
+		fmt.Sprintf("URL:         %s", media.URL),
+		"",
+		fmt.Sprintf("Created:     %s", media.DateCreated.String()),
+		fmt.Sprintf("Modified:    %s", media.DateModified.String()),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderMediaInfo renders the media info summary for the right panel.
+func renderMediaInfo(m Model) string {
+	lines := []string{
+		"Media Library",
+		"",
+		fmt.Sprintf("  Total: %d", len(m.MediaList)),
+	}
+
+	if len(m.MediaList) > 0 && m.Cursor < len(m.MediaList) {
+		lines = append(lines, "")
+		lines = append(lines, fmt.Sprintf("  ID: %s", m.MediaList[m.Cursor].MediaID))
+		if m.MediaList[m.Cursor].Class.Valid && m.MediaList[m.Cursor].Class.String != "" {
+			lines = append(lines, fmt.Sprintf("  Class: %s", m.MediaList[m.Cursor].Class.String))
+		}
 	}
 
 	return strings.Join(lines, "\n")

@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/tui"
 )
 
 // DialogAction represents the type of action this dialog performs
@@ -158,29 +159,34 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 		buttonBar,
 	}, "\n")
 
-	// Apply border and position
+	// Apply border
 	dialogBox := d.borderStyle.Width(contentWidth).Render(content)
-
-	// Center the dialog on screen
-	dialogBox = lipgloss.Place(
-		windowWidth,
-		windowHeight,
-		lipgloss.Center,
-		lipgloss.Center,
-		dialogBox,
-	)
 
 	return dialogBox
 }
 
-// DialogOverlay positions a dialog over existing content
+// DialogOverlay positions a dialog over existing content using layer compositing.
 func DialogOverlay(content string, dialog DialogModel, width, height int) string {
 	dialogContent := dialog.Render(width, height)
+	dialogW := lipgloss.Width(dialogContent)
+	dialogH := lipgloss.Height(dialogContent)
 
-	// Place the dialog on top of the overlay
-	return lipgloss.Place(width, height, lipgloss.Center, lipgloss.Center, dialogContent,
-		lipgloss.WithWhitespaceChars(" "),
-		lipgloss.WithWhitespaceForeground(lipgloss.Color("#000000")))
+	x := (width - dialogW) / 2
+	y := (height - dialogH) / 2
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+
+	return tui.Composite(content, tui.Overlay{
+		Content: dialogContent,
+		X:       x,
+		Y:       y,
+		Width:   dialogW,
+		Height:  dialogH,
+	})
 }
 
 // Dialog-related messages

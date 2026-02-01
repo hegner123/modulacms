@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -25,10 +26,16 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+var wizard bool
+
+func init() {
+	serveCmd.Flags().BoolVar(&wizard, "wizard", false, "Run interactive configuration wizard before starting")
+}
+
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the HTTP, HTTPS, and SSH servers",
-	Long:  "Start all ModulaCMS servers. This is the default command when no subcommand is given.",
+	Long:  "Start all ModulaCMS servers. Use --wizard for interactive setup.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
@@ -49,6 +56,21 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
+		// Setup: wizard mode runs interactive install, otherwise auto-create defaults if config missing
+		if wizard {
+			if err := install.RunInstall(&verbose, nil); err != nil {
+				return fmt.Errorf("wizard setup failed: %w", err)
+			}
+		} else {
+			if _, statErr := os.Stat(cfgPath); errors.Is(statErr, os.ErrNotExist) {
+				utility.DefaultLogger.Info("No config found, creating defaults...", "path", cfgPath)
+				yes := true
+				if err := install.RunInstall(&verbose, &yes); err != nil {
+					return fmt.Errorf("auto-setup failed: %w", err)
+				}
+			}
+		}
+
 		cfg, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
@@ -65,12 +87,12 @@ var serveCmd = &cobra.Command{
 		obsCleanup := initObservability(rootCtx, cfg)
 		defer obsCleanup()
 
-		// Run install check
+		// Run install check — if DB isn't connected, attempt table creation and bootstrap
 		initStatus, err := install.CheckInstall(cfg, &verbose)
 		if err != nil {
-			utility.DefaultLogger.Error("Installation check failed", err)
-			if installErr := install.RunInstall(&verbose, nil); installErr != nil {
-				return installErr
+			utility.DefaultLogger.Warn("Installation check reported issues, attempting DB setup", err)
+			if setupErr := install.CreateDbSimple(cfgPath, cfg); setupErr != nil {
+				return fmt.Errorf("database setup failed: %w", setupErr)
 			}
 		}
 

@@ -38,19 +38,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m, cmd := m.UpdateCms(msg); cmd != nil {
 		return m, cmd
 	}
-	switch msg := msg.(type) {
-
-	default:
-		// Check if we need to handle dialog key presses first
-		if m.DialogActive && m.Dialog != nil {
-			switch msg := msg.(type) {
-			case tea.KeyMsg:
-				dialog, cmd := m.Dialog.Update(msg)
-				m.Dialog = &dialog
-				if cmd != nil {
-					return m, cmd
-				}
-			}
+	// When dialog is active, route all key input to the dialog and stop.
+	if m.DialogActive && m.Dialog != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			dialog, cmd := m.Dialog.Update(keyMsg)
+			m.Dialog = &dialog
+			return m, cmd
 		}
 	}
 

@@ -143,6 +143,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.Routes = msg.Routes
 		return newModel, NewStateUpdate()
+	case MediaListSet:
+		newModel := m
+		newModel.MediaList = msg.MediaList
+		return newModel, NewStateUpdate()
 	case RootDatatypesSet:
 		newModel := m
 		newModel.RootDatatypes = msg.RootDatatypes
