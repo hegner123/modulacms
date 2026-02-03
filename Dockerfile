@@ -27,6 +27,11 @@ ARG BUILD_DATE=unknown
 
 WORKDIR /build
 
+# Build dependencies: C libraries required by CGO packages (sqlite3, webp)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libwebp-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 # Layer 1: vendor (large, rarely changes — cached)
 COPY vendor/ vendor/
 COPY go.mod go.sum ./
@@ -60,10 +65,11 @@ LABEL org.opencontainers.image.description="Headless CMS with HTTP, HTTPS, and S
 LABEL org.opencontainers.image.source="https://github.com/hegner123/modulacms"
 LABEL org.opencontainers.image.licenses="AGPL-3.0"
 
-# Runtime dependencies: TLS certs and timezone data
+# Runtime dependencies: TLS certs, timezone data, and shared libraries for CGO
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     tzdata \
+    libwebp7 \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
