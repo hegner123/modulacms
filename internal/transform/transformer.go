@@ -7,6 +7,20 @@ import (
 	"github.com/hegner123/modulacms/internal/model"
 )
 
+// allChildrenSameType returns true if every child node has the same datatype label.
+func allChildrenSameType(nodes []*model.Node) bool {
+	if len(nodes) <= 1 {
+		return true
+	}
+	first := nodes[0].Datatype.Info.Label
+	for _, n := range nodes[1:] {
+		if n.Datatype.Info.Label != first {
+			return false
+		}
+	}
+	return true
+}
+
 // Use OutputFormat from config package
 type OutputFormat = config.OutputFormat
 

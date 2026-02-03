@@ -104,14 +104,16 @@ func (c *ContentfulTransformer) transformNode(node *model.Node) ContentfulEntry 
 
 	// Transform child nodes
 	if len(node.Nodes) > 0 {
-		childType := pluralize(node.Nodes[0].Datatype.Info.Label)
 		children := make([]ContentfulEntry, 0, len(node.Nodes))
-
 		for _, child := range node.Nodes {
 			children = append(children, c.transformNode(child))
 		}
 
-		entry.Fields[childType] = children
+		if allChildrenSameType(node.Nodes) {
+			entry.Fields[pluralize(node.Nodes[0].Datatype.Info.Label)] = children
+		} else {
+			entry.Fields["children"] = children
+		}
 	}
 
 	return entry

@@ -76,14 +76,16 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 
 	// Transform child nodes to arrays
 	if len(node.Nodes) > 0 {
-		childType := pluralize(node.Nodes[0].Datatype.Info.Label)
 		children := make([]map[string]any, 0, len(node.Nodes))
-
 		for _, child := range node.Nodes {
 			children = append(children, c.transformNode(child))
 		}
 
-		doc[childType] = children
+		if allChildrenSameType(node.Nodes) {
+			doc[pluralize(node.Nodes[0].Datatype.Info.Label)] = children
+		} else {
+			doc["children"] = children
+		}
 	}
 
 	return doc

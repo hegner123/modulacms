@@ -83,16 +83,16 @@ func (s *StrapiTransformer) transformNode(node *model.Node) StrapiEntry {
 
 	// Transform child nodes as relations
 	if len(node.Nodes) > 0 {
-		childType := pluralize(node.Nodes[0].Datatype.Info.Label)
 		children := make([]StrapiEntry, 0, len(node.Nodes))
-
 		for _, child := range node.Nodes {
 			children = append(children, s.transformNode(child))
 		}
 
-		entry.Attributes[childType] = StrapiRelation{
-			Data: children,
+		key := "children"
+		if allChildrenSameType(node.Nodes) {
+			key = pluralize(node.Nodes[0].Datatype.Info.Label)
 		}
+		entry.Attributes[key] = StrapiRelation{Data: children}
 	}
 
 	return entry

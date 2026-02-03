@@ -1,12 +1,15 @@
 package router
 
 import (
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/transform"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -120,8 +123,18 @@ func apiImportContent(w http.ResponseWriter, r *http.Request, c config.Config, f
 		return
 	}
 
-	// Import to database (STUB - to be implemented)
-	result, err := importRootToDatabase(d, root)
+	// Parse optional route_id from query parameter
+	routeID := types.NullableRouteID{Valid: false}
+	routeIDStr := r.URL.Query().Get("route_id")
+	if routeIDStr != "" {
+		routeID = types.NullableRouteID{
+			ID:    types.RouteID(routeIDStr),
+			Valid: true,
+		}
+	}
+
+	// Import to database
+	result, err := importRootToDatabase(d, root, routeID)
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to import to database", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -136,20 +149,28 @@ func apiImportContent(w http.ResponseWriter, r *http.Request, c config.Config, f
 
 // ImportResult represents the result of an import operation
 type ImportResult struct {
-	Success         bool     `json:"success"`
-	DatatypesCreated int     `json:"datatypes_created"`
-	FieldsCreated    int     `json:"fields_created"`
-	ContentCreated   int     `json:"content_created"`
-	Errors          []string `json:"errors,omitempty"`
-	Message         string   `json:"message"`
+	Success          bool     `json:"success"`
+	DatatypesCreated int      `json:"datatypes_created"`
+	FieldsCreated    int      `json:"fields_created"`
+	ContentCreated   int      `json:"content_created"`
+	Errors           []string `json:"errors,omitempty"`
+	Message          string   `json:"message"`
+}
+
+// importContext tracks state during recursive import
+type importContext struct {
+	driver        db.DbDriver
+	routeID       types.NullableRouteID
+	authorID      types.NullableUserID
+	datatypeCache map[string]types.DatatypeID // "label|type" -> existing DatatypeID
+	result        *ImportResult
 }
 
 // importRootToDatabase imports a parsed Root structure to the database
-// STUB: This is a placeholder for the actual implementation
-func importRootToDatabase(driver db.DbDriver, root model.Root) (*ImportResult, error) {
+func importRootToDatabase(driver db.DbDriver, root model.Root, routeID types.NullableRouteID) (*ImportResult, error) {
 	result := &ImportResult{
 		Success: false,
-		Message: "Import functionality not yet implemented (stub)",
+		Errors:  []string{},
 	}
 
 	if root.Node == nil {
@@ -157,62 +178,245 @@ func importRootToDatabase(driver db.DbDriver, root model.Root) (*ImportResult, e
 		return result, nil
 	}
 
-	// TODO: Implement actual database insertion logic
-	// Steps to implement:
-	// 1. Extract or create Datatype from root.Node.Datatype
-	// 2. Create/update Fields from root.Node.Fields
-	// 3. Create ContentData from root.Node.Datatype.Content
-	// 4. Create ContentFields linking content to fields
-	// 5. Recursively process child nodes (root.Node.Nodes)
-	// 6. Handle relationships and references
+	ctx := &importContext{
+		driver:        driver,
+		routeID:       routeID,
+		authorID:      types.NullableUserID{Valid: false},
+		datatypeCache: make(map[string]types.DatatypeID),
+		result:        result,
+	}
 
-	// STUB: Simulate successful import
-	result.Success = true
-	result.Message = "Import stubbed - database insertion not implemented"
-	result.DatatypesCreated = countDatatypes(root)
-	result.FieldsCreated = countFields(root)
-	result.ContentCreated = countContent(root)
+	ctx.importNode(root.Node, types.NullableContentID{Valid: false})
 
-	utility.DefaultLogger.Info("Import stub called",
+	result.Success = len(result.Errors) == 0
+	if result.Success {
+		result.Message = fmt.Sprintf("Import complete: %d datatypes, %d fields, %d content nodes created",
+			result.DatatypesCreated, result.FieldsCreated, result.ContentCreated)
+	} else {
+		result.Message = fmt.Sprintf("Import completed with %d errors", len(result.Errors))
+	}
+
+	utility.DefaultLogger.Info("Import completed",
 		"datatypes", result.DatatypesCreated,
 		"fields", result.FieldsCreated,
 		"content", result.ContentCreated,
+		"errors", len(result.Errors),
 	)
 
 	return result, nil
 }
 
-// Helper functions to count items in the tree (for stub response)
+// importNode recursively imports a single node and its children into the database.
+// Returns the ContentID of the created content_data row (empty if creation failed).
+func (ctx *importContext) importNode(node *model.Node, parentID types.NullableContentID) types.ContentID {
+	// Find or create the datatype
+	datatypeID := ctx.findOrCreateDatatype(node)
+	if datatypeID.IsZero() {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create datatype for label=%q type=%q", node.Datatype.Info.Label, node.Datatype.Info.Type))
+		return types.ContentID("")
+	}
 
-func countDatatypes(root model.Root) int {
-	if root.Node == nil {
-		return 0
+	// Create content_data with null sibling pointers (patched after children are created)
+	now := types.TimestampNow()
+	contentData := ctx.driver.CreateContentData(db.CreateContentDataParams{
+		RouteID:  ctx.routeID,
+		ParentID: parentID,
+		DatatypeID: types.NullableDatatypeID{
+			ID:    datatypeID,
+			Valid: true,
+		},
+		AuthorID:      ctx.authorID,
+		FirstChildID:  sql.NullString{Valid: false},
+		NextSiblingID: sql.NullString{Valid: false},
+		PrevSiblingID: sql.NullString{Valid: false},
+		DateCreated:   now,
+		DateModified:  now,
+	})
+
+	contentDataID := contentData.ContentDataID
+	if contentDataID.IsZero() {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create content_data for node type=%q", node.Datatype.Info.Label))
+		return types.ContentID("")
 	}
-	count := 1 // Current node's datatype
-	for _, child := range root.Node.Nodes {
-		count += countDatatypes(model.Root{Node: child})
+
+	// Create fields and content_fields for this node
+	for _, field := range node.Fields {
+		ctx.createFieldAndContentField(field, contentDataID, datatypeID)
 	}
-	return count
+
+	// Recurse into children and collect their content IDs
+	childIDs := make([]types.ContentID, 0, len(node.Nodes))
+	for _, child := range node.Nodes {
+		childContentID := ctx.importNode(child, types.NullableContentID{
+			ID:    contentDataID,
+			Valid: true,
+		})
+		if !childContentID.IsZero() {
+			childIDs = append(childIDs, childContentID)
+		}
+	}
+
+	// Patch sibling pointers after all children are created
+	if len(childIDs) > 0 {
+		ctx.patchSiblingPointers(contentData, childIDs)
+	}
+
+	ctx.result.ContentCreated++
+	return contentDataID
 }
 
-func countFields(root model.Root) int {
-	if root.Node == nil {
-		return 0
+// findOrCreateDatatype returns an existing or newly-created DatatypeID for the node's type.
+// De-duplicates by "label|type" key.
+func (ctx *importContext) findOrCreateDatatype(node *model.Node) types.DatatypeID {
+	label := node.Datatype.Info.Label
+	typeStr := node.Datatype.Info.Type
+	cacheKey := label + "|" + typeStr
+
+	if existing, ok := ctx.datatypeCache[cacheKey]; ok {
+		return existing
 	}
-	count := len(root.Node.Fields)
-	for _, child := range root.Node.Nodes {
-		count += countFields(model.Root{Node: child})
+
+	now := types.TimestampNow()
+	created := ctx.driver.CreateDatatype(db.CreateDatatypeParams{
+		ParentID:     types.NullableContentID{Valid: false},
+		Label:        label,
+		Type:         typeStr,
+		AuthorID:     ctx.authorID,
+		DateCreated:  now,
+		DateModified: now,
+	})
+
+	if created.DatatypeID.IsZero() {
+		return types.DatatypeID("")
 	}
-	return count
+
+	ctx.datatypeCache[cacheKey] = created.DatatypeID
+	ctx.result.DatatypesCreated++
+	return created.DatatypeID
 }
 
-func countContent(root model.Root) int {
-	if root.Node == nil {
-		return 0
+// createFieldAndContentField creates a field definition, a content_field linking
+// it to the content_data, and a datatype_field linking the field to the datatype.
+func (ctx *importContext) createFieldAndContentField(field model.Field, contentDataID types.ContentID, datatypeID types.DatatypeID) {
+	now := types.TimestampNow()
+
+	// Create the field definition
+	createdField := ctx.driver.CreateField(db.CreateFieldParams{
+		ParentID: types.NullableContentID{
+			ID:    contentDataID,
+			Valid: true,
+		},
+		Label:        field.Info.Label,
+		Data:         "",
+		Type:         types.FieldType(field.Info.Type),
+		AuthorID:     ctx.authorID,
+		DateCreated:  now,
+		DateModified: now,
+	})
+
+	if createdField.FieldID.IsZero() {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create field label=%q for content_data=%s", field.Info.Label, contentDataID))
+		return
 	}
-	count := 1 // Current node's content
-	for _, child := range root.Node.Nodes {
-		count += countContent(model.Root{Node: child})
+
+	// Create the content_field linking content_data to field value
+	ctx.driver.CreateContentField(db.CreateContentFieldParams{
+		RouteID: ctx.routeID,
+		ContentDataID: types.NullableContentID{
+			ID:    contentDataID,
+			Valid: true,
+		},
+		FieldID: types.NullableFieldID{
+			ID:    createdField.FieldID,
+			Valid: true,
+		},
+		FieldValue:   field.Content.FieldValue,
+		AuthorID:     ctx.authorID,
+		DateCreated:  now,
+		DateModified: now,
+	})
+
+	// Create the datatype_field linking the datatype to the field
+	ctx.driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
+		DatatypeID: types.NullableDatatypeID{
+			ID:    datatypeID,
+			Valid: true,
+		},
+		FieldID: types.NullableFieldID{
+			ID:    createdField.FieldID,
+			Valid: true,
+		},
+	})
+
+	ctx.result.FieldsCreated++
+}
+
+// patchSiblingPointers sets first_child_id on the parent and links children
+// with prev_sibling_id/next_sibling_id pointers.
+//
+// For children [c0, c1, c2]:
+//
+//	parent.FirstChildID = c0.ID
+//	c0.PrevSiblingID = null,  c0.NextSiblingID = c1.ID
+//	c1.PrevSiblingID = c0.ID, c1.NextSiblingID = c2.ID
+//	c2.PrevSiblingID = c1.ID, c2.NextSiblingID = null
+func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs []types.ContentID) {
+	// Set first_child_id on the parent
+	_, err := ctx.driver.UpdateContentData(db.UpdateContentDataParams{
+		ContentDataID: parent.ContentDataID,
+		RouteID:       parent.RouteID,
+		ParentID:      parent.ParentID,
+		FirstChildID:  sql.NullString{String: childIDs[0].String(), Valid: true},
+		NextSiblingID: parent.NextSiblingID,
+		PrevSiblingID: parent.PrevSiblingID,
+		DatatypeID:    parent.DatatypeID,
+		AuthorID:      parent.AuthorID,
+		DateCreated:   parent.DateCreated,
+		DateModified:  parent.DateModified,
+	})
+	if err != nil {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to set first_child_id on content_data=%s: %v", parent.ContentDataID, err))
 	}
-	return count
+
+	// Link each child with sibling pointers
+	for i, childID := range childIDs {
+		prevSibling := sql.NullString{Valid: false}
+		if i > 0 {
+			prevSibling = sql.NullString{String: childIDs[i-1].String(), Valid: true}
+		}
+
+		nextSibling := sql.NullString{Valid: false}
+		if i < len(childIDs)-1 {
+			nextSibling = sql.NullString{String: childIDs[i+1].String(), Valid: true}
+		}
+
+		// We need the full row to update — fetch it first
+		childData, fetchErr := ctx.driver.GetContentData(childID)
+		if fetchErr != nil {
+			ctx.result.Errors = append(ctx.result.Errors,
+				fmt.Sprintf("failed to fetch content_data=%s for sibling patch: %v", childID, fetchErr))
+			continue
+		}
+
+		_, updateErr := ctx.driver.UpdateContentData(db.UpdateContentDataParams{
+			ContentDataID: childData.ContentDataID,
+			RouteID:       childData.RouteID,
+			ParentID:      childData.ParentID,
+			FirstChildID:  childData.FirstChildID,
+			NextSiblingID: nextSibling,
+			PrevSiblingID: prevSibling,
+			DatatypeID:    childData.DatatypeID,
+			AuthorID:      childData.AuthorID,
+			DateCreated:   childData.DateCreated,
+			DateModified:  childData.DateModified,
+		})
+		if updateErr != nil {
+			ctx.result.Errors = append(ctx.result.Errors,
+				fmt.Sprintf("failed to set sibling pointers on content_data=%s: %v", childID, updateErr))
+		}
+	}
 }
