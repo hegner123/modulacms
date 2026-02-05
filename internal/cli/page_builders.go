@@ -208,6 +208,9 @@ func (t *TablePage) AddBody(b string) {
 }
 
 func (t *TablePage) RenderBody(m Model) string {
+	if len(t.TableHeaders) == 0 {
+		return t.Body
+	}
 	start, end := m.Paginator.GetSliceBounds(len(t.TableRows))
 	currentView := t.TableRows[start:end]
 

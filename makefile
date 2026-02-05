@@ -14,7 +14,7 @@ WHITE  := $(shell tput -Txterm setaf 7)
 CYAN   := $(shell tput -Txterm setaf 6)
 RESET  := $(shell tput -Txterm sgr0)
 
-.PHONY: all test build vendor test-development check docker-up docker-dev docker-infra docker-down docker-reset docker-destroy docker-logs docker-build docker-release
+.PHONY: all test build vendor test-development check docker-up docker-dev docker-infra docker-down docker-reset docker-destroy docker-logs docker-build docker-release dealer-up dealer-down dealer-reset dealer-destroy dealer-logs dealer-rebuild
 
 all: help
 
@@ -160,6 +160,27 @@ docker-release: ## Release the container with tag latest and version
 	docker tag modulacms $(DOCKER_REGISTRY)modulacms:$(VERSION)
 	docker push $(DOCKER_REGISTRY)modulacms:latest
 	docker push $(DOCKER_REGISTRY)modulacms:$(VERSION)
+
+## Dealer:
+DEALER_COMPOSE=docker compose -p modulacms-dealer
+
+dealer-up: ## Start dealer CMS container (builds image, mounts config.dealer.json)
+	DOCKER_BUILDKIT=1 $(DEALER_COMPOSE) up -d --build
+
+dealer-down: ## Stop dealer container, keep volumes
+	$(DEALER_COMPOSE) down
+
+dealer-reset: ## Stop dealer container and delete volumes
+	$(DEALER_COMPOSE) down -v
+
+dealer-destroy: ## Remove dealer container, volumes, and images
+	$(DEALER_COMPOSE) down -v --rmi all
+
+dealer-logs: ## Tail dealer container logs
+	$(DEALER_COMPOSE) logs -f modulacms
+
+dealer-rebuild: ## Force rebuild dealer image and restart
+	DOCKER_BUILDKIT=1 $(DEALER_COMPOSE) up -d --build --force-recreate
 
 ## Help:
 help: ## Show this help.

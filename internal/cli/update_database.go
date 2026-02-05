@@ -26,13 +26,25 @@ func NewDatabaseUpdate() tea.Cmd {
 func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case DatabaseGetMsg:
-		return m, m.DatabaseGet(m.Config, msg.Source, msg.Table, msg.ID)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			m.DatabaseGet(m.Config, msg.Source, msg.Table, msg.ID),
+		)
 	case DatabaseListMsg:
-		return m, m.DatabaseList(m.Config, msg.Source, msg.Table)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			m.DatabaseList(m.Config, msg.Source, msg.Table),
+		)
 	case DatabaseListFilteredMsg:
-		return m, m.DatabaseFilteredList(m.Config, msg.Source, msg.Table, msg.Columns, msg.WhereColumn, msg.Value)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			m.DatabaseFilteredList(m.Config, msg.Source, msg.Table, msg.Columns, msg.WhereColumn, msg.Value),
+		)
 	case DatabaseTreeMsg:
-		return m, m.GetFullTree(m.Config, m.PageRouteId)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			m.GetFullTree(m.Config, m.PageRouteId),
+		)
 
 	case DatabaseListRowsMsg:
 		res := db.CastToTypedSlice(msg.Rows, msg.Table)
@@ -41,16 +53,26 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 			data, _ := res.([]db.Datatypes)
 			return m, DatatypesFetchResultCmd(data)
 		}
-		return m, LogMessageCmd(fmt.Sprintln(res))
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintln(res)),
+		)
 	case DatabaseDeleteEntry:
-		return m, LogMessageCmd(fmt.Sprintf("Database delete requested: ID %d from table %s", msg.Id, msg.Table))
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Database delete requested: ID %d from table %s", msg.Id, msg.Table)),
+		)
 	case DatabaseInsertEntry:
 		return m, tea.Batch(
+			LoadingStartCmd(),
 			m.DatabaseInsert(m.Config, msg.Table, msg.Columns, msg.Values),
 			LogMessageCmd(fmt.Sprintf("Database create initiated: table %s with %d fields", msg.Table, len(msg.Columns))),
 		)
 	case DatabaseUpdateEntry:
-		return m, LogMessageCmd(fmt.Sprintf("Database update initiated: table %s with %d fields", msg.Table, len(msg.Values)))
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Database update initiated: table %s with %d fields", msg.Table, len(msg.Values))),
+		)
 	default:
 		return m, nil
 	}

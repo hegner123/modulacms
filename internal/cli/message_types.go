@@ -261,6 +261,26 @@ type CmsDefineDatatypeReadyMsg struct{}
 
 type CmsBuildDefineDatatypeFormMsg struct{}
 type CmsDefineDatatypeFormMsg struct{}
+
+type CmsEditDatatypeLoadMsg struct {
+	Datatype db.Datatypes
+}
+type CmsEditDatatypeFormMsg struct {
+	Datatype db.Datatypes
+}
+type DatatypeUpdateSaveMsg struct {
+	DatatypeID types.DatatypeID
+	Parent     string
+	Label      string
+	Type       string
+}
+type DatatypeUpdatedMsg struct {
+	DatatypeID types.DatatypeID
+	Label      string
+}
+type DatatypeUpdateFailedMsg struct {
+	Error error
+}
 type CmsGetDatatypeParentOptionsMsg struct {
 	Admin bool
 }
@@ -313,6 +333,24 @@ type RootDatatypesFetchResultsMsg struct {
 }
 type RootDatatypesSet struct {
 	RootDatatypes []db.Datatypes
+}
+
+type AllDatatypesFetchMsg struct{}
+type AllDatatypesFetchResultsMsg struct {
+	Data []db.Datatypes
+}
+type AllDatatypesSet struct {
+	AllDatatypes []db.Datatypes
+}
+
+type DatatypeFieldsFetchMsg struct {
+	DatatypeID types.DatatypeID
+}
+type DatatypeFieldsFetchResultsMsg struct {
+	Fields []db.Fields
+}
+type DatatypeFieldsSet struct {
+	Fields []db.Fields
 }
 
 type RoutesByDatatypeFetchMsg struct {

@@ -90,20 +90,26 @@ type Model struct {
 	History      []PageHistory
 	QueryResults []sql.Row
 	Time         time.Time
-	Dialog       *DialogModel
-	DialogActive bool
+	Dialog           *DialogModel
+	DialogActive     bool
+	FormDialog       *FormDialogModel
+	FormDialogActive bool
 	Root         TreeRoot
 	PanelFocus        tui.FocusPanel
 	Routes            []db.Routes
-	RootDatatypes     []db.Datatypes
-	SelectedDatatype  types.DatatypeID
-	MediaList         []db.Media
+	RootDatatypes          []db.Datatypes
+	AllDatatypes           []db.Datatypes
+	SelectedDatatype       types.DatatypeID
+	SelectedDatatypeFields []db.Fields
+	FieldCursor            int // Cursor for the fields panel (center)
+	MediaList              []db.Media
 
 	// SSH User Provisioning
 	NeedsProvisioning bool
 	SSHFingerprint    string
 	SSHKeyType        string
 	SSHPublicKey      string
+	UserID            types.UserID
 }
 
 var CliContinue bool = false
@@ -144,6 +150,18 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 
+	// Find system user for CLI mode (non-SSH sessions)
+	var systemAdminID types.UserID
+	if users, err := driver.ListUsers(); err == nil && users != nil {
+		for _, u := range *users {
+			if strings.EqualFold(u.Username, "system") {
+				systemAdminID = u.UserID
+				utility.DefaultLogger.Finfo(fmt.Sprintf("CLI mode: using system user %s (%s)", u.Username, u.UserID))
+				break
+			}
+		}
+	}
+
 	m := Model{
 		DB:          driver,
 		Config:      c,
@@ -167,6 +185,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd
 		History:     []PageHistory{},
 		Verbose:     verbose,
 		PageRouteId: types.RouteID(""), // TODO: Implement route selection UI
+		UserID:      systemAdminID,     // Set system admin for CLI mode
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

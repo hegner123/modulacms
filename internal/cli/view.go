@@ -35,10 +35,6 @@ func (m Model) View() string {
 	}
 
 	var ui string
-	if m.Loading {
-		str := fmt.Sprintf("\n\n   %s Loading forever...press q to quit\n\n", m.Spinner.View())
-		return str
-	}
 
 	if isCMSPanelPage(m.Page.Index) {
 		return renderCMSPanelLayout(m)
@@ -124,12 +120,13 @@ func (m Model) View() string {
 		p := NewTablePage()
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader(fmt.Sprintf("Read %s", m.TableState.Table))
-		if !m.Loading {
+		if m.Loading {
+			p.AddBody(fmt.Sprintf("\n   %s Loading...\n", m.Spinner.View()))
+		} else {
 			p.AddHeaders(m.TableState.Headers)
 			p.AddRows(m.TableState.Rows)
-			p.AddStatus(m.RenderStatusBar())
 		}
-
+		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case READSINGLEPAGE:
 		columns := make([]ReadSingleRow, 0, len(m.TableState.Headers))
@@ -163,10 +160,11 @@ func (m Model) View() string {
 		ui = p.Render(m)
 	case UPDATEPAGE:
 		p := NewTablePage()
-		if !m.Loading {
+		if m.Loading {
+			p.AddBody(fmt.Sprintf("\n   %s Loading...\n", m.Spinner.View()))
+		} else {
 			p.AddHeaders(m.TableState.Headers)
 			p.AddRows(m.TableState.Rows)
-			p.AddStatus(m.RenderStatusBar())
 		}
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
@@ -179,18 +177,14 @@ func (m Model) View() string {
 		ui = p.Render(m)
 	case DELETEPAGE:
 		p := NewTablePage()
-		if !m.Loading {
+		if m.Loading {
+			p.AddBody(fmt.Sprintf("\n   %s Loading...\n", m.Spinner.View()))
+		} else {
 			p.AddHeaders(m.TableState.Headers)
 			p.AddRows(m.TableState.Rows)
-			p.AddStatus(m.RenderStatusBar())
 		}
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Delete")
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case DATATYPES:
-		p := NewFormPage()
-		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case DEVELOPMENT:
@@ -203,6 +197,11 @@ func (m Model) View() string {
 		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddHeader("Dynamic")
 		p.AddControls("q quit")
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
+	case DATATYPE:
+		p := NewFormPage()
+		p.AddTitle(m.Titles[m.TitleFont])
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case ACTIONSPAGE:
@@ -219,6 +218,10 @@ func (m Model) View() string {
 
 	if m.DialogActive && m.Dialog != nil {
 		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
+	}
+
+	if m.FormDialogActive && m.FormDialog != nil {
+		return FormDialogOverlay(ui, *m.FormDialog, m.Width, m.Height)
 	}
 
 	return ui

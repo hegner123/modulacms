@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -88,6 +89,17 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if newDatatype.DatatypeID.IsZero() {
+		newDatatype.DatatypeID = types.NewDatatypeID()
+	}
+	now := types.NewTimestamp(time.Now().UTC())
+	if !newDatatype.DateCreated.Valid {
+		newDatatype.DateCreated = now
+	}
+	if !newDatatype.DateModified.Valid {
+		newDatatype.DateModified = now
 	}
 
 	createdDatatype := d.CreateDatatype(newDatatype)

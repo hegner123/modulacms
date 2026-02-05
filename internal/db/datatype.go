@@ -24,6 +24,7 @@ type Datatypes struct {
 }
 
 type CreateDatatypeParams struct {
+	DatatypeID   types.DatatypeID        `json:"datatype_id"`
 	ParentID     types.NullableContentID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Type         string                  `json:"type"`
@@ -99,8 +100,12 @@ func (d Database) MapDatatype(a mdb.Datatypes) Datatypes {
 }
 
 func (d Database) MapCreateDatatypeParams(a CreateDatatypeParams) mdb.CreateDatatypeParams {
+	id := a.DatatypeID
+	if id.IsZero() {
+		id = types.NewDatatypeID()
+	}
 	return mdb.CreateDatatypeParams{
-		DatatypeID:   types.NewDatatypeID(),
+		DatatypeID:   id,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,
@@ -226,8 +231,12 @@ func (d MysqlDatabase) MapDatatype(a mdbm.Datatypes) Datatypes {
 }
 
 func (d MysqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbm.CreateDatatypeParams {
+	id := a.DatatypeID
+	if id.IsZero() {
+		id = types.NewDatatypeID()
+	}
 	return mdbm.CreateDatatypeParams{
-		DatatypeID: types.NewDatatypeID(),
+		DatatypeID: id,
 		ParentID:   a.ParentID,
 		Label:    a.Label,
 		Type:     a.Type,
@@ -353,8 +362,12 @@ func (d PsqlDatabase) MapDatatype(a mdbp.Datatypes) Datatypes {
 }
 
 func (d PsqlDatabase) MapCreateDatatypeParams(a CreateDatatypeParams) mdbp.CreateDatatypeParams {
+	id := a.DatatypeID
+	if id.IsZero() {
+		id = types.NewDatatypeID()
+	}
 	return mdbp.CreateDatatypeParams{
-		DatatypeID:   types.NewDatatypeID(),
+		DatatypeID:   id,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Type:         a.Type,

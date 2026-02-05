@@ -80,7 +80,7 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case TablesSet:
 		newModel := m
 		newModel.Tables = msg.Tables
-		return newModel, NewStateUpdate()
+		return newModel, tea.Batch(NewStateUpdate(), LoadingStopCmd())
 	case ColumnsSet:
 		newModel := m
 		newModel.TableState.Columns = msg.Columns
@@ -135,6 +135,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.DialogActive = msg.DialogActive
 		return newModel, NewStateUpdate()
+	case FormDialogSetMsg:
+		newModel := m
+		newModel.FormDialog = msg.Dialog
+		return newModel, NewStateUpdate()
+	case FormDialogActiveSetMsg:
+		newModel := m
+		newModel.FormDialogActive = msg.Active
+		return newModel, NewStateUpdate()
 	case DatatypeMenuSet:
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
@@ -150,6 +158,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case RootDatatypesSet:
 		newModel := m
 		newModel.RootDatatypes = msg.RootDatatypes
+		return newModel, NewStateUpdate()
+	case AllDatatypesSet:
+		newModel := m
+		newModel.AllDatatypes = msg.AllDatatypes
+		return newModel, NewStateUpdate()
+	case DatatypeFieldsSet:
+		newModel := m
+		newModel.SelectedDatatypeFields = msg.Fields
 		return newModel, NewStateUpdate()
 	case SelectedDatatypeSet:
 		newModel := m

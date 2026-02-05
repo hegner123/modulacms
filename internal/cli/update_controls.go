@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -45,7 +46,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case DELETEPAGE:
 		return m.TableNavigationControls(msg)
 	case DATATYPES:
-		return m.FormControls(msg)
+		return m.DatatypesControls(msg)
 	case DEVELOPMENT:
 		return DevelopmentInterface(m, msg)
 	case DATATYPE:
@@ -149,9 +150,7 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			case ROUTES:
 				return m, NavigateToPageCmd(m.PageMap[ROUTES])
 			case DATATYPES:
-				return m, tea.Batch(
-					CmsDefineDatatypeLoadCmd(),
-				)
+				return m, NavigateToPageCmd(m.PageMap[DATATYPES])
 			case FIELDS:
 				return m, tea.Batch()
 			case CONTENT:
@@ -202,6 +201,184 @@ func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 				m.PageRouteId = route.RouteID
 				return m, LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID))
 			}
+		}
+	}
+	return m, nil
+}
+
+// DatatypesControls handles keyboard navigation for the datatypes panel page.
+// Panel-specific controls:
+//   - TreePanel (left): Navigate datatypes list, 'n' creates new datatype
+//   - ContentPanel (center): Navigate fields list, 'n' creates new field
+//   - RoutePanel (right): Actions panel (info only)
+func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "q", "ctrl+c":
+			return m, tea.Quit
+		case "esc":
+			// Escape goes back to tree panel if not already there
+			if m.PanelFocus != tui.TreePanel {
+				m.PanelFocus = tui.TreePanel
+				return m, nil
+			}
+			return m, tea.Quit
+		case "tab":
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			// Reset field cursor when entering content panel
+			if m.PanelFocus == tui.ContentPanel {
+				m.FieldCursor = 0
+			}
+			return m, nil
+		case "shift+tab":
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			// Reset field cursor when entering content panel
+			if m.PanelFocus == tui.ContentPanel {
+				m.FieldCursor = 0
+			}
+			return m, nil
+		case "shift+left":
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		case "shift+right":
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		case "up", "k":
+			return m.datatypesControlsUp()
+		case "down", "j":
+			return m.datatypesControlsDown()
+		case "h", "left", "backspace":
+			// If in center or right panel, move left to tree panel
+			if m.PanelFocus != tui.TreePanel {
+				m.PanelFocus = tui.TreePanel
+				return m, nil
+			}
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		case "l", "right":
+			// Move right to next panel
+			if m.PanelFocus == tui.TreePanel {
+				m.PanelFocus = tui.ContentPanel
+				m.FieldCursor = 0
+				return m, nil
+			}
+			if m.PanelFocus == tui.ContentPanel {
+				m.PanelFocus = tui.RoutePanel
+				return m, nil
+			}
+		case "n":
+			return m.datatypesControlsNew()
+		case "e":
+			return m.datatypesControlsEdit()
+		case "enter":
+			return m.datatypesControlsSelect()
+		}
+	}
+	return m, nil
+}
+
+// datatypesControlsUp handles up navigation based on panel focus
+func (m Model) datatypesControlsUp() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Navigate datatypes list
+		if m.Cursor > 0 {
+			newCursor := m.Cursor - 1
+			if newCursor < len(m.AllDatatypes) {
+				dt := m.AllDatatypes[newCursor]
+				m.FieldCursor = 0 // Reset field cursor when changing datatype
+				return m, tea.Batch(CursorUpCmd(), DatatypeFieldsFetchCmd(dt.DatatypeID))
+			}
+			return m, CursorUpCmd()
+		}
+	case tui.ContentPanel:
+		// Navigate fields list
+		if m.FieldCursor > 0 {
+			m.FieldCursor--
+		}
+		return m, nil
+	}
+	return m, nil
+}
+
+// datatypesControlsDown handles down navigation based on panel focus
+func (m Model) datatypesControlsDown() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Navigate datatypes list
+		if m.Cursor < len(m.AllDatatypes)-1 {
+			newCursor := m.Cursor + 1
+			if newCursor < len(m.AllDatatypes) {
+				dt := m.AllDatatypes[newCursor]
+				m.FieldCursor = 0 // Reset field cursor when changing datatype
+				return m, tea.Batch(CursorDownCmd(), DatatypeFieldsFetchCmd(dt.DatatypeID))
+			}
+			return m, CursorDownCmd()
+		}
+	case tui.ContentPanel:
+		// Navigate fields list
+		maxFields := len(m.SelectedDatatypeFields)
+		if m.FieldCursor < maxFields-1 {
+			m.FieldCursor++
+		}
+		return m, nil
+	}
+	return m, nil
+}
+
+// datatypesControlsNew handles 'n' key based on panel focus
+func (m Model) datatypesControlsNew() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Create new datatype
+		return m, CmsDefineDatatypeLoadCmd()
+	case tui.ContentPanel:
+		// Create new field for the selected datatype
+		if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+			return m, ShowFieldFormDialogCmd(FORMDIALOGCREATEFIELD, "New Field")
+		}
+	}
+	return m, nil
+}
+
+// datatypesControlsEdit handles 'e' key based on panel focus
+func (m Model) datatypesControlsEdit() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Edit selected datatype
+		if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+			return m, CmsEditDatatypeLoadCmd(m.AllDatatypes[m.Cursor])
+		}
+	case tui.ContentPanel:
+		// Edit selected field
+		if len(m.SelectedDatatypeFields) > 0 && m.FieldCursor < len(m.SelectedDatatypeFields) {
+			field := m.SelectedDatatypeFields[m.FieldCursor]
+			return m, LogMessageCmd(fmt.Sprintf("Edit field: %s", field.Label))
+		}
+	}
+	return m, nil
+}
+
+// datatypesControlsSelect handles enter key based on panel focus
+func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Select datatype (move focus to fields)
+		if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+			dt := m.AllDatatypes[m.Cursor]
+			m.PanelFocus = tui.ContentPanel
+			m.FieldCursor = 0
+			return m, LogMessageCmd(fmt.Sprintf("Datatype selected: %s (%s)", dt.Label, dt.DatatypeID))
+		}
+	case tui.ContentPanel:
+		// Select field (show field details or edit)
+		if len(m.SelectedDatatypeFields) > 0 && m.FieldCursor < len(m.SelectedDatatypeFields) {
+			field := m.SelectedDatatypeFields[m.FieldCursor]
+			return m, LogMessageCmd(fmt.Sprintf("Field selected: %s [%s]", field.Label, field.Type))
 		}
 	}
 	return m, nil
@@ -292,6 +469,7 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 						m.SelectedDatatype = dt.DatatypeID
 						m.Cursor = 0
 						return m, tea.Batch(
+							LoadingStartCmd(),
 							SelectedDatatypeSetCmd(dt.DatatypeID),
 							RoutesByDatatypeFetchCmd(dt.DatatypeID),
 						)
@@ -303,6 +481,7 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 						m.PageRouteId = route.RouteID
 						m.Cursor = 0
 						return m, tea.Batch(
+							LoadingStartCmd(),
 							LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID)),
 							ReloadContentTreeCmd(m.Config, route.RouteID),
 						)
@@ -746,8 +925,8 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.Cursor > 0 {
 				m.Cursor--
 			}
-			cmd := FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, nil)
-			cmds = append(cmds, cmd)
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, nil))
 		default:
 			var scmd tea.Cmd
 			m.Spinner, scmd = m.Spinner.Update(msg)
@@ -781,12 +960,17 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 
 	// Handle form state changes
 	if m.FormState.Form.State == huh.StateAborted {
-		cmds = append(cmds, FormCancelCmd())
+		datatypesPage := m.PageMap[DATATYPES]
+		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
+		cmds = append(cmds, FormCompletedCmd(&datatypesPage))
 	}
 
 	if m.FormState.Form.State == huh.StateCompleted {
-		utility.DefaultLogger.Finfo("Tables Fetch ")
-		// TODO: Implement form completion handling with proper messages
+		datatypesPage := m.PageMap[DATATYPES]
+		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
+		cmds = append(cmds, LoadingStartCmd())
+		cmds = append(cmds, AllDatatypesFetchCmd())
+		cmds = append(cmds, FormCompletedCmd(&datatypesPage))
 	}
 
 	return m, tea.Batch(cmds...)
@@ -849,7 +1033,13 @@ func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			return m, tea.Batch(
 				LoadingStartCmd(),
-				RunActionCmd(m.Config, m.Cursor),
+				RunActionCmd(ActionParams{
+					Config:         m.Config,
+					UserID:         m.UserID,
+					SSHFingerprint: m.SSHFingerprint,
+					SSHKeyType:     m.SSHKeyType,
+					SSHPublicKey:   m.SSHPublicKey,
+				}, m.Cursor),
 			)
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -20,7 +21,51 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case BuildTreeFromRouteMsg:
 		return m, nil
 	case CmsDefineDatatypeLoadMsg:
-		return m, CmsBuildDefineDatatypeFormCmd()
+		// Show form dialog instead of navigating to separate page
+		return m, ShowFormDialogCmd(FORMDIALOGCREATEDATATYPE, "New Datatype", m.AllDatatypes)
+	case CreateDatatypeFromDialogRequestMsg:
+		return m, m.HandleCreateDatatypeFromDialog(msg)
+	case CreateFieldFromDialogRequestMsg:
+		return m, m.HandleCreateFieldFromDialog(msg)
+	case CmsEditDatatypeLoadMsg:
+		return m, CmsEditDatatypeFormCmd(msg.Datatype)
+	case DatatypeUpdateSaveMsg:
+		d := m.DB
+		datatypeID := msg.DatatypeID
+		parentStr := msg.Parent
+		label := msg.Label
+		dtType := msg.Type
+		return m, func() tea.Msg {
+			parentID := types.NullableContentID{}
+			if parentStr != "" {
+				parentID = types.NullableContentID{
+					ID:    types.ContentID(parentStr),
+					Valid: true,
+				}
+			}
+			params := db.UpdateDatatypeParams{
+				DatatypeID:   datatypeID,
+				ParentID:     parentID,
+				Label:        label,
+				Type:         dtType,
+				DateModified: types.TimestampNow(),
+			}
+			_, err := d.UpdateDatatype(params)
+			if err != nil {
+				return DatatypeUpdateFailedMsg{Error: err}
+			}
+			return DatatypeUpdatedMsg{DatatypeID: datatypeID, Label: label}
+		}
+	case DatatypeUpdatedMsg:
+		datatypesPage := m.PageMap[DATATYPES]
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			LogMessageCmd(fmt.Sprintf("Datatype updated: %s", msg.Label)),
+			AllDatatypesFetchCmd(),
+			FormCompletedCmd(&datatypesPage),
+		)
+	case DatatypeUpdateFailedMsg:
+		return m, LogMessageCmd(fmt.Sprintf("Datatype update failed: %v", msg.Error))
 	case CmsDefineDatatypeReadyMsg:
 		return m, nil
 	case BuildContentFormMsg:
@@ -80,12 +125,18 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Handle empty tree (route doesn't exist or has no content)
 		if msg.RootNode == nil {
 			newModel.Root = *NewTreeRoot()
-			return newModel, LogMessageCmd(fmt.Sprintf("No content tree found for route %s", msg.RouteID))
+			return newModel, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("No content tree found for route %s", msg.RouteID)),
+			)
 		}
 
 		newModel.Root = *msg.RootNode
-		return newModel, LogMessageCmd(fmt.Sprintf("Tree reloaded: %d nodes, %d orphans resolved",
-			msg.Stats.NodesCount, msg.Stats.OrphansResolved))
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Tree reloaded: %d nodes, %d orphans resolved",
+				msg.Stats.NodesCount, msg.Stats.OrphansResolved)),
+		)
 
 	default:
 		return m, nil

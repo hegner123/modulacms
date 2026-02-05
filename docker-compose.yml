@@ -1,0 +1,24 @@
+services:
+  modulacms:
+    build: .
+    container_name: modulacms
+    environment:
+      - TERM=xterm-256color
+      - CLICOLOR_FORCE=1
+    ports:
+      - "8080:8080"
+      - "4000:4000"
+      - "2233:2233"
+    volumes:
+      - ./config.dealer.json:/app/config.json:ro
+      - modulacms-data:/app/data
+      - modulacms-certs:/app/certs
+      - modulacms-ssh:/app/.ssh
+      - modulacms-backups:/app/backups
+    restart: unless-stopped
+
+volumes:
+  modulacms-data:
+  modulacms-certs:
+  modulacms-ssh:
+  modulacms-backups:

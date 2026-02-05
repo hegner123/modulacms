@@ -20,7 +20,7 @@ import (
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/router"
-	"github.com/hegner123/modulacms/internal/tui"
+	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/acme/autocert"
@@ -71,7 +71,7 @@ var serveCmd = &cobra.Command{
 			}
 		}
 
-		cfg, _, err := loadConfigAndDB()
+		cfg, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -105,7 +105,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				tui.TuiMiddleware(&verbose, cfg),
+				cli.CliMiddleware(&verbose, cfg, driver),
 				logging.Middleware(),
 			),
 		)
@@ -128,8 +128,11 @@ var serveCmd = &cobra.Command{
 
 		// Determine HTTP host based on environment
 		httpHost := cfg.Client_Site
-		if cfg.Environment == "local" {
+		switch cfg.Environment {
+		case "local":
 			httpHost = "localhost"
+		case "docker":
+			httpHost = "0.0.0.0"
 		}
 
 		// TLS config: use autocert for non-local, nil for local

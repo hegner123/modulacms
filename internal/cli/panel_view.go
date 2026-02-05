@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES:
 		return true
 	default:
 		return false
@@ -75,6 +75,10 @@ func renderCMSPanelLayout(m Model) string {
 		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
 	}
 
+	if m.FormDialogActive && m.FormDialog != nil {
+		return FormDialogOverlay(ui, *m.FormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 
@@ -120,6 +124,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = "Users"
 		center = "Select a user"
 		right = "Permissions"
+
+	case DATATYPES:
+		left = renderDatatypesList(m)
+		center = renderDatatypeDetail(m)
+		right = renderDatatypeActions(m)
 
 	default:
 		left = ""
@@ -379,6 +388,110 @@ func renderMediaInfo(m Model) string {
 		if m.MediaList[m.Cursor].Class.Valid && m.MediaList[m.Cursor].Class.String != "" {
 			lines = append(lines, fmt.Sprintf("  Class: %s", m.MediaList[m.Cursor].Class.String))
 		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderDatatypesList renders all datatypes for the left panel on the DATATYPES page.
+func renderDatatypesList(m Model) string {
+	if len(m.AllDatatypes) == 0 {
+		return "(no datatypes)"
+	}
+
+	lines := make([]string, 0, len(m.AllDatatypes))
+	for i, dt := range m.AllDatatypes {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		parent := ""
+		if dt.ParentID.Valid {
+			parent = fmt.Sprintf(" (child of %s)", dt.ParentID.ID)
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]%s", cursor, dt.Label, dt.Type, parent))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderDatatypeDetail renders the fields for the selected datatype in the center panel.
+// Shows cursor when ContentPanel has focus.
+func renderDatatypeDetail(m Model) string {
+	if len(m.AllDatatypes) == 0 || m.Cursor >= len(m.AllDatatypes) {
+		return "No datatype selected"
+	}
+
+	dt := m.AllDatatypes[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Fields for: %s", dt.Label),
+		"",
+	}
+
+	if len(m.SelectedDatatypeFields) == 0 {
+		// Show (empty) with cursor if focused
+		if m.PanelFocus == tui.ContentPanel {
+			lines = append(lines, " -> (empty)")
+		} else {
+			lines = append(lines, "    (empty)")
+		}
+		lines = append(lines, "")
+		lines = append(lines, "Press 'n' to add a field")
+	} else {
+		for i, field := range m.SelectedDatatypeFields {
+			cursor := "   "
+			if m.PanelFocus == tui.ContentPanel && m.FieldCursor == i {
+				cursor = " ->"
+			}
+			lines = append(lines, fmt.Sprintf("%s %d. %s [%s]", cursor, i+1, field.Label, field.Type))
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderDatatypeActions renders available actions for the right panel on DATATYPES page.
+// Shows context-sensitive hints based on which panel is focused.
+func renderDatatypeActions(m Model) string {
+	lines := []string{
+		"Actions",
+		"",
+	}
+
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		lines = append(lines,
+			"Datatypes Panel",
+			"",
+			"  n: New datatype",
+			"  e: Edit datatype",
+			"  d: Delete datatype",
+			"",
+			"  enter: Select",
+			"  tab: Switch panel",
+		)
+	case tui.ContentPanel:
+		lines = append(lines,
+			"Fields Panel",
+			"",
+			"  n: New field",
+			"  e: Edit field",
+			"  d: Delete field",
+			"",
+			"  esc/h: Back to datatypes",
+			"  tab: Switch panel",
+		)
+	default:
+		lines = append(lines,
+			"  n: New",
+			"  e: Edit",
+			"  d: Delete",
+		)
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("Datatypes: %d", len(m.AllDatatypes)))
+	if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+		lines = append(lines, fmt.Sprintf("Fields: %d", len(m.SelectedDatatypeFields)))
 	}
 
 	return strings.Join(lines, "\n")

@@ -86,6 +86,10 @@ func apiCreateDatatypeField(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
+	if newDatatypeField.ID == "" {
+		newDatatypeField.ID = string(types.NewDatatypeFieldID())
+	}
+
 	createdDatatypeField := d.CreateDatatypeField(newDatatypeField)
 
 	w.Header().Set("Content-Type", "application/json")

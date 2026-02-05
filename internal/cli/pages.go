@@ -88,6 +88,7 @@ func InitPages() *map[PageIndex]Page {
 	editContentPage := NewPage(EDITCONTENT, "Edit")
 	actionsPage := NewPage(ACTIONSPAGE, "Actions")
 	routesPage := NewPage(ROUTES, "Routes")
+	datatypePage := NewPage(DATATYPE, "Define Datatype")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -115,5 +116,6 @@ func InitPages() *map[PageIndex]Page {
 	p[EDITCONTENT] = editContentPage
 	p[ACTIONSPAGE] = actionsPage
 	p[ROUTES] = routesPage
+	p[DATATYPE] = datatypePage
 	return &p
 }

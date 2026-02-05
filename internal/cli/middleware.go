@@ -1,6 +1,9 @@
 package cli
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -9,6 +12,7 @@ import (
 	"github.com/charmbracelet/wish/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/muesli/termenv"
 )
 
@@ -38,13 +42,24 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver) wish.Middlewar
 		m.Height = pty.Window.Height
 		m.Time = time.Now()
 
+		// Always store SSH key info from the session
+		if s.PublicKey() != nil {
+			keyBytes := s.PublicKey().Marshal()
+			hash := sha256.Sum256(keyBytes)
+			m.SSHFingerprint = fmt.Sprintf("SHA256:%s", base64.StdEncoding.EncodeToString(hash[:]))
+			m.SSHKeyType = s.PublicKey().Type()
+			m.SSHPublicKey = base64.StdEncoding.EncodeToString(keyBytes)
+		}
+
 		// Check if user needs provisioning
 		ctx := s.Context()
 		if needsProvisioning, ok := ctx.Value("needs_provisioning").(bool); ok && needsProvisioning {
 			m.NeedsProvisioning = true
-			m.SSHFingerprint = ctx.Value("ssh_fingerprint").(string)
-			m.SSHKeyType = ctx.Value("ssh_key_type").(string)
-			m.SSHPublicKey = ctx.Value("ssh_public_key").(string)
+		}
+
+		// Extract authenticated user ID from SSH context
+		if userID, ok := ctx.Value("user_id").(types.UserID); ok {
+			m.UserID = userID
 		}
 
 		return newProg(&m, append(bubbletea.MakeOptions(s), tea.WithAltScreen())...)

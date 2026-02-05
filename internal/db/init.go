@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"sync"
 	"time"
 
@@ -108,9 +109,15 @@ func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	}
 	ctx := context.Background()
 
-	// Create connection string
-	connStr := fmt.Sprintf("postgres://%s:%s@%s/%s?sslmode=disable",
-		d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	// Create connection string (url.UserPassword escapes special chars in credentials)
+	connURL := url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(d.Config.Db_User, d.Config.Db_Password),
+		Host:     d.Config.Db_URL,
+		Path:     d.Config.Db_Name,
+		RawQuery: "sslmode=disable",
+	}
+	connStr := connURL.String()
 
 	// Hide password in logs
 	sanitizedConnStr := fmt.Sprintf("postgres://%s:****@%s/%s?sslmode=disable",

@@ -6,6 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -85,7 +86,10 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 				ColumnTypesSetCmd(&ct),
 			)
 	case DatatypesFetchMsg:
-		return m, DatabaseListCmd(DATATYPEMENU, db.Datatype)
+		return m, tea.Batch(
+			LoadingStartCmd(),
+			DatabaseListCmd(DATATYPEMENU, db.Datatype),
+		)
 
 	case DatatypesFetchResultsMsg:
 		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
@@ -98,6 +102,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		return m, tea.Batch(
+			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintln(datatypeMenuLabels)),
 			DatatypeMenuSetCmd(datatypeMenuLabels),
 			PageMenuSetCmd(newMenu),
@@ -125,7 +130,10 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case RoutesFetchResultsMsg:
-		return m, RoutesSetCmd(msg.Data)
+		return m, tea.Batch(
+			RoutesSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
 
 	case RootDatatypesFetchMsg:
 		d := m.DB
@@ -141,7 +149,64 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case RootDatatypesFetchResultsMsg:
-		return m, RootDatatypesSetCmd(msg.Data)
+		return m, tea.Batch(
+			RootDatatypesSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
+
+	case AllDatatypesFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			datatypes, err := d.ListDatatypes()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if datatypes == nil {
+				return AllDatatypesFetchResultsMsg{Data: []db.Datatypes{}}
+			}
+			return AllDatatypesFetchResultsMsg{Data: *datatypes}
+		}
+
+	case AllDatatypesFetchResultsMsg:
+		cmds := []tea.Cmd{
+			AllDatatypesSetCmd(msg.Data),
+			LoadingStopCmd(),
+		}
+		// Fetch fields for the first datatype (cursor position 0)
+		if len(msg.Data) > 0 {
+			cmds = append(cmds, DatatypeFieldsFetchCmd(msg.Data[0].DatatypeID))
+		}
+		return m, tea.Batch(cmds...)
+
+	case DatatypeFieldsFetchMsg:
+		d := m.DB
+		datatypeID := msg.DatatypeID
+		return m, func() tea.Msg {
+			// Get field IDs from the join table
+			dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+			dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if dtFields == nil || len(*dtFields) == 0 {
+				return DatatypeFieldsFetchResultsMsg{Fields: []db.Fields{}}
+			}
+
+			// Fetch actual field details for each field ID
+			var fields []db.Fields
+			for _, dtf := range *dtFields {
+				if dtf.FieldID.Valid {
+					field, err := d.GetField(dtf.FieldID.ID)
+					if err == nil && field != nil {
+						fields = append(fields, *field)
+					}
+				}
+			}
+			return DatatypeFieldsFetchResultsMsg{Fields: fields}
+		}
+
+	case DatatypeFieldsFetchResultsMsg:
+		return m, DatatypeFieldsSetCmd(msg.Fields)
 
 	case RoutesByDatatypeFetchMsg:
 		d := m.DB
@@ -171,7 +236,10 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 	case MediaFetchResultsMsg:
-		return m, MediaListSetCmd(msg.Data)
+		return m, tea.Batch(
+			MediaListSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
 
 	case FetchErrMsg:
 		// Handle an error from data fetching.

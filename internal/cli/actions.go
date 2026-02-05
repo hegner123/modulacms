@@ -4,14 +4,26 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/update"
 	"github.com/hegner123/modulacms/internal/utility"
 )
+
+// ActionParams groups the context needed by action commands.
+type ActionParams struct {
+	Config         *config.Config
+	UserID         types.UserID
+	SSHFingerprint string
+	SSHKeyType     string
+	SSHPublicKey   string
+}
 
 // ActionItem describes a single action available on the Actions page.
 type ActionItem struct {
@@ -32,6 +44,8 @@ func ActionsMenu() []ActionItem {
 		{Label: "Generate Certs", Description: "Generate self-signed SSL certificates"},
 		{Label: "Check for Updates", Description: "Check for and apply updates"},
 		{Label: "Validate Config", Description: "Validate the configuration file"},
+		{Label: "Generate API Token", Description: "Create a new API token for the current user"},
+		{Label: "Register SSH Key", Description: "Create a new user and register the current SSH key"},
 	}
 }
 
@@ -64,31 +78,35 @@ type ActionConfirmedMsg struct {
 
 // --- Action execution commands ---
 
-func RunActionCmd(cfg *config.Config, actionIndex int) tea.Cmd {
+func RunActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	switch actionIndex {
 	case 0:
-		return runDBInit(cfg)
+		return runDBInit(p.Config)
 	case 4:
-		return runDBExport(cfg)
+		return runDBExport(p.Config)
 	case 5:
-		return runGenerateCerts(cfg)
+		return runGenerateCerts(p.Config)
 	case 6:
 		return runCheckForUpdates()
 	case 7:
-		return runValidateConfig(cfg)
+		return runValidateConfig(p.Config)
+	case 8:
+		return runGenerateAPIToken(p.Config, p.UserID)
+	case 9:
+		return runRegisterSSHKey(p)
 	default:
 		return nil
 	}
 }
 
-func RunDestructiveActionCmd(cfg *config.Config, actionIndex int) tea.Cmd {
+func RunDestructiveActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	switch actionIndex {
 	case 1:
-		return runDBWipe(cfg)
+		return runDBWipe(p.Config)
 	case 2:
-		return runDBWipeRedeploy(cfg)
+		return runDBWipeRedeploy(p.Config)
 	case 3:
-		return runDBReset(cfg)
+		return runDBReset(p.Config)
 	default:
 		return nil
 	}
@@ -312,6 +330,205 @@ func runValidateConfig(cfg *config.Config) tea.Cmd {
 		return ActionResultMsg{
 			Title:   "Validation Passed",
 			Message: "Configuration is valid.",
+		}
+	}
+}
+
+func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
+	return func() tea.Msg {
+		driver := db.ConfigDB(*cfg)
+
+		// Use authenticated user if available, otherwise fall back to first system_admin
+		ownerID := userID
+		if ownerID.IsZero() {
+			roles, err := driver.ListRoles()
+			if err != nil {
+				return ActionResultMsg{
+					Title:   "Token Generation Failed",
+					Message: fmt.Sprintf("Failed to list roles:\n%s", err),
+					IsError: true,
+				}
+			}
+			var adminRoleID string
+			for _, r := range *roles {
+				if r.Label == "system_admin" {
+					adminRoleID = string(r.RoleID)
+					break
+				}
+			}
+			if adminRoleID == "" {
+				return ActionResultMsg{
+					Title:   "Token Generation Failed",
+					Message: "No system_admin role found. Run DB Init first.",
+					IsError: true,
+				}
+			}
+
+			users, err := driver.ListUsers()
+			if err != nil {
+				return ActionResultMsg{
+					Title:   "Token Generation Failed",
+					Message: fmt.Sprintf("Failed to list users:\n%s", err),
+					IsError: true,
+				}
+			}
+			for _, u := range *users {
+				if u.Role == adminRoleID {
+					ownerID = u.UserID
+					break
+				}
+			}
+			if ownerID.IsZero() {
+				return ActionResultMsg{
+					Title:   "Token Generation Failed",
+					Message: "No system_admin user found. Create one first.",
+					IsError: true,
+				}
+			}
+		}
+
+		token, err := utility.MakeRandomString()
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Token Generation Failed",
+				Message: fmt.Sprintf("Failed to generate token:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		now := time.Now().UTC()
+		expiry := now.AddDate(0, 0, 90)
+
+		driver.CreateToken(db.CreateTokenParams{
+			UserID:    types.NullableUserID{ID: ownerID, Valid: true},
+			TokenType: "api_key",
+			Token:     token,
+			IssuedAt:  now.Format(time.RFC3339),
+			ExpiresAt: types.NewTimestamp(expiry),
+			Revoked:   false,
+		})
+
+		return ActionResultMsg{
+			Title:   "API Token Generated",
+			Message: fmt.Sprintf("Token: %s\n\nExpires: %s\n\nUse as: Authorization: Bearer <token>\n\nCopy this token now — it cannot be shown again.", token, expiry.Format(time.RFC3339)),
+		}
+	}
+}
+
+func runRegisterSSHKey(p ActionParams) tea.Cmd {
+	return func() tea.Msg {
+		if p.SSHFingerprint == "" {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: "No SSH key detected. Connect via SSH with a public key.",
+				IsError: true,
+			}
+		}
+
+		driver := db.ConfigDB(*p.Config)
+
+		// Check if key is already registered
+		existing, err := driver.GetUserSshKeyByFingerprint(p.SSHFingerprint)
+		if err == nil && existing != nil {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: fmt.Sprintf("This SSH key is already registered.\n\nFingerprint: %s\nKey ID: %s", p.SSHFingerprint, existing.SshKeyID),
+				IsError: true,
+			}
+		}
+
+		// Generate a random password and hash it (user authenticates via SSH key)
+		tempPassword, err := utility.MakeRandomString()
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: fmt.Sprintf("Failed to generate credentials:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		hash, err := auth.HashPassword(tempPassword)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: fmt.Sprintf("Failed to hash password:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		now := time.Now().UTC()
+		ts := types.NewTimestamp(now)
+
+		// Look up the system_admin role by label
+		roles, err := driver.ListRoles()
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: fmt.Sprintf("Failed to list roles:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		var roleID string
+		for _, r := range *roles {
+			if r.Label == "system_admin" {
+				roleID = string(r.RoleID)
+				break
+			}
+		}
+		if roleID == "" {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: "No system_admin role found. Run DB Init first.",
+				IsError: true,
+			}
+		}
+
+		// Derive a short username from the fingerprint
+		shortFP := p.SSHFingerprint
+		if len(shortFP) > 15 {
+			shortFP = shortFP[7:15] // Skip "SHA256:" prefix, take 8 chars
+		}
+		username := fmt.Sprintf("user-%s", shortFP)
+
+		user, err := driver.CreateUser(db.CreateUserParams{
+			Username:     username,
+			Name:         "SSH User",
+			Email:        types.Email(fmt.Sprintf("%s@modulacms.local", username)),
+			Hash:         hash,
+			Role:         roleID,
+			DateCreated:  ts,
+			DateModified: ts,
+		})
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Registration Failed",
+				Message: fmt.Sprintf("Failed to create user:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		// Register the SSH key to the new user
+		_, err = driver.CreateUserSshKey(db.CreateUserSshKeyParams{
+			UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
+			PublicKey:   p.SSHPublicKey,
+			KeyType:     p.SSHKeyType,
+			Fingerprint: p.SSHFingerprint,
+			Label:       "Registered via TUI",
+			DateCreated: ts,
+		})
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Registration Partial",
+				Message: fmt.Sprintf("User created (%s) but SSH key registration failed:\n%s\n\nRegister the key manually.", username, err),
+				IsError: true,
+			}
+		}
+
+		return ActionResultMsg{
+			Title: "SSH Key Registered",
+			Message: fmt.Sprintf("New user created and SSH key registered.\n\nUsername: %s\nUser ID: %s\nKey Type: %s\nFingerprint: %s\n\nReconnect via SSH to use the new account.",
+				username, user.UserID, p.SSHKeyType, p.SSHFingerprint),
 		}
 	}
 }

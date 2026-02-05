@@ -42,7 +42,13 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		form, count, values := NewDefineDatatypeForm(m, false)
 		return m, tea.Batch(
 			SetFormDataCmd(*form, count, values, nil),
-			NavigateToPageCmd(m.PageMap[DATATYPES]),
+			NavigateToPageCmd(m.PageMap[DATATYPE]),
+		)
+	case CmsEditDatatypeFormMsg:
+		form, count, values := NewEditDatatypeForm(m, msg.Datatype)
+		return m, tea.Batch(
+			SetFormDataCmd(*form, count, values, nil),
+			NavigateToPageCmd(m.PageMap[DATATYPE]),
 		)
 	case FormSubmitMsg:
 		newModel := m
@@ -65,6 +71,7 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			}
 			return m, tea.Batch(
+				LoadingStartCmd(),
 				DatabaseInsertCmd(db.DBTable(msg.Table), filteredColumns, filteredValues),
 				LogMessageCmd(fmt.Sprintln(filteredColumns)),
 				LogMessageCmd(fmt.Sprintln(filteredValues)),
@@ -86,7 +93,10 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		fo[msg.Form] = newOptionsSet
 		return newModel, NewUpdatedForm()
 	case DbResMsg:
-		return m, LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table))
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Database operation completed for table %s", msg.Table)),
+		)
 	}
 
 	return m, nil

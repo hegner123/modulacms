@@ -20,6 +20,7 @@ type DatatypeFields struct {
 }
 
 type CreateDatatypeFieldParams struct {
+	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
 }
@@ -59,8 +60,12 @@ func (d Database) MapDatatypeField(a mdb.DatatypesFields) DatatypeFields {
 }
 
 func (d Database) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdb.CreateDatatypeFieldParams {
+	id := a.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
 	return mdb.CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
+		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -178,8 +183,12 @@ func (d MysqlDatabase) MapDatatypeField(a mdbm.DatatypesFields) DatatypeFields {
 }
 
 func (d MysqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbm.CreateDatatypeFieldParams {
+	id := a.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
 	return mdbm.CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
+		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}
@@ -301,8 +310,12 @@ func (d PsqlDatabase) MapDatatypeField(a mdbp.DatatypesFields) DatatypeFields {
 }
 
 func (d PsqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdbp.CreateDatatypeFieldParams {
+	id := a.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
 	return mdbp.CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
+		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
 	}

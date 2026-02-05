@@ -95,6 +95,81 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 	return form, len(values), values
 }
 
+func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
+	values := make([]*string, 8)
+
+	var (
+		parent   string
+		label    = dt.Label
+		datatype = dt.Type
+	)
+	if dt.ParentID.Valid {
+		parent = dt.ParentID.ID.String()
+	}
+
+	groupDescription := "Edit datatype"
+	typeDescription := "Optional - ROOT is reserved for root content types.\n"
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewSelect[string]().
+				Title("Parent").
+				OptionsFunc(func() []huh.Option[string] {
+					options := make([]huh.Option[string], 0)
+					dbc := db.ConfigDB(*m.Config)
+					rows, err := dbc.ListDatatypes()
+					if err != nil {
+						return options
+					}
+					blankOption := huh.Option[string]{
+						Key:   "ROOT",
+						Value: "",
+					}
+					options = append(options, blankOption)
+					for _, v := range *rows {
+						option := huh.Option[string]{
+							Key:   v.Label,
+							Value: fmt.Sprint(v.DatatypeID),
+						}
+						options = append(options, option)
+					}
+					return options
+				}, nil).
+				Value(&parent),
+			huh.NewInput().
+				Title("Label").
+				Description("Display name for this content type").
+				Value(&label),
+			huh.NewInput().
+				Title("Type").
+				Description(typeDescription).
+				Value(&datatype),
+		).Description(groupDescription),
+	)
+	values[1] = &parent
+	values[2] = &label
+	values[3] = &datatype
+	form.Init()
+
+	datatypeID := dt.DatatypeID
+	form.SubmitCmd = tea.Batch(
+		LogMessageCmd(fmt.Sprintf("Edit datatype SubmitCmd triggered for %s", datatypeID)),
+		func() tea.Msg {
+			return DatatypeUpdateSaveMsg{
+				DatatypeID: datatypeID,
+				Parent:     *values[1],
+				Label:      *values[2],
+				Type:       *values[3],
+			}
+		},
+		FocusSetCmd(PAGEFOCUS),
+		func() tea.Msg {
+			return tea.ResumeMsg{}
+		},
+	)
+
+	return form, len(values), values
+}
+
 // Field Form for adding fields to a Datatype
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {

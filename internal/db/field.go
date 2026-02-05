@@ -24,6 +24,7 @@ type Fields struct {
 	DateModified types.Timestamp         `json:"date_modified"`
 }
 type CreateFieldParams struct {
+	FieldID      types.FieldID           `json:"field_id"`
 	ParentID     types.NullableContentID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
@@ -103,8 +104,12 @@ func (d Database) MapField(a mdb.Fields) Fields {
 }
 
 func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParams {
+	id := a.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
 	return mdb.CreateFieldParams{
-		FieldID:      types.NewFieldID(),
+		FieldID:      id,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -233,8 +238,12 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 }
 
 func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFieldParams {
+	id := a.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
 	return mdbm.CreateFieldParams{
-		FieldID:      types.NewFieldID(),
+		FieldID:      id,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -361,8 +370,12 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 }
 
 func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateFieldParams {
+	id := a.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
 	return mdbp.CreateFieldParams{
-		FieldID:      types.NewFieldID(),
+		FieldID:      id,
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,

@@ -68,6 +68,7 @@ certs/
 *.pem
 config.json
 *config.json
+config.*.json
 bookmark.md
 test.png
 test-*.png

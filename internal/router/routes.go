@@ -3,6 +3,7 @@ package router
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -87,6 +88,17 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if newRoute.RouteID.IsZero() {
+		newRoute.RouteID = types.NewRouteID()
+	}
+	now := types.NewTimestamp(time.Now().UTC())
+	if !newRoute.DateCreated.Valid {
+		newRoute.DateCreated = now
+	}
+	if !newRoute.DateModified.Valid {
+		newRoute.DateModified = now
 	}
 
 	createdRoute := d.CreateRoute(newRoute)

@@ -3,6 +3,7 @@ package router
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -87,6 +88,17 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if newField.FieldID.IsZero() {
+		newField.FieldID = types.NewFieldID()
+	}
+	now := types.NewTimestamp(time.Now().UTC())
+	if !newField.DateCreated.Valid {
+		newField.DateCreated = now
+	}
+	if !newField.DateModified.Valid {
+		newField.DateModified = now
 	}
 
 	createdField := d.CreateField(newField)

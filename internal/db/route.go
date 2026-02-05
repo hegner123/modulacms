@@ -23,6 +23,7 @@ type Routes struct {
 }
 
 type CreateRouteParams struct {
+	RouteID      types.RouteID        `json:"route_id"`
 	Slug         types.Slug           `json:"slug"`
 	Title        string               `json:"title"`
 	Status       int64                `json:"status"`
@@ -77,8 +78,12 @@ func (d Database) MapRoute(a mdb.Routes) Routes {
 }
 
 func (d Database) MapCreateRouteParams(a CreateRouteParams) mdb.CreateRouteParams {
+	id := a.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
 	return mdb.CreateRouteParams{
-		RouteID:      types.NewRouteID(),
+		RouteID:      id,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
@@ -212,8 +217,12 @@ func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
 }
 
 func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRouteParams {
+	id := a.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
 	return mdbm.CreateRouteParams{
-		RouteID:      types.NewRouteID(),
+		RouteID:      id,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
@@ -351,8 +360,12 @@ func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
 }
 
 func (d PsqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbp.CreateRouteParams {
+	id := a.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
 	return mdbp.CreateRouteParams{
-		RouteID:      types.NewRouteID(),
+		RouteID:      id,
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),

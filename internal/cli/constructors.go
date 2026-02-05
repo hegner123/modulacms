@@ -385,6 +385,12 @@ func CmsBuildDefineDatatypeFormCmd() tea.Cmd {
 		return CmsBuildDefineDatatypeFormMsg{}
 	}
 }
+func CmsEditDatatypeLoadCmd(dt db.Datatypes) tea.Cmd {
+	return func() tea.Msg { return CmsEditDatatypeLoadMsg{Datatype: dt} }
+}
+func CmsEditDatatypeFormCmd(dt db.Datatypes) tea.Cmd {
+	return func() tea.Msg { return CmsEditDatatypeFormMsg{Datatype: dt} }
+}
 func CmsDefineDatatypeFormCmd() tea.Cmd {
 	return func() tea.Msg {
 		return CmsDefineDatatypeFormMsg{}
@@ -445,6 +451,22 @@ func RootDatatypesFetchCmd() tea.Cmd {
 }
 func RootDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
 	return func() tea.Msg { return RootDatatypesSet{RootDatatypes: datatypes} }
+}
+
+// All datatypes constructors
+func AllDatatypesFetchCmd() tea.Cmd {
+	return func() tea.Msg { return AllDatatypesFetchMsg{} }
+}
+func AllDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
+	return func() tea.Msg { return AllDatatypesSet{AllDatatypes: datatypes} }
+}
+
+// Datatype fields constructors
+func DatatypeFieldsFetchCmd(datatypeID types.DatatypeID) tea.Cmd {
+	return func() tea.Msg { return DatatypeFieldsFetchMsg{DatatypeID: datatypeID} }
+}
+func DatatypeFieldsSetCmd(fields []db.Fields) tea.Cmd {
+	return func() tea.Msg { return DatatypeFieldsSet{Fields: fields} }
 }
 
 // Routes by datatype constructors
