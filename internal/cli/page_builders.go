@@ -12,6 +12,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tree"
+	"github.com/hegner123/modulacms/internal/tui"
 )
 
 type PageUI interface {
@@ -547,66 +548,25 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 }
 
 func (c CMSPage) ProcessFields(model Model) string {
-	node := model.Root.NodeAtIndex(model.Cursor)
-	if node == nil || node.Instance == nil {
-		return "No content selected"
-	}
-
-	// Fetch content fields from database
-	if model.DB == nil {
-		return "Database not connected"
-	}
-
-	contentDataID := types.NullableContentID{
-		ID:    node.Instance.ContentDataID,
-		Valid: true,
-	}
-	contentFields, err := model.DB.ListContentFieldsByContentData(contentDataID)
-	if err != nil {
-		return fmt.Sprintf("Error loading fields: %v", err)
-	}
-
-	if contentFields == nil || len(*contentFields) == 0 {
-		return "No fields for this content"
-	}
-
-	// Fetch field definitions for labels
-	var fieldDefs []db.Fields
-	if node.Instance.DatatypeID.Valid {
-		dtFields, err := model.DB.ListDatatypeFieldByDatatypeID(node.Instance.DatatypeID)
-		if err == nil && dtFields != nil {
-			for _, dtf := range *dtFields {
-				if dtf.FieldID.Valid {
-					field, err := model.DB.GetField(dtf.FieldID.ID)
-					if err == nil && field != nil {
-						fieldDefs = append(fieldDefs, *field)
-					}
-				}
-			}
-		}
+	if len(model.SelectedContentFields) == 0 {
+		return "No fields"
 	}
 
 	fields := []string{}
-	for _, cf := range *contentFields {
-		// Find field label from definitions
-		var fieldLabel string
-		for _, f := range fieldDefs {
-			if cf.FieldID.Valid && f.FieldID == cf.FieldID.ID {
-				fieldLabel = f.Label
-				break
-			}
-		}
-		if fieldLabel == "" {
-			fieldLabel = fmt.Sprintf("Field %s", cf.FieldID)
+	for i, cf := range model.SelectedContentFields {
+		cursor := "   "
+		if model.PanelFocus == tui.RoutePanel && model.FieldCursor == i {
+			cursor = " > "
 		}
 
-		// Truncate long values
-		value := cf.FieldValue
-		if len(value) > 40 {
+		value := cf.Value
+		if value == "" {
+			value = "(empty)"
+		} else if len(value) > 40 {
 			value = value[:37] + "..."
 		}
 
-		fields = append(fields, fmt.Sprintf("%s: %s", fieldLabel, value))
+		fields = append(fields, fmt.Sprintf("%s%s: %s", cursor, cf.Label, value))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, fields...)

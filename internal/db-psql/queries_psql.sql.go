@@ -1348,24 +1348,37 @@ const createDatatypeField = `-- name: CreateDatatypeField :one
 INSERT INTO datatypes_fields (
     id,
     datatype_id,
-    field_id
+    field_id,
+    sort_order
 ) VALUES (
     $1,
     $2,
-    $3
-) RETURNING id, datatype_id, field_id
+    $3,
+    $4
+) RETURNING id, datatype_id, field_id, sort_order
 `
 
 type CreateDatatypeFieldParams struct {
 	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int32                    `json:"sort_order"`
 }
 
 func (q *Queries) CreateDatatypeField(ctx context.Context, arg CreateDatatypeFieldParams) (DatatypesFields, error) {
-	row := q.db.QueryRowContext(ctx, createDatatypeField, arg.ID, arg.DatatypeID, arg.FieldID)
+	row := q.db.QueryRowContext(ctx, createDatatypeField,
+		arg.ID,
+		arg.DatatypeID,
+		arg.FieldID,
+		arg.SortOrder,
+	)
 	var i DatatypesFields
-	err := row.Scan(&i.ID, &i.DatatypeID, &i.FieldID)
+	err := row.Scan(
+		&i.ID,
+		&i.DatatypeID,
+		&i.FieldID,
+		&i.SortOrder,
+	)
 	return i, err
 }
 
@@ -1402,7 +1415,8 @@ CREATE TABLE IF NOT EXISTS datatypes_fields (
     field_id TEXT NOT NULL
         CONSTRAINT fk_df_field
             REFERENCES fields
-            ON UPDATE CASCADE ON DELETE CASCADE
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0
 )
 `
 
@@ -3899,6 +3913,23 @@ func (q *Queries) GetLatestVerification(ctx context.Context, arg GetLatestVerifi
 	return i, err
 }
 
+const getMaxSortOrderByDatatypeID = `-- name: GetMaxSortOrderByDatatypeID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM datatypes_fields
+WHERE datatype_id = $1
+`
+
+type GetMaxSortOrderByDatatypeIDParams struct {
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) GetMaxSortOrderByDatatypeID(ctx context.Context, arg GetMaxSortOrderByDatatypeIDParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxSortOrderByDatatypeID, arg.DatatypeID)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 WHERE media_id = $1 LIMIT 1
@@ -5938,8 +5969,8 @@ func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChil
 }
 
 const listDatatypeField = `-- name: ListDatatypeField :many
-SELECT id, datatype_id, field_id FROM datatypes_fields
-ORDER BY id
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
+ORDER BY sort_order, id
 `
 
 func (q *Queries) ListDatatypeField(ctx context.Context) ([]DatatypesFields, error) {
@@ -5951,7 +5982,12 @@ func (q *Queries) ListDatatypeField(ctx context.Context) ([]DatatypesFields, err
 	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
-		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -5966,9 +6002,9 @@ func (q *Queries) ListDatatypeField(ctx context.Context) ([]DatatypesFields, err
 }
 
 const listDatatypeFieldByDatatypeID = `-- name: ListDatatypeFieldByDatatypeID :many
-SELECT id, datatype_id, field_id FROM datatypes_fields
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
 WHERE datatype_id = $1
-ORDER BY id
+ORDER BY sort_order, id
 `
 
 type ListDatatypeFieldByDatatypeIDParams struct {
@@ -5984,7 +6020,12 @@ func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, arg ListDat
 	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
-		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -5999,9 +6040,9 @@ func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, arg ListDat
 }
 
 const listDatatypeFieldByFieldID = `-- name: ListDatatypeFieldByFieldID :many
-SELECT id, datatype_id, field_id FROM datatypes_fields
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
 WHERE field_id = $1
-ORDER BY id
+ORDER BY sort_order, id
 `
 
 type ListDatatypeFieldByFieldIDParams struct {
@@ -6017,7 +6058,12 @@ func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, arg ListDataty
 	items := []DatatypesFields{}
 	for rows.Next() {
 		var i DatatypesFields
-		if err := rows.Scan(&i.ID, &i.DatatypeID, &i.FieldID); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -7261,18 +7307,41 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 const updateDatatypeField = `-- name: UpdateDatatypeField :exec
 UPDATE datatypes_fields SET
     datatype_id = $1,
-    field_id = $2
-WHERE id = $3
+    field_id = $2,
+    sort_order = $3
+WHERE id = $4
 `
 
 type UpdateDatatypeFieldParams struct {
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int32                    `json:"sort_order"`
 	ID         string                   `json:"id"`
 }
 
 func (q *Queries) UpdateDatatypeField(ctx context.Context, arg UpdateDatatypeFieldParams) error {
-	_, err := q.db.ExecContext(ctx, updateDatatypeField, arg.DatatypeID, arg.FieldID, arg.ID)
+	_, err := q.db.ExecContext(ctx, updateDatatypeField,
+		arg.DatatypeID,
+		arg.FieldID,
+		arg.SortOrder,
+		arg.ID,
+	)
+	return err
+}
+
+const updateDatatypeFieldSortOrder = `-- name: UpdateDatatypeFieldSortOrder :exec
+UPDATE datatypes_fields
+SET sort_order = $1
+WHERE id = $2
+`
+
+type UpdateDatatypeFieldSortOrderParams struct {
+	SortOrder int32  `json:"sort_order"`
+	ID        string `json:"id"`
+}
+
+func (q *Queries) UpdateDatatypeFieldSortOrder(ctx context.Context, arg UpdateDatatypeFieldSortOrderParams) error {
+	_, err := q.db.ExecContext(ctx, updateDatatypeFieldSortOrder, arg.SortOrder, arg.ID)
 	return err
 }
 

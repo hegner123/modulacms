@@ -656,3 +656,15 @@ func (page *Root) flattenVisibleRecursive(node *Node, result *[]*Node) {
 		page.flattenVisibleRecursive(node.NextSibling, result)
 	}
 }
+
+// FindVisibleIndex returns the visible index of the node with the given
+// content ID, or -1 if the node is not currently visible.
+func (page *Root) FindVisibleIndex(contentID types.ContentID) int {
+	visible := page.FlattenVisible()
+	for i, n := range visible {
+		if n.Instance != nil && n.Instance.ContentDataID == contentID {
+			return i
+		}
+	}
+	return -1
+}

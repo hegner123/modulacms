@@ -473,10 +473,16 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		// Panel focus cycling
 		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
+			if m.PanelFocus == tui.RoutePanel {
+				m.FieldCursor = 0
+			}
 			return m, nil
 		}
 		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
+			if m.PanelFocus == tui.RoutePanel {
+				m.FieldCursor = 0
+			}
 			return m, nil
 		}
 
@@ -508,9 +514,15 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				if m.Cursor > 0 {
 					return m, CursorUpCmd()
 				}
+			} else if m.PanelFocus == tui.RoutePanel {
+				// Navigate fields in right panel
+				if m.FieldCursor > 0 {
+					m.FieldCursor--
+				}
+				return m, nil
 			} else {
 				if m.Cursor > 0 {
-					return m, CursorUpCmd()
+					return m, contentBrowserCursorUpCmd(m)
 				}
 			}
 		}
@@ -519,10 +531,16 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				if m.Cursor < len(m.RootContentSummary)-1 {
 					return m, CursorDownCmd()
 				}
+			} else if m.PanelFocus == tui.RoutePanel {
+				// Navigate fields in right panel
+				if m.FieldCursor < len(m.SelectedContentFields)-1 {
+					m.FieldCursor++
+				}
+				return m, nil
 			} else {
 				maxCursor := m.Root.CountVisible()
 				if m.Cursor < maxCursor-1 {
-					return m, CursorDownCmd()
+					return m, contentBrowserCursorDownCmd(m)
 				}
 			}
 		}
@@ -575,6 +593,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		// Actions
 		if km.Matches(key, config.ActionEdit) {
 			if !m.PageRouteId.IsZero() {
+				if m.PanelFocus == tui.RoutePanel {
+					return m.contentFieldEdit()
+				}
 				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil {
 					m.Logger.Finfo(fmt.Sprintf("'e' key pressed, editing node %s with datatype %s", node.Instance.ContentDataID, node.Datatype.Label))
@@ -599,6 +620,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 					return m, ShowCreateRouteWithContentDialogCmd(string(m.RootDatatypes[0].DatatypeID))
 				}
 			} else {
+				if m.PanelFocus == tui.RoutePanel {
+					return m.contentFieldAdd()
+				}
 				node := m.Root.NodeAtIndex(m.Cursor)
 				m.Logger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
 				if node != nil {
@@ -611,6 +635,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		if km.Matches(key, config.ActionDelete) {
 			if !m.PageRouteId.IsZero() {
+				if m.PanelFocus == tui.RoutePanel {
+					return m.contentFieldDelete()
+				}
 				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil {
 					contentName := DecideNodeName(*node)
@@ -657,6 +684,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		if km.Matches(key, config.ActionReorderUp) {
 			if !m.PageRouteId.IsZero() {
+				if m.PanelFocus == tui.RoutePanel {
+					return m.contentFieldReorderUp()
+				}
 				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil && node.PrevSibling != nil {
 					return m, tea.Batch(LoadingStartCmd(), ReorderSiblingCmd(node.Instance.ContentDataID, m.PageRouteId, "up"))
@@ -665,6 +695,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		if km.Matches(key, config.ActionReorderDown) {
 			if !m.PageRouteId.IsZero() {
+				if m.PanelFocus == tui.RoutePanel {
+					return m.contentFieldReorderDown()
+				}
 				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil && node.NextSibling != nil {
 					return m, tea.Batch(LoadingStartCmd(), ReorderSiblingCmd(node.Instance.ContentDataID, m.PageRouteId, "down"))
@@ -696,6 +729,34 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 
+		// Navigate to parent
+		if km.Matches(key, config.ActionGoParent) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Parent != nil && node.Parent.Instance != nil {
+					idx := m.Root.FindVisibleIndex(node.Parent.Instance.ContentDataID)
+					if idx >= 0 {
+						m.Cursor = idx
+						return m, nil
+					}
+				}
+			}
+		}
+		// Navigate to first child
+		if km.Matches(key, config.ActionGoChild) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.FirstChild != nil {
+					node.Expand = true
+					idx := m.Root.FindVisibleIndex(node.FirstChild.Instance.ContentDataID)
+					if idx >= 0 {
+						m.Cursor = idx
+						return m, nil
+					}
+				}
+			}
+		}
+
 		// Title font change
 		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
@@ -709,6 +770,141 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		}
 	}
 	return m, nil
+}
+
+// contentBrowserCursorUpCmd returns CursorUpCmd + LoadContentFieldsCmd for the node at cursor-1.
+func contentBrowserCursorUpCmd(m Model) tea.Cmd {
+	newCursor := m.Cursor - 1
+	node := m.Root.NodeAtIndex(newCursor)
+	if node != nil && node.Instance != nil {
+		return tea.Batch(CursorUpCmd(), LoadContentFieldsCmd(m.Config, node.Instance.ContentDataID, node.Instance.DatatypeID))
+	}
+	return CursorUpCmd()
+}
+
+// contentBrowserCursorDownCmd returns CursorDownCmd + LoadContentFieldsCmd for the node at cursor+1.
+func contentBrowserCursorDownCmd(m Model) tea.Cmd {
+	newCursor := m.Cursor + 1
+	node := m.Root.NodeAtIndex(newCursor)
+	if node != nil && node.Instance != nil {
+		return tea.Batch(CursorDownCmd(), LoadContentFieldsCmd(m.Config, node.Instance.ContentDataID, node.Instance.DatatypeID))
+	}
+	return CursorDownCmd()
+}
+
+// contentFieldEdit opens a single-field edit dialog for the currently selected field.
+func (m Model) contentFieldEdit() (Model, tea.Cmd) {
+	if len(m.SelectedContentFields) == 0 || m.FieldCursor >= len(m.SelectedContentFields) {
+		return m, ShowDialog("Info", "No field selected", false)
+	}
+	cf := m.SelectedContentFields[m.FieldCursor]
+	if cf.ContentFieldID.IsZero() {
+		return m, ShowDialog("Info", "Field has no value yet. Use 'n' to add.", false)
+	}
+	node := m.Root.NodeAtIndex(m.Cursor)
+	if node == nil || node.Instance == nil {
+		return m, nil
+	}
+	return m, ShowEditSingleFieldDialogCmd(cf, node.Instance.ContentDataID, m.PageRouteId, node.Instance.DatatypeID)
+}
+
+// contentFieldAdd shows a picker for fields not yet populated on the content.
+func (m Model) contentFieldAdd() (Model, tea.Cmd) {
+	node := m.Root.NodeAtIndex(m.Cursor)
+	if node == nil || node.Instance == nil {
+		return m, ShowDialog("Error", "No content node selected", false)
+	}
+
+	// Find missing fields: fields in datatype but not in content
+	existingFieldIDs := make(map[string]bool)
+	for _, cf := range m.SelectedContentFields {
+		if !cf.ContentFieldID.IsZero() {
+			existingFieldIDs[string(cf.FieldID)] = true
+		}
+	}
+
+	// All fields with empty content value are candidates for "add"
+	var missing []ContentFieldDisplay
+	for _, cf := range m.SelectedContentFields {
+		if cf.ContentFieldID.IsZero() {
+			missing = append(missing, cf)
+		}
+	}
+
+	if len(missing) == 0 {
+		return m, ShowDialog("Info", "All fields already populated", false)
+	}
+
+	// If only one missing field, add it directly
+	if len(missing) == 1 {
+		return m, m.HandleAddContentField(
+			node.Instance.ContentDataID,
+			missing[0].FieldID,
+			m.PageRouteId,
+			node.Instance.DatatypeID,
+		)
+	}
+
+	// Multiple missing fields - show picker dialog
+	options := make([]huh.Option[string], 0, len(missing))
+	for _, mf := range missing {
+		options = append(options, huh.NewOption(mf.Label, string(mf.FieldID)))
+	}
+	return m, ShowAddContentFieldDialogCmd(options, node.Instance.ContentDataID, m.PageRouteId, node.Instance.DatatypeID)
+}
+
+// contentFieldDelete shows delete confirmation for the selected content field.
+func (m Model) contentFieldDelete() (Model, tea.Cmd) {
+	if len(m.SelectedContentFields) == 0 || m.FieldCursor >= len(m.SelectedContentFields) {
+		return m, ShowDialog("Info", "No field selected", false)
+	}
+	cf := m.SelectedContentFields[m.FieldCursor]
+	if cf.ContentFieldID.IsZero() {
+		return m, ShowDialog("Info", "Field has no value to delete", false)
+	}
+	node := m.Root.NodeAtIndex(m.Cursor)
+	if node == nil || node.Instance == nil {
+		return m, nil
+	}
+	return m, ShowDeleteContentFieldDialogCmd(cf, node.Instance.ContentDataID, m.PageRouteId, node.Instance.DatatypeID)
+}
+
+// contentFieldReorderUp swaps the current field with the one above.
+func (m Model) contentFieldReorderUp() (Model, tea.Cmd) {
+	if m.FieldCursor <= 0 || len(m.SelectedContentFields) < 2 {
+		return m, nil
+	}
+	node := m.Root.NodeAtIndex(m.Cursor)
+	if node == nil || node.Instance == nil {
+		return m, nil
+	}
+	current := m.SelectedContentFields[m.FieldCursor]
+	prev := m.SelectedContentFields[m.FieldCursor-1]
+	// We need sort_order from the junction records. Since the fields are in sort_order,
+	// use index as fallback sort order if DatatypeFieldID is available
+	return m, m.HandleReorderField(
+		current.DatatypeFieldID, prev.DatatypeFieldID,
+		int64(m.FieldCursor), int64(m.FieldCursor-1),
+		node.Instance.DatatypeID, node.Instance.ContentDataID, m.PageRouteId, "up",
+	)
+}
+
+// contentFieldReorderDown swaps the current field with the one below.
+func (m Model) contentFieldReorderDown() (Model, tea.Cmd) {
+	if m.FieldCursor >= len(m.SelectedContentFields)-1 || len(m.SelectedContentFields) < 2 {
+		return m, nil
+	}
+	node := m.Root.NodeAtIndex(m.Cursor)
+	if node == nil || node.Instance == nil {
+		return m, nil
+	}
+	current := m.SelectedContentFields[m.FieldCursor]
+	next := m.SelectedContentFields[m.FieldCursor+1]
+	return m, m.HandleReorderField(
+		current.DatatypeFieldID, next.DatatypeFieldID,
+		int64(m.FieldCursor), int64(m.FieldCursor+1),
+		node.Instance.DatatypeID, node.Instance.ContentDataID, m.PageRouteId, "down",
+	)
 }
 
 // MediaControls handles keyboard navigation for the media library page.

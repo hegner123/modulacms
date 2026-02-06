@@ -93,6 +93,7 @@ type StringDatatypeFields struct {
 	ID         string `json:"id"`
 	DatatypeID string `json:"datatype_id"`
 	FieldID    string `json:"field_id"`
+	SortOrder  string `json:"sort_order"`
 }
 
 type StringSessions struct {

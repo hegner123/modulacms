@@ -17,17 +17,20 @@ type DatatypeFields struct {
 	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int64                    `json:"sort_order"`
 }
 
 type CreateDatatypeFieldParams struct {
 	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int64                    `json:"sort_order"`
 }
 
 type UpdateDatatypeFieldParams struct {
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int64                    `json:"sort_order"`
 	ID         string                   `json:"id"`
 }
 
@@ -42,6 +45,7 @@ func MapStringDatatypeField(a DatatypeFields) StringDatatypeFields {
 		ID:         a.ID,
 		DatatypeID: a.DatatypeID.String(),
 		FieldID:    a.FieldID.String(),
+		SortOrder:  fmt.Sprintf("%d", a.SortOrder),
 	}
 }
 
@@ -56,6 +60,7 @@ func (d Database) MapDatatypeField(a mdb.DatatypesFields) DatatypeFields {
 		ID:         a.ID,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  a.SortOrder,
 	}
 }
 
@@ -68,6 +73,7 @@ func (d Database) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) mdb.
 		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  a.SortOrder,
 	}
 }
 
@@ -75,6 +81,7 @@ func (d Database) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) mdb.
 	return mdb.UpdateDatatypeFieldParams{
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  a.SortOrder,
 		ID:         a.ID,
 	}
 }
@@ -168,6 +175,32 @@ func (d Database) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, err
 	return &u, nil
 }
 
+func (d Database) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
+	queries := mdb.New(d.Connection)
+	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdb.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: sortOrder,
+		ID:        id,
+	})
+}
+
+func (d Database) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+	queries := mdb.New(d.Connection)
+	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdb.GetMaxSortOrderByDatatypeIDParams{
+		DatatypeID: datatypeID,
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to get max sort order: %v", err)
+	}
+	switch v := result.(type) {
+	case int64:
+		return v, nil
+	case float64:
+		return int64(v), nil
+	default:
+		return -1, nil
+	}
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -179,6 +212,7 @@ func (d MysqlDatabase) MapDatatypeField(a mdbm.DatatypesFields) DatatypeFields {
 		ID:         a.ID,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int64(a.SortOrder),
 	}
 }
 
@@ -191,6 +225,7 @@ func (d MysqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams)
 		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int32(a.SortOrder),
 	}
 }
 
@@ -198,6 +233,7 @@ func (d MysqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams)
 	return mdbm.UpdateDatatypeFieldParams{
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int32(a.SortOrder),
 		ID:         a.ID,
 	}
 }
@@ -295,6 +331,34 @@ func (d MysqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string
 	return &u, nil
 }
 
+func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
+	queries := mdbm.New(d.Connection)
+	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbm.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: int32(sortOrder),
+		ID:        id,
+	})
+}
+
+func (d MysqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+	queries := mdbm.New(d.Connection)
+	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdbm.GetMaxSortOrderByDatatypeIDParams{
+		DatatypeID: datatypeID,
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to get max sort order: %v", err)
+	}
+	switch v := result.(type) {
+	case int64:
+		return v, nil
+	case int32:
+		return int64(v), nil
+	case float64:
+		return int64(v), nil
+	default:
+		return -1, nil
+	}
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -306,6 +370,7 @@ func (d PsqlDatabase) MapDatatypeField(a mdbp.DatatypesFields) DatatypeFields {
 		ID:         a.ID,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int64(a.SortOrder),
 	}
 }
 
@@ -318,6 +383,7 @@ func (d PsqlDatabase) MapCreateDatatypeFieldParams(a CreateDatatypeFieldParams) 
 		ID:         id,
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int32(a.SortOrder),
 	}
 }
 
@@ -325,6 +391,7 @@ func (d PsqlDatabase) MapUpdateDatatypeFieldParams(a UpdateDatatypeFieldParams) 
 	return mdbp.UpdateDatatypeFieldParams{
 		DatatypeID: a.DatatypeID,
 		FieldID:    a.FieldID,
+		SortOrder:  int32(a.SortOrder),
 		ID:         a.ID,
 	}
 }
@@ -416,4 +483,32 @@ func (d PsqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string,
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
 	return &u, nil
+}
+
+func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
+	queries := mdbp.New(d.Connection)
+	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbp.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: int32(sortOrder),
+		ID:        id,
+	})
+}
+
+func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+	queries := mdbp.New(d.Connection)
+	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdbp.GetMaxSortOrderByDatatypeIDParams{
+		DatatypeID: datatypeID,
+	})
+	if err != nil {
+		return -1, fmt.Errorf("failed to get max sort order: %v", err)
+	}
+	switch v := result.(type) {
+	case int64:
+		return v, nil
+	case int32:
+		return int64(v), nil
+	case float64:
+		return int64(v), nil
+	default:
+		return -1, nil
+	}
 }

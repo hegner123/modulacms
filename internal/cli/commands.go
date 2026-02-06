@@ -1084,6 +1084,219 @@ func (m Model) HandleDeleteUser(msg DeleteUserRequestMsg) tea.Cmd {
 	}
 }
 
+// LoadContentFieldsMsg carries cached content fields for the right panel.
+type LoadContentFieldsMsg struct {
+	Fields []ContentFieldDisplay
+}
+
+// LoadContentFieldsCmd fetches content fields for a specific content node
+// and resolves field labels from the datatype field definitions.
+func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		contentID := types.NullableContentID{ID: contentDataID, Valid: true}
+		contentFields, err := d.ListContentFieldsByContentData(contentID)
+		if err != nil {
+			return LoadContentFieldsMsg{Fields: nil}
+		}
+
+		// Fetch field definitions for labels via junction table (sorted by sort_order, id)
+		var dtFields *[]db.DatatypeFields
+		if datatypeID.Valid {
+			dtFields, err = d.ListDatatypeFieldByDatatypeID(datatypeID)
+			if err != nil {
+				dtFields = nil
+			}
+		}
+
+		// Build field definition map: field_id -> (label, type, junction_id)
+		type fieldInfo struct {
+			Label           string
+			Type            string
+			DatatypeFieldID string
+		}
+		fieldDefMap := make(map[string]fieldInfo)
+		var orderedFieldIDs []string
+		if dtFields != nil {
+			for _, dtf := range *dtFields {
+				if !dtf.FieldID.Valid {
+					continue
+				}
+				field, fErr := d.GetField(dtf.FieldID.ID)
+				if fErr != nil || field == nil {
+					continue
+				}
+				fieldDefMap[string(dtf.FieldID.ID)] = fieldInfo{
+					Label:           field.Label,
+					Type:            string(field.Type),
+					DatatypeFieldID: dtf.ID,
+				}
+				orderedFieldIDs = append(orderedFieldIDs, string(dtf.FieldID.ID))
+			}
+		}
+
+		// Build content field value map: field_id -> ContentFields
+		cfMap := make(map[string]db.ContentFields)
+		if contentFields != nil {
+			for _, cf := range *contentFields {
+				if cf.FieldID.Valid {
+					cfMap[string(cf.FieldID.ID)] = cf
+				}
+			}
+		}
+
+		// Build result in sort_order from junction table
+		result := make([]ContentFieldDisplay, 0, len(orderedFieldIDs))
+		for _, fid := range orderedFieldIDs {
+			info := fieldDefMap[fid]
+			display := ContentFieldDisplay{
+				DatatypeFieldID: info.DatatypeFieldID,
+				FieldID:         types.FieldID(fid),
+				Label:           info.Label,
+				Type:            info.Type,
+			}
+			if cf, ok := cfMap[fid]; ok {
+				display.ContentFieldID = cf.ContentFieldID
+				display.Value = cf.FieldValue
+			}
+			result = append(result, display)
+		}
+
+		return LoadContentFieldsMsg{Fields: result}
+	}
+}
+
+// ContentFieldUpdatedMsg signals that a single content field was updated.
+type ContentFieldUpdatedMsg struct {
+	ContentID  types.ContentID
+	DatatypeID types.NullableDatatypeID
+	RouteID    types.RouteID
+}
+
+// ContentFieldDeletedMsg signals that a content field was deleted.
+type ContentFieldDeletedMsg struct {
+	ContentID  types.ContentID
+	DatatypeID types.NullableDatatypeID
+	RouteID    types.RouteID
+}
+
+// ContentFieldAddedMsg signals that a new content field was added.
+type ContentFieldAddedMsg struct {
+	ContentID  types.ContentID
+	DatatypeID types.NullableDatatypeID
+	RouteID    types.RouteID
+}
+
+// FieldReorderedMsg signals that field sort_order was swapped.
+type FieldReorderedMsg struct {
+	DatatypeID types.NullableDatatypeID
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	Direction  string
+}
+
+// HandleEditSingleField updates one content field value.
+func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, contentID types.ContentID, fieldID types.FieldID, newValue string, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	cfg := m.Config
+	userID := m.UserID
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		// Get existing content field
+		cf, err := d.GetContentField(contentFieldID)
+		if err != nil || cf == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content field not found: %v", err)}
+		}
+
+		_, err = d.UpdateContentField(db.UpdateContentFieldParams{
+			ContentFieldID: contentFieldID,
+			RouteID:        cf.RouteID,
+			ContentDataID:  types.NullableContentID{ID: contentID, Valid: true},
+			FieldID:        types.NullableFieldID{ID: fieldID, Valid: true},
+			FieldValue:     newValue,
+			AuthorID:       types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			DateCreated:    cf.DateCreated,
+			DateModified:   types.TimestampNow(),
+		})
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update field: %v", err)}
+		}
+
+		return ContentFieldUpdatedMsg{
+			ContentID:  contentID,
+			DatatypeID: datatypeID,
+			RouteID:    routeID,
+		}
+	}
+}
+
+// HandleDeleteContentField deletes a content field record.
+func (m Model) HandleDeleteContentField(contentFieldID types.ContentFieldID, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	cfg := m.Config
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		err := d.DeleteContentField(contentFieldID)
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete field: %v", err)}
+		}
+
+		return ContentFieldDeletedMsg{
+			ContentID:  contentID,
+			DatatypeID: datatypeID,
+			RouteID:    routeID,
+		}
+	}
+}
+
+// HandleAddContentField creates a new content field record for a field not yet populated.
+func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.FieldID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	cfg := m.Config
+	userID := m.UserID
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		d.CreateContentField(db.CreateContentFieldParams{
+			ContentDataID: types.NullableContentID{ID: contentID, Valid: true},
+			FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
+			FieldValue:    "",
+			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
+			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			DateCreated:   types.TimestampNow(),
+			DateModified:  types.TimestampNow(),
+		})
+
+		return ContentFieldAddedMsg{
+			ContentID:  contentID,
+			DatatypeID: datatypeID,
+			RouteID:    routeID,
+		}
+	}
+}
+
+// HandleReorderField swaps sort_order between two junction records.
+func (m Model) HandleReorderField(aID string, bID string, aOrder int64, bOrder int64, datatypeID types.NullableDatatypeID, contentID types.ContentID, routeID types.RouteID, direction string) tea.Cmd {
+	cfg := m.Config
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		if err := d.UpdateDatatypeFieldSortOrder(aID, bOrder); err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+		}
+		if err := d.UpdateDatatypeFieldSortOrder(bID, aOrder); err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
+		}
+
+		return FieldReorderedMsg{
+			DatatypeID: datatypeID,
+			ContentID:  contentID,
+			RouteID:    routeID,
+			Direction:  direction,
+		}
+	}
+}
+
 // HandleDeleteDatatype deletes a datatype and its junction records
 func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 	logger := m.Logger

@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS datatypes_fields (
     field_id TEXT NOT NULL
         CONSTRAINT fk_df_field
             REFERENCES fields
-            ON DELETE CASCADE
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_datatypes_fields_datatype ON datatypes_fields(datatype_id);

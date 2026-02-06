@@ -106,7 +106,8 @@ type Model struct {
 	AllDatatypes           []db.Datatypes
 	SelectedDatatype       types.DatatypeID
 	SelectedDatatypeFields []db.Fields
-	FieldCursor            int // Cursor for the fields panel (center)
+	FieldCursor            int // Cursor for fields panel (datatypes: center, content: right)
+	SelectedContentFields  []ContentFieldDisplay
 	MediaList              []db.Media
 	FilePicker             filepicker.Model
 	FilePickerActive       bool
@@ -124,6 +125,16 @@ type Model struct {
 	SSHKeyType        string
 	SSHPublicKey      string
 	UserID            types.UserID
+}
+
+// ContentFieldDisplay represents a content field for right panel display.
+type ContentFieldDisplay struct {
+	ContentFieldID types.ContentFieldID
+	DatatypeFieldID string
+	FieldID        types.FieldID
+	Label          string
+	Type           string
+	Value          string
 }
 
 var CliContinue bool = false

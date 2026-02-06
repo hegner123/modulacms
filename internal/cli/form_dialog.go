@@ -5,6 +5,7 @@ import (
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -31,6 +32,8 @@ const (
 	FORMDIALOGMOVECONTENT            FormDialogAction = "move_content"
 	FORMDIALOGCREATEUSER             FormDialogAction = "create_user"
 	FORMDIALOGEDITUSER               FormDialogAction = "edit_user"
+	FORMDIALOGEDIITSINGLEFIELD       FormDialogAction = "edit_single_field"
+	FORMDIALOGADDCONTENTFIELD        FormDialogAction = "add_content_field"
 )
 
 // FormDialogField indices for focus navigation
@@ -1779,4 +1782,94 @@ func UserFormDialogOverlay(content string, dialog UserFormDialogModel, width, he
 		Width:   dialogW,
 		Height:  dialogH,
 	})
+}
+
+// =============================================================================
+// SINGLE CONTENT FIELD EDIT DIALOG
+// =============================================================================
+
+// ShowEditSingleFieldDialogMsg triggers showing the single-field edit dialog.
+type ShowEditSingleFieldDialogMsg struct {
+	Field      ContentFieldDisplay
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	DatatypeID types.NullableDatatypeID
+}
+
+// ShowEditSingleFieldDialogCmd creates a command to show the single-field edit dialog.
+func ShowEditSingleFieldDialogCmd(cf ContentFieldDisplay, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditSingleFieldDialogMsg{
+			Field:      cf,
+			ContentID:  contentID,
+			RouteID:    routeID,
+			DatatypeID: datatypeID,
+		}
+	}
+}
+
+// EditSingleFieldAcceptMsg is sent when the single-field edit dialog is accepted.
+type EditSingleFieldAcceptMsg struct {
+	ContentFieldID types.ContentFieldID
+	ContentID      types.ContentID
+	FieldID        types.FieldID
+	NewValue       string
+	RouteID        types.RouteID
+	DatatypeID     types.NullableDatatypeID
+}
+
+// =============================================================================
+// ADD CONTENT FIELD DIALOG (picker for multiple missing fields)
+// =============================================================================
+
+// ShowAddContentFieldDialogMsg triggers showing the add-field picker dialog.
+type ShowAddContentFieldDialogMsg struct {
+	Options    []huh.Option[string]
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	DatatypeID types.NullableDatatypeID
+}
+
+// ShowAddContentFieldDialogCmd creates a command to show the add-field picker.
+func ShowAddContentFieldDialogCmd(options []huh.Option[string], contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		return ShowAddContentFieldDialogMsg{
+			Options:    options,
+			ContentID:  contentID,
+			RouteID:    routeID,
+			DatatypeID: datatypeID,
+		}
+	}
+}
+
+// =============================================================================
+// DELETE CONTENT FIELD DIALOG
+// =============================================================================
+
+// DeleteContentFieldContext stores context for deleting a content field.
+type DeleteContentFieldContext struct {
+	ContentFieldID types.ContentFieldID
+	ContentID      types.ContentID
+	RouteID        types.RouteID
+	DatatypeID     types.NullableDatatypeID
+}
+
+// ShowDeleteContentFieldDialogMsg triggers showing the delete content field confirmation dialog.
+type ShowDeleteContentFieldDialogMsg struct {
+	Field      ContentFieldDisplay
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	DatatypeID types.NullableDatatypeID
+}
+
+// ShowDeleteContentFieldDialogCmd creates a command to show the delete content field dialog.
+func ShowDeleteContentFieldDialogCmd(cf ContentFieldDisplay, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteContentFieldDialogMsg{
+			Field:      cf,
+			ContentID:  contentID,
+			RouteID:    routeID,
+			DatatypeID: datatypeID,
+		}
+	}
 }

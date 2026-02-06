@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -177,6 +178,87 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			UserFormDialogSetCmd(&dialog),
 			UserFormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditSingleFieldDialogMsg:
+		// Store context for when the dialog is accepted
+		editSingleFieldContext = &editSingleFieldCtx{
+			ContentFieldID: msg.Field.ContentFieldID,
+			ContentID:      msg.ContentID,
+			FieldID:        msg.Field.FieldID,
+			RouteID:        msg.RouteID,
+			DatatypeID:     msg.DatatypeID,
+		}
+		// Create a content form dialog with a single field, pre-populated with current value
+		existingFields := []ExistingContentField{{
+			ContentFieldID: msg.Field.ContentFieldID,
+			FieldID:        msg.Field.FieldID,
+			Label:          msg.Field.Label,
+			Type:           msg.Field.Type,
+			Value:          msg.Field.Value,
+		}}
+		dialog := NewEditContentFormDialog(
+			fmt.Sprintf("Edit: %s", msg.Field.Label),
+			msg.ContentID,
+			types.DatatypeID(msg.DatatypeID.ID),
+			msg.RouteID,
+			existingFields,
+		)
+		dialog.Action = FORMDIALOGEDIITSINGLEFIELD
+		return m, tea.Batch(
+			ContentFormDialogSetCmd(&dialog),
+			ContentFormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowAddContentFieldDialogMsg:
+		// Store context for when the dialog is accepted
+		addContentFieldContext = &addContentFieldCtx{
+			ContentID:  msg.ContentID,
+			RouteID:    msg.RouteID,
+			DatatypeID: msg.DatatypeID,
+		}
+		// Create a picker dialog to select which missing field to add
+		parents := make([]ParentOption, 0, len(msg.Options))
+		for _, opt := range msg.Options {
+			parents = append(parents, ParentOption{
+				Label: opt.Key,
+				Value: opt.Value,
+			})
+		}
+		dialog := FormDialogModel{
+			dialogStyles:  newDialogStyles(),
+			Title:         "Add Field",
+			Width:         50,
+			Action:        FORMDIALOGADDCONTENTFIELD,
+			LabelInput:    textinput.New(),
+			TypeInput:     textinput.New(),
+			ParentOptions: parents,
+			ParentIndex:   0,
+			focusIndex:    FormDialogFieldParent,
+		}
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteContentFieldDialogMsg:
+		// Show delete confirmation for a content field
+		dialog := NewDialog(
+			"Delete Field Value",
+			fmt.Sprintf("Delete value for field '%s'?\nThis removes the stored value.", msg.Field.Label),
+			true,
+			DIALOGDELETECONTENTFIELD,
+		)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteContentFieldContext = &DeleteContentFieldContext{
+			ContentFieldID: msg.Field.ContentFieldID,
+			ContentID:      msg.ContentID,
+			RouteID:        msg.RouteID,
+			DatatypeID:     msg.DatatypeID,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case UserFormDialogSetMsg:
@@ -366,6 +448,20 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					DeleteUserCmd(userID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETECONTENTFIELD:
+			if deleteContentFieldContext != nil {
+				ctx := deleteContentFieldContext
+				deleteContentFieldContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					m.HandleDeleteContentField(ctx.ContentFieldID, ctx.ContentID, ctx.RouteID, ctx.DatatypeID),
 				)
 			}
 			return m, tea.Batch(
@@ -576,6 +672,21 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 			)
+		case FORMDIALOGADDCONTENTFIELD:
+			// ParentID = selected field ID from the picker
+			if addContentFieldContext != nil && msg.ParentID != "" {
+				ctx := addContentFieldContext
+				addContentFieldContext = nil
+				return m, tea.Batch(
+					FormDialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					m.HandleAddContentField(ctx.ContentID, types.FieldID(msg.ParentID), ctx.RouteID, ctx.DatatypeID),
+				)
+			}
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
 		default:
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
@@ -583,6 +694,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		}
 	case FormDialogCancelMsg:
+		addContentFieldContext = nil
 		return m, tea.Batch(
 			FormDialogActiveSetCmd(false),
 			FocusSetCmd(PAGEFOCUS),
@@ -617,6 +729,30 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				LoadingStartCmd(),
 				UpdateContentFromDialogCmd(msg.ContentID, msg.DatatypeID, msg.RouteID, msg.FieldValues),
 			)
+		case FORMDIALOGEDIITSINGLEFIELD:
+			// Single-field edit: use stored context for ContentFieldID
+			if editSingleFieldContext != nil {
+				ctx := editSingleFieldContext
+				editSingleFieldContext = nil
+				var newValue string
+				for _, val := range msg.FieldValues {
+					newValue = val
+					break
+				}
+				return m, tea.Batch(
+					ContentFormDialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					m.HandleEditSingleField(
+						ctx.ContentFieldID,
+						ctx.ContentID, ctx.FieldID, newValue, ctx.RouteID,
+						ctx.DatatypeID,
+					),
+				)
+			}
+			return m, tea.Batch(
+				ContentFormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
 		default:
 			// Create new content (FORMDIALOGCREATECONTENT or default)
 			return m, tea.Batch(
@@ -627,6 +763,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		}
 	case ContentFormDialogCancelMsg:
+		editSingleFieldContext = nil
 		return m, tea.Batch(
 			ContentFormDialogActiveSetCmd(false),
 			FocusSetCmd(PAGEFOCUS),
@@ -950,16 +1087,22 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 
 		// Link field to datatype via datatypes_fields join table
 		dtFieldID := string(types.NewDatatypeFieldID())
+		dtDatatypeID := types.NullableDatatypeID{
+			ID:    msg.DatatypeID,
+			Valid: true,
+		}
+		maxSort, err := d.GetMaxSortOrderByDatatypeID(dtDatatypeID)
+		if err != nil {
+			maxSort = -1
+		}
 		dtFieldParams := db.CreateDatatypeFieldParams{
-			ID: dtFieldID,
-			DatatypeID: types.NullableDatatypeID{
-				ID:    msg.DatatypeID,
-				Valid: true,
-			},
+			ID:         dtFieldID,
+			DatatypeID: dtDatatypeID,
 			FieldID: types.NullableFieldID{
 				ID:    field.FieldID,
 				Valid: true,
 			},
+			SortOrder: maxSort + 1,
 		}
 
 		d.CreateDatatypeField(dtFieldParams)
@@ -1550,6 +1693,29 @@ type DeleteContentContext struct {
 
 // Global variable to store the delete context
 var deleteContentContext *DeleteContentContext
+
+// Global variable to store delete content field context
+var deleteContentFieldContext *DeleteContentFieldContext
+
+// editSingleFieldContext stores context for the single-field edit dialog
+type editSingleFieldCtx struct {
+	ContentFieldID types.ContentFieldID
+	ContentID      types.ContentID
+	FieldID        types.FieldID
+	RouteID        types.RouteID
+	DatatypeID     types.NullableDatatypeID
+}
+
+var editSingleFieldContext *editSingleFieldCtx
+
+// addContentFieldContext stores context for the add content field operation
+type addContentFieldCtx struct {
+	ContentID  types.ContentID
+	RouteID    types.RouteID
+	DatatypeID types.NullableDatatypeID
+}
+
+var addContentFieldContext *addContentFieldCtx
 
 // =============================================================================
 // DELETE DATATYPE

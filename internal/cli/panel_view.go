@@ -273,7 +273,16 @@ func getContextControls(m Model) string {
 		if m.PageRouteId.IsZero() {
 			return nav + " │ enter:view │ " + km.HintString(config.ActionNew) + ":new │ " + common
 		}
-		return nav + " │ " + km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse) + ":expand │ " + km.HintString(config.ActionNew) + ":new │ " +
+		if m.PanelFocus == tui.RoutePanel {
+			return nav + " │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " +
+				km.HintString(config.ActionNew) + ":add │ " +
+				km.HintString(config.ActionDelete) + ":delete │ " +
+				km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " + common
+		}
+		return nav + " │ " + km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse) + ":expand │ " +
+			km.HintString(config.ActionGoParent) + "/" + km.HintString(config.ActionGoChild) + ":parent/child │ " +
+			km.HintString(config.ActionNew) + ":new │ " +
 			km.HintString(config.ActionEdit) + ":edit │ " +
 			km.HintString(config.ActionDelete) + ":delete │ " +
 			km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " +

@@ -216,10 +216,12 @@ type DbDriver interface {
 	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
 	CreateDatatypeFieldTable() error
 	DeleteDatatypeField(string) error
+	GetMaxSortOrderByDatatypeID(types.NullableDatatypeID) (int64, error)
 	ListDatatypeField() (*[]DatatypeFields, error)
 	ListDatatypeFieldByDatatypeID(types.NullableDatatypeID) (*[]DatatypeFields, error)
 	ListDatatypeFieldByFieldID(types.NullableFieldID) (*[]DatatypeFields, error)
 	UpdateDatatypeField(UpdateDatatypeFieldParams) (*string, error)
+	UpdateDatatypeFieldSortOrder(string, int64) error
 
 	// Fields
 	CountFields() (*int64, error)

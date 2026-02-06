@@ -12,8 +12,8 @@ Common editing tasks that need to be implemented for the TUI content editor.
 
 ### Content Navigation
 - [x] **Expand/Collapse tree nodes** - Toggle node expansion with +/- keys
-- [ ] **Navigate to parent** - Jump to parent node
-- [ ] **Navigate to children** - Jump to first child
+- [x] **Navigate to parent** - Jump to parent node (press `g`)
+- [x] **Navigate to children** - Jump to first child (press `G`)
 
 ### Content Reorganization
 - [x] **Move content** - Reparent a node to different parent (press `m`)
@@ -66,10 +66,10 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [x] **Delete user** - Delete via confirmation dialog
 
 ## Field Operations
-- [ ] **Edit single field** - Inline field editing
-- [ ] **Add field to content** - Add new field value
-- [ ] **Remove field from content** - Delete field value
-- [ ] **Reorder fields** - Change field display order
+- [x] **Edit single field** - Inline field editing (press `e` on right panel)
+- [x] **Add field to content** - Add new field value (press `n` on right panel)
+- [x] **Remove field from content** - Delete field value (press `d` on right panel)
+- [x] **Reorder fields** - Change field display order (Shift+Up/Down on right panel)
 
 ## Bulk Operations
 - [ ] **Bulk delete** - Delete multiple selected items

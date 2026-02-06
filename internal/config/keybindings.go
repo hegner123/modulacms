@@ -29,6 +29,8 @@ const (
 	ActionCopy        Action = "copy"
 	ActionPublish     Action = "publish"
 	ActionArchive     Action = "archive"
+	ActionGoParent    Action = "go_parent"
+	ActionGoChild     Action = "go_child"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -62,6 +64,8 @@ func DefaultKeyMap() KeyMap {
 		ActionCopy:        {"c"},
 		ActionPublish:     {"p"},
 		ActionArchive:     {"a"},
+		ActionGoParent:    {"g"},
+		ActionGoChild:     {"G"},
 	}
 }
 

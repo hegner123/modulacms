@@ -271,11 +271,55 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			newModel.PendingCursorContentID = ""
 		}
 
+		// Load content fields for the currently selected node
+		var fieldCmd tea.Cmd
+		node := newModel.Root.NodeAtIndex(newModel.Cursor)
+		if node != nil && node.Instance != nil {
+			fieldCmd = LoadContentFieldsCmd(newModel.Config, node.Instance.ContentDataID, node.Instance.DatatypeID)
+		}
+
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Tree reloaded: %d nodes, %d orphans resolved",
 				msg.Stats.NodesCount, msg.Stats.OrphansResolved)),
+			fieldCmd,
 		)
+
+	case LoadContentFieldsMsg:
+		m.SelectedContentFields = msg.Fields
+		if m.FieldCursor >= len(msg.Fields) {
+			m.FieldCursor = max(0, len(msg.Fields)-1)
+		}
+		return m, nil
+
+	case ContentFieldUpdatedMsg:
+		return m, tea.Batch(
+			ShowDialog("Success", "Field updated", false),
+			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
+		)
+
+	case ContentFieldDeletedMsg:
+		if m.FieldCursor >= len(m.SelectedContentFields)-1 && m.FieldCursor > 0 {
+			m.FieldCursor--
+		}
+		return m, tea.Batch(
+			ShowDialog("Success", "Field deleted", false),
+			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
+		)
+
+	case ContentFieldAddedMsg:
+		return m, tea.Batch(
+			ShowDialog("Success", "Field added", false),
+			LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID),
+		)
+
+	case FieldReorderedMsg:
+		if msg.Direction == "up" && m.FieldCursor > 0 {
+			m.FieldCursor--
+		} else if msg.Direction == "down" && m.FieldCursor < len(m.SelectedContentFields)-1 {
+			m.FieldCursor++
+		}
+		return m, LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID)
 
 	default:
 		return m, nil

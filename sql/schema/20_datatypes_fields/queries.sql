@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS datatypes_fields (
     field_id TEXT NOT NULL
         CONSTRAINT fk_df_field
             REFERENCES fields
-            ON DELETE CASCADE
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0
 );
 
 -- name: CountDatatypeField :one
@@ -20,26 +21,28 @@ FROM datatypes_fields;
 
 -- name: ListDatatypeField :many
 SELECT * FROM datatypes_fields
-ORDER BY id;
+ORDER BY sort_order, id;
 
 -- name: ListDatatypeFieldByDatatypeID :many
-SELECT * 
+SELECT *
 FROM datatypes_fields
 WHERE datatype_id = ?
-ORDER BY id;
+ORDER BY sort_order, id;
 
 -- name: ListDatatypeFieldByFieldID :many
-SELECT * 
+SELECT *
 FROM datatypes_fields
 WHERE field_id = ?
-ORDER BY id;
+ORDER BY sort_order, id;
 
 -- name: CreateDatatypeField :one
 INSERT INTO datatypes_fields (
     id,
     datatype_id,
-    field_id
+    field_id,
+    sort_order
 ) VALUES (
+    ?,
     ?,
     ?,
     ?
@@ -47,11 +50,22 @@ INSERT INTO datatypes_fields (
 RETURNING *;
 
 -- name: UpdateDatatypeField :exec
-UPDATE datatypes_fields 
+UPDATE datatypes_fields
 SET datatype_id = ?,
-    field_id = ?
+    field_id = ?,
+    sort_order = ?
 WHERE id = ?;
 
 -- name: DeleteDatatypeField :exec
 DELETE FROM datatypes_fields
 WHERE id = ?;
+
+-- name: UpdateDatatypeFieldSortOrder :exec
+UPDATE datatypes_fields
+SET sort_order = ?
+WHERE id = ?;
+
+-- name: GetMaxSortOrderByDatatypeID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM datatypes_fields
+WHERE datatype_id = ?;

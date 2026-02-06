@@ -171,6 +171,7 @@ type DatatypesFields struct {
 	ID         string                   `json:"id"`
 	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 	FieldID    types.NullableFieldID    `json:"field_id"`
+	SortOrder  int64                    `json:"sort_order"`
 }
 
 type Fields struct {
