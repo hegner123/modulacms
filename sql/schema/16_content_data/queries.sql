@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -66,9 +67,11 @@ INSERT INTO content_data (
     prev_sibling_id,
     datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -83,13 +86,14 @@ INSERT INTO content_data (
 
 -- name: UpdateContentData :exec
 UPDATE content_data
-SET route_id = ?, 
+SET route_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
     datatype_id = ?,
     author_id = ?,
+    status = ?,
     date_created = ?,
     date_modified = ?
 WHERE content_data_id = ?;

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -64,6 +65,7 @@ INSERT INTO admin_content_data (
     admin_route_id,
     admin_datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
@@ -76,7 +78,8 @@ INSERT INTO admin_content_data (
     $7,
     $8,
     $9,
-    $10
+    $10,
+    $11
 ) RETURNING *;
 
 -- name: UpdateAdminContentData :exec
@@ -88,9 +91,10 @@ SET parent_id = $1,
     admin_route_id = $5,
     admin_datatype_id = $6,
     author_id = $7,
-    date_created = $8,
-    date_modified = $9
-WHERE admin_content_data_id = $10;
+    status = $8,
+    date_created = $9,
+    date_modified = $10
+WHERE admin_content_data_id = $11;
 
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data

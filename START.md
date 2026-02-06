@@ -69,7 +69,7 @@ This section tracks what the user is working on. It is for **user awareness only
 **ACTIVE — Work on this when asked:**
 | Project | Path | Status |
 |---------|------|--------|
-| TUI Content Editor | `/Users/home/Documents/Code/Go_dev/modulacms/TODO_EDITING.md` | Phase 1 in progress |
+| TUI Content Editor | `/Users/home/Documents/Code/Go_dev/modulacms/TODO_EDITING.md` | Phase 2 in progress |
 
 **PAUSED — Do NOT resume unless user explicitly requests:**
 | Project | Path | Status | Notes |
@@ -82,25 +82,24 @@ This section tracks what the user is working on. It is for **user awareness only
 
 Current task list for TUI content editor implementation. Full details in `/TODO_EDITING.md`.
 
-### Phase 1 - Core Editing (Current)
+### Phase 1 - Core Editing (complete)
 - [x] Create content - Dialog-based content creation
 - [x] Read/View content - Tree view with preview
 - [x] Update content fields - Edit existing field values
 - [x] Delete content - Remove content nodes
-- [ ] **Expand/Collapse tree nodes** - Next item (add +/- key handlers)
+- [x] Expand/Collapse tree nodes - +/= expand, -/_ collapse
 
-### Phase 1.5 - Missing Action Handlers
-Status bar hints these actions but handlers are not wired up:
-- [ ] Delete datatype (tree panel)
-- [ ] Delete field (content panel)
-- [ ] Delete route
-- [ ] Upload media
-- [ ] Delete media
-- [ ] Users admin CRUD (needs dedicated controls function)
+### Phase 1.5 - Missing Action Handlers (complete)
+- [x] Delete datatype (tree panel, with child-check protection)
+- [x] Delete field (content panel, with junction cleanup)
+- [x] Delete route
+- [ ] Upload media — **deferred** (requires S3/bucket integration)
+- [x] Delete media
+- [x] Users admin CRUD (full UserFormDialogModel with create/edit/delete)
 
-### Phase 2 - Reorganization
-- [ ] Move content (reparent)
-- [ ] Reorder siblings
+### Phase 2 - Reorganization (in progress)
+- [x] Move content (reparent) - press `m`, target selector
+- [ ] **Reorder siblings** ← next
 - [ ] Copy content
 
 ### Phase 3 - Status Management

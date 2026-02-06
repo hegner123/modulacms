@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 

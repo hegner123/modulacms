@@ -21,6 +21,7 @@ type AdminContentData struct {
 	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
 }
@@ -142,6 +143,7 @@ type ContentData struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 }

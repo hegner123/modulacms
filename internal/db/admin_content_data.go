@@ -23,6 +23,7 @@ type AdminContentData struct {
 	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
 }
@@ -34,6 +35,7 @@ type CreateAdminContentDataParams struct {
 	AdminRouteID    string                        `json:"admin_route_id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID        types.NullableUserID          `json:"author_id"`
+	Status          types.ContentStatus           `json:"status"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
@@ -45,6 +47,7 @@ type UpdateAdminContentDataParams struct {
 	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
@@ -78,6 +81,7 @@ func MapAdminContentDataJSON(a AdminContentData) ContentDataJSON {
 		RouteID:       a.AdminRouteID,
 		DatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
+		Status:        string(a.Status),
 		DateCreated:   a.DateCreated.String(),
 		DateModified:  a.DateModified.String(),
 	}
@@ -91,6 +95,7 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:           a.AuthorID.String(),
+		Status:             string(a.Status),
 		DateCreated:        a.DateCreated.String(),
 		DateModified:       a.DateModified.String(),
 		History:            "", // History field removed
@@ -113,6 +118,7 @@ func (d Database) MapAdminContentData(a mdb.AdminContentData) AdminContentData {
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -128,6 +134,7 @@ func (d Database) MapCreateAdminContentDataParams(a CreateAdminContentDataParams
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -142,6 +149,7 @@ func (d Database) MapUpdateAdminContentDataParams(a UpdateAdminContentDataParams
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 		AdminContentDataID: a.AdminContentDataID,
@@ -245,6 +253,7 @@ func (d MysqlDatabase) MapAdminContentData(a mdbm.AdminContentData) AdminContent
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -259,6 +268,7 @@ func (d MysqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataP
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -272,6 +282,7 @@ func (d MysqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataP
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 		AdminContentDataID: a.AdminContentDataID,
@@ -377,6 +388,7 @@ func (d PsqlDatabase) MapAdminContentData(a mdbp.AdminContentData) AdminContentD
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -391,6 +403,7 @@ func (d PsqlDatabase) MapCreateAdminContentDataParams(a CreateAdminContentDataPa
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 	}
@@ -404,6 +417,7 @@ func (d PsqlDatabase) MapUpdateAdminContentDataParams(a UpdateAdminContentDataPa
 		AdminRouteID:       a.AdminRouteID,
 		AdminDatatypeID:    a.AdminDatatypeID,
 		AuthorID:           a.AuthorID,
+		Status:             a.Status,
 		DateCreated:        a.DateCreated,
 		DateModified:       a.DateModified,
 		AdminContentDataID: a.AdminContentDataID,

@@ -1502,6 +1502,7 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 				ID:    authorID,
 				Valid: true,
 			},
+			Status:       types.ContentStatusDraft,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
 		}
@@ -1932,6 +1933,7 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 				ID:    authorID,
 				Valid: !authorID.IsZero(),
 			},
+			Status:       types.ContentStatusDraft,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
 		}

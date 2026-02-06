@@ -37,6 +37,7 @@ type GetContentTreeByRouteRow struct {
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
+	Status        types.ContentStatus      `json:"status"`
 	DatatypeLabel string                   `json:"datatype_label"`
 	DatatypeType  string                   `json:"datatype_type"`
 }
@@ -86,6 +87,7 @@ func (d Database) MapGetContentTreeByRouteRow(a mdb.GetContentTreeByRouteRow) Ge
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
+		Status:        a.Status,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}
@@ -198,6 +200,7 @@ func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteR
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
+		Status:        a.Status,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}
@@ -305,6 +308,7 @@ func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRo
 		AuthorID:      a.AuthorID,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
+		Status:        a.Status,
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 	}

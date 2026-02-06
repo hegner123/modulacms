@@ -275,6 +275,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_route_id INTEGER,
     parent_id INTEGER,
     admin_datatype_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
@@ -316,6 +317,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id INTEGER,
     parent_id INTEGER,
     datatype_id INTEGER,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 

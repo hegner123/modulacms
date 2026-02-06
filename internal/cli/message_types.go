@@ -386,6 +386,41 @@ type MediaUploadedMsg struct {
 	Name string
 }
 
+// Reorder siblings
+type ReorderSiblingRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Direction string // "up" or "down"
+}
+type ContentReorderedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Direction string
+}
+
+// Copy content
+type CopyContentRequestMsg struct {
+	SourceContentID types.ContentID
+	RouteID         types.RouteID
+}
+type ContentCopiedMsg struct {
+	SourceContentID types.ContentID
+	NewContentID    types.ContentID
+	RouteID         types.RouteID
+	FieldCount      int
+}
+
+// Publish/Unpublish
+type TogglePublishRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+type ContentPublishToggledMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	NewStatus types.ContentStatus
+}
+
 type PanelFocusReset struct{}
 
 // Users fetch messages

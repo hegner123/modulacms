@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

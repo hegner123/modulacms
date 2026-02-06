@@ -23,6 +23,7 @@ type ContentData struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 }
@@ -35,6 +36,7 @@ type CreateContentDataParams struct {
 	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 }
@@ -47,6 +49,7 @@ type UpdateContentDataParams struct {
 	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 	ContentDataID types.ContentID          `json:"content_data_id"`
@@ -62,6 +65,7 @@ type ContentDataJSON struct {
 	RouteID       string `json:"route_id"`
 	DatatypeID    string `json:"datatype_id"`
 	AuthorID      string `json:"author_id"`
+	Status        string `json:"status"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
 }
@@ -89,6 +93,7 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 		RouteID:       a.RouteID.String(),
 		DatatypeID:    a.DatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
+		Status:        string(a.Status),
 		DateCreated:   a.DateCreated.String(),
 		DateModified:  a.DateModified.String(),
 	}
@@ -117,6 +122,7 @@ func MapStringContentData(a ContentData) StringContentData {
 		PrevSiblingID: prevSiblingID,
 		DatatypeID:    a.DatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
+		Status:        string(a.Status),
 		DateCreated:   a.DateCreated.String(),
 		DateModified:  a.DateModified.String(),
 		History:       "", // History field removed
@@ -139,6 +145,7 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -154,6 +161,7 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -168,6 +176,7 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 		ContentDataID: a.ContentDataID,
@@ -275,6 +284,7 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -290,6 +300,7 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -304,6 +315,7 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 		ContentDataID: a.ContentDataID,
@@ -415,6 +427,7 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -430,6 +443,7 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 		RouteID:       a.RouteID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 	}
@@ -444,6 +458,7 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 		PrevSiblingID: a.PrevSiblingID,
 		DatatypeID:    a.DatatypeID,
 		AuthorID:      a.AuthorID,
+		Status:        a.Status,
 		DateCreated:   a.DateCreated,
 		DateModified:  a.DateModified,
 		ContentDataID: a.ContentDataID,

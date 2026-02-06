@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id VARCHAR(26) NULL,
     datatype_id VARCHAR(26) NULL,
     author_id VARCHAR(26) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -64,9 +65,11 @@ INSERT INTO content_data (
     prev_sibling_id,
     datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -84,13 +87,14 @@ SELECT * FROM content_data WHERE content_data_id = LAST_INSERT_ID();
 
 -- name: UpdateContentData :exec
 UPDATE content_data
-set route_id = ?,
+SET route_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
     datatype_id = ?,
     author_id = ?,
+    status = ?,
     date_created = ?,
     date_modified = ?
 WHERE content_data_id = ?;

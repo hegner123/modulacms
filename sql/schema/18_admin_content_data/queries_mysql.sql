@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_route_id VARCHAR(26) NOT NULL,
     admin_datatype_id VARCHAR(26) NOT NULL,
     author_id VARCHAR(26) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -65,9 +66,11 @@ INSERT INTO admin_content_data (
     admin_route_id,
     admin_datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -92,6 +95,7 @@ SET parent_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
+    status = ?,
     date_created = ?,
     date_modified = ?
 WHERE admin_content_data_id = ?;

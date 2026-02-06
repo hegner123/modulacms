@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -63,6 +64,7 @@ INSERT INTO content_data (
     route_id,
     datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
@@ -75,7 +77,8 @@ INSERT INTO content_data (
     $7,
     $8,
     $9,
-    $10
+    $10,
+    $11
 ) RETURNING *;
 
 -- name: UpdateContentData :exec
@@ -85,11 +88,12 @@ SET route_id = $1,
     first_child_id = $3,
     next_sibling_id = $4,
     prev_sibling_id = $5,
-    datatype_id =$6,
+    datatype_id = $6,
     author_id = $7,
-    date_created = $8,
-    date_modified = $9
-WHERE content_data_id = $10;
+    status = $8,
+    date_created = $9,
+    date_modified = $10
+WHERE content_data_id = $11;
 
 -- name: DeleteContentData :exec
 DELETE FROM content_data

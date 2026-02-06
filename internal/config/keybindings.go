@@ -22,8 +22,12 @@ const (
 	ActionTitleNext Action = "title_next"
 	ActionPagePrev  Action = "page_prev"
 	ActionPageNext  Action = "page_next"
-	ActionExpand    Action = "expand"
-	ActionCollapse  Action = "collapse"
+	ActionExpand      Action = "expand"
+	ActionCollapse    Action = "collapse"
+	ActionReorderUp   Action = "reorder_up"
+	ActionReorderDown Action = "reorder_down"
+	ActionCopy        Action = "copy"
+	ActionPublish     Action = "publish"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -50,8 +54,12 @@ func DefaultKeyMap() KeyMap {
 		ActionTitleNext: {"shift+right"},
 		ActionPagePrev:  {"left"},
 		ActionPageNext:  {"right"},
-		ActionExpand:    {"+", "="},
-		ActionCollapse:  {"-", "_"},
+		ActionExpand:      {"+", "="},
+		ActionCollapse:    {"-", "_"},
+		ActionReorderUp:   {"shift+up", "K"},
+		ActionReorderDown: {"shift+down", "J"},
+		ActionCopy:        {"c"},
+		ActionPublish:     {"p"},
 	}
 }
 

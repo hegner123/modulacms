@@ -452,9 +452,11 @@ INSERT INTO admin_content_data (
     admin_route_id,
     admin_datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -477,6 +479,7 @@ type CreateAdminContentDataParams struct {
 	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
 }
@@ -491,6 +494,7 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
+		arg.Status,
 		arg.DateCreated,
 		arg.DateModified,
 	)
@@ -507,6 +511,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_route_id VARCHAR(26) NOT NULL,
     admin_datatype_id VARCHAR(26) NOT NULL,
     author_id VARCHAR(26) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -1000,9 +1005,11 @@ INSERT INTO content_data (
     prev_sibling_id,
     datatype_id,
     author_id,
+    status,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -1025,6 +1032,7 @@ type CreateContentDataParams struct {
 	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 }
@@ -1039,6 +1047,7 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 		arg.PrevSiblingID,
 		arg.DatatypeID,
 		arg.AuthorID,
+		arg.Status,
 		arg.DateCreated,
 		arg.DateModified,
 	)
@@ -1055,6 +1064,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     route_id VARCHAR(26) NULL,
     datatype_id VARCHAR(26) NULL,
     author_id VARCHAR(26) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -2487,12 +2497,39 @@ func (q *Queries) DropAllTables(ctx context.Context) error {
 	return err
 }
 
+const dropBackupSetsTable = `-- name: DropBackupSetsTable :exec
+DROP TABLE IF EXISTS backup_sets
+`
+
+func (q *Queries) DropBackupSetsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropBackupSetsTable)
+	return err
+}
+
 const dropBackupTables = `-- name: DropBackupTables :exec
 DROP TABLE IF EXISTS backup_sets
 `
 
 func (q *Queries) DropBackupTables(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropBackupTables)
+	return err
+}
+
+const dropBackupVerificationsTable = `-- name: DropBackupVerificationsTable :exec
+DROP TABLE IF EXISTS backup_verifications
+`
+
+func (q *Queries) DropBackupVerificationsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropBackupVerificationsTable)
+	return err
+}
+
+const dropBackupsTable = `-- name: DropBackupsTable :exec
+DROP TABLE IF EXISTS backups
+`
+
+func (q *Queries) DropBackupsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropBackupsTable)
 	return err
 }
 
@@ -2650,7 +2687,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -2670,6 +2707,7 @@ func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDa
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
+		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -3195,7 +3233,7 @@ func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetC
 }
 
 const getContentData = `-- name: GetContentData :one
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
 WHERE content_data_id = ? LIMIT 1
 `
 
@@ -3215,6 +3253,7 @@ func (q *Queries) GetContentData(ctx context.Context, arg GetContentDataParams) 
 		&i.RouteID,
 		&i.DatatypeID,
 		&i.AuthorID,
+		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -3296,10 +3335,11 @@ SELECT cd.content_data_id,
         cd.datatype_id, 
         cd.route_id, 
         cd.author_id, 
-        cd.date_created, 
+        cd.date_created,
         cd.date_modified,
+        cd.status,
        dt.label as datatype_label, dt.type as datatype_type
-FROM content_data cd 
+FROM content_data cd
 JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id = ?
 ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id
@@ -3320,6 +3360,7 @@ type GetContentTreeByRouteRow struct {
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
+	Status        types.ContentStatus      `json:"status"`
 	DatatypeLabel string                   `json:"datatype_label"`
 	DatatypeType  string                   `json:"datatype_type"`
 }
@@ -3344,6 +3385,7 @@ func (q *Queries) GetContentTreeByRoute(ctx context.Context, arg GetContentTreeB
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.Status,
 			&i.DatatypeLabel,
 			&i.DatatypeType,
 		); err != nil {
@@ -3458,7 +3500,7 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDe
 }
 
 const getLastAdminContentData = `-- name: GetLastAdminContentData :one
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData, error) {
@@ -3473,6 +3515,7 @@ func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData
 		&i.AdminRouteID,
 		&i.AdminDatatypeID,
 		&i.AuthorID,
+		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -3569,7 +3612,7 @@ func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
 }
 
 const getLastContentData = `-- name: GetLastContentData :one
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified FROM content_data WHERE content_data_id = LAST_INSERT_ID()
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data WHERE content_data_id = LAST_INSERT_ID()
 `
 
 func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
@@ -3584,6 +3627,7 @@ func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
 		&i.RouteID,
 		&i.DatatypeID,
 		&i.AuthorID,
+		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
 	)
@@ -4930,7 +4974,7 @@ func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, arg Increment
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -4952,6 +4996,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
+			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -4969,7 +5014,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
@@ -4996,6 +5041,7 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdmin
 			&i.AdminRouteID,
 			&i.AdminDatatypeID,
 			&i.AuthorID,
+			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -5694,7 +5740,7 @@ func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEven
 }
 
 const listContentData = `-- name: ListContentData :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
 ORDER BY content_data_id
 `
 
@@ -5716,6 +5762,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 			&i.RouteID,
 			&i.DatatypeID,
 			&i.AuthorID,
+			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -5733,7 +5780,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 }
 
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 `
@@ -5760,6 +5807,7 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 			&i.RouteID,
 			&i.DatatypeID,
 			&i.AuthorID,
+			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
@@ -6897,6 +6945,7 @@ SET parent_id = ?,
     admin_route_id = ?,
     admin_datatype_id = ?,
     author_id = ?,
+    status = ?,
     date_created = ?,
     date_modified = ?
 WHERE admin_content_data_id = ?
@@ -6910,6 +6959,7 @@ type UpdateAdminContentDataParams struct {
 	AdminRouteID       string                        `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
@@ -6924,6 +6974,7 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 		arg.AdminRouteID,
 		arg.AdminDatatypeID,
 		arg.AuthorID,
+		arg.Status,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.AdminContentDataID,
@@ -7170,13 +7221,14 @@ func (q *Queries) UpdateBackupStatus(ctx context.Context, arg UpdateBackupStatus
 
 const updateContentData = `-- name: UpdateContentData :exec
 UPDATE content_data
-set route_id = ?,
+SET route_id = ?,
     parent_id = ?,
     first_child_id = ?,
     next_sibling_id = ?,
     prev_sibling_id = ?,
     datatype_id = ?,
     author_id = ?,
+    status = ?,
     date_created = ?,
     date_modified = ?
 WHERE content_data_id = ?
@@ -7190,6 +7242,7 @@ type UpdateContentDataParams struct {
 	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 	ContentDataID types.ContentID          `json:"content_data_id"`
@@ -7204,6 +7257,7 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 		arg.PrevSiblingID,
 		arg.DatatypeID,
 		arg.AuthorID,
+		arg.Status,
 		arg.DateCreated,
 		arg.DateModified,
 		arg.ContentDataID,

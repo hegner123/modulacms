@@ -287,6 +287,7 @@ func (m Model) CreateContentWithFields(
 			DatatypeID:    types.NullableDatatypeID{ID: datatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
 			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+			Status:        types.ContentStatusDraft,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      types.NullableContentID{}, // NULL - no parent initially
@@ -369,6 +370,7 @@ func (m Model) HandleCreateContentFromDialog(
 			DatatypeID:    types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
 			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+			Status:        types.ContentStatusDraft,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      msg.ParentID,
@@ -656,6 +658,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 					PrevSiblingID: prevSibling.PrevSiblingID,
 					DatatypeID:    prevSibling.DatatypeID,
 					AuthorID:      prevSibling.AuthorID,
+					Status:        prevSibling.Status,
 					DateCreated:   prevSibling.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
@@ -679,6 +682,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 					PrevSiblingID: content.PrevSiblingID, // Point to our prev sibling
 					DatatypeID:    nextSibling.DatatypeID,
 					AuthorID:      nextSibling.AuthorID,
+					Status:        nextSibling.Status,
 					DateCreated:   nextSibling.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
@@ -702,6 +706,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 						PrevSiblingID: parent.PrevSiblingID,
 						DatatypeID:    parent.DatatypeID,
 						AuthorID:      parent.AuthorID,
+						Status:        parent.Status,
 						DateCreated:   parent.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
@@ -786,6 +791,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 					PrevSiblingID: prev.PrevSiblingID,
 					DatatypeID:    prev.DatatypeID,
 					AuthorID:      prev.AuthorID,
+					Status:        prev.Status,
 					DateCreated:   prev.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
@@ -809,6 +815,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 					PrevSiblingID: source.PrevSiblingID, // point to source's prev
 					DatatypeID:    next.DatatypeID,
 					AuthorID:      next.AuthorID,
+					Status:        next.Status,
 					DateCreated:   next.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
@@ -832,6 +839,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 						PrevSiblingID: oldParent.PrevSiblingID,
 						DatatypeID:    oldParent.DatatypeID,
 						AuthorID:      oldParent.AuthorID,
+						Status:        oldParent.Status,
 						DateCreated:   oldParent.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
@@ -866,6 +874,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 				PrevSiblingID: target.PrevSiblingID,
 				DatatypeID:    target.DatatypeID,
 				AuthorID:      target.AuthorID,
+				Status:        target.Status,
 				DateCreated:   target.DateCreated,
 				DateModified:  types.TimestampNow(),
 			}
@@ -895,6 +904,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 						PrevSiblingID: current.PrevSiblingID,
 						DatatypeID:    current.DatatypeID,
 						AuthorID:      current.AuthorID,
+						Status:        current.Status,
 						DateCreated:   current.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
@@ -918,6 +928,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			PrevSiblingID: newPrevSiblingID,
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      source.AuthorID,
+			Status:        source.Status,
 			DateCreated:   source.DateCreated,
 			DateModified:  types.TimestampNow(),
 		}
@@ -1327,5 +1338,471 @@ func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
 
 		logger.Finfo(fmt.Sprintf("Media uploaded successfully: %s", baseName))
 		return MediaUploadedMsg{Name: baseName}
+	}
+}
+
+// ReorderSiblingCmd creates a command to reorder content among siblings.
+func ReorderSiblingCmd(contentID types.ContentID, routeID types.RouteID, direction string) tea.Cmd {
+	return func() tea.Msg {
+		return ReorderSiblingRequestMsg{
+			ContentID: contentID,
+			RouteID:   routeID,
+			Direction: direction,
+		}
+	}
+}
+
+// HandleReorderSibling swaps a node with its prev or next sibling in the linked list.
+func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		logger := utility.DefaultLogger
+
+		// Read the node to move
+		a, err := d.GetContentData(msg.ContentID)
+		if err != nil || a == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content not found: %v", err)}
+		}
+
+		if msg.Direction == "up" {
+			// Move up: swap A with its prev sibling B
+			if !a.PrevSiblingID.Valid || a.PrevSiblingID.String == "" {
+				return ActionResultMsg{Title: "Info", Message: "Already at top"}
+			}
+			bID := types.ContentID(a.PrevSiblingID.String)
+			b, bErr := d.GetContentData(bID)
+			if bErr != nil || b == nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Previous sibling not found: %v", bErr)}
+			}
+
+			// Before: [C?] <-> B <-> A <-> [D?]
+			// After:  [C?] <-> A <-> B <-> [D?]
+
+			// If B has a prev (C), update C.NextSiblingID -> A
+			if b.PrevSiblingID.Valid && b.PrevSiblingID.String != "" {
+				cID := types.ContentID(b.PrevSiblingID.String)
+				c, cErr := d.GetContentData(cID)
+				if cErr == nil && c != nil {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: c.ContentDataID,
+						RouteID:       c.RouteID,
+						ParentID:      c.ParentID,
+						FirstChildID:  c.FirstChildID,
+						NextSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+						PrevSiblingID: c.PrevSiblingID,
+						DatatypeID:    c.DatatypeID,
+						AuthorID:      c.AuthorID,
+						Status:        c.Status,
+						DateCreated:   c.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update C during reorder up", updateErr)
+					}
+				}
+			}
+
+			// If A has a next (D), update D.PrevSiblingID -> B
+			if a.NextSiblingID.Valid && a.NextSiblingID.String != "" {
+				dID := types.ContentID(a.NextSiblingID.String)
+				dNode, dErr := d.GetContentData(dID)
+				if dErr == nil && dNode != nil {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: dNode.ContentDataID,
+						RouteID:       dNode.RouteID,
+						ParentID:      dNode.ParentID,
+						FirstChildID:  dNode.FirstChildID,
+						NextSiblingID: dNode.NextSiblingID,
+						PrevSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+						DatatypeID:    dNode.DatatypeID,
+						AuthorID:      dNode.AuthorID,
+						Status:        dNode.Status,
+						DateCreated:   dNode.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update D during reorder up", updateErr)
+					}
+				}
+			}
+
+			// If parent.FirstChildID == B, update to A
+			if a.ParentID.Valid {
+				parent, pErr := d.GetContentData(a.ParentID.ID)
+				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(b.ContentDataID) {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: parent.ContentDataID,
+						RouteID:       parent.RouteID,
+						ParentID:      parent.ParentID,
+						FirstChildID:  sql.NullString{String: string(a.ContentDataID), Valid: true},
+						NextSiblingID: parent.NextSiblingID,
+						PrevSiblingID: parent.PrevSiblingID,
+						DatatypeID:    parent.DatatypeID,
+						AuthorID:      parent.AuthorID,
+						Status:        parent.Status,
+						DateCreated:   parent.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update parent during reorder up", updateErr)
+					}
+				}
+			}
+
+			// Update A: prev = B.prev, next = B
+			_, aErr := d.UpdateContentData(db.UpdateContentDataParams{
+				ContentDataID: a.ContentDataID,
+				RouteID:       a.RouteID,
+				ParentID:      a.ParentID,
+				FirstChildID:  a.FirstChildID,
+				NextSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+				PrevSiblingID: b.PrevSiblingID,
+				DatatypeID:    a.DatatypeID,
+				AuthorID:      a.AuthorID,
+				Status:        a.Status,
+				DateCreated:   a.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if aErr != nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update node: %v", aErr)}
+			}
+
+			// Update B: prev = A, next = A's original next
+			_, bUpdateErr := d.UpdateContentData(db.UpdateContentDataParams{
+				ContentDataID: b.ContentDataID,
+				RouteID:       b.RouteID,
+				ParentID:      b.ParentID,
+				FirstChildID:  b.FirstChildID,
+				NextSiblingID: a.NextSiblingID,
+				PrevSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+				DatatypeID:    b.DatatypeID,
+				AuthorID:      b.AuthorID,
+				Status:        b.Status,
+				DateCreated:   b.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if bUpdateErr != nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update sibling: %v", bUpdateErr)}
+			}
+
+		} else {
+			// Move down: swap A with its next sibling B
+			if !a.NextSiblingID.Valid || a.NextSiblingID.String == "" {
+				return ActionResultMsg{Title: "Info", Message: "Already at bottom"}
+			}
+			bID := types.ContentID(a.NextSiblingID.String)
+			b, bErr := d.GetContentData(bID)
+			if bErr != nil || b == nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Next sibling not found: %v", bErr)}
+			}
+
+			// Before: [C?] <-> A <-> B <-> [D?]
+			// After:  [C?] <-> B <-> A <-> [D?]
+
+			// If A has a prev (C), update C.NextSiblingID -> B
+			if a.PrevSiblingID.Valid && a.PrevSiblingID.String != "" {
+				cID := types.ContentID(a.PrevSiblingID.String)
+				c, cErr := d.GetContentData(cID)
+				if cErr == nil && c != nil {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: c.ContentDataID,
+						RouteID:       c.RouteID,
+						ParentID:      c.ParentID,
+						FirstChildID:  c.FirstChildID,
+						NextSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+						PrevSiblingID: c.PrevSiblingID,
+						DatatypeID:    c.DatatypeID,
+						AuthorID:      c.AuthorID,
+						Status:        c.Status,
+						DateCreated:   c.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update C during reorder down", updateErr)
+					}
+				}
+			}
+
+			// If B has a next (D), update D.PrevSiblingID -> A
+			if b.NextSiblingID.Valid && b.NextSiblingID.String != "" {
+				dID := types.ContentID(b.NextSiblingID.String)
+				dNode, dErr := d.GetContentData(dID)
+				if dErr == nil && dNode != nil {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: dNode.ContentDataID,
+						RouteID:       dNode.RouteID,
+						ParentID:      dNode.ParentID,
+						FirstChildID:  dNode.FirstChildID,
+						NextSiblingID: dNode.NextSiblingID,
+						PrevSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+						DatatypeID:    dNode.DatatypeID,
+						AuthorID:      dNode.AuthorID,
+						Status:        dNode.Status,
+						DateCreated:   dNode.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update D during reorder down", updateErr)
+					}
+				}
+			}
+
+			// If parent.FirstChildID == A, update to B
+			if a.ParentID.Valid {
+				parent, pErr := d.GetContentData(a.ParentID.ID)
+				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(a.ContentDataID) {
+					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+						ContentDataID: parent.ContentDataID,
+						RouteID:       parent.RouteID,
+						ParentID:      parent.ParentID,
+						FirstChildID:  sql.NullString{String: string(b.ContentDataID), Valid: true},
+						NextSiblingID: parent.NextSiblingID,
+						PrevSiblingID: parent.PrevSiblingID,
+						DatatypeID:    parent.DatatypeID,
+						AuthorID:      parent.AuthorID,
+						Status:        parent.Status,
+						DateCreated:   parent.DateCreated,
+						DateModified:  types.TimestampNow(),
+					})
+					if updateErr != nil {
+						logger.Ferror("Failed to update parent during reorder down", updateErr)
+					}
+				}
+			}
+
+			// Update B: prev = A.prev, next = A
+			_, bUpdateErr := d.UpdateContentData(db.UpdateContentDataParams{
+				ContentDataID: b.ContentDataID,
+				RouteID:       b.RouteID,
+				ParentID:      b.ParentID,
+				FirstChildID:  b.FirstChildID,
+				NextSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+				PrevSiblingID: a.PrevSiblingID,
+				DatatypeID:    b.DatatypeID,
+				AuthorID:      b.AuthorID,
+				Status:        b.Status,
+				DateCreated:   b.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if bUpdateErr != nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update sibling: %v", bUpdateErr)}
+			}
+
+			// Update A: prev = B, next = B's original next
+			_, aErr := d.UpdateContentData(db.UpdateContentDataParams{
+				ContentDataID: a.ContentDataID,
+				RouteID:       a.RouteID,
+				ParentID:      a.ParentID,
+				FirstChildID:  a.FirstChildID,
+				NextSiblingID: b.NextSiblingID,
+				PrevSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+				DatatypeID:    a.DatatypeID,
+				AuthorID:      a.AuthorID,
+				Status:        a.Status,
+				DateCreated:   a.DateCreated,
+				DateModified:  types.TimestampNow(),
+			})
+			if aErr != nil {
+				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update node: %v", aErr)}
+			}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content reordered %s: %s", msg.Direction, msg.ContentID))
+		return ContentReorderedMsg{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+			Direction: msg.Direction,
+		}
+	}
+}
+
+// CopyContentCmd creates a command to copy a content node as a new sibling.
+func CopyContentCmd(sourceID types.ContentID, routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return CopyContentRequestMsg{
+			SourceContentID: sourceID,
+			RouteID:         routeID,
+		}
+	}
+}
+
+// HandleCopyContent duplicates a content node and its fields as a new sibling.
+func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
+	cfg := m.Config
+	userID := m.UserID
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		logger := utility.DefaultLogger
+
+		// Read source
+		source, err := d.GetContentData(msg.SourceContentID)
+		if err != nil || source == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Source content not found: %v", err)}
+		}
+
+		// Read source fields
+		sourceFields, err := d.ListContentFieldsByContentData(types.NullableContentID{ID: msg.SourceContentID, Valid: true})
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to read source fields: %v", err)}
+		}
+
+		// Create new ContentData as sibling after source
+		now := types.TimestampNow()
+		newContent := d.CreateContentData(db.CreateContentDataParams{
+			RouteID:       source.RouteID,
+			ParentID:      source.ParentID,
+			FirstChildID:  sql.NullString{},                                                      // no children (flat copy)
+			NextSiblingID: source.NextSiblingID,                                                   // take source's next
+			PrevSiblingID: sql.NullString{String: string(source.ContentDataID), Valid: true},       // prev = source
+			DatatypeID:    source.DatatypeID,
+			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			Status:        types.ContentStatusDraft,
+			DateCreated:   now,
+			DateModified:  now,
+		})
+
+		if newContent.ContentDataID.IsZero() {
+			return ActionResultMsg{Title: "Error", Message: "Failed to create content copy"}
+		}
+
+		// Update source.NextSiblingID -> new node
+		_, sErr := d.UpdateContentData(db.UpdateContentDataParams{
+			ContentDataID: source.ContentDataID,
+			RouteID:       source.RouteID,
+			ParentID:      source.ParentID,
+			FirstChildID:  source.FirstChildID,
+			NextSiblingID: sql.NullString{String: string(newContent.ContentDataID), Valid: true},
+			PrevSiblingID: source.PrevSiblingID,
+			DatatypeID:    source.DatatypeID,
+			AuthorID:      source.AuthorID,
+			Status:        source.Status,
+			DateCreated:   source.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if sErr != nil {
+			logger.Ferror("Failed to update source next pointer after copy", sErr)
+		}
+
+		// If source had a next sibling (D), update D.PrevSiblingID -> new node
+		if source.NextSiblingID.Valid && source.NextSiblingID.String != "" {
+			dID := types.ContentID(source.NextSiblingID.String)
+			dNode, dErr := d.GetContentData(dID)
+			if dErr == nil && dNode != nil {
+				_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					ContentDataID: dNode.ContentDataID,
+					RouteID:       dNode.RouteID,
+					ParentID:      dNode.ParentID,
+					FirstChildID:  dNode.FirstChildID,
+					NextSiblingID: dNode.NextSiblingID,
+					PrevSiblingID: sql.NullString{String: string(newContent.ContentDataID), Valid: true},
+					DatatypeID:    dNode.DatatypeID,
+					AuthorID:      dNode.AuthorID,
+					Status:        dNode.Status,
+					DateCreated:   dNode.DateCreated,
+					DateModified:  types.TimestampNow(),
+				})
+				if updateErr != nil {
+					logger.Ferror("Failed to update next sibling prev pointer after copy", updateErr)
+				}
+			}
+		}
+
+		// Copy fields
+		fieldCount := 0
+		if sourceFields != nil {
+			for _, field := range *sourceFields {
+				_ = d.CreateContentField(db.CreateContentFieldParams{
+					RouteID:       field.RouteID,
+					ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
+					FieldID:       field.FieldID,
+					FieldValue:    field.FieldValue,
+					AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+					DateCreated:   now,
+					DateModified:  now,
+				})
+				fieldCount++
+			}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content copied: %s -> %s with %d fields", msg.SourceContentID, newContent.ContentDataID, fieldCount))
+		return ContentCopiedMsg{
+			SourceContentID: msg.SourceContentID,
+			NewContentID:    newContent.ContentDataID,
+			RouteID:         msg.RouteID,
+			FieldCount:      fieldCount,
+		}
+	}
+}
+
+// TogglePublishCmd creates a command to toggle content publish status.
+func TogglePublishCmd(contentID types.ContentID, routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return TogglePublishRequestMsg{
+			ContentID: contentID,
+			RouteID:   routeID,
+		}
+	}
+}
+
+// HandleTogglePublish toggles a content node between draft and published status.
+func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		logger := utility.DefaultLogger
+
+		content, err := d.GetContentData(msg.ContentID)
+		if err != nil || content == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content not found: %v", err)}
+		}
+
+		// Toggle status
+		newStatus := types.ContentStatusPublished
+		if content.Status == types.ContentStatusPublished {
+			newStatus = types.ContentStatusDraft
+		}
+
+		_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+			ContentDataID: content.ContentDataID,
+			RouteID:       content.RouteID,
+			ParentID:      content.ParentID,
+			FirstChildID:  content.FirstChildID,
+			NextSiblingID: content.NextSiblingID,
+			PrevSiblingID: content.PrevSiblingID,
+			DatatypeID:    content.DatatypeID,
+			AuthorID:      content.AuthorID,
+			Status:        newStatus,
+			DateCreated:   content.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if updateErr != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update status: %v", updateErr)}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content %s status changed to %s", msg.ContentID, newStatus))
+		return ContentPublishToggledMsg{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+			NewStatus: newStatus,
+		}
 	}
 }

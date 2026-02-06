@@ -655,6 +655,38 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
 		}
+		if km.Matches(key, config.ActionReorderUp) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil && node.PrevSibling != nil {
+					return m, tea.Batch(LoadingStartCmd(), ReorderSiblingCmd(node.Instance.ContentDataID, m.PageRouteId, "up"))
+				}
+			}
+		}
+		if km.Matches(key, config.ActionReorderDown) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil && node.NextSibling != nil {
+					return m, tea.Batch(LoadingStartCmd(), ReorderSiblingCmd(node.Instance.ContentDataID, m.PageRouteId, "down"))
+				}
+			}
+		}
+		if km.Matches(key, config.ActionCopy) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil {
+					return m, tea.Batch(LoadingStartCmd(), CopyContentCmd(node.Instance.ContentDataID, m.PageRouteId))
+				}
+			}
+		}
+		if km.Matches(key, config.ActionPublish) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil {
+					return m, tea.Batch(LoadingStartCmd(), TogglePublishCmd(node.Instance.ContentDataID, m.PageRouteId))
+				}
+			}
+		}
 
 		// Title font change
 		if km.Matches(key, config.ActionTitlePrev) {

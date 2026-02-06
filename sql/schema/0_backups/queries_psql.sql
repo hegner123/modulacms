@@ -1,3 +1,12 @@
+-- name: DropBackupSetsTable :exec
+DROP TABLE IF EXISTS backup_sets;
+
+-- name: DropBackupVerificationsTable :exec
+DROP TABLE IF EXISTS backup_verifications;
+
+-- name: DropBackupsTable :exec
+DROP TABLE IF EXISTS backups;
+
 -- name: DropBackupTables :exec
 DROP TABLE IF EXISTS backup_sets;
 DROP TABLE IF EXISTS backup_verifications;

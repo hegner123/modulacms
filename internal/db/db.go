@@ -679,6 +679,7 @@ func (d Database) CreateBootstrapData() error {
 		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -695,6 +696,7 @@ func (d Database) CreateBootstrapData() error {
 		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})
@@ -1312,6 +1314,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -1328,6 +1331,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})
@@ -1918,6 +1922,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		PrevSiblingID: sql.NullString{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -1934,6 +1939,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		AdminRouteID:    adminRoute.AdminRouteID.String(),
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})

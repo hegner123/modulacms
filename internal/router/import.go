@@ -227,6 +227,7 @@ func (ctx *importContext) importNode(node *model.Node, parentID types.NullableCo
 			Valid: true,
 		},
 		AuthorID:      ctx.authorID,
+		Status:        types.ContentStatusDraft,
 		FirstChildID:  sql.NullString{Valid: false},
 		NextSiblingID: sql.NullString{Valid: false},
 		PrevSiblingID: sql.NullString{Valid: false},
@@ -374,6 +375,7 @@ func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs [
 		PrevSiblingID: parent.PrevSiblingID,
 		DatatypeID:    parent.DatatypeID,
 		AuthorID:      parent.AuthorID,
+		Status:        parent.Status,
 		DateCreated:   parent.DateCreated,
 		DateModified:  parent.DateModified,
 	})
@@ -411,6 +413,7 @@ func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs [
 			PrevSiblingID: prevSibling,
 			DatatypeID:    childData.DatatypeID,
 			AuthorID:      childData.AuthorID,
+			Status:        childData.Status,
 			DateCreated:   childData.DateCreated,
 			DateModified:  childData.DateModified,
 		})

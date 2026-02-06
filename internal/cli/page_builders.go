@@ -430,8 +430,14 @@ func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) stri
 		cursor = "->"
 	}
 
-	// Build the row: cursor + indent + icon + name
-	return cursor + indent + icon + " " + name
+	// Status indicator for published content
+	statusMark := ""
+	if node.Instance != nil && node.Instance.Status == types.ContentStatusPublished {
+		statusMark = "* "
+	}
+
+	// Build the row: cursor + indent + icon + statusMark + name
+	return cursor + indent + icon + " " + statusMark + name
 }
 
 func FormatRow(node *tree.Node) string {
@@ -490,6 +496,9 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 
 	// Content Type
 	preview = append(preview, fmt.Sprintf("Type: %s", node.Datatype.Label))
+
+	// Status
+	preview = append(preview, fmt.Sprintf("Status: %s", node.Instance.Status))
 
 	// Content ID
 	preview = append(preview, fmt.Sprintf("ID: %s", node.Instance.ContentDataID))

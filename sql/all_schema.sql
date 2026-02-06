@@ -247,6 +247,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     author_id INTEGER NOT NULL
         REFERENCES users
             ON DELETE SET DEFAULT,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -307,6 +308,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     admin_route_id INTEGER NOT NULL,
     admin_datatype_id INTEGER NOT NULL,
     author_id INTEGER NOT NULL DEFAULT 1,
+    status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 

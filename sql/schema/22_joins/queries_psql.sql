@@ -8,10 +8,11 @@ SELECT cd.content_data_id,
         cd.datatype_id, 
         cd.route_id, 
         cd.author_id, 
-        cd.date_created, 
+        cd.date_created,
         cd.date_modified,
+        cd.status,
        dt.label as datatype_label, dt.type as datatype_type
-FROM content_data cd 
+FROM content_data cd
 JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id = $1
 ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id;

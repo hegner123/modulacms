@@ -275,7 +275,10 @@ func getContextControls(m Model) string {
 		}
 		return nav + " │ " + km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse) + ":expand │ " + km.HintString(config.ActionNew) + ":new │ " +
 			km.HintString(config.ActionEdit) + ":edit │ " +
-			km.HintString(config.ActionDelete) + ":delete │ " + common
+			km.HintString(config.ActionDelete) + ":delete │ " +
+			km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " +
+			km.HintString(config.ActionCopy) + ":copy │ " +
+			km.HintString(config.ActionPublish) + ":publish │ " + common
 
 	case ROUTES:
 		return nav + " │ enter:select │ " + km.HintString(config.ActionNew) + ":new │ " +

@@ -128,6 +128,7 @@ type StringContentData struct {
 	PrevSiblingID string `json:"prev_sibling_id"`
 	DatatypeID    string `json:"datatype_id"`
 	AuthorID      string `json:"author_id"`
+	Status        string `json:"status"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
 	History       string `json:"history"`
@@ -185,6 +186,7 @@ type StringAdminContentData struct {
 	AdminRouteID       string `json:"admin_route_id"`
 	AdminDatatypeID    string `json:"admin_datatype_id"`
 	AuthorID           string `json:"author_id"`
+	Status             string `json:"status"`
 	DateCreated        string `json:"date_created"`
 	DateModified       string `json:"date_modified"`
 	History            string `json:"history"`
