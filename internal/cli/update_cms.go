@@ -124,6 +124,13 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case DeleteRouteRequestMsg:
 		// Delete route
 		return m, m.HandleDeleteRoute(msg)
+	case MediaUploadStartMsg:
+		return m, m.HandleMediaUpload(msg)
+	case MediaUploadedMsg:
+		return m, tea.Batch(
+			MediaFetchCmd(),
+			ShowDialog("Upload Complete", fmt.Sprintf("'%s' uploaded successfully.", msg.Name), false),
+		)
 	case DeleteMediaRequestMsg:
 		// Delete media item
 		return m, m.HandleDeleteMedia(msg)

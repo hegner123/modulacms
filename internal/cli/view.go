@@ -216,6 +216,10 @@ func (m Model) View() string {
 		ui = m.RenderUI()
 	}
 
+	if m.FilePickerActive {
+		return FilePickerOverlay(ui, m.FilePicker, m.Width, m.Height)
+	}
+
 	if m.DialogActive && m.Dialog != nil {
 		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
 	}

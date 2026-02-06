@@ -38,6 +38,34 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m, cmd := m.UpdateCms(msg); cmd != nil {
 		return m, cmd
 	}
+	// When file picker is active, route all input to it.
+	if m.FilePickerActive {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			if keyMsg.String() == "esc" || keyMsg.String() == "ctrl+c" {
+				m.FilePickerActive = false
+				return m, nil
+			}
+			var cmd tea.Cmd
+			m.FilePicker, cmd = m.FilePicker.Update(msg)
+
+			if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
+				m.FilePickerActive = false
+				return m, MediaUploadCmd(path)
+			}
+
+			// Disabled file selection stays in picker (filepicker shows its own error)
+			if didSelect, _ := m.FilePicker.DidSelectDisabledFile(msg); didSelect {
+				return m, cmd
+			}
+
+			return m, cmd
+		}
+		// Non-key messages still forwarded to filepicker (for directory reads)
+		var cmd tea.Cmd
+		m.FilePicker, cmd = m.FilePicker.Update(msg)
+		return m, cmd
+	}
+
 	// When dialog is active, route all key input to the dialog and stop.
 	if m.DialogActive && m.Dialog != nil {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {

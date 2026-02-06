@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/paginator"
 	"github.com/charmbracelet/bubbles/spinner"
 	"github.com/charmbracelet/bubbles/viewport"
@@ -107,6 +108,8 @@ type Model struct {
 	SelectedDatatypeFields []db.Fields
 	FieldCursor            int // Cursor for the fields panel (center)
 	MediaList              []db.Media
+	FilePicker             filepicker.Model
+	FilePickerActive       bool
 	RootContentSummary     []db.RootContentSummary
 	UsersList              []db.Users
 	UserFormDialog         *UserFormDialogModel

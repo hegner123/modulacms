@@ -4,11 +4,15 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/media"
 	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -1282,5 +1286,46 @@ func (m Model) ReloadContentTree(c *config.Config, routeID types.RouteID) tea.Cm
 			Stats:    stats,
 			RootNode: newRoot,
 		}
+	}
+}
+
+// HandleMediaUpload runs the media upload pipeline asynchronously.
+func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
+	logger := m.Logger
+	if logger == nil {
+		logger = utility.DefaultLogger
+	}
+	cfg := m.Config
+	return func() tea.Msg {
+		filename := filepath.Base(msg.FilePath)
+		baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
+
+		logger.Finfo(fmt.Sprintf("Starting media upload: %s", filename))
+
+		// Step 1: Create placeholder DB record
+		media.CreateMedia(baseName, *cfg)
+
+		// Step 2: Create temp directory for optimized files
+		tmpDir, err := os.MkdirTemp("", media.TempDirPrefix)
+		if err != nil {
+			logger.Ferror("Failed to create temp directory", err)
+			return ActionResultMsg{
+				Title:   "Upload Error",
+				Message: fmt.Sprintf("Failed to create temp directory: %v", err),
+			}
+		}
+		defer os.RemoveAll(tmpDir)
+
+		// Step 3: Run upload pipeline (optimize -> S3 upload -> DB update)
+		if err := media.HandleMediaUpload(msg.FilePath, tmpDir, *cfg); err != nil {
+			logger.Ferror("Media upload failed", err)
+			return ActionResultMsg{
+				Title:   "Upload Error",
+				Message: fmt.Sprintf("Upload failed: %v", err),
+			}
+		}
+
+		logger.Finfo(fmt.Sprintf("Media uploaded successfully: %s", baseName))
+		return MediaUploadedMsg{Name: baseName}
 	}
 }

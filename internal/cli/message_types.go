@@ -376,6 +376,16 @@ type RootContentSummarySet struct {
 	RootContentSummary []db.RootContentSummary
 }
 
+// MediaUploadStartMsg triggers the async upload pipeline
+type MediaUploadStartMsg struct {
+	FilePath string
+}
+
+// MediaUploadedMsg signals upload completed successfully
+type MediaUploadedMsg struct {
+	Name string
+}
+
 type PanelFocusReset struct{}
 
 // Users fetch messages

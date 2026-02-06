@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/charmbracelet/bubbles/filepicker"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/config"
@@ -702,6 +703,15 @@ func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
+		}
+		if km.Matches(key, config.ActionNew) {
+			fp := filepicker.New()
+			fp.AllowedTypes = []string{".png", ".jpg", ".jpeg", ".webp", ".gif"}
+			fp.CurrentDirectory, _ = os.UserHomeDir()
+			fp.Height = m.Height - 4
+			m.FilePicker = fp
+			m.FilePickerActive = true
+			return m, m.FilePicker.Init()
 		}
 		if km.Matches(key, config.ActionDelete) {
 			if len(m.MediaList) > 0 && m.Cursor < len(m.MediaList) {

@@ -3,6 +3,7 @@ package cli
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -269,4 +270,30 @@ func DeleteContentCmd(contentID, routeID string) tea.Cmd {
 type ContentDeletedMsg struct {
 	ContentID string
 	RouteID   string
+}
+
+// FilePickerOverlay renders a file picker as a full-screen overlay.
+func FilePickerOverlay(base string, fp filepicker.Model, width, height int) string {
+	title := lipgloss.NewStyle().
+		Bold(true).
+		Foreground(config.DefaultStyle.Accent).
+		Render("Select a file to upload")
+
+	hint := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Secondary).
+		Render("esc: cancel")
+
+	pickerView := lipgloss.NewStyle().
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(config.DefaultStyle.Accent).
+		Padding(1, 2).
+		Width(width - 4).
+		Height(height - 4).
+		Render(title + "\n\n" + fp.View() + "\n\n" + hint)
+
+	return lipgloss.Place(width, height,
+		lipgloss.Center, lipgloss.Center,
+		pickerView,
+		lipgloss.WithWhitespaceChars(" "),
+	)
 }

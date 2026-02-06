@@ -432,6 +432,11 @@ func MediaFetchCmd() tea.Cmd       { return func() tea.Msg { return MediaFetchMs
 func MediaListSetCmd(media []db.Media) tea.Cmd {
 	return func() tea.Msg { return MediaListSet{MediaList: media} }
 }
+func MediaUploadCmd(filePath string) tea.Cmd {
+	return func() tea.Msg {
+		return MediaUploadStartMsg{FilePath: filePath}
+	}
+}
 
 // Users constructors
 func UsersFetchCmd() tea.Cmd       { return func() tea.Msg { return UsersFetchMsg{} } }

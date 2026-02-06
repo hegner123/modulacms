@@ -72,6 +72,10 @@ func renderCMSPanelLayout(m Model) string {
 
 	ui := lipgloss.JoinVertical(lipgloss.Left, header, body, statusBar)
 
+	if m.FilePickerActive {
+		return FilePickerOverlay(ui, m.FilePicker, m.Width, m.Height)
+	}
+
 	if m.DialogActive && m.Dialog != nil {
 		return DialogOverlay(ui, *m.Dialog, m.Width, m.Height)
 	}
