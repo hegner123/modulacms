@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/tree"
 )
 
 type LogModelMsg struct {
@@ -307,8 +308,8 @@ type ContentCreatedWithErrorsMsg struct {
 
 type TreeLoadedMsg struct {
 	RouteID  types.RouteID
-	Stats    *LoadStats
-	RootNode *TreeRoot
+	Stats    *tree.LoadStats
+	RootNode *tree.Root
 }
 
 type BuildContentFormMsg struct {
@@ -376,3 +377,17 @@ type RootContentSummarySet struct {
 }
 
 type PanelFocusReset struct{}
+
+// Users fetch messages
+type UsersFetchMsg struct{}
+type UsersFetchResultsMsg struct {
+	Data []db.Users
+}
+type UsersListSet struct {
+	UsersList []db.Users
+}
+
+// Message types
+type BuildTreeFromRouteMsg struct {
+	RouteID int64
+}

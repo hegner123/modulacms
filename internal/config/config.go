@@ -94,6 +94,8 @@ type Config struct {
 	Observability_Server_Name    string  `json:"observability_server_name"`     // Server/instance name
 	Observability_Flush_Interval string  `json:"observability_flush_interval"`  // How often to flush metrics (e.g., "30s", "1m")
 	Observability_Tags           map[string]string `json:"observability_tags"` // Global tags for all metrics/events
+
+	KeyBindings KeyMap `json:"keybindings"`
 }
 
 var DisableSystemTables ConfigOption = "disableSystemTables"

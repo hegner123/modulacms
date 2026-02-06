@@ -11,6 +11,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tree"
 )
 
 type PageUI interface {
@@ -331,7 +332,7 @@ const (
 
 type CMSPage struct {
 	BasePage
-	Tree    TreeRoot
+	Tree    tree.Root
 	Display DisplayMode
 }
 
@@ -380,12 +381,12 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 }
 
 // traverseTree recursively renders the tree with proper indentation and cursor
-func (c CMSPage) traverseTree(node *TreeNode, display *[]string, cursor int, currentIndex *int) {
+func (c CMSPage) traverseTree(node *tree.Node, display *[]string, cursor int, currentIndex *int) {
 	c.traverseTreeWithDepth(node, display, cursor, currentIndex, 0)
 }
 
 // traverseTreeWithDepth recursively renders the tree tracking depth for indentation
-func (c CMSPage) traverseTreeWithDepth(node *TreeNode, display *[]string, cursor int, currentIndex *int, depth int) {
+func (c CMSPage) traverseTreeWithDepth(node *tree.Node, display *[]string, cursor int, currentIndex *int, depth int) {
 	if node == nil {
 		return
 	}
@@ -407,7 +408,7 @@ func (c CMSPage) traverseTreeWithDepth(node *TreeNode, display *[]string, cursor
 }
 
 // FormatTreeRow formats a single tree node with cursor and indentation
-func (c CMSPage) FormatTreeRow(node *TreeNode, isSelected bool, depth int) string {
+func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) string {
 	indent := strings.Repeat("  ", depth)
 
 	// Icon based on node type and state
@@ -433,7 +434,7 @@ func (c CMSPage) FormatTreeRow(node *TreeNode, isSelected bool, depth int) strin
 	return cursor + indent + icon + " " + name
 }
 
-func FormatRow(node *TreeNode) string {
+func FormatRow(node *tree.Node) string {
 	row := ""
 	//HasChildrenCollapsed := "+"
 	//HasChildrenExpanded := "-"
@@ -446,7 +447,7 @@ func FormatRow(node *TreeNode) string {
 	return row
 }
 
-func DecideNodeName(node TreeNode) string {
+func DecideNodeName(node tree.Node) string {
 	var out string
 	if index := slices.IndexFunc(node.Fields, FieldMatchesLabel); index > -1 {
 		id := node.Fields[index].FieldID
@@ -473,7 +474,7 @@ func FieldMatchesLabel(field db.Fields) bool {
 }
 
 func (c CMSPage) ProcessContentPreview(model Model) string {
-	node := c.getSelectedNode(model)
+	node := model.Root.NodeAtIndex(model.Cursor)
 	if node == nil {
 		return "No content selected"
 	}
@@ -532,7 +533,7 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 }
 
 func (c CMSPage) ProcessFields(model Model) string {
-	node := c.getSelectedNode(model)
+	node := model.Root.NodeAtIndex(model.Cursor)
 	if node == nil || node.Instance == nil {
 		return "No content selected"
 	}
@@ -597,42 +598,6 @@ func (c CMSPage) ProcessFields(model Model) string {
 	return lipgloss.JoinVertical(lipgloss.Left, fields...)
 }
 
-// getSelectedNode finds the node at the current cursor position
-func (c CMSPage) getSelectedNode(model Model) *TreeNode {
-	if model.Root.Root == nil {
-		return nil
-	}
-	currentIndex := 0
-	return c.findNodeAtCursor(model.Root.Root, model.Cursor, &currentIndex)
-}
-
-// findNodeAtCursor traverses the tree to find the node at cursor position
-func (c CMSPage) findNodeAtCursor(node *TreeNode, cursor int, currentIndex *int) *TreeNode {
-	if node == nil {
-		return nil
-	}
-
-	// Check if this is the node we're looking for
-	if *currentIndex == cursor {
-		return node
-	}
-	*currentIndex++
-
-	// Check children if expanded
-	if node.Expand && node.FirstChild != nil {
-		if result := c.findNodeAtCursor(node.FirstChild, cursor, currentIndex); result != nil {
-			return result
-		}
-	}
-
-	// Check siblings
-	if node.NextSibling != nil {
-		return c.findNodeAtCursor(node.NextSibling, cursor, currentIndex)
-	}
-
-	return nil
-}
-
 func (c CMSPage) CenterColumn(content string) string {
 	switch c.Display {
 	case Main:
@@ -676,7 +641,7 @@ func NewCMSPage() CMSPage {
 	b := NewBasePage()
 	p := CMSPage{
 		BasePage: b,
-		Tree:     TreeRoot{},
+		Tree:     tree.Root{},
 	}
 
 	return p

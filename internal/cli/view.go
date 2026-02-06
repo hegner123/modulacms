@@ -228,6 +228,10 @@ func (m Model) View() string {
 		return ContentFormDialogOverlay(ui, *m.ContentFormDialog, m.Width, m.Height)
 	}
 
+	if m.UserFormDialogActive && m.UserFormDialog != nil {
+		return UserFormDialogOverlay(ui, *m.UserFormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 

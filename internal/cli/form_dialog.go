@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
@@ -27,6 +28,9 @@ const (
 	FORMDIALOGCHILDDATATYPE          FormDialogAction = "child_datatype"
 	FORMDIALOGCREATECONTENT          FormDialogAction = "create_content"
 	FORMDIALOGEDITCONTENT            FormDialogAction = "edit_content"
+	FORMDIALOGMOVECONTENT            FormDialogAction = "move_content"
+	FORMDIALOGCREATEUSER             FormDialogAction = "create_user"
+	FORMDIALOGEDITUSER               FormDialogAction = "edit_user"
 )
 
 // FormDialogField indices for focus navigation
@@ -44,8 +48,75 @@ type ParentOption struct {
 	Value string // DatatypeID or empty for ROOT
 }
 
+// TypeOption represents a selectable field type from the registry
+type TypeOption struct {
+	Label string
+	Value string // Registry key (e.g., "text")
+}
+
+// TypeOptionsFromRegistry builds TypeOption slice from the field input registry.
+func TypeOptionsFromRegistry() []TypeOption {
+	entries := FieldInputTypes()
+	opts := make([]TypeOption, len(entries))
+	for i, e := range entries {
+		opts[i] = TypeOption{Label: e.Label, Value: e.Key}
+	}
+	return opts
+}
+
+// dialogStyles holds the shared styles used by all dialog types.
+type dialogStyles struct {
+	borderStyle        lipgloss.Style
+	titleStyle         lipgloss.Style
+	labelStyle         lipgloss.Style
+	inputStyle         lipgloss.Style
+	focusedInputStyle  lipgloss.Style
+	buttonStyle        lipgloss.Style
+	cancelButtonStyle  lipgloss.Style
+	confirmButtonStyle lipgloss.Style
+}
+
+func newDialogStyles() dialogStyles {
+	return dialogStyles{
+		borderStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.RoundedBorder()).
+			Padding(1, 2),
+		titleStyle: lipgloss.NewStyle().
+			Bold(true).
+			Foreground(config.DefaultStyle.Accent).
+			MarginBottom(1),
+		labelStyle: lipgloss.NewStyle().
+			Foreground(config.DefaultStyle.Secondary).
+			MarginBottom(0),
+		inputStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(config.DefaultStyle.Tertiary).
+			Padding(0, 1).
+			MarginBottom(1),
+		focusedInputStyle: lipgloss.NewStyle().
+			BorderStyle(lipgloss.NormalBorder()).
+			BorderForeground(config.DefaultStyle.Accent).
+			Padding(0, 1).
+			MarginBottom(1),
+		buttonStyle: lipgloss.NewStyle().
+			Padding(0, 2).
+			MarginRight(2),
+		cancelButtonStyle: lipgloss.NewStyle().
+			Foreground(config.DefaultStyle.Secondary).
+			Background(config.DefaultStyle.Tertiary).
+			Padding(0, 2).
+			MarginRight(2),
+		confirmButtonStyle: lipgloss.NewStyle().
+			Foreground(config.DefaultStyle.Primary).
+			Background(config.DefaultStyle.Accent).
+			Padding(0, 2),
+	}
+}
+
 // FormDialogModel represents a form dialog with text inputs and buttons
 type FormDialogModel struct {
+	dialogStyles
+
 	Title  string
 	Width  int
 	Action FormDialogAction
@@ -57,22 +128,16 @@ type FormDialogModel struct {
 	LabelInput textinput.Model
 	TypeInput  textinput.Model
 
+	// Type selection (populated from registry for field dialogs)
+	TypeOptions []TypeOption
+	TypeIndex   int
+
 	// Parent selection
 	ParentOptions []ParentOption
 	ParentIndex   int
 
 	// Focus management: 0=Label, 1=Type, 2=Parent, 3=Cancel, 4=Confirm
 	focusIndex int
-
-	// Styles
-	borderStyle        lipgloss.Style
-	titleStyle         lipgloss.Style
-	labelStyle         lipgloss.Style
-	inputStyle         lipgloss.Style
-	focusedInputStyle  lipgloss.Style
-	buttonStyle        lipgloss.Style
-	cancelButtonStyle  lipgloss.Style
-	confirmButtonStyle lipgloss.Style
 }
 
 // NewFormDialog creates a new form dialog for datatype creation
@@ -102,6 +167,7 @@ func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes
 	}
 
 	return FormDialogModel{
+		dialogStyles:  newDialogStyles(),
 		Title:         title,
 		Width:         60,
 		Action:        action,
@@ -110,31 +176,6 @@ func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes
 		ParentOptions: parentOptions,
 		ParentIndex:   0,
 		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
 	}
 }
 
@@ -147,46 +188,15 @@ func NewFieldFormDialog(title string, action FormDialogAction) FormDialogModel {
 	labelInput.Width = 40
 	labelInput.Focus()
 
-	// Create type input
-	typeInput := textinput.New()
-	typeInput.Placeholder = "text"
-	typeInput.CharLimit = 32
-	typeInput.Width = 40
-
 	return FormDialogModel{
-		Title:         title,
-		Width:         60,
-		Action:        action,
-		LabelInput:    labelInput,
-		TypeInput:     typeInput,
-		ParentOptions: nil, // No parent selection for fields
-		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        60,
+		Action:       action,
+		LabelInput:   labelInput,
+		TypeOptions:  TypeOptionsFromRegistry(),
+		TypeIndex:    0,
+		focusIndex:   FormDialogFieldLabel,
 	}
 }
 
@@ -206,39 +216,13 @@ func NewRouteFormDialog(title string, action FormDialogAction) FormDialogModel {
 	slugInput.Width = 40
 
 	return FormDialogModel{
-		Title:         title,
-		Width:         60,
-		Action:        action,
-		LabelInput:    titleInput,
-		TypeInput:     slugInput,
-		ParentOptions: nil, // No parent selection for routes
-		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        60,
+		Action:       action,
+		LabelInput:   titleInput,
+		TypeInput:    slugInput,
+		focusIndex:   FormDialogFieldLabel,
 	}
 }
 
@@ -247,12 +231,17 @@ func (d *FormDialogModel) HasParentSelector() bool {
 	return len(d.ParentOptions) > 0
 }
 
+// HasTypeSelector returns true if the dialog has a type selector carousel
+func (d *FormDialogModel) HasTypeSelector() bool {
+	return len(d.TypeOptions) > 0
+}
+
 // Update handles input for the form dialog
 func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Special handling for child datatype selection - simple vertical list
-		if d.Action == FORMDIALOGCHILDDATATYPE {
+		// Special handling for child datatype selection and move content - simple vertical list
+		if d.Action == FORMDIALOGCHILDDATATYPE || d.Action == FORMDIALOGMOVECONTENT {
 			return d.updateChildDatatypeSelection(msg)
 		}
 
@@ -264,6 +253,12 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 			d.focusPrev()
 			return *d, nil
 		case "left":
+			if d.focusIndex == FormDialogFieldType && d.HasTypeSelector() {
+				if d.TypeIndex > 0 {
+					d.TypeIndex--
+				}
+				return *d, nil
+			}
 			if d.focusIndex == FormDialogFieldParent && d.HasParentSelector() {
 				if d.ParentIndex > 0 {
 					d.ParentIndex--
@@ -275,6 +270,12 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 				return *d, nil
 			}
 		case "right":
+			if d.focusIndex == FormDialogFieldType && d.HasTypeSelector() {
+				if d.TypeIndex < len(d.TypeOptions)-1 {
+					d.TypeIndex++
+				}
+				return *d, nil
+			}
 			if d.focusIndex == FormDialogFieldParent && d.HasParentSelector() {
 				if d.ParentIndex < len(d.ParentOptions)-1 {
 					d.ParentIndex++
@@ -296,12 +297,18 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 					parentID = d.ParentOptions[d.ParentIndex].Value
 				}
 
+				// Get type value from selector or text input
+				typeValue := d.TypeInput.Value()
+				if d.HasTypeSelector() && d.TypeIndex < len(d.TypeOptions) {
+					typeValue = d.TypeOptions[d.TypeIndex].Value
+				}
+
 				return *d, func() tea.Msg {
 					return FormDialogAcceptMsg{
 						Action:   d.Action,
 						EntityID: d.EntityID,
 						Label:    d.LabelInput.Value(),
-						Type:     d.TypeInput.Value(),
+						Type:     typeValue,
 						ParentID: parentID,
 					}
 				}
@@ -319,7 +326,9 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 		case FormDialogFieldLabel:
 			d.LabelInput, cmd = d.LabelInput.Update(msg)
 		case FormDialogFieldType:
-			d.TypeInput, cmd = d.TypeInput.Update(msg)
+			if !d.HasTypeSelector() {
+				d.TypeInput, cmd = d.TypeInput.Update(msg)
+			}
 		}
 		return *d, cmd
 	}
@@ -385,13 +394,17 @@ func (d *FormDialogModel) focusPrev() {
 
 func (d *FormDialogModel) updateFocus() {
 	d.LabelInput.Blur()
-	d.TypeInput.Blur()
+	if !d.HasTypeSelector() {
+		d.TypeInput.Blur()
+	}
 
 	switch d.focusIndex {
 	case FormDialogFieldLabel:
 		d.LabelInput.Focus()
 	case FormDialogFieldType:
-		d.TypeInput.Focus()
+		if !d.HasTypeSelector() {
+			d.TypeInput.Focus()
+		}
 	}
 }
 
@@ -403,8 +416,8 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	content.WriteString(d.titleStyle.Render(d.Title))
 	content.WriteString("\n\n")
 
-	// Special rendering for child datatype selection - vertical list
-	if d.Action == FORMDIALOGCHILDDATATYPE {
+	// Special rendering for child datatype selection and move content - vertical list
+	if d.Action == FORMDIALOGCHILDDATATYPE || d.Action == FORMDIALOGMOVECONTENT {
 		return d.renderChildDatatypeSelection(windowWidth, windowHeight)
 	}
 
@@ -431,10 +444,28 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	typeLabel := d.labelStyle.Render(secondFieldLabel)
 	content.WriteString(typeLabel)
 	content.WriteString("\n")
-	if d.focusIndex == FormDialogFieldType {
-		content.WriteString(d.focusedInputStyle.Render(d.TypeInput.View()))
+	if d.HasTypeSelector() {
+		optLabel := d.TypeOptions[d.TypeIndex].Label
+		if d.focusIndex == FormDialogFieldType {
+			selector := lipgloss.NewStyle().
+				Foreground(config.DefaultStyle.Primary).
+				Background(config.DefaultStyle.Accent).
+				Padding(0, 1).
+				Render("◀ " + optLabel + " ▶")
+			content.WriteString(selector)
+		} else {
+			selector := lipgloss.NewStyle().
+				Foreground(config.DefaultStyle.Secondary).
+				Padding(0, 1).
+				Render("  " + optLabel + "  ")
+			content.WriteString(selector)
+		}
 	} else {
-		content.WriteString(d.inputStyle.Render(d.TypeInput.View()))
+		if d.focusIndex == FormDialogFieldType {
+			content.WriteString(d.focusedInputStyle.Render(d.TypeInput.View()))
+		} else {
+			content.WriteString(d.inputStyle.Render(d.TypeInput.View()))
+		}
 	}
 	content.WriteString("\n")
 
@@ -679,6 +710,7 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 	}
 
 	return FormDialogModel{
+		dialogStyles:  newDialogStyles(),
 		Title:         title,
 		Width:         60,
 		Action:        action,
@@ -688,31 +720,6 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 		ParentOptions: parentOptions,
 		ParentIndex:   selectedParentIndex,
 		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
 	}
 }
 
@@ -726,48 +733,16 @@ func NewEditFieldDialog(title string, action FormDialogAction, field db.Fields) 
 	labelInput.SetValue(field.Label)
 	labelInput.Focus()
 
-	// Create type input with current value
-	typeInput := textinput.New()
-	typeInput.Placeholder = "text"
-	typeInput.CharLimit = 32
-	typeInput.Width = 40
-	typeInput.SetValue(string(field.Type))
-
 	return FormDialogModel{
-		Title:         title,
-		Width:         60,
-		Action:        action,
-		EntityID:      string(field.FieldID),
-		LabelInput:    labelInput,
-		TypeInput:     typeInput,
-		ParentOptions: nil, // No parent selection for fields
-		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        60,
+		Action:       action,
+		EntityID:     string(field.FieldID),
+		LabelInput:   labelInput,
+		TypeOptions:  TypeOptionsFromRegistry(),
+		TypeIndex:    FieldInputTypeIndex(string(field.Type)),
+		focusIndex:   FormDialogFieldLabel,
 	}
 }
 
@@ -789,40 +764,14 @@ func NewEditRouteDialog(title string, action FormDialogAction, route db.Routes) 
 	slugInput.SetValue(string(route.Slug))
 
 	return FormDialogModel{
-		Title:         title,
-		Width:         60,
-		Action:        action,
-		EntityID:      string(route.RouteID),
-		LabelInput:    titleInput,
-		TypeInput:     slugInput,
-		ParentOptions: nil, // No parent selection for routes
-		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        60,
+		Action:       action,
+		EntityID:     string(route.RouteID),
+		LabelInput:   titleInput,
+		TypeInput:    slugInput,
+		focusIndex:   FormDialogFieldLabel,
 	}
 }
 
@@ -886,40 +835,14 @@ func NewRouteWithContentDialog(title string, action FormDialogAction, datatypeID
 	slugInput.Width = 40
 
 	return FormDialogModel{
-		Title:         title,
-		Width:         60,
-		Action:        action,
-		EntityID:      datatypeID, // Store datatypeID in EntityID for route+content creation
-		LabelInput:    titleInput,
-		TypeInput:     slugInput,
-		ParentOptions: nil,
-		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
-		borderStyle:   lipgloss.NewStyle().BorderStyle(lipgloss.RoundedBorder()).Padding(1, 2),
-		titleStyle:    lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent).MarginBottom(1),
-		labelStyle:    lipgloss.NewStyle().Foreground(config.DefaultStyle.Secondary).MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        60,
+		Action:       action,
+		EntityID:     datatypeID, // Store datatypeID in EntityID for route+content creation
+		LabelInput:   titleInput,
+		TypeInput:    slugInput,
+		focusIndex:   FormDialogFieldLabel,
 	}
 }
 
@@ -1011,6 +934,7 @@ func NewChildDatatypeDialog(title string, childDatatypes []db.Datatypes, routeID
 	typeInput.Placeholder = ""
 
 	return FormDialogModel{
+		dialogStyles:  newDialogStyles(),
 		Title:         title,
 		Width:         50,
 		Action:        FORMDIALOGCHILDDATATYPE,
@@ -1020,38 +944,76 @@ func NewChildDatatypeDialog(title string, childDatatypes []db.Datatypes, routeID
 		ParentOptions: parents,
 		ParentIndex:   0,
 		focusIndex:    FormDialogFieldParent, // Start on selection
-		borderStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			Padding(1, 2),
-		titleStyle: lipgloss.NewStyle().
-			Bold(true).
-			Foreground(config.DefaultStyle.Accent).
-			MarginBottom(1),
-		labelStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+	}
+}
+
+// =============================================================================
+// MOVE CONTENT DIALOG
+// =============================================================================
+
+// ShowMoveContentDialogMsg triggers showing the move content dialog
+type ShowMoveContentDialogMsg struct {
+	SourceNode   *tree.Node
+	RouteID      types.RouteID
+	ValidTargets []ParentOption
+}
+
+// MoveContentRequestMsg triggers the actual content move operation
+type MoveContentRequestMsg struct {
+	SourceContentID types.ContentID
+	TargetContentID types.ContentID
+	RouteID         types.RouteID
+}
+
+// ContentMovedMsg is sent after content is successfully moved
+type ContentMovedMsg struct {
+	SourceContentID types.ContentID
+	TargetContentID types.ContentID
+	RouteID         types.RouteID
+}
+
+// ShowMoveContentDialogCmd creates a command to show the move content dialog
+func ShowMoveContentDialogCmd(node *tree.Node, routeID types.RouteID, targets []ParentOption) tea.Cmd {
+	return func() tea.Msg {
+		return ShowMoveContentDialogMsg{
+			SourceNode:   node,
+			RouteID:      routeID,
+			ValidTargets: targets,
+		}
+	}
+}
+
+// MoveContentCmd creates a command that returns a MoveContentRequestMsg
+func MoveContentCmd(sourceID, targetID types.ContentID, routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return MoveContentRequestMsg{
+			SourceContentID: sourceID,
+			TargetContentID: targetID,
+			RouteID:         routeID,
+		}
+	}
+}
+
+// NewMoveContentDialog creates a dialog for selecting a move target
+func NewMoveContentDialog(title string, sourceContentID string, routeID string, targets []ParentOption) FormDialogModel {
+	// Initialize text inputs even though they're not displayed
+	// This prevents nil pointer panics when updateFocus is called
+	labelInput := textinput.New()
+	labelInput.Placeholder = ""
+	typeInput := textinput.New()
+	typeInput.Placeholder = ""
+
+	return FormDialogModel{
+		dialogStyles:  newDialogStyles(),
+		Title:         title,
+		Width:         50,
+		Action:        FORMDIALOGMOVECONTENT,
+		EntityID:      sourceContentID + "|" + routeID,
+		LabelInput:    labelInput,
+		TypeInput:     typeInput,
+		ParentOptions: targets,
+		ParentIndex:   0,
+		focusIndex:    FormDialogFieldParent, // Start on selection
 	}
 }
 
@@ -1069,6 +1031,8 @@ type ContentFieldInput struct {
 
 // ContentFormDialogModel represents a form dialog with dynamic content fields
 type ContentFormDialogModel struct {
+	dialogStyles
+
 	Title      string
 	Width      int
 	Action     FormDialogAction
@@ -1082,16 +1046,6 @@ type ContentFormDialogModel struct {
 
 	// Focus management: 0 to len(Fields)-1 for fields, then Cancel, then Confirm
 	focusIndex int
-
-	// Styles
-	borderStyle        lipgloss.Style
-	titleStyle         lipgloss.Style
-	labelStyle         lipgloss.Style
-	inputStyle         lipgloss.Style
-	focusedInputStyle  lipgloss.Style
-	buttonStyle        lipgloss.Style
-	cancelButtonStyle  lipgloss.Style
-	confirmButtonStyle lipgloss.Style
 }
 
 // NewContentFormDialog creates a new content form dialog with dynamic fields
@@ -1115,45 +1069,14 @@ func NewContentFormDialog(title string, action FormDialogAction, datatypeID type
 	}
 
 	return ContentFormDialogModel{
-		Title:      title,
-		Width:      65,
-		Action:     action,
-		DatatypeID: datatypeID,
-		RouteID:    routeID,
-		Fields:     contentFields,
-		focusIndex: 0,
-		borderStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			Padding(1, 2),
-		titleStyle: lipgloss.NewStyle().
-			Bold(true).
-			Foreground(config.DefaultStyle.Accent).
-			MarginBottom(1),
-		labelStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        65,
+		Action:       action,
+		DatatypeID:   datatypeID,
+		RouteID:      routeID,
+		Fields:       contentFields,
+		focusIndex:   0,
 	}
 }
 
@@ -1481,46 +1404,15 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 	}
 
 	return ContentFormDialogModel{
-		Title:      title,
-		Width:      65,
-		Action:     FORMDIALOGEDITCONTENT,
-		DatatypeID: datatypeID,
-		RouteID:    routeID,
-		ContentID:  contentID, // Set the content ID for edit mode
-		Fields:     contentFields,
-		focusIndex: 0,
-		borderStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.RoundedBorder()).
-			Padding(1, 2),
-		titleStyle: lipgloss.NewStyle().
-			Bold(true).
-			Foreground(config.DefaultStyle.Accent).
-			MarginBottom(1),
-		labelStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			MarginBottom(0),
-		inputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Tertiary).
-			Padding(0, 1).
-			MarginBottom(1),
-		focusedInputStyle: lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
-			BorderForeground(config.DefaultStyle.Accent).
-			Padding(0, 1).
-			MarginBottom(1),
-		buttonStyle: lipgloss.NewStyle().
-			Padding(0, 2).
-			MarginRight(2),
-		cancelButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Secondary).
-			Background(config.DefaultStyle.Tertiary).
-			Padding(0, 2).
-			MarginRight(2),
-		confirmButtonStyle: lipgloss.NewStyle().
-			Foreground(config.DefaultStyle.Primary).
-			Background(config.DefaultStyle.Accent).
-			Padding(0, 2),
+		dialogStyles: newDialogStyles(),
+		Title:        title,
+		Width:        65,
+		Action:       FORMDIALOGEDITCONTENT,
+		DatatypeID:   datatypeID,
+		RouteID:      routeID,
+		ContentID:    contentID, // Set the content ID for edit mode
+		Fields:       contentFields,
+		focusIndex:   0,
 	}
 }
 
@@ -1592,4 +1484,299 @@ type ContentUpdatedFromDialogMsg struct {
 	DatatypeID   types.DatatypeID
 	RouteID      types.RouteID
 	UpdatedCount int
+}
+
+// =============================================================================
+// USER FORM DIALOG
+// =============================================================================
+
+// UserFormDialogModel represents a form dialog for user CRUD operations
+type UserFormDialogModel struct {
+	dialogStyles
+
+	Title    string
+	Width    int
+	Action   FormDialogAction
+	EntityID string // UserID for edit operations
+
+	UsernameInput textinput.Model
+	NameInput     textinput.Model
+	EmailInput    textinput.Model
+	RoleInput     textinput.Model
+
+	// Focus: 0=username, 1=name, 2=email, 3=role, 4=cancel, 5=confirm
+	focusIndex int
+}
+
+// NewUserFormDialog creates a user form dialog for creating a new user
+func NewUserFormDialog(title string) UserFormDialogModel {
+	username := textinput.New()
+	username.Placeholder = "username"
+	username.CharLimit = 64
+	username.Width = 40
+	username.Focus()
+
+	name := textinput.New()
+	name.Placeholder = "Full Name"
+	name.CharLimit = 128
+	name.Width = 40
+
+	email := textinput.New()
+	email.Placeholder = "user@example.com"
+	email.CharLimit = 128
+	email.Width = 40
+
+	role := textinput.New()
+	role.Placeholder = "admin"
+	role.CharLimit = 32
+	role.Width = 40
+
+	return UserFormDialogModel{
+		dialogStyles:  newDialogStyles(),
+		Title:         title,
+		Width:         60,
+		Action:        FORMDIALOGCREATEUSER,
+		UsernameInput: username,
+		NameInput:     name,
+		EmailInput:    email,
+		RoleInput:     role,
+		focusIndex:    0,
+	}
+}
+
+// NewEditUserFormDialog creates a user form dialog pre-populated for editing
+func NewEditUserFormDialog(title string, user db.Users) UserFormDialogModel {
+	username := textinput.New()
+	username.Placeholder = "username"
+	username.CharLimit = 64
+	username.Width = 40
+	username.SetValue(user.Username)
+	username.Focus()
+
+	name := textinput.New()
+	name.Placeholder = "Full Name"
+	name.CharLimit = 128
+	name.Width = 40
+	name.SetValue(user.Name)
+
+	email := textinput.New()
+	email.Placeholder = "user@example.com"
+	email.CharLimit = 128
+	email.Width = 40
+	email.SetValue(user.Email.String())
+
+	role := textinput.New()
+	role.Placeholder = "admin"
+	role.CharLimit = 32
+	role.Width = 40
+	role.SetValue(user.Role)
+
+	return UserFormDialogModel{
+		dialogStyles:  newDialogStyles(),
+		Title:         title,
+		Width:         60,
+		Action:        FORMDIALOGEDITUSER,
+		EntityID:      user.UserID.String(),
+		UsernameInput: username,
+		NameInput:     name,
+		EmailInput:    email,
+		RoleInput:     role,
+		focusIndex:    0,
+	}
+}
+
+// Update handles user input for the user form dialog
+func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab", "down":
+			d.userFormFocusNext()
+			return *d, nil
+		case "shift+tab", "up":
+			d.userFormFocusPrev()
+			return *d, nil
+		case "enter":
+			if d.focusIndex == 5 {
+				// Confirm button
+				return *d, func() tea.Msg {
+					return UserFormDialogAcceptMsg{
+						Action:   d.Action,
+						EntityID: d.EntityID,
+						Username: d.UsernameInput.Value(),
+						Name:     d.NameInput.Value(),
+						Email:    d.EmailInput.Value(),
+						Role:     d.RoleInput.Value(),
+					}
+				}
+			}
+			if d.focusIndex == 4 {
+				// Cancel button
+				return *d, func() tea.Msg { return UserFormDialogCancelMsg{} }
+			}
+			// On text fields, move to next
+			d.userFormFocusNext()
+			return *d, nil
+		case "esc":
+			return *d, func() tea.Msg { return UserFormDialogCancelMsg{} }
+		}
+	}
+
+	// Update the focused input
+	var cmd tea.Cmd
+	switch d.focusIndex {
+	case 0:
+		d.UsernameInput, cmd = d.UsernameInput.Update(msg)
+	case 1:
+		d.NameInput, cmd = d.NameInput.Update(msg)
+	case 2:
+		d.EmailInput, cmd = d.EmailInput.Update(msg)
+	case 3:
+		d.RoleInput, cmd = d.RoleInput.Update(msg)
+	}
+	return *d, cmd
+}
+
+func (d *UserFormDialogModel) userFormFocusNext() {
+	d.focusIndex = (d.focusIndex + 1) % 6
+	d.userFormUpdateFocus()
+}
+
+func (d *UserFormDialogModel) userFormFocusPrev() {
+	d.focusIndex = (d.focusIndex + 5) % 6
+	d.userFormUpdateFocus()
+}
+
+func (d *UserFormDialogModel) userFormUpdateFocus() {
+	d.UsernameInput.Blur()
+	d.NameInput.Blur()
+	d.EmailInput.Blur()
+	d.RoleInput.Blur()
+	switch d.focusIndex {
+	case 0:
+		d.UsernameInput.Focus()
+	case 1:
+		d.NameInput.Focus()
+	case 2:
+		d.EmailInput.Focus()
+	case 3:
+		d.RoleInput.Focus()
+	}
+}
+
+// Render renders the user form dialog
+func (d UserFormDialogModel) Render(windowWidth, windowHeight int) string {
+	contentWidth := d.Width
+
+	titleText := d.titleStyle.Render(d.Title)
+
+	// Render each field
+	fields := []struct {
+		label string
+		input textinput.Model
+		idx   int
+	}{
+		{"Username", d.UsernameInput, 0},
+		{"Name", d.NameInput, 1},
+		{"Email", d.EmailInput, 2},
+		{"Role", d.RoleInput, 3},
+	}
+
+	var fieldRows []string
+	for _, f := range fields {
+		label := d.labelStyle.Render(f.label)
+		style := d.inputStyle
+		if d.focusIndex == f.idx {
+			style = d.focusedInputStyle
+		}
+		input := style.Width(contentWidth - 6).Render(f.input.View())
+		fieldRows = append(fieldRows, label+"\n"+input)
+	}
+
+	// Buttons
+	cancelStyle := d.cancelButtonStyle
+	confirmStyle := d.confirmButtonStyle
+	if d.focusIndex == 4 {
+		cancelStyle = cancelStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
+	}
+	if d.focusIndex == 5 {
+		confirmStyle = confirmStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
+	}
+	cancelBtn := cancelStyle.Render("Cancel")
+	confirmBtn := confirmStyle.Render("Save")
+	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, "  ", confirmBtn)
+
+	// Assemble
+	content := titleText + "\n\n"
+	content += strings.Join(fieldRows, "\n")
+	content += "\n\n" + buttonBar
+
+	return d.borderStyle.Width(contentWidth).Render(content)
+}
+
+// UserFormDialogAcceptMsg is sent when the user form dialog is confirmed
+type UserFormDialogAcceptMsg struct {
+	Action   FormDialogAction
+	EntityID string
+	Username string
+	Name     string
+	Email    string
+	Role     string
+}
+
+// UserFormDialogCancelMsg is sent when the user form dialog is cancelled
+type UserFormDialogCancelMsg struct{}
+
+// ShowUserFormDialogMsg triggers showing a user form dialog
+type ShowUserFormDialogMsg struct {
+	Title string
+}
+
+// ShowEditUserDialogMsg triggers showing an edit user dialog
+type ShowEditUserDialogMsg struct {
+	User db.Users
+}
+
+// UserFormDialogSetCmd sets the user form dialog model
+func UserFormDialogSetCmd(dialog *UserFormDialogModel) tea.Cmd {
+	return func() tea.Msg { return UserFormDialogSetMsg{Dialog: dialog} }
+}
+
+// UserFormDialogActiveSetCmd sets the user form dialog active state
+func UserFormDialogActiveSetCmd(active bool) tea.Cmd {
+	return func() tea.Msg { return UserFormDialogActiveSetMsg{Active: active} }
+}
+
+// UserFormDialogSetMsg carries the dialog model
+type UserFormDialogSetMsg struct {
+	Dialog *UserFormDialogModel
+}
+
+// UserFormDialogActiveSetMsg carries the active state
+type UserFormDialogActiveSetMsg struct {
+	Active bool
+}
+
+// UserFormDialogOverlay positions a user form dialog over existing content
+func UserFormDialogOverlay(content string, dialog UserFormDialogModel, width, height int) string {
+	dialogContent := dialog.Render(width, height)
+	dialogW := lipgloss.Width(dialogContent)
+	dialogH := lipgloss.Height(dialogContent)
+
+	x := (width - dialogW) / 2
+	y := (height - dialogH) / 2
+	if x < 0 {
+		x = 0
+	}
+	if y < 0 {
+		y = 0
+	}
+
+	return tui.Composite(content, tui.Overlay{
+		Content: dialogContent,
+		X:       x,
+		Y:       y,
+		Width:   dialogW,
+		Height:  dialogH,
+	})
 }

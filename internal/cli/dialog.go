@@ -14,12 +14,17 @@ import (
 type DialogAction string
 
 const (
-	DIALOGGENERIC       DialogAction = "generic"
-	DIALOGDELETE        DialogAction = "delete"
-	DIALOGACTIONCONFIRM DialogAction = "action_confirm"
-	DIALOGINITCONTENT   DialogAction = "init_content"
-	DIALOGQUITCONFIRM   DialogAction = "quit_confirm"
-	DIALOGDELETECONTENT DialogAction = "delete_content"
+	DIALOGGENERIC        DialogAction = "generic"
+	DIALOGDELETE         DialogAction = "delete"
+	DIALOGACTIONCONFIRM  DialogAction = "action_confirm"
+	DIALOGINITCONTENT    DialogAction = "init_content"
+	DIALOGQUITCONFIRM    DialogAction = "quit_confirm"
+	DIALOGDELETECONTENT  DialogAction = "delete_content"
+	DIALOGDELETEDATATYPE DialogAction = "delete_datatype"
+	DIALOGDELETEFIELD    DialogAction = "delete_field"
+	DIALOGDELETEROUTE    DialogAction = "delete_route"
+	DIALOGDELETEMEDIA    DialogAction = "delete_media"
+	DIALOGDELETEUSER     DialogAction = "delete_user"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -81,7 +86,8 @@ func (d *DialogModel) SetButtons(okText, cancelText string) {
 // Update handles user input for the dialog
 func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch d.Action {
-	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT:
+	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT,
+		DIALOGDELETEDATATYPE, DIALOGDELETEFIELD, DIALOGDELETEROUTE, DIALOGDELETEMEDIA, DIALOGDELETEUSER:
 		return d.ToggleControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc

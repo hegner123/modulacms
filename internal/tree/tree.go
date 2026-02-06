@@ -1,17 +1,16 @@
-package cli
+package tree
 
 import (
 	"fmt"
 
-	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-type TreeRoot struct {
-	Root      *TreeNode
-	NodeIndex map[types.ContentID]*TreeNode
-	Orphans   map[types.ContentID]*TreeNode
+type Root struct {
+	Root      *Node
+	NodeIndex map[types.ContentID]*Node
+	Orphans   map[types.ContentID]*Node
 	MaxRetry  int
 }
 
@@ -34,42 +33,66 @@ func (stats LoadStats) String() string {
 
 }
 
-type TreeNode struct {
+type Node struct {
 	Instance       *db.ContentData
 	InstanceFields []db.ContentFields
 	Datatype       db.Datatypes
 	Fields         []db.Fields
-	Parent         *TreeNode
-	FirstChild     *TreeNode
-	NextSibling    *TreeNode
-	PrevSibling    *TreeNode
+	Parent         *Node
+	FirstChild     *Node
+	NextSibling    *Node
+	PrevSibling    *Node
 	Expand         bool
 	Indent         int
 	Wrapped        int
 }
 
-func NewTreeRoot() *TreeRoot {
-	return &TreeRoot{
-		NodeIndex: make(map[types.ContentID]*TreeNode),
-		Orphans:   make(map[types.ContentID]*TreeNode),
+func NewRoot() *Root {
+	return &Root{
+		NodeIndex: make(map[types.ContentID]*Node),
+		Orphans:   make(map[types.ContentID]*Node),
 		MaxRetry:  100,
 	}
 }
 
-func NewTreeNode(row db.GetRouteTreeByRouteIDRow) *TreeNode {
+func NewNode(row db.GetRouteTreeByRouteIDRow) *Node {
 	cd := db.ContentData{
 		ContentDataID: row.ContentDataID,
 		ParentID:      row.ParentID,
 	}
 
-	return &TreeNode{
+	return &Node{
 		Instance: &cd,
 		Expand:   true, // Expanded by default
 	}
 
 }
 
-func (page *TreeRoot) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadStats, error) {
+func NewNodeFromContentTree(row db.GetContentTreeByRouteRow) *Node {
+	cd := db.ContentData{
+		ContentDataID: row.ContentDataID,
+		ParentID:      row.ParentID,
+		RouteID:       row.RouteID,
+		DatatypeID:    row.DatatypeID,
+		AuthorID:      row.AuthorID,
+		DateCreated:   row.DateCreated,
+		DateModified:  row.DateModified,
+	}
+
+	dt := db.Datatypes{
+		DatatypeID: row.DatatypeID.ID,
+		Label:      row.DatatypeLabel,
+		Type:       row.DatatypeType,
+	}
+
+	return &Node{
+		Instance: &cd,
+		Datatype: dt,
+		Expand:   true, // Expanded by default
+	}
+}
+
+func (page *Root) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadStats, error) {
 	stats := &LoadStats{
 		NodesCount:      0,
 		OrphansResolved: 0,
@@ -96,9 +119,9 @@ func (page *TreeRoot) LoadFromRows(rows *[]db.GetContentTreeByRouteRow) (*LoadSt
 	return stats, page.validateFinalState(stats)
 }
 
-func (page *TreeRoot) createAllNodes(rows *[]db.GetContentTreeByRouteRow, stats *LoadStats) error {
+func (page *Root) createAllNodes(rows *[]db.GetContentTreeByRouteRow, stats *LoadStats) error {
 	for _, row := range *rows {
-		node := NewTreeNodeFromContentTree(row)
+		node := NewNodeFromContentTree(row)
 		page.NodeIndex[node.Instance.ContentDataID] = node
 		stats.NodesCount++
 
@@ -112,7 +135,7 @@ func (page *TreeRoot) createAllNodes(rows *[]db.GetContentTreeByRouteRow, stats 
 }
 
 // Phase 2: Immediate Hierarchy Assignment
-func (page *TreeRoot) assignImmediateHierarchy(stats *LoadStats) error {
+func (page *Root) assignImmediateHierarchy(stats *LoadStats) error {
 	for id, node := range page.NodeIndex {
 		if !node.Instance.ParentID.Valid {
 			continue // Skip root
@@ -133,7 +156,7 @@ func (page *TreeRoot) assignImmediateHierarchy(stats *LoadStats) error {
 }
 
 // Phase 3: Iterative Orphan Resolution
-func (page *TreeRoot) resolveOrphans(stats *LoadStats) error {
+func (page *Root) resolveOrphans(stats *LoadStats) error {
 	for len(page.Orphans) > 0 && stats.RetryAttempts < page.MaxRetry {
 		stats.RetryAttempts++
 		orphansResolved := 0
@@ -164,7 +187,7 @@ func (page *TreeRoot) resolveOrphans(stats *LoadStats) error {
 }
 
 // Detect circular reference chains
-func (page *TreeRoot) detectCircularReferences(stats *LoadStats) bool {
+func (page *Root) detectCircularReferences(stats *LoadStats) bool {
 	circularRefs := []types.ContentID{}
 
 	for id, orphan := range page.Orphans {
@@ -178,7 +201,7 @@ func (page *TreeRoot) detectCircularReferences(stats *LoadStats) bool {
 }
 
 // Check if node creates circular reference
-func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[types.ContentID]bool) bool {
+func (page *Root) hasCircularReference(node *Node, visited map[types.ContentID]bool) bool {
 	nodeID := node.Instance.ContentDataID
 
 	if visited[nodeID] {
@@ -201,7 +224,7 @@ func (page *TreeRoot) hasCircularReference(node *TreeNode, visited map[types.Con
 }
 
 // Attach node to parent with proper sibling linking
-func (page *TreeRoot) attachNodeToParent(node, parent *TreeNode) {
+func (page *Root) attachNodeToParent(node, parent *Node) {
 	node.Parent = parent
 
 	if parent.FirstChild == nil {
@@ -218,7 +241,7 @@ func (page *TreeRoot) attachNodeToParent(node, parent *TreeNode) {
 }
 
 // Final validation and error reporting
-func (page *TreeRoot) validateFinalState(stats *LoadStats) error {
+func (page *Root) validateFinalState(stats *LoadStats) error {
 	// Record final orphans
 	for id := range page.Orphans {
 		stats.FinalOrphans = append(stats.FinalOrphans, id)
@@ -241,31 +264,7 @@ func (page *TreeRoot) validateFinalState(stats *LoadStats) error {
 	return nil
 }
 
-func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
-	cd := db.ContentData{
-		ContentDataID: row.ContentDataID,
-		ParentID:      row.ParentID,
-		RouteID:       row.RouteID,
-		DatatypeID:    row.DatatypeID,
-		AuthorID:      row.AuthorID,
-		DateCreated:   row.DateCreated,
-		DateModified:  row.DateModified,
-	}
-
-	dt := db.Datatypes{
-		DatatypeID: row.DatatypeID.ID,
-		Label:      row.DatatypeLabel,
-		Type:       row.DatatypeType,
-	}
-
-	return &TreeNode{
-		Instance: &cd,
-		Datatype: dt,
-		Expand:   true, // Expanded by default
-	}
-}
-
-func (page *TreeRoot) InsertTreeNodeByIndex(parent, firstChild, prevSibling, nextSibling, n *TreeNode) {
+func (page *Root) InsertNodeByIndex(parent, firstChild, prevSibling, nextSibling, n *Node) {
 	page.NodeIndex[n.Instance.ContentDataID] = n
 	n.Parent = parent
 	n.FirstChild = firstChild
@@ -276,7 +275,7 @@ func (page *TreeRoot) InsertTreeNodeByIndex(parent, firstChild, prevSibling, nex
 
 // Functions for working with Nodes in a tree where access is constant
 
-func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
+func (page *Root) DeleteNodeByIndex(n *Node) bool {
 	target := page.NodeIndex[n.Instance.ContentDataID]
 	if page.Root == nil || target == nil || page.Root == target || target.Parent == nil {
 		return false
@@ -299,16 +298,14 @@ func (page *TreeRoot) DeleteTreeNodeByIndex(n *TreeNode) bool {
 	return true
 }
 
-func DeleteFirstChild(target *TreeNode) bool {
+func DeleteFirstChild(target *Node) bool {
 	if target.FirstChild != nil {
-		return DeleteFirstChildHasChildren(target)
-	} else {
-		return DeleteFirstChildNoChildren(target)
-
+		return deleteFirstChildHasChildren(target)
 	}
+	return deleteFirstChildNoChildren(target)
 }
 
-func DeleteFirstChildHasChildren(target *TreeNode) bool {
+func deleteFirstChildHasChildren(target *Node) bool {
 	if target.NextSibling != nil {
 		target.Parent.FirstChild = target.FirstChild
 		current := target.FirstChild
@@ -321,40 +318,36 @@ func DeleteFirstChildHasChildren(target *TreeNode) bool {
 		current.NextSibling = target.NextSibling
 		current.Parent = target.Parent
 		return true
-	} else {
-		target.Parent.FirstChild = target.FirstChild
-		current := target.FirstChild
-		for current != nil {
-			current.Parent = target.Parent
-			current = current.NextSibling
-		}
-		return true
 	}
+	target.Parent.FirstChild = target.FirstChild
+	current := target.FirstChild
+	for current != nil {
+		current.Parent = target.Parent
+		current = current.NextSibling
+	}
+	return true
 }
 
-func DeleteFirstChildNoChildren(target *TreeNode) bool {
+func deleteFirstChildNoChildren(target *Node) bool {
 	// else (No children but is first child)
 	if target.NextSibling != nil {
 		target.Parent.FirstChild = target.NextSibling
 		target.NextSibling.PrevSibling = nil
 		return true
-	} else {
-		// if target.NextSibling = nil
-		target.Parent.FirstChild = nil
-		return true
 	}
-
+	// if target.NextSibling = nil
+	target.Parent.FirstChild = nil
+	return true
 }
 
-func DeleteNestedChild(target *TreeNode) bool {
+func DeleteNestedChild(target *Node) bool {
 	if target.FirstChild != nil {
-		return DeleteNestedChildHasChildren(target)
-	} else {
-		return DeleteNestedChildNoChildren(target)
+		return deleteNestedChildHasChildren(target)
 	}
-
+	return deleteNestedChildNoChildren(target)
 }
-func DeleteNestedChildHasChildren(target *TreeNode) bool {
+
+func deleteNestedChildHasChildren(target *Node) bool {
 	if target.NextSibling != nil {
 		if target.PrevSibling == nil {
 			return false
@@ -369,23 +362,21 @@ func DeleteNestedChildHasChildren(target *TreeNode) bool {
 		current.NextSibling = target.NextSibling
 		current.Parent = target.Parent
 		return true
-	} else {
-		if target.PrevSibling == nil || target.FirstChild == nil {
-			return false
-		}
-		target.PrevSibling.NextSibling = target.FirstChild
-		target.FirstChild.PrevSibling = target.PrevSibling
-		current := target.FirstChild
-		for current != nil {
-			current.Parent = target.Parent
-			current = current.NextSibling
-		}
-		return true
 	}
-
+	if target.PrevSibling == nil || target.FirstChild == nil {
+		return false
+	}
+	target.PrevSibling.NextSibling = target.FirstChild
+	target.FirstChild.PrevSibling = target.PrevSibling
+	current := target.FirstChild
+	for current != nil {
+		current.Parent = target.Parent
+		current = current.NextSibling
+	}
+	return true
 }
 
-func DeleteNestedChildNoChildren(target *TreeNode) bool {
+func deleteNestedChildNoChildren(target *Node) bool {
 	// else (No children but isn't first child)
 	if target.NextSibling != nil {
 		if target.PrevSibling == nil {
@@ -394,25 +385,108 @@ func DeleteNestedChildNoChildren(target *TreeNode) bool {
 		target.PrevSibling.NextSibling = target.NextSibling
 		target.NextSibling.PrevSibling = target.PrevSibling
 		return true
-	} else {
-		if target.PrevSibling == nil {
-			return false
-		}
-		target.PrevSibling.NextSibling = nil
-		return true
+	}
+	if target.PrevSibling == nil {
+		return false
+	}
+	target.PrevSibling.NextSibling = nil
+	return true
+}
+
+// CountVisible counts the number of visible nodes in the tree
+func (page *Root) CountVisible() int {
+	if page.Root == nil {
+		return 0
+	}
+	count := 0
+	page.countNodesRecursive(page.Root, &count)
+	return count
+}
+
+// countNodesRecursive recursively counts visible nodes
+func (page *Root) countNodesRecursive(node *Node, count *int) {
+	if node == nil {
+		return
+	}
+	*count++
+
+	if node.Expand && node.FirstChild != nil {
+		page.countNodesRecursive(node.FirstChild, count)
+	}
+
+	if node.NextSibling != nil {
+		page.countNodesRecursive(node.NextSibling, count)
 	}
 }
 
-// Message types
-type BuildTreeFromRouteMsg struct {
-	RouteID int64
+// NodeAtIndex returns the node at the given visible index
+func (page *Root) NodeAtIndex(index int) *Node {
+	if page.Root == nil {
+		return nil
+	}
+	currentIndex := 0
+	return page.nodeAtIndex(page.Root, index, &currentIndex)
 }
 
-// Constructors
-func BuildTreeFromRouteCMD(id int64) tea.Cmd {
-	return func() tea.Msg {
-		return BuildTreeFromRouteMsg{
-			RouteID: id,
+// nodeAtIndex finds the node at the given index
+func (page *Root) nodeAtIndex(node *Node, targetIndex int, currentIndex *int) *Node {
+	if node == nil {
+		return nil
+	}
+
+	if *currentIndex == targetIndex {
+		return node
+	}
+	*currentIndex++
+
+	if node.Expand && node.FirstChild != nil {
+		if result := page.nodeAtIndex(node.FirstChild, targetIndex, currentIndex); result != nil {
+			return result
 		}
+	}
+
+	if node.NextSibling != nil {
+		return page.nodeAtIndex(node.NextSibling, targetIndex, currentIndex)
+	}
+
+	return nil
+}
+
+// IsDescendantOf returns true if node is a descendant of ancestor.
+// Walks up the parent chain from node looking for ancestor.
+func IsDescendantOf(node, ancestor *Node) bool {
+	current := node.Parent
+	for current != nil {
+		if current == ancestor {
+			return true
+		}
+		current = current.Parent
+	}
+	return false
+}
+
+// FlattenVisible returns a flat slice of all visible nodes in display order,
+// respecting the Expand state of each node.
+func (page *Root) FlattenVisible() []*Node {
+	if page.Root == nil {
+		return nil
+	}
+	var result []*Node
+	page.flattenVisibleRecursive(page.Root, &result)
+	return result
+}
+
+func (page *Root) flattenVisibleRecursive(node *Node, result *[]*Node) {
+	if node == nil {
+		return
+	}
+	*result = append(*result, node)
+
+	if node.Expand && node.FirstChild != nil {
+		page.flattenVisibleRecursive(node.FirstChild, result)
+	}
+
+	if node.NextSibling != nil {
+		page.flattenVisibleRecursive(node.NextSibling, result)
 	}
 }

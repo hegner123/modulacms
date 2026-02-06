@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
@@ -95,6 +96,142 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowDeleteDatatypeDialogMsg:
+		if msg.HasChildren {
+			dialog := NewDialog("Cannot Delete", fmt.Sprintf("Cannot delete '%s' because it has child datatypes.\nDelete child datatypes first.", msg.Label), false, DIALOGGENERIC)
+			return m, tea.Batch(
+				DialogSetCmd(&dialog),
+				DialogActiveSetCmd(true),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		dialog := NewDialog("Delete Datatype", fmt.Sprintf("Delete datatype '%s'?\nThis will remove all field associations.", msg.Label), true, DIALOGDELETEDATATYPE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteDatatypeContext = &DeleteDatatypeContext{
+			DatatypeID: msg.DatatypeID,
+			Label:      msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteFieldDialogMsg:
+		dialog := NewDialog("Delete Field", fmt.Sprintf("Delete field '%s'?\nThis will unlink it from the datatype and remove the field.", msg.Label), true, DIALOGDELETEFIELD)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteFieldContext = &DeleteFieldContext{
+			FieldID:    msg.FieldID,
+			DatatypeID: msg.DatatypeID,
+			Label:      msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteRouteDialogMsg:
+		dialog := NewDialog("Delete Route", fmt.Sprintf("Delete route '%s'?\nAssociated content will also be removed.", msg.Title), true, DIALOGDELETEROUTE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteRouteContext = &DeleteRouteContext{
+			RouteID: msg.RouteID,
+			Title:   msg.Title,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteMediaDialogMsg:
+		dialog := NewDialog("Delete Media", fmt.Sprintf("Delete media '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEMEDIA)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteMediaContext = &DeleteMediaContext{
+			MediaID: msg.MediaID,
+			Label:   msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteUserDialogMsg:
+		dialog := NewDialog("Delete User", fmt.Sprintf("Delete user '%s'?\nThis cannot be undone.", msg.Username), true, DIALOGDELETEUSER)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteUserContext = &DeleteUserContext{
+			UserID:   msg.UserID,
+			Username: msg.Username,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowUserFormDialogMsg:
+		dialog := NewUserFormDialog(msg.Title)
+		return m, tea.Batch(
+			UserFormDialogSetCmd(&dialog),
+			UserFormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditUserDialogMsg:
+		dialog := NewEditUserFormDialog("Edit User", msg.User)
+		return m, tea.Batch(
+			UserFormDialogSetCmd(&dialog),
+			UserFormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case UserFormDialogSetMsg:
+		m.UserFormDialog = msg.Dialog
+		return m, nil
+	case UserFormDialogActiveSetMsg:
+		m.UserFormDialogActive = msg.Active
+		return m, nil
+	case UserFormDialogAcceptMsg:
+		switch msg.Action {
+		case FORMDIALOGCREATEUSER:
+			return m, tea.Batch(
+				UserFormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateUserFromDialogCmd(msg.Username, msg.Name, msg.Email, msg.Role),
+			)
+		case FORMDIALOGEDITUSER:
+			return m, tea.Batch(
+				UserFormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateUserFromDialogCmd(msg.EntityID, msg.Username, msg.Name, msg.Email, msg.Role),
+			)
+		default:
+			return m, tea.Batch(
+				UserFormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		}
+	case UserFormDialogCancelMsg:
+		return m, tea.Batch(
+			UserFormDialogActiveSetCmd(false),
+			FocusSetCmd(PAGEFOCUS),
+		)
+	case UserCreatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("User created: %s", msg.Username)),
+			UsersFetchCmd(),
+		)
+	case UserUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("User updated: %s", msg.Username)),
+			UsersFetchCmd(),
+		)
+	case UserDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("User deleted: %s", msg.UserID)),
+			UsersFetchCmd(),
+		)
 	case DialogAcceptMsg:
 		// Handle dialog accept action
 		switch msg.Action {
@@ -153,6 +290,82 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					InitializeRouteContentCmd(routeID, datatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEDATATYPE:
+			if deleteDatatypeContext != nil {
+				datatypeID := deleteDatatypeContext.DatatypeID
+				deleteDatatypeContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteDatatypeCmd(datatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEFIELD:
+			if deleteFieldContext != nil {
+				fieldID := deleteFieldContext.FieldID
+				datatypeID := deleteFieldContext.DatatypeID
+				deleteFieldContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteFieldCmd(fieldID, datatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEROUTE:
+			if deleteRouteContext != nil {
+				routeID := deleteRouteContext.RouteID
+				deleteRouteContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteRouteCmd(routeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEMEDIA:
+			if deleteMediaContext != nil {
+				mediaID := deleteMediaContext.MediaID
+				deleteMediaContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteMediaCmd(mediaID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEUSER:
+			if deleteUserContext != nil {
+				userID := deleteUserContext.UserID
+				deleteUserContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteUserCmd(userID),
 				)
 			}
 			return m, tea.Batch(
@@ -252,6 +465,14 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FormDialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowMoveContentDialogMsg:
+		sourceID := string(msg.SourceNode.Instance.ContentDataID)
+		dialog := NewMoveContentDialog("Move Content", sourceID, string(msg.RouteID), msg.ValidTargets)
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case FormDialogAcceptMsg:
 		// Handle form dialog accept based on action type
 		switch msg.Action {
@@ -335,6 +556,21 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			}
 			if m.Logger != nil {
 				m.Logger.Finfo("ParentID was empty, just closing dialog")
+			}
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGMOVECONTENT:
+			// ParentID = selected target content ID, EntityID = "sourceContentID|routeID"
+			parts := strings.SplitN(msg.EntityID, "|", 2)
+			if len(parts) == 2 && msg.ParentID != "" {
+				return m, tea.Batch(
+					FormDialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					MoveContentCmd(types.ContentID(parts[0]), types.ContentID(msg.ParentID), types.RouteID(parts[1])),
+				)
 			}
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
@@ -490,6 +726,42 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Content initialized for route: %s", msg.Title)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
+	case DatatypeDeletedMsg:
+		// Refresh datatypes list after deletion
+		newModel := m
+		newModel.Cursor = 0
+		newModel.FieldCursor = 0
+		newModel.SelectedDatatypeFields = nil
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Datatype deleted: %s", msg.DatatypeID)),
+			AllDatatypesFetchCmd(),
+		)
+	case FieldDeletedMsg:
+		// Refresh fields list after deletion
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Field deleted: %s", msg.FieldID)),
+			DatatypeFieldsFetchCmd(msg.DatatypeID),
+		)
+	case RouteDeletedMsg:
+		// Refresh routes list after deletion
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Route deleted: %s", msg.RouteID)),
+			RoutesFetchCmd(),
+		)
+	case MediaDeletedMsg:
+		// Refresh media list after deletion
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Media deleted: %s", msg.MediaID)),
+			MediaFetchCmd(),
 		)
 	default:
 		return m, nil
@@ -1277,6 +1549,310 @@ type DeleteContentContext struct {
 
 // Global variable to store the delete context
 var deleteContentContext *DeleteContentContext
+
+// =============================================================================
+// DELETE DATATYPE
+// =============================================================================
+
+// DeleteDatatypeContext stores context for deleting a datatype
+type DeleteDatatypeContext struct {
+	DatatypeID types.DatatypeID
+	Label      string
+}
+
+var deleteDatatypeContext *DeleteDatatypeContext
+
+// ShowDeleteDatatypeDialogMsg triggers showing a delete datatype confirmation dialog
+type ShowDeleteDatatypeDialogMsg struct {
+	DatatypeID  types.DatatypeID
+	Label       string
+	HasChildren bool
+}
+
+// ShowDeleteDatatypeDialogCmd creates a command to show a delete datatype confirmation dialog
+func ShowDeleteDatatypeDialogCmd(datatypeID types.DatatypeID, label string, hasChildren bool) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteDatatypeDialogMsg{
+			DatatypeID:  datatypeID,
+			Label:       label,
+			HasChildren: hasChildren,
+		}
+	}
+}
+
+// DeleteDatatypeRequestMsg triggers datatype deletion
+type DeleteDatatypeRequestMsg struct {
+	DatatypeID types.DatatypeID
+}
+
+// DatatypeDeletedMsg is sent after a datatype is successfully deleted
+type DatatypeDeletedMsg struct {
+	DatatypeID types.DatatypeID
+}
+
+// DeleteDatatypeCmd creates a command to delete a datatype
+func DeleteDatatypeCmd(datatypeID types.DatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteDatatypeRequestMsg{DatatypeID: datatypeID}
+	}
+}
+
+// =============================================================================
+// DELETE FIELD
+// =============================================================================
+
+// DeleteFieldContext stores context for deleting a field from a datatype
+type DeleteFieldContext struct {
+	FieldID    types.FieldID
+	DatatypeID types.DatatypeID
+	Label      string
+}
+
+var deleteFieldContext *DeleteFieldContext
+
+// ShowDeleteFieldDialogMsg triggers showing a delete field confirmation dialog
+type ShowDeleteFieldDialogMsg struct {
+	FieldID    types.FieldID
+	DatatypeID types.DatatypeID
+	Label      string
+}
+
+// ShowDeleteFieldDialogCmd creates a command to show a delete field confirmation dialog
+func ShowDeleteFieldDialogCmd(fieldID types.FieldID, datatypeID types.DatatypeID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteFieldDialogMsg{
+			FieldID:    fieldID,
+			DatatypeID: datatypeID,
+			Label:      label,
+		}
+	}
+}
+
+// DeleteFieldRequestMsg triggers field deletion
+type DeleteFieldRequestMsg struct {
+	FieldID    types.FieldID
+	DatatypeID types.DatatypeID
+}
+
+// FieldDeletedMsg is sent after a field is successfully deleted
+type FieldDeletedMsg struct {
+	FieldID    types.FieldID
+	DatatypeID types.DatatypeID
+}
+
+// DeleteFieldCmd creates a command to delete a field
+func DeleteFieldCmd(fieldID types.FieldID, datatypeID types.DatatypeID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteFieldRequestMsg{FieldID: fieldID, DatatypeID: datatypeID}
+	}
+}
+
+// =============================================================================
+// DELETE ROUTE
+// =============================================================================
+
+// DeleteRouteContext stores context for deleting a route
+type DeleteRouteContext struct {
+	RouteID types.RouteID
+	Title   string
+}
+
+var deleteRouteContext *DeleteRouteContext
+
+// ShowDeleteRouteDialogMsg triggers showing a delete route confirmation dialog
+type ShowDeleteRouteDialogMsg struct {
+	RouteID types.RouteID
+	Title   string
+}
+
+// ShowDeleteRouteDialogCmd creates a command to show a delete route confirmation dialog
+func ShowDeleteRouteDialogCmd(routeID types.RouteID, title string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteRouteDialogMsg{
+			RouteID: routeID,
+			Title:   title,
+		}
+	}
+}
+
+// DeleteRouteRequestMsg triggers route deletion
+type DeleteRouteRequestMsg struct {
+	RouteID types.RouteID
+}
+
+// RouteDeletedMsg is sent after a route is successfully deleted
+type RouteDeletedMsg struct {
+	RouteID types.RouteID
+}
+
+// DeleteRouteCmd creates a command to delete a route
+func DeleteRouteCmd(routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteRouteRequestMsg{RouteID: routeID}
+	}
+}
+
+// =============================================================================
+// DELETE MEDIA
+// =============================================================================
+
+// DeleteMediaContext stores context for deleting a media item
+type DeleteMediaContext struct {
+	MediaID types.MediaID
+	Label   string
+}
+
+var deleteMediaContext *DeleteMediaContext
+
+// ShowDeleteMediaDialogMsg triggers showing a delete media confirmation dialog
+type ShowDeleteMediaDialogMsg struct {
+	MediaID types.MediaID
+	Label   string
+}
+
+// ShowDeleteMediaDialogCmd creates a command to show a delete media confirmation dialog
+func ShowDeleteMediaDialogCmd(mediaID types.MediaID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteMediaDialogMsg{
+			MediaID: mediaID,
+			Label:   label,
+		}
+	}
+}
+
+// DeleteMediaRequestMsg triggers media deletion
+type DeleteMediaRequestMsg struct {
+	MediaID types.MediaID
+}
+
+// MediaDeletedMsg is sent after a media item is successfully deleted
+type MediaDeletedMsg struct {
+	MediaID types.MediaID
+}
+
+// DeleteMediaCmd creates a command to delete a media item
+func DeleteMediaCmd(mediaID types.MediaID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteMediaRequestMsg{MediaID: mediaID}
+	}
+}
+
+// =============================================================================
+// DELETE USER
+// =============================================================================
+
+// DeleteUserContext stores context for deleting a user
+type DeleteUserContext struct {
+	UserID   types.UserID
+	Username string
+}
+
+var deleteUserContext *DeleteUserContext
+
+// ShowDeleteUserDialogMsg triggers showing a delete user confirmation dialog
+type ShowDeleteUserDialogMsg struct {
+	UserID   types.UserID
+	Username string
+}
+
+// ShowDeleteUserDialogCmd creates a command to show a delete user confirmation dialog
+func ShowDeleteUserDialogCmd(userID types.UserID, username string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteUserDialogMsg{
+			UserID:   userID,
+			Username: username,
+		}
+	}
+}
+
+// DeleteUserRequestMsg triggers user deletion
+type DeleteUserRequestMsg struct {
+	UserID types.UserID
+}
+
+// UserDeletedMsg is sent after a user is successfully deleted
+type UserDeletedMsg struct {
+	UserID types.UserID
+}
+
+// DeleteUserCmd creates a command to delete a user
+func DeleteUserCmd(userID types.UserID) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteUserRequestMsg{UserID: userID}
+	}
+}
+
+// =============================================================================
+// CREATE/UPDATE USER
+// =============================================================================
+
+// CreateUserFromDialogRequestMsg triggers user creation
+type CreateUserFromDialogRequestMsg struct {
+	Username string
+	Name     string
+	Email    string
+	Role     string
+}
+
+// UserCreatedFromDialogMsg is sent after a user is created from the form dialog
+type UserCreatedFromDialogMsg struct {
+	UserID   types.UserID
+	Username string
+}
+
+// UpdateUserFromDialogRequestMsg triggers user update
+type UpdateUserFromDialogRequestMsg struct {
+	UserID   string
+	Username string
+	Name     string
+	Email    string
+	Role     string
+}
+
+// UserUpdatedFromDialogMsg is sent after a user is updated from the form dialog
+type UserUpdatedFromDialogMsg struct {
+	UserID   types.UserID
+	Username string
+}
+
+// ShowCreateUserDialogCmd creates a command to show user creation dialog
+func ShowCreateUserDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowUserFormDialogMsg{Title: "New User"}
+	}
+}
+
+// ShowEditUserDialogCmd creates a command to show user edit dialog
+func ShowEditUserDialogCmd(user db.Users) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditUserDialogMsg{User: user}
+	}
+}
+
+// CreateUserFromDialogCmd creates a command to trigger user creation
+func CreateUserFromDialogCmd(username, name, email, role string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateUserFromDialogRequestMsg{
+			Username: username,
+			Name:     name,
+			Email:    email,
+			Role:     role,
+		}
+	}
+}
+
+// UpdateUserFromDialogCmd creates a command to trigger user update
+func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateUserFromDialogRequestMsg{
+			UserID:   userID,
+			Username: username,
+			Name:     name,
+			Email:    email,
+			Role:     role,
+		}
+	}
+}
 
 // InitializeRouteContentContextCmd stores the context for route content initialization
 func InitializeRouteContentContextCmd(route db.Routes, datatypeID string) tea.Cmd {

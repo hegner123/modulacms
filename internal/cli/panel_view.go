@@ -84,6 +84,10 @@ func renderCMSPanelLayout(m Model) string {
 		return ContentFormDialogOverlay(ui, *m.ContentFormDialog, m.Width, m.Height)
 	}
 
+	if m.UserFormDialogActive && m.UserFormDialog != nil {
+		return UserFormDialogOverlay(ui, *m.UserFormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 
@@ -142,9 +146,9 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		right = renderMediaInfo(m)
 
 	case USERSADMIN:
-		left = "Users"
-		center = "Select a user"
-		right = "Permissions"
+		left = renderUsersList(m)
+		center = renderUserDetail(m)
+		right = renderUserPermissions(m)
 
 	case DATATYPES:
 		left = renderDatatypesList(m)
@@ -254,39 +258,51 @@ func renderCMSPanelStatusBar(m Model) string {
 // getContextControls returns context-sensitive keybinding hints based on
 // current page and panel focus.
 func getContextControls(m Model) string {
-	// Common controls
-	common := "tab:panel │ h:back │ q:quit"
+	km := m.Config.KeyBindings
+	nav := km.HintString(config.ActionUp) + "/" + km.HintString(config.ActionDown) + ":nav"
+	common := km.HintString(config.ActionNextPanel) + ":panel │ " +
+		km.HintString(config.ActionBack) + ":back │ " +
+		km.HintString(config.ActionQuit) + ":quit"
 
 	switch m.Page.Index {
 	case CONTENT:
 		if m.PageRouteId.IsZero() {
-			// Content selection mode (no route selected)
-			return "↑↓:nav │ enter:view │ n:new │ " + common
+			return nav + " │ enter:view │ " + km.HintString(config.ActionNew) + ":new │ " + common
 		}
-		// Content browsing mode (route selected, showing tree)
-		return "↑↓:nav │ +/-:expand │ n:new │ e:edit │ d:delete │ " + common
+		return nav + " │ " + km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse) + ":expand │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
 
 	case ROUTES:
-		return "↑↓:nav │ enter:select │ n:new │ e:edit │ d:delete │ " + common
+		return nav + " │ enter:select │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
 
 	case DATATYPES:
 		switch m.PanelFocus {
 		case tui.TreePanel:
-			return "↑↓:nav │ n:new │ e:edit │ d:delete │ " + common
+			return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " +
+				km.HintString(config.ActionDelete) + ":delete │ " + common
 		case tui.ContentPanel:
-			return "↑↓:nav │ n:new field │ e:edit │ d:delete │ " + common
+			return nav + " │ " + km.HintString(config.ActionNew) + ":new field │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " +
+				km.HintString(config.ActionDelete) + ":delete │ " + common
 		default:
-			return "↑↓:nav │ " + common
+			return nav + " │ " + common
 		}
 
 	case MEDIA:
-		return "↑↓:nav │ n:upload │ d:delete │ " + common
+		return nav + " │ " + km.HintString(config.ActionNew) + ":upload │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
 
 	case USERSADMIN:
-		return "↑↓:nav │ n:new │ e:edit │ d:delete │ " + common
+		return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
 
 	case CMSPAGE, ADMINCMSPAGE:
-		return "↑↓:nav │ enter:select │ " + common
+		return nav + " │ enter:select │ " + common
 
 	default:
 		return common
@@ -610,6 +626,77 @@ func renderContentActions(m Model) string {
 		"  d: Delete",
 		"",
 		fmt.Sprintf("Content: %d", len(m.RootContentSummary)),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderUsersList renders the list of users for the left panel.
+func renderUsersList(m Model) string {
+	if len(m.UsersList) == 0 {
+		return "No users found"
+	}
+
+	selectedStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Accent).
+		Bold(true)
+	normalStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Secondary)
+
+	var lines []string
+	for i, user := range m.UsersList {
+		prefix := "  "
+		style := normalStyle
+		if i == m.Cursor {
+			prefix = "> "
+			style = selectedStyle
+		}
+		lines = append(lines, style.Render(fmt.Sprintf("%s%s (%s)", prefix, user.Username, user.Role)))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderUserDetail renders the details of the selected user for the center panel.
+func renderUserDetail(m Model) string {
+	if len(m.UsersList) == 0 || m.Cursor >= len(m.UsersList) {
+		return "Select a user"
+	}
+
+	user := m.UsersList[m.Cursor]
+	labelStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Accent).
+		Bold(true)
+
+	lines := []string{
+		labelStyle.Render("User Details"),
+		"",
+		fmt.Sprintf("  Username:  %s", user.Username),
+		fmt.Sprintf("  Name:      %s", user.Name),
+		fmt.Sprintf("  Email:     %s", user.Email),
+		fmt.Sprintf("  Role:      %s", user.Role),
+		"",
+		fmt.Sprintf("  ID:        %s", user.UserID),
+		fmt.Sprintf("  Created:   %s", user.DateCreated),
+		fmt.Sprintf("  Modified:  %s", user.DateModified),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderUserPermissions renders the permissions panel for the selected user.
+func renderUserPermissions(m Model) string {
+	if len(m.UsersList) == 0 || m.Cursor >= len(m.UsersList) {
+		return "Permissions\n\n  (none)"
+	}
+
+	user := m.UsersList[m.Cursor]
+	lines := []string{
+		"Permissions",
+		"",
+		fmt.Sprintf("  Role: %s", user.Role),
+		"",
+		fmt.Sprintf("  Users: %d", len(m.UsersList)),
 	}
 
 	return strings.Join(lines, "\n")

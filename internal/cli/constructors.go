@@ -433,6 +433,12 @@ func MediaListSetCmd(media []db.Media) tea.Cmd {
 	return func() tea.Msg { return MediaListSet{MediaList: media} }
 }
 
+// Users constructors
+func UsersFetchCmd() tea.Cmd       { return func() tea.Msg { return UsersFetchMsg{} } }
+func UsersListSetCmd(users []db.Users) tea.Cmd {
+	return func() tea.Msg { return UsersListSet{UsersList: users} }
+}
+
 // RootContentSummary constructors
 func RootContentSummaryFetchCmd() tea.Cmd {
 	return func() tea.Msg { return RootContentSummaryFetchMsg{} }
@@ -511,5 +517,14 @@ func ReloadContentTreeCmd(config *config.Config, routeID types.RouteID) tea.Cmd 
 	return func() tea.Msg {
 		m := Model{Config: config}
 		return m.ReloadContentTree(config, routeID)()
+	}
+}
+
+// Constructors
+func BuildTreeFromRouteCMD(id int64) tea.Cmd {
+	return func() tea.Msg {
+		return BuildTreeFromRouteMsg{
+			RouteID: id,
+		}
 	}
 }

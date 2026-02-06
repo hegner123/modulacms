@@ -6,8 +6,10 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
@@ -59,7 +61,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case CONTENT:
 		return m.ContentBrowserControls(msg)
 	case USERSADMIN:
-		return m.BasicCMSControls(msg)
+		return m.UsersAdminControls(msg)
 	case MEDIA:
 		return m.MediaControls(msg)
 
@@ -70,34 +72,38 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Don't intercept form navigation keys when form has focus
-		switch msg.String() {
-		//Exit
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+		km := m.Config.KeyBindings
+		key := msg.String()
 
-		case "shift+left":
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.PageMenu)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "shift+tab", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
-			// Only proceed if we have menu items
+		}
+		if km.Matches(key, config.ActionSelect) {
 			if len(m.PageMenu) > 0 {
 				return m, NavigateToPageCmd(m.PageMenu[m.Cursor])
 			}
@@ -109,41 +115,46 @@ func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Don't intercept form navigation keys when form has focus
-		switch msg.String() {
-		//Exit
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+		km := m.Config.KeyBindings
+		key := msg.String()
 
-		case "tab":
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
 			return m, nil
-		case "shift+tab":
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
 			return m, nil
-
-		case "shift+left":
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
-			// Only proceed if we have menu items
+		}
+		if km.Matches(key, config.ActionSelect) {
 			page := m.PageMenu[m.Cursor]
 			switch page.Index {
 			case ROUTES:
@@ -153,13 +164,10 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 			case FIELDS:
 				return m, tea.Batch()
 			case CONTENT:
-				// Navigate to content browser
 				return m, NavigateToPageCmd(m.PageMap[CONTENT])
 			case MEDIA:
-				// Navigate to media page
 				return m, NavigateToPageCmd(m.PageMap[MEDIA])
 			case USERSADMIN:
-				// Navigate to users admin page
 				return m, NavigateToPageCmd(m.PageMap[USERSADMIN])
 			default:
 				return m, nil
@@ -173,40 +181,54 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
 			return m, tea.Quit
-		case "tab":
+		}
+		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
 			return m, nil
-		case "shift+tab":
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
 			return m, nil
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.Routes)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
+		}
+		if km.Matches(key, config.ActionSelect) {
 			if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
 				route := m.Routes[m.Cursor]
 				m.PageRouteId = route.RouteID
 				return m, LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID))
 			}
-		case "n":
-			// Create new route
+		}
+		if km.Matches(key, config.ActionNew) {
 			return m, ShowRouteFormDialogCmd(FORMDIALOGCREATEROUTE, "New Route")
-		case "e":
-			// Edit selected route
+		}
+		if km.Matches(key, config.ActionEdit) {
 			if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
 				return m, ShowEditRouteDialogCmd(m.Routes[m.Cursor])
+			}
+		}
+		if km.Matches(key, config.ActionDelete) {
+			if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
+				route := m.Routes[m.Cursor]
+				return m, ShowDeleteRouteDialogCmd(route.RouteID, route.Title)
 			}
 		}
 	}
@@ -221,44 +243,51 @@ func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
-			return m, tea.Quit
-		case "esc":
-			// Escape goes back to tree panel if not already there
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		// Dismiss first: esc goes back to tree panel before quitting
+		if km.Matches(key, config.ActionDismiss) {
 			if m.PanelFocus != tui.TreePanel {
 				m.PanelFocus = tui.TreePanel
 				return m, nil
 			}
 			return m, tea.Quit
-		case "tab":
+		}
+		if km.Matches(key, config.ActionQuit) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
-			// Reset field cursor when entering content panel
 			if m.PanelFocus == tui.ContentPanel {
 				m.FieldCursor = 0
 			}
 			return m, nil
-		case "shift+tab":
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
-			// Reset field cursor when entering content panel
 			if m.PanelFocus == tui.ContentPanel {
 				m.FieldCursor = 0
 			}
 			return m, nil
-		case "shift+left":
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			return m.datatypesControlsUp()
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			return m.datatypesControlsDown()
-		case "h", "left", "backspace":
-			// If in center or right panel, move left to tree panel
+		}
+		if km.Matches(key, config.ActionBack) {
 			if m.PanelFocus != tui.TreePanel {
 				m.PanelFocus = tui.TreePanel
 				return m, nil
@@ -266,8 +295,9 @@ func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "l", "right":
-			// Move right to next panel
+		}
+		// Right arrow moves to next panel (subset of select behavior)
+		if key == "l" || key == "right" {
 			if m.PanelFocus == tui.TreePanel {
 				m.PanelFocus = tui.ContentPanel
 				m.FieldCursor = 0
@@ -277,11 +307,17 @@ func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 				m.PanelFocus = tui.RoutePanel
 				return m, nil
 			}
-		case "n":
+		}
+		if km.Matches(key, config.ActionNew) {
 			return m.datatypesControlsNew()
-		case "e":
+		}
+		if km.Matches(key, config.ActionEdit) {
 			return m.datatypesControlsEdit()
-		case "enter":
+		}
+		if km.Matches(key, config.ActionDelete) {
+			return m.datatypesControlsDelete()
+		}
+		if key == "enter" {
 			return m.datatypesControlsSelect()
 		}
 	}
@@ -370,6 +406,37 @@ func (m Model) datatypesControlsEdit() (Model, tea.Cmd) {
 	return m, nil
 }
 
+// datatypesControlsDelete handles 'd' key based on panel focus
+func (m Model) datatypesControlsDelete() (Model, tea.Cmd) {
+	switch m.PanelFocus {
+	case tui.TreePanel:
+		// Delete selected datatype
+		if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+			dt := m.AllDatatypes[m.Cursor]
+			// Check if any other datatype has this as parent
+			hasChildren := false
+			for _, other := range m.AllDatatypes {
+				if other.ParentID.Valid && types.DatatypeID(other.ParentID.ID) == dt.DatatypeID {
+					hasChildren = true
+					break
+				}
+			}
+			return m, ShowDeleteDatatypeDialogCmd(dt.DatatypeID, dt.Label, hasChildren)
+		}
+	case tui.ContentPanel:
+		// Delete selected field from the datatype
+		if len(m.SelectedDatatypeFields) > 0 && m.FieldCursor < len(m.SelectedDatatypeFields) {
+			field := m.SelectedDatatypeFields[m.FieldCursor]
+			var datatypeID types.DatatypeID
+			if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+				datatypeID = m.AllDatatypes[m.Cursor].DatatypeID
+			}
+			return m, ShowDeleteFieldDialogCmd(field.FieldID, datatypeID, field.Label)
+		}
+	}
+	return m, nil
+}
+
 // datatypesControlsSelect handles enter key based on panel focus
 func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
 	switch m.PanelFocus {
@@ -399,27 +466,32 @@ func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
 func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		km := m.Config.KeyBindings
+		key := msg.String()
+
 		// Panel focus cycling
-		case "tab":
+		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
 			return m, nil
-		case "shift+tab":
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
 			return m, nil
+		}
 
-		// Exit / Back
-		case "ctrl+c":
+		// Exit: ctrl+c always quits immediately
+		if key == "ctrl+c" {
 			return m, tea.Quit
-		case "q":
-			// Show quit confirmation dialog
+		}
+		// q shows quit confirmation dialog
+		if km.Matches(key, config.ActionQuit) && !km.Matches(key, config.ActionDismiss) && !km.Matches(key, config.ActionBack) {
 			return m, ShowQuitConfirmDialogCmd()
-		case "esc", "h", "left", "backspace":
-			// Step back through content flow states
+		}
+		// Esc / back: step back through content flow states
+		if km.Matches(key, config.ActionDismiss) || km.Matches(key, config.ActionBack) {
 			if !m.PageRouteId.IsZero() {
-				// Clear route, go back to content list
 				m.PageRouteId = types.RouteID("")
-				m.Root = TreeRoot{}
+				m.Root = tree.Root{}
 				m.Cursor = 0
 				return m, nil
 			}
@@ -427,38 +499,36 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, HistoryPopCmd()
 			}
 			return m, tea.Quit
+		}
 
 		// Navigation
-		case "up", "k":
+		if km.Matches(key, config.ActionUp) {
 			if m.PageRouteId.IsZero() {
-				// Navigating content summary list
 				if m.Cursor > 0 {
 					return m, CursorUpCmd()
 				}
 			} else {
-				// Navigating content tree
 				if m.Cursor > 0 {
 					return m, CursorUpCmd()
 				}
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.PageRouteId.IsZero() {
-				// Navigating content summary list
 				if m.Cursor < len(m.RootContentSummary)-1 {
 					return m, CursorDownCmd()
 				}
 			} else {
-				// Navigating content tree
-				maxCursor := m.countVisibleNodes()
+				maxCursor := m.Root.CountVisible()
 				if m.Cursor < maxCursor-1 {
 					return m, CursorDownCmd()
 				}
 			}
+		}
 
 		// Selection
-		case "enter", "l", "right":
+		if km.Matches(key, config.ActionSelect) {
 			if m.PageRouteId.IsZero() {
-				// Select a content summary -> go to content tree
 				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
 					content := m.RootContentSummary[m.Cursor]
 					if content.RouteID.Valid {
@@ -473,22 +543,40 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 					}
 				}
 			} else {
-				// Content tree: expand/collapse
-				node := m.getSelectedNodeFromModel()
+				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.FirstChild != nil {
 					node.Expand = !node.Expand
 					return m, nil
 				}
 			}
+		}
+
+		// Expand/Collapse
+		if km.Matches(key, config.ActionExpand) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.FirstChild != nil {
+					node.Expand = true
+					return m, nil
+				}
+			}
+		}
+		if km.Matches(key, config.ActionCollapse) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.FirstChild != nil {
+					node.Expand = false
+					return m, nil
+				}
+			}
+		}
 
 		// Actions
-		case "e":
+		if km.Matches(key, config.ActionEdit) {
 			if !m.PageRouteId.IsZero() {
-				// Edit the selected node - show content fields dialog with existing values
-				node := m.getSelectedNodeFromModel()
+				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil {
 					m.Logger.Finfo(fmt.Sprintf("'e' key pressed, editing node %s with datatype %s", node.Instance.ContentDataID, node.Datatype.Label))
-					// Fetch existing content fields and show edit dialog
 					return m, FetchContentForEditCmd(
 						node.Instance.ContentDataID,
 						node.Datatype.DatatypeID,
@@ -498,21 +586,19 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				}
 				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
-		case "n":
+		}
+		if km.Matches(key, config.ActionNew) {
 			if m.PageRouteId.IsZero() {
-				// Create a new route with content using ROOT datatype from selected content
 				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
 					content := m.RootContentSummary[m.Cursor]
 					if content.DatatypeID.Valid {
 						return m, ShowCreateRouteWithContentDialogCmd(string(content.DatatypeID.ID))
 					}
 				} else if len(m.RootDatatypes) > 0 {
-					// Fallback: use first ROOT datatype if no content selected
 					return m, ShowCreateRouteWithContentDialogCmd(string(m.RootDatatypes[0].DatatypeID))
 				}
 			} else {
-				// When viewing content tree, show dialog to select child datatype
-				node := m.getSelectedNodeFromModel()
+				node := m.Root.NodeAtIndex(m.Cursor)
 				m.Logger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
 				if node != nil {
 					m.Logger.Finfo(fmt.Sprintf("Showing child datatype picker for parent %s", node.Datatype.Label))
@@ -521,9 +607,10 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				m.Logger.Finfo("No node selected")
 				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
-		case "d":
+		}
+		if km.Matches(key, config.ActionDelete) {
 			if !m.PageRouteId.IsZero() {
-				node := m.getSelectedNodeFromModel()
+				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil {
 					contentName := DecideNodeName(*node)
 					hasChildren := node.FirstChild != nil
@@ -535,13 +622,46 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				}
 				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
+		}
+		if km.Matches(key, config.ActionMove) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil {
+					// Build valid target list: all visible nodes except self and descendants
+					allVisible := m.Root.FlattenVisible()
+					targets := make([]ParentOption, 0)
+					for _, candidate := range allVisible {
+						if candidate.Instance == nil {
+							continue
+						}
+						if candidate.Instance.ContentDataID == node.Instance.ContentDataID {
+							continue // skip self
+						}
+						if tree.IsDescendantOf(candidate, node) {
+							continue // skip descendants of source
+						}
+						label := DecideNodeName(*candidate)
+						targets = append(targets, ParentOption{
+							Label: label,
+							Value: string(candidate.Instance.ContentDataID),
+						})
+					}
+					if len(targets) == 0 {
+						return m, ShowDialog("Cannot Move", "No valid move targets", false)
+					}
+					return m, ShowMoveContentDialogCmd(node, m.PageRouteId, targets)
+				}
+				return m, ShowDialog("Error", "Please select a content node first", false)
+			}
+		}
 
 		// Title font change
-		case "shift+left":
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
@@ -550,95 +670,118 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// countVisibleNodes counts the number of visible nodes in the tree
-func (m Model) countVisibleNodes() int {
-	if m.Root.Root == nil {
-		return 0
-	}
-	count := 0
-	m.countNodesRecursive(m.Root.Root, &count)
-	return count
-}
-
-// countNodesRecursive recursively counts visible nodes
-func (m Model) countNodesRecursive(node *TreeNode, count *int) {
-	if node == nil {
-		return
-	}
-	*count++
-
-	if node.Expand && node.FirstChild != nil {
-		m.countNodesRecursive(node.FirstChild, count)
-	}
-
-	if node.NextSibling != nil {
-		m.countNodesRecursive(node.NextSibling, count)
-	}
-}
-
-// getSelectedNodeFromModel returns the currently selected node
-func (m Model) getSelectedNodeFromModel() *TreeNode {
-	if m.Root.Root == nil {
-		return nil
-	}
-	currentIndex := 0
-	return m.findNodeAtIndex(m.Root.Root, m.Cursor, &currentIndex)
-}
-
-// findNodeAtIndex finds the node at the given index
-func (m Model) findNodeAtIndex(node *TreeNode, targetIndex int, currentIndex *int) *TreeNode {
-	if node == nil {
-		return nil
-	}
-
-	if *currentIndex == targetIndex {
-		return node
-	}
-	*currentIndex++
-
-	if node.Expand && node.FirstChild != nil {
-		if result := m.findNodeAtIndex(node.FirstChild, targetIndex, currentIndex); result != nil {
-			return result
-		}
-	}
-
-	if node.NextSibling != nil {
-		return m.findNodeAtIndex(node.NextSibling, targetIndex, currentIndex)
-	}
-
-	return nil
-}
-
 // MediaControls handles keyboard navigation for the media library page.
 func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
 			return m, tea.Quit
-		case "tab":
+		}
+		if km.Matches(key, config.ActionNextPanel) {
 			m.PanelFocus = (m.PanelFocus + 1) % 3
 			return m, nil
-		case "shift+tab":
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
 			m.PanelFocus = (m.PanelFocus + 2) % 3
 			return m, nil
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.MediaList)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "shift+left":
+		}
+		if km.Matches(key, config.ActionDelete) {
+			if len(m.MediaList) > 0 && m.Cursor < len(m.MediaList) {
+				media := m.MediaList[m.Cursor]
+				label := media.MediaID.String()
+				if media.DisplayName.Valid && media.DisplayName.String != "" {
+					label = media.DisplayName.String
+				} else if media.Name.Valid && media.Name.String != "" {
+					label = media.Name.String
+				}
+				return m, ShowDeleteMediaDialogCmd(media.MediaID, label)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// UsersAdminControls handles keyboard navigation for the users admin page.
+func (m Model) UsersAdminControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.UsersList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionNew) {
+			return m, ShowCreateUserDialogCmd()
+		}
+		if km.Matches(key, config.ActionEdit) {
+			if len(m.UsersList) > 0 && m.Cursor < len(m.UsersList) {
+				return m, ShowEditUserDialogCmd(m.UsersList[m.Cursor])
+			}
+		}
+		if km.Matches(key, config.ActionDelete) {
+			if len(m.UsersList) > 0 && m.Cursor < len(m.UsersList) {
+				user := m.UsersList[m.Cursor]
+				return m, ShowDeleteUserDialogCmd(user.UserID, user.Username)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
@@ -650,35 +793,38 @@ func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		//Exit
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+		km := m.Config.KeyBindings
+		key := msg.String()
 
-		case "shift+left":
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.PageMenu) {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "shift+tab", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
-			// Only proceed if we have menu items
-			// Use datatypes as menu items
-			// Next page has AddNew and a list of existing content
+		}
+		if km.Matches(key, config.ActionSelect) {
 			page := m.PageMenu[m.Cursor]
 			switch page.Index {
 			default:
@@ -693,34 +839,38 @@ func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		// Don't intercept form navigation keys when form has focus
-		switch msg.String() {
-		//Exit
-		case "q", "esc", "ctrl+c":
-			return m, tea.Quit
+		km := m.Config.KeyBindings
+		key := msg.String()
 
-		case "shift+left":
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {
 				return m, TitleFontPreviousCmd()
 			}
-		case "shift+right":
+		}
+		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
 			}
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.PageMenu)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "shift+tab", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
-			// Only proceed if we have menu items
+		}
+		if km.Matches(key, config.ActionSelect) {
 			if len(m.DatatypeMenu) > 0 {
 				return m, tea.Batch(
 					NavigateToPageCmd(m.Pages[DYNAMICPAGE]),
@@ -734,22 +884,28 @@ func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
 			return m, tea.Quit
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.Tables)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "left", "shift+tab", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
-		case "enter", "l", "right":
+		}
+		if km.Matches(key, config.ActionSelect) {
 			cmds = append(cmds, SelectTableCmd(m.Tables[m.Cursor]))
 		}
 	}
@@ -794,59 +950,71 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+		handled := false
 
-		switch msg.String() {
-		case "q", "esc", "ctrl+c":
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
 			return m, tea.Quit
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+			handled = true
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(m.TableState.Rows)-1 {
 				return m, CursorDownCmd()
 			}
-		case "h", "shift+tab", "backspace":
-			if len(m.History) > 0 {
-				return m, HistoryPopCmd()
+			handled = true
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
+			// "h", "shift+tab", "backspace" go back in history
+			if key != "left" {
+				if len(m.History) > 0 {
+					return m, HistoryPopCmd()
+				}
+				handled = true
 			}
-		case "left":
+		}
+		if km.Matches(key, config.ActionPagePrev) {
 			if m.PageMod > 0 {
 				return m, PageModPreviousCmd()
 			}
-		case "right":
+			handled = true
+		}
+		if km.Matches(key, config.ActionPageNext) {
 			if m.PageMod < (len(m.TableState.Rows)-1)/m.MaxRows {
 				return m, PageModNextCmd()
 			}
-
-		//Action
-		case "enter", "l":
+			handled = true
+		}
+		// Select action (enter, l)
+		if key == "enter" || key == "l" {
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
 			if recordIndex < len(m.TableState.Rows) {
 				cmds = append(cmds, CursorSetCmd(recordIndex))
 
-				// Handle different actions based on current page
 				switch m.Page.Index {
 				case READPAGE:
-					// Navigate to single record view
 					cmds = append(cmds, NavigateToPageCmd(m.PageMap[READSINGLEPAGE]))
 				case UPDATEPAGE:
-					// Navigate to update form with pre-populated values
 					cmds = append(cmds, NavigateToPageCmd(m.PageMap[UPDATEFORMPAGE]))
 				case DELETEPAGE:
-					// Show confirmation dialog
 					cmds = append(cmds, ShowDialogCmd("Confirm Delete",
 						"Are you sure you want to delete this record? This action cannot be undone.", true, DIALOGDELETE))
 				}
 			}
+			handled = true
+		}
 
-		default:
+		if !handled {
 			cmds = append(cmds, m.UpdateMaxCursorCmd())
 			cmds = append(cmds, PaginationUpdateCmd())
 		}
 	}
 	return m, tea.Batch(cmds...)
-
 }
 
 func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
@@ -854,31 +1022,31 @@ func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
 	var rows [][]string
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
 			return m, tea.Quit
-		//Exit
-		case "left":
+		}
+		if km.Matches(key, config.ActionPagePrev) {
 			if m.PageMod > 0 {
 				m.PageMod--
 			}
-		case "right":
+		}
+		if km.Matches(key, config.ActionPageNext) {
 			if m.PageMod < len(m.TableState.Rows)/m.MaxRows {
 				m.PageMod++
 			}
-
-		//Action
-		case "enter", "l":
+		}
+		if key == "enter" || key == "l" {
 			rows = m.TableState.Rows
 			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
-			// Only update if the calculated index is valid
 			if recordIndex < len(m.TableState.Rows) {
 				m.Cursor = recordIndex
 			}
 			m.TableState.Row = &rows[recordIndex]
 			m.Cursor = 0
 			m.Page = m.Pages[UPDATEFORMPAGE]
-
 		}
 	}
 	var pcmd tea.Cmd
@@ -931,12 +1099,15 @@ func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
 func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
-
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
+		km := m.Config.KeyBindings
+		key := msg.String()
+		handled := false
+
+		if km.Matches(key, config.ActionQuit) {
 			return m, tea.Quit
-		case "enter", "l":
+		}
+		if key == "enter" || key == "l" {
 			err := m.DatabaseDelete(m.Config, db.StringDBTable(m.TableState.Table))
 			if err != nil {
 				return m, nil
@@ -946,7 +1117,9 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, nil))
-		default:
+			handled = true
+		}
+		if !handled {
 			var scmd tea.Cmd
 			m.Spinner, scmd = m.Spinner.Update(msg)
 			cmds = append(cmds, scmd)
@@ -999,48 +1172,55 @@ func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := message.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
 			return m, tea.Quit
-		//Exit
-		case "h", "shift+tab", "backspace":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
 			if len(m.History) > 0 {
 				entry := *m.PopHistory()
 				m.Page = entry.Page
 				m.Cursor = entry.Cursor
 				return m, nil
 			}
-		case "d":
+		}
+		if km.Matches(key, config.ActionDelete) {
 			return m, nil
 		}
-
 	}
 
 	return m, tea.Batch(cmds...)
-
 }
 
 func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 	actions := ActionsMenu()
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
 			return m, tea.Quit
-		case "h", "left", "backspace", "esc":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
 			if len(m.History) > 0 {
 				return m, HistoryPopCmd()
 			}
 			return m, tea.Quit
-		case "up", "k":
+		}
+		if km.Matches(key, config.ActionUp) {
 			if m.Cursor > 0 {
 				return m, CursorUpCmd()
 			}
-		case "down", "j":
+		}
+		if km.Matches(key, config.ActionDown) {
 			if m.Cursor < len(actions)-1 {
 				return m, CursorDownCmd()
 			}
-		case "enter", "l", "right":
+		}
+		if km.Matches(key, config.ActionSelect) {
 			if m.Cursor >= len(actions) {
 				return m, nil
 			}
@@ -1070,10 +1250,13 @@ func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
+		km := newModel.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
 			return newModel, tea.Quit
-		case "h", "backspace", "esc":
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
 			if len(newModel.History) > 0 {
 				return newModel, HistoryPopCmd()
 			}

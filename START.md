@@ -39,7 +39,7 @@ Store paths using the mem MCP tool for faster onboarding in future sessions.
 ```
 mcp__mem__store
   key: "modulacms-paths"
-  content: "Primary: /Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md (dev guidelines), /Users/home/Documents/Code/Go_dev/modulacms/ai/ (documentation root). Active project: See START.md Project Status section."
+  content: "Primary: /Users/home/Documents/Code/Go_dev/modulacms/CLAUDE.md (dev guidelines), /Users/home/Documents/Code/Go_dev/modulacms/ai/bubble-references (tui/cli component references), /Users/home/Documents/Code/Go_dev/modulacms/ai/ (documentation root). Active project: See START.md Project Status section."
   tags: ["paths", "documentation"]
 ```
 
@@ -87,7 +87,16 @@ Current task list for TUI content editor implementation. Full details in `/TODO_
 - [x] Read/View content - Tree view with preview
 - [x] Update content fields - Edit existing field values
 - [x] Delete content - Remove content nodes
-- [ ] **Expand/Collapse tree nodes** - Next item
+- [ ] **Expand/Collapse tree nodes** - Next item (add +/- key handlers)
+
+### Phase 1.5 - Missing Action Handlers
+Status bar hints these actions but handlers are not wired up:
+- [ ] Delete datatype (tree panel)
+- [ ] Delete field (content panel)
+- [ ] Delete route
+- [ ] Upload media
+- [ ] Delete media
+- [ ] Users admin CRUD (needs dedicated controls function)
 
 ### Phase 2 - Reorganization
 - [ ] Move content (reparent)

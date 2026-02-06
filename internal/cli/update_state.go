@@ -162,6 +162,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.MediaList = msg.MediaList
 		return newModel, NewStateUpdate()
+	case UsersListSet:
+		newModel := m
+		newModel.UsersList = msg.UsersList
+		return newModel, NewStateUpdate()
 	case RootContentSummarySet:
 		newModel := m
 		newModel.RootContentSummary = msg.RootContentSummary

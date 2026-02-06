@@ -36,6 +36,12 @@ func (m *Manager) Load() error {
 	config.Bucket_Endpoint = strings.TrimPrefix(config.Bucket_Endpoint, "https://")
 	config.Bucket_Endpoint = strings.TrimPrefix(config.Bucket_Endpoint, "http://")
 
+	// Merge keybinding overrides into defaults so unspecified actions keep
+	// their default bindings.
+	defaults := DefaultKeyMap()
+	defaults.Merge(config.KeyBindings)
+	config.KeyBindings = defaults
+
 	m.config = config
 	m.loaded = true
 	return nil

@@ -167,6 +167,8 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(cmds...)
 		case USERSADMIN:
 			page := m.PageMap[USERSADMIN]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, UsersFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, PanelFocusResetCmd())

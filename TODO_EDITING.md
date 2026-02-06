@@ -11,7 +11,7 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [x] **Delete content** - Remove content node (with child handling options)
 
 ### Content Navigation
-- [ ] **Expand/Collapse tree nodes** - Toggle node expansion with +/- keys
+- [ ] **Expand/Collapse tree nodes** - Toggle node expansion with +/- keys (status bar hints +/- but only enter works)
 - [ ] **Navigate to parent** - Jump to parent node
 - [ ] **Navigate to children** - Jump to first child
 
@@ -25,6 +25,43 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [ ] **Publish/Unpublish** - Change content visibility status
 - [ ] **Draft/Archive** - Lifecycle state transitions
 - [ ] **Schedule publishing** - Time-based status changes
+
+## Datatypes Page
+
+### Implemented
+- [x] **Create datatype** - Dialog-based creation with parent selector
+- [x] **Edit datatype** - Edit label, type, parent via modal dialog
+- [x] **Create field** - Dialog-based field creation (content panel)
+- [x] **Edit field** - Edit label and type via modal dialog (content panel)
+
+### Missing (hinted in status bar but not implemented)
+- [ ] **Delete datatype** - Remove datatype from tree panel (`ActionDelete` handler missing in `DatatypesControls`)
+- [ ] **Delete field** - Remove field from content panel (`ActionDelete` handler missing in `DatatypesControls`)
+
+## Routes Page
+
+### Implemented
+- [x] **Create route** - Dialog-based route creation
+- [x] **Edit route** - Edit title and slug via modal dialog
+
+### Missing (hinted in status bar but not implemented)
+- [ ] **Delete route** - Remove route (`ActionDelete` handler missing in `RoutesControls`)
+
+## Media Page
+
+### Implemented
+- [x] **Browse media** - List and navigate media items
+
+### Missing (hinted in status bar but not implemented)
+- [ ] **Upload media** - Upload new media (`ActionNew` handler missing in `MediaControls`)
+- [ ] **Delete media** - Remove media item (`ActionDelete` handler missing in `MediaControls`)
+
+## Users Admin Page
+
+### Missing (all CRUD hinted in status bar but uses generic `BasicCMSControls`)
+- [ ] **Create user** - No `UsersAdminControls` function exists
+- [ ] **Edit user** - No `UsersAdminControls` function exists
+- [ ] **Delete user** - No `UsersAdminControls` function exists
 
 ## Field Operations
 - [ ] **Edit single field** - Inline field editing
@@ -60,21 +97,30 @@ Common editing tasks that need to be implemented for the TUI content editor.
 
 ## Implementation Priority
 
-### Phase 1 - Core Editing
-1. Edit content fields (update existing)
-2. Delete content
-3. Expand/Collapse tree nodes
+### Phase 1 - Core Editing (current)
+1. ~~Edit content fields (update existing)~~ done
+2. ~~Delete content~~ done
+3. Expand/Collapse tree nodes (add +/- key handlers)
+
+### Phase 1.5 - Missing Action Handlers
+Hinted in status bar but not wired up:
+4. Delete datatype (tree panel)
+5. Delete field (content panel)
+6. Delete route
+7. Upload media
+8. Delete media
+9. Users admin CRUD (needs dedicated controls function)
 
 ### Phase 2 - Reorganization
-4. Move content (reparent)
-5. Reorder siblings
-6. Copy content
+10. Move content (reparent)
+11. Reorder siblings
+12. Copy content
 
 ### Phase 3 - Status Management
-7. Publish/Unpublish
-8. Draft/Archive states
+13. Publish/Unpublish
+14. Draft/Archive states
 
 ### Phase 4 - Advanced Features
-9. Version history
-10. Search & filter
-11. Bulk operations
+15. Version history
+16. Search & filter
+17. Bulk operations

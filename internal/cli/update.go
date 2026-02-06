@@ -65,5 +65,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// When user form dialog is active, route all key input to the user form dialog and stop.
+	if m.UserFormDialogActive && m.UserFormDialog != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			userFormDialog, cmd := m.UserFormDialog.Update(keyMsg)
+			m.UserFormDialog = &userFormDialog
+			return m, cmd
+		}
+	}
+
 	return m.PageSpecificMsgHandlers(nil, msg)
 }

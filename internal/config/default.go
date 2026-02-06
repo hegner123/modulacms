@@ -84,6 +84,8 @@ func DefaultConfig() Config {
 	c.Observability_Flush_Interval = "30s"
 	c.Observability_Tags = map[string]string{}
 
+	c.KeyBindings = DefaultKeyMap()
+
 	return c
 }
 

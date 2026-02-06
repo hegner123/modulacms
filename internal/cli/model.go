@@ -17,6 +17,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -97,7 +98,7 @@ type Model struct {
 	FormDialogActive        bool
 	ContentFormDialog       *ContentFormDialogModel
 	ContentFormDialogActive bool
-	Root                    TreeRoot
+	Root                    tree.Root
 	PanelFocus        tui.FocusPanel
 	Routes            []db.Routes
 	RootDatatypes          []db.Datatypes
@@ -107,6 +108,9 @@ type Model struct {
 	FieldCursor            int // Cursor for the fields panel (center)
 	MediaList              []db.Media
 	RootContentSummary     []db.RootContentSummary
+	UsersList              []db.Users
+	UserFormDialog         *UserFormDialogModel
+	UserFormDialogActive   bool
 
 	// SSH User Provisioning
 	NeedsProvisioning bool
