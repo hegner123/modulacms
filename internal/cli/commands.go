@@ -1806,3 +1806,64 @@ func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
 		}
 	}
 }
+
+// ArchiveContentCmd creates a command to toggle content archive status.
+func ArchiveContentCmd(contentID types.ContentID, routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return ArchiveContentRequestMsg{
+			ContentID: contentID,
+			RouteID:   routeID,
+		}
+	}
+}
+
+// HandleArchiveContent toggles a content node between archived and draft status.
+// If currently archived, reverts to draft. Otherwise, sets to archived.
+func (m Model) HandleArchiveContent(msg ArchiveContentRequestMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		logger := utility.DefaultLogger
+
+		content, err := d.GetContentData(msg.ContentID)
+		if err != nil || content == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content not found: %v", err)}
+		}
+
+		// Toggle archive: if archived -> draft, otherwise -> archived
+		newStatus := types.ContentStatusArchived
+		if content.Status == types.ContentStatusArchived {
+			newStatus = types.ContentStatusDraft
+		}
+
+		_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+			ContentDataID: content.ContentDataID,
+			RouteID:       content.RouteID,
+			ParentID:      content.ParentID,
+			FirstChildID:  content.FirstChildID,
+			NextSiblingID: content.NextSiblingID,
+			PrevSiblingID: content.PrevSiblingID,
+			DatatypeID:    content.DatatypeID,
+			AuthorID:      content.AuthorID,
+			Status:        newStatus,
+			DateCreated:   content.DateCreated,
+			DateModified:  types.TimestampNow(),
+		})
+		if updateErr != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update status: %v", updateErr)}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content %s status changed to %s", msg.ContentID, newStatus))
+		return ContentArchivedMsg{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+			NewStatus: newStatus,
+		}
+	}
+}

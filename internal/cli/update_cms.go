@@ -140,6 +140,18 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			ShowDialog("Status Changed", fmt.Sprintf("Content is now: %s", statusLabel), false),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
+	case ArchiveContentRequestMsg:
+		return m, m.HandleArchiveContent(msg)
+	case ContentArchivedMsg:
+		statusLabel := "Archived"
+		if msg.NewStatus == types.ContentStatusDraft {
+			statusLabel = "Draft"
+		}
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Status Changed", fmt.Sprintf("Content is now: %s", statusLabel), false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
 	case DeleteContentRequestMsg:
 		// Delete content
 		return m, m.HandleDeleteContent(msg)

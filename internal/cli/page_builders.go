@@ -430,10 +430,15 @@ func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) stri
 		cursor = "->"
 	}
 
-	// Status indicator for published content
+	// Status indicator for published/archived content
 	statusMark := ""
-	if node.Instance != nil && node.Instance.Status == types.ContentStatusPublished {
-		statusMark = "* "
+	if node.Instance != nil {
+		switch node.Instance.Status {
+		case types.ContentStatusPublished:
+			statusMark = "* "
+		case types.ContentStatusArchived:
+			statusMark = "~ "
+		}
 	}
 
 	// Build the row: cursor + indent + icon + statusMark + name

@@ -421,6 +421,17 @@ type ContentPublishToggledMsg struct {
 	NewStatus types.ContentStatus
 }
 
+// Archive/Unarchive
+type ArchiveContentRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+type ContentArchivedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	NewStatus types.ContentStatus
+}
+
 type PanelFocusReset struct{}
 
 // Users fetch messages

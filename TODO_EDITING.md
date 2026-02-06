@@ -23,7 +23,7 @@ Common editing tasks that need to be implemented for the TUI content editor.
 
 ### Content Status
 - [x] **Publish/Unpublish** - Toggle content status (draft/published)
-- [ ] **Draft/Archive** - Lifecycle state transitions (archive not wired)
+- [x] **Draft/Archive** - Toggle archive status (press `a`), `~` tree indicator
 - [ ] **Schedule publishing** - Time-based status changes
 
 ## Datatypes Page
@@ -117,9 +117,9 @@ Common editing tasks that need to be implemented for the TUI content editor.
 11. ~~Reorder siblings~~ done (Shift+Up/K, Shift+Down/J, tree reorder by pointers)
 12. ~~Copy content~~ done (handler + field duplication)
 
-### Phase 3 - Status Management (partial)
+### Phase 3 - Status Management (complete)
 13. ~~Publish/Unpublish~~ done (toggle draft/published)
-14. Draft/Archive states (HQ step 9, depends on 8)
+14. ~~Draft/Archive~~ done (toggle archived/draft with `a` key, `~` tree indicator)
 
 ### Phase 4 - Advanced Features
 15. Version history (HQ step 10)

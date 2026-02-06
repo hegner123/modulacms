@@ -28,6 +28,7 @@ const (
 	ActionReorderDown Action = "reorder_down"
 	ActionCopy        Action = "copy"
 	ActionPublish     Action = "publish"
+	ActionArchive     Action = "archive"
 )
 
 // KeyMap maps semantic actions to one or more key strings (as reported by
@@ -60,6 +61,7 @@ func DefaultKeyMap() KeyMap {
 		ActionReorderDown: {"shift+down", "J"},
 		ActionCopy:        {"c"},
 		ActionPublish:     {"p"},
+		ActionArchive:     {"a"},
 	}
 }
 
