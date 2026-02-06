@@ -43,7 +43,7 @@ ORDER BY datatype_id;
 -- name: ListDatatypeChildren :many
 SELECT * FROM datatypes
 WHERE parent_id = $1
-ORDER BY datatype_id;
+ORDER BY label;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (

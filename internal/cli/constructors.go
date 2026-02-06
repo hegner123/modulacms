@@ -433,6 +433,14 @@ func MediaListSetCmd(media []db.Media) tea.Cmd {
 	return func() tea.Msg { return MediaListSet{MediaList: media} }
 }
 
+// RootContentSummary constructors
+func RootContentSummaryFetchCmd() tea.Cmd {
+	return func() tea.Msg { return RootContentSummaryFetchMsg{} }
+}
+func RootContentSummarySetCmd(summary []db.RootContentSummary) tea.Cmd {
+	return func() tea.Msg { return RootContentSummarySet{RootContentSummary: summary} }
+}
+
 // Route constructors
 func RoutesFetchCmd() tea.Cmd { return func() tea.Msg { return RoutesFetchMsg{} } }
 func RoutesFetchResultCmd(data []db.Routes) tea.Cmd {

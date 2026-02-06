@@ -19,7 +19,7 @@ import (
 type timeMsg time.Time
 
 // Wish Middleware launches CLI program
-func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver) wish.Middleware {
+func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger) wish.Middleware {
 	newProg := func(m tea.Model, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)
 		go func() {
@@ -36,7 +36,7 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver) wish.Middlewar
 			wish.Fatalln(s, "no active terminal, skipping")
 			return nil
 		}
-		m, _ := InitialModel(v, c, driver)
+		m, _ := InitialModel(v, c, driver, logger)
 		m.Term = pty.Term
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height

@@ -127,6 +127,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 		case CONTENT:
 			page := m.PageMap[CONTENT]
 			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, RootContentSummaryFetchCmd())
 			cmds = append(cmds, RootDatatypesFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))

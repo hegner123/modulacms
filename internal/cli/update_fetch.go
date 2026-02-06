@@ -28,18 +28,18 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		d := db.ConfigDB(c)
 		rows, err := d.ExecuteQuery(query, dbt)
 		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
+			m.Logger.Ferror("", err)
 			return m, ErrorSetCmd(err)
 		}
 		defer utility.HandleRowsCloseDeferErr(rows)
 		columns, err := rows.Columns()
 		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
+			m.Logger.Ferror("", err)
 			return m, ErrorSetCmd(err)
 		}
 		listRows, err := db.GenericList(dbt, d)
 		if err != nil {
-			utility.DefaultLogger.Ferror("", err)
+			m.Logger.Ferror("", err)
 			return m, ErrorSetCmd(err)
 		}
 
@@ -92,9 +92,9 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		)
 
 	case DatatypesFetchResultsMsg:
-		utility.DefaultLogger.Finfo("tableFetchedMsg returned")
+		m.Logger.Finfo("tableFetchedMsg returned")
 		newMenu := m.BuildDatatypeMenu(msg.Data)
-		utility.DefaultLogger.Finfo("newMenu", newMenu)
+		m.Logger.Finfo("newMenu", newMenu)
 
 		datatypeMenuLabels := make([]string, 0, len(newMenu))
 		for _, item := range newMenu {
@@ -118,6 +118,11 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case RoutesFetchMsg:
 		d := m.DB
+		if d == nil {
+			return m, func() tea.Msg {
+				return FetchErrMsg{Error: fmt.Errorf("database not connected")}
+			}
+		}
 		return m, func() tea.Msg {
 			routes, err := d.ListRoutes()
 			if err != nil {
@@ -241,12 +246,116 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			LoadingStopCmd(),
 		)
 
+	case RootContentSummaryFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			summary, err := d.ListRootContentSummary()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if summary == nil {
+				return RootContentSummaryFetchResultsMsg{Data: []db.RootContentSummary{}}
+			}
+			return RootContentSummaryFetchResultsMsg{Data: *summary}
+		}
+
+	case RootContentSummaryFetchResultsMsg:
+		return m, tea.Batch(
+			RootContentSummarySetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
+
+	case FetchChildDatatypesMsg:
+		d := m.DB
+		parentID := msg.ParentDatatypeID
+		routeID := msg.RouteID
+		return m, func() tea.Msg {
+			children, err := d.ListDatatypeChildren(parentID)
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if children == nil || len(*children) == 0 {
+				// No child datatypes, cannot create child content
+				return ActionResultMsg{
+					Title:   "No Child Types",
+					Message: "This datatype has no child types defined.",
+				}
+			}
+			return ShowChildDatatypeDialogMsg{
+				ChildDatatypes: *children,
+				RouteID:        string(routeID),
+			}
+		}
+
+	case FetchContentFieldsMsg:
+		d := m.DB
+		datatypeID := msg.DatatypeID
+		routeID := msg.RouteID
+		parentID := msg.ParentID
+		title := msg.Title
+		utility.DefaultLogger.Finfo(fmt.Sprintf("FetchContentFieldsMsg received: DatatypeID=%s, RouteID=%s", datatypeID, routeID))
+		return m, func() tea.Msg {
+			utility.DefaultLogger.Finfo("FetchContentFieldsMsg command executing...")
+			// Fetch field IDs from the datatypes_fields join table
+			dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+			dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
+			if err != nil {
+				utility.DefaultLogger.Ferror("ListDatatypeFieldByDatatypeID error", err)
+				return FetchErrMsg{Error: err}
+			}
+
+			if dtFields == nil || len(*dtFields) == 0 {
+				utility.DefaultLogger.Finfo("No datatype fields found")
+				return ActionResultMsg{
+					Title:   "No Fields",
+					Message: "This datatype has no fields defined.",
+				}
+			}
+
+			utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d datatype fields", len(*dtFields)))
+
+			// Fetch actual field details for each field ID
+			var fields []db.Fields
+			for _, dtf := range *dtFields {
+				if dtf.FieldID.Valid {
+					field, err := d.GetField(dtf.FieldID.ID)
+					if err == nil && field != nil {
+						fields = append(fields, *field)
+					}
+				}
+			}
+
+			if len(fields) == 0 {
+				utility.DefaultLogger.Finfo("No valid fields found after fetching")
+				return ActionResultMsg{
+					Title:   "No Fields",
+					Message: "No valid fields found for this datatype.",
+				}
+			}
+
+			utility.DefaultLogger.Finfo(fmt.Sprintf("Returning ShowContentFormDialogMsg with %d fields", len(fields)))
+			return ShowContentFormDialogMsg{
+				Action:     FORMDIALOGCREATECONTENT,
+				Title:      title,
+				DatatypeID: datatypeID,
+				RouteID:    routeID,
+				ParentID:   parentID,
+				Fields:     fields,
+			}
+		}
+
 	case FetchErrMsg:
-		// Handle an error from data fetching.
+		// Handle an error from data fetching - show dialog to user
 		return m, tea.Batch(
 			ErrorSetCmd(msg.Error),
 			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database fetch error for table %s: %s", m.TableState.Table, msg.Error.Error())),
+			LogMessageCmd(fmt.Sprintf("Database fetch error: %s", msg.Error.Error())),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Fetch Error",
+					Message: msg.Error.Error(),
+				}
+			},
 		)
 	}
 	return m, nil

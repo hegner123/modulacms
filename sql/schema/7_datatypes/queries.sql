@@ -44,9 +44,9 @@ WHERE type = 'ROOT'
 ORDER BY datatype_id;
 
 -- name: ListDatatypeChildren :many
-SELECT * FROM admin_datatypes
+SELECT * FROM datatypes
 WHERE parent_id = ?
-ORDER BY datatype_id;
+ORDER BY label;
 
 -- name: CreateDatatype :one
 INSERT INTO datatypes (

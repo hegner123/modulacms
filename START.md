@@ -3,7 +3,7 @@
 ModulaCMS AI Agent Onboarding
 
 **Location:** /Users/home/Documents/Code/Go_dev/modulacms/START.md
-**Last Updated:** 2026-01-23
+**Last Updated:** 2026-02-05
 
 ---
 
@@ -69,12 +69,43 @@ This section tracks what the user is working on. It is for **user awareness only
 **ACTIVE — Work on this when asked:**
 | Project | Path | Status |
 |---------|------|--------|
-| (none) | | |
+| TUI Content Editor | `/Users/home/Documents/Code/Go_dev/modulacms/TODO_EDITING.md` | Phase 1 in progress |
 
 **PAUSED — Do NOT resume unless user explicitly requests:**
 | Project | Path | Status | Notes |
 |---------|------|--------|-------|
 | Core CMS Content Creation | `/Users/home/Documents/Code/Go_dev/modulacms/ai/refactor/CORE-CMS-CONTENT-CREATION-PLAN.md` | 90% complete | Testing remaining |
+
+---
+
+## TUI Content Editor TODO
+
+Current task list for TUI content editor implementation. Full details in `/TODO_EDITING.md`.
+
+### Phase 1 - Core Editing (Current)
+- [x] Create content - Dialog-based content creation
+- [x] Read/View content - Tree view with preview
+- [x] Update content fields - Edit existing field values
+- [x] Delete content - Remove content nodes
+- [ ] **Expand/Collapse tree nodes** - Next item
+
+### Phase 2 - Reorganization
+- [ ] Move content (reparent)
+- [ ] Reorder siblings
+- [ ] Copy content
+
+### Phase 3 - Status Management
+- [ ] Publish/Unpublish
+- [ ] Draft/Archive states
+
+### Phase 4 - Advanced Features
+- [ ] Version history
+- [ ] Search & filter
+- [ ] Bulk operations
+
+### UI/UX Improvements
+- [x] Controls guide - Context-sensitive keybindings in status bar
+- [x] Quit confirmation - Confirm before quitting on content pages
 
 **COMPLETED — Historical reference only:**
 | Project | Path |

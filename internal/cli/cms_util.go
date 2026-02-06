@@ -2,7 +2,6 @@ package cli
 
 import (
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // CollectFieldValuesFromForm extracts field values from form state
@@ -22,7 +21,7 @@ func (m Model) CollectFieldValuesFromForm() map[types.FieldID]string {
 			fieldIDStr := m.FormState.FormMap[i]
 			fieldID := types.FieldID(fieldIDStr)
 			if err := fieldID.Validate(); err != nil {
-				utility.DefaultLogger.Ferror("Invalid field ID", err)
+				m.Logger.Ferror("Invalid field ID", err)
 				continue
 			}
 

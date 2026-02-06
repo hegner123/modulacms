@@ -3,7 +3,6 @@ package cli
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/tui"
-	"github.com/hegner123/modulacms/internal/utility"
 )
 
 type StateUpdated struct{}
@@ -98,7 +97,7 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel.TableState.Rows = msg.Rows
 		return newModel, NewStateUpdate()
 	case LogMsg:
-		utility.DefaultLogger.Finfo(msg.Message)
+		m.Logger.Finfo(msg.Message)
 		return m, NewStateUpdate()
 	case ClearScreen:
 		return m, tea.ClearScreen
@@ -143,6 +142,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.FormDialogActive = msg.Active
 		return newModel, NewStateUpdate()
+	case ContentFormDialogSetMsg:
+		newModel := m
+		newModel.ContentFormDialog = msg.Dialog
+		return newModel, NewStateUpdate()
+	case ContentFormDialogActiveSetMsg:
+		newModel := m
+		newModel.ContentFormDialogActive = msg.Active
+		return newModel, NewStateUpdate()
 	case DatatypeMenuSet:
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
@@ -154,6 +161,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case MediaListSet:
 		newModel := m
 		newModel.MediaList = msg.MediaList
+		return newModel, NewStateUpdate()
+	case RootContentSummarySet:
+		newModel := m
+		newModel.RootContentSummary = msg.RootContentSummary
 		return newModel, NewStateUpdate()
 	case RootDatatypesSet:
 		newModel := m

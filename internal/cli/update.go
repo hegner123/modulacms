@@ -56,5 +56,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
+	// When content form dialog is active, route all key input to the content form dialog and stop.
+	if m.ContentFormDialogActive && m.ContentFormDialog != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			contentFormDialog, cmd := m.ContentFormDialog.Update(keyMsg)
+			m.ContentFormDialog = &contentFormDialog
+			return m, cmd
+		}
+	}
+
 	return m.PageSpecificMsgHandlers(nil, msg)
 }

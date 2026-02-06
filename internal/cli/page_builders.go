@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss/table"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 type PageUI interface {
@@ -380,62 +381,56 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 
 // traverseTree recursively renders the tree with proper indentation and cursor
 func (c CMSPage) traverseTree(node *TreeNode, display *[]string, cursor int, currentIndex *int) {
+	c.traverseTreeWithDepth(node, display, cursor, currentIndex, 0)
+}
+
+// traverseTreeWithDepth recursively renders the tree tracking depth for indentation
+func (c CMSPage) traverseTreeWithDepth(node *TreeNode, display *[]string, cursor int, currentIndex *int, depth int) {
 	if node == nil {
 		return
 	}
 
-	// Render current node with cursor highlight
-	row := c.FormatTreeRow(node, *currentIndex == cursor)
+	// Render current node with cursor and depth-based indentation
+	row := c.FormatTreeRow(node, *currentIndex == cursor, depth)
 	*display = append(*display, row)
 	*currentIndex++
 
-	// Render children if expanded
+	// Render children if expanded (increase depth)
 	if node.Expand && node.FirstChild != nil {
-		c.traverseTree(node.FirstChild, display, cursor, currentIndex)
+		c.traverseTreeWithDepth(node.FirstChild, display, cursor, currentIndex, depth+1)
 	}
 
-	// Render siblings
+	// Render siblings (same depth)
 	if node.NextSibling != nil {
-		c.traverseTree(node.NextSibling, display, cursor, currentIndex)
+		c.traverseTreeWithDepth(node.NextSibling, display, cursor, currentIndex, depth)
 	}
 }
 
-// FormatTreeRow formats a single tree node with proper styling
-func (c CMSPage) FormatTreeRow(node *TreeNode, isSelected bool) string {
-	indent := strings.Repeat("  ", node.Indent)
+// FormatTreeRow formats a single tree node with cursor and indentation
+func (c CMSPage) FormatTreeRow(node *TreeNode, isSelected bool, depth int) string {
+	indent := strings.Repeat("  ", depth)
 
 	// Icon based on node type and state
-	icon := "📄"
+	icon := "├─"
 	if node.FirstChild != nil {
 		if node.Expand {
-			icon = "📂"  // Open folder
+			icon = "▼"
 		} else {
-			icon = "📁"  // Closed folder
+			icon = "▶"
 		}
 	}
 
 	// Get node name
 	name := DecideNodeName(*node)
 
-	// Selection indicator
-	cursor := " "
+	// Selection indicator (cursor only, no highlighting)
+	cursor := "  "
 	if isSelected {
-		cursor = ">"
+		cursor = "->"
 	}
 
-	// Build the row
-	row := cursor + " " + indent + icon + " " + name
-
-	// Style based on selection
-	if isSelected {
-		style := lipgloss.NewStyle().
-			Background(config.DefaultStyle.ActiveBG).
-			Foreground(config.DefaultStyle.Active).
-			Bold(true)
-		return style.Render(row)
-	}
-
-	return row
+	// Build the row: cursor + indent + icon + name
+	return cursor + indent + icon + " " + name
 }
 
 func FormatRow(node *TreeNode) string {
@@ -515,16 +510,22 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 	preview = append(preview, "")
 	preview = append(preview, "Structure:")
 	if node.Parent != nil {
-		preview = append(preview, "  ├─ Has parent")
+		preview = append(preview, fmt.Sprintf("  ├─ Parent: %s", node.Parent.Datatype.Label))
 	}
 	if node.FirstChild != nil {
-		preview = append(preview, "  ├─ Has children")
+		preview = append(preview, "  ├─ Children:")
+		// List all child datatypes
+		child := node.FirstChild
+		for child != nil {
+			preview = append(preview, fmt.Sprintf("  │   • %s", child.Datatype.Label))
+			child = child.NextSibling
+		}
 	}
 	if node.NextSibling != nil {
-		preview = append(preview, "  ├─ Has next sibling")
+		preview = append(preview, fmt.Sprintf("  ├─ Next: %s", node.NextSibling.Datatype.Label))
 	}
 	if node.PrevSibling != nil {
-		preview = append(preview, "  └─ Has previous sibling")
+		preview = append(preview, fmt.Sprintf("  └─ Prev: %s", node.PrevSibling.Datatype.Label))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, preview...)
@@ -532,19 +533,49 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 
 func (c CMSPage) ProcessFields(model Model) string {
 	node := c.getSelectedNode(model)
-	if node == nil || len(node.InstanceFields) == 0 {
-		return "No fields"
+	if node == nil || node.Instance == nil {
+		return "No content selected"
+	}
+
+	// Fetch content fields from database
+	if model.DB == nil {
+		return "Database not connected"
+	}
+
+	contentDataID := types.NullableContentID{
+		ID:    node.Instance.ContentDataID,
+		Valid: true,
+	}
+	contentFields, err := model.DB.ListContentFieldsByContentData(contentDataID)
+	if err != nil {
+		return fmt.Sprintf("Error loading fields: %v", err)
+	}
+
+	if contentFields == nil || len(*contentFields) == 0 {
+		return "No fields for this content"
+	}
+
+	// Fetch field definitions for labels
+	var fieldDefs []db.Fields
+	if node.Instance.DatatypeID.Valid {
+		dtFields, err := model.DB.ListDatatypeFieldByDatatypeID(node.Instance.DatatypeID)
+		if err == nil && dtFields != nil {
+			for _, dtf := range *dtFields {
+				if dtf.FieldID.Valid {
+					field, err := model.DB.GetField(dtf.FieldID.ID)
+					if err == nil && field != nil {
+						fieldDefs = append(fieldDefs, *field)
+					}
+				}
+			}
+		}
 	}
 
 	fields := []string{}
-	fieldsTitle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Secondary).Render("Fields:")
-	fields = append(fields, fieldsTitle)
-	fields = append(fields, "")
-
-	for _, cf := range node.InstanceFields {
-		// Find field definition
+	for _, cf := range *contentFields {
+		// Find field label from definitions
 		var fieldLabel string
-		for _, f := range node.Fields {
+		for _, f := range fieldDefs {
 			if cf.FieldID.Valid && f.FieldID == cf.FieldID.ID {
 				fieldLabel = f.Label
 				break
@@ -556,11 +587,11 @@ func (c CMSPage) ProcessFields(model Model) string {
 
 		// Truncate long values
 		value := cf.FieldValue
-		if len(value) > 50 {
-			value = value[:47] + "..."
+		if len(value) > 40 {
+			value = value[:37] + "..."
 		}
 
-		fields = append(fields, fmt.Sprintf("├─ %s: %s", fieldLabel, value))
+		fields = append(fields, fmt.Sprintf("%s: %s", fieldLabel, value))
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, fields...)

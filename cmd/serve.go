@@ -105,7 +105,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				cli.CliMiddleware(&verbose, cfg, driver),
+				cli.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger),
 				logging.Middleware(),
 			),
 		)

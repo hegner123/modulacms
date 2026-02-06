@@ -201,6 +201,24 @@ func (d Database) ListDatatypesRoot() (*[]Datatypes, error) {
 	return &res, nil
 }
 
+func (d Database) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	// Convert DatatypeID to NullableContentID for the query (sqlc generates this param type)
+	params := mdb.ListDatatypeChildrenParams{
+		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+	}
+	rows, err := queries.ListDatatypeChildren(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 	params := d.MapUpdateDatatypeParams(s)
 	queries := mdb.New(d.Connection)
@@ -332,6 +350,23 @@ func (d MysqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	params := mdbm.ListDatatypeChildrenParams{
+		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+	}
+	rows, err := queries.ListDatatypeChildren(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
 	params := d.MapUpdateDatatypeParams(s)
 	queries := mdbm.New(d.Connection)
@@ -454,6 +489,23 @@ func (d PsqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
 	rows, err := queries.ListDatatypeRoot(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	params := mdbp.ListDatatypeChildrenParams{
+		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+	}
+	rows, err := queries.ListDatatypeChildren(d.Context, params)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
 	}
 	res := []Datatypes{}
 	for _, v := range rows {

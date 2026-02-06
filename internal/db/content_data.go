@@ -534,3 +534,106 @@ func (d PsqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, err
 	u := fmt.Sprintf("Successfully updated content data %v\n", s.ContentDataID)
 	return &u, nil
 }
+
+///////////////////////////////
+// ROOT CONTENT SUMMARY
+//////////////////////////////
+
+// RootContentSummary represents a root content data entry with route and datatype info
+type RootContentSummary struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	RouteSlug     types.Slug               `json:"route_slug"`
+	RouteTitle    string                   `json:"route_title"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+}
+
+// SQLITE - ListRootContentSummary
+
+func (d Database) MapRootContentSummary(a mdb.ListRootContentSummaryRow) RootContentSummary {
+	return RootContentSummary{
+		ContentDataID: a.ContentDataID,
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+	}
+}
+
+func (d Database) ListRootContentSummary() (*[]RootContentSummary, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListRootContentSummary(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root content summary: %v", err)
+	}
+	res := []RootContentSummary{}
+	for _, v := range rows {
+		m := d.MapRootContentSummary(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// MYSQL - ListRootContentSummary
+
+func (d MysqlDatabase) MapRootContentSummary(a mdbm.ListRootContentSummaryRow) RootContentSummary {
+	return RootContentSummary{
+		ContentDataID: a.ContentDataID,
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+	}
+}
+
+func (d MysqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListRootContentSummary(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root content summary: %v", err)
+	}
+	res := []RootContentSummary{}
+	for _, v := range rows {
+		m := d.MapRootContentSummary(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// PSQL - ListRootContentSummary
+
+func (d PsqlDatabase) MapRootContentSummary(a mdbp.ListRootContentSummaryRow) RootContentSummary {
+	return RootContentSummary{
+		ContentDataID: a.ContentDataID,
+		RouteID:       a.RouteID,
+		DatatypeID:    a.DatatypeID,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+		DateCreated:   a.DateCreated,
+		DateModified:  a.DateModified,
+	}
+}
+
+func (d PsqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListRootContentSummary(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get root content summary: %v", err)
+	}
+	res := []RootContentSummary{}
+	for _, v := range rows {
+		m := d.MapRootContentSummary(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}

@@ -9,7 +9,6 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tui"
-	"github.com/hegner123/modulacms/internal/utility"
 )
 
 type ControlUpdate struct{}
@@ -201,6 +200,14 @@ func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 				m.PageRouteId = route.RouteID
 				return m, LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID))
 			}
+		case "n":
+			// Create new route
+			return m, ShowRouteFormDialogCmd(FORMDIALOGCREATEROUTE, "New Route")
+		case "e":
+			// Edit selected route
+			if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
+				return m, ShowEditRouteDialogCmd(m.Routes[m.Cursor])
+			}
 		}
 	}
 	return m, nil
@@ -349,15 +356,15 @@ func (m Model) datatypesControlsNew() (Model, tea.Cmd) {
 func (m Model) datatypesControlsEdit() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
-		// Edit selected datatype
+		// Edit selected datatype using modal dialog
 		if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
-			return m, CmsEditDatatypeLoadCmd(m.AllDatatypes[m.Cursor])
+			return m, ShowEditDatatypeDialogCmd(m.AllDatatypes[m.Cursor], m.AllDatatypes)
 		}
 	case tui.ContentPanel:
-		// Edit selected field
+		// Edit selected field using modal dialog
 		if len(m.SelectedDatatypeFields) > 0 && m.FieldCursor < len(m.SelectedDatatypeFields) {
 			field := m.SelectedDatatypeFields[m.FieldCursor]
-			return m, LogMessageCmd(fmt.Sprintf("Edit field: %s", field.Label))
+			return m, ShowEditFieldDialogCmd(field)
 		}
 	}
 	return m, nil
@@ -385,10 +392,10 @@ func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
 }
 
 // ContentBrowserControls handles keyboard navigation for the content browser.
-// The Content page has a multi-step flow:
-//   - Left panel: ROOT datatypes list
-//   - Center panel: routes for selected ROOT type (or content tree if route active)
-//   - Right panel: details/actions
+// The Content page shows:
+//   - Left panel: content data instances with slug and ROOT datatype label
+//   - Center panel: details of selected content (or content tree if viewing)
+//   - Right panel: actions
 func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -402,21 +409,17 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			return m, nil
 
 		// Exit / Back
-		case "q", "ctrl+c":
+		case "ctrl+c":
 			return m, tea.Quit
+		case "q":
+			// Show quit confirmation dialog
+			return m, ShowQuitConfirmDialogCmd()
 		case "esc", "h", "left", "backspace":
 			// Step back through content flow states
 			if !m.PageRouteId.IsZero() {
-				// Clear route, go back to route list
+				// Clear route, go back to content list
 				m.PageRouteId = types.RouteID("")
 				m.Root = TreeRoot{}
-				m.Cursor = 0
-				return m, nil
-			}
-			if !m.SelectedDatatype.IsZero() {
-				// Clear datatype, go back to ROOT type list
-				m.SelectedDatatype = types.DatatypeID("")
-				m.Routes = nil
 				m.Cursor = 0
 				return m, nil
 			}
@@ -428,7 +431,7 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		// Navigation
 		case "up", "k":
 			if m.PageRouteId.IsZero() {
-				// Navigating ROOT types or routes list
+				// Navigating content summary list
 				if m.Cursor > 0 {
 					return m, CursorUpCmd()
 				}
@@ -440,16 +443,9 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		case "down", "j":
 			if m.PageRouteId.IsZero() {
-				if m.SelectedDatatype.IsZero() {
-					// Navigating ROOT types
-					if m.Cursor < len(m.RootDatatypes)-1 {
-						return m, CursorDownCmd()
-					}
-				} else {
-					// Navigating routes list
-					if m.Cursor < len(m.Routes)-1 {
-						return m, CursorDownCmd()
-					}
+				// Navigating content summary list
+				if m.Cursor < len(m.RootContentSummary)-1 {
+					return m, CursorDownCmd()
 				}
 			} else {
 				// Navigating content tree
@@ -462,28 +458,17 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		// Selection
 		case "enter", "l", "right":
 			if m.PageRouteId.IsZero() {
-				if m.SelectedDatatype.IsZero() {
-					// Select a ROOT datatype -> fetch routes for it
-					if len(m.RootDatatypes) > 0 && m.Cursor < len(m.RootDatatypes) {
-						dt := m.RootDatatypes[m.Cursor]
-						m.SelectedDatatype = dt.DatatypeID
+				// Select a content summary -> go to content tree
+				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
+					content := m.RootContentSummary[m.Cursor]
+					if content.RouteID.Valid {
+						m.PageRouteId = content.RouteID.ID
+						m.SelectedDatatype = content.DatatypeID.ID
 						m.Cursor = 0
 						return m, tea.Batch(
 							LoadingStartCmd(),
-							SelectedDatatypeSetCmd(dt.DatatypeID),
-							RoutesByDatatypeFetchCmd(dt.DatatypeID),
-						)
-					}
-				} else {
-					// Select a route -> set PageRouteId and load content tree
-					if len(m.Routes) > 0 && m.Cursor < len(m.Routes) {
-						route := m.Routes[m.Cursor]
-						m.PageRouteId = route.RouteID
-						m.Cursor = 0
-						return m, tea.Batch(
-							LoadingStartCmd(),
-							LogMessageCmd(fmt.Sprintf("Route selected: %s (%s)", route.Title, route.RouteID)),
-							ReloadContentTreeCmd(m.Config, route.RouteID),
+							LogMessageCmd(fmt.Sprintf("Content selected: %s [%s]", content.RouteSlug, content.DatatypeLabel)),
+							ReloadContentTreeCmd(m.Config, content.RouteID.ID),
 						)
 					}
 				}
@@ -496,25 +481,59 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			}
 
-		// Actions (only when browsing content tree)
+		// Actions
 		case "e":
 			if !m.PageRouteId.IsZero() {
-				return m, NavigateToPageCmd(m.PageMap[EDITCONTENT])
+				// Edit the selected node - show content fields dialog with existing values
+				node := m.getSelectedNodeFromModel()
+				if node != nil && node.Instance != nil {
+					m.Logger.Finfo(fmt.Sprintf("'e' key pressed, editing node %s with datatype %s", node.Instance.ContentDataID, node.Datatype.Label))
+					// Fetch existing content fields and show edit dialog
+					return m, FetchContentForEditCmd(
+						node.Instance.ContentDataID,
+						node.Datatype.DatatypeID,
+						m.PageRouteId,
+						fmt.Sprintf("Edit: %s", node.Datatype.Label),
+					)
+				}
+				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
 		case "n":
-			if !m.PageRouteId.IsZero() {
-				node := m.getSelectedNodeFromModel()
-				utility.DefaultLogger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
-				if node != nil {
-					utility.DefaultLogger.Finfo(fmt.Sprintf("Building form for datatype %s (label: %s)", node.Datatype.DatatypeID, node.Datatype.Label))
-					return m, m.BuildContentFieldsForm(node.Datatype.DatatypeID, m.PageRouteId)
+			if m.PageRouteId.IsZero() {
+				// Create a new route with content using ROOT datatype from selected content
+				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
+					content := m.RootContentSummary[m.Cursor]
+					if content.DatatypeID.Valid {
+						return m, ShowCreateRouteWithContentDialogCmd(string(content.DatatypeID.ID))
+					}
+				} else if len(m.RootDatatypes) > 0 {
+					// Fallback: use first ROOT datatype if no content selected
+					return m, ShowCreateRouteWithContentDialogCmd(string(m.RootDatatypes[0].DatatypeID))
 				}
-				utility.DefaultLogger.Finfo("No node selected")
-				return m, ShowDialog("Error", "Please select a content type first", false)
+			} else {
+				// When viewing content tree, show dialog to select child datatype
+				node := m.getSelectedNodeFromModel()
+				m.Logger.Finfo(fmt.Sprintf("'n' key pressed, node: %v", node != nil))
+				if node != nil {
+					m.Logger.Finfo(fmt.Sprintf("Showing child datatype picker for parent %s", node.Datatype.Label))
+					return m, ShowChildDatatypeDialogCmd(node.Datatype.DatatypeID, m.PageRouteId)
+				}
+				m.Logger.Finfo("No node selected")
+				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
 		case "d":
 			if !m.PageRouteId.IsZero() {
-				return m, ShowDialog("Confirm Delete", "Delete this content? This cannot be undone.", true)
+				node := m.getSelectedNodeFromModel()
+				if node != nil && node.Instance != nil {
+					contentName := DecideNodeName(*node)
+					hasChildren := node.FirstChild != nil
+					return m, ShowDeleteContentDialogCmd(
+						string(node.Instance.ContentDataID),
+						contentName,
+						hasChildren,
+					)
+				}
+				return m, ShowDialog("Error", "Please select a content node first", false)
 			}
 
 		// Title font change
@@ -877,7 +896,7 @@ func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	defer func() {
 		if err := logFile.Close(); err != nil {
-			utility.DefaultLogger.Finfo("Tables Fetch ")
+			m.Logger.Finfo("Tables Fetch ")
 		}
 	}()
 
@@ -948,7 +967,7 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	defer func() {
 		if err := logFile.Close(); err != nil {
-			utility.DefaultLogger.Finfo("Tables Fetch ")
+			m.Logger.Finfo("Tables Fetch ")
 		}
 	}()
 

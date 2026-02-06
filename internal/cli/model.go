@@ -54,6 +54,7 @@ type ModelInterface interface {
 type Model struct {
 	DB           db.DbDriver
 	Config       *config.Config
+	Logger       Logger
 	Status       ApplicationState
 	TitleFont    int
 	Titles       []string
@@ -92,9 +93,11 @@ type Model struct {
 	Time         time.Time
 	Dialog           *DialogModel
 	DialogActive     bool
-	FormDialog       *FormDialogModel
-	FormDialogActive bool
-	Root         TreeRoot
+	FormDialog              *FormDialogModel
+	FormDialogActive        bool
+	ContentFormDialog       *ContentFormDialogModel
+	ContentFormDialogActive bool
+	Root                    TreeRoot
 	PanelFocus        tui.FocusPanel
 	Routes            []db.Routes
 	RootDatatypes          []db.Datatypes
@@ -103,6 +106,7 @@ type Model struct {
 	SelectedDatatypeFields []db.Fields
 	FieldCursor            int // Cursor for the fields panel (center)
 	MediaList              []db.Media
+	RootContentSummary     []db.RootContentSummary
 
 	// SSH User Provisioning
 	NeedsProvisioning bool
@@ -125,7 +129,11 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 	}
 }
 
-func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd) {
+func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) (Model, tea.Cmd) {
+	// Use provided logger or fall back to utility.DefaultLogger
+	if logger == nil {
+		logger = utility.DefaultLogger
+	}
 
 	verbose := false
 	if v != nil {
@@ -135,7 +143,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd
 	// TODO add conditional to check ui config for custom titles
 	fs, err := TitleFile.ReadDir("titles")
 	if err != nil {
-		utility.DefaultLogger.Fatal("", err)
+		logger.Fatal("", err)
 	}
 	fonts := ParseTitles(fs)
 
@@ -156,7 +164,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd
 		for _, u := range *users {
 			if strings.EqualFold(u.Username, "system") {
 				systemAdminID = u.UserID
-				utility.DefaultLogger.Finfo(fmt.Sprintf("CLI mode: using system user %s (%s)", u.Username, u.UserID))
+				logger.Finfo(fmt.Sprintf("CLI mode: using system user %s (%s)", u.Username, u.UserID))
 				break
 			}
 		}
@@ -165,6 +173,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver) (Model, tea.Cmd
 	m := Model{
 		DB:          driver,
 		Config:      c,
+		Logger:      logger,
 		Status:      OK,
 		TitleFont:   0,
 		Titles:      LoadTitles(fonts),

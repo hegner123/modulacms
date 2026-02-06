@@ -60,3 +60,19 @@ FROM content_data cd
 WHERE cd.route_id = ?
 ORDER BY cd.content_data_id, f.field_id;
 
+-- name: ListRootContentSummary :many
+SELECT
+    cd.content_data_id,
+    cd.route_id,
+    cd.datatype_id,
+    r.slug AS route_slug,
+    r.title AS route_title,
+    dt.label AS datatype_label,
+    cd.date_created,
+    cd.date_modified
+FROM content_data cd
+    INNER JOIN routes r ON cd.route_id = r.route_id
+    INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.parent_id IS NULL
+    AND dt.type = 'ROOT'
+ORDER BY dt.label, r.slug;

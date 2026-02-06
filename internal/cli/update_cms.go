@@ -27,6 +27,18 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, m.HandleCreateDatatypeFromDialog(msg)
 	case CreateFieldFromDialogRequestMsg:
 		return m, m.HandleCreateFieldFromDialog(msg)
+	case CreateRouteFromDialogRequestMsg:
+		return m, m.HandleCreateRouteFromDialog(msg)
+	case UpdateDatatypeFromDialogRequestMsg:
+		return m, m.HandleUpdateDatatypeFromDialog(msg)
+	case UpdateFieldFromDialogRequestMsg:
+		return m, m.HandleUpdateFieldFromDialog(msg)
+	case UpdateRouteFromDialogRequestMsg:
+		return m, m.HandleUpdateRouteFromDialog(msg)
+	case CreateRouteWithContentRequestMsg:
+		return m, m.HandleCreateRouteWithContent(msg)
+	case InitializeRouteContentRequestMsg:
+		return m, m.HandleInitializeRouteContent(msg)
 	case CmsEditDatatypeLoadMsg:
 		return m, CmsEditDatatypeFormCmd(msg.Datatype)
 	case DatatypeUpdateSaveMsg:
@@ -71,19 +83,38 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	case BuildContentFormMsg:
 		// Build dynamic form for content creation
 		return m, m.BuildContentFieldsForm(msg.DatatypeID, msg.RouteID)
+	case ChildDatatypeSelectedMsg:
+		// User selected a child datatype from the dialog - fetch fields and show content form
+		m.Logger.Finfo(fmt.Sprintf("ChildDatatypeSelectedMsg received: DatatypeID=%s, RouteID=%s", msg.DatatypeID, msg.RouteID))
+		selectedNode := m.getSelectedNodeFromModel()
+		var parentContentID types.NullableContentID
+		if selectedNode != nil && selectedNode.Instance != nil {
+			parentContentID = types.NullableContentID{ID: selectedNode.Instance.ContentDataID, Valid: true}
+			m.Logger.Finfo(fmt.Sprintf("Parent content ID: %s", parentContentID.ID))
+		}
+		return m, FetchContentFieldsCmd(msg.DatatypeID, msg.RouteID, parentContentID, "New Content")
+	case CreateContentFromDialogRequestMsg:
+		// Create content from dialog values using authenticated user
+		return m, m.HandleCreateContentFromDialog(msg, m.UserID)
+	case FetchContentForEditMsg:
+		// Fetch content fields for editing - this runs in background and shows edit dialog
+		return m, m.HandleFetchContentForEdit(msg)
+	case UpdateContentFromDialogRequestMsg:
+		// Update content from dialog values using authenticated user
+		return m, m.HandleUpdateContentFromDialog(msg, m.UserID)
+	case DeleteContentRequestMsg:
+		// Delete content
+		return m, m.HandleDeleteContent(msg)
 	case CmsAddNewContentDataMsg:
 		// Collect field values from form state
 		fieldValues := m.CollectFieldValuesFromForm()
 
-		// Dispatch specialized command using typed methods
-		// TODO: Get actual authorID from authenticated user session
-		// Using a default UserID - in production this should come from the session
-		defaultAuthorID := types.UserID("01JTRBZ0000000000000000001") // Placeholder author ID
+		// Dispatch specialized command using typed methods with authenticated user
 		return m, CreateContentWithFieldsCmd(
 			m.Config,
 			msg.Datatype,
 			m.PageRouteId,
-			defaultAuthorID,
+			m.UserID,
 			fieldValues,
 		)
 
@@ -116,6 +147,22 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			LogMessageCmd(fmt.Sprintf("Failed field IDs: %v", msg.FailedFields)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 			FormCompletedCmd(&contentPage), // Navigate back to content browser
+		)
+
+	case ContentDeletedMsg:
+		// Content deleted successfully - reload tree and show success
+		newModel := m
+		// Reset cursor if it's beyond the new tree size
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog(
+				"Success",
+				"Content deleted successfully",
+				false,
+			),
+			LogMessageCmd(fmt.Sprintf("Content deleted: ID=%s", msg.ContentID)),
+			ReloadContentTreeCmd(m.Config, types.RouteID(msg.RouteID)),
 		)
 
 	case TreeLoadedMsg:

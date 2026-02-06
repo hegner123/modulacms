@@ -38,9 +38,10 @@ func renderCMSPanelLayout(m Model) string {
 	rightW := m.Width - leftW - centerW
 
 	left, center, right := cmsPanelContent(m)
+	leftTitle, centerTitle, rightTitle := cmsPanelTitles(m)
 
 	treePanel := tui.Panel{
-		Title:   "Tree",
+		Title:   leftTitle,
 		Width:   leftW,
 		Height:  bodyH,
 		Content: left,
@@ -48,7 +49,7 @@ func renderCMSPanelLayout(m Model) string {
 	}
 
 	contentPanel := tui.Panel{
-		Title:   "Content",
+		Title:   centerTitle,
 		Width:   centerW,
 		Height:  bodyH,
 		Content: center,
@@ -56,7 +57,7 @@ func renderCMSPanelLayout(m Model) string {
 	}
 
 	routePanel := tui.Panel{
-		Title:   "Route",
+		Title:   rightTitle,
 		Width:   rightW,
 		Height:  bodyH,
 		Content: right,
@@ -79,7 +80,32 @@ func renderCMSPanelLayout(m Model) string {
 		return FormDialogOverlay(ui, *m.FormDialog, m.Width, m.Height)
 	}
 
+	if m.ContentFormDialogActive && m.ContentFormDialog != nil {
+		return ContentFormDialogOverlay(ui, *m.ContentFormDialog, m.Width, m.Height)
+	}
+
 	return ui
+}
+
+// cmsPanelTitles returns the panel titles based on the current page context.
+func cmsPanelTitles(m Model) (left, center, right string) {
+	switch m.Page.Index {
+	case CONTENT:
+		if m.PageRouteId.IsZero() {
+			return "Content", "Details", "Actions"
+		}
+		return "Tree", "Content", "Fields"
+	case ROUTES:
+		return "Routes", "Details", "Actions"
+	case MEDIA:
+		return "Media", "Details", "Info"
+	case DATATYPES:
+		return "Datatypes", "Fields", "Actions"
+	case USERSADMIN:
+		return "Users", "Details", "Permissions"
+	default:
+		return "Tree", "Content", "Route"
+	}
 }
 
 // cmsPanelContent returns the left, center, and right panel content strings
@@ -93,15 +119,10 @@ func cmsPanelContent(m Model) (left, center, right string) {
 
 	case CONTENT:
 		if m.PageRouteId.IsZero() {
-			// Content selection flow: ROOT types -> routes
-			left = renderRootDatatypesList(m)
-			if m.SelectedDatatype.IsZero() {
-				center = "Select a root type"
-				right = fmt.Sprintf("Root Types: %d", len(m.RootDatatypes))
-			} else {
-				center = renderRoutesList(m)
-				right = renderRouteActions(m)
-			}
+			// Content selection flow: show content instances with slug and datatype
+			left = renderRootContentSummaryList(m)
+			center = renderContentSummaryDetail(m)
+			right = renderContentActions(m)
 		} else {
 			// Content browsing: tree view
 			cms := CMSPage{}
@@ -207,8 +228,8 @@ func renderCMSPanelStatusBar(m Model) string {
 	}
 	focusIndicator := lipgloss.JoinHorizontal(lipgloss.Center, focusParts...)
 
-	// Right: key hints
-	hints := barStyle.Padding(0, 1).Render("tab:panel  h:back  q:quit")
+	// Right: context-sensitive key hints
+	hints := barStyle.Padding(0, 1).Render(getContextControls(m))
 
 	// Calculate spacing
 	statusW := lipgloss.Width(statusBadge)
@@ -228,6 +249,48 @@ func renderCMSPanelStatusBar(m Model) string {
 	rightSpacer := barStyle.Render(strings.Repeat(" ", rightGap))
 
 	return statusBadge + leftSpacer + focusIndicator + rightSpacer + hints
+}
+
+// getContextControls returns context-sensitive keybinding hints based on
+// current page and panel focus.
+func getContextControls(m Model) string {
+	// Common controls
+	common := "tab:panel │ h:back │ q:quit"
+
+	switch m.Page.Index {
+	case CONTENT:
+		if m.PageRouteId.IsZero() {
+			// Content selection mode (no route selected)
+			return "↑↓:nav │ enter:view │ n:new │ " + common
+		}
+		// Content browsing mode (route selected, showing tree)
+		return "↑↓:nav │ +/-:expand │ n:new │ e:edit │ d:delete │ " + common
+
+	case ROUTES:
+		return "↑↓:nav │ enter:select │ n:new │ e:edit │ d:delete │ " + common
+
+	case DATATYPES:
+		switch m.PanelFocus {
+		case tui.TreePanel:
+			return "↑↓:nav │ n:new │ e:edit │ d:delete │ " + common
+		case tui.ContentPanel:
+			return "↑↓:nav │ n:new field │ e:edit │ d:delete │ " + common
+		default:
+			return "↑↓:nav │ " + common
+		}
+
+	case MEDIA:
+		return "↑↓:nav │ n:upload │ d:delete │ " + common
+
+	case USERSADMIN:
+		return "↑↓:nav │ n:new │ e:edit │ d:delete │ " + common
+
+	case CMSPAGE, ADMINCMSPAGE:
+		return "↑↓:nav │ enter:select │ " + common
+
+	default:
+		return common
+	}
 }
 
 // renderRootDatatypesList renders ROOT datatypes for the left panel on the CONTENT page.
@@ -267,7 +330,7 @@ func renderRoutesList(m Model) string {
 		if route.RouteID == m.PageRouteId {
 			active = " *"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s /%s%s", cursor, route.Title, route.Slug, active))
+		lines = append(lines, fmt.Sprintf("%s %s %s%s", cursor, route.Title, route.Slug, active))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -281,7 +344,7 @@ func renderRouteDetail(m Model) string {
 	route := m.Routes[m.Cursor]
 	lines := []string{
 		fmt.Sprintf("Title:    %s", route.Title),
-		fmt.Sprintf("Slug:     /%s", route.Slug),
+		fmt.Sprintf("Slug:     %s", route.Slug),
 		fmt.Sprintf("Status:   %d", route.Status),
 		fmt.Sprintf("Author:   %s", route.AuthorID.String()),
 		fmt.Sprintf("Created:  %s", route.DateCreated.String()),
@@ -492,6 +555,61 @@ func renderDatatypeActions(m Model) string {
 	lines = append(lines, fmt.Sprintf("Datatypes: %d", len(m.AllDatatypes)))
 	if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
 		lines = append(lines, fmt.Sprintf("Fields: %d", len(m.SelectedDatatypeFields)))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderRootContentSummaryList renders content data instances with slug and ROOT datatype label for the left panel.
+func renderRootContentSummaryList(m Model) string {
+	if len(m.RootContentSummary) == 0 {
+		return "(no content)"
+	}
+
+	lines := make([]string, 0, len(m.RootContentSummary))
+	for i, content := range m.RootContentSummary {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		lines = append(lines, fmt.Sprintf("%s [%s] %s", cursor, content.DatatypeLabel, content.RouteSlug))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderContentSummaryDetail renders details for the selected content summary in the center panel.
+func renderContentSummaryDetail(m Model) string {
+	if len(m.RootContentSummary) == 0 || m.Cursor >= len(m.RootContentSummary) {
+		return "No content selected"
+	}
+
+	content := m.RootContentSummary[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Route:    %s", content.RouteSlug),
+		fmt.Sprintf("Title:    %s", content.RouteTitle),
+		fmt.Sprintf("Datatype: %s", content.DatatypeLabel),
+		"",
+		fmt.Sprintf("ID:       %s", content.ContentDataID),
+		fmt.Sprintf("Route ID: %s", content.RouteID.String()),
+		"",
+		fmt.Sprintf("Created:  %s", content.DateCreated.String()),
+		fmt.Sprintf("Modified: %s", content.DateModified.String()),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderContentActions renders available actions for the right panel on the CONTENT page.
+func renderContentActions(m Model) string {
+	lines := []string{
+		"Actions",
+		"",
+		"  enter: View content tree",
+		"  n: New content",
+		"  e: Edit",
+		"  d: Delete",
+		"",
+		fmt.Sprintf("Content: %d", len(m.RootContentSummary)),
 	}
 
 	return strings.Join(lines, "\n")

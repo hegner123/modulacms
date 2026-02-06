@@ -185,6 +185,7 @@ type DbDriver interface {
 	GetContentData(types.ContentID) (*ContentData, error)
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
+	ListRootContentSummary() (*[]RootContentSummary, error)
 	UpdateContentData(UpdateContentDataParams) (*string, error)
 
 	// ContentFields
@@ -196,6 +197,7 @@ type DbDriver interface {
 	GetContentFieldsByRoute(types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error)
 	ListContentFields() (*[]ContentFields, error)
 	ListContentFieldsByRoute(types.NullableRouteID) (*[]ContentFields, error)
+	ListContentFieldsByContentData(types.NullableContentID) (*[]ContentFields, error)
 	UpdateContentField(UpdateContentFieldParams) (*string, error)
 
 	// Datatypes
@@ -206,6 +208,7 @@ type DbDriver interface {
 	GetDatatype(types.DatatypeID) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
+	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
 	UpdateDatatype(UpdateDatatypeParams) (*string, error)
 
 	// DatatypeFields

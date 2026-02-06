@@ -114,7 +114,7 @@ func (m Model) GetSuggestionsString(c *config.Config, column string) []string {
 	} else {
 		r, err := db.GetColumnRowsString(con, ctx, m.TableState.Table, column)
 		if err != nil {
-			utility.DefaultLogger.Error("ERROR", err)
+			m.Logger.Error("ERROR", err)
 			return nil
 		}
 		return r

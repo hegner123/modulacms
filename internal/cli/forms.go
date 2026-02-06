@@ -173,6 +173,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 // Field Form for adding fields to a Datatype
 
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
+	logger := m.Logger
 	var (
 		parentID string
 		label    string
@@ -188,7 +189,7 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
-							utility.DefaultLogger.Error("error listing datatypes %w", err)
+							logger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
 							option := huh.NewOption(v.Label, string(v.DatatypeID))
@@ -210,6 +211,7 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	return form, 3 // 3 fields
 }
 func CreateFieldForm(m Model) (*huh.Form, int) {
+	logger := m.Logger
 	var (
 		parentID string
 		label    string
@@ -226,7 +228,7 @@ func CreateFieldForm(m Model) (*huh.Form, int) {
 						d := db.ConfigDB(*m.GetConfig())
 						r, err := d.ListDatatypes()
 						if err != nil {
-							utility.DefaultLogger.Error("error listing datatypes %w", err)
+							logger.Error("error listing datatypes %w", err)
 						}
 						for _, v := range *r {
 							option := huh.NewOption(v.Label, string(v.DatatypeID))
@@ -434,32 +436,52 @@ func (m *Model) BuildCMSForm(table db.DBTable) tea.Cmd {
 
 // BuildContentFieldsForm creates a dynamic form for content creation based on datatype fields
 func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {
+	logger := m.Logger
+	if logger == nil {
+		logger = utility.DefaultLogger
+	}
 	return func() tea.Msg {
 		d := db.ConfigDB(*m.Config)
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
+		logger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
 
-		// Fetch fields for this datatype
-		nullableID := types.NullableContentID{ID: types.ContentID(datatypeID), Valid: true}
-		fields, err := d.ListFieldsByDatatypeID(nullableID)
+		// Fetch field IDs from the datatypes_fields join table
+		dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+		dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
 		if err != nil {
-			utility.DefaultLogger.Ferror("ListFieldsByDatatypeID error", err)
+			logger.Ferror("ListDatatypeFieldByDatatypeID error", err)
 			return FetchErrMsg{Error: err}
 		}
 
-		if fields == nil || len(*fields) == 0 {
-			utility.DefaultLogger.Finfo(fmt.Sprintf("No fields found for datatype %s", datatypeID))
+		if dtFields == nil || len(*dtFields) == 0 {
+			logger.Finfo(fmt.Sprintf("No fields found for datatype %s", datatypeID))
 			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %s", datatypeID)}
 		}
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d fields for datatype %s", len(*fields), datatypeID))
+		// Fetch actual field details for each field ID
+		var fields []db.Fields
+		for _, dtf := range *dtFields {
+			if dtf.FieldID.Valid {
+				field, err := d.GetField(dtf.FieldID.ID)
+				if err == nil && field != nil {
+					fields = append(fields, *field)
+				}
+			}
+		}
+
+		if len(fields) == 0 {
+			logger.Finfo(fmt.Sprintf("No valid fields found for datatype %s", datatypeID))
+			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %s", datatypeID)}
+		}
+
+		logger.Finfo(fmt.Sprintf("Found %d fields for datatype %s", len(fields), datatypeID))
 
 		// Build form inputs for each field
 		var formFields []huh.Field
 		var formMap []string
 		var values []*string
 
-		for _, field := range *fields {
+		for _, field := range fields {
 			value := ""
 			values = append(values, &value)
 
@@ -492,11 +514,11 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 			},
 		)
 
-		utility.DefaultLogger.Finfo(fmt.Sprintf("Returning NewFormMsg with %d fields", len(*fields)))
+		logger.Finfo(fmt.Sprintf("Returning NewFormMsg with %d fields", len(fields)))
 
 		return NewFormMsg{
 			Form:        form,
-			FieldsCount: len(*fields),
+			FieldsCount: len(fields),
 			Values:      values,
 			FormMap:     formMap,
 		}

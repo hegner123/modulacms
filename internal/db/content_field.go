@@ -212,6 +212,20 @@ func (d Database) ListContentFieldsByRoute(routeID types.NullableRouteID) (*[]Co
 	return &res, nil
 }
 
+func (d Database) ListContentFieldsByContentData(contentDataID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentData(d.Context, mdb.ListContentFieldsByContentDataParams{ContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
 	params := d.MapUpdateContentFieldParams(s)
 	queries := mdb.New(d.Connection)
@@ -333,6 +347,20 @@ func (d MysqlDatabase) ListContentFieldsByRoute(routeID types.NullableRouteID) (
 	rows, err := queries.ListContentFieldsByRoute(d.Context, mdbm.ListContentFieldsByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListContentFieldsByContentData(contentDataID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentData(d.Context, mdbm.ListContentFieldsByContentDataParams{ContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data: %v", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {
@@ -464,6 +492,20 @@ func (d PsqlDatabase) ListContentFieldsByRoute(routeID types.NullableRouteID) (*
 	rows, err := queries.ListContentFieldsByRoute(d.Context, mdbp.ListContentFieldsByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by route: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentFieldsByContentData(contentDataID types.NullableContentID) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentData(d.Context, mdbp.ListContentFieldsByContentDataParams{ContentDataID: contentDataID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data: %v", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {

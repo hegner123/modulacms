@@ -5,15 +5,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
-	"regexp"
 	"strings"
-	"unicode"
 )
 
-// Slug represents a URL-safe identifier (lowercase alphanumeric with hyphens)
+// Slug represents a URL path (starts with /, lowercase alphanumeric segments with hyphens)
+// Examples: /, /about, /about/careers, /blog/2024/my-post
 type Slug string
-
-var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
 func (s Slug) Validate() error {
 	if s == "" {
@@ -22,9 +19,49 @@ func (s Slug) Validate() error {
 	if len(s) > 255 {
 		return fmt.Errorf("Slug: too long (max 255 chars)")
 	}
-	if !slugRegex.MatchString(string(s)) {
-		return fmt.Errorf("Slug: invalid format %q (must be lowercase alphanumeric with hyphens)", s)
+	str := string(s)
+
+	// Must start with /
+	if str[0] != '/' {
+		return fmt.Errorf("Slug: must start with / (got %q)", s)
 	}
+
+	// Root path is valid
+	if str == "/" {
+		return nil
+	}
+
+	// Check each character and segment structure
+	prevChar := byte('/')
+	for i := 1; i < len(str); i++ {
+		c := str[i]
+		switch {
+		case c >= 'a' && c <= 'z':
+			// lowercase letter - always valid
+		case c >= '0' && c <= '9':
+			// digit - always valid
+		case c == '-':
+			// hyphen - not allowed after / or another -
+			if prevChar == '/' || prevChar == '-' {
+				return fmt.Errorf("Slug: invalid format %q (hyphen cannot follow / or another hyphen)", s)
+			}
+		case c == '/':
+			// slash - not allowed after / or -
+			if prevChar == '/' || prevChar == '-' {
+				return fmt.Errorf("Slug: invalid format %q (/ cannot follow / or hyphen)", s)
+			}
+		default:
+			return fmt.Errorf("Slug: invalid character %q in %q (allowed: a-z, 0-9, -, /)", string(c), s)
+		}
+		prevChar = c
+	}
+
+	// Cannot end with - or /
+	lastChar := str[len(str)-1]
+	if lastChar == '-' || lastChar == '/' {
+		return fmt.Errorf("Slug: cannot end with %q", string(lastChar))
+	}
+
 	return nil
 }
 
@@ -32,17 +69,19 @@ func (s Slug) String() string { return string(s) }
 
 func (s Slug) IsZero() bool { return s == "" }
 
-// Slugify converts a string to a valid slug
+// Slugify converts a string to a valid slug path
+// Input "Home" becomes "/home", "About Us" becomes "/about-us"
+// Input "/about/careers" is preserved (with cleanup)
 func Slugify(input string) Slug {
 	// Lowercase
 	result := strings.ToLower(input)
 	// Replace spaces and underscores with hyphens
 	result = strings.ReplaceAll(result, " ", "-")
 	result = strings.ReplaceAll(result, "_", "-")
-	// Remove non-alphanumeric except hyphens
+	// Keep only alphanumeric, hyphens, and slashes
 	var sb strings.Builder
 	for _, r := range result {
-		if unicode.IsLetter(r) || unicode.IsDigit(r) || r == '-' {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' || r == '/' {
 			sb.WriteRune(r)
 		}
 	}
@@ -51,8 +90,27 @@ func Slugify(input string) Slug {
 	for strings.Contains(result, "--") {
 		result = strings.ReplaceAll(result, "--", "-")
 	}
-	// Trim hyphens from ends
-	result = strings.Trim(result, "-")
+	// Collapse multiple slashes
+	for strings.Contains(result, "//") {
+		result = strings.ReplaceAll(result, "//", "/")
+	}
+	// Remove hyphen-slash and slash-hyphen combinations
+	for strings.Contains(result, "-/") {
+		result = strings.ReplaceAll(result, "-/", "/")
+	}
+	for strings.Contains(result, "/-") {
+		result = strings.ReplaceAll(result, "/-", "/")
+	}
+	// Trim hyphens and slashes from end
+	result = strings.TrimRight(result, "-/")
+	// Ensure starts with /
+	if !strings.HasPrefix(result, "/") {
+		result = "/" + result
+	}
+	// Handle empty result (just /)
+	if result == "" {
+		result = "/"
+	}
 	return Slug(result)
 }
 
@@ -75,7 +133,8 @@ func (s *Slug) Scan(value any) error {
 	default:
 		return fmt.Errorf("Slug: cannot scan %T", value)
 	}
-	return s.Validate()
+	// Skip validation for legacy data - validation is enforced on write
+	return nil
 }
 
 func (s Slug) MarshalJSON() ([]byte, error) { return json.Marshal(string(s)) }
@@ -92,8 +151,6 @@ func (s *Slug) UnmarshalJSON(data []byte) error {
 // Email represents a validated email address
 type Email string
 
-var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
-
 func (e Email) Validate() error {
 	if e == "" {
 		return fmt.Errorf("Email: cannot be empty")
@@ -101,10 +158,76 @@ func (e Email) Validate() error {
 	if len(e) > 254 {
 		return fmt.Errorf("Email: too long (max 254 chars)")
 	}
-	if !emailRegex.MatchString(string(e)) {
-		return fmt.Errorf("Email: invalid format %q", e)
+
+	str := string(e)
+
+	// Find @ symbol - must have exactly one
+	atIndex := strings.Index(str, "@")
+	if atIndex == -1 {
+		return fmt.Errorf("Email: missing @ in %q", e)
 	}
+	if strings.Count(str, "@") > 1 {
+		return fmt.Errorf("Email: multiple @ symbols in %q", e)
+	}
+
+	local := str[:atIndex]
+	domain := str[atIndex+1:]
+
+	// Local part validation
+	if len(local) == 0 {
+		return fmt.Errorf("Email: empty local part in %q", e)
+	}
+	for _, c := range local {
+		if !isEmailLocalChar(c) {
+			return fmt.Errorf("Email: invalid character %q in local part of %q", string(c), e)
+		}
+	}
+
+	// Domain validation
+	if len(domain) == 0 {
+		return fmt.Errorf("Email: empty domain in %q", e)
+	}
+	if !strings.Contains(domain, ".") {
+		return fmt.Errorf("Email: domain must contain a dot in %q", e)
+	}
+
+	// Check domain characters and structure
+	lastDotIndex := strings.LastIndex(domain, ".")
+	tld := domain[lastDotIndex+1:]
+	if len(tld) < 2 {
+		return fmt.Errorf("Email: TLD must be at least 2 characters in %q", e)
+	}
+
+	for _, c := range domain {
+		if !isEmailDomainChar(c) {
+			return fmt.Errorf("Email: invalid character %q in domain of %q", string(c), e)
+		}
+	}
+
 	return nil
+}
+
+// isEmailLocalChar returns true if c is valid in email local part
+func isEmailLocalChar(c rune) bool {
+	if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+		return true
+	}
+	if c >= '0' && c <= '9' {
+		return true
+	}
+	// Special characters allowed in local part: ._%+-
+	return c == '.' || c == '_' || c == '%' || c == '+' || c == '-'
+}
+
+// isEmailDomainChar returns true if c is valid in email domain
+func isEmailDomainChar(c rune) bool {
+	if (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') {
+		return true
+	}
+	if c >= '0' && c <= '9' {
+		return true
+	}
+	return c == '.' || c == '-'
 }
 
 func (e Email) String() string { return string(e) }

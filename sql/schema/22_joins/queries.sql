@@ -50,7 +50,7 @@ WHERE cd.datatype_id = ?
 ORDER BY r.title;
 
 -- name: GetRouteTreeByRouteID :many
-SELECT 
+SELECT
     cd.content_data_id,
     cd.parent_id,
     cd.first_child_id,
@@ -65,8 +65,25 @@ FROM content_data cd
     INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
     INNER JOIN datatypes_fields df ON dt.datatype_id = df.datatype_id
     INNER JOIN fields f ON df.field_id = f.field_id
-    LEFT JOIN content_fields cf ON cd.content_data_id = cf.content_data_id 
+    LEFT JOIN content_fields cf ON cd.content_data_id = cf.content_data_id
         AND f.field_id = cf.field_id
 WHERE cd.route_id = ?
 ORDER BY cd.content_data_id, f.field_id;
+
+-- name: ListRootContentSummary :many
+SELECT
+    cd.content_data_id,
+    cd.route_id,
+    cd.datatype_id,
+    r.slug AS route_slug,
+    r.title AS route_title,
+    dt.label AS datatype_label,
+    cd.date_created,
+    cd.date_modified
+FROM content_data cd
+    INNER JOIN routes r ON cd.route_id = r.route_id
+    INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.parent_id IS NULL
+    AND dt.type = 'ROOT'
+ORDER BY dt.label, r.slug;
 

@@ -17,6 +17,9 @@ const (
 	DIALOGGENERIC       DialogAction = "generic"
 	DIALOGDELETE        DialogAction = "delete"
 	DIALOGACTIONCONFIRM DialogAction = "action_confirm"
+	DIALOGINITCONTENT   DialogAction = "init_content"
+	DIALOGQUITCONFIRM   DialogAction = "quit_confirm"
+	DIALOGDELETECONTENT DialogAction = "delete_content"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -78,7 +81,7 @@ func (d *DialogModel) SetButtons(okText, cancelText string) {
 // Update handles user input for the dialog
 func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch d.Action {
-	case DIALOGDELETE, DIALOGACTIONCONFIRM:
+	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT:
 		return d.ToggleControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc
@@ -210,4 +213,54 @@ func HandleShowDialog(title, message string, showCancel bool) tea.Cmd {
 			ShowCancel: showCancel,
 		}
 	}
+}
+
+// ShowQuitConfirmDialogMsg triggers showing a quit confirmation dialog
+type ShowQuitConfirmDialogMsg struct{}
+
+// ShowQuitConfirmDialogCmd creates a command to show a quit confirmation dialog
+func ShowQuitConfirmDialogCmd() tea.Cmd {
+	return func() tea.Msg {
+		return ShowQuitConfirmDialogMsg{}
+	}
+}
+
+// ShowDeleteContentDialogMsg triggers showing a delete content confirmation dialog
+type ShowDeleteContentDialogMsg struct {
+	ContentID   string
+	ContentName string
+	HasChildren bool
+}
+
+// ShowDeleteContentDialogCmd creates a command to show a delete content confirmation dialog
+func ShowDeleteContentDialogCmd(contentID, contentName string, hasChildren bool) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteContentDialogMsg{
+			ContentID:   contentID,
+			ContentName: contentName,
+			HasChildren: hasChildren,
+		}
+	}
+}
+
+// DeleteContentRequestMsg triggers content deletion
+type DeleteContentRequestMsg struct {
+	ContentID string
+	RouteID   string
+}
+
+// DeleteContentCmd creates a command to delete content
+func DeleteContentCmd(contentID, routeID string) tea.Cmd {
+	return func() tea.Msg {
+		return DeleteContentRequestMsg{
+			ContentID: contentID,
+			RouteID:   routeID,
+		}
+	}
+}
+
+// ContentDeletedMsg is sent after content is successfully deleted
+type ContentDeletedMsg struct {
+	ContentID string
+	RouteID   string
 }

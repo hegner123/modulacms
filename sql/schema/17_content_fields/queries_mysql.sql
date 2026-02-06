@@ -43,6 +43,11 @@ SELECT * FROM content_fields
 WHERE route_id = ?
 ORDER BY content_field_id;
 
+-- name: ListContentFieldsByContentData :many
+SELECT * FROM content_fields
+WHERE content_data_id = ?
+ORDER BY content_field_id;
+
 -- name: CreateContentField :exec
 INSERT INTO content_fields (
     content_field_id,

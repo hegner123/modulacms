@@ -367,5 +367,12 @@ type MediaFetchResultsMsg struct {
 type MediaListSet struct {
 	MediaList []db.Media
 }
+type RootContentSummaryFetchMsg struct{}
+type RootContentSummaryFetchResultsMsg struct {
+	Data []db.RootContentSummary
+}
+type RootContentSummarySet struct {
+	RootContentSummary []db.RootContentSummary
+}
 
 type PanelFocusReset struct{}

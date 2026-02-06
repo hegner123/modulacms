@@ -110,6 +110,7 @@ func NewUserProvisioningForm(m Model) *huh.Form {
 
 // ProvisionSSHUser creates a new user and registers their SSH key
 func ProvisionSSHUser(m Model) tea.Cmd {
+	logger := m.Logger
 	return func() tea.Msg {
 		dbc := db.ConfigDB(*m.Config)
 
@@ -122,7 +123,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 		// Hash the password
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 		if err != nil {
-			utility.DefaultLogger.Error("Failed to hash password", err)
+			logger.Error("Failed to hash password", err)
 			return UserProvisioningCompleteMsg{Error: fmt.Errorf("failed to hash password: %v", err)}
 		}
 
@@ -161,11 +162,11 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 			DateModified: now,
 		})
 		if err != nil {
-			utility.DefaultLogger.Error("Failed to create user", err)
+			logger.Error("Failed to create user", err)
 			return UserProvisioningCompleteMsg{Error: fmt.Errorf("failed to create user: %v", err)}
 		}
 
-		utility.DefaultLogger.Info("Created user: %s (ID: %s)", user.Email, user.UserID)
+		logger.Info("Created user: %s (ID: %s)", user.Email, user.UserID)
 
 		// Register the SSH key
 		_, err = dbc.CreateUserSshKey(db.CreateUserSshKeyParams{
@@ -177,14 +178,14 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 			DateCreated: now,
 		})
 		if err != nil {
-			utility.DefaultLogger.Error("Failed to register SSH key", err)
+			logger.Error("Failed to register SSH key", err)
 			return UserProvisioningCompleteMsg{
 				UserID: user.UserID,
 				Error:  fmt.Errorf("user created but failed to register SSH key: %v", err),
 			}
 		}
 
-		utility.DefaultLogger.Info("Registered SSH key for user: %s (fingerprint: %s)", user.Email, m.SSHFingerprint)
+		logger.Info("Registered SSH key for user: %s (fingerprint: %s)", user.Email, m.SSHFingerprint)
 
 		return UserProvisioningCompleteMsg{
 			UserID: user.UserID,

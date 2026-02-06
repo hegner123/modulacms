@@ -70,7 +70,7 @@ var tuiV1Cmd = &cobra.Command{
 			}
 		}()
 
-		model, _ := cli.InitialModel(&verbose, cfg, driver)
+		model, _ := cli.InitialModel(&verbose, cfg, driver, utility.DefaultLogger)
 		if _, ok := cli.CliRun(&model); !ok {
 			process, err := os.FindProcess(os.Getpid())
 			if err != nil {

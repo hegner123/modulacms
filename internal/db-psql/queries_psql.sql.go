@@ -5728,6 +5728,48 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 	return items, nil
 }
 
+const listContentFieldsByContentData = `-- name: ListContentFieldsByContentData :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+WHERE content_data_id = $1
+ORDER BY content_field_id
+`
+
+type ListContentFieldsByContentDataParams struct {
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+}
+
+func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListContentFieldsByContentDataParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByContentData, arg.ContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
 SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = $1
@@ -5809,7 +5851,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 const listDatatypeChildren = `-- name: ListDatatypeChildren :many
 SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE parent_id = $1
-ORDER BY datatype_id
+ORDER BY label
 `
 
 type ListDatatypeChildrenParams struct {
@@ -6220,6 +6262,67 @@ func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
 	for rows.Next() {
 		var i Roles
 		if err := rows.Scan(&i.RoleID, &i.Label, &i.Permissions); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRootContentSummary = `-- name: ListRootContentSummary :many
+SELECT
+    cd.content_data_id,
+    cd.route_id,
+    cd.datatype_id,
+    r.slug AS route_slug,
+    r.title AS route_title,
+    dt.label AS datatype_label,
+    cd.date_created,
+    cd.date_modified
+FROM content_data cd
+    INNER JOIN routes r ON cd.route_id = r.route_id
+    INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE cd.parent_id IS NULL
+    AND dt.type = 'ROOT'
+ORDER BY dt.label, r.slug
+`
+
+type ListRootContentSummaryRow struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	RouteSlug     types.Slug               `json:"route_slug"`
+	RouteTitle    string                   `json:"route_title"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+}
+
+func (q *Queries) ListRootContentSummary(ctx context.Context) ([]ListRootContentSummaryRow, error) {
+	rows, err := q.db.QueryContext(ctx, listRootContentSummary)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListRootContentSummaryRow{}
+	for rows.Next() {
+		var i ListRootContentSummaryRow
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.RouteSlug,
+			&i.RouteTitle,
+			&i.DatatypeLabel,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

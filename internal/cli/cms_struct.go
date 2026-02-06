@@ -64,6 +64,7 @@ func NewTreeNode(row db.GetRouteTreeByRouteIDRow) *TreeNode {
 
 	return &TreeNode{
 		Instance: &cd,
+		Expand:   true, // Expanded by default
 	}
 
 }
@@ -260,6 +261,7 @@ func NewTreeNodeFromContentTree(row db.GetContentTreeByRouteRow) *TreeNode {
 	return &TreeNode{
 		Instance: &cd,
 		Datatype: dt,
+		Expand:   true, // Expanded by default
 	}
 }
 
