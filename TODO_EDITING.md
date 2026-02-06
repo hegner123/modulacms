@@ -11,19 +11,19 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [x] **Delete content** - Remove content node (with child handling options)
 
 ### Content Navigation
-- [ ] **Expand/Collapse tree nodes** - Toggle node expansion with +/- keys (status bar hints +/- but only enter works)
+- [x] **Expand/Collapse tree nodes** - Toggle node expansion with +/- keys
 - [ ] **Navigate to parent** - Jump to parent node
 - [ ] **Navigate to children** - Jump to first child
 
 ### Content Reorganization
-- [ ] **Move content** - Reparent a node to different parent
-- [ ] **Reorder siblings** - Change sibling order (move up/down)
-- [ ] **Copy content** - Duplicate a node (with/without children)
+- [x] **Move content** - Reparent a node to different parent (press `m`)
+- [x] **Reorder siblings** - Move up/down within same parent (Shift+Up/K, Shift+Down/J) with cursor tracking
+- [x] **Copy content** - Duplicate a node with fields
 - [ ] **Cut/Paste content** - Move via clipboard
 
 ### Content Status
-- [ ] **Publish/Unpublish** - Change content visibility status
-- [ ] **Draft/Archive** - Lifecycle state transitions
+- [x] **Publish/Unpublish** - Toggle content status (draft/published)
+- [ ] **Draft/Archive** - Lifecycle state transitions (archive not wired)
 - [ ] **Schedule publishing** - Time-based status changes
 
 ## Datatypes Page
@@ -34,9 +34,9 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [x] **Create field** - Dialog-based field creation (content panel)
 - [x] **Edit field** - Edit label and type via modal dialog (content panel)
 
-### Missing (hinted in status bar but not implemented)
-- [ ] **Delete datatype** - Remove datatype from tree panel (`ActionDelete` handler missing in `DatatypesControls`)
-- [ ] **Delete field** - Remove field from content panel (`ActionDelete` handler missing in `DatatypesControls`)
+### Implemented
+- [x] **Delete datatype** - Remove datatype from tree panel (with child-check protection, junction cleanup)
+- [x] **Delete field** - Remove field from content panel (with junction record deletion)
 
 ## Routes Page
 
@@ -44,24 +44,26 @@ Common editing tasks that need to be implemented for the TUI content editor.
 - [x] **Create route** - Dialog-based route creation
 - [x] **Edit route** - Edit title and slug via modal dialog
 
-### Missing (hinted in status bar but not implemented)
-- [ ] **Delete route** - Remove route (`ActionDelete` handler missing in `RoutesControls`)
+### Implemented
+- [x] **Delete route** - Remove route via confirmation dialog
 
 ## Media Page
 
 ### Implemented
 - [x] **Browse media** - List and navigate media items
 
-### Missing (hinted in status bar but not implemented)
-- [ ] **Upload media** - Upload new media (`ActionNew` handler missing in `MediaControls`)
-- [ ] **Delete media** - Remove media item (`ActionDelete` handler missing in `MediaControls`)
+### Implemented
+- [x] **Delete media** - Remove media item via confirmation dialog
+
+### Implemented
+- [x] **Upload media** - File picker overlay with async upload pipeline
 
 ## Users Admin Page
 
-### Missing (all CRUD hinted in status bar but uses generic `BasicCMSControls`)
-- [ ] **Create user** - No `UsersAdminControls` function exists
-- [ ] **Edit user** - No `UsersAdminControls` function exists
-- [ ] **Delete user** - No `UsersAdminControls` function exists
+### Implemented
+- [x] **Create user** - `UserFormDialogModel` with username, name, email, role fields
+- [x] **Edit user** - Edit via modal dialog (preserves password hash)
+- [x] **Delete user** - Delete via confirmation dialog
 
 ## Field Operations
 - [ ] **Edit single field** - Inline field editing
@@ -97,30 +99,29 @@ Common editing tasks that need to be implemented for the TUI content editor.
 
 ## Implementation Priority
 
-### Phase 1 - Core Editing (current)
+### Phase 1 - Core Editing (complete)
 1. ~~Edit content fields (update existing)~~ done
 2. ~~Delete content~~ done
-3. Expand/Collapse tree nodes (add +/- key handlers)
+3. ~~Expand/Collapse tree nodes~~ done (+/= expand, -/_ collapse)
 
-### Phase 1.5 - Missing Action Handlers
-Hinted in status bar but not wired up:
-4. Delete datatype (tree panel)
-5. Delete field (content panel)
-6. Delete route
-7. Upload media
-8. Delete media
-9. Users admin CRUD (needs dedicated controls function)
+### Phase 1.5 - Missing Action Handlers (complete)
+4. ~~Delete datatype (tree panel)~~ done
+5. ~~Delete field (content panel)~~ done
+6. ~~Delete route~~ done
+7. ~~Upload media~~ done (file picker overlay + async pipeline)
+8. ~~Delete media~~ done
+9. ~~Users admin CRUD~~ done (full create/edit/delete with UserFormDialogModel)
 
-### Phase 2 - Reorganization
-10. Move content (reparent)
-11. Reorder siblings
-12. Copy content
+### Phase 2 - Reorganization (complete)
+10. ~~Move content (reparent)~~ done (press `m`, target selector)
+11. ~~Reorder siblings~~ done (Shift+Up/K, Shift+Down/J, tree reorder by pointers)
+12. ~~Copy content~~ done (handler + field duplication)
 
-### Phase 3 - Status Management
-13. Publish/Unpublish
-14. Draft/Archive states
+### Phase 3 - Status Management (partial)
+13. ~~Publish/Unpublish~~ done (toggle draft/published)
+14. Draft/Archive states (HQ step 9, depends on 8)
 
 ### Phase 4 - Advanced Features
-15. Version history
-16. Search & filter
-17. Bulk operations
+15. Version history (HQ step 10)
+16. Search & filter (HQ step 11)
+17. Bulk operations (HQ step 12, depends on 5+8+11)

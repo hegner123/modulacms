@@ -112,6 +112,34 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 			LogMessageCmd(fmt.Sprintf("Content moved: %s -> %s", msg.SourceContentID, msg.TargetContentID)),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
+	case ReorderSiblingRequestMsg:
+		return m, m.HandleReorderSibling(msg)
+	case ContentReorderedMsg:
+		m.PendingCursorContentID = msg.ContentID
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
+	case CopyContentRequestMsg:
+		return m, m.HandleCopyContent(msg)
+	case ContentCopiedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Success", fmt.Sprintf("Content copied with %d fields", msg.FieldCount), false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
+	case TogglePublishRequestMsg:
+		return m, m.HandleTogglePublish(msg)
+	case ContentPublishToggledMsg:
+		statusLabel := "Published"
+		if msg.NewStatus == types.ContentStatusDraft {
+			statusLabel = "Draft"
+		}
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Status Changed", fmt.Sprintf("Content is now: %s", statusLabel), false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
 	case DeleteContentRequestMsg:
 		// Delete content
 		return m, m.HandleDeleteContent(msg)
@@ -210,6 +238,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		// Handle empty tree (route doesn't exist or has no content)
 		if msg.RootNode == nil {
 			newModel.Root = *tree.NewRoot()
+			newModel.PendingCursorContentID = ""
 			return newModel, tea.Batch(
 				LoadingStopCmd(),
 				LogMessageCmd(fmt.Sprintf("No content tree found for route %s", msg.RouteID)),
@@ -217,6 +246,19 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 
 		newModel.Root = *msg.RootNode
+
+		// Restore cursor position after reorder
+		if newModel.PendingCursorContentID != "" {
+			visible := newModel.Root.FlattenVisible()
+			for i, n := range visible {
+				if n.Instance.ContentDataID == newModel.PendingCursorContentID {
+					newModel.Cursor = i
+					break
+				}
+			}
+			newModel.PendingCursorContentID = ""
+		}
+
 		return newModel, tea.Batch(
 			LoadingStopCmd(),
 			LogMessageCmd(fmt.Sprintf("Tree reloaded: %d nodes, %d orphans resolved",

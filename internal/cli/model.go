@@ -115,6 +115,9 @@ type Model struct {
 	UserFormDialog         *UserFormDialogModel
 	UserFormDialogActive   bool
 
+	// Cursor tracking across tree reloads (e.g., after sibling reorder)
+	PendingCursorContentID types.ContentID
+
 	// SSH User Provisioning
 	NeedsProvisioning bool
 	SSHFingerprint    string
