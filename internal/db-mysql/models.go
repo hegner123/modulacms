@@ -129,6 +129,8 @@ type ChangeEvent struct {
 	OldValues     types.JSONData       `json:"old_values"`
 	NewValues     types.JSONData       `json:"new_values"`
 	Metadata      types.JSONData       `json:"metadata"`
+	RequestId     types.NullableString `json:"request_id"`
+	Ip            types.NullableString `json:"ip"`
 	SyncedAt      types.Timestamp      `json:"synced_at"`
 	ConsumedAt    types.Timestamp      `json:"consumed_at"`
 }

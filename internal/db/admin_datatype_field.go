@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -443,4 +446,113 @@ func (d PsqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams)
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
 	return &u, nil
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewAdminDatatypeFieldCmd is an audited create command for admin_datatypes_fields (SQLite).
+// Note: Update and Delete commands are not implemented because no dedicated
+// GetAdminDatatypeField sqlc query exists for the GetBefore interface requirement.
+type NewAdminDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
+func (c NewAdminDatatypeFieldCmd) Params() any                           { return c.params }
+func (c NewAdminDatatypeFieldCmd) GetID(row mdb.AdminDatatypesFields) string { return row.ID }
+
+func (c NewAdminDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypesFields, error) {
+	queries := mdb.New(tx)
+	return queries.CreateAdminDatatypeField(ctx, mdb.CreateAdminDatatypeFieldParams{
+		ID:              string(types.NewAdminDatatypeFieldID()),
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+	})
+}
+
+func (d Database) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeFieldParams) NewAdminDatatypeFieldCmd {
+	return NewAdminDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewAdminDatatypeFieldCmdMysql is an audited create command for admin_datatypes_fields (MySQL).
+type NewAdminDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
+func (c NewAdminDatatypeFieldCmdMysql) Params() any                           { return c.params }
+func (c NewAdminDatatypeFieldCmdMysql) GetID(row mdbm.AdminDatatypesFields) string { return row.ID }
+
+func (c NewAdminDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypesFields, error) {
+	id := string(types.NewAdminDatatypeFieldID())
+	queries := mdbm.New(tx)
+	err := queries.CreateAdminDatatypeField(ctx, mdbm.CreateAdminDatatypeFieldParams{
+		ID:              id,
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+	})
+	if err != nil {
+		return mdbm.AdminDatatypesFields{}, fmt.Errorf("execute create admin_datatypes_fields: %w", err)
+	}
+	return queries.GetAdminDatatypeField(ctx, mdbm.GetAdminDatatypeFieldParams{ID: id})
+}
+
+func (d MysqlDatabase) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeFieldParams) NewAdminDatatypeFieldCmdMysql {
+	return NewAdminDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewAdminDatatypeFieldCmdPsql is an audited create command for admin_datatypes_fields (PostgreSQL).
+type NewAdminDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }
+func (c NewAdminDatatypeFieldCmdPsql) Params() any                           { return c.params }
+func (c NewAdminDatatypeFieldCmdPsql) GetID(row mdbp.AdminDatatypesFields) string { return row.ID }
+
+func (c NewAdminDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypesFields, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateAdminDatatypeField(ctx, mdbp.CreateAdminDatatypeFieldParams{
+		ID:              string(types.NewAdminDatatypeFieldID()),
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+	})
+}
+
+func (d PsqlDatabase) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeFieldParams) NewAdminDatatypeFieldCmdPsql {
+	return NewAdminDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }

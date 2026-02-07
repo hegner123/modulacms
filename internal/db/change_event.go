@@ -26,6 +26,8 @@ type ChangeEvent struct {
 	OldValues     types.JSONData       `json:"old_values"`
 	NewValues     types.JSONData       `json:"new_values"`
 	Metadata      types.JSONData       `json:"metadata"`
+	RequestID     types.NullableString `json:"request_id"`
+	IP            types.NullableString `json:"ip"`
 	SyncedAt      types.Timestamp      `json:"synced_at"`
 	ConsumedAt    types.Timestamp      `json:"consumed_at"`
 }
@@ -42,6 +44,8 @@ type RecordChangeEventParams struct {
 	OldValues    types.JSONData       `json:"old_values"`
 	NewValues    types.JSONData       `json:"new_values"`
 	Metadata     types.JSONData       `json:"metadata"`
+	RequestID    types.NullableString `json:"request_id"`
+	IP           types.NullableString `json:"ip"`
 }
 
 type ListChangeEventsParams struct {
@@ -81,6 +85,8 @@ func (d Database) MapChangeEvent(a mdb.ChangeEvent) ChangeEvent {
 		OldValues:     a.OldValues,
 		NewValues:     a.NewValues,
 		Metadata:      a.Metadata,
+		RequestID:     a.RequestId,
+		IP:            a.Ip,
 		SyncedAt:      a.SyncedAt,
 		ConsumedAt:    a.ConsumedAt,
 	}
@@ -99,6 +105,8 @@ func (d Database) MapRecordChangeEventParams(a RecordChangeEventParams) mdb.Reco
 		OldValues:    a.OldValues,
 		NewValues:    a.NewValues,
 		Metadata:     a.Metadata,
+		RequestId:    a.RequestID,
+		Ip:           a.IP,
 	}
 }
 
@@ -236,6 +244,8 @@ func (d MysqlDatabase) MapChangeEvent(a mdbm.ChangeEvent) ChangeEvent {
 		OldValues:     a.OldValues,
 		NewValues:     a.NewValues,
 		Metadata:      a.Metadata,
+		RequestID:     a.RequestId,
+		IP:            a.Ip,
 		SyncedAt:      a.SyncedAt,
 		ConsumedAt:    a.ConsumedAt,
 	}
@@ -254,6 +264,8 @@ func (d MysqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdb
 		OldValues:    a.OldValues,
 		NewValues:    a.NewValues,
 		Metadata:     a.Metadata,
+		RequestId:    a.RequestID,
+		Ip:           a.IP,
 	}
 }
 
@@ -395,6 +407,8 @@ func (d PsqlDatabase) MapChangeEvent(a mdbp.ChangeEvent) ChangeEvent {
 		OldValues:     a.OldValues,
 		NewValues:     a.NewValues,
 		Metadata:      a.Metadata,
+		RequestID:     a.RequestId,
+		IP:            a.Ip,
 		SyncedAt:      a.SyncedAt,
 		ConsumedAt:    a.ConsumedAt,
 	}
@@ -413,6 +427,8 @@ func (d PsqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdbp
 		OldValues:    a.OldValues,
 		NewValues:    a.NewValues,
 		Metadata:     a.Metadata,
+		RequestId:    a.RequestID,
+		Ip:           a.IP,
 	}
 }
 

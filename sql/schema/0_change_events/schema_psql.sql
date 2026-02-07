@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS change_events (
     old_values JSONB,
     new_values JSONB,
     metadata JSONB,
+    request_id TEXT,
+    ip TEXT,
     synced_at TIMESTAMP WITH TIME ZONE,
     consumed_at TIMESTAMP WITH TIME ZONE
 );

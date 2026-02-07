@@ -1,12 +1,14 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -454,4 +456,348 @@ func (d PsqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) (
 	}
 	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
 	return &u, nil
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewAdminContentFieldCmd is an audited create command for admin_content_fields (SQLite).
+type NewAdminContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c NewAdminContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminContentFieldCmd) TableName() string                     { return "admin_content_fields" }
+func (c NewAdminContentFieldCmd) Params() any                           { return c.params }
+func (c NewAdminContentFieldCmd) GetID(row mdb.AdminContentFields) string {
+	return string(row.AdminContentFieldID)
+}
+
+func (c NewAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.AdminContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.CreateAdminContentField(ctx, mdb.CreateAdminContentFieldParams{
+		AdminContentFieldID: types.NewAdminContentFieldID(),
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+	})
+}
+
+func (d Database) NewAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminContentFieldParams) NewAdminContentFieldCmd {
+	return NewAdminContentFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// UpdateAdminContentFieldCmd is an audited update command for admin_content_fields (SQLite).
+type UpdateAdminContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c UpdateAdminContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminContentFieldCmd) TableName() string                     { return "admin_content_fields" }
+func (c UpdateAdminContentFieldCmd) Params() any                           { return c.params }
+func (c UpdateAdminContentFieldCmd) GetID() string {
+	return string(c.params.AdminContentFieldID)
+}
+
+func (c UpdateAdminContentFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.GetAdminContentField(ctx, mdb.GetAdminContentFieldParams{AdminContentFieldID: c.params.AdminContentFieldID})
+}
+
+func (c UpdateAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateAdminContentField(ctx, mdb.UpdateAdminContentFieldParams{
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+		AdminContentFieldID: c.params.AdminContentFieldID,
+	})
+}
+
+func (d Database) UpdateAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminContentFieldParams) UpdateAdminContentFieldCmd {
+	return UpdateAdminContentFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// DeleteAdminContentFieldCmd is an audited delete command for admin_content_fields (SQLite).
+type DeleteAdminContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminContentFieldCmd) TableName() string                     { return "admin_content_fields" }
+func (c DeleteAdminContentFieldCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminContentFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.GetAdminContentField(ctx, mdb.GetAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (c DeleteAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteAdminContentField(ctx, mdb.DeleteAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (d Database) DeleteAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminContentFieldID) DeleteAdminContentFieldCmd {
+	return DeleteAdminContentFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewAdminContentFieldCmdMysql is an audited create command for admin_content_fields (MySQL).
+type NewAdminContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewAdminContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminContentFieldCmdMysql) TableName() string                     { return "admin_content_fields" }
+func (c NewAdminContentFieldCmdMysql) Params() any                           { return c.params }
+func (c NewAdminContentFieldCmdMysql) GetID(row mdbm.AdminContentFields) string {
+	return string(row.AdminContentFieldID)
+}
+
+func (c NewAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.AdminContentFields, error) {
+	id := types.NewAdminContentFieldID()
+	queries := mdbm.New(tx)
+	err := queries.CreateAdminContentField(ctx, mdbm.CreateAdminContentFieldParams{
+		AdminContentFieldID: id,
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+	})
+	if err != nil {
+		return mdbm.AdminContentFields{}, fmt.Errorf("execute create admin_content_fields: %w", err)
+	}
+	return queries.GetAdminContentField(ctx, mdbm.GetAdminContentFieldParams{AdminContentFieldID: id})
+}
+
+func (d MysqlDatabase) NewAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminContentFieldParams) NewAdminContentFieldCmdMysql {
+	return NewAdminContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// UpdateAdminContentFieldCmdMysql is an audited update command for admin_content_fields (MySQL).
+type UpdateAdminContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminContentFieldCmdMysql) TableName() string                     { return "admin_content_fields" }
+func (c UpdateAdminContentFieldCmdMysql) Params() any                           { return c.params }
+func (c UpdateAdminContentFieldCmdMysql) GetID() string {
+	return string(c.params.AdminContentFieldID)
+}
+
+func (c UpdateAdminContentFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminContentFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminContentField(ctx, mdbm.GetAdminContentFieldParams{AdminContentFieldID: c.params.AdminContentFieldID})
+}
+
+func (c UpdateAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateAdminContentField(ctx, mdbm.UpdateAdminContentFieldParams{
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+		AdminContentFieldID: c.params.AdminContentFieldID,
+	})
+}
+
+func (d MysqlDatabase) UpdateAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminContentFieldParams) UpdateAdminContentFieldCmdMysql {
+	return UpdateAdminContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// DeleteAdminContentFieldCmdMysql is an audited delete command for admin_content_fields (MySQL).
+type DeleteAdminContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminContentFieldCmdMysql) TableName() string                     { return "admin_content_fields" }
+func (c DeleteAdminContentFieldCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminContentFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminContentFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminContentField(ctx, mdbm.GetAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (c DeleteAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteAdminContentField(ctx, mdbm.DeleteAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (d MysqlDatabase) DeleteAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminContentFieldID) DeleteAdminContentFieldCmdMysql {
+	return DeleteAdminContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewAdminContentFieldCmdPsql is an audited create command for admin_content_fields (PostgreSQL).
+type NewAdminContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewAdminContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminContentFieldCmdPsql) TableName() string                     { return "admin_content_fields" }
+func (c NewAdminContentFieldCmdPsql) Params() any                           { return c.params }
+func (c NewAdminContentFieldCmdPsql) GetID(row mdbp.AdminContentFields) string {
+	return string(row.AdminContentFieldID)
+}
+
+func (c NewAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.AdminContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateAdminContentField(ctx, mdbp.CreateAdminContentFieldParams{
+		AdminContentFieldID: types.NewAdminContentFieldID(),
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminContentFieldParams) NewAdminContentFieldCmdPsql {
+	return NewAdminContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// UpdateAdminContentFieldCmdPsql is an audited update command for admin_content_fields (PostgreSQL).
+type UpdateAdminContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminContentFieldCmdPsql) TableName() string                     { return "admin_content_fields" }
+func (c UpdateAdminContentFieldCmdPsql) Params() any                           { return c.params }
+func (c UpdateAdminContentFieldCmdPsql) GetID() string {
+	return string(c.params.AdminContentFieldID)
+}
+
+func (c UpdateAdminContentFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetAdminContentField(ctx, mdbp.GetAdminContentFieldParams{AdminContentFieldID: c.params.AdminContentFieldID})
+}
+
+func (c UpdateAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateAdminContentField(ctx, mdbp.UpdateAdminContentFieldParams{
+		AdminRouteID:        c.params.AdminRouteID,
+		AdminContentDataID:  c.params.AdminContentDataID,
+		AdminFieldID:        c.params.AdminFieldID,
+		AdminFieldValue:     c.params.AdminFieldValue,
+		AuthorID:            c.params.AuthorID,
+		DateCreated:         c.params.DateCreated,
+		DateModified:        c.params.DateModified,
+		AdminContentFieldID: c.params.AdminContentFieldID,
+	})
+}
+
+func (d PsqlDatabase) UpdateAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminContentFieldParams) UpdateAdminContentFieldCmdPsql {
+	return UpdateAdminContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// DeleteAdminContentFieldCmdPsql is an audited delete command for admin_content_fields (PostgreSQL).
+type DeleteAdminContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminContentFieldCmdPsql) TableName() string                     { return "admin_content_fields" }
+func (c DeleteAdminContentFieldCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminContentFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetAdminContentField(ctx, mdbp.GetAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (c DeleteAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteAdminContentField(ctx, mdbp.DeleteAdminContentFieldParams{AdminContentFieldID: c.id})
+}
+
+func (d PsqlDatabase) DeleteAdminContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminContentFieldID) DeleteAdminContentFieldCmdPsql {
+	return DeleteAdminContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

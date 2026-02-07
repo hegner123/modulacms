@@ -288,6 +288,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "change_events.metadata"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.request_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "change_events.ip"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "change_events.synced_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"
@@ -592,6 +596,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "change_events.metadata"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.request_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "change_events.ip"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "change_events.synced_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"
@@ -896,6 +904,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "change_events.metadata"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "change_events.request_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "change_events.ip"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
           - column: "change_events.synced_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"

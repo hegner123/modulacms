@@ -1,12 +1,14 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -551,4 +553,372 @@ func (d PsqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
 	return &u, nil
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewMediaCmd is an audited create command for media (SQLite).
+type NewMediaCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewMediaCmd) Context() context.Context              { return c.ctx }
+func (c NewMediaCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewMediaCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewMediaCmd) TableName() string                     { return "media" }
+func (c NewMediaCmd) Params() any                           { return c.params }
+func (c NewMediaCmd) GetID(row mdb.Media) string            { return string(row.MediaID) }
+
+func (c NewMediaCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Media, error) {
+	queries := mdb.New(tx)
+	return queries.CreateMedia(ctx, mdb.CreateMediaParams{
+		MediaID:      types.NewMediaID(),
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		URL:          c.params.URL,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d Database) NewMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaParams) NewMediaCmd {
+	return NewMediaCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// UpdateMediaCmd is an audited update command for media (SQLite).
+type UpdateMediaCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateMediaCmd) Context() context.Context              { return c.ctx }
+func (c UpdateMediaCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateMediaCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateMediaCmd) TableName() string                     { return "media" }
+func (c UpdateMediaCmd) Params() any                           { return c.params }
+func (c UpdateMediaCmd) GetID() string                         { return string(c.params.MediaID) }
+
+func (c UpdateMediaCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Media, error) {
+	queries := mdb.New(tx)
+	return queries.GetMedia(ctx, mdb.GetMediaParams{MediaID: c.params.MediaID})
+}
+
+func (c UpdateMediaCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateMedia(ctx, mdb.UpdateMediaParams{
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		URL:          c.params.URL,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		MediaID:      c.params.MediaID,
+	})
+}
+
+func (d Database) UpdateMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaParams) UpdateMediaCmd {
+	return UpdateMediaCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// DeleteMediaCmd is an audited delete command for media (SQLite).
+type DeleteMediaCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.MediaID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteMediaCmd) Context() context.Context              { return c.ctx }
+func (c DeleteMediaCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteMediaCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteMediaCmd) TableName() string                     { return "media" }
+func (c DeleteMediaCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteMediaCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Media, error) {
+	queries := mdb.New(tx)
+	return queries.GetMedia(ctx, mdb.GetMediaParams{MediaID: c.id})
+}
+
+func (c DeleteMediaCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteMedia(ctx, mdb.DeleteMediaParams{MediaID: c.id})
+}
+
+func (d Database) DeleteMediaCmd(ctx context.Context, auditCtx audited.AuditContext, id types.MediaID) DeleteMediaCmd {
+	return DeleteMediaCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewMediaCmdMysql is an audited create command for media (MySQL).
+type NewMediaCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewMediaCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewMediaCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewMediaCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewMediaCmdMysql) TableName() string                     { return "media" }
+func (c NewMediaCmdMysql) Params() any                           { return c.params }
+func (c NewMediaCmdMysql) GetID(row mdbm.Media) string           { return string(row.MediaID) }
+
+func (c NewMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Media, error) {
+	id := types.NewMediaID()
+	queries := mdbm.New(tx)
+	err := queries.CreateMedia(ctx, mdbm.CreateMediaParams{
+		MediaID:      id,
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		URL:          c.params.URL,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+	if err != nil {
+		return mdbm.Media{}, fmt.Errorf("execute create media: %w", err)
+	}
+	return queries.GetMedia(ctx, mdbm.GetMediaParams{MediaID: id})
+}
+
+func (d MysqlDatabase) NewMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaParams) NewMediaCmdMysql {
+	return NewMediaCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// UpdateMediaCmdMysql is an audited update command for media (MySQL).
+type UpdateMediaCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateMediaCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateMediaCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateMediaCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateMediaCmdMysql) TableName() string                     { return "media" }
+func (c UpdateMediaCmdMysql) Params() any                           { return c.params }
+func (c UpdateMediaCmdMysql) GetID() string                         { return string(c.params.MediaID) }
+
+func (c UpdateMediaCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Media, error) {
+	queries := mdbm.New(tx)
+	return queries.GetMedia(ctx, mdbm.GetMediaParams{MediaID: c.params.MediaID})
+}
+
+func (c UpdateMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateMedia(ctx, mdbm.UpdateMediaParams{
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		URL:          c.params.URL,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		MediaID:      c.params.MediaID,
+	})
+}
+
+func (d MysqlDatabase) UpdateMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaParams) UpdateMediaCmdMysql {
+	return UpdateMediaCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// DeleteMediaCmdMysql is an audited delete command for media (MySQL).
+type DeleteMediaCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.MediaID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteMediaCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteMediaCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteMediaCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteMediaCmdMysql) TableName() string                     { return "media" }
+func (c DeleteMediaCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteMediaCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Media, error) {
+	queries := mdbm.New(tx)
+	return queries.GetMedia(ctx, mdbm.GetMediaParams{MediaID: c.id})
+}
+
+func (c DeleteMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteMedia(ctx, mdbm.DeleteMediaParams{MediaID: c.id})
+}
+
+func (d MysqlDatabase) DeleteMediaCmd(ctx context.Context, auditCtx audited.AuditContext, id types.MediaID) DeleteMediaCmdMysql {
+	return DeleteMediaCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewMediaCmdPsql is an audited create command for media (PostgreSQL).
+type NewMediaCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewMediaCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewMediaCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewMediaCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewMediaCmdPsql) TableName() string                     { return "media" }
+func (c NewMediaCmdPsql) Params() any                           { return c.params }
+func (c NewMediaCmdPsql) GetID(row mdbp.Media) string           { return string(row.MediaID) }
+
+func (c NewMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Media, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateMedia(ctx, mdbp.CreateMediaParams{
+		MediaID:      types.NewMediaID(),
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		URL:          c.params.URL,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaParams) NewMediaCmdPsql {
+	return NewMediaCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// UpdateMediaCmdPsql is an audited update command for media (PostgreSQL).
+type UpdateMediaCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateMediaCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateMediaCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateMediaCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateMediaCmdPsql) TableName() string                     { return "media" }
+func (c UpdateMediaCmdPsql) Params() any                           { return c.params }
+func (c UpdateMediaCmdPsql) GetID() string                         { return string(c.params.MediaID) }
+
+func (c UpdateMediaCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Media, error) {
+	queries := mdbp.New(tx)
+	return queries.GetMedia(ctx, mdbp.GetMediaParams{MediaID: c.params.MediaID})
+}
+
+func (c UpdateMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateMedia(ctx, mdbp.UpdateMediaParams{
+		Name:         c.params.Name,
+		DisplayName:  c.params.DisplayName,
+		Alt:          c.params.Alt,
+		Caption:      c.params.Caption,
+		Description:  c.params.Description,
+		Class:        c.params.Class,
+		URL:          c.params.URL,
+		Mimetype:     c.params.Mimetype,
+		Dimensions:   c.params.Dimensions,
+		Srcset:       c.params.Srcset,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		MediaID:      c.params.MediaID,
+	})
+}
+
+func (d PsqlDatabase) UpdateMediaCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaParams) UpdateMediaCmdPsql {
+	return UpdateMediaCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// DeleteMediaCmdPsql is an audited delete command for media (PostgreSQL).
+type DeleteMediaCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.MediaID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteMediaCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteMediaCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteMediaCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteMediaCmdPsql) TableName() string                     { return "media" }
+func (c DeleteMediaCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteMediaCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Media, error) {
+	queries := mdbp.New(tx)
+	return queries.GetMedia(ctx, mdbp.GetMediaParams{MediaID: c.id})
+}
+
+func (c DeleteMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteMedia(ctx, mdbp.DeleteMediaParams{MediaID: c.id})
+}
+
+func (d PsqlDatabase) DeleteMediaCmd(ctx context.Context, auditCtx audited.AuditContext, id types.MediaID) DeleteMediaCmdPsql {
+	return DeleteMediaCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

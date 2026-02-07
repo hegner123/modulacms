@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -450,4 +453,334 @@ func (d PsqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Username)
 	return &u, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+type NewUserCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserCmd) Context() context.Context              { return c.ctx }
+func (c NewUserCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewUserCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserCmd) TableName() string                     { return "users" }
+func (c NewUserCmd) Params() any                           { return c.params }
+func (c NewUserCmd) GetID(u mdb.Users) string              { return string(u.UserID) }
+
+func (c NewUserCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Users, error) {
+	queries := mdb.New(tx)
+	return queries.CreateUser(ctx, mdb.CreateUserParams{
+		UserID:       types.NewUserID(),
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d Database) NewUserCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserParams) NewUserCmd {
+	return NewUserCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateUserCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserCmd) Context() context.Context              { return c.ctx }
+func (c UpdateUserCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserCmd) TableName() string                     { return "users" }
+func (c UpdateUserCmd) Params() any                           { return c.params }
+func (c UpdateUserCmd) GetID() string                         { return string(c.params.UserID) }
+
+func (c UpdateUserCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Users, error) {
+	queries := mdb.New(tx)
+	return queries.GetUser(ctx, mdb.GetUserParams{UserID: c.params.UserID})
+}
+
+func (c UpdateUserCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateUser(ctx, mdb.UpdateUserParams{
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		UserID:       c.params.UserID,
+	})
+}
+
+func (d Database) UpdateUserCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserParams) UpdateUserCmd {
+	return UpdateUserCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteUserCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.UserID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserCmd) Context() context.Context              { return c.ctx }
+func (c DeleteUserCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserCmd) TableName() string                     { return "users" }
+func (c DeleteUserCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteUserCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Users, error) {
+	queries := mdb.New(tx)
+	return queries.GetUser(ctx, mdb.GetUserParams{UserID: c.id})
+}
+
+func (c DeleteUserCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteUser(ctx, mdb.DeleteUserParams{UserID: c.id})
+}
+
+func (d Database) DeleteUserCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserID) DeleteUserCmd {
+	return DeleteUserCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+type NewUserCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewUserCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewUserCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserCmdMysql) TableName() string                     { return "users" }
+func (c NewUserCmdMysql) Params() any                           { return c.params }
+func (c NewUserCmdMysql) GetID(u mdbm.Users) string             { return string(u.UserID) }
+
+func (c NewUserCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Users, error) {
+	queries := mdbm.New(tx)
+	params := mdbm.CreateUserParams{
+		UserID:       types.NewUserID(),
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	}
+	if err := queries.CreateUser(ctx, params); err != nil {
+		return mdbm.Users{}, err
+	}
+	return queries.GetUser(ctx, mdbm.GetUserParams{UserID: params.UserID})
+}
+
+func (d MysqlDatabase) NewUserCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserParams) NewUserCmdMysql {
+	return NewUserCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+type UpdateUserCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateUserCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserCmdMysql) TableName() string                     { return "users" }
+func (c UpdateUserCmdMysql) Params() any                           { return c.params }
+func (c UpdateUserCmdMysql) GetID() string                         { return string(c.params.UserID) }
+
+func (c UpdateUserCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Users, error) {
+	queries := mdbm.New(tx)
+	return queries.GetUser(ctx, mdbm.GetUserParams{UserID: c.params.UserID})
+}
+
+func (c UpdateUserCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateUser(ctx, mdbm.UpdateUserParams{
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		UserID:       c.params.UserID,
+	})
+}
+
+func (d MysqlDatabase) UpdateUserCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserParams) UpdateUserCmdMysql {
+	return UpdateUserCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteUserCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.UserID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteUserCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserCmdMysql) TableName() string                     { return "users" }
+func (c DeleteUserCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteUserCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Users, error) {
+	queries := mdbm.New(tx)
+	return queries.GetUser(ctx, mdbm.GetUserParams{UserID: c.id})
+}
+
+func (c DeleteUserCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteUser(ctx, mdbm.DeleteUserParams{UserID: c.id})
+}
+
+func (d MysqlDatabase) DeleteUserCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserID) DeleteUserCmdMysql {
+	return DeleteUserCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+type NewUserCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewUserCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewUserCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserCmdPsql) TableName() string                     { return "users" }
+func (c NewUserCmdPsql) Params() any                           { return c.params }
+func (c NewUserCmdPsql) GetID(u mdbp.Users) string             { return string(u.UserID) }
+
+func (c NewUserCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Users, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateUser(ctx, mdbp.CreateUserParams{
+		UserID:       types.NewUserID(),
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewUserCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserParams) NewUserCmdPsql {
+	return NewUserCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateUserCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateUserParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateUserCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserCmdPsql) TableName() string                     { return "users" }
+func (c UpdateUserCmdPsql) Params() any                           { return c.params }
+func (c UpdateUserCmdPsql) GetID() string                         { return string(c.params.UserID) }
+
+func (c UpdateUserCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Users, error) {
+	queries := mdbp.New(tx)
+	return queries.GetUser(ctx, mdbp.GetUserParams{UserID: c.params.UserID})
+}
+
+func (c UpdateUserCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateUser(ctx, mdbp.UpdateUserParams{
+		Username:     c.params.Username,
+		Name:         c.params.Name,
+		Email:        c.params.Email,
+		Hash:         c.params.Hash,
+		Roles:        c.params.Role,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		UserID:       c.params.UserID,
+	})
+}
+
+func (d PsqlDatabase) UpdateUserCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserParams) UpdateUserCmdPsql {
+	return UpdateUserCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteUserCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.UserID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteUserCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserCmdPsql) TableName() string                     { return "users" }
+func (c DeleteUserCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteUserCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Users, error) {
+	queries := mdbp.New(tx)
+	return queries.GetUser(ctx, mdbp.GetUserParams{UserID: c.id})
+}
+
+func (c DeleteUserCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteUser(ctx, mdbp.DeleteUserParams{UserID: c.id})
+}
+
+func (d PsqlDatabase) DeleteUserCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserID) DeleteUserCmdPsql {
+	return DeleteUserCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

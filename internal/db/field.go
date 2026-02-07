@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -477,4 +480,348 @@ func (d PsqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
+}
+
+///////////////////////////////
+// AUDITED COMMAND STRUCTS
+//////////////////////////////
+
+// ----- SQLite CREATE -----
+
+type NewFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewFieldCmd) Context() context.Context              { return c.ctx }
+func (c NewFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewFieldCmd) TableName() string                     { return "fields" }
+func (c NewFieldCmd) Params() any                           { return c.params }
+func (c NewFieldCmd) GetID(f mdb.Fields) string             { return string(f.FieldID) }
+
+func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
+	id := c.params.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
+	queries := mdb.New(tx)
+	return queries.CreateField(ctx, mdb.CreateFieldParams{
+		FieldID:      id,
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d Database) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmd {
+	return NewFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateFieldCmd) Context() context.Context              { return c.ctx }
+func (c UpdateFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateFieldCmd) TableName() string                     { return "fields" }
+func (c UpdateFieldCmd) Params() any                           { return c.params }
+func (c UpdateFieldCmd) GetID() string                         { return string(c.params.FieldID) }
+
+func (c UpdateFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
+	queries := mdb.New(tx)
+	return queries.GetField(ctx, mdb.GetFieldParams{FieldID: c.params.FieldID})
+}
+
+func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateField(ctx, mdb.UpdateFieldParams{
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		FieldID:      c.params.FieldID,
+	})
+}
+
+func (d Database) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmd {
+	return UpdateFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.FieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteFieldCmd) Context() context.Context              { return c.ctx }
+func (c DeleteFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteFieldCmd) TableName() string                     { return "fields" }
+func (c DeleteFieldCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
+	queries := mdb.New(tx)
+	return queries.GetField(ctx, mdb.GetFieldParams{FieldID: c.id})
+}
+
+func (c DeleteFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteField(ctx, mdb.DeleteFieldParams{FieldID: c.id})
+}
+
+func (d Database) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmd {
+	return DeleteFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+type NewFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewFieldCmdMysql) TableName() string                     { return "fields" }
+func (c NewFieldCmdMysql) Params() any                           { return c.params }
+func (c NewFieldCmdMysql) GetID(f mdbm.Fields) string            { return string(f.FieldID) }
+
+func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
+	id := c.params.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
+	queries := mdbm.New(tx)
+	params := mdbm.CreateFieldParams{
+		FieldID:      id,
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	}
+	if err := queries.CreateField(ctx, params); err != nil {
+		return mdbm.Fields{}, err
+	}
+	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: params.FieldID})
+}
+
+func (d MysqlDatabase) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmdMysql {
+	return NewFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+type UpdateFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateFieldCmdMysql) TableName() string                     { return "fields" }
+func (c UpdateFieldCmdMysql) Params() any                           { return c.params }
+func (c UpdateFieldCmdMysql) GetID() string                         { return string(c.params.FieldID) }
+
+func (c UpdateFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: c.params.FieldID})
+}
+
+func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateField(ctx, mdbm.UpdateFieldParams{
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		FieldID:      c.params.FieldID,
+	})
+}
+
+func (d MysqlDatabase) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmdMysql {
+	return UpdateFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.FieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteFieldCmdMysql) TableName() string                     { return "fields" }
+func (c DeleteFieldCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: c.id})
+}
+
+func (c DeleteFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteField(ctx, mdbm.DeleteFieldParams{FieldID: c.id})
+}
+
+func (d MysqlDatabase) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmdMysql {
+	return DeleteFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+type NewFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewFieldCmdPsql) TableName() string                     { return "fields" }
+func (c NewFieldCmdPsql) Params() any                           { return c.params }
+func (c NewFieldCmdPsql) GetID(f mdbp.Fields) string            { return string(f.FieldID) }
+
+func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
+	id := c.params.FieldID
+	if id.IsZero() {
+		id = types.NewFieldID()
+	}
+	queries := mdbp.New(tx)
+	return queries.CreateField(ctx, mdbp.CreateFieldParams{
+		FieldID:      id,
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmdPsql {
+	return NewFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateFieldCmdPsql) TableName() string                     { return "fields" }
+func (c UpdateFieldCmdPsql) Params() any                           { return c.params }
+func (c UpdateFieldCmdPsql) GetID() string                         { return string(c.params.FieldID) }
+
+func (c UpdateFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetField(ctx, mdbp.GetFieldParams{FieldID: c.params.FieldID})
+}
+
+func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateField(ctx, mdbp.UpdateFieldParams{
+		ParentID:     c.params.ParentID,
+		Label:        c.params.Label,
+		Data:         c.params.Data,
+		Type:         c.params.Type,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		FieldID:      c.params.FieldID,
+	})
+}
+
+func (d PsqlDatabase) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmdPsql {
+	return UpdateFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.FieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteFieldCmdPsql) TableName() string                     { return "fields" }
+func (c DeleteFieldCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetField(ctx, mdbp.GetFieldParams{FieldID: c.id})
+}
+
+func (c DeleteFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteField(ctx, mdbp.DeleteFieldParams{FieldID: c.id})
+}
+
+func (d PsqlDatabase) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmdPsql {
+	return DeleteFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

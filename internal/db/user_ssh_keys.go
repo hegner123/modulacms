@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"time"
@@ -8,6 +9,7 @@ import (
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -461,4 +463,209 @@ func (d PsqlDatabase) CountUserSshKeys() (*int64, error) {
 		return nil, err
 	}
 	return &count, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+type NewUserSshKeyCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserSshKeyParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserSshKeyCmd) Context() context.Context              { return c.ctx }
+func (c NewUserSshKeyCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewUserSshKeyCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserSshKeyCmd) TableName() string                     { return "user_ssh_keys" }
+func (c NewUserSshKeyCmd) Params() any                           { return c.params }
+func (c NewUserSshKeyCmd) GetID(u mdb.UserSshKeys) string        { return u.SSHKeyID }
+
+func (c NewUserSshKeyCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.UserSshKeys, error) {
+	queries := mdb.New(tx)
+	return queries.CreateUserSshKey(ctx, mdb.CreateUserSshKeyParams{
+		SSHKeyID:    string(types.NewUserSshKeyID()),
+		UserID:      c.params.UserID,
+		PublicKey:   c.params.PublicKey,
+		KeyType:     c.params.KeyType,
+		Fingerprint: c.params.Fingerprint,
+		Label:       sql.NullString{String: c.params.Label, Valid: c.params.Label != ""},
+		DateCreated: c.params.DateCreated,
+	})
+}
+
+func (d Database) NewUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserSshKeyParams) NewUserSshKeyCmd {
+	return NewUserSshKeyCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteUserSshKeyCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserSshKeyCmd) Context() context.Context              { return c.ctx }
+func (c DeleteUserSshKeyCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserSshKeyCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserSshKeyCmd) TableName() string                     { return "user_ssh_keys" }
+func (c DeleteUserSshKeyCmd) GetID() string                         { return c.id }
+
+func (c DeleteUserSshKeyCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.UserSshKeys, error) {
+	queries := mdb.New(tx)
+	return queries.GetUserSshKey(ctx, mdb.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c DeleteUserSshKeyCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteUserSshKey(ctx, mdb.DeleteUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (d Database) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteUserSshKeyCmd {
+	return DeleteUserSshKeyCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+type NewUserSshKeyCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserSshKeyParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserSshKeyCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewUserSshKeyCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewUserSshKeyCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserSshKeyCmdMysql) TableName() string                     { return "user_ssh_keys" }
+func (c NewUserSshKeyCmdMysql) Params() any                           { return c.params }
+func (c NewUserSshKeyCmdMysql) GetID(u mdbm.UserSshKeys) string      { return u.SSHKeyID }
+
+func (c NewUserSshKeyCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.UserSshKeys, error) {
+	queries := mdbm.New(tx)
+	sshKeyID := string(types.NewUserSshKeyID())
+	_, err := queries.CreateUserSshKey(ctx, mdbm.CreateUserSshKeyParams{
+		SSHKeyID:    sshKeyID,
+		UserID:      c.params.UserID,
+		PublicKey:   c.params.PublicKey,
+		KeyType:     c.params.KeyType,
+		Fingerprint: c.params.Fingerprint,
+		Label:       sql.NullString{String: c.params.Label, Valid: c.params.Label != ""},
+		DateCreated: c.params.DateCreated,
+	})
+	if err != nil {
+		return mdbm.UserSshKeys{}, err
+	}
+	return queries.GetUserSshKey(ctx, mdbm.GetUserSshKeyParams{SSHKeyID: sshKeyID})
+}
+
+func (d MysqlDatabase) NewUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserSshKeyParams) NewUserSshKeyCmdMysql {
+	return NewUserSshKeyCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteUserSshKeyCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserSshKeyCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteUserSshKeyCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserSshKeyCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserSshKeyCmdMysql) TableName() string                     { return "user_ssh_keys" }
+func (c DeleteUserSshKeyCmdMysql) GetID() string                         { return c.id }
+
+func (c DeleteUserSshKeyCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.UserSshKeys, error) {
+	queries := mdbm.New(tx)
+	return queries.GetUserSshKey(ctx, mdbm.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c DeleteUserSshKeyCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteUserSshKey(ctx, mdbm.DeleteUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (d MysqlDatabase) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteUserSshKeyCmdMysql {
+	return DeleteUserSshKeyCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+type NewUserSshKeyCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateUserSshKeyParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewUserSshKeyCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewUserSshKeyCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewUserSshKeyCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewUserSshKeyCmdPsql) TableName() string                     { return "user_ssh_keys" }
+func (c NewUserSshKeyCmdPsql) Params() any                           { return c.params }
+func (c NewUserSshKeyCmdPsql) GetID(u mdbp.UserSshKeys) string      { return u.SSHKeyID }
+
+func (c NewUserSshKeyCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.UserSshKeys, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateUserSshKey(ctx, mdbp.CreateUserSshKeyParams{
+		SSHKeyID:    string(types.NewUserSshKeyID()),
+		UserID:      c.params.UserID,
+		PublicKey:   c.params.PublicKey,
+		KeyType:     c.params.KeyType,
+		Fingerprint: c.params.Fingerprint,
+		Label:       sql.NullString{String: c.params.Label, Valid: c.params.Label != ""},
+		DateCreated: c.params.DateCreated,
+	})
+}
+
+func (d PsqlDatabase) NewUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserSshKeyParams) NewUserSshKeyCmdPsql {
+	return NewUserSshKeyCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteUserSshKeyCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteUserSshKeyCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteUserSshKeyCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteUserSshKeyCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteUserSshKeyCmdPsql) TableName() string                     { return "user_ssh_keys" }
+func (c DeleteUserSshKeyCmdPsql) GetID() string                         { return c.id }
+
+func (c DeleteUserSshKeyCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.UserSshKeys, error) {
+	queries := mdbp.New(tx)
+	return queries.GetUserSshKey(ctx, mdbp.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c DeleteUserSshKeyCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteUserSshKey(ctx, mdbp.DeleteUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (d PsqlDatabase) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteUserSshKeyCmdPsql {
+	return DeleteUserSshKeyCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

@@ -1,12 +1,14 @@
 package db
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -651,4 +653,354 @@ func (d PsqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewContentDataCmd is an audited create command for content_data (SQLite).
+type NewContentDataCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentDataCmd) Context() context.Context              { return c.ctx }
+func (c NewContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentDataCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentDataCmd) TableName() string                     { return "content_data" }
+func (c NewContentDataCmd) Params() any                           { return c.params }
+func (c NewContentDataCmd) GetID(row mdb.ContentData) string      { return string(row.ContentDataID) }
+
+func (c NewContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
+	queries := mdb.New(tx)
+	return queries.CreateContentData(ctx, mdb.CreateContentDataParams{
+		ContentDataID: types.NewContentID(),
+		RouteID:       c.params.RouteID,
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+	})
+}
+
+func (d Database) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmd {
+	return NewContentDataCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// UpdateContentDataCmd is an audited update command for content_data (SQLite).
+type UpdateContentDataCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentDataCmd) Context() context.Context              { return c.ctx }
+func (c UpdateContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentDataCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentDataCmd) TableName() string                     { return "content_data" }
+func (c UpdateContentDataCmd) Params() any                           { return c.params }
+func (c UpdateContentDataCmd) GetID() string                         { return string(c.params.ContentDataID) }
+
+func (c UpdateContentDataCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
+	queries := mdb.New(tx)
+	return queries.GetContentData(ctx, mdb.GetContentDataParams{ContentDataID: c.params.ContentDataID})
+}
+
+func (c UpdateContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateContentData(ctx, mdb.UpdateContentDataParams{
+		RouteID:       c.params.RouteID,
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+		ContentDataID: c.params.ContentDataID,
+	})
+}
+
+func (d Database) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmd {
+	return UpdateContentDataCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// DeleteContentDataCmd is an audited delete command for content_data (SQLite).
+type DeleteContentDataCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentDataCmd) Context() context.Context              { return c.ctx }
+func (c DeleteContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentDataCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentDataCmd) TableName() string                     { return "content_data" }
+func (c DeleteContentDataCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentDataCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
+	queries := mdb.New(tx)
+	return queries.GetContentData(ctx, mdb.GetContentDataParams{ContentDataID: c.id})
+}
+
+func (c DeleteContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteContentData(ctx, mdb.DeleteContentDataParams{ContentDataID: c.id})
+}
+
+func (d Database) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmd {
+	return DeleteContentDataCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewContentDataCmdMysql is an audited create command for content_data (MySQL).
+type NewContentDataCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentDataCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentDataCmdMysql) TableName() string                     { return "content_data" }
+func (c NewContentDataCmdMysql) Params() any                           { return c.params }
+func (c NewContentDataCmdMysql) GetID(row mdbm.ContentData) string     { return string(row.ContentDataID) }
+
+func (c NewContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
+	id := types.NewContentID()
+	queries := mdbm.New(tx)
+	err := queries.CreateContentData(ctx, mdbm.CreateContentDataParams{
+		ContentDataID: id,
+		RouteID:       c.params.RouteID,
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+	})
+	if err != nil {
+		return mdbm.ContentData{}, fmt.Errorf("execute create content_data: %w", err)
+	}
+	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: id})
+}
+
+func (d MysqlDatabase) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmdMysql {
+	return NewContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// UpdateContentDataCmdMysql is an audited update command for content_data (MySQL).
+type UpdateContentDataCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentDataCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentDataCmdMysql) TableName() string                     { return "content_data" }
+func (c UpdateContentDataCmdMysql) Params() any                           { return c.params }
+func (c UpdateContentDataCmdMysql) GetID() string                         { return string(c.params.ContentDataID) }
+
+func (c UpdateContentDataCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
+	queries := mdbm.New(tx)
+	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: c.params.ContentDataID})
+}
+
+func (c UpdateContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateContentData(ctx, mdbm.UpdateContentDataParams{
+		RouteID:       c.params.RouteID,
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+		ContentDataID: c.params.ContentDataID,
+	})
+}
+
+func (d MysqlDatabase) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmdMysql {
+	return UpdateContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// DeleteContentDataCmdMysql is an audited delete command for content_data (MySQL).
+type DeleteContentDataCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentDataCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentDataCmdMysql) TableName() string                     { return "content_data" }
+func (c DeleteContentDataCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentDataCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
+	queries := mdbm.New(tx)
+	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: c.id})
+}
+
+func (c DeleteContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteContentData(ctx, mdbm.DeleteContentDataParams{ContentDataID: c.id})
+}
+
+func (d MysqlDatabase) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmdMysql {
+	return DeleteContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewContentDataCmdPsql is an audited create command for content_data (PostgreSQL).
+type NewContentDataCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentDataCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentDataCmdPsql) TableName() string                     { return "content_data" }
+func (c NewContentDataCmdPsql) Params() any                           { return c.params }
+func (c NewContentDataCmdPsql) GetID(row mdbp.ContentData) string     { return string(row.ContentDataID) }
+
+func (c NewContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateContentData(ctx, mdbp.CreateContentDataParams{
+		ContentDataID: types.NewContentID(),
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		RouteID:       c.params.RouteID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmdPsql {
+	return NewContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// UpdateContentDataCmdPsql is an audited update command for content_data (PostgreSQL).
+type UpdateContentDataCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentDataParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentDataCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentDataCmdPsql) TableName() string                     { return "content_data" }
+func (c UpdateContentDataCmdPsql) Params() any                           { return c.params }
+func (c UpdateContentDataCmdPsql) GetID() string                         { return string(c.params.ContentDataID) }
+
+func (c UpdateContentDataCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
+	queries := mdbp.New(tx)
+	return queries.GetContentData(ctx, mdbp.GetContentDataParams{ContentDataID: c.params.ContentDataID})
+}
+
+func (c UpdateContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateContentData(ctx, mdbp.UpdateContentDataParams{
+		RouteID:       c.params.RouteID,
+		ParentID:      c.params.ParentID,
+		FirstChildID:  c.params.FirstChildID,
+		NextSiblingID: c.params.NextSiblingID,
+		PrevSiblingID: c.params.PrevSiblingID,
+		DatatypeID:    c.params.DatatypeID,
+		AuthorID:      c.params.AuthorID,
+		Status:        c.params.Status,
+		DateCreated:   c.params.DateCreated,
+		DateModified:  c.params.DateModified,
+		ContentDataID: c.params.ContentDataID,
+	})
+}
+
+func (d PsqlDatabase) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmdPsql {
+	return UpdateContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// DeleteContentDataCmdPsql is an audited delete command for content_data (PostgreSQL).
+type DeleteContentDataCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentDataCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentDataCmdPsql) TableName() string                     { return "content_data" }
+func (c DeleteContentDataCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentDataCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
+	queries := mdbp.New(tx)
+	return queries.GetContentData(ctx, mdbp.GetContentDataParams{ContentDataID: c.id})
+}
+
+func (c DeleteContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteContentData(ctx, mdbp.DeleteContentDataParams{ContentDataID: c.id})
+}
+
+func (d PsqlDatabase) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmdPsql {
+	return DeleteContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

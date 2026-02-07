@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS change_events (
     old_values JSONB,
     new_values JSONB,
     metadata JSONB,
+    request_id TEXT,
+    ip TEXT,
     synced_at TIMESTAMP WITH TIME ZONE,
     consumed_at TIMESTAMP WITH TIME ZONE
 );
@@ -31,9 +33,11 @@ INSERT INTO change_events (
     user_id,
     old_values,
     new_values,
-    metadata
+    metadata,
+    request_id,
+    ip
 ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13
 )
 RETURNING *;
 

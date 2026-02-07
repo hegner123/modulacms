@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -479,4 +482,345 @@ func (d PsqlDatabase) UpdateRoute(s UpdateRouteParams) (*string, error) {
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
 	return &u, nil
+}
+
+///////////////////////////////
+// AUDITED COMMAND STRUCTS
+//////////////////////////////
+
+// ----- SQLite CREATE -----
+
+type NewRouteCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRouteParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewRouteCmd) Context() context.Context              { return c.ctx }
+func (c NewRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewRouteCmd) TableName() string                     { return "routes" }
+func (c NewRouteCmd) Params() any                           { return c.params }
+func (c NewRouteCmd) GetID(r mdb.Routes) string             { return string(r.RouteID) }
+
+func (c NewRouteCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Routes, error) {
+	id := c.params.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
+	queries := mdb.New(tx)
+	return queries.CreateRoute(ctx, mdb.CreateRouteParams{
+		RouteID:      id,
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       c.params.Status,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d Database) NewRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRouteParams) NewRouteCmd {
+	return NewRouteCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateRouteCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRouteParams
+	routeID  types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateRouteCmd) Context() context.Context              { return c.ctx }
+func (c UpdateRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateRouteCmd) TableName() string                     { return "routes" }
+func (c UpdateRouteCmd) Params() any                           { return c.params }
+func (c UpdateRouteCmd) GetID() string                         { return string(c.routeID) }
+
+func (c UpdateRouteCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Routes, error) {
+	queries := mdb.New(tx)
+	return queries.GetRoute(ctx, mdb.GetRouteParams{RouteID: c.routeID})
+}
+
+func (c UpdateRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateRoute(ctx, mdb.UpdateRouteParams{
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       c.params.Status,
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		Slug_2:       c.params.Slug_2,
+	})
+}
+
+func (d Database) UpdateRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.RouteID, params UpdateRouteParams) UpdateRouteCmd {
+	return UpdateRouteCmd{ctx: ctx, auditCtx: auditCtx, params: params, routeID: routeID, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteRouteCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteRouteCmd) Context() context.Context              { return c.ctx }
+func (c DeleteRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteRouteCmd) TableName() string                     { return "routes" }
+func (c DeleteRouteCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteRouteCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Routes, error) {
+	queries := mdb.New(tx)
+	return queries.GetRoute(ctx, mdb.GetRouteParams{RouteID: c.id})
+}
+
+func (c DeleteRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteRoute(ctx, mdb.DeleteRouteParams{RouteID: c.id})
+}
+
+func (d Database) DeleteRouteCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RouteID) DeleteRouteCmd {
+	return DeleteRouteCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+type NewRouteCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRouteParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewRouteCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewRouteCmdMysql) TableName() string                     { return "routes" }
+func (c NewRouteCmdMysql) Params() any                           { return c.params }
+func (c NewRouteCmdMysql) GetID(r mdbm.Routes) string            { return string(r.RouteID) }
+
+func (c NewRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
+	id := c.params.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
+	queries := mdbm.New(tx)
+	params := mdbm.CreateRouteParams{
+		RouteID:      id,
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       int32(c.params.Status),
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	}
+	if err := queries.CreateRoute(ctx, params); err != nil {
+		return mdbm.Routes{}, err
+	}
+	return queries.GetRoute(ctx, mdbm.GetRouteParams{RouteID: params.RouteID})
+}
+
+func (d MysqlDatabase) NewRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRouteParams) NewRouteCmdMysql {
+	return NewRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+type UpdateRouteCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRouteParams
+	routeID  types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateRouteCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateRouteCmdMysql) TableName() string                     { return "routes" }
+func (c UpdateRouteCmdMysql) Params() any                           { return c.params }
+func (c UpdateRouteCmdMysql) GetID() string                         { return string(c.routeID) }
+
+func (c UpdateRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
+	queries := mdbm.New(tx)
+	return queries.GetRoute(ctx, mdbm.GetRouteParams{RouteID: c.routeID})
+}
+
+func (c UpdateRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateRoute(ctx, mdbm.UpdateRouteParams{
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       int32(c.params.Status),
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		Slug_2:       c.params.Slug_2,
+	})
+}
+
+func (d MysqlDatabase) UpdateRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.RouteID, params UpdateRouteParams) UpdateRouteCmdMysql {
+	return UpdateRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, routeID: routeID, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteRouteCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteRouteCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteRouteCmdMysql) TableName() string                     { return "routes" }
+func (c DeleteRouteCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
+	queries := mdbm.New(tx)
+	return queries.GetRoute(ctx, mdbm.GetRouteParams{RouteID: c.id})
+}
+
+func (c DeleteRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteRoute(ctx, mdbm.DeleteRouteParams{RouteID: c.id})
+}
+
+func (d MysqlDatabase) DeleteRouteCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RouteID) DeleteRouteCmdMysql {
+	return DeleteRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+type NewRouteCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRouteParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewRouteCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewRouteCmdPsql) TableName() string                     { return "routes" }
+func (c NewRouteCmdPsql) Params() any                           { return c.params }
+func (c NewRouteCmdPsql) GetID(r mdbp.Routes) string            { return string(r.RouteID) }
+
+func (c NewRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
+	id := c.params.RouteID
+	if id.IsZero() {
+		id = types.NewRouteID()
+	}
+	queries := mdbp.New(tx)
+	return queries.CreateRoute(ctx, mdbp.CreateRouteParams{
+		RouteID:      id,
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       int32(c.params.Status),
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRouteParams) NewRouteCmdPsql {
+	return NewRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateRouteCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRouteParams
+	routeID  types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateRouteCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateRouteCmdPsql) TableName() string                     { return "routes" }
+func (c UpdateRouteCmdPsql) Params() any                           { return c.params }
+func (c UpdateRouteCmdPsql) GetID() string                         { return string(c.routeID) }
+
+func (c UpdateRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
+	queries := mdbp.New(tx)
+	return queries.GetRoute(ctx, mdbp.GetRouteParams{RouteID: c.routeID})
+}
+
+func (c UpdateRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateRoute(ctx, mdbp.UpdateRouteParams{
+		Slug:         c.params.Slug,
+		Title:        c.params.Title,
+		Status:       int32(c.params.Status),
+		AuthorID:     c.params.AuthorID,
+		DateCreated:  c.params.DateCreated,
+		DateModified: c.params.DateModified,
+		Slug_2:       c.params.Slug_2,
+	})
+}
+
+func (d PsqlDatabase) UpdateRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.RouteID, params UpdateRouteParams) UpdateRouteCmdPsql {
+	return UpdateRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, routeID: routeID, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteRouteCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RouteID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteRouteCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteRouteCmdPsql) TableName() string                     { return "routes" }
+func (c DeleteRouteCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
+	queries := mdbp.New(tx)
+	return queries.GetRoute(ctx, mdbp.GetRouteParams{RouteID: c.id})
+}
+
+func (c DeleteRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteRoute(ctx, mdbp.DeleteRouteParams{RouteID: c.id})
+}
+
+func (d PsqlDatabase) DeleteRouteCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RouteID) DeleteRouteCmdPsql {
+	return DeleteRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

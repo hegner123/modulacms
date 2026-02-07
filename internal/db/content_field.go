@@ -1,12 +1,15 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -530,4 +533,333 @@ func (d PsqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, e
 // Deprecated: Use types.NullableRouteID directly
 func NullableRouteIDFromInt64(id int64) types.NullableRouteID {
 	return types.NullableRouteID{ID: types.RouteID(strconv.FormatInt(id, 10)), Valid: id != 0}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewContentFieldCmd is an audited create command for content_fields (SQLite).
+type NewContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c NewContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentFieldCmd) TableName() string                     { return "content_fields" }
+func (c NewContentFieldCmd) Params() any                           { return c.params }
+func (c NewContentFieldCmd) GetID(row mdb.ContentFields) string    { return string(row.ContentFieldID) }
+
+func (c NewContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.ContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.CreateContentField(ctx, mdb.CreateContentFieldParams{
+		ContentFieldID: types.NewContentFieldID(),
+		RouteID:        c.params.RouteID,
+		ContentDataID:  c.params.ContentDataID,
+		FieldID:        c.params.FieldID,
+		FieldValue:     c.params.FieldValue,
+		AuthorID:       c.params.AuthorID,
+		DateCreated:    c.params.DateCreated,
+		DateModified:   c.params.DateModified,
+	})
+}
+
+func (d Database) NewContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentFieldParams) NewContentFieldCmd {
+	return NewContentFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// UpdateContentFieldCmd is an audited update command for content_fields (SQLite).
+type UpdateContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c UpdateContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentFieldCmd) TableName() string                     { return "content_fields" }
+func (c UpdateContentFieldCmd) Params() any                           { return c.params }
+func (c UpdateContentFieldCmd) GetID() string                         { return string(c.params.ContentFieldID) }
+
+func (c UpdateContentFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.GetContentField(ctx, mdb.GetContentFieldParams{ContentFieldID: c.params.ContentFieldID})
+}
+
+func (c UpdateContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateContentField(ctx, mdb.UpdateContentFieldParams{
+		RouteID:        c.params.RouteID,
+		ContentDataID:  c.params.ContentDataID,
+		FieldID:        c.params.FieldID,
+		FieldValue:     c.params.FieldValue,
+		AuthorID:       c.params.AuthorID,
+		DateCreated:    c.params.DateCreated,
+		DateModified:   c.params.DateModified,
+		ContentFieldID: c.params.ContentFieldID,
+	})
+}
+
+func (d Database) UpdateContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentFieldParams) UpdateContentFieldCmd {
+	return UpdateContentFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// DeleteContentFieldCmd is an audited delete command for content_fields (SQLite).
+type DeleteContentFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentFieldCmd) Context() context.Context              { return c.ctx }
+func (c DeleteContentFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentFieldCmd) TableName() string                     { return "content_fields" }
+func (c DeleteContentFieldCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentFields, error) {
+	queries := mdb.New(tx)
+	return queries.GetContentField(ctx, mdb.GetContentFieldParams{ContentFieldID: c.id})
+}
+
+func (c DeleteContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteContentField(ctx, mdb.DeleteContentFieldParams{ContentFieldID: c.id})
+}
+
+func (d Database) DeleteContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentFieldID) DeleteContentFieldCmd {
+	return DeleteContentFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewContentFieldCmdMysql is an audited create command for content_fields (MySQL).
+type NewContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentFieldCmdMysql) TableName() string                     { return "content_fields" }
+func (c NewContentFieldCmdMysql) Params() any                           { return c.params }
+func (c NewContentFieldCmdMysql) GetID(row mdbm.ContentFields) string   { return string(row.ContentFieldID) }
+
+func (c NewContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.ContentFields, error) {
+	id := types.NewContentFieldID()
+	queries := mdbm.New(tx)
+	err := queries.CreateContentField(ctx, mdbm.CreateContentFieldParams{
+		ContentFieldID: id,
+		RouteID:        c.params.RouteID,
+		ContentDataID:  c.params.ContentDataID,
+		FieldID:        c.params.FieldID,
+		FieldValue:     c.params.FieldValue,
+		AuthorID:       c.params.AuthorID,
+	})
+	if err != nil {
+		return mdbm.ContentFields{}, fmt.Errorf("execute create content_fields: %w", err)
+	}
+	return queries.GetContentField(ctx, mdbm.GetContentFieldParams{ContentFieldID: id})
+}
+
+func (d MysqlDatabase) NewContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentFieldParams) NewContentFieldCmdMysql {
+	return NewContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// UpdateContentFieldCmdMysql is an audited update command for content_fields (MySQL).
+type UpdateContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentFieldCmdMysql) TableName() string                     { return "content_fields" }
+func (c UpdateContentFieldCmdMysql) Params() any                           { return c.params }
+func (c UpdateContentFieldCmdMysql) GetID() string                         { return string(c.params.ContentFieldID) }
+
+func (c UpdateContentFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetContentField(ctx, mdbm.GetContentFieldParams{ContentFieldID: c.params.ContentFieldID})
+}
+
+func (c UpdateContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateContentField(ctx, mdbm.UpdateContentFieldParams{
+		RouteID:        c.params.RouteID,
+		ContentDataID:  c.params.ContentDataID,
+		FieldID:        c.params.FieldID,
+		FieldValue:     c.params.FieldValue,
+		AuthorID:       c.params.AuthorID,
+		ContentFieldID: c.params.ContentFieldID,
+	})
+}
+
+func (d MysqlDatabase) UpdateContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentFieldParams) UpdateContentFieldCmdMysql {
+	return UpdateContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// DeleteContentFieldCmdMysql is an audited delete command for content_fields (MySQL).
+type DeleteContentFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteContentFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentFieldCmdMysql) TableName() string                     { return "content_fields" }
+func (c DeleteContentFieldCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetContentField(ctx, mdbm.GetContentFieldParams{ContentFieldID: c.id})
+}
+
+func (c DeleteContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteContentField(ctx, mdbm.DeleteContentFieldParams{ContentFieldID: c.id})
+}
+
+func (d MysqlDatabase) DeleteContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentFieldID) DeleteContentFieldCmdMysql {
+	return DeleteContentFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewContentFieldCmdPsql is an audited create command for content_fields (PostgreSQL).
+type NewContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewContentFieldCmdPsql) TableName() string                     { return "content_fields" }
+func (c NewContentFieldCmdPsql) Params() any                           { return c.params }
+func (c NewContentFieldCmdPsql) GetID(row mdbp.ContentFields) string   { return string(row.ContentFieldID) }
+
+func (c NewContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.ContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateContentField(ctx, mdbp.CreateContentFieldParams{
+		ContentFieldID: types.NewContentFieldID(),
+		RouteID:        c.params.RouteID,
+		ContentDataID:  c.params.ContentDataID,
+		FieldID:        c.params.FieldID,
+		FieldValue:     c.params.FieldValue,
+		AuthorID:       c.params.AuthorID,
+		DateCreated:    c.params.DateCreated,
+		DateModified:   c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentFieldParams) NewContentFieldCmdPsql {
+	return NewContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// UpdateContentFieldCmdPsql is an audited update command for content_fields (PostgreSQL).
+type UpdateContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateContentFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateContentFieldCmdPsql) TableName() string                     { return "content_fields" }
+func (c UpdateContentFieldCmdPsql) Params() any                           { return c.params }
+func (c UpdateContentFieldCmdPsql) GetID() string                         { return string(c.params.ContentFieldID) }
+
+func (c UpdateContentFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetContentField(ctx, mdbp.GetContentFieldParams{ContentFieldID: c.params.ContentFieldID})
+}
+
+func (c UpdateContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateContentField(ctx, mdbp.UpdateContentFieldParams{
+		ContentFieldID:   c.params.ContentFieldID,
+		RouteID:          c.params.RouteID,
+		ContentDataID:    c.params.ContentDataID,
+		FieldID:          c.params.FieldID,
+		FieldValue:       c.params.FieldValue,
+		AuthorID:         c.params.AuthorID,
+		DateCreated:      c.params.DateCreated,
+		DateModified:     c.params.DateModified,
+		ContentFieldID_2: c.params.ContentFieldID,
+	})
+}
+
+func (d PsqlDatabase) UpdateContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentFieldParams) UpdateContentFieldCmdPsql {
+	return UpdateContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// DeleteContentFieldCmdPsql is an audited delete command for content_fields (PostgreSQL).
+type DeleteContentFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.ContentFieldID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteContentFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteContentFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteContentFieldCmdPsql) TableName() string                     { return "content_fields" }
+func (c DeleteContentFieldCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteContentFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentFields, error) {
+	queries := mdbp.New(tx)
+	return queries.GetContentField(ctx, mdbp.GetContentFieldParams{ContentFieldID: c.id})
+}
+
+func (c DeleteContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteContentField(ctx, mdbp.DeleteContentFieldParams{ContentFieldID: c.id})
+}
+
+func (d PsqlDatabase) DeleteContentFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentFieldID) DeleteContentFieldCmdPsql {
+	return DeleteContentFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

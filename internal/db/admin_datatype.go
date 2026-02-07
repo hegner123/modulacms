@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -440,4 +443,329 @@ func (d PsqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string,
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
 	return &u, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+type NewAdminDatatypeCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeCmd) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeCmd) TableName() string                     { return "admin_datatypes" }
+func (c NewAdminDatatypeCmd) Params() any                           { return c.params }
+func (c NewAdminDatatypeCmd) GetID(u mdb.AdminDatatypes) string     { return string(u.AdminDatatypeID) }
+
+func (c NewAdminDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypes, error) {
+	queries := mdb.New(tx)
+	return queries.CreateAdminDatatype(ctx, mdb.CreateAdminDatatypeParams{
+		AdminDatatypeID: types.NewAdminDatatypeID(),
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+	})
+}
+
+func (d Database) NewAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeParams) NewAdminDatatypeCmd {
+	return NewAdminDatatypeCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateAdminDatatypeCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeCmd) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeCmd) TableName() string                     { return "admin_datatypes" }
+func (c UpdateAdminDatatypeCmd) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeCmd) GetID() string                         { return string(c.params.AdminDatatypeID) }
+
+func (c UpdateAdminDatatypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypes, error) {
+	queries := mdb.New(tx)
+	return queries.GetAdminDatatype(ctx, mdb.GetAdminDatatypeParams{AdminDatatypeID: c.params.AdminDatatypeID})
+}
+
+func (c UpdateAdminDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateAdminDatatype(ctx, mdb.UpdateAdminDatatypeParams{
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+		AdminDatatypeID: c.params.AdminDatatypeID,
+	})
+}
+
+func (d Database) UpdateAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeParams) UpdateAdminDatatypeCmd {
+	return UpdateAdminDatatypeCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteAdminDatatypeCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminDatatypeID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeCmd) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeCmd) TableName() string                     { return "admin_datatypes" }
+func (c DeleteAdminDatatypeCmd) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminDatatypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypes, error) {
+	queries := mdb.New(tx)
+	return queries.GetAdminDatatype(ctx, mdb.GetAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (c DeleteAdminDatatypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteAdminDatatype(ctx, mdb.DeleteAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (d Database) DeleteAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminDatatypeID) DeleteAdminDatatypeCmd {
+	return DeleteAdminDatatypeCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+type NewAdminDatatypeCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeCmdMysql) TableName() string                     { return "admin_datatypes" }
+func (c NewAdminDatatypeCmdMysql) Params() any                           { return c.params }
+func (c NewAdminDatatypeCmdMysql) GetID(u mdbm.AdminDatatypes) string    { return string(u.AdminDatatypeID) }
+
+func (c NewAdminDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypes, error) {
+	queries := mdbm.New(tx)
+	id := types.NewAdminDatatypeID()
+	err := queries.CreateAdminDatatype(ctx, mdbm.CreateAdminDatatypeParams{
+		AdminDatatypeID: id,
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+	})
+	if err != nil {
+		return mdbm.AdminDatatypes{}, err
+	}
+	return queries.GetAdminDatatype(ctx, mdbm.GetAdminDatatypeParams{AdminDatatypeID: id})
+}
+
+func (d MysqlDatabase) NewAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeParams) NewAdminDatatypeCmdMysql {
+	return NewAdminDatatypeCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+type UpdateAdminDatatypeCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeCmdMysql) TableName() string                     { return "admin_datatypes" }
+func (c UpdateAdminDatatypeCmdMysql) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeCmdMysql) GetID() string                         { return string(c.params.AdminDatatypeID) }
+
+func (c UpdateAdminDatatypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypes, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminDatatype(ctx, mdbm.GetAdminDatatypeParams{AdminDatatypeID: c.params.AdminDatatypeID})
+}
+
+func (c UpdateAdminDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateAdminDatatype(ctx, mdbm.UpdateAdminDatatypeParams{
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+		AdminDatatypeID: c.params.AdminDatatypeID,
+	})
+}
+
+func (d MysqlDatabase) UpdateAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeParams) UpdateAdminDatatypeCmdMysql {
+	return UpdateAdminDatatypeCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteAdminDatatypeCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminDatatypeID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeCmdMysql) TableName() string                     { return "admin_datatypes" }
+func (c DeleteAdminDatatypeCmdMysql) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminDatatypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypes, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminDatatype(ctx, mdbm.GetAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (c DeleteAdminDatatypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteAdminDatatype(ctx, mdbm.DeleteAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (d MysqlDatabase) DeleteAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminDatatypeID) DeleteAdminDatatypeCmdMysql {
+	return DeleteAdminDatatypeCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+type NewAdminDatatypeCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewAdminDatatypeCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewAdminDatatypeCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminDatatypeCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewAdminDatatypeCmdPsql) TableName() string                     { return "admin_datatypes" }
+func (c NewAdminDatatypeCmdPsql) Params() any                           { return c.params }
+func (c NewAdminDatatypeCmdPsql) GetID(u mdbp.AdminDatatypes) string    { return string(u.AdminDatatypeID) }
+
+func (c NewAdminDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypes, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateAdminDatatype(ctx, mdbp.CreateAdminDatatypeParams{
+		AdminDatatypeID: types.NewAdminDatatypeID(),
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+	})
+}
+
+func (d PsqlDatabase) NewAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeParams) NewAdminDatatypeCmdPsql {
+	return NewAdminDatatypeCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateAdminDatatypeCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeCmdPsql) TableName() string                     { return "admin_datatypes" }
+func (c UpdateAdminDatatypeCmdPsql) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeCmdPsql) GetID() string                         { return string(c.params.AdminDatatypeID) }
+
+func (c UpdateAdminDatatypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypes, error) {
+	queries := mdbp.New(tx)
+	return queries.GetAdminDatatype(ctx, mdbp.GetAdminDatatypeParams{AdminDatatypeID: c.params.AdminDatatypeID})
+}
+
+func (c UpdateAdminDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateAdminDatatype(ctx, mdbp.UpdateAdminDatatypeParams{
+		ParentID:        c.params.ParentID,
+		Label:           c.params.Label,
+		Type:            c.params.Type,
+		AuthorID:        c.params.AuthorID,
+		DateCreated:     c.params.DateCreated,
+		DateModified:    c.params.DateModified,
+		AdminDatatypeID: c.params.AdminDatatypeID,
+	})
+}
+
+func (d PsqlDatabase) UpdateAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeParams) UpdateAdminDatatypeCmdPsql {
+	return UpdateAdminDatatypeCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteAdminDatatypeCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.AdminDatatypeID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeCmdPsql) TableName() string                     { return "admin_datatypes" }
+func (c DeleteAdminDatatypeCmdPsql) GetID() string                         { return string(c.id) }
+
+func (c DeleteAdminDatatypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypes, error) {
+	queries := mdbp.New(tx)
+	return queries.GetAdminDatatype(ctx, mdbp.GetAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (c DeleteAdminDatatypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteAdminDatatype(ctx, mdbp.DeleteAdminDatatypeParams{AdminDatatypeID: c.id})
+}
+
+func (d PsqlDatabase) DeleteAdminDatatypeCmd(ctx context.Context, auditCtx audited.AuditContext, id types.AdminDatatypeID) DeleteAdminDatatypeCmdPsql {
+	return DeleteAdminDatatypeCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

@@ -1,11 +1,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -511,4 +514,127 @@ func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatat
 	default:
 		return -1, nil
 	}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — SQLITE
+//////////////////////////////
+
+// NewDatatypeFieldCmd is an audited create command for datatypes_fields (SQLite).
+// Note: Update and Delete commands are not implemented because no GetDatatypeField
+// query exists in the sqlc-generated code, which is required for GetBefore.
+type NewDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c NewDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
+func (c NewDatatypeFieldCmd) Params() any                           { return c.params }
+func (c NewDatatypeFieldCmd) GetID(row mdb.DatatypesFields) string  { return row.ID }
+
+func (c NewDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.DatatypesFields, error) {
+	id := c.params.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
+	queries := mdb.New(tx)
+	return queries.CreateDatatypeField(ctx, mdb.CreateDatatypeFieldParams{
+		ID:         id,
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  c.params.SortOrder,
+	})
+}
+
+func (d Database) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateDatatypeFieldParams) NewDatatypeFieldCmd {
+	return NewDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — MYSQL
+//////////////////////////////
+
+// NewDatatypeFieldCmdMysql is an audited create command for datatypes_fields (MySQL).
+type NewDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
+func (c NewDatatypeFieldCmdMysql) Params() any                           { return c.params }
+func (c NewDatatypeFieldCmdMysql) GetID(row mdbm.DatatypesFields) string { return row.ID }
+
+func (c NewDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.DatatypesFields, error) {
+	id := c.params.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
+	queries := mdbm.New(tx)
+	err := queries.CreateDatatypeField(ctx, mdbm.CreateDatatypeFieldParams{
+		ID:         id,
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  int32(c.params.SortOrder),
+	})
+	if err != nil {
+		return mdbm.DatatypesFields{}, fmt.Errorf("execute create datatypes_fields: %w", err)
+	}
+	return queries.GetDatatypeField(ctx, mdbm.GetDatatypeFieldParams{ID: id})
+}
+
+func (d MysqlDatabase) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateDatatypeFieldParams) NewDatatypeFieldCmdMysql {
+	return NewDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+///////////////////////////////
+// AUDITED COMMANDS — POSTGRES
+//////////////////////////////
+
+// NewDatatypeFieldCmdPsql is an audited create command for datatypes_fields (PostgreSQL).
+type NewDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c NewDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c NewDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }
+func (c NewDatatypeFieldCmdPsql) Params() any                           { return c.params }
+func (c NewDatatypeFieldCmdPsql) GetID(row mdbp.DatatypesFields) string { return row.ID }
+
+func (c NewDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.DatatypesFields, error) {
+	id := c.params.ID
+	if id == "" {
+		id = string(types.NewDatatypeFieldID())
+	}
+	queries := mdbp.New(tx)
+	return queries.CreateDatatypeField(ctx, mdbp.CreateDatatypeFieldParams{
+		ID:         id,
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  int32(c.params.SortOrder),
+	})
+}
+
+func (d PsqlDatabase) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateDatatypeFieldParams) NewDatatypeFieldCmdPsql {
+	return NewDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }

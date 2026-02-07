@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS change_events (
     old_values TEXT,
     new_values TEXT,
     metadata TEXT,
+    request_id TEXT,
+    ip TEXT,
     synced_at TEXT,
     consumed_at TEXT
 );
@@ -31,9 +33,11 @@ INSERT INTO change_events (
     user_id,
     old_values,
     new_values,
-    metadata
+    metadata,
+    request_id,
+    ip
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 RETURNING *;
 

@@ -1048,6 +1048,8 @@ CREATE TABLE IF NOT EXISTS change_events (
     old_values TEXT,
     new_values TEXT,
     metadata TEXT,
+    request_id TEXT,
+    ip TEXT,
     synced_at TEXT,
     consumed_at TEXT
 )
@@ -3351,7 +3353,7 @@ func (q *Queries) GetBackupsByStatus(ctx context.Context, arg GetBackupsByStatus
 }
 
 const getChangeEvent = `-- name: GetChangeEvent :one
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE event_id = ? LIMIT 1
 `
 
@@ -3375,6 +3377,8 @@ func (q *Queries) GetChangeEvent(ctx context.Context, arg GetChangeEventParams) 
 		&i.OldValues,
 		&i.NewValues,
 		&i.Metadata,
+		&i.RequestId,
+		&i.Ip,
 		&i.SyncedAt,
 		&i.ConsumedAt,
 	)
@@ -3382,7 +3386,7 @@ func (q *Queries) GetChangeEvent(ctx context.Context, arg GetChangeEventParams) 
 }
 
 const getChangeEventsByRecord = `-- name: GetChangeEventsByRecord :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE table_name = ? AND record_id = ?
 ORDER BY hlc_timestamp DESC
 `
@@ -3414,6 +3418,8 @@ func (q *Queries) GetChangeEventsByRecord(ctx context.Context, arg GetChangeEven
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -3431,7 +3437,7 @@ func (q *Queries) GetChangeEventsByRecord(ctx context.Context, arg GetChangeEven
 }
 
 const getChangeEventsByRecordPaginated = `-- name: GetChangeEventsByRecordPaginated :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE table_name = ? AND record_id = ?
 ORDER BY hlc_timestamp DESC
 LIMIT ? OFFSET ?
@@ -3471,6 +3477,8 @@ func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetC
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -4425,7 +4433,7 @@ func (q *Queries) GetTokenByUserId(ctx context.Context, arg GetTokenByUserIdPara
 }
 
 const getUnconsumedEvents = `-- name: GetUnconsumedEvents :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE consumed_at IS NULL
 ORDER BY hlc_timestamp ASC
 LIMIT ?
@@ -4457,6 +4465,8 @@ func (q *Queries) GetUnconsumedEvents(ctx context.Context, arg GetUnconsumedEven
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -4474,7 +4484,7 @@ func (q *Queries) GetUnconsumedEvents(ctx context.Context, arg GetUnconsumedEven
 }
 
 const getUnsyncedEvents = `-- name: GetUnsyncedEvents :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE synced_at IS NULL
 ORDER BY hlc_timestamp ASC
 LIMIT ?
@@ -4506,6 +4516,8 @@ func (q *Queries) GetUnsyncedEvents(ctx context.Context, arg GetUnsyncedEventsPa
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -4523,7 +4535,7 @@ func (q *Queries) GetUnsyncedEvents(ctx context.Context, arg GetUnsyncedEventsPa
 }
 
 const getUnsyncedEventsByNode = `-- name: GetUnsyncedEventsByNode :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE synced_at IS NULL AND node_id = ?
 ORDER BY hlc_timestamp ASC
 LIMIT ?
@@ -4556,6 +4568,8 @@ func (q *Queries) GetUnsyncedEventsByNode(ctx context.Context, arg GetUnsyncedEv
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -5551,7 +5565,7 @@ func (q *Queries) ListBackups(ctx context.Context, arg ListBackupsParams) ([]Bac
 }
 
 const listChangeEvents = `-- name: ListChangeEvents :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 ORDER BY hlc_timestamp DESC
 LIMIT ? OFFSET ?
 `
@@ -5583,6 +5597,8 @@ func (q *Queries) ListChangeEvents(ctx context.Context, arg ListChangeEventsPara
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -5600,7 +5616,7 @@ func (q *Queries) ListChangeEvents(ctx context.Context, arg ListChangeEventsPara
 }
 
 const listChangeEventsByAction = `-- name: ListChangeEventsByAction :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE action = ?
 ORDER BY hlc_timestamp DESC
 LIMIT ? OFFSET ?
@@ -5634,6 +5650,8 @@ func (q *Queries) ListChangeEventsByAction(ctx context.Context, arg ListChangeEv
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -5651,7 +5669,7 @@ func (q *Queries) ListChangeEventsByAction(ctx context.Context, arg ListChangeEv
 }
 
 const listChangeEventsByUser = `-- name: ListChangeEventsByUser :many
-SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at FROM change_events
+SELECT event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at FROM change_events
 WHERE user_id = ?
 ORDER BY hlc_timestamp DESC
 LIMIT ? OFFSET ?
@@ -5685,6 +5703,8 @@ func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEven
 			&i.OldValues,
 			&i.NewValues,
 			&i.Metadata,
+			&i.RequestId,
+			&i.Ip,
 			&i.SyncedAt,
 			&i.ConsumedAt,
 		); err != nil {
@@ -6881,11 +6901,13 @@ INSERT INTO change_events (
     user_id,
     old_values,
     new_values,
-    metadata
+    metadata,
+    request_id,
+    ip
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, synced_at, consumed_at
+RETURNING event_id, hlc_timestamp, wall_timestamp, node_id, table_name, record_id, operation, "action", user_id, old_values, new_values, metadata, request_id, ip, synced_at, consumed_at
 `
 
 type RecordChangeEventParams struct {
@@ -6900,6 +6922,8 @@ type RecordChangeEventParams struct {
 	OldValues    types.JSONData       `json:"old_values"`
 	NewValues    types.JSONData       `json:"new_values"`
 	Metadata     types.JSONData       `json:"metadata"`
+	RequestId    types.NullableString `json:"request_id"`
+	Ip           types.NullableString `json:"ip"`
 }
 
 func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventParams) (ChangeEvent, error) {
@@ -6915,6 +6939,8 @@ func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventPa
 		arg.OldValues,
 		arg.NewValues,
 		arg.Metadata,
+		arg.RequestId,
+		arg.Ip,
 	)
 	var i ChangeEvent
 	err := row.Scan(
@@ -6930,6 +6956,8 @@ func (q *Queries) RecordChangeEvent(ctx context.Context, arg RecordChangeEventPa
 		&i.OldValues,
 		&i.NewValues,
 		&i.Metadata,
+		&i.RequestId,
+		&i.Ip,
 		&i.SyncedAt,
 		&i.ConsumedAt,
 	)

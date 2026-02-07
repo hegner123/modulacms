@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS change_events (
     old_values JSON,
     new_values JSON,
     metadata JSON,
+    request_id VARCHAR(255),
+    ip VARCHAR(45),
     synced_at TIMESTAMP NULL,
     consumed_at TIMESTAMP NULL,
     CONSTRAINT chk_operation CHECK (operation IN ('INSERT', 'UPDATE', 'DELETE'))
@@ -32,9 +34,11 @@ INSERT INTO change_events (
     user_id,
     old_values,
     new_values,
-    metadata
+    metadata,
+    request_id,
+    ip
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
 );
 
 -- name: GetChangeEvent :one
