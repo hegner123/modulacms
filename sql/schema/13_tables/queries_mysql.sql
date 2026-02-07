@@ -39,9 +39,6 @@ INSERT INTO tables (
     ?,
     ?
 );
--- name: GetLastTable :one
- SELECT * FROM tables WHERE id = LAST_INSERT_ID();
-
 -- name: UpdateTable :exec
 UPDATE tables
 SET label = ?

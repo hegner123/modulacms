@@ -33,9 +33,6 @@ FROM routes
 WHERE slug = ? 
 LIMIT 1;
 
--- name: GetLastRoute :one
-SELECT * FROM routes WHERE route_id = LAST_INSERT_ID();
-
 -- name: ListRoute :many
 SELECT * FROM routes
 ORDER BY slug;

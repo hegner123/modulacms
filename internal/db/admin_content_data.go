@@ -306,7 +306,7 @@ func (d MysqlDatabase) CreateAdminContentData(s CreateAdminContentDataParams) Ad
 	if err != nil {
 		fmt.Printf("Failed to CreateAdminContentData: %v\n", err)
 	}
-	row, err := queries.GetLastAdminContentData(d.Context)
+	row, err := queries.GetAdminContentData(d.Context, mdbm.GetAdminContentDataParams{AdminContentDataID: params.AdminContentDataID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted AdminContentData: %v\n", err)
 	}

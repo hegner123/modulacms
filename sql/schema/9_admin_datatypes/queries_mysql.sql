@@ -63,9 +63,6 @@ INSERT INTO admin_datatypes (
     ?
 );
 
--- name: GetLastAdminDatatype :one
-SELECT * FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID();
-
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = ?,

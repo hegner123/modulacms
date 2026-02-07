@@ -2773,6 +2773,21 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 	return i, err
 }
 
+const getAdminDatatypeField = `-- name: GetAdminDatatypeField :one
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields WHERE id = ? LIMIT 1
+`
+
+type GetAdminDatatypeFieldParams struct {
+	ID string `json:"id"`
+}
+
+func (q *Queries) GetAdminDatatypeField(ctx context.Context, arg GetAdminDatatypeFieldParams) (AdminDatatypesFields, error) {
+	row := q.db.QueryRowContext(ctx, getAdminDatatypeField, arg.ID)
+	var i AdminDatatypesFields
+	err := row.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID)
+	return i, err
+}
+
 const getAdminField = `-- name: GetAdminField :one
 SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
@@ -3435,6 +3450,26 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 	return i, err
 }
 
+const getDatatypeField = `-- name: GetDatatypeField :one
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields WHERE id = ? LIMIT 1
+`
+
+type GetDatatypeFieldParams struct {
+	ID string `json:"id"`
+}
+
+func (q *Queries) GetDatatypeField(ctx context.Context, arg GetDatatypeFieldParams) (DatatypesFields, error) {
+	row := q.db.QueryRowContext(ctx, getDatatypeField, arg.ID)
+	var i DatatypesFields
+	err := row.Scan(
+		&i.ID,
+		&i.DatatypeID,
+		&i.FieldID,
+		&i.SortOrder,
+	)
+	return i, err
+}
+
 const getField = `-- name: GetField :one
 SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified FROM fields 
 WHERE field_id = ? LIMIT 1
@@ -3506,397 +3541,6 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDe
 		return nil, err
 	}
 	return items, nil
-}
-
-const getLastAdminContentData = `-- name: GetLastAdminContentData :one
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminContentData(ctx context.Context) (AdminContentData, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminContentData)
-	var i AdminContentData
-	err := row.Scan(
-		&i.AdminContentDataID,
-		&i.ParentID,
-		&i.FirstChildID,
-		&i.NextSiblingID,
-		&i.PrevSiblingID,
-		&i.AdminRouteID,
-		&i.AdminDatatypeID,
-		&i.AuthorID,
-		&i.Status,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastAdminContentField = `-- name: GetLastAdminContentField :one
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields WHERE admin_content_field_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminContentField(ctx context.Context) (AdminContentFields, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminContentField)
-	var i AdminContentFields
-	err := row.Scan(
-		&i.AdminContentFieldID,
-		&i.AdminRouteID,
-		&i.AdminContentDataID,
-		&i.AdminFieldID,
-		&i.AdminFieldValue,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastAdminDatatype = `-- name: GetLastAdminDatatype :one
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes WHERE admin_datatype_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminDatatype(ctx context.Context) (AdminDatatypes, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminDatatype)
-	var i AdminDatatypes
-	err := row.Scan(
-		&i.AdminDatatypeID,
-		&i.ParentID,
-		&i.Label,
-		&i.Type,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastAdminDatatypeField = `-- name: GetLastAdminDatatypeField :one
-SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields WHERE id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminDatatypeField(ctx context.Context) (AdminDatatypesFields, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminDatatypeField)
-	var i AdminDatatypesFields
-	err := row.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID)
-	return i, err
-}
-
-const getLastAdminField = `-- name: GetLastAdminField :one
-SELECT admin_field_id, parent_id, label, data, type, author_id, date_created, date_modified FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminField(ctx context.Context) (AdminFields, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminField)
-	var i AdminFields
-	err := row.Scan(
-		&i.AdminFieldID,
-		&i.ParentID,
-		&i.Label,
-		&i.Data,
-		&i.Type,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastAdminRoute = `-- name: GetLastAdminRoute :one
-SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified FROM admin_routes WHERE admin_route_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastAdminRoute(ctx context.Context) (AdminRoutes, error) {
-	row := q.db.QueryRowContext(ctx, getLastAdminRoute)
-	var i AdminRoutes
-	err := row.Scan(
-		&i.AdminRouteID,
-		&i.Slug,
-		&i.Title,
-		&i.Status,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastContentData = `-- name: GetLastContentData :one
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data WHERE content_data_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastContentData(ctx context.Context) (ContentData, error) {
-	row := q.db.QueryRowContext(ctx, getLastContentData)
-	var i ContentData
-	err := row.Scan(
-		&i.ContentDataID,
-		&i.ParentID,
-		&i.FirstChildID,
-		&i.NextSiblingID,
-		&i.PrevSiblingID,
-		&i.RouteID,
-		&i.DatatypeID,
-		&i.AuthorID,
-		&i.Status,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastContentField = `-- name: GetLastContentField :one
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields WHERE content_field_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastContentField(ctx context.Context) (ContentFields, error) {
-	row := q.db.QueryRowContext(ctx, getLastContentField)
-	var i ContentFields
-	err := row.Scan(
-		&i.ContentFieldID,
-		&i.RouteID,
-		&i.ContentDataID,
-		&i.FieldID,
-		&i.FieldValue,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastDatatype = `-- name: GetLastDatatype :one
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes WHERE datatype_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastDatatype(ctx context.Context) (Datatypes, error) {
-	row := q.db.QueryRowContext(ctx, getLastDatatype)
-	var i Datatypes
-	err := row.Scan(
-		&i.DatatypeID,
-		&i.ParentID,
-		&i.Label,
-		&i.Type,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastDatatypeField = `-- name: GetLastDatatypeField :one
-SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields WHERE id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastDatatypeField(ctx context.Context) (DatatypesFields, error) {
-	row := q.db.QueryRowContext(ctx, getLastDatatypeField)
-	var i DatatypesFields
-	err := row.Scan(
-		&i.ID,
-		&i.DatatypeID,
-		&i.FieldID,
-		&i.SortOrder,
-	)
-	return i, err
-}
-
-const getLastField = `-- name: GetLastField :one
-SELECT field_id, parent_id, label, data, type, author_id, date_created, date_modified FROM fields WHERE field_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastField(ctx context.Context) (Fields, error) {
-	row := q.db.QueryRowContext(ctx, getLastField)
-	var i Fields
-	err := row.Scan(
-		&i.FieldID,
-		&i.ParentID,
-		&i.Label,
-		&i.Data,
-		&i.Type,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastMedia = `-- name: GetLastMedia :one
-SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media WHERE media_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastMedia(ctx context.Context) (Media, error) {
-	row := q.db.QueryRowContext(ctx, getLastMedia)
-	var i Media
-	err := row.Scan(
-		&i.MediaID,
-		&i.Name,
-		&i.DisplayName,
-		&i.Alt,
-		&i.Caption,
-		&i.Description,
-		&i.Class,
-		&i.Mimetype,
-		&i.Dimensions,
-		&i.URL,
-		&i.Srcset,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastMediaDimension = `-- name: GetLastMediaDimension :one
-SELECT md_id, label, width, height, aspect_ratio FROM media_dimensions WHERE md_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastMediaDimension(ctx context.Context) (MediaDimensions, error) {
-	row := q.db.QueryRowContext(ctx, getLastMediaDimension)
-	var i MediaDimensions
-	err := row.Scan(
-		&i.MdID,
-		&i.Label,
-		&i.Width,
-		&i.Height,
-		&i.AspectRatio,
-	)
-	return i, err
-}
-
-const getLastPermission = `-- name: GetLastPermission :one
-SELECT permission_id, table_id, mode, label FROM permissions WHERE permission_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastPermission(ctx context.Context) (Permissions, error) {
-	row := q.db.QueryRowContext(ctx, getLastPermission)
-	var i Permissions
-	err := row.Scan(
-		&i.PermissionID,
-		&i.TableID,
-		&i.Mode,
-		&i.Label,
-	)
-	return i, err
-}
-
-const getLastRole = `-- name: GetLastRole :one
-SELECT role_id, label, permissions FROM roles WHERE role_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastRole(ctx context.Context) (Roles, error) {
-	row := q.db.QueryRowContext(ctx, getLastRole)
-	var i Roles
-	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
-	return i, err
-}
-
-const getLastRoute = `-- name: GetLastRoute :one
-SELECT route_id, slug, title, status, author_id, date_created, date_modified FROM routes WHERE route_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastRoute(ctx context.Context) (Routes, error) {
-	row := q.db.QueryRowContext(ctx, getLastRoute)
-	var i Routes
-	err := row.Scan(
-		&i.RouteID,
-		&i.Slug,
-		&i.Title,
-		&i.Status,
-		&i.AuthorID,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastSession = `-- name: GetLastSession :one
- SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions WHERE session_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastSession(ctx context.Context) (Sessions, error) {
-	row := q.db.QueryRowContext(ctx, getLastSession)
-	var i Sessions
-	err := row.Scan(
-		&i.SessionID,
-		&i.UserID,
-		&i.CreatedAt,
-		&i.ExpiresAt,
-		&i.LastAccess,
-		&i.IpAddress,
-		&i.UserAgent,
-		&i.SessionData,
-	)
-	return i, err
-}
-
-const getLastTable = `-- name: GetLastTable :one
- SELECT id, label, author_id FROM tables WHERE id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastTable(ctx context.Context) (Tables, error) {
-	row := q.db.QueryRowContext(ctx, getLastTable)
-	var i Tables
-	err := row.Scan(&i.ID, &i.Label, &i.AuthorID)
-	return i, err
-}
-
-const getLastToken = `-- name: GetLastToken :one
- SELECT id, user_id, token_type, token, issued_at, expires_at, revoked FROM tokens WHERE id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastToken(ctx context.Context) (Tokens, error) {
-	row := q.db.QueryRowContext(ctx, getLastToken)
-	var i Tokens
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.TokenType,
-		&i.Tokens,
-		&i.IssuedAt,
-		&i.ExpiresAt,
-		&i.Revoked,
-	)
-	return i, err
-}
-
-const getLastUser = `-- name: GetLastUser :one
- SELECT user_id, username, name, email, hash, role, date_created, date_modified FROM users WHERE user_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastUser(ctx context.Context) (Users, error) {
-	row := q.db.QueryRowContext(ctx, getLastUser)
-	var i Users
-	err := row.Scan(
-		&i.UserID,
-		&i.Username,
-		&i.Name,
-		&i.Email,
-		&i.Hash,
-		&i.Roles,
-		&i.DateCreated,
-		&i.DateModified,
-	)
-	return i, err
-}
-
-const getLastUserOauth = `-- name: GetLastUserOauth :one
-SELECT user_oauth_id, user_id, oauth_provider, oauth_provider_user_id, access_token, refresh_token, token_expires_at, date_created
-FROM user_oauth
-WHERE user_oauth_id = LAST_INSERT_ID()
-`
-
-func (q *Queries) GetLastUserOauth(ctx context.Context) (UserOauth, error) {
-	row := q.db.QueryRowContext(ctx, getLastUserOauth)
-	var i UserOauth
-	err := row.Scan(
-		&i.UserOAuthID,
-		&i.UserID,
-		&i.OauthProvider,
-		&i.OAuthProviderUserID,
-		&i.AccessToken,
-		&i.RefreshToken,
-		&i.TokenExpiresAt,
-		&i.DateCreated,
-	)
-	return i, err
 }
 
 const getLatestBackup = `-- name: GetLatestBackup :one

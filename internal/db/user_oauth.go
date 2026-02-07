@@ -263,7 +263,7 @@ func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, err
 		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
 		return nil, e
 	}
-	row, err := queries.GetLastUserOauth(d.Context)
+	row, err := queries.GetUserOauth(d.Context, mdbm.GetUserOauthParams{UserOAuthID: params.UserOAuthID})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get last inserted UserOauth: %v\n", err)
 	}

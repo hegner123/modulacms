@@ -279,7 +279,7 @@ func (d MysqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
 		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
 		return nil, e
 	}
-	row, err := queries.GetLastSession(d.Context)
+	row, err := queries.GetSession(d.Context, mdbm.GetSessionParams{SessionID: params.SessionID})
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get last inserted Session: %v\n", err)
 	}

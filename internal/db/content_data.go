@@ -346,7 +346,7 @@ func (d MysqlDatabase) CreateContentData(s CreateContentDataParams) ContentData 
 	if err != nil {
 		fmt.Printf("Failed to CreateContentData: %v\n", err)
 	}
-	row, err := queries.GetLastContentData(d.Context)
+	row, err := queries.GetContentData(d.Context, mdbm.GetContentDataParams{ContentDataID: params.ContentDataID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted ContentData: %v\n", err)
 	}

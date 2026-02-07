@@ -63,9 +63,6 @@ INSERT INTO users (
     ?
 );
 
--- name: GetLastUser :one
- SELECT * FROM users WHERE user_id = LAST_INSERT_ID();
-
 -- name: UpdateUser :exec
 UPDATE users
     SET username = ?,

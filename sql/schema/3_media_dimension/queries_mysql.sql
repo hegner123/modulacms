@@ -39,9 +39,6 @@ INSERT INTO media_dimensions(
     ?
 );
 
--- name: GetLastMediaDimension :one
-SELECT * FROM media_dimensions WHERE md_id = LAST_INSERT_ID();
-
 -- name: UpdateMediaDimension :exec
 UPDATE media_dimensions
 set label = ?,

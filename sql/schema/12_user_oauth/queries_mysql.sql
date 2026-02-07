@@ -78,11 +78,6 @@ INSERT INTO user_oauth (
     ?
 );
 
--- name: GetLastUserOauth :one
-SELECT *
-FROM user_oauth
-WHERE user_oauth_id = LAST_INSERT_ID();
-
 -- name: UpdateUserOauth :exec
 UPDATE user_oauth
 SET access_token = ?,

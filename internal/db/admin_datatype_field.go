@@ -227,7 +227,7 @@ func (d MysqlDatabase) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams
 	if err != nil {
 		fmt.Printf("Failed to CreateAdminDatatypeField: %v\n", err)
 	}
-	row, err := queries.GetLastAdminDatatypeField(d.Context)
+	row, err := queries.GetAdminDatatypeField(d.Context, mdbm.GetAdminDatatypeFieldParams{ID: params.ID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted AdminDatatypeField: %v\n", err)
 	}

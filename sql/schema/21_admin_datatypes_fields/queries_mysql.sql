@@ -19,6 +19,9 @@ CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
 SELECT COUNT(*)
 FROM admin_datatypes_fields;
 
+-- name: GetAdminDatatypeField :one
+SELECT * FROM admin_datatypes_fields WHERE id = ? LIMIT 1;
+
 -- name: ListAdminDatatypeField :many
 SELECT * FROM admin_datatypes_fields
 ORDER BY id;
@@ -43,9 +46,6 @@ INSERT INTO admin_datatypes_fields (
     ?,
     ?
 );
-
--- name: GetLastAdminDatatypeField :one
-SELECT * FROM admin_datatypes_fields WHERE id = LAST_INSERT_ID();
 
 -- name: UpdateAdminDatatypeField :exec
 UPDATE admin_datatypes_fields SET

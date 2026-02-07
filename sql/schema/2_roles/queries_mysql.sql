@@ -25,9 +25,6 @@ SELECT * FROM roles;
 -- name: CreateRole :exec
 INSERT INTO roles (role_id, label, permissions) VALUES (?,?,?);
 
--- name: GetLastRole :one
-SELECT * FROM roles WHERE role_id = LAST_INSERT_ID();
-
 -- name: UpdateRole :exec
 UPDATE roles
 set label=?,

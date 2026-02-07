@@ -257,7 +257,7 @@ func (d MysqlDatabase) CreateToken(s CreateTokenParams) Tokens {
 	if err != nil {
 		fmt.Printf("Failed to CreateToken: %v\n", err)
 	}
-	row, err := queries.GetLastToken(d.Context)
+	row, err := queries.GetToken(d.Context, mdbm.GetTokenParams{ID: params.ID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Token: %v\n", err)
 	}

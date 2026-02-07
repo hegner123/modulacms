@@ -289,7 +289,7 @@ func (d MysqlDatabase) CreateField(s CreateFieldParams) Fields {
 	if err != nil {
 		fmt.Printf("Failed to CreateField: %v\n", err)
 	}
-	row, err := queries.GetLastField(d.Context)
+	row, err := queries.GetField(d.Context, mdbm.GetFieldParams{FieldID: params.FieldID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Field: %v\n", err)
 	}

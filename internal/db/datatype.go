@@ -296,7 +296,7 @@ func (d MysqlDatabase) CreateDatatype(s CreateDatatypeParams) Datatypes {
 	if err != nil {
 		fmt.Printf("Failed to CreateDatatype: %v\n", err)
 	}
-	row, err := queries.GetLastDatatype(d.Context)
+	row, err := queries.GetDatatype(d.Context, mdbm.GetDatatypeParams{DatatypeID: params.DatatypeID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Datatype: %v\n", err)
 	}

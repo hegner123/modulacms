@@ -328,7 +328,7 @@ func (d MysqlDatabase) CreateMedia(s CreateMediaParams) Media {
 	if err != nil {
 		fmt.Printf("Failed to CreateMedia: %v\n", err)
 	}
-	row, err := queries.GetLastMedia(d.Context)
+	row, err := queries.GetMedia(d.Context, mdbm.GetMediaParams{MediaID: params.MediaID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Media: %v\n", err)
 	}

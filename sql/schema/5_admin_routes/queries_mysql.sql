@@ -60,9 +60,6 @@ INSERT INTO admin_routes (
     ?
 );
 
--- name: GetLastAdminRoute :one
-SELECT * FROM admin_routes WHERE admin_route_id = LAST_INSERT_ID();
-
 -- name: UpdateAdminRoute :exec
 UPDATE admin_routes
 SET slug = ?,

@@ -296,7 +296,7 @@ func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaD
 	if err != nil {
 		fmt.Printf("Failed to CreateMediaDimension: %v\n", err)
 	}
-	row, err := queries.GetLastMediaDimension(d.Context)
+	row, err := queries.GetMediaDimension(d.Context, mdbm.GetMediaDimensionParams{MdID: params.MdID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted MediaDimension: %v\n", err)
 	}

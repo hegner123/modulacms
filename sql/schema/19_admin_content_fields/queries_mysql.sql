@@ -64,9 +64,6 @@ INSERT INTO admin_content_fields (
     ?
 );
 
--- name: GetLastAdminContentField :one
-SELECT * FROM admin_content_fields WHERE admin_content_field_id = LAST_INSERT_ID();
-
 -- name: UpdateAdminContentField :exec
 UPDATE admin_content_fields
 SET admin_route_id=?,

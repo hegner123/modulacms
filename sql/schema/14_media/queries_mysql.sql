@@ -77,9 +77,6 @@ INSERT INTO media (
     ?,
     ?
 );
--- name: GetLastMedia :one
-SELECT * FROM media WHERE media_id = LAST_INSERT_ID();
-
 -- name: UpdateMedia :exec
 UPDATE media
 SET name = ?,

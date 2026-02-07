@@ -302,7 +302,7 @@ func (d MysqlDatabase) CreateContentField(s CreateContentFieldParams) ContentFie
 	if err != nil {
 		fmt.Printf("Failed to CreateContentField: %v\n", err)
 	}
-	row, err := queries.GetLastContentField(d.Context)
+	row, err := queries.GetContentField(d.Context, mdbm.GetContentFieldParams{ContentFieldID: params.ContentFieldID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted ContentField: %v\n", err)
 	}

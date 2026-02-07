@@ -209,7 +209,7 @@ func (d MysqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
 	if err != nil {
 		fmt.Printf("Failed to CreatePermission: %v\n", err)
 	}
-	row, err := queries.GetLastPermission(d.Context)
+	row, err := queries.GetPermission(d.Context, mdbm.GetPermissionParams{PermissionID: params.PermissionID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Permission: %v\n", err)
 	}

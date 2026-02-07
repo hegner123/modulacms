@@ -54,9 +54,6 @@ INSERT INTO sessions (
     ?
 );
 
--- name: GetLastSession :one
- SELECT * FROM sessions WHERE session_id = LAST_INSERT_ID();
-
 -- name: UpdateSession :exec
 UPDATE sessions
     SET user_id=?,

@@ -57,9 +57,6 @@ INSERT INTO admin_fields (
     ?
 );
 
--- name: GetLastAdminField :one
-SELECT * FROM admin_fields WHERE admin_field_id = LAST_INSERT_ID();
-
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET  parent_id = ?,

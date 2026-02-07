@@ -65,9 +65,6 @@ INSERT INTO content_fields (
     ?
 );
 
--- name: GetLastContentField :one
-SELECT * FROM content_fields WHERE content_field_id = LAST_INSERT_ID();
-
 -- name: UpdateContentField :exec
 UPDATE content_fields
 set  route_id = ?,

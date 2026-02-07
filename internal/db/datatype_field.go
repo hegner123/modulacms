@@ -262,7 +262,7 @@ func (d MysqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) Datatype
 	if err != nil {
 		fmt.Printf("Failed to CreateDatatypeField: %v\n", err)
 	}
-	row, err := queries.GetLastDatatypeField(d.Context)
+	row, err := queries.GetDatatypeField(d.Context, mdbm.GetDatatypeFieldParams{ID: params.ID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted DatatypeField: %v\n", err)
 	}

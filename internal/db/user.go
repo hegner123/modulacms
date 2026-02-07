@@ -262,7 +262,7 @@ func (d MysqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
 		e := fmt.Errorf("Failed to CreateUser.\n %v\n", err)
 		return nil, e
 	}
-	row, err := queries.GetLastUser(d.Context)
+	row, err := queries.GetUser(d.Context, mdbm.GetUserParams{UserID: params.UserID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted User: %v\n", err)
 	}

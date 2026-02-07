@@ -82,9 +82,6 @@ INSERT INTO content_data (
     ?
 );
 
--- name: GetLastContentData :one
-SELECT * FROM content_data WHERE content_data_id = LAST_INSERT_ID();
-
 -- name: UpdateContentData :exec
 UPDATE content_data
 SET route_id = ?,

@@ -34,9 +34,6 @@ INSERT INTO permissions(
     ?
 );
 
--- name: GetLastPermission :one
-SELECT * FROM permissions WHERE permission_id = LAST_INSERT_ID();
-
 -- name: UpdatePermission :exec
 UPDATE permissions
 set table_id=?,

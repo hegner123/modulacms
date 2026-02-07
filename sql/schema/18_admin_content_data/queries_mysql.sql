@@ -83,9 +83,6 @@ INSERT INTO admin_content_data (
     ?
 );
 
--- name: GetLastAdminContentData :one
-SELECT * FROM admin_content_data WHERE content_data_id = LAST_INSERT_ID();
-
 -- name: UpdateAdminContentData :exec
 UPDATE admin_content_data
 SET parent_id = ?,

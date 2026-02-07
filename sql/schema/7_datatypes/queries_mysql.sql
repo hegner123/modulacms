@@ -62,9 +62,6 @@ INSERT INTO datatypes (
     ?
     );
 
--- name: GetLastDatatype :one
-SELECT * FROM datatypes WHERE datatype_id = LAST_INSERT_ID();
-
 -- name: UpdateDatatype :exec
 UPDATE datatypes
 set 

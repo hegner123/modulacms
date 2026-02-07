@@ -282,7 +282,7 @@ func (d MysqlDatabase) CreateAdminField(s CreateAdminFieldParams) AdminFields {
 	if err != nil {
 		fmt.Printf("Failed to CreateAdminField: %v\n", err)
 	}
-	row, err := queries.GetLastAdminField(d.Context)
+	row, err := queries.GetAdminField(d.Context, mdbm.GetAdminFieldParams{AdminFieldID: params.AdminFieldID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted AdminField: %v\n", err)
 	}

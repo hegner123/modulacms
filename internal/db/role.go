@@ -192,7 +192,7 @@ func (d MysqlDatabase) CreateRole(s CreateRoleParams) Roles {
 	if err != nil {
 		fmt.Printf("Failed to CreateRole: %v\n", err)
 	}
-	row, err := queries.GetLastRole(d.Context)
+	row, err := queries.GetRole(d.Context, mdbm.GetRoleParams{RoleID: params.RoleID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Role: %v\n", err)
 	}

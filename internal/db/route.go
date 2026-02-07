@@ -267,7 +267,7 @@ func (d MysqlDatabase) CreateRoute(s CreateRouteParams) Routes {
 	if err != nil {
 		fmt.Printf("Failed to CreateRoute: %v\n", err)
 	}
-	row, err := queries.GetLastRoute(d.Context)
+	row, err := queries.GetRoute(d.Context, mdbm.GetRouteParams{RouteID: params.RouteID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Route: %v\n", err)
 	}

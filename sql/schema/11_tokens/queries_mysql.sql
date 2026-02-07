@@ -52,9 +52,6 @@ INSERT INTO tokens (
     ?
 );
 
--- name: GetLastToken :one
- SELECT * FROM tokens WHERE id = LAST_INSERT_ID();
-
 -- name: UpdateToken :exec
 UPDATE tokens
 set token = ?,

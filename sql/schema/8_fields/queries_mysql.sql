@@ -58,9 +58,6 @@ INSERT INTO fields  (
     ?
 );
 
--- name: GetLastField :one
-SELECT * FROM fields WHERE field_id = LAST_INSERT_ID();
-
 -- name: UpdateField :exec
 UPDATE fields 
 set 

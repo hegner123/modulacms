@@ -269,7 +269,7 @@ func (d MysqlDatabase) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDat
 	if err != nil {
 		fmt.Printf("Failed to CreateAdminDatatype: %v\n", err)
 	}
-	row, err := queries.GetLastAdminDatatype(d.Context)
+	row, err := queries.GetAdminDatatype(d.Context, mdbm.GetAdminDatatypeParams{AdminDatatypeID: params.AdminDatatypeID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted AdminDatatype: %v\n", err)
 	}

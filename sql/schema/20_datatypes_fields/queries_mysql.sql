@@ -20,6 +20,9 @@ CREATE TABLE IF NOT EXISTS datatypes_fields (
 SELECT COUNT(*)
 FROM datatypes_fields;
 
+-- name: GetDatatypeField :one
+SELECT * FROM datatypes_fields WHERE id = ? LIMIT 1;
+
 -- name: ListDatatypeField :many
 SELECT * FROM datatypes_fields
 ORDER BY sort_order, id;
@@ -46,9 +49,6 @@ INSERT INTO datatypes_fields (
     ?,
     ?
 );
-
--- name: GetLastDatatypeField :one
-SELECT * FROM datatypes_fields WHERE id = LAST_INSERT_ID();
 
 -- name: UpdateDatatypeField :exec
 UPDATE datatypes_fields SET

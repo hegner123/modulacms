@@ -238,7 +238,7 @@ func (d MysqlDatabase) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
 	if err != nil {
 		fmt.Printf("Failed to CreateAdminRoute: %v\n", err)
 	}
-	row, err := queries.GetLastAdminRoute(d.Context)
+	row, err := queries.GetAdminRouteById(d.Context, mdbm.GetAdminRouteByIdParams{AdminRouteID: params.AdminRouteID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted AdminRoute: %v\n", err)
 	}

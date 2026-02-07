@@ -193,7 +193,7 @@ func (d MysqlDatabase) CreateTable(s CreateTableParams) Tables {
 	if err != nil {
 		fmt.Printf("Failed to CreateTable: %v\n", err)
 	}
-	row, err := queries.GetLastTable(d.Context)
+	row, err := queries.GetTable(d.Context, mdbm.GetTableParams{ID: params.ID})
 	if err != nil {
 		fmt.Printf("Failed to get last inserted Table: %v\n", err)
 	}
