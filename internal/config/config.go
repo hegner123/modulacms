@@ -96,6 +96,13 @@ type Config struct {
 	Observability_Flush_Interval string  `json:"observability_flush_interval"`  // How often to flush metrics (e.g., "30s", "1m")
 	Observability_Tags           map[string]string `json:"observability_tags"` // Global tags for all metrics/events
 
+	// Plugin runtime configuration
+	Plugin_Enabled   bool   `json:"plugin_enabled"`
+	Plugin_Directory string `json:"plugin_directory"`  // path to plugins dir, e.g. "./plugins/"
+	Plugin_Max_VMs   int    `json:"plugin_max_vms"`    // per plugin, default 4
+	Plugin_Timeout   int    `json:"plugin_timeout"`    // seconds, default 5
+	Plugin_Max_Ops   int    `json:"plugin_max_ops"`    // per VM checkout, default 1000
+
 	// Plugin database pool limits (zero values use defaults from db.DefaultPluginPoolConfig)
 	Plugin_DB_MaxOpenConns    int    `json:"plugin_db_max_open_conns"`
 	Plugin_DB_MaxIdleConns    int    `json:"plugin_db_max_idle_conns"`

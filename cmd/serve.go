@@ -88,7 +88,10 @@ var serveCmd = &cobra.Command{
 			return fmt.Errorf("plugin pool init failed: %w", err)
 		}
 		defer pluginPoolCleanup()
-		_ = pluginPool // placeholder until plugin.NewManager is implemented
+		pluginManager := initPluginManager(rootCtx, cfg, pluginPool)
+		if pluginManager != nil {
+			defer pluginManager.Shutdown(rootCtx)
+		}
 
 		if cfg.Node_ID == "" {
 			cfg.Node_ID = string(types.NewNodeID())

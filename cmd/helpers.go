@@ -8,6 +8,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -147,4 +148,44 @@ func logConfigSummary(cfg *config.Config) {
 		utility.DefaultLogger.Info("Storage", "endpoint", cfg.Bucket_Endpoint, "media", cfg.Bucket_Media, "backup", cfg.Bucket_Backup)
 	}
 	utility.DefaultLogger.Info("CORS", "origins", cfg.Cors_Origins, "credentials", cfg.Cors_Credentials)
+}
+
+// initPluginManager creates and starts the plugin Manager if plugin_enabled is true.
+// Returns nil when plugins are disabled. The caller must defer Manager.Shutdown()
+// when the returned manager is non-nil.
+//
+// Note: Manager.Shutdown() also closes the *sql.DB pool it receives. Since
+// pluginPoolCleanup (registered earlier in the defer stack) will attempt to close
+// the same pool afterward, the second close is a benign no-op that logs an error.
+// This is intentional — keeping both defers avoids a nil-pool panic if
+// initPluginManager returns nil but the pool was already created.
+func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *plugin.Manager {
+	if !cfg.Plugin_Enabled {
+		utility.DefaultLogger.Info("plugin system disabled")
+		return nil
+	}
+
+	dir := cfg.Plugin_Directory
+	if dir == "" {
+		dir = "./plugins/"
+	}
+
+	// Map config driver name to query builder dialect.
+	// config.DbDriver values ("sqlite", "mysql", "postgres") are accepted by
+	// db.DialectFromString; unrecognized values default to DialectSQLite.
+	dialect := db.DialectFromString(string(cfg.Db_Driver))
+
+	mgr := plugin.NewManager(plugin.ManagerConfig{
+		Enabled:         cfg.Plugin_Enabled,
+		Directory:       dir,
+		MaxVMsPerPlugin: cfg.Plugin_Max_VMs,
+		ExecTimeoutSec:  cfg.Plugin_Timeout,
+		MaxOpsPerExec:   cfg.Plugin_Max_Ops,
+	}, pool, dialect)
+
+	if err := mgr.LoadAll(ctx); err != nil {
+		utility.DefaultLogger.Error("plugin system load error", err)
+	}
+
+	return mgr
 }
