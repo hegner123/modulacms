@@ -1144,3 +1144,117 @@ func (id *BackupSetID) UnmarshalJSON(data []byte) error {
 	*id = BackupSetID(s)
 	return id.Validate()
 }
+
+// ContentRelationID uniquely identifies a content relation
+type ContentRelationID string
+
+func NewContentRelationID() ContentRelationID    { return ContentRelationID(NewULID().String()) }
+func (id ContentRelationID) String() string      { return string(id) }
+func (id ContentRelationID) IsZero() bool        { return id == "" }
+func (id ContentRelationID) Validate() error     { return validateULID(string(id), "ContentRelationID") }
+func (id ContentRelationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+func (id ContentRelationID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+func ParseContentRelationID(s string) (ContentRelationID, error) {
+	id := ContentRelationID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+func (id ContentRelationID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("ContentRelationID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+func (id *ContentRelationID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("ContentRelationID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = ContentRelationID(v)
+	case []byte:
+		*id = ContentRelationID(string(v))
+	default:
+		return fmt.Errorf("ContentRelationID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+func (id ContentRelationID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+func (id *ContentRelationID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("ContentRelationID: %w", err)
+	}
+	*id = ContentRelationID(s)
+	return id.Validate()
+}
+
+// AdminContentRelationID uniquely identifies an admin content relation
+type AdminContentRelationID string
+
+func NewAdminContentRelationID() AdminContentRelationID { return AdminContentRelationID(NewULID().String()) }
+func (id AdminContentRelationID) String() string        { return string(id) }
+func (id AdminContentRelationID) IsZero() bool          { return id == "" }
+func (id AdminContentRelationID) Validate() error       { return validateULID(string(id), "AdminContentRelationID") }
+func (id AdminContentRelationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+func (id AdminContentRelationID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+func ParseAdminContentRelationID(s string) (AdminContentRelationID, error) {
+	id := AdminContentRelationID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+func (id AdminContentRelationID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminContentRelationID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+func (id *AdminContentRelationID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminContentRelationID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminContentRelationID(v)
+	case []byte:
+		*id = AdminContentRelationID(string(v))
+	default:
+		return fmt.Errorf("AdminContentRelationID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+func (id AdminContentRelationID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+func (id *AdminContentRelationID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminContentRelationID: %w", err)
+	}
+	*id = AdminContentRelationID(s)
+	return id.Validate()
+}

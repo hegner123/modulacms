@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS fields (
     parent_id VARCHAR(26) NULL,
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -25,15 +27,15 @@ SELECT COUNT(*)
 FROM fields ;
 
 -- name: GetField :one
-SELECT * FROM fields 
+SELECT * FROM fields
 WHERE field_id = ? LIMIT 1;
 
 -- name: ListField :many
-SELECT * FROM fields 
+SELECT * FROM fields
 ORDER BY field_id;
 
 -- name: ListFieldByDatatypeID :many
-SELECT * FROM fields 
+SELECT * FROM fields
 WHERE parent_id = ?
 ORDER BY field_id;
 
@@ -43,6 +45,8 @@ INSERT INTO fields  (
     parent_id,
     label,
     data,
+    validation,
+    ui_config,
     type,
     author_id,
     date_created,
@@ -55,15 +59,19 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
+    ?,
     ?
 );
 
 -- name: UpdateField :exec
-UPDATE fields 
-set 
+UPDATE fields
+set
     parent_id = ?,
     label = ?,
     data = ?,
+    validation = ?,
+    ui_config = ?,
     type = ?,
     author_id = ?,
     date_created = ?,
@@ -71,6 +79,5 @@ set
     WHERE field_id = ?;
 
 -- name: DeleteField :exec
-DELETE FROM fields 
+DELETE FROM fields
 WHERE field_id = ?;
-

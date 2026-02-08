@@ -36,6 +36,8 @@ type StringFields struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
+	Validation   string `json:"validation"`
+	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
@@ -163,6 +165,8 @@ type StringAdminFields struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
+	Validation   string `json:"validation"`
+	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`

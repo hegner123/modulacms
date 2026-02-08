@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
             ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text'::TEXT NOT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
@@ -45,6 +47,8 @@ INSERT INTO admin_fields (
     parent_id,
     label,
     data,
+    validation,
+    ui_config,
     type,
     author_id,
     date_created,
@@ -57,7 +61,9 @@ INSERT INTO admin_fields (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9,
+    $10
 )
 RETURNING *;
 
@@ -66,11 +72,13 @@ UPDATE admin_fields
 SET parent_id    = $1,
     label        = $2,
     data         = $3,
-    type         = $4,
-    author_id    = $5,
-    date_created = $6,
-    date_modified= $7
-WHERE admin_field_id = $8;
+    validation   = $4,
+    ui_config    = $5,
+    type         = $6,
+    author_id    = $7,
+    date_created = $8,
+    date_modified= $9
+WHERE admin_field_id = $10;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields

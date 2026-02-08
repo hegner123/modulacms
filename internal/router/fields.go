@@ -101,6 +101,12 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 	if !newField.DateModified.Valid {
 		newField.DateModified = now
 	}
+	if newField.Validation == "" {
+		newField.Validation = types.EmptyJSON
+	}
+	if newField.UIConfig == "" {
+		newField.UIConfig = types.EmptyJSON
+	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
 	createdField, err := d.CreateField(r.Context(), ac, newField)
@@ -126,6 +132,13 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if updateField.Validation == "" {
+		updateField.Validation = types.EmptyJSON
+	}
+	if updateField.UIConfig == "" {
+		updateField.UIConfig = types.EmptyJSON
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)

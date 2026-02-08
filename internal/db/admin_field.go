@@ -17,10 +17,12 @@ import (
 //////////////////////////////
 
 type AdminFields struct {
-	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
@@ -28,9 +30,11 @@ type AdminFields struct {
 }
 
 type CreateAdminFieldParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
@@ -38,9 +42,11 @@ type CreateAdminFieldParams struct {
 }
 
 type UpdateAdminFieldParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
@@ -49,18 +55,22 @@ type UpdateAdminFieldParams struct {
 }
 
 type ListAdminFieldByRouteIdRow struct {
-	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 }
 
 type ListAdminFieldsByDatatypeIDRow struct {
-	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 }
 
@@ -82,6 +92,8 @@ func MapAdminFieldJSON(a AdminFields) FieldsJSON {
 		ParentID:     a.ParentID.String(),
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
@@ -96,6 +108,8 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 		ParentID:     a.ParentID.String(),
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UIConfig,
 		Type:         string(a.Type),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
@@ -116,6 +130,8 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -129,6 +145,8 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -141,6 +159,8 @@ func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.Update
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -226,6 +246,8 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -239,6 +261,8 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -251,6 +275,8 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -336,6 +362,8 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -349,6 +377,8 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -361,6 +391,8 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -461,6 +493,8 @@ func (c NewAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Adm
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -501,6 +535,8 @@ func (c UpdateAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -570,6 +606,8 @@ func (c NewAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -614,6 +652,8 @@ func (c UpdateAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -682,6 +722,8 @@ func (c NewAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -722,6 +764,8 @@ func (c UpdateAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,

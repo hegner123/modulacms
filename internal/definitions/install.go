@@ -45,6 +45,8 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 			FieldID:      types.NewFieldID(),
 			Label:        fieldDef.Label,
 			Data:         fieldDef.Data,
+			Validation:   types.EmptyJSON,
+			UIConfig:     types.EmptyJSON,
 			Type:         fieldDef.Type,
 			AuthorID:     author,
 			DateCreated:  now,

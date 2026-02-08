@@ -6,6 +6,8 @@ CREATE TABLE admin_fields (
             ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id TEXT NOT NULL
         REFERENCES users

@@ -1,4 +1,6 @@
 -- name: DropAllTables :exec
+DROP TABLE IF EXISTS admin_content_relations;
+DROP TABLE IF EXISTS content_relations;
 DROP TABLE IF EXISTS admin_datatypes_fields;
 DROP TABLE IF EXISTS datatypes_fields;
 DROP TABLE IF EXISTS admin_content_fields;

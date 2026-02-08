@@ -28,6 +28,7 @@ sql:
           # Column name ID suffixes (explicit to get uppercase ID)
           admin_content_data_id: "AdminContentDataID"
           admin_content_field_id: "AdminContentFieldID"
+          admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
           admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
@@ -37,6 +38,7 @@ sql:
           backup_set_id: "BackupSetID"
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
+          content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
@@ -55,8 +57,10 @@ sql:
           role_id: "RoleID"
           route_id: "RouteID"
           session_id: "SessionID"
+          source_content_id: "SourceContentID"
           ssh_key_id: "SSHKeyID"
           table_id: "TableID"
+          target_content_id: "TargetContentID"
           user_id: "UserID"
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
@@ -64,12 +68,14 @@ sql:
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
+          admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
           admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
+          content_relation: ContentRelations
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
@@ -129,6 +135,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # CONTENT RELATIONS — PRIMARY IDs
+          - column: "content_relations.content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
+          - column: "admin_content_relations.admin_content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentRelationID"}
+          # CONTENT RELATIONS — FK columns
+          - column: "content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -160,6 +180,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: fields.parent_id references datatypes, not content_data
+          - column: "fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_fields.parent_id references admin_datatypes, not content_data
+          - column: "admin_fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -336,6 +364,7 @@ sql:
           # Column name ID suffixes (explicit to get uppercase ID)
           admin_content_data_id: "AdminContentDataID"
           admin_content_field_id: "AdminContentFieldID"
+          admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
           admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
@@ -345,6 +374,7 @@ sql:
           backup_set_id: "BackupSetID"
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
+          content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
@@ -363,8 +393,10 @@ sql:
           role_id: "RoleID"
           route_id: "RouteID"
           session_id: "SessionID"
+          source_content_id: "SourceContentID"
           ssh_key_id: "SSHKeyID"
           table_id: "TableID"
+          target_content_id: "TargetContentID"
           user_id: "UserID"
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
@@ -372,12 +404,14 @@ sql:
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
+          admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
           admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
+          content_relation: ContentRelations
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
@@ -437,6 +471,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # CONTENT RELATIONS — PRIMARY IDs
+          - column: "content_relations.content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
+          - column: "admin_content_relations.admin_content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentRelationID"}
+          # CONTENT RELATIONS — FK columns
+          - column: "content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -468,6 +516,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: fields.parent_id references datatypes, not content_data
+          - column: "fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_fields.parent_id references admin_datatypes, not content_data
+          - column: "admin_fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -644,6 +700,7 @@ sql:
           # Column name ID suffixes (explicit to get uppercase ID)
           admin_content_data_id: "AdminContentDataID"
           admin_content_field_id: "AdminContentFieldID"
+          admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
           admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
@@ -653,6 +710,7 @@ sql:
           backup_set_id: "BackupSetID"
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
+          content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
@@ -671,8 +729,10 @@ sql:
           role_id: "RoleID"
           route_id: "RouteID"
           session_id: "SessionID"
+          source_content_id: "SourceContentID"
           ssh_key_id: "SSHKeyID"
           table_id: "TableID"
+          target_content_id: "TargetContentID"
           user_id: "UserID"
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
@@ -680,12 +740,14 @@ sql:
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
+          admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
           admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
+          content_relation: ContentRelations
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
@@ -745,6 +807,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # CONTENT RELATIONS — PRIMARY IDs
+          - column: "content_relations.content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
+          - column: "admin_content_relations.admin_content_relation_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentRelationID"}
+          # CONTENT RELATIONS — FK columns
+          - column: "content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_relations.source_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          - column: "admin_content_relations.target_content_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -776,6 +852,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: fields.parent_id references datatypes, not content_data
+          - column: "fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_fields.parent_id references admin_datatypes, not content_data
+          - column: "admin_fields.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}

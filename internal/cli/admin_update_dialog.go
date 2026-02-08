@@ -448,9 +448,11 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 		fieldType := types.FieldType(fieldTypeStr)
 
 		fieldParams := db.CreateAdminFieldParams{
-			Label: msg.Label,
-			Data:  "",
-			Type:  fieldType,
+			Label:      msg.Label,
+			Data:       "",
+			Validation: types.EmptyJSON,
+			UIConfig:   types.EmptyJSON,
+			Type:       fieldType,
 			AuthorID: types.NullableUserID{
 				ID:    authorID,
 				Valid: true,
@@ -543,6 +545,8 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 			ParentID:     existing.ParentID,
 			Label:        msg.Label,
 			Data:         existing.Data,
+			Validation:   existing.Validation,
+			UIConfig:     existing.UIConfig,
 			Type:         fieldType,
 			AuthorID:     existing.AuthorID,
 			DateCreated:  existing.DateCreated,

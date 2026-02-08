@@ -3,10 +3,14 @@ package cli
 import (
 	"context"
 	"fmt"
+	"os"
 	"strings"
 
+	"github.com/charmbracelet/bubbles/filepicker"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+
+	"github.com/hegner123/modulacms/internal/backup"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
@@ -93,6 +97,46 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ActionResultMsg:
 		// Show result dialog after an action completes
 		dialog := NewDialog(msg.Title, msg.Message, false, DIALOGGENERIC)
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case OpenFilePickerForRestoreMsg:
+		// Open file picker for selecting a backup archive
+		fp := filepicker.New()
+		fp.AllowedTypes = []string{".zip"}
+		fp.CurrentDirectory, _ = os.UserHomeDir()
+		fp.Height = m.Height - 4
+		m.FilePicker = fp
+		m.FilePickerActive = true
+		m.FilePickerPurpose = FILEPICKER_RESTORE
+		return m, m.FilePicker.Init()
+	case RestoreBackupFromPathMsg:
+		// Show confirmation before restoring
+		dialog := NewDialog(
+			"Restore Backup",
+			fmt.Sprintf("Restore from:\n%s\n\nThis will replace the current database. Continue?", msg.Path),
+			true,
+			DIALOGBACKUPRESTORE,
+		)
+		dialog.SetButtons("Restore", "Cancel")
+		restoreBackupContext = &RestoreBackupContext{Path: msg.Path}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case BackupRestoreCompleteMsg:
+		// Show result dialog and quit on dismiss
+		dialog := NewDialog(
+			"Restore Complete",
+			fmt.Sprintf("Backup restored from:\n%s\n\nThe application will exit. Please restart.", msg.Path),
+			false,
+			DIALOGGENERIC,
+		)
+		restoreRequiresQuit = true
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			DialogSetCmd(&dialog),
@@ -546,6 +590,31 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				DialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 			)
+		case DIALOGBACKUPRESTORE:
+			if restoreBackupContext != nil {
+				backupPath := restoreBackupContext.Path
+				restoreBackupContext = nil
+				cfg := m.Config
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						if err := backup.RestoreFromBackup(*cfg, backupPath); err != nil {
+							return ActionResultMsg{
+								Title:   "Restore Failed",
+								Message: fmt.Sprintf("Failed to restore backup:\n%s", err),
+								IsError: true,
+							}
+						}
+						return BackupRestoreCompleteMsg{Path: backupPath}
+					},
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
 		case DIALOGDELETECONTENTFIELD:
 			if deleteContentFieldContext != nil {
 				ctx := deleteContentFieldContext
@@ -567,6 +636,11 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			)
 		}
 	case DialogCancelMsg:
+		// If a restore just completed, quit the application
+		if restoreRequiresQuit {
+			restoreRequiresQuit = false
+			return m, tea.Quit
+		}
 		// Handle dialog cancel action
 		return m, tea.Batch(
 			DialogActiveSetCmd(false),
@@ -1413,6 +1487,8 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			FieldID:      fieldID,
 			Label:        msg.Label,
 			Data:         "",
+			Validation:   types.EmptyJSON,
+			UIConfig:     types.EmptyJSON,
 			Type:         fieldType,
 			AuthorID:     nullableAuthorID,
 			DateCreated:  types.TimestampNow(),
@@ -1760,6 +1836,8 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 			ParentID:     existing.ParentID,
 			Label:        msg.Label,
 			Data:         existing.Data,
+			Validation:   existing.Validation,
+			UIConfig:     existing.UIConfig,
 			Type:         fieldType,
 			AuthorID:     existing.AuthorID,
 			DateCreated:  existing.DateCreated,
@@ -2077,6 +2155,14 @@ type DeleteContentContext struct {
 	ContentID string
 	RouteID   string
 }
+
+// Restore backup context
+type RestoreBackupContext struct {
+	Path string
+}
+
+var restoreBackupContext *RestoreBackupContext
+var restoreRequiresQuit bool
 
 // Global variable to store the delete context
 var deleteContentContext *DeleteContentContext

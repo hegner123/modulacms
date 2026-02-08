@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS fields (
             ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
@@ -28,15 +30,15 @@ SELECT COUNT(*)
 FROM fields ;
 
 -- name: GetField :one
-SELECT * FROM fields 
+SELECT * FROM fields
 WHERE field_id = $1 LIMIT 1;
 
 -- name: ListField :many
-SELECT * FROM fields 
+SELECT * FROM fields
 ORDER BY field_id;
 
 -- name: ListFieldByDatatypeID :many
-SELECT * FROM fields 
+SELECT * FROM fields
 WHERE parent_id = $1
 ORDER BY field_id;
 
@@ -46,6 +48,8 @@ INSERT INTO fields  (
     parent_id,
     label,
     data,
+    validation,
+    ui_config,
     type,
     author_id,
     date_created,
@@ -58,23 +62,26 @@ INSERT INTO fields  (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9,
+    $10
     ) RETURNING *;
 
 
 -- name: UpdateField :exec
-UPDATE fields 
+UPDATE fields
 SET parent_id = $1,
     label = $2,
     data = $3,
-    type = $4,
-    author_id = $5,
-    date_created = $6,
-    date_modified = $7
-    WHERE field_id = $8
+    validation = $4,
+    ui_config = $5,
+    type = $6,
+    author_id = $7,
+    date_created = $8,
+    date_modified = $9
+    WHERE field_id = $10
     RETURNING *;
 
 -- name: DeleteField :exec
-DELETE FROM fields 
+DELETE FROM fields
 WHERE field_id = $1;
-

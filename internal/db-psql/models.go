@@ -37,6 +37,15 @@ type AdminContentFields struct {
 	DateModified        types.Timestamp            `json:"date_modified"`
 }
 
+type AdminContentRelations struct {
+	AdminContentRelationID types.AdminContentRelationID `json:"admin_content_relation_id"`
+	SourceContentID        types.AdminContentID         `json:"source_content_id"`
+	TargetContentID        types.AdminContentID         `json:"target_content_id"`
+	AdminFieldID           types.NullableAdminFieldID   `json:"admin_field_id"`
+	SortOrder              int32                        `json:"sort_order"`
+	DateCreated            types.Timestamp              `json:"date_created"`
+}
+
 type AdminDatatypes struct {
 	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
 	ParentID        types.NullableContentID `json:"parent_id"`
@@ -54,14 +63,16 @@ type AdminDatatypesFields struct {
 }
 
 type AdminFields struct {
-	AdminFieldID types.AdminFieldID      `json:"admin_field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
-	Label        string                  `json:"label"`
-	Data         string                  `json:"data"`
-	Type         types.FieldType         `json:"type"`
-	AuthorID     types.NullableUserID    `json:"author_id"`
-	DateCreated  types.Timestamp         `json:"date_created"`
-	DateModified types.Timestamp         `json:"date_modified"`
+	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Label        string                        `json:"label"`
+	Data         string                        `json:"data"`
+	Validation   string                        `json:"validation"`
+	UiConfig     string                        `json:"ui_config"`
+	Type         types.FieldType               `json:"type"`
+	AuthorID     types.NullableUserID          `json:"author_id"`
+	DateCreated  types.Timestamp               `json:"date_created"`
+	DateModified types.Timestamp               `json:"date_modified"`
 }
 
 type AdminRoutes struct {
@@ -161,6 +172,15 @@ type ContentFields struct {
 	DateModified   types.Timestamp         `json:"date_modified"`
 }
 
+type ContentRelations struct {
+	ContentRelationID types.ContentRelationID `json:"content_relation_id"`
+	SourceContentID   types.ContentID         `json:"source_content_id"`
+	TargetContentID   types.ContentID         `json:"target_content_id"`
+	FieldID           types.NullableFieldID   `json:"field_id"`
+	SortOrder         int32                   `json:"sort_order"`
+	DateCreated       types.Timestamp         `json:"date_created"`
+}
+
 type Datatypes struct {
 	DatatypeID   types.DatatypeID        `json:"datatype_id"`
 	ParentID     types.NullableContentID `json:"parent_id"`
@@ -179,14 +199,16 @@ type DatatypesFields struct {
 }
 
 type Fields struct {
-	FieldID      types.FieldID           `json:"field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
-	Label        string                  `json:"label"`
-	Data         string                  `json:"data"`
-	Type         types.FieldType         `json:"type"`
-	AuthorID     types.NullableUserID    `json:"author_id"`
-	DateCreated  types.Timestamp         `json:"date_created"`
-	DateModified types.Timestamp         `json:"date_modified"`
+	FieldID      types.FieldID            `json:"field_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Label        string                   `json:"label"`
+	Data         string                   `json:"data"`
+	Validation   string                   `json:"validation"`
+	UiConfig     string                   `json:"ui_config"`
+	Type         types.FieldType          `json:"type"`
+	AuthorID     types.NullableUserID     `json:"author_id"`
+	DateCreated  types.Timestamp          `json:"date_created"`
+	DateModified types.Timestamp          `json:"date_modified"`
 }
 
 type Media struct {

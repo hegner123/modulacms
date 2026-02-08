@@ -104,6 +104,18 @@ type DbDriver interface {
 	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
 	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
+	// AdminContentRelations
+	CountAdminContentRelations() (*int64, error)
+	CreateAdminContentRelation(context.Context, audited.AuditContext, CreateAdminContentRelationParams) (*AdminContentRelations, error)
+	CreateAdminContentRelationTable() error
+	DeleteAdminContentRelation(context.Context, audited.AuditContext, types.AdminContentRelationID) error
+	DropAdminContentRelationTable() error
+	GetAdminContentRelation(types.AdminContentRelationID) (*AdminContentRelations, error)
+	ListAdminContentRelationsBySource(types.AdminContentID) (*[]AdminContentRelations, error)
+	ListAdminContentRelationsByTarget(types.AdminContentID) (*[]AdminContentRelations, error)
+	ListAdminContentRelationsBySourceAndField(types.AdminContentID, types.AdminFieldID) (*[]AdminContentRelations, error)
+	UpdateAdminContentRelationSortOrder(context.Context, audited.AuditContext, UpdateAdminContentRelationSortOrderParams) error
+
 	// AdminDatatypes
 	CountAdminDatatypes() (*int64, error)
 	CreateAdminDatatype(context.Context, audited.AuditContext, CreateAdminDatatypeParams) (*AdminDatatypes, error)
@@ -201,6 +213,18 @@ type DbDriver interface {
 	ListContentFieldsByContentData(types.NullableContentID) (*[]ContentFields, error)
 	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 
+	// ContentRelations
+	CountContentRelations() (*int64, error)
+	CreateContentRelation(context.Context, audited.AuditContext, CreateContentRelationParams) (*ContentRelations, error)
+	CreateContentRelationTable() error
+	DeleteContentRelation(context.Context, audited.AuditContext, types.ContentRelationID) error
+	DropContentRelationTable() error
+	GetContentRelation(types.ContentRelationID) (*ContentRelations, error)
+	ListContentRelationsBySource(types.ContentID) (*[]ContentRelations, error)
+	ListContentRelationsByTarget(types.ContentID) (*[]ContentRelations, error)
+	ListContentRelationsBySourceAndField(types.ContentID, types.FieldID) (*[]ContentRelations, error)
+	UpdateContentRelationSortOrder(context.Context, audited.AuditContext, UpdateContentRelationSortOrderParams) error
+
 	// Datatypes
 	CountDatatypes() (*int64, error)
 	CreateDatatype(context.Context, audited.AuditContext, CreateDatatypeParams) (*Datatypes, error)
@@ -232,7 +256,7 @@ type DbDriver interface {
 	GetField(types.FieldID) (*Fields, error)
 	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
 	ListFields() (*[]Fields, error)
-	ListFieldsByDatatypeID(types.NullableContentID) (*[]Fields, error)
+	ListFieldsByDatatypeID(types.NullableDatatypeID) (*[]Fields, error)
 	UpdateField(context.Context, audited.AuditContext, UpdateFieldParams) (*string, error)
 
 	// Media
@@ -529,6 +553,17 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	err = d.CreateContentRelationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentRelationTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateDatatypeFieldTable()
 	if err != nil {
@@ -671,9 +706,11 @@ func (d Database) CreateBootstrapData() error {
 
 	// 9. Create default admin field (admin_field_id = 1)
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
@@ -688,9 +725,11 @@ func (d Database) CreateBootstrapData() error {
 
 	// 10. Create default field (field_id = 1)
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
@@ -1224,6 +1263,17 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	err = d.CreateContentRelationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentRelationTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateDatatypeFieldTable()
 	if err != nil {
@@ -1366,9 +1416,11 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 9. Create default admin field (admin_field_id = 1)
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
@@ -1383,9 +1435,11 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 10. Create default field (field_id = 1)
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
@@ -1892,6 +1946,17 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	err = d.CreateContentRelationTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentRelationTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateDatatypeFieldTable()
 	if err != nil {
@@ -2034,9 +2099,11 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 9. Create default admin field (admin_field_id = 1)
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
@@ -2051,9 +2118,11 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 10. Create default field (field_id = 1)
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Content",
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         "text",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),

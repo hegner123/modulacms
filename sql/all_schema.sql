@@ -119,6 +119,8 @@ CREATE TABLE admin_fields (
             ON DELETE SET DEFAULT,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL,
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users
@@ -290,6 +292,8 @@ CREATE TABLE IF NOT EXISTS fields(
             ON DELETE SET DEFAULT,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users
@@ -369,3 +373,50 @@ CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
             ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS content_relations (
+    content_relation_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_relation_id) = 26),
+    source_content_id TEXT NOT NULL
+        REFERENCES content_data(content_data_id)
+            ON DELETE CASCADE,
+    target_content_id TEXT NOT NULL
+        REFERENCES content_data(content_data_id)
+            ON DELETE CASCADE,
+    field_id TEXT NOT NULL
+        REFERENCES fields(field_id)
+            ON DELETE RESTRICT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_content_id != target_content_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_content_relations_unique
+    ON content_relations(source_content_id, field_id, target_content_id);
+CREATE INDEX IF NOT EXISTS idx_content_relations_target
+    ON content_relations(target_content_id, date_created);
+CREATE INDEX IF NOT EXISTS idx_content_relations_field
+    ON content_relations(field_id);
+
+CREATE TABLE IF NOT EXISTS admin_content_relations (
+    admin_content_relation_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_relation_id) = 26),
+    -- holds admin_content_data_id, named for code symmetry with content_relations
+    source_content_id TEXT NOT NULL
+        REFERENCES admin_content_data(admin_content_data_id)
+            ON DELETE CASCADE,
+    -- holds admin_content_data_id, named for code symmetry with content_relations
+    target_content_id TEXT NOT NULL
+        REFERENCES admin_content_data(admin_content_data_id)
+            ON DELETE CASCADE,
+    admin_field_id TEXT NOT NULL
+        REFERENCES admin_fields(admin_field_id)
+            ON DELETE RESTRICT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CHECK (source_content_id != target_content_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_content_relations_unique
+    ON admin_content_relations(source_content_id, admin_field_id, target_content_id);
+CREATE INDEX IF NOT EXISTS idx_admin_content_relations_target
+    ON admin_content_relations(target_content_id, date_created);
+CREATE INDEX IF NOT EXISTS idx_admin_content_relations_field
+    ON admin_content_relations(admin_field_id);

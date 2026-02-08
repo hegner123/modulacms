@@ -318,12 +318,14 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 
 	// Create the field definition
 	createdField, fieldErr := ctx.driver.CreateField(ctx.ctx, ctx.ac, db.CreateFieldParams{
-		ParentID: types.NullableContentID{
-			ID:    contentDataID,
+		ParentID: types.NullableDatatypeID{
+			ID:    datatypeID,
 			Valid: true,
 		},
 		Label:        field.Info.Label,
 		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldType(field.Info.Type),
 		AuthorID:     ctx.authorID,
 		DateCreated:  now,

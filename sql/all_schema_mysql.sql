@@ -184,6 +184,8 @@ CREATE TABLE IF NOT EXISTS fields (
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
@@ -244,6 +246,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     parent_id INT DEFAULT NULL,
     label VARCHAR(255) NOT NULL DEFAULT 'unlabeled',
     data TEXT NOT NULL, -- MySQL does not allow a DEFAULT value for TEXT
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type VARCHAR(255) NOT NULL DEFAULT 'text',
     author VARCHAR(255) NOT NULL DEFAULT 'system',
     author_id INT NOT NULL DEFAULT 1,
@@ -356,3 +360,53 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields(field_id)
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS content_relations (
+    content_relation_id VARCHAR(26) NOT NULL,
+    source_content_id VARCHAR(26) NOT NULL,
+    target_content_id VARCHAR(26) NOT NULL,
+    field_id VARCHAR(26) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (content_relation_id),
+    CONSTRAINT chk_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
+    CONSTRAINT fk_content_relations_source FOREIGN KEY (source_content_id)
+        REFERENCES content_data(content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_content_relations_target FOREIGN KEY (target_content_id)
+        REFERENCES content_data(content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_content_relations_field FOREIGN KEY (field_id)
+        REFERENCES fields(field_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT uq_content_relations_unique UNIQUE (source_content_id, field_id, target_content_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_content_relations_target ON content_relations(target_content_id, date_created);
+CREATE INDEX idx_content_relations_field ON content_relations(field_id);
+
+CREATE TABLE IF NOT EXISTS admin_content_relations (
+    admin_content_relation_id VARCHAR(26) NOT NULL,
+    -- holds admin_content_data_id, named for code symmetry with content_relations
+    source_content_id VARCHAR(26) NOT NULL,
+    -- holds admin_content_data_id, named for code symmetry with content_relations
+    target_content_id VARCHAR(26) NOT NULL,
+    admin_field_id VARCHAR(26) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (admin_content_relation_id),
+    CONSTRAINT chk_admin_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
+    CONSTRAINT fk_admin_content_relations_source FOREIGN KEY (source_content_id)
+        REFERENCES admin_content_data(admin_content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_relations_target FOREIGN KEY (target_content_id)
+        REFERENCES admin_content_data(admin_content_data_id)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_admin_content_relations_field FOREIGN KEY (admin_field_id)
+        REFERENCES admin_fields(admin_field_id)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT uq_admin_content_relations_unique UNIQUE (source_content_id, admin_field_id, target_content_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_admin_content_relations_target ON admin_content_relations(target_content_id, date_created);
+CREATE INDEX idx_admin_content_relations_field ON admin_content_relations(admin_field_id);

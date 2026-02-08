@@ -10,6 +10,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
             ON DELETE SET NULL,
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
@@ -47,11 +49,15 @@ INSERT INTO admin_fields (
     parent_id,
     label,
     data,
+    validation,
+    ui_config,
     type,
     author_id,
     date_created,
     date_modified
     ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -68,6 +74,8 @@ UPDATE admin_fields
 SET parent_id = ?,
     label = ?,
     data = ?,
+    validation = ?,
+    ui_config = ?,
     type = ?,
     author_id = ?,
     date_created = ?,

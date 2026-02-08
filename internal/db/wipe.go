@@ -21,6 +21,14 @@ func (d Database) DropAllTables() error {
 		return fmt.Errorf("drop datatypes_fields: %w", err)
 	}
 
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	if err := queries.DropAdminContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_content_relations: %w", err)
+	}
+	if err := queries.DropContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop content_relations: %w", err)
+	}
+
 	// Tier 5: Content field values
 	if err := queries.DropAdminContentField(d.Context); err != nil {
 		return fmt.Errorf("drop admin_content_fields: %w", err)
@@ -123,6 +131,14 @@ func (d MysqlDatabase) DropAllTables() error {
 		return fmt.Errorf("drop datatypes_fields: %w", err)
 	}
 
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	if err := queries.DropAdminContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_content_relations: %w", err)
+	}
+	if err := queries.DropContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop content_relations: %w", err)
+	}
+
 	// Tier 5: Content field values
 	if err := queries.DropAdminContentFieldTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_content_fields: %w", err)
@@ -223,6 +239,14 @@ func (d PsqlDatabase) DropAllTables() error {
 	}
 	if err := queries.DropDatatypesFieldsTable(d.Context); err != nil {
 		return fmt.Errorf("drop datatypes_fields: %w", err)
+	}
+
+	// Tier 5.5: Content relation tables (depend on content_data and fields)
+	if err := queries.DropAdminContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop admin_content_relations: %w", err)
+	}
+	if err := queries.DropContentRelationTable(d.Context); err != nil {
+		return fmt.Errorf("drop content_relations: %w", err)
 	}
 
 	// Tier 5: Content field values

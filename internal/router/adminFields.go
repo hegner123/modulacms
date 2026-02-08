@@ -96,6 +96,13 @@ func apiCreateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
+	if newAdminField.Validation == "" {
+		newAdminField.Validation = types.EmptyJSON
+	}
+	if newAdminField.UIConfig == "" {
+		newAdminField.UIConfig = types.EmptyJSON
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
 	createdAdminField, err := d.CreateAdminField(r.Context(), ac, newAdminField)
 	if err != nil {
@@ -120,6 +127,13 @@ func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if updateAdminField.Validation == "" {
+		updateAdminField.Validation = types.EmptyJSON
+	}
+	if updateAdminField.UIConfig == "" {
+		updateAdminField.UIConfig = types.EmptyJSON
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)

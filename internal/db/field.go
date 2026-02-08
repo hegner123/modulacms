@@ -17,29 +17,35 @@ import (
 //////////////////////////////
 
 type Fields struct {
-	FieldID      types.FieldID           `json:"field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	FieldID      types.FieldID            `json:"field_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
 	DateModified types.Timestamp         `json:"date_modified"`
 }
 type CreateFieldParams struct {
-	FieldID      types.FieldID           `json:"field_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	FieldID      types.FieldID            `json:"field_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
 	DateModified types.Timestamp         `json:"date_modified"`
 }
 type UpdateFieldParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Data         string                  `json:"data"`
+	Validation   string                  `json:"validation"`
+	UIConfig     string                  `json:"ui_config"`
 	Type         types.FieldType         `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
@@ -52,6 +58,8 @@ type FieldsJSON struct {
 	ParentID     string `json:"parent_id"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
+	Validation   string `json:"validation"`
+	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
@@ -65,6 +73,8 @@ func MapFieldJSON(a Fields) FieldsJSON {
 		ParentID:     a.ParentID.String(),
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
@@ -79,6 +89,8 @@ func MapStringField(a Fields) StringFields {
 		ParentID:     a.ParentID.String(),
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
@@ -99,6 +111,8 @@ func (d Database) MapField(a mdb.Fields) Fields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -116,6 +130,8 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -128,6 +144,8 @@ func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParam
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -190,7 +208,7 @@ func (d Database) ListFields() (*[]Fields, error) {
 	return &res, nil
 }
 
-func (d Database) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fields, error) {
+func (d Database) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdb.ListFieldByDatatypeIDParams{ParentID: id})
 	if err != nil {
@@ -225,6 +243,8 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -242,6 +262,8 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -254,6 +276,8 @@ func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFiel
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -312,7 +336,7 @@ func (d MysqlDatabase) ListFields() (*[]Fields, error) {
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fields, error) {
+func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdbm.ListFieldByDatatypeIDParams{ParentID: id})
 	if err != nil {
@@ -346,6 +370,8 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UIConfig:     a.UiConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -363,6 +389,8 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -375,6 +403,8 @@ func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateField
 		ParentID:     a.ParentID,
 		Label:        a.Label,
 		Data:         a.Data,
+		Validation:   a.Validation,
+		UiConfig:     a.UIConfig,
 		Type:         a.Type,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
@@ -433,7 +463,7 @@ func (d PsqlDatabase) ListFields() (*[]Fields, error) {
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fields, error) {
+func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdbp.ListFieldByDatatypeIDParams{ParentID: id})
 	if err != nil {
@@ -488,6 +518,8 @@ func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, 
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -528,6 +560,8 @@ func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -600,6 +634,8 @@ func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fi
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -644,6 +680,8 @@ func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -716,6 +754,8 @@ func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fie
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
@@ -756,6 +796,8 @@ func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 		ParentID:     c.params.ParentID,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
+		Validation:   c.params.Validation,
+		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
