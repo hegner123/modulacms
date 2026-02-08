@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -88,6 +91,46 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 			utility.DefaultLogger.Error("Observability shutdown error", err)
 		}
 	}
+}
+
+// initPluginPool creates an independent database connection pool for plugin use.
+// Returns the pool and a cleanup function that closes it.
+func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
+	pc := db.DefaultPluginPoolConfig()
+
+	if cfg.Plugin_DB_MaxOpenConns > 0 {
+		pc.MaxOpenConns = cfg.Plugin_DB_MaxOpenConns
+	}
+	if cfg.Plugin_DB_MaxIdleConns > 0 {
+		pc.MaxIdleConns = cfg.Plugin_DB_MaxIdleConns
+	}
+	if cfg.Plugin_DB_ConnMaxLifetime != "" {
+		d, err := time.ParseDuration(cfg.Plugin_DB_ConnMaxLifetime)
+		if err != nil {
+			return nil, nil, fmt.Errorf("invalid plugin_db_conn_max_lifetime %q: %w", cfg.Plugin_DB_ConnMaxLifetime, err)
+		}
+		pc.ConnMaxLifetime = d
+	}
+
+	pool, err := db.OpenPool(*cfg, pc)
+	if err != nil {
+		return nil, nil, fmt.Errorf("plugin pool: %w", err)
+	}
+
+	utility.DefaultLogger.Info("Plugin database pool initialized",
+		"max_open", pc.MaxOpenConns,
+		"max_idle", pc.MaxIdleConns,
+		"max_lifetime", pc.ConnMaxLifetime,
+	)
+
+	cleanup := func() {
+		utility.DefaultLogger.Info("Closing plugin database pool")
+		if cerr := pool.Close(); cerr != nil {
+			utility.DefaultLogger.Error("Plugin pool close error", cerr)
+		}
+	}
+
+	return pool, cleanup, nil
 }
 
 // logConfigSummary logs the loaded configuration details.

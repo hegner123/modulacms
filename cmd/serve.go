@@ -82,6 +82,14 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
+		// Initialize isolated plugin database pool
+		pluginPool, pluginPoolCleanup, err := initPluginPool(cfg)
+		if err != nil {
+			return fmt.Errorf("plugin pool init failed: %w", err)
+		}
+		defer pluginPoolCleanup()
+		_ = pluginPool // placeholder until plugin.NewManager is implemented
+
 		if cfg.Node_ID == "" {
 			cfg.Node_ID = string(types.NewNodeID())
 			utility.DefaultLogger.Finfo("No node_id configured, generated ephemeral node ID", "node_id", cfg.Node_ID)

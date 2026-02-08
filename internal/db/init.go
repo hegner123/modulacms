@@ -53,6 +53,15 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 		return d
 	}
 
+	// Enable WAL mode for concurrent reader support
+	_, err = db.Exec("PRAGMA journal_mode=WAL;")
+	if err != nil {
+		errWithContext := fmt.Errorf("failed to enable WAL mode: %w", err)
+		utility.DefaultLogger.Error("Database configuration error", errWithContext)
+		d.Err = errWithContext
+		return d
+	}
+
 	db.SetMaxOpenConns(25)
 	db.SetMaxIdleConns(10)
 	db.SetConnMaxLifetime(5 * time.Minute)
@@ -232,6 +241,91 @@ func CloseDB() error {
 }
 
 
+
+// buildDSN returns the Go sql driver name and data source name for the
+// configured database driver without opening a connection.
+func buildDSN(cfg config.Config) (driverName string, dsn string, err error) {
+	switch cfg.Db_Driver {
+	case config.Sqlite:
+		src := cfg.Db_URL
+		if src == "" {
+			src = "./modula.db"
+		}
+		return "sqlite3", src, nil
+
+	case config.Mysql:
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s", cfg.Db_User, cfg.Db_Password, cfg.Db_URL, cfg.Db_Name)
+		return "mysql", dsn, nil
+
+	case config.Psql:
+		connURL := url.URL{
+			Scheme:   "postgres",
+			User:     url.UserPassword(cfg.Db_User, cfg.Db_Password),
+			Host:     cfg.Db_URL,
+			Path:     cfg.Db_Name,
+			RawQuery: "sslmode=disable",
+		}
+		return "postgres", connURL.String(), nil
+
+	default:
+		return "", "", fmt.Errorf("unsupported database driver: %q", string(cfg.Db_Driver))
+	}
+}
+
+// PoolConfig holds connection pool tuning parameters.
+type PoolConfig struct {
+	MaxOpenConns    int
+	MaxIdleConns    int
+	ConnMaxLifetime time.Duration
+}
+
+// DefaultPluginPoolConfig returns conservative pool limits suitable for
+// plugin workloads that should not starve the core CMS connection pool.
+func DefaultPluginPoolConfig() PoolConfig {
+	return PoolConfig{
+		MaxOpenConns:    10,
+		MaxIdleConns:    5,
+		ConnMaxLifetime: 5 * time.Minute,
+	}
+}
+
+// OpenPool opens a new *sql.DB with independent pool limits.
+// The returned pool is NOT a singleton — the caller owns it and must close it.
+func OpenPool(cfg config.Config, pc PoolConfig) (*sql.DB, error) {
+	driverName, dsn, err := buildDSN(cfg)
+	if err != nil {
+		return nil, fmt.Errorf("buildDSN: %w", err)
+	}
+
+	pool, err := sql.Open(driverName, dsn)
+	if err != nil {
+		return nil, fmt.Errorf("sql.Open(%s): %w", driverName, err)
+	}
+
+	pool.SetMaxOpenConns(pc.MaxOpenConns)
+	pool.SetMaxIdleConns(pc.MaxIdleConns)
+	pool.SetConnMaxLifetime(pc.ConnMaxLifetime)
+
+	switch cfg.Db_Driver {
+	case config.Sqlite:
+		if _, err := pool.Exec("PRAGMA foreign_keys=1;"); err != nil {
+			pool.Close() //nolint:errcheck // best-effort on setup failure
+			return nil, fmt.Errorf("PRAGMA foreign_keys: %w", err)
+		}
+		if _, err := pool.Exec("PRAGMA journal_mode=WAL;"); err != nil {
+			pool.Close() //nolint:errcheck // best-effort on setup failure
+			return nil, fmt.Errorf("PRAGMA journal_mode: %w", err)
+		}
+
+	case config.Mysql, config.Psql:
+		if err := pool.Ping(); err != nil {
+			pool.Close() //nolint:errcheck // best-effort on setup failure
+			return nil, fmt.Errorf("ping %s: %w", driverName, err)
+		}
+	}
+
+	return pool, nil
+}
 
 func GenerateKey() []byte {
 	key := make([]byte, 32)
