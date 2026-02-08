@@ -1,11 +1,13 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/tree"
 )
 
@@ -44,12 +46,23 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, CmsEditDatatypeFormCmd(msg.Datatype)
 	case DatatypeUpdateSaveMsg:
 		d := m.DB
+		cfg := m.Config
+		userID := m.UserID
 		datatypeID := msg.DatatypeID
 		parentStr := msg.Parent
 		label := msg.Label
 		dtType := msg.Type
 		return m, func() tea.Msg {
-			parentID := types.NullableContentID{}
+			ctx := context.Background()
+			ac := middleware.AuditContextFromCLI(*cfg, userID)
+
+			// Fetch existing record to preserve unchanged values
+			existing, err := d.GetDatatype(datatypeID)
+			if err != nil {
+				return DatatypeUpdateFailedMsg{Error: fmt.Errorf("failed to get datatype for update: %w", err)}
+			}
+
+			parentID := existing.ParentID
 			if parentStr != "" {
 				parentID = types.NullableContentID{
 					ID:    types.ContentID(parentStr),
@@ -61,9 +74,11 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 				ParentID:     parentID,
 				Label:        label,
 				Type:         dtType,
+				AuthorID:     existing.AuthorID,
+				DateCreated:  existing.DateCreated,
 				DateModified: types.TimestampNow(),
 			}
-			_, err := d.UpdateDatatype(params)
+			_, err = d.UpdateDatatype(ctx, ac, params)
 			if err != nil {
 				return DatatypeUpdateFailedMsg{Error: err}
 			}

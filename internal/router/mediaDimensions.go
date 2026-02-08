@@ -7,6 +7,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -88,7 +89,13 @@ func apiCreateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 		return err
 	}
 
-	createdMediaDimension := d.CreateMediaDimension(newMediaDimension)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdMediaDimension, err := d.CreateMediaDimension(r.Context(), ac, newMediaDimension)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -108,7 +115,8 @@ func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 		return err
 	}
 
-	updatedMediaDimension, err := d.UpdateMediaDimension(updateMediaDimension)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedMediaDimension, err := d.UpdateMediaDimension(r.Context(), ac, updateMediaDimension)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -131,7 +139,8 @@ func apiDeleteMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteMediaDimension(mdID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteMediaDimension(r.Context(), ac, mdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

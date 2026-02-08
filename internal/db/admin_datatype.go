@@ -137,15 +137,14 @@ func (d Database) CountAdminDatatypes() (*int64, error) {
 	return &c, nil
 }
 
-func (d Database) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDatatypes {
-	params := d.MapCreateAdminDatatypeParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminDatatype(d.Context, params)
+func (d Database) CreateAdminDatatype(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeParams) (*AdminDatatypes, error) {
+	cmd := d.NewAdminDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatype  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminDatatype: %w", err)
 	}
-
-	return d.MapAdminDatatype(row)
+	r := d.MapAdminDatatype(result)
+	return &r, nil
 }
 func (d Database) CreateAdminDatatypeTable() error {
 	queries := mdb.New(d.Connection)
@@ -153,14 +152,9 @@ func (d Database) CreateAdminDatatypeTable() error {
 	return err
 }
 
-func (d Database) DeleteAdminDatatype(id types.AdminDatatypeID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminDatatype(d.Context, mdb.DeleteAdminDatatypeParams{AdminDatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin datatype: %v ", id)
-	}
-
-	return nil
+func (d Database) DeleteAdminDatatype(ctx context.Context, ac audited.AuditContext, id types.AdminDatatypeID) error {
+	cmd := d.DeleteAdminDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
@@ -201,15 +195,13 @@ func (d Database) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin datatype, %v ", err)
+func (d Database) UpdateAdminDatatype(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -265,18 +257,14 @@ func (d MysqlDatabase) CountAdminDatatypes() (*int64, error) {
 	return &c, nil
 }
 
-func (d MysqlDatabase) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDatatypes {
-	params := d.MapCreateAdminDatatypeParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminDatatype(d.Context, params)
+func (d MysqlDatabase) CreateAdminDatatype(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeParams) (*AdminDatatypes, error) {
+	cmd := d.NewAdminDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatype: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminDatatype: %w", err)
 	}
-	row, err := queries.GetAdminDatatype(d.Context, mdbm.GetAdminDatatypeParams{AdminDatatypeID: params.AdminDatatypeID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminDatatype: %v\n", err)
-	}
-	return d.MapAdminDatatype(row)
+	r := d.MapAdminDatatype(result)
+	return &r, nil
 }
 
 func (d MysqlDatabase) CreateAdminDatatypeTable() error {
@@ -285,14 +273,9 @@ func (d MysqlDatabase) CreateAdminDatatypeTable() error {
 	return err
 }
 
-func (d MysqlDatabase) DeleteAdminDatatype(id types.AdminDatatypeID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminDatatype(d.Context, mdbm.DeleteAdminDatatypeParams{AdminDatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin datatype: %v ", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteAdminDatatype(ctx context.Context, ac audited.AuditContext, id types.AdminDatatypeID) error {
+	cmd := d.DeleteAdminDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
@@ -319,15 +302,13 @@ func (d MysqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin datatype, %v ", err)
+func (d MysqlDatabase) UpdateAdminDatatype(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -383,15 +364,14 @@ func (d PsqlDatabase) CountAdminDatatypes() (*int64, error) {
 	return &c, nil
 }
 
-func (d PsqlDatabase) CreateAdminDatatype(s CreateAdminDatatypeParams) AdminDatatypes {
-	params := d.MapCreateAdminDatatypeParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminDatatype(d.Context, params)
+func (d PsqlDatabase) CreateAdminDatatype(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeParams) (*AdminDatatypes, error) {
+	cmd := d.NewAdminDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatype  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminDatatype: %w", err)
 	}
-
-	return d.MapAdminDatatype(row)
+	r := d.MapAdminDatatype(result)
+	return &r, nil
 }
 
 func (d PsqlDatabase) CreateAdminDatatypeTable() error {
@@ -400,14 +380,9 @@ func (d PsqlDatabase) CreateAdminDatatypeTable() error {
 	return err
 }
 
-func (d PsqlDatabase) DeleteAdminDatatype(id types.AdminDatatypeID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminDatatype(d.Context, mdbp.DeleteAdminDatatypeParams{AdminDatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin datatype: %v ", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteAdminDatatype(ctx context.Context, ac audited.AuditContext, id types.AdminDatatypeID) error {
+	cmd := d.DeleteAdminDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetAdminDatatypeById(id types.AdminDatatypeID) (*AdminDatatypes, error) {
@@ -434,15 +409,13 @@ func (d PsqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateAdminDatatype(s UpdateAdminDatatypeParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin datatype, %v ", err)
+func (d PsqlDatabase) UpdateAdminDatatype(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 // ========== AUDITED COMMAND TYPES ==========

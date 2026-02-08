@@ -121,25 +121,19 @@ func (d Database) CreateUserOauthTable() error {
 	return err
 }
 
-func (d Database) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
-	params := d.MapCreateUserOauthParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateUserOauth(d.Context, params)
+func (d Database) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
+	cmd := d.NewUserOauthCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create userOauth: %w", err)
 	}
-	userOauth := d.MapUserOauth(row)
-	return &userOauth, nil
+	r := d.MapUserOauth(result)
+	return &r, nil
 }
 
-func (d Database) DeleteUserOauth(id types.UserOauthID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, mdb.DeleteUserOauthParams{UserOAuthID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
-	}
-	return nil
+func (d Database) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
+	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
@@ -189,15 +183,13 @@ func (d Database) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateUserOauth(s UpdateUserOauthParams) (*string, error) {
-	params := d.MapUpdateUserOauthParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateUserOauth(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user oauth, %v", err)
+func (d Database) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
+	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated user oauth %v\n", s.UserOauthID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -258,29 +250,19 @@ func (d MysqlDatabase) CreateUserOauthTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
-	params := d.MapCreateUserOauthParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateUserOauth(d.Context, params)
+func (d MysqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
+	cmd := d.NewUserOauthCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create userOauth: %w", err)
 	}
-	row, err := queries.GetUserOauth(d.Context, mdbm.GetUserOauthParams{UserOAuthID: params.UserOAuthID})
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get last inserted UserOauth: %v\n", err)
-	}
-	userOauth := d.MapUserOauth(row)
-	return &userOauth, nil
+	r := d.MapUserOauth(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteUserOauth(id types.UserOauthID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, mdbm.DeleteUserOauthParams{UserOAuthID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
+	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
@@ -330,15 +312,13 @@ func (d MysqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateUserOauth(s UpdateUserOauthParams) (*string, error) {
-	params := d.MapUpdateUserOauthParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateUserOauth(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user oauth, %v", err)
+func (d MysqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
+	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated user oauth %v\n", s.UserOauthID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -399,25 +379,19 @@ func (d PsqlDatabase) CreateUserOauthTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateUserOauth(s CreateUserOauthParams) (*UserOauth, error) {
-	params := d.MapCreateUserOauthParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateUserOauth(d.Context, params)
+func (d PsqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
+	cmd := d.NewUserOauthCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUserOauth.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create userOauth: %w", err)
 	}
-	userOauth := d.MapUserOauth(row)
-	return &userOauth, nil
+	r := d.MapUserOauth(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteUserOauth(id types.UserOauthID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUserOauth(d.Context, mdbp.DeleteUserOauthParams{UserOAuthID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete UserOauth: %v ", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
+	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
@@ -467,15 +441,13 @@ func (d PsqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateUserOauth(s UpdateUserOauthParams) (*string, error) {
-	params := d.MapUpdateUserOauthParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateUserOauth(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user oauth, %v", err)
+func (d PsqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
+	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update userOauth: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated user oauth %v\n", s.UserOauthID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.UserOauthID)
+	return &msg, nil
 }
 
 // ========== AUDITED COMMAND TYPES ==========

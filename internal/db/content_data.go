@@ -202,23 +202,19 @@ func (d Database) CreateContentDataTable() error {
 	return err
 }
 
-func (d Database) CreateContentData(s CreateContentDataParams) ContentData {
-	params := d.MapCreateContentDataParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateContentData(d.Context, params)
+func (d Database) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
+	cmd := d.NewContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentData: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentData: %w", err)
 	}
-	return d.MapContentData(row)
+	r := d.MapContentData(result)
+	return &r, nil
 }
 
-func (d Database) DeleteContentData(id types.ContentID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, mdb.DeleteContentDataParams{ContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete content data: %v\n", id)
-	}
-	return nil
+func (d Database) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
+	cmd := d.DeleteContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetContentData(id types.ContentID) (*ContentData, error) {
@@ -259,15 +255,13 @@ func (d Database) ListContentDataByRoute(routeID types.NullableRouteID) (*[]Cont
 	return &res, nil
 }
 
-func (d Database) UpdateContentData(s UpdateContentDataParams) (*string, error) {
-	params := d.MapUpdateContentDataParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d Database) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
+	cmd := d.UpdateContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content data %v\n", s.ContentDataID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -341,27 +335,19 @@ func (d MysqlDatabase) CreateContentDataTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateContentData(s CreateContentDataParams) ContentData {
-	params := d.MapCreateContentDataParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateContentData(d.Context, params)
+func (d MysqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
+	cmd := d.NewContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentData: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentData: %w", err)
 	}
-	row, err := queries.GetContentData(d.Context, mdbm.GetContentDataParams{ContentDataID: params.ContentDataID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted ContentData: %v\n", err)
-	}
-	return d.MapContentData(row)
+	r := d.MapContentData(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteContentData(id types.ContentID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, mdbm.DeleteContentDataParams{ContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete content data: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
+	cmd := d.DeleteContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
@@ -402,15 +388,13 @@ func (d MysqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, error) {
-	params := d.MapUpdateContentDataParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d MysqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
+	cmd := d.UpdateContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content data %v\n", s.ContentDataID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -484,23 +468,19 @@ func (d PsqlDatabase) CreateContentDataTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateContentData(s CreateContentDataParams) ContentData {
-	params := d.MapCreateContentDataParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateContentData(d.Context, params)
+func (d PsqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
+	cmd := d.NewContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentData: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentData: %w", err)
 	}
-	return d.MapContentData(row)
+	r := d.MapContentData(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteContentData(id types.ContentID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteContentData(d.Context, mdbp.DeleteContentDataParams{ContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete content data: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
+	cmd := d.DeleteContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
@@ -541,15 +521,13 @@ func (d PsqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateContentData(s UpdateContentDataParams) (*string, error) {
-	params := d.MapUpdateContentDataParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d PsqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
+	cmd := d.UpdateContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content data %v\n", s.ContentDataID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////

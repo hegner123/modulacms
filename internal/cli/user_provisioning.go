@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/charmbracelet/huh"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -152,7 +154,10 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 
 		// Create the user
 		now := types.TimestampNow()
-		user, err := dbc.CreateUser(db.CreateUserParams{
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*m.Config, types.UserID(""))
+
+		user, err := dbc.CreateUser(ctx, ac, db.CreateUserParams{
 			Username:     username,
 			Name:         name,
 			Email:        types.Email(email),
@@ -169,7 +174,7 @@ func ProvisionSSHUser(m Model) tea.Cmd {
 		logger.Info("Created user: %s (ID: %s)", user.Email, user.UserID)
 
 		// Register the SSH key
-		_, err = dbc.CreateUserSshKey(db.CreateUserSshKeyParams{
+		_, err = dbc.CreateUserSshKey(ctx, ac, db.CreateUserSshKeyParams{
 			UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
 			PublicKey:   m.SSHPublicKey,
 			KeyType:     m.SSHKeyType,

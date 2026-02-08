@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/media"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -96,8 +98,7 @@ func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []stri
 	)
 }
 
-func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
-	id := m.GetCurrentRowId()
+func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable, rowID int64, valuesMap map[string]any) tea.Cmd {
 	d := db.ConfigDB(*c)
 
 	con, _, err := d.GetConnection()
@@ -105,14 +106,9 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 		return LogMessageCmd(err.Error())
 	}
 
-	valuesMap := make(map[string]any, 0)
-	for i, v := range m.FormState.FormValues {
-		valuesMap[m.TableState.Headers[i]] = *v
-	}
-
 	// Using secure query builder
 	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildUpdateQuery(string(table), id, valuesMap)
+	query, args, err := sqb.SecureBuildUpdateQuery(string(table), rowID, valuesMap)
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
@@ -120,9 +116,6 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable) tea.Cmd {
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
-
-	// Reset the form values after update
-	m.FormState.FormValues = nil
 
 	m.Logger.Finfo("CLI Update successful", nil)
 	return DbResultCmd(res, string(table))
@@ -276,14 +269,17 @@ func (m Model) CreateContentWithFields(
 	if logger == nil {
 		logger = utility.DefaultLogger
 	}
+	cfg := c
 	return func() tea.Msg {
-		d := db.ConfigDB(*c)
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Debug logging
 		logger.Finfo(fmt.Sprintf("Creating ContentData: DatatypeID=%s, RouteID=%s, AuthorID=%s", datatypeID, routeID, authorID))
 
 		// Step 1: Create ContentData using typed DbDriver method
-		contentData := d.CreateContentData(db.CreateContentDataParams{
+		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: datatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
 			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
@@ -295,6 +291,11 @@ func (m Model) CreateContentWithFields(
 			NextSiblingID: sql.NullString{},          // NULL - no siblings initially
 			PrevSiblingID: sql.NullString{},          // NULL - no siblings initially
 		})
+		if err != nil {
+			return DbErrMsg{
+				Error: fmt.Errorf("failed to create content data: %w", err),
+			}
+		}
 
 		// Check if creation succeeded
 		if contentData.ContentDataID.IsZero() {
@@ -313,7 +314,7 @@ func (m Model) CreateContentWithFields(
 				continue
 			}
 
-			fieldResult := d.CreateContentField(db.CreateContentFieldParams{
+			fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 				ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 				FieldValue:    value,
@@ -324,7 +325,7 @@ func (m Model) CreateContentWithFields(
 			})
 
 			// Track failures
-			if fieldResult.ContentFieldID.IsZero() {
+			if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
 				failedFields = append(failedFields, fieldID)
 			} else {
 				createdFields++
@@ -358,15 +359,18 @@ func (m Model) HandleCreateContentFromDialog(
 	if logger == nil {
 		logger = utility.DefaultLogger
 	}
+	cfg := m.Config
 	return func() tea.Msg {
-		d := db.ConfigDB(*m.Config)
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Debug logging
 		logger.Finfo(fmt.Sprintf("Creating ContentData from dialog: DatatypeID=%s, RouteID=%s, AuthorID=%s, HasParent=%v",
 			msg.DatatypeID, msg.RouteID, authorID, msg.ParentID.Valid))
 
 		// Step 1: Create ContentData using typed DbDriver method
-		contentData := d.CreateContentData(db.CreateContentDataParams{
+		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
 			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
@@ -378,6 +382,11 @@ func (m Model) HandleCreateContentFromDialog(
 			NextSiblingID: sql.NullString{}, // NULL - no siblings initially
 			PrevSiblingID: sql.NullString{}, // NULL - no siblings initially
 		})
+		if err != nil {
+			return DbErrMsg{
+				Error: fmt.Errorf("failed to create content data: %w", err),
+			}
+		}
 
 		// Check if creation succeeded
 		if contentData.ContentDataID.IsZero() {
@@ -396,7 +405,7 @@ func (m Model) HandleCreateContentFromDialog(
 				continue
 			}
 
-			fieldResult := d.CreateContentField(db.CreateContentFieldParams{
+			fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 				ContentDataID: types.NullableContentID{ID: contentData.ContentDataID, Valid: true},
 				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 				FieldValue:    value,
@@ -407,7 +416,7 @@ func (m Model) HandleCreateContentFromDialog(
 			})
 
 			// Track failures
-			if fieldResult.ContentFieldID.IsZero() {
+			if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
 				failedFields = append(failedFields, fieldID)
 			} else {
 				createdFields++
@@ -528,6 +537,8 @@ func (m Model) HandleUpdateContentFromDialog(
 	cfg := m.Config
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		logger.Finfo(fmt.Sprintf("Updating content fields: ContentID=%s, AuthorID=%s, %d fields",
 			msg.ContentID, authorID, len(msg.FieldValues)))
@@ -560,7 +571,7 @@ func (m Model) HandleUpdateContentFromDialog(
 			// Check if this field already exists
 			if existing, ok := existingMap[string(fieldID)]; ok {
 				// Update existing field
-				_, err := d.UpdateContentField(db.UpdateContentFieldParams{
+				_, err := d.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
 					ContentFieldID: existing.ContentFieldID,
 					RouteID:        existing.RouteID,
 					ContentDataID:  contentDataID,
@@ -578,7 +589,7 @@ func (m Model) HandleUpdateContentFromDialog(
 				}
 			} else {
 				// Create new field (field was added to datatype after content was created)
-				fieldResult := d.CreateContentField(db.CreateContentFieldParams{
+				fieldResult, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 					ContentDataID: contentDataID,
 					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:    value,
@@ -587,8 +598,8 @@ func (m Model) HandleUpdateContentFromDialog(
 					DateCreated:   types.TimestampNow(),
 					DateModified:  types.TimestampNow(),
 				})
-				if fieldResult.ContentFieldID.IsZero() {
-					logger.Ferror(fmt.Sprintf("Failed to create field %s", fieldID), nil)
+				if fieldErr != nil || fieldResult.ContentFieldID.IsZero() {
+					logger.Ferror(fmt.Sprintf("Failed to create field %s", fieldID), fieldErr)
 					updateErrors = append(updateErrors, string(fieldID))
 				} else {
 					updatedCount++
@@ -619,8 +630,11 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		contentID := types.ContentID(msg.ContentID)
 		logger.Finfo(fmt.Sprintf("Deleting content: %s", contentID))
@@ -662,7 +676,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 					DateCreated:   prevSibling.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
-				if _, err := d.UpdateContentData(updateParams); err != nil {
+				if _, err := d.UpdateContentData(ctx, ac, updateParams); err != nil {
 					logger.Ferror("Failed to update prev sibling", err)
 				}
 			}
@@ -686,7 +700,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 					DateCreated:   nextSibling.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
-				if _, err := d.UpdateContentData(updateParams); err != nil {
+				if _, err := d.UpdateContentData(ctx, ac, updateParams); err != nil {
 					logger.Ferror("Failed to update next sibling", err)
 				}
 			}
@@ -710,7 +724,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 						DateCreated:   parent.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
-					if _, err := d.UpdateContentData(updateParams); err != nil {
+					if _, err := d.UpdateContentData(ctx, ac, updateParams); err != nil {
 						logger.Ferror("Failed to update parent first_child", err)
 					}
 				}
@@ -718,7 +732,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		}
 
 		// Delete the content data (content_fields will cascade delete)
-		if err := d.DeleteContentData(contentID); err != nil {
+		if err := d.DeleteContentData(ctx, ac, contentID); err != nil {
 			logger.Ferror("Failed to delete content", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -752,8 +766,11 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Moving content: %s -> %s", msg.SourceContentID, msg.TargetContentID))
 
@@ -795,7 +812,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 					DateCreated:   prev.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
-				if _, updateErr := d.UpdateContentData(params); updateErr != nil {
+				if _, updateErr := d.UpdateContentData(ctx, ac, params); updateErr != nil {
 					logger.Ferror("Failed to update prev sibling during move", updateErr)
 				}
 			}
@@ -819,7 +836,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 					DateCreated:   next.DateCreated,
 					DateModified:  types.TimestampNow(),
 				}
-				if _, updateErr := d.UpdateContentData(params); updateErr != nil {
+				if _, updateErr := d.UpdateContentData(ctx, ac, params); updateErr != nil {
 					logger.Ferror("Failed to update next sibling during move", updateErr)
 				}
 			}
@@ -843,7 +860,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 						DateCreated:   oldParent.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
-					if _, updateErr := d.UpdateContentData(params); updateErr != nil {
+					if _, updateErr := d.UpdateContentData(ctx, ac, params); updateErr != nil {
 						logger.Ferror("Failed to update old parent first_child during move", updateErr)
 					}
 				}
@@ -878,7 +895,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 				DateCreated:   target.DateCreated,
 				DateModified:  types.TimestampNow(),
 			}
-			if _, updateErr := d.UpdateContentData(targetParams); updateErr != nil {
+			if _, updateErr := d.UpdateContentData(ctx, ac, targetParams); updateErr != nil {
 				logger.Ferror("Failed to set target first_child", updateErr)
 				return ActionResultMsg{
 					Title:   "Error",
@@ -908,7 +925,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 						DateCreated:   current.DateCreated,
 						DateModified:  types.TimestampNow(),
 					}
-					if _, updateErr := d.UpdateContentData(lastParams); updateErr != nil {
+					if _, updateErr := d.UpdateContentData(ctx, ac, lastParams); updateErr != nil {
 						logger.Ferror("Failed to update last sibling next pointer", updateErr)
 					}
 					newPrevSiblingID = sql.NullString{String: string(current.ContentDataID), Valid: true}
@@ -932,7 +949,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			DateCreated:   source.DateCreated,
 			DateModified:  types.TimestampNow(),
 		}
-		if _, updateErr := d.UpdateContentData(sourceParams); updateErr != nil {
+		if _, updateErr := d.UpdateContentData(ctx, ac, sourceParams); updateErr != nil {
 			logger.Ferror("Failed to update source node", updateErr)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -961,8 +978,11 @@ func (m Model) HandleCreateUserFromDialog(msg CreateUserFromDialogRequestMsg) te
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		email := types.Email(msg.Email)
 		if err := email.Validate(); err != nil {
@@ -972,7 +992,7 @@ func (m Model) HandleCreateUserFromDialog(msg CreateUserFromDialogRequestMsg) te
 			}
 		}
 
-		user, err := d.CreateUser(db.CreateUserParams{
+		user, err := d.CreateUser(ctx, ac, db.CreateUserParams{
 			Username:     msg.Username,
 			Name:         msg.Name,
 			Email:        email,
@@ -1013,8 +1033,11 @@ func (m Model) HandleUpdateUserFromDialog(msg UpdateUserFromDialogRequestMsg) te
 		}
 	}
 
+	callerUserID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, callerUserID)
 
 		userID := types.UserID(msg.UserID)
 
@@ -1035,7 +1058,7 @@ func (m Model) HandleUpdateUserFromDialog(msg UpdateUserFromDialogRequestMsg) te
 			}
 		}
 
-		_, err = d.UpdateUser(db.UpdateUserParams{
+		_, err = d.UpdateUser(ctx, ac, db.UpdateUserParams{
 			UserID:       userID,
 			Username:     msg.Username,
 			Name:         msg.Name,
@@ -1066,12 +1089,15 @@ func (m Model) HandleDeleteUser(msg DeleteUserRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Deleting user: %s", msg.UserID))
 
-		if err := d.DeleteUser(msg.UserID); err != nil {
+		if err := d.DeleteUser(ctx, ac, msg.UserID); err != nil {
 			logger.Ferror("Failed to delete user", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1202,6 +1228,8 @@ func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, conten
 	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		// Get existing content field
 		cf, err := d.GetContentField(contentFieldID)
@@ -1209,7 +1237,7 @@ func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, conten
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content field not found: %v", err)}
 		}
 
-		_, err = d.UpdateContentField(db.UpdateContentFieldParams{
+		_, err = d.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
 			ContentFieldID: contentFieldID,
 			RouteID:        cf.RouteID,
 			ContentDataID:  types.NullableContentID{ID: contentID, Valid: true},
@@ -1234,10 +1262,13 @@ func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, conten
 // HandleDeleteContentField deletes a content field record.
 func (m Model) HandleDeleteContentField(contentFieldID types.ContentFieldID, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		err := d.DeleteContentField(contentFieldID)
+		err := d.DeleteContentField(ctx, ac, contentFieldID)
 		if err != nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to delete field: %v", err)}
 		}
@@ -1256,8 +1287,10 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		d.CreateContentField(db.CreateContentFieldParams{
+		_, err := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 			ContentDataID: types.NullableContentID{ID: contentID, Valid: true},
 			FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 			FieldValue:    "",
@@ -1266,6 +1299,9 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 		})
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to add content field: %v", err)}
+		}
 
 		return ContentFieldAddedMsg{
 			ContentID:  contentID,
@@ -1278,13 +1314,16 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 // HandleReorderField swaps sort_order between two junction records.
 func (m Model) HandleReorderField(aID string, bID string, aOrder int64, bOrder int64, datatypeID types.NullableDatatypeID, contentID types.ContentID, routeID types.RouteID, direction string) tea.Cmd {
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		if err := d.UpdateDatatypeFieldSortOrder(aID, bOrder); err != nil {
+		if err := d.UpdateDatatypeFieldSortOrder(ctx, ac, aID, bOrder); err != nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
 		}
-		if err := d.UpdateDatatypeFieldSortOrder(bID, aOrder); err != nil {
+		if err := d.UpdateDatatypeFieldSortOrder(ctx, ac, bID, aOrder); err != nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
 		}
 
@@ -1304,8 +1343,11 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Deleting datatype: %s", msg.DatatypeID))
 
@@ -1341,14 +1383,14 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 		}
 		if dtFields != nil {
 			for _, dtf := range *dtFields {
-				if err := d.DeleteDatatypeField(dtf.ID); err != nil {
+				if err := d.DeleteDatatypeField(ctx, ac, dtf.ID); err != nil {
 					logger.Ferror(fmt.Sprintf("Failed to delete junction record %s", dtf.ID), err)
 				}
 			}
 		}
 
 		// Delete the datatype
-		if err := d.DeleteDatatype(msg.DatatypeID); err != nil {
+		if err := d.DeleteDatatype(ctx, ac, msg.DatatypeID); err != nil {
 			logger.Ferror("Failed to delete datatype", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1368,8 +1410,11 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Deleting field: %s from datatype: %s", msg.FieldID, msg.DatatypeID))
 
@@ -1387,7 +1432,7 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 		if fieldJunctions != nil {
 			for _, dtf := range *fieldJunctions {
 				if dtf.DatatypeID.Valid && dtf.DatatypeID.ID == msg.DatatypeID {
-					if err := d.DeleteDatatypeField(dtf.ID); err != nil {
+					if err := d.DeleteDatatypeField(ctx, ac, dtf.ID); err != nil {
 						logger.Ferror(fmt.Sprintf("Failed to delete junction record %s", dtf.ID), err)
 					}
 				}
@@ -1395,7 +1440,7 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 		}
 
 		// Delete the field itself
-		if err := d.DeleteField(msg.FieldID); err != nil {
+		if err := d.DeleteField(ctx, ac, msg.FieldID); err != nil {
 			logger.Ferror("Failed to delete field", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1418,12 +1463,15 @@ func (m Model) HandleDeleteRoute(msg DeleteRouteRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Deleting route: %s", msg.RouteID))
 
-		if err := d.DeleteRoute(msg.RouteID); err != nil {
+		if err := d.DeleteRoute(ctx, ac, msg.RouteID); err != nil {
 			logger.Ferror("Failed to delete route", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1443,12 +1491,15 @@ func (m Model) HandleDeleteMedia(msg DeleteMediaRequestMsg) tea.Cmd {
 		logger = utility.DefaultLogger
 	}
 	cfg := m.Config
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
 		logger.Finfo(fmt.Sprintf("Deleting media: %s", msg.MediaID))
 
-		if err := d.DeleteMedia(msg.MediaID); err != nil {
+		if err := d.DeleteMedia(ctx, ac, msg.MediaID); err != nil {
 			logger.Ferror("Failed to delete media", err)
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1527,7 +1578,14 @@ func (m Model) HandleMediaUpload(msg MediaUploadStartMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Starting media upload: %s", filename))
 
 		// Step 1: Create placeholder DB record
-		media.CreateMedia(baseName, *cfg)
+		_, err := media.CreateMedia(baseName, *cfg)
+		if err != nil {
+			logger.Ferror("Failed to create media record", err)
+			return ActionResultMsg{
+				Title:   "Upload Error",
+				Message: fmt.Sprintf("Failed to create media record: %v", err),
+			}
+		}
 
 		// Step 2: Create temp directory for optimized files
 		tmpDir, err := os.MkdirTemp("", media.TempDirPrefix)
@@ -1574,8 +1632,11 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
 		// Read the node to move
@@ -1603,7 +1664,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				cID := types.ContentID(b.PrevSiblingID.String)
 				c, cErr := d.GetContentData(cID)
 				if cErr == nil && c != nil {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: c.ContentDataID,
 						RouteID:       c.RouteID,
 						ParentID:      c.ParentID,
@@ -1627,7 +1688,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				dID := types.ContentID(a.NextSiblingID.String)
 				dNode, dErr := d.GetContentData(dID)
 				if dErr == nil && dNode != nil {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: dNode.ContentDataID,
 						RouteID:       dNode.RouteID,
 						ParentID:      dNode.ParentID,
@@ -1650,7 +1711,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			if a.ParentID.Valid {
 				parent, pErr := d.GetContentData(a.ParentID.ID)
 				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(b.ContentDataID) {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: parent.ContentDataID,
 						RouteID:       parent.RouteID,
 						ParentID:      parent.ParentID,
@@ -1670,7 +1731,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// Update A: prev = B.prev, next = B
-			_, aErr := d.UpdateContentData(db.UpdateContentDataParams{
+			_, aErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: a.ContentDataID,
 				RouteID:       a.RouteID,
 				ParentID:      a.ParentID,
@@ -1688,7 +1749,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// Update B: prev = A, next = A's original next
-			_, bUpdateErr := d.UpdateContentData(db.UpdateContentDataParams{
+			_, bUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: b.ContentDataID,
 				RouteID:       b.RouteID,
 				ParentID:      b.ParentID,
@@ -1724,7 +1785,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				cID := types.ContentID(a.PrevSiblingID.String)
 				c, cErr := d.GetContentData(cID)
 				if cErr == nil && c != nil {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: c.ContentDataID,
 						RouteID:       c.RouteID,
 						ParentID:      c.ParentID,
@@ -1748,7 +1809,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				dID := types.ContentID(b.NextSiblingID.String)
 				dNode, dErr := d.GetContentData(dID)
 				if dErr == nil && dNode != nil {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: dNode.ContentDataID,
 						RouteID:       dNode.RouteID,
 						ParentID:      dNode.ParentID,
@@ -1771,7 +1832,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			if a.ParentID.Valid {
 				parent, pErr := d.GetContentData(a.ParentID.ID)
 				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(a.ContentDataID) {
-					_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: parent.ContentDataID,
 						RouteID:       parent.RouteID,
 						ParentID:      parent.ParentID,
@@ -1791,7 +1852,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// Update B: prev = A.prev, next = A
-			_, bUpdateErr := d.UpdateContentData(db.UpdateContentDataParams{
+			_, bUpdateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: b.ContentDataID,
 				RouteID:       b.RouteID,
 				ParentID:      b.ParentID,
@@ -1809,7 +1870,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// Update A: prev = B, next = B's original next
-			_, aErr := d.UpdateContentData(db.UpdateContentDataParams{
+			_, aErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: a.ContentDataID,
 				RouteID:       a.RouteID,
 				ParentID:      a.ParentID,
@@ -1858,6 +1919,8 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
 		// Read source
@@ -1874,25 +1937,28 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 
 		// Create new ContentData as sibling after source
 		now := types.TimestampNow()
-		newContent := d.CreateContentData(db.CreateContentDataParams{
+		newContent, createErr := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			RouteID:       source.RouteID,
 			ParentID:      source.ParentID,
-			FirstChildID:  sql.NullString{},                                                      // no children (flat copy)
-			NextSiblingID: source.NextSiblingID,                                                   // take source's next
-			PrevSiblingID: sql.NullString{String: string(source.ContentDataID), Valid: true},       // prev = source
+			FirstChildID:  sql.NullString{},                                                // no children (flat copy)
+			NextSiblingID: source.NextSiblingID,                                             // take source's next
+			PrevSiblingID: sql.NullString{String: string(source.ContentDataID), Valid: true}, // prev = source
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
 			Status:        types.ContentStatusDraft,
 			DateCreated:   now,
 			DateModified:  now,
 		})
+		if createErr != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to create content copy: %v", createErr)}
+		}
 
 		if newContent.ContentDataID.IsZero() {
 			return ActionResultMsg{Title: "Error", Message: "Failed to create content copy"}
 		}
 
 		// Update source.NextSiblingID -> new node
-		_, sErr := d.UpdateContentData(db.UpdateContentDataParams{
+		_, sErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 			ContentDataID: source.ContentDataID,
 			RouteID:       source.RouteID,
 			ParentID:      source.ParentID,
@@ -1914,7 +1980,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 			dID := types.ContentID(source.NextSiblingID.String)
 			dNode, dErr := d.GetContentData(dID)
 			if dErr == nil && dNode != nil {
-				_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+				_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 					ContentDataID: dNode.ContentDataID,
 					RouteID:       dNode.RouteID,
 					ParentID:      dNode.ParentID,
@@ -1937,7 +2003,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		fieldCount := 0
 		if sourceFields != nil {
 			for _, field := range *sourceFields {
-				_ = d.CreateContentField(db.CreateContentFieldParams{
+				_, fieldErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 					RouteID:       field.RouteID,
 					ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
 					FieldID:       field.FieldID,
@@ -1946,6 +2012,9 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 					DateCreated:   now,
 					DateModified:  now,
 				})
+				if fieldErr != nil {
+					logger.Ferror(fmt.Sprintf("Failed to copy field: %v", fieldErr), fieldErr)
+				}
 				fieldCount++
 			}
 		}
@@ -1979,8 +2048,11 @@ func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
 		content, err := d.GetContentData(msg.ContentID)
@@ -1994,7 +2066,7 @@ func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
 			newStatus = types.ContentStatusDraft
 		}
 
-		_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+		_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 			ContentDataID: content.ContentDataID,
 			RouteID:       content.RouteID,
 			ParentID:      content.ParentID,
@@ -2040,8 +2112,11 @@ func (m Model) HandleArchiveContent(msg ArchiveContentRequestMsg) tea.Cmd {
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
 		content, err := d.GetContentData(msg.ContentID)
@@ -2055,7 +2130,7 @@ func (m Model) HandleArchiveContent(msg ArchiveContentRequestMsg) tea.Cmd {
 			newStatus = types.ContentStatusDraft
 		}
 
-		_, updateErr := d.UpdateContentData(db.UpdateContentDataParams{
+		_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 			ContentDataID: content.ContentDataID,
 			RouteID:       content.RouteID,
 			ParentID:      content.ParentID,

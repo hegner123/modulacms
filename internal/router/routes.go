@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -101,7 +102,13 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		newRoute.DateModified = now
 	}
 
-	createdRoute := d.CreateRoute(newRoute)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdRoute, err := d.CreateRoute(r.Context(), ac, newRoute)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -121,7 +128,8 @@ func apiUpdateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	updatedRoute, err := d.UpdateRoute(updateRoute)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedRoute, err := d.UpdateRoute(r.Context(), ac, updateRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -145,7 +153,8 @@ func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteRoute(id)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteRoute(r.Context(), ac, id)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

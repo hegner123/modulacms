@@ -127,7 +127,7 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 		RoutesHandler(w, r, c)
 	})
 	mux.HandleFunc("/api/v1/routes/", func(w http.ResponseWriter, r *http.Request) {
-		RoutesHandler(w, r, c)
+		RouteHandler(w, r, c)
 	})
 	mux.HandleFunc("/api/v1/roles", func(w http.ResponseWriter, r *http.Request) {
 		RolesHandler(w, r, c)

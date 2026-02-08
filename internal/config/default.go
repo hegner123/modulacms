@@ -6,6 +6,8 @@ import (
 	"runtime"
 	"strconv"
 	"time"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 func DefaultConfig() Config {
@@ -83,6 +85,8 @@ func DefaultConfig() Config {
 	c.Observability_Server_Name = ""
 	c.Observability_Flush_Interval = "30s"
 	c.Observability_Tags = map[string]string{}
+
+	c.Node_ID = string(types.NewNodeID())
 
 	c.KeyBindings = DefaultKeyMap()
 

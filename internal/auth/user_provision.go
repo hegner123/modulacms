@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"golang.org/x/oauth2"
 )
@@ -240,8 +242,10 @@ func (up *UserProvisioner) createNewUser(
 	}
 
 	// Create user (no password for OAuth users)
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(up.config.Node_ID), types.UserID(""), "oauth-provision", "system")
 	now := types.TimestampNow()
-	user, err := up.driver.CreateUser(db.CreateUserParams{
+	user, err := up.driver.CreateUser(ctx, ac, db.CreateUserParams{
 		Username:     username,
 		Name:         name,
 		Email:        types.Email(userInfo.Email),
@@ -261,7 +265,7 @@ func (up *UserProvisioner) createNewUser(
 	if !token.Expiry.IsZero() {
 		expiresAt = token.Expiry.Format(time.RFC3339)
 	}
-	_, err = up.driver.CreateUserOauth(db.CreateUserOauthParams{
+	_, err = up.driver.CreateUserOauth(ctx, ac, db.CreateUserOauthParams{
 		UserID:              types.NullableUserID{ID: user.UserID, Valid: true},
 		OauthProvider:       provider,
 		OauthProviderUserID: providerUserID,
@@ -293,7 +297,9 @@ func (up *UserProvisioner) linkOAuthToUser(
 		expiresAt = token.Expiry.Format(time.RFC3339)
 	}
 
-	_, err := up.driver.CreateUserOauth(db.CreateUserOauthParams{
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(up.config.Node_ID), user.UserID, "oauth-link", "system")
+	_, err := up.driver.CreateUserOauth(ctx, ac, db.CreateUserOauthParams{
 		UserID:              types.NullableUserID{ID: user.UserID, Valid: true},
 		OauthProvider:       provider,
 		OauthProviderUserID: providerUserID,
@@ -319,7 +325,9 @@ func (up *UserProvisioner) updateTokens(userOauthID types.UserOauthID, token *oa
 		expiresAt = token.Expiry.Format(time.RFC3339)
 	}
 
-	_, err := up.driver.UpdateUserOauth(db.UpdateUserOauthParams{
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(up.config.Node_ID), types.UserID(""), "oauth-token-update", "system")
+	_, err := up.driver.UpdateUserOauth(ctx, ac, db.UpdateUserOauthParams{
 		UserOauthID:    userOauthID,
 		AccessToken:    token.AccessToken,
 		RefreshToken:   token.RefreshToken,

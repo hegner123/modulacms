@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -101,7 +102,13 @@ func apiCreateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		newField.DateModified = now
 	}
 
-	createdField := d.CreateField(newField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdField, err := d.CreateField(r.Context(), ac, newField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -121,7 +128,8 @@ func apiUpdateField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	updatedField, err := d.UpdateField(updateField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedField, err := d.UpdateField(r.Context(), ac, updateField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -145,7 +153,8 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteField(fID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteField(r.Context(), ac, fID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

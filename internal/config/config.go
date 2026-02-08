@@ -80,6 +80,7 @@ type Config struct {
 	Update_Notify_Only    bool         `json:"update_notify_only"`
 	Output_Format         OutputFormat `json:"output_format"`
 	Space_ID              string       `json:"space_id"`
+	Node_ID               string       `json:"node_id"`
 
 	// Observability - Metrics and Error Tracking
 	Observability_Enabled        bool    `json:"observability_enabled"`

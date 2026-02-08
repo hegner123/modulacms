@@ -119,15 +119,14 @@ func (d Database) CountAdminRoutes() (*int64, error) {
 	return &c, nil
 }
 
-func (d Database) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
-	params := d.MapCreateAdminRouteParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminRoute(d.Context, params)
+func (d Database) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
+	cmd := d.NewAdminRouteCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminRoute  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminRoute: %w", err)
 	}
-
-	return d.MapAdminRoute(row)
+	r := d.MapAdminRoute(result)
+	return &r, nil
 }
 
 func (d Database) CreateAdminRouteTable() error {
@@ -136,14 +135,9 @@ func (d Database) CreateAdminRouteTable() error {
 	return err
 }
 
-func (d Database) DeleteAdminRoute(id types.AdminRouteID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, mdb.DeleteAdminRouteParams{AdminRouteID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin route: %v ", id)
-	}
-
-	return nil
+func (d Database) DeleteAdminRoute(ctx context.Context, ac audited.AuditContext, id types.AdminRouteID) error {
+	cmd := d.DeleteAdminRouteCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
@@ -170,15 +164,13 @@ func (d Database) ListAdminRoutes() (*[]AdminRoutes, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
-	params := d.MapUpdateAdminRouteParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminRoute(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin route, %v", err)
+func (d Database) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext, s UpdateAdminRouteParams) (*string, error) {
+	cmd := d.UpdateAdminRouteCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -234,18 +226,14 @@ func (d MysqlDatabase) CountAdminRoutes() (*int64, error) {
 	return &c, nil
 }
 
-func (d MysqlDatabase) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
-	params := d.MapCreateAdminRouteParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminRoute(d.Context, params)
+func (d MysqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
+	cmd := d.NewAdminRouteCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminRoute: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminRoute: %w", err)
 	}
-	row, err := queries.GetAdminRouteById(d.Context, mdbm.GetAdminRouteByIdParams{AdminRouteID: params.AdminRouteID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminRoute: %v\n", err)
-	}
-	return d.MapAdminRoute(row)
+	r := d.MapAdminRoute(result)
+	return &r, nil
 }
 
 func (d MysqlDatabase) CreateAdminRouteTable() error {
@@ -254,14 +242,9 @@ func (d MysqlDatabase) CreateAdminRouteTable() error {
 	return err
 }
 
-func (d MysqlDatabase) DeleteAdminRoute(id types.AdminRouteID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, mdbm.DeleteAdminRouteParams{AdminRouteID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin route: %v ", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteAdminRoute(ctx context.Context, ac audited.AuditContext, id types.AdminRouteID) error {
+	cmd := d.DeleteAdminRouteCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
@@ -288,15 +271,13 @@ func (d MysqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
-	params := d.MapUpdateAdminRouteParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminRoute(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin route, %v", err)
+func (d MysqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext, s UpdateAdminRouteParams) (*string, error) {
+	cmd := d.UpdateAdminRouteCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -352,15 +333,14 @@ func (d PsqlDatabase) CountAdminRoutes() (*int64, error) {
 	return &c, nil
 }
 
-func (d PsqlDatabase) CreateAdminRoute(s CreateAdminRouteParams) AdminRoutes {
-	params := d.MapCreateAdminRouteParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminRoute(d.Context, params)
+func (d PsqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
+	cmd := d.NewAdminRouteCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminRoute  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminRoute: %w", err)
 	}
-
-	return d.MapAdminRoute(row)
+	r := d.MapAdminRoute(result)
+	return &r, nil
 }
 
 func (d PsqlDatabase) CreateAdminRouteTable() error {
@@ -369,14 +349,9 @@ func (d PsqlDatabase) CreateAdminRouteTable() error {
 	return err
 }
 
-func (d PsqlDatabase) DeleteAdminRoute(id types.AdminRouteID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminRoute(d.Context, mdbp.DeleteAdminRouteParams{AdminRouteID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin route: %v ", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteAdminRoute(ctx context.Context, ac audited.AuditContext, id types.AdminRouteID) error {
+	cmd := d.DeleteAdminRouteCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
@@ -403,15 +378,13 @@ func (d PsqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateAdminRoute(s UpdateAdminRouteParams) (*string, error) {
-	params := d.MapUpdateAdminRouteParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminRoute(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin route, %v", err)
+func (d PsqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext, s UpdateAdminRouteParams) (*string, error) {
+	cmd := d.UpdateAdminRouteCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminRoute: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Slug)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Slug)
+	return &msg, nil
 }
 
 // ========== AUDITED COMMAND TYPES ==========
@@ -456,7 +429,6 @@ func (d Database) NewAdminRouteCmd(ctx context.Context, auditCtx audited.AuditCo
 type UpdateAdminRouteCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
-	routeID  types.AdminRouteID
 	params   UpdateAdminRouteParams
 	conn     *sql.DB
 	recorder audited.ChangeEventRecorder
@@ -468,11 +440,11 @@ func (c UpdateAdminRouteCmd) Connection() *sql.DB                   { return c.c
 func (c UpdateAdminRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminRouteCmd) TableName() string                     { return "admin_routes" }
 func (c UpdateAdminRouteCmd) Params() any                           { return c.params }
-func (c UpdateAdminRouteCmd) GetID() string                         { return string(c.routeID) }
+func (c UpdateAdminRouteCmd) GetID() string                         { return string(c.params.Slug_2) }
 
 func (c UpdateAdminRouteCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminRoutes, error) {
 	queries := mdb.New(tx)
-	return queries.GetAdminRouteById(ctx, mdb.GetAdminRouteByIdParams{AdminRouteID: c.routeID})
+	return queries.GetAdminRouteBySlug(ctx, mdb.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
 func (c UpdateAdminRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error {
@@ -488,8 +460,8 @@ func (c UpdateAdminRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error
 	})
 }
 
-func (d Database) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.AdminRouteID, params UpdateAdminRouteParams) UpdateAdminRouteCmd {
-	return UpdateAdminRouteCmd{ctx: ctx, auditCtx: auditCtx, routeID: routeID, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+func (d Database) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminRouteParams) UpdateAdminRouteCmd {
+	return UpdateAdminRouteCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- SQLite DELETE -----
@@ -568,7 +540,6 @@ func (d MysqlDatabase) NewAdminRouteCmd(ctx context.Context, auditCtx audited.Au
 type UpdateAdminRouteCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
-	routeID  types.AdminRouteID
 	params   UpdateAdminRouteParams
 	conn     *sql.DB
 	recorder audited.ChangeEventRecorder
@@ -580,11 +551,11 @@ func (c UpdateAdminRouteCmdMysql) Connection() *sql.DB                   { retur
 func (c UpdateAdminRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminRouteCmdMysql) TableName() string                     { return "admin_routes" }
 func (c UpdateAdminRouteCmdMysql) Params() any                           { return c.params }
-func (c UpdateAdminRouteCmdMysql) GetID() string                         { return string(c.routeID) }
+func (c UpdateAdminRouteCmdMysql) GetID() string                         { return string(c.params.Slug_2) }
 
 func (c UpdateAdminRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminRoutes, error) {
 	queries := mdbm.New(tx)
-	return queries.GetAdminRouteById(ctx, mdbm.GetAdminRouteByIdParams{AdminRouteID: c.routeID})
+	return queries.GetAdminRouteBySlug(ctx, mdbm.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
 func (c UpdateAdminRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
@@ -600,8 +571,8 @@ func (c UpdateAdminRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 	})
 }
 
-func (d MysqlDatabase) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.AdminRouteID, params UpdateAdminRouteParams) UpdateAdminRouteCmdMysql {
-	return UpdateAdminRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, routeID: routeID, params: params, conn: d.Connection, recorder: MysqlRecorder}
+func (d MysqlDatabase) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminRouteParams) UpdateAdminRouteCmdMysql {
+	return UpdateAdminRouteCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- MySQL DELETE -----
@@ -675,7 +646,6 @@ func (d PsqlDatabase) NewAdminRouteCmd(ctx context.Context, auditCtx audited.Aud
 type UpdateAdminRouteCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
-	routeID  types.AdminRouteID
 	params   UpdateAdminRouteParams
 	conn     *sql.DB
 	recorder audited.ChangeEventRecorder
@@ -687,11 +657,11 @@ func (c UpdateAdminRouteCmdPsql) Connection() *sql.DB                   { return
 func (c UpdateAdminRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminRouteCmdPsql) TableName() string                     { return "admin_routes" }
 func (c UpdateAdminRouteCmdPsql) Params() any                           { return c.params }
-func (c UpdateAdminRouteCmdPsql) GetID() string                         { return string(c.routeID) }
+func (c UpdateAdminRouteCmdPsql) GetID() string                         { return string(c.params.Slug_2) }
 
 func (c UpdateAdminRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminRoutes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetAdminRoute(ctx, mdbp.GetAdminRouteParams{AdminRouteID: c.routeID})
+	return queries.GetAdminRouteBySlug(ctx, mdbp.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
 func (c UpdateAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
@@ -707,8 +677,8 @@ func (c UpdateAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 	})
 }
 
-func (d PsqlDatabase) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, routeID types.AdminRouteID, params UpdateAdminRouteParams) UpdateAdminRouteCmdPsql {
-	return UpdateAdminRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, routeID: routeID, params: params, conn: d.Connection, recorder: PsqlRecorder}
+func (d PsqlDatabase) UpdateAdminRouteCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminRouteParams) UpdateAdminRouteCmdPsql {
+	return UpdateAdminRouteCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
 // ----- PostgreSQL DELETE -----

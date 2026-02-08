@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"runtime"
@@ -12,6 +13,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/update"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -399,7 +401,10 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 		now := time.Now().UTC()
 		expiry := now.AddDate(0, 0, 90)
 
-		driver.CreateToken(db.CreateTokenParams{
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
+
+		_, tokenErr := driver.CreateToken(ctx, ac, db.CreateTokenParams{
 			UserID:    types.NullableUserID{ID: ownerID, Valid: true},
 			TokenType: "api_key",
 			Token:     token,
@@ -407,6 +412,13 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			ExpiresAt: types.NewTimestamp(expiry),
 			Revoked:   false,
 		})
+		if tokenErr != nil {
+			return ActionResultMsg{
+				Title:   "Token Generation Failed",
+				Message: fmt.Sprintf("Failed to store token: %s", tokenErr),
+				IsError: true,
+			}
+		}
 
 		return ActionResultMsg{
 			Title:   "API Token Generated",
@@ -491,7 +503,10 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		}
 		username := fmt.Sprintf("user-%s", shortFP)
 
-		user, err := driver.CreateUser(db.CreateUserParams{
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*p.Config, p.UserID)
+
+		user, err := driver.CreateUser(ctx, ac, db.CreateUserParams{
 			Username:     username,
 			Name:         "SSH User",
 			Email:        types.Email(fmt.Sprintf("%s@modulacms.local", username)),
@@ -509,7 +524,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		}
 
 		// Register the SSH key to the new user
-		_, err = driver.CreateUserSshKey(db.CreateUserSshKeyParams{
+		_, err = driver.CreateUserSshKey(ctx, ac, db.CreateUserSshKeyParams{
 			UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
 			PublicKey:   p.SSHPublicKey,
 			KeyType:     p.SSHKeyType,

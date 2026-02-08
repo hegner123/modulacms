@@ -1,5 +1,6 @@
 {
   "environment": "production",
+  "node_id": "01KGWQKFNTDCCR8JTKSEGZH07Q",
   "os": "linux",
   "environment_hosts": {
     "local": "localhost",

@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,7 +49,8 @@ func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 		return err
 	}
 
-	updatedSession, err := d.UpdateSession(updateSession)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedSession, err := d.UpdateSession(r.Context(), ac, updateSession)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -72,7 +74,8 @@ func apiDeleteSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteSession(sID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteSession(r.Context(), ac, sID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

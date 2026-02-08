@@ -2,12 +2,13 @@ package router
 
 import (
 	"encoding/json"
-	"net/http"
 	"fmt"
+	"net/http"
 
-	 "github.com/hegner123/modulacms/internal/config"
-	 "github.com/hegner123/modulacms/internal/db"
-	 "github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // TokensHandler handles CRUD operations that do not require a specific user ID.
@@ -71,7 +72,13 @@ func apiCreateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	createdToken := d.CreateToken(newToken)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdToken, err := d.CreateToken(r.Context(), ac, newToken)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -91,7 +98,8 @@ func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	updatedToken, err := d.UpdateToken(updateToken)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedToken, err := d.UpdateToken(r.Context(), ac, updateToken)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -114,7 +122,8 @@ func apiDeleteToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteToken(tId)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteToken(r.Context(), ac, tId)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

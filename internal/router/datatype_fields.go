@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -90,7 +91,13 @@ func apiCreateDatatypeField(w http.ResponseWriter, r *http.Request, c config.Con
 		newDatatypeField.ID = string(types.NewDatatypeFieldID())
 	}
 
-	createdDatatypeField := d.CreateDatatypeField(newDatatypeField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdDatatypeField, err := d.CreateDatatypeField(r.Context(), ac, newDatatypeField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -115,7 +122,8 @@ func apiUpdateDatatypeField(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
-	updatedDatatypeField, err := d.UpdateDatatypeField(updateDatatypeField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedDatatypeField, err := d.UpdateDatatypeField(r.Context(), ac, updateDatatypeField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -140,7 +148,8 @@ func apiDeleteDatatypeField(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
-	err := d.DeleteDatatypeField(q)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteDatatypeField(r.Context(), ac, q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

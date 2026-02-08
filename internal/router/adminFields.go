@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -95,7 +96,13 @@ func apiCreateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	createdAdminField := d.CreateAdminField(newAdminField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdAdminField, err := d.CreateAdminField(r.Context(), ac, newAdminField)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -115,7 +122,8 @@ func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	updatedAdminField, err := d.UpdateAdminField(updateAdminField)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedAdminField, err := d.UpdateAdminField(r.Context(), ac, updateAdminField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -139,7 +147,8 @@ func apiDeleteAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteAdminField(afID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteAdminField(r.Context(), ac, afID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

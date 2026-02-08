@@ -5,12 +5,14 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"encoding/json"
+	"net"
 	"net/http"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -135,7 +137,12 @@ func OauthCallbackHandler(c config.Config) http.HandlerFunc {
 		dbc := db.ConfigDB(c)
 		expiresAt := types.NewTimestamp(time.Now().Add(24 * time.Hour))
 
-		_, err = dbc.CreateSession(db.CreateSessionParams{
+		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+		if splitErr != nil {
+			clientIP = r.RemoteAddr
+		}
+		ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		_, err = dbc.CreateSession(r.Context(), ac, db.CreateSessionParams{
 			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 			ExpiresAt: expiresAt,
 			SessionData: sql.NullString{
@@ -280,7 +287,12 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 
 	// Create session in database
 	expiresAt := types.NewTimestamp(time.Now().Add(24 * time.Hour))
-	_, err = dbc.CreateSession(db.CreateSessionParams{
+	clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+	if splitErr != nil {
+		clientIP = r.RemoteAddr
+	}
+	ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+	_, err = dbc.CreateSession(r.Context(), ac, db.CreateSessionParams{
 		UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 		ExpiresAt: expiresAt,
 		SessionData: sql.NullString{

@@ -106,23 +106,19 @@ func (d Database) CreateDatatypeFieldTable() error {
 	return err
 }
 
-func (d Database) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeFields {
-	params := d.MapCreateDatatypeFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateDatatypeField(d.Context, params)
+func (d Database) CreateDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateDatatypeFieldParams) (*DatatypeFields, error) {
+	cmd := d.NewDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatypeField: %w", err)
 	}
-	return d.MapDatatypeField(row)
+	r := d.MapDatatypeField(result)
+	return &r, nil
 }
 
-func (d Database) DeleteDatatypeField(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, mdb.DeleteDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete DatatypeField: %v", id)
-	}
-	return nil
+func (d Database) DeleteDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) ListDatatypeField() (*[]DatatypeFields, error) {
@@ -167,23 +163,18 @@ func (d Database) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]Datat
 	return &res, nil
 }
 
-func (d Database) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateDatatypeFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d Database) UpdateDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
-func (d Database) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdb.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: sortOrder,
-		ID:        id,
-	})
+func (d Database) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
+	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
+	return audited.Update(cmd)
 }
 
 func (d Database) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
@@ -258,27 +249,19 @@ func (d MysqlDatabase) CreateDatatypeFieldTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeFields {
-	params := d.MapCreateDatatypeFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateDatatypeField(d.Context, params)
+func (d MysqlDatabase) CreateDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateDatatypeFieldParams) (*DatatypeFields, error) {
+	cmd := d.NewDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatypeField: %w", err)
 	}
-	row, err := queries.GetDatatypeField(d.Context, mdbm.GetDatatypeFieldParams{ID: params.ID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted DatatypeField: %v\n", err)
-	}
-	return d.MapDatatypeField(row)
+	r := d.MapDatatypeField(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteDatatypeField(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, mdbm.DeleteDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete DatatypeField: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
@@ -323,23 +306,18 @@ func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateDatatypeFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d MysqlDatabase) UpdateDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
-func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbm.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
+func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
+	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
+	return audited.Update(cmd)
 }
 
 func (d MysqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
@@ -416,23 +394,19 @@ func (d PsqlDatabase) CreateDatatypeFieldTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateDatatypeField(s CreateDatatypeFieldParams) DatatypeFields {
-	params := d.MapCreateDatatypeFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateDatatypeField(d.Context, params)
+func (d PsqlDatabase) CreateDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateDatatypeFieldParams) (*DatatypeFields, error) {
+	cmd := d.NewDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatypeField: %w", err)
 	}
-	return d.MapDatatypeField(row)
+	r := d.MapDatatypeField(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteDatatypeField(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteDatatypeField(d.Context, mdbp.DeleteDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete DatatypeField: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
@@ -477,23 +451,18 @@ func (d PsqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]D
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateDatatypeField(s UpdateDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateDatatypeFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d PsqlDatabase) UpdateDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
-func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbp.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
+func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
+	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
+	return audited.Update(cmd)
 }
 
 func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
@@ -521,8 +490,6 @@ func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatat
 //////////////////////////////
 
 // NewDatatypeFieldCmd is an audited create command for datatypes_fields (SQLite).
-// Note: Update and Delete commands are not implemented because no GetDatatypeField
-// query exists in the sqlc-generated code, which is required for GetBefore.
 type NewDatatypeFieldCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -555,6 +522,139 @@ func (c NewDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.
 
 func (d Database) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateDatatypeFieldParams) NewDatatypeFieldCmd {
 	return NewDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldCmd) Params() any                           { return c.params }
+func (c UpdateDatatypeFieldCmd) GetID() string                         { return c.params.ID }
+
+func (c UpdateDatatypeFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.DatatypesFields, error) {
+	queries := mdb.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdb.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.params.ID {
+			return v, nil
+		}
+	}
+	return mdb.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.params.ID)
+}
+
+func (c UpdateDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateDatatypeField(ctx, mdb.UpdateDatatypeFieldParams{
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  c.params.SortOrder,
+		ID:         c.params.ID,
+	})
+}
+
+func (d Database) UpdateDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateDatatypeFieldParams) UpdateDatatypeFieldCmd {
+	return UpdateDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE SORT ORDER -----
+
+type UpdateDatatypeFieldSortOrderCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	sortOrder int64
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldSortOrderCmd) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldSortOrderCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldSortOrderCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldSortOrderCmd) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldSortOrderCmd) Params() any {
+	return map[string]any{"id": c.id, "sort_order": c.sortOrder}
+}
+func (c UpdateDatatypeFieldSortOrderCmd) GetID() string { return c.id }
+
+func (c UpdateDatatypeFieldSortOrderCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.DatatypesFields, error) {
+	queries := mdb.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdb.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdb.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.id)
+}
+
+func (c UpdateDatatypeFieldSortOrderCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateDatatypeFieldSortOrder(ctx, mdb.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: c.sortOrder,
+		ID:        c.id,
+	})
+}
+
+func (d Database) UpdateDatatypeFieldSortOrderCmd(ctx context.Context, auditCtx audited.AuditContext, id string, sortOrder int64) UpdateDatatypeFieldSortOrderCmd {
+	return UpdateDatatypeFieldSortOrderCmd{ctx: ctx, auditCtx: auditCtx, id: id, sortOrder: sortOrder, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c DeleteDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
+func (c DeleteDatatypeFieldCmd) GetID() string                         { return c.id }
+
+func (c DeleteDatatypeFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.DatatypesFields, error) {
+	queries := mdb.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdb.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdb.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.id)
+}
+
+func (c DeleteDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteDatatypeField(ctx, mdb.DeleteDatatypeFieldParams{ID: c.id})
+}
+
+func (d Database) DeleteDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteDatatypeFieldCmd {
+	return DeleteDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 ///////////////////////////////
@@ -600,6 +700,112 @@ func (d MysqlDatabase) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited
 	return NewDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
+// ----- MySQL UPDATE -----
+
+type UpdateDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldCmdMysql) Params() any                           { return c.params }
+func (c UpdateDatatypeFieldCmdMysql) GetID() string                         { return c.params.ID }
+
+func (c UpdateDatatypeFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.DatatypesFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetDatatypeField(ctx, mdbm.GetDatatypeFieldParams{ID: c.params.ID})
+}
+
+func (c UpdateDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateDatatypeField(ctx, mdbm.UpdateDatatypeFieldParams{
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  int32(c.params.SortOrder),
+		ID:         c.params.ID,
+	})
+}
+
+func (d MysqlDatabase) UpdateDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateDatatypeFieldParams) UpdateDatatypeFieldCmdMysql {
+	return UpdateDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE SORT ORDER -----
+
+type UpdateDatatypeFieldSortOrderCmdMysql struct {
+	ctx       context.Context
+	auditCtx  audited.AuditContext
+	id        string
+	sortOrder int64
+	conn      *sql.DB
+	recorder  audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Params() any {
+	return map[string]any{"id": c.id, "sort_order": c.sortOrder}
+}
+func (c UpdateDatatypeFieldSortOrderCmdMysql) GetID() string { return c.id }
+
+func (c UpdateDatatypeFieldSortOrderCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.DatatypesFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetDatatypeField(ctx, mdbm.GetDatatypeFieldParams{ID: c.id})
+}
+
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateDatatypeFieldSortOrder(ctx, mdbm.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: int32(c.sortOrder),
+		ID:        c.id,
+	})
+}
+
+func (d MysqlDatabase) UpdateDatatypeFieldSortOrderCmd(ctx context.Context, auditCtx audited.AuditContext, id string, sortOrder int64) UpdateDatatypeFieldSortOrderCmdMysql {
+	return UpdateDatatypeFieldSortOrderCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, sortOrder: sortOrder, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
+func (c DeleteDatatypeFieldCmdMysql) GetID() string                         { return c.id }
+
+func (c DeleteDatatypeFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.DatatypesFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetDatatypeField(ctx, mdbm.GetDatatypeFieldParams{ID: c.id})
+}
+
+func (c DeleteDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteDatatypeField(ctx, mdbm.DeleteDatatypeFieldParams{ID: c.id})
+}
+
+func (d MysqlDatabase) DeleteDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteDatatypeFieldCmdMysql {
+	return DeleteDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
 ///////////////////////////////
 // AUDITED COMMANDS — POSTGRES
 //////////////////////////////
@@ -637,4 +843,137 @@ func (c NewDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (
 
 func (d PsqlDatabase) NewDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateDatatypeFieldParams) NewDatatypeFieldCmdPsql {
 	return NewDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldCmdPsql) Params() any                           { return c.params }
+func (c UpdateDatatypeFieldCmdPsql) GetID() string                         { return c.params.ID }
+
+func (c UpdateDatatypeFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.DatatypesFields, error) {
+	queries := mdbp.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdbp.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.params.ID {
+			return v, nil
+		}
+	}
+	return mdbp.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.params.ID)
+}
+
+func (c UpdateDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateDatatypeField(ctx, mdbp.UpdateDatatypeFieldParams{
+		DatatypeID: c.params.DatatypeID,
+		FieldID:    c.params.FieldID,
+		SortOrder:  int32(c.params.SortOrder),
+		ID:         c.params.ID,
+	})
+}
+
+func (d PsqlDatabase) UpdateDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateDatatypeFieldParams) UpdateDatatypeFieldCmdPsql {
+	return UpdateDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE SORT ORDER -----
+
+type UpdateDatatypeFieldSortOrderCmdPsql struct {
+	ctx       context.Context
+	auditCtx  audited.AuditContext
+	id        string
+	sortOrder int64
+	conn      *sql.DB
+	recorder  audited.ChangeEventRecorder
+}
+
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) TableName() string                     { return "datatypes_fields" }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Params() any {
+	return map[string]any{"id": c.id, "sort_order": c.sortOrder}
+}
+func (c UpdateDatatypeFieldSortOrderCmdPsql) GetID() string { return c.id }
+
+func (c UpdateDatatypeFieldSortOrderCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.DatatypesFields, error) {
+	queries := mdbp.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdbp.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdbp.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.id)
+}
+
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateDatatypeFieldSortOrder(ctx, mdbp.UpdateDatatypeFieldSortOrderParams{
+		SortOrder: int32(c.sortOrder),
+		ID:        c.id,
+	})
+}
+
+func (d PsqlDatabase) UpdateDatatypeFieldSortOrderCmd(ctx context.Context, auditCtx audited.AuditContext, id string, sortOrder int64) UpdateDatatypeFieldSortOrderCmdPsql {
+	return UpdateDatatypeFieldSortOrderCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, sortOrder: sortOrder, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }
+func (c DeleteDatatypeFieldCmdPsql) GetID() string                         { return c.id }
+
+func (c DeleteDatatypeFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.DatatypesFields, error) {
+	queries := mdbp.New(tx)
+	rows, err := queries.ListDatatypeField(ctx)
+	if err != nil {
+		return mdbp.DatatypesFields{}, fmt.Errorf("list datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdbp.DatatypesFields{}, fmt.Errorf("datatypes_fields not found: %v", c.id)
+}
+
+func (c DeleteDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteDatatypeField(ctx, mdbp.DeleteDatatypeFieldParams{ID: c.id})
+}
+
+func (d PsqlDatabase) DeleteDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteDatatypeFieldCmdPsql {
+	return DeleteDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

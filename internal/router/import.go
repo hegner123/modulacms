@@ -1,6 +1,7 @@
 package router
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -9,7 +10,9 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/transform"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -134,7 +137,8 @@ func apiImportContent(w http.ResponseWriter, r *http.Request, c config.Config, f
 	}
 
 	// Import to database
-	result, err := importRootToDatabase(d, root, routeID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	result, err := importRootToDatabase(r.Context(), ac, d, root, routeID)
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to import to database", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -159,6 +163,8 @@ type ImportResult struct {
 
 // importContext tracks state during recursive import
 type importContext struct {
+	ctx           context.Context
+	ac            audited.AuditContext
 	driver        db.DbDriver
 	routeID       types.NullableRouteID
 	authorID      types.NullableUserID
@@ -167,7 +173,7 @@ type importContext struct {
 }
 
 // importRootToDatabase imports a parsed Root structure to the database
-func importRootToDatabase(driver db.DbDriver, root model.Root, routeID types.NullableRouteID) (*ImportResult, error) {
+func importRootToDatabase(reqCtx context.Context, ac audited.AuditContext, driver db.DbDriver, root model.Root, routeID types.NullableRouteID) (*ImportResult, error) {
 	result := &ImportResult{
 		Success: false,
 		Errors:  []string{},
@@ -179,6 +185,8 @@ func importRootToDatabase(driver db.DbDriver, root model.Root, routeID types.Nul
 	}
 
 	ctx := &importContext{
+		ctx:           reqCtx,
+		ac:            ac,
 		driver:        driver,
 		routeID:       routeID,
 		authorID:      types.NullableUserID{Valid: false},
@@ -219,7 +227,7 @@ func (ctx *importContext) importNode(node *model.Node, parentID types.NullableCo
 
 	// Create content_data with null sibling pointers (patched after children are created)
 	now := types.TimestampNow()
-	contentData := ctx.driver.CreateContentData(db.CreateContentDataParams{
+	contentData, createErr := ctx.driver.CreateContentData(ctx.ctx, ctx.ac, db.CreateContentDataParams{
 		RouteID:  ctx.routeID,
 		ParentID: parentID,
 		DatatypeID: types.NullableDatatypeID{
@@ -234,6 +242,11 @@ func (ctx *importContext) importNode(node *model.Node, parentID types.NullableCo
 		DateCreated:   now,
 		DateModified:  now,
 	})
+	if createErr != nil {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create content_data for node type=%q: %v", node.Datatype.Info.Label, createErr))
+		return types.ContentID("")
+	}
 
 	contentDataID := contentData.ContentDataID
 	if contentDataID.IsZero() {
@@ -261,7 +274,7 @@ func (ctx *importContext) importNode(node *model.Node, parentID types.NullableCo
 
 	// Patch sibling pointers after all children are created
 	if len(childIDs) > 0 {
-		ctx.patchSiblingPointers(contentData, childIDs)
+		ctx.patchSiblingPointers(*contentData, childIDs)
 	}
 
 	ctx.result.ContentCreated++
@@ -280,7 +293,7 @@ func (ctx *importContext) findOrCreateDatatype(node *model.Node) types.DatatypeI
 	}
 
 	now := types.TimestampNow()
-	created := ctx.driver.CreateDatatype(db.CreateDatatypeParams{
+	created, createErr := ctx.driver.CreateDatatype(ctx.ctx, ctx.ac, db.CreateDatatypeParams{
 		ParentID:     types.NullableContentID{Valid: false},
 		Label:        label,
 		Type:         typeStr,
@@ -289,7 +302,7 @@ func (ctx *importContext) findOrCreateDatatype(node *model.Node) types.DatatypeI
 		DateModified: now,
 	})
 
-	if created.DatatypeID.IsZero() {
+	if createErr != nil || created.DatatypeID.IsZero() {
 		return types.DatatypeID("")
 	}
 
@@ -304,7 +317,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 	now := types.TimestampNow()
 
 	// Create the field definition
-	createdField := ctx.driver.CreateField(db.CreateFieldParams{
+	createdField, fieldErr := ctx.driver.CreateField(ctx.ctx, ctx.ac, db.CreateFieldParams{
 		ParentID: types.NullableContentID{
 			ID:    contentDataID,
 			Valid: true,
@@ -317,14 +330,14 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 		DateModified: now,
 	})
 
-	if createdField.FieldID.IsZero() {
+	if fieldErr != nil || createdField.FieldID.IsZero() {
 		ctx.result.Errors = append(ctx.result.Errors,
 			fmt.Sprintf("failed to create field label=%q for content_data=%s", field.Info.Label, contentDataID))
 		return
 	}
 
 	// Create the content_field linking content_data to field value
-	ctx.driver.CreateContentField(db.CreateContentFieldParams{
+	_, cfErr := ctx.driver.CreateContentField(ctx.ctx, ctx.ac, db.CreateContentFieldParams{
 		RouteID: ctx.routeID,
 		ContentDataID: types.NullableContentID{
 			ID:    contentDataID,
@@ -339,9 +352,13 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 		DateCreated:  now,
 		DateModified: now,
 	})
+	if cfErr != nil {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create content_field for field=%s content_data=%s: %v", createdField.FieldID, contentDataID, cfErr))
+	}
 
 	// Create the datatype_field linking the datatype to the field
-	ctx.driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
+	_, dtfErr := ctx.driver.CreateDatatypeField(ctx.ctx, ctx.ac, db.CreateDatatypeFieldParams{
 		DatatypeID: types.NullableDatatypeID{
 			ID:    datatypeID,
 			Valid: true,
@@ -351,6 +368,10 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 			Valid: true,
 		},
 	})
+	if dtfErr != nil {
+		ctx.result.Errors = append(ctx.result.Errors,
+			fmt.Sprintf("failed to create datatype_field for field=%s datatype=%s: %v", createdField.FieldID, datatypeID, dtfErr))
+	}
 
 	ctx.result.FieldsCreated++
 }
@@ -366,7 +387,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 //	c2.PrevSiblingID = c1.ID, c2.NextSiblingID = null
 func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs []types.ContentID) {
 	// Set first_child_id on the parent
-	_, err := ctx.driver.UpdateContentData(db.UpdateContentDataParams{
+	_, err := ctx.driver.UpdateContentData(ctx.ctx, ctx.ac, db.UpdateContentDataParams{
 		ContentDataID: parent.ContentDataID,
 		RouteID:       parent.RouteID,
 		ParentID:      parent.ParentID,
@@ -404,7 +425,7 @@ func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs [
 			continue
 		}
 
-		_, updateErr := ctx.driver.UpdateContentData(db.UpdateContentDataParams{
+		_, updateErr := ctx.driver.UpdateContentData(ctx.ctx, ctx.ac, db.UpdateContentDataParams{
 			ContentDataID: childData.ContentDataID,
 			RouteID:       childData.RouteID,
 			ParentID:      childData.ParentID,

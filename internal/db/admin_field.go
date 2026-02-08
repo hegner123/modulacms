@@ -160,15 +160,14 @@ func (d Database) CountAdminFields() (*int64, error) {
 	return &c, nil
 }
 
-func (d Database) CreateAdminField(s CreateAdminFieldParams) AdminFields {
-	params := d.MapCreateAdminFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminField(d.Context, params)
+func (d Database) CreateAdminField(ctx context.Context, ac audited.AuditContext, s CreateAdminFieldParams) (*AdminFields, error) {
+	cmd := d.NewAdminFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminField  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminField: %w", err)
 	}
-
-	return d.MapAdminField(row)
+	r := d.MapAdminField(result)
+	return &r, nil
 }
 
 func (d Database) CreateAdminFieldTable() error {
@@ -177,14 +176,9 @@ func (d Database) CreateAdminFieldTable() error {
 	return err
 }
 
-func (d Database) DeleteAdminField(id types.AdminFieldID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminField(d.Context, mdb.DeleteAdminFieldParams{AdminFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin field: %v", id)
-	}
-
-	return nil
+func (d Database) DeleteAdminField(ctx context.Context, ac audited.AuditContext, id types.AdminFieldID) error {
+	cmd := d.DeleteAdminFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetAdminField(id types.AdminFieldID) (*AdminFields, error) {
@@ -211,15 +205,13 @@ func (d Database) ListAdminFields() (*[]AdminFields, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
-	params := d.MapUpdateAdminFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin field, %v", err)
+func (d Database) UpdateAdminField(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldParams) (*string, error) {
+	cmd := d.UpdateAdminFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -278,18 +270,14 @@ func (d MysqlDatabase) CountAdminFields() (*int64, error) {
 	return &c, nil
 }
 
-func (d MysqlDatabase) CreateAdminField(s CreateAdminFieldParams) AdminFields {
-	params := d.MapCreateAdminFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminField(d.Context, params)
+func (d MysqlDatabase) CreateAdminField(ctx context.Context, ac audited.AuditContext, s CreateAdminFieldParams) (*AdminFields, error) {
+	cmd := d.NewAdminFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminField: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminField: %w", err)
 	}
-	row, err := queries.GetAdminField(d.Context, mdbm.GetAdminFieldParams{AdminFieldID: params.AdminFieldID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminField: %v\n", err)
-	}
-	return d.MapAdminField(row)
+	r := d.MapAdminField(result)
+	return &r, nil
 }
 
 func (d MysqlDatabase) CreateAdminFieldTable() error {
@@ -298,14 +286,9 @@ func (d MysqlDatabase) CreateAdminFieldTable() error {
 	return err
 }
 
-func (d MysqlDatabase) DeleteAdminField(id types.AdminFieldID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminField(d.Context, mdbm.DeleteAdminFieldParams{AdminFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin field: %v", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteAdminField(ctx context.Context, ac audited.AuditContext, id types.AdminFieldID) error {
+	cmd := d.DeleteAdminFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetAdminField(id types.AdminFieldID) (*AdminFields, error) {
@@ -332,15 +315,13 @@ func (d MysqlDatabase) ListAdminFields() (*[]AdminFields, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
-	params := d.MapUpdateAdminFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin field, %v", err)
+func (d MysqlDatabase) UpdateAdminField(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldParams) (*string, error) {
+	cmd := d.UpdateAdminFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -399,15 +380,14 @@ func (d PsqlDatabase) CountAdminFields() (*int64, error) {
 	return &c, nil
 }
 
-func (d PsqlDatabase) CreateAdminField(s CreateAdminFieldParams) AdminFields {
-	params := d.MapCreateAdminFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminField(d.Context, params)
+func (d PsqlDatabase) CreateAdminField(ctx context.Context, ac audited.AuditContext, s CreateAdminFieldParams) (*AdminFields, error) {
+	cmd := d.NewAdminFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminField  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminField: %w", err)
 	}
-
-	return d.MapAdminField(row)
+	r := d.MapAdminField(result)
+	return &r, nil
 }
 
 func (d PsqlDatabase) CreateAdminFieldTable() error {
@@ -416,14 +396,9 @@ func (d PsqlDatabase) CreateAdminFieldTable() error {
 	return err
 }
 
-func (d PsqlDatabase) DeleteAdminField(id types.AdminFieldID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminField(d.Context, mdbp.DeleteAdminFieldParams{AdminFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin field: %v", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteAdminField(ctx context.Context, ac audited.AuditContext, id types.AdminFieldID) error {
+	cmd := d.DeleteAdminFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetAdminField(id types.AdminFieldID) (*AdminFields, error) {
@@ -450,15 +425,13 @@ func (d PsqlDatabase) ListAdminFields() (*[]AdminFields, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateAdminField(s UpdateAdminFieldParams) (*string, error) {
-	params := d.MapUpdateAdminFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update admin field, %v", err)
+func (d PsqlDatabase) UpdateAdminField(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldParams) (*string, error) {
+	cmd := d.UpdateAdminFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 // ========== AUDITED COMMAND TYPES ==========

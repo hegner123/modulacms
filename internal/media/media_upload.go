@@ -1,6 +1,7 @@
 package media
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -14,6 +15,7 @@ import (
 	bucket "github.com/hegner123/modulacms/internal/bucket"
 	config "github.com/hegner123/modulacms/internal/config"
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
@@ -107,7 +109,9 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	params := MapMediaParams(row)
 	params.Srcset = db.StringToNullString(string(srcsetJSON))
 
-	_, err = d.UpdateMedia(params)
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(c.Node_ID), types.UserID(""), "", "system")
+	_, err = d.UpdateMedia(ctx, ac, params)
 	if err != nil {
 		rollbackS3Uploads(s3Session, c.Bucket_Media, uploadedKeys)
 		return fmt.Errorf("database update failed: %w", err)

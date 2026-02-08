@@ -10,6 +10,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -197,7 +198,13 @@ func apiCreateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	createdAdminRoute := d.CreateAdminRoute(newAdminRoute)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdAdminRoute, err := d.CreateAdminRoute(r.Context(), ac, newAdminRoute)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -217,7 +224,8 @@ func apiUpdateAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 		return err
 	}
 
-	updatedAdminRoute, err := d.UpdateAdminRoute(updateAdminRoute)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedAdminRoute, err := d.UpdateAdminRoute(r.Context(), ac, updateAdminRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -241,7 +249,8 @@ func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteAdminRoute(id)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteAdminRoute(r.Context(), ac, id)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

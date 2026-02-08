@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -129,7 +130,13 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	createdMedia := d.CreateMedia(newMedia)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdMedia, err := d.CreateMedia(r.Context(), ac, newMedia)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -149,7 +156,8 @@ func apiUpdateMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	updatedMedia, err := d.UpdateMedia(updateMedia)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedMedia, err := d.UpdateMedia(r.Context(), ac, updateMedia)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -173,7 +181,8 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteMedia(mID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteMedia(r.Context(), ac, mID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

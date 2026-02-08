@@ -5,7 +5,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
-	"github.com/hegner123/modulacms/internal/db"
 )
 
 type UpdatedForm struct{}
@@ -19,19 +18,6 @@ func NewUpdatedForm() tea.Cmd {
 func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 
-	case FormCreate:
-		switch msg.FormType {
-		case DATABASECREATE:
-			if m.TableState.Columns == nil {
-				return m, LogMessageCmd(fmt.Sprintf("Form creation failed: no columns available for table %s", m.TableState.Table))
-			}
-			var cmds []tea.Cmd
-			c := m.NewInsertForm(db.DBTable(m.TableState.Table))
-			cmds = append(cmds, c)
-			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, LogMessageCmd(fmt.Sprintf("Database create form initialized for table %s with %d fields", m.TableState.Table, len(*m.TableState.Columns)-1)))
-			return m, tea.Batch(cmds...)
-		}
 	case NewFormMsg:
 		return m, tea.Batch(
 			LoadingStartCmd(),
@@ -54,30 +40,6 @@ func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.FormState.FormSubmit = true
 		return newModel, nil
-	case FormActionMsg:
-		switch msg.Action {
-		case INSERT:
-			filteredColumns := make([]string, 0)
-			filteredValues := make([]*string, 0)
-
-			for i, value := range msg.Values {
-				if value != nil && *value != "" {
-					filteredColumns = append(filteredColumns, msg.Columns[i])
-					filteredValues = append(filteredValues, value)
-				} else {
-					filteredColumns = append(filteredColumns, msg.Columns[i])
-					filteredValues = append(filteredValues, nil)
-
-				}
-			}
-			return m, tea.Batch(
-				LoadingStartCmd(),
-				DatabaseInsertCmd(db.DBTable(msg.Table), filteredColumns, filteredValues),
-				LogMessageCmd(fmt.Sprintln(filteredColumns)),
-				LogMessageCmd(fmt.Sprintln(filteredValues)),
-			)
-
-		}
 	case FormInitOptionsMsg:
 		newModel := m
 		if newModel.FormState.FormOptions == nil {

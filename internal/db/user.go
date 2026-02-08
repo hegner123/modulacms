@@ -129,25 +129,19 @@ func (d Database) CreateUserTable() error {
 	return err
 }
 
-func (d Database) CreateUser(s CreateUserParams) (*Users, error) {
-	params := d.MapCreateUserParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateUser(d.Context, params)
+func (d Database) CreateUser(ctx context.Context, ac audited.AuditContext, s CreateUserParams) (*Users, error) {
+	cmd := d.NewUserCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUser.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	u := d.MapUser(row)
+	u := d.MapUser(result)
 	return &u, nil
 }
 
-func (d Database) DeleteUser(id types.UserID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteUser(d.Context, mdb.DeleteUserParams{UserID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete user: %v", id)
-	}
-	return nil
+func (d Database) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	cmd := d.DeleteUserCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetUser(id types.UserID) (*Users, error) {
@@ -184,12 +178,10 @@ func (d Database) ListUsers() (*[]Users, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateUser(s UpdateUserParams) (*string, error) {
-	params := d.MapUpdateUserParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateUser(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user, %v", err)
+func (d Database) UpdateUser(ctx context.Context, ac audited.AuditContext, s UpdateUserParams) (*string, error) {
+	cmd := d.UpdateUserCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Username)
 	return &u, nil
@@ -257,29 +249,19 @@ func (d MysqlDatabase) CreateUserTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
-	params := d.MapCreateUserParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateUser(d.Context, params)
+func (d MysqlDatabase) CreateUser(ctx context.Context, ac audited.AuditContext, s CreateUserParams) (*Users, error) {
+	cmd := d.NewUserCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUser.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	row, err := queries.GetUser(d.Context, mdbm.GetUserParams{UserID: params.UserID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted User: %v\n", err)
-	}
-	u := d.MapUser(row)
+	u := d.MapUser(result)
 	return &u, nil
 }
 
-func (d MysqlDatabase) DeleteUser(id types.UserID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUser(d.Context, mdbm.DeleteUserParams{UserID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete user: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	cmd := d.DeleteUserCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetUser(id types.UserID) (*Users, error) {
@@ -316,12 +298,10 @@ func (d MysqlDatabase) ListUsers() (*[]Users, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
-	params := d.MapUpdateUserParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateUser(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user, %v", err)
+func (d MysqlDatabase) UpdateUser(ctx context.Context, ac audited.AuditContext, s UpdateUserParams) (*string, error) {
+	cmd := d.UpdateUserCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Username)
 	return &u, nil
@@ -389,25 +369,19 @@ func (d PsqlDatabase) CreateUserTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateUser(s CreateUserParams) (*Users, error) {
-	params := d.MapCreateUserParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateUser(d.Context, params)
+func (d PsqlDatabase) CreateUser(ctx context.Context, ac audited.AuditContext, s CreateUserParams) (*Users, error) {
+	cmd := d.NewUserCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateUser.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
-	u := d.MapUser(row)
+	u := d.MapUser(result)
 	return &u, nil
 }
 
-func (d PsqlDatabase) DeleteUser(id types.UserID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUser(d.Context, mdbp.DeleteUserParams{UserID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete user: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteUser(ctx context.Context, ac audited.AuditContext, id types.UserID) error {
+	cmd := d.DeleteUserCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetUser(id types.UserID) (*Users, error) {
@@ -444,12 +418,10 @@ func (d PsqlDatabase) ListUsers() (*[]Users, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateUser(s UpdateUserParams) (*string, error) {
-	params := d.MapUpdateUserParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateUser(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update user, %v", err)
+func (d PsqlDatabase) UpdateUser(ctx context.Context, ac audited.AuditContext, s UpdateUserParams) (*string, error) {
+	cmd := d.UpdateUserCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update user: %w", err)
 	}
 	u := fmt.Sprintf("Successfully updated %v\n", s.Username)
 	return &u, nil

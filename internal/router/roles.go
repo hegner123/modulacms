@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -89,7 +90,13 @@ func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
-	createdRole := d.CreateRole(newRole)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdRole, err := d.CreateRole(r.Context(), ac, newRole)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -109,7 +116,8 @@ func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
-	updatedRole, err := d.UpdateRole(updateRole)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedRole, err := d.UpdateRole(r.Context(), ac, updateRole)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -133,7 +141,8 @@ func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteRole(rID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteRole(r.Context(), ac, rID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

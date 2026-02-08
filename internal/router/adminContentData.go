@@ -8,6 +8,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -93,7 +94,13 @@ func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	createdAdminContentData := d.CreateAdminContentData(newAdminContentData)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdAdminContentData, err := d.CreateAdminContentData(r.Context(), ac, newAdminContentData)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -134,7 +141,8 @@ func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	updatedAdminContentData, err := d.UpdateAdminContentData(updateAdminContentData)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedAdminContentData, err := d.UpdateAdminContentData(r.Context(), ac, updateAdminContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -164,7 +172,8 @@ func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	err := d.DeleteAdminContentData(acdID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteAdminContentData(r.Context(), ac, acdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

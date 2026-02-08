@@ -35,6 +35,9 @@ const (
 	EDITCONTENT
 	ACTIONSPAGE
 	ROUTES
+	ADMINROUTES
+	ADMINDATATYPES
+	ADMINCONTENT
 )
 
 func NewDatatypePage(label string) Page {
@@ -89,6 +92,9 @@ func InitPages() *map[PageIndex]Page {
 	actionsPage := NewPage(ACTIONSPAGE, "Actions")
 	routesPage := NewPage(ROUTES, "Routes")
 	datatypePage := NewPage(DATATYPE, "Define Datatype")
+	adminRoutesPage := NewPage(ADMINROUTES, "Admin Routes")
+	adminDatatypesPage := NewPage(ADMINDATATYPES, "Admin Datatypes")
+	adminContentPage := NewPage(ADMINCONTENT, "Admin Content")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -117,5 +123,8 @@ func InitPages() *map[PageIndex]Page {
 	p[ACTIONSPAGE] = actionsPage
 	p[ROUTES] = routesPage
 	p[DATATYPE] = datatypePage
+	p[ADMINROUTES] = adminRoutesPage
+	p[ADMINDATATYPES] = adminDatatypesPage
+	p[ADMINCONTENT] = adminContentPage
 	return &p
 }

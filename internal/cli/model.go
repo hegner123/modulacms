@@ -113,8 +113,18 @@ type Model struct {
 	FilePickerActive       bool
 	RootContentSummary     []db.RootContentSummary
 	UsersList              []db.Users
-	UserFormDialog         *UserFormDialogModel
-	UserFormDialogActive   bool
+	UserFormDialog             *UserFormDialogModel
+	UserFormDialogActive       bool
+	DatabaseFormDialog         *DatabaseFormDialogModel
+	DatabaseFormDialogActive   bool
+
+	// Admin CMS state
+	AdminRoutes                 []db.AdminRoutes
+	AdminAllDatatypes           []db.AdminDatatypes
+	AdminSelectedDatatypeFields []db.AdminFields
+	AdminRootContentSummary     []db.AdminContentData
+	AdminSelectedContentFields  []AdminContentFieldDisplay
+	AdminFieldCursor            int
 
 	// Cursor tracking across tree reloads (e.g., after sibling reorder)
 	PendingCursorContentID types.ContentID

@@ -118,23 +118,19 @@ func (d Database) CreateTokenTable() error {
 	return err
 }
 
-func (d Database) CreateToken(s CreateTokenParams) Tokens {
-	params := d.MapCreateTokenParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateToken(d.Context, params)
+func (d Database) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateToken: %v\n", err)
+		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
-	return d.MapToken(row)
+	r := d.MapToken(result)
+	return &r, nil
 }
 
-func (d Database) DeleteToken(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteToken(d.Context, mdb.DeleteTokenParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Token: %v ", id)
-	}
-	return nil
+func (d Database) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetToken(id string) (*Tokens, error) {
@@ -185,15 +181,13 @@ func (d Database) ListTokens() (*[]Tokens, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateToken(s UpdateTokenParams) (*string, error) {
-	params := d.MapUpdateTokenParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateToken(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update token, %v", err)
+func (d Database) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated token %v\n", s.Token)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -253,27 +247,19 @@ func (d MysqlDatabase) CreateTokenTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateToken(s CreateTokenParams) Tokens {
-	params := d.MapCreateTokenParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateToken(d.Context, params)
+func (d MysqlDatabase) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateToken: %v\n", err)
+		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
-	row, err := queries.GetToken(d.Context, mdbm.GetTokenParams{ID: params.ID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Token: %v\n", err)
-	}
-	return d.MapToken(row)
+	r := d.MapToken(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteToken(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteToken(d.Context, mdbm.DeleteTokenParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Token: %v ", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetToken(id string) (*Tokens, error) {
@@ -324,15 +310,13 @@ func (d MysqlDatabase) ListTokens() (*[]Tokens, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
-	params := d.MapUpdateTokenParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateToken(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update token, %v", err)
+func (d MysqlDatabase) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated token %v\n", s.Token)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -392,23 +376,19 @@ func (d PsqlDatabase) CreateTokenTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateToken(s CreateTokenParams) Tokens {
-	params := d.MapCreateTokenParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateToken(d.Context, params)
+func (d PsqlDatabase) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateToken: %v\n", err)
+		return nil, fmt.Errorf("failed to create token: %w", err)
 	}
-	return d.MapToken(row)
+	r := d.MapToken(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteToken(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteToken(d.Context, mdbp.DeleteTokenParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Token: %v ", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetToken(id string) (*Tokens, error) {
@@ -459,15 +439,13 @@ func (d PsqlDatabase) ListTokens() (*[]Tokens, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateToken(s UpdateTokenParams) (*string, error) {
-	params := d.MapUpdateTokenParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateToken(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update token, %v", err)
+func (d PsqlDatabase) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated token %v\n", s.Token)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////

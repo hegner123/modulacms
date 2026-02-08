@@ -147,23 +147,19 @@ func (d Database) CreateDatatypeTable() error {
 	return err
 }
 
-func (d Database) CreateDatatype(s CreateDatatypeParams) Datatypes {
-	params := d.MapCreateDatatypeParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateDatatype(d.Context, params)
+func (d Database) CreateDatatype(ctx context.Context, ac audited.AuditContext, s CreateDatatypeParams) (*Datatypes, error) {
+	cmd := d.NewDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatype: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatype: %w", err)
 	}
-	return d.MapDatatype(row)
+	r := d.MapDatatype(result)
+	return &r, nil
 }
 
-func (d Database) DeleteDatatype(id types.DatatypeID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteDatatype(d.Context, mdb.DeleteDatatypeParams{DatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete datatype: %v", id)
-	}
-	return nil
+func (d Database) DeleteDatatype(ctx context.Context, ac audited.AuditContext, id types.DatatypeID) error {
+	cmd := d.DeleteDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetDatatype(id types.DatatypeID) (*Datatypes, error) {
@@ -222,15 +218,13 @@ func (d Database) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes,
 	return &res, nil
 }
 
-func (d Database) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
-	params := d.MapUpdateDatatypeParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d Database) UpdateDatatype(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeParams) (*string, error) {
+	cmd := d.UpdateDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -292,27 +286,19 @@ func (d MysqlDatabase) CreateDatatypeTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateDatatype(s CreateDatatypeParams) Datatypes {
-	params := d.MapCreateDatatypeParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateDatatype(d.Context, params)
+func (d MysqlDatabase) CreateDatatype(ctx context.Context, ac audited.AuditContext, s CreateDatatypeParams) (*Datatypes, error) {
+	cmd := d.NewDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatype: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatype: %w", err)
 	}
-	row, err := queries.GetDatatype(d.Context, mdbm.GetDatatypeParams{DatatypeID: params.DatatypeID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Datatype: %v\n", err)
-	}
-	return d.MapDatatype(row)
+	r := d.MapDatatype(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteDatatype(id types.DatatypeID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteDatatype(d.Context, mdbm.DeleteDatatypeParams{DatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete datatype: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteDatatype(ctx context.Context, ac audited.AuditContext, id types.DatatypeID) error {
+	cmd := d.DeleteDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetDatatype(id types.DatatypeID) (*Datatypes, error) {
@@ -370,15 +356,13 @@ func (d MysqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datat
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
-	params := d.MapUpdateDatatypeParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d MysqlDatabase) UpdateDatatype(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeParams) (*string, error) {
+	cmd := d.UpdateDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -444,23 +428,19 @@ func (d PsqlDatabase) CreateDatatypeTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateDatatype(s CreateDatatypeParams) Datatypes {
-	params := d.MapCreateDatatypeParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateDatatype(d.Context, params)
+func (d PsqlDatabase) CreateDatatype(ctx context.Context, ac audited.AuditContext, s CreateDatatypeParams) (*Datatypes, error) {
+	cmd := d.NewDatatypeCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateDatatype: %v\n", err)
+		return nil, fmt.Errorf("failed to create datatype: %w", err)
 	}
-	return d.MapDatatype(row)
+	r := d.MapDatatype(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteDatatype(id types.DatatypeID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteDatatype(d.Context, mdbp.DeleteDatatypeParams{DatatypeID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete datatype: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteDatatype(ctx context.Context, ac audited.AuditContext, id types.DatatypeID) error {
+	cmd := d.DeleteDatatypeCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetDatatype(id types.DatatypeID) (*Datatypes, error) {
@@ -518,15 +498,13 @@ func (d PsqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Dataty
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateDatatype(s UpdateDatatypeParams) (*string, error) {
-	params := d.MapUpdateDatatypeParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateDatatype(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d PsqlDatabase) UpdateDatatype(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeParams) (*string, error) {
+	cmd := d.UpdateDatatypeCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update datatype: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////

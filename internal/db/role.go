@@ -87,23 +87,19 @@ func (d Database) CreateRoleTable() error {
 	return err
 }
 
-func (d Database) CreateRole(s CreateRoleParams) Roles {
-	params := d.MapCreateRoleParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateRole(d.Context, params)
+func (d Database) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateRole: %v\n", err)
+		return nil, fmt.Errorf("failed to create role: %w", err)
 	}
-	return d.MapRole(row)
+	r := d.MapRole(result)
+	return &r, nil
 }
 
-func (d Database) DeleteRole(id types.RoleID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteRole(d.Context, mdb.DeleteRoleParams{RoleID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete role: %v", id)
-	}
-	return nil
+func (d Database) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetRole(id types.RoleID) (*Roles, error) {
@@ -130,15 +126,13 @@ func (d Database) ListRoles() (*[]Roles, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateRole(s UpdateRoleParams) (*string, error) {
-	params := d.MapUpdateRoleParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateRole(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update role, %v", err)
+func (d Database) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -188,27 +182,19 @@ func (d MysqlDatabase) CreateRoleTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateRole(s CreateRoleParams) Roles {
-	params := d.MapCreateRoleParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateRole(d.Context, params)
+func (d MysqlDatabase) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateRole: %v\n", err)
+		return nil, fmt.Errorf("failed to create role: %w", err)
 	}
-	row, err := queries.GetRole(d.Context, mdbm.GetRoleParams{RoleID: params.RoleID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Role: %v\n", err)
-	}
-	return d.MapRole(row)
+	r := d.MapRole(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteRole(id types.RoleID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteRole(d.Context, mdbm.DeleteRoleParams{RoleID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete role: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetRole(id types.RoleID) (*Roles, error) {
@@ -235,15 +221,13 @@ func (d MysqlDatabase) ListRoles() (*[]Roles, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
-	params := d.MapUpdateRoleParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateRole(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update role, %v", err)
+func (d MysqlDatabase) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -293,23 +277,19 @@ func (d PsqlDatabase) CreateRoleTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateRole(s CreateRoleParams) Roles {
-	params := d.MapCreateRoleParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateRole(d.Context, params)
+func (d PsqlDatabase) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateRole: %v\n", err)
+		return nil, fmt.Errorf("failed to create role: %w", err)
 	}
-	return d.MapRole(row)
+	r := d.MapRole(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteRole(id types.RoleID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteRole(d.Context, mdbp.DeleteRoleParams{RoleID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete role: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetRole(id types.RoleID) (*Roles, error) {
@@ -336,15 +316,13 @@ func (d PsqlDatabase) ListRoles() (*[]Roles, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateRole(s UpdateRoleParams) (*string, error) {
-	params := d.MapUpdateRoleParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateRole(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update role, %v", err)
+func (d PsqlDatabase) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////

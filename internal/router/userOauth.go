@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -48,7 +49,8 @@ func ApiCreateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 		return err
 	}
 
-	createdUserOauth, err := d.CreateUserOauth(newUserOauth)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdUserOauth, err := d.CreateUserOauth(r.Context(), ac, newUserOauth)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -73,7 +75,8 @@ func ApiUpdateUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 		return err
 	}
 
-	updatedUserOauth, err := d.UpdateUserOauth(updateUserOauth)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedUserOauth, err := d.UpdateUserOauth(r.Context(), ac, updateUserOauth)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -97,7 +100,8 @@ func ApiDeleteUserOauth(w http.ResponseWriter, r *http.Request, c config.Config)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteUserOauth(uoID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteUserOauth(r.Context(), ac, uoID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

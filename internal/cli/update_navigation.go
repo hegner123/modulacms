@@ -31,7 +31,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, TablesFetchCmd())
 			cmds = append(cmds, PageSetCmd(msg.Page))
-			cmds = append(cmds, PageMenuSetCmd(m.CmsMenuInit()))
+			cmds = append(cmds, PageMenuSetCmd(m.AdminCmsMenuInit()))
 			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
@@ -46,13 +46,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(msg.Page))
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, GetColumnsCmd(*m.Config, m.TableState.Table))
-
-			return m, tea.Batch(cmds...)
-		case CREATEPAGE:
-			cmds = append(cmds, FormNewCmd(DATABASECREATE))
-			cmds = append(cmds, FocusSetCmd(FORMFOCUS))
-			cmds = append(cmds, PageSetCmd(m.PageMap[CREATEPAGE]))
-			cmds = append(cmds, StatusSetCmd(EDITING))
 
 			return m, tea.Batch(cmds...)
 		case READPAGE:
@@ -75,14 +68,6 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
 			cmds = append(cmds, StatusSetCmd(OK))
-
-			return m, tea.Batch(cmds...)
-		case UPDATEFORMPAGE:
-			page := m.PageMap[UPDATEFORMPAGE]
-			cmds = append(cmds, LoadingStartCmd())
-			cmds = append(cmds, FetchTableHeadersRowsCmd(*m.Config, m.TableState.Table, &page))
-			cmds = append(cmds, FormNewCmd(DATABASEUPDATE))
-			cmds = append(cmds, StatusSetCmd(EDITING))
 
 			return m, tea.Batch(cmds...)
 		case DELETEPAGE:
@@ -198,16 +183,45 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(m.PageMap[ACTIONSPAGE]))
 
 			return m, tea.Batch(cmds...)
+		case ADMINROUTES:
+			page := m.PageMap[ADMINROUTES]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminRoutesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case ADMINDATATYPES:
+			page := m.PageMap[ADMINDATATYPES]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminAllDatatypesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case ADMINCONTENT:
+			page := m.PageMap[ADMINCONTENT]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminContentDataFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
 		}
 
 		return m, nil
 	case SelectTable:
+		// Set table synchronously to avoid race with NavigateToPageCmd
+		newModel := m
+		newModel.TableState.Table = m.Tables[m.Cursor]
 		cmds := make([]tea.Cmd, 0)
 		cmds = append(cmds, NavigateToPageCmd(m.PageMap[TABLEPAGE]))
-		cmds = append(cmds, TableSetCmd(m.Tables[m.Cursor]))
 		cmds = append(cmds, PageMenuSetCmd(m.DatabaseMenuInit()))
 
-		return m, tea.Batch(cmds...)
+		return newModel, tea.Batch(cmds...)
 	case FormCompletedMsg:
 		cmds := make([]tea.Cmd, 0)
 		newModel := m

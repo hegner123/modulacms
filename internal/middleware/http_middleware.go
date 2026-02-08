@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
+	db "github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -92,9 +93,9 @@ var PublicEndpoints = []string{
 func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Allow public endpoints
+			// Allow public endpoints (exact match or with trailing slash)
 			for _, endpoint := range PublicEndpoints {
-				if strings.HasPrefix(r.URL.Path, endpoint) {
+				if r.URL.Path == endpoint || r.URL.Path == endpoint+"/" {
 					next.ServeHTTP(w, r)
 					return
 				}
@@ -119,6 +120,14 @@ func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Hand
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// AuthenticatedUser extracts the authenticated user from the request context.
+// Returns nil if no user is authenticated.
+func AuthenticatedUser(ctx context.Context) *db.Users {
+	var key authcontext = "authenticated"
+	user, _ := ctx.Value(key).(*db.Users)
+	return user
 }
 
 // Chain applies multiple middleware in sequence (left to right)

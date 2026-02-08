@@ -1,5 +1,6 @@
 {
     "environment": "docker",
+    "node_id": "01KGWQKFNTMST1YQGVY4RFD9ZJ",
     "port": ":8080",
     "ssl_port": ":4000",
     "cert_dir": "./certs",

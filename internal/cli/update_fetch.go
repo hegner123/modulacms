@@ -21,21 +21,13 @@ func NewFetchUpdate() tea.Cmd {
 func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case FetchHeadersRows:
-		c := msg.Config
 		t := msg.Table
 		dbt := db.StringDBTable(t)
-		query := "SELECT * FROM"
-		d := db.ConfigDB(c)
-		rows, err := d.ExecuteQuery(query, dbt)
-		if err != nil {
-			m.Logger.Ferror("", err)
-			return m, ErrorSetCmd(err)
-		}
-		defer utility.HandleRowsCloseDeferErr(rows)
-		columns, err := rows.Columns()
-		if err != nil {
-			m.Logger.Ferror("", err)
-			return m, ErrorSetCmd(err)
+		d := db.ConfigDB(msg.Config)
+
+		columns := db.GenericHeaders(dbt)
+		if columns == nil {
+			return m, ErrorSetCmd(fmt.Errorf("unknown table: %s", t))
 		}
 		listRows, err := db.GenericList(dbt, d)
 		if err != nil {
@@ -65,26 +57,11 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case GetColumns:
 		dbt := db.StringDBTable(msg.Table)
-		query := "SELECT * FROM"
-		d := db.ConfigDB(msg.Config)
-		rows, err := d.ExecuteQuery(query, dbt)
-		if err != nil {
-			return m, ErrorSetCmd(err)
+		clm := db.GenericHeaders(dbt)
+		if clm == nil {
+			return m, ErrorSetCmd(fmt.Errorf("unknown table: %s", msg.Table))
 		}
-		defer utility.HandleRowsCloseDeferErr(rows)
-		clm, err := rows.Columns()
-		if err != nil {
-			return m, ErrorSetCmd(err)
-		}
-		ct, err := rows.ColumnTypes()
-		if err != nil {
-			return m, ErrorSetCmd(err)
-		}
-		return m,
-			tea.Batch(
-				ColumnsSetCmd(&clm),
-				ColumnTypesSetCmd(&ct),
-			)
+		return m, ColumnsSetCmd(&clm)
 	case DatatypesFetchMsg:
 		return m, tea.Batch(
 			LoadingStartCmd(),

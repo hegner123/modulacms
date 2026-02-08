@@ -158,23 +158,19 @@ func (d Database) CreateContentFieldTable() error {
 	return err
 }
 
-func (d Database) CreateContentField(s CreateContentFieldParams) ContentFields {
-	params := d.MapCreateContentFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateContentField(d.Context, params)
+func (d Database) CreateContentField(ctx context.Context, ac audited.AuditContext, s CreateContentFieldParams) (*ContentFields, error) {
+	cmd := d.NewContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentField: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentField: %w", err)
 	}
-	return d.MapContentField(row)
+	r := d.MapContentField(result)
+	return &r, nil
 }
 
-func (d Database) DeleteContentField(id types.ContentFieldID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteContentField(d.Context, mdb.DeleteContentFieldParams{ContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete ContentField: %v", id)
-	}
-	return nil
+func (d Database) DeleteContentField(ctx context.Context, ac audited.AuditContext, id types.ContentFieldID) error {
+	cmd := d.DeleteContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetContentField(id types.ContentFieldID) (*ContentFields, error) {
@@ -229,15 +225,13 @@ func (d Database) ListContentFieldsByContentData(contentDataID types.NullableCon
 	return &res, nil
 }
 
-func (d Database) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
-	params := d.MapUpdateContentFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d Database) UpdateContentField(ctx context.Context, ac audited.AuditContext, s UpdateContentFieldParams) (*string, error) {
+	cmd := d.UpdateContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field %v\n", s.ContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentFieldID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -298,27 +292,19 @@ func (d MysqlDatabase) CreateContentFieldTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateContentField(s CreateContentFieldParams) ContentFields {
-	params := d.MapCreateContentFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateContentField(d.Context, params)
+func (d MysqlDatabase) CreateContentField(ctx context.Context, ac audited.AuditContext, s CreateContentFieldParams) (*ContentFields, error) {
+	cmd := d.NewContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentField: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentField: %w", err)
 	}
-	row, err := queries.GetContentField(d.Context, mdbm.GetContentFieldParams{ContentFieldID: params.ContentFieldID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted ContentField: %v\n", err)
-	}
-	return d.MapContentField(row)
+	r := d.MapContentField(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteContentField(id types.ContentFieldID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteContentField(d.Context, mdbm.DeleteContentFieldParams{ContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete ContentField: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteContentField(ctx context.Context, ac audited.AuditContext, id types.ContentFieldID) error {
+	cmd := d.DeleteContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetContentField(id types.ContentFieldID) (*ContentFields, error) {
@@ -373,15 +359,13 @@ func (d MysqlDatabase) ListContentFieldsByContentData(contentDataID types.Nullab
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
-	params := d.MapUpdateContentFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d MysqlDatabase) UpdateContentField(ctx context.Context, ac audited.AuditContext, s UpdateContentFieldParams) (*string, error) {
+	cmd := d.UpdateContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field %v\n", s.ContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentFieldID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -447,23 +431,19 @@ func (d PsqlDatabase) CreateContentFieldTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateContentField(s CreateContentFieldParams) ContentFields {
-	params := d.MapCreateContentFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateContentField(d.Context, params)
+func (d PsqlDatabase) CreateContentField(ctx context.Context, ac audited.AuditContext, s CreateContentFieldParams) (*ContentFields, error) {
+	cmd := d.NewContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateContentField: %v\n", err)
+		return nil, fmt.Errorf("failed to create contentField: %w", err)
 	}
-	return d.MapContentField(row)
+	r := d.MapContentField(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteContentField(id types.ContentFieldID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteContentField(d.Context, mdbp.DeleteContentFieldParams{ContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete ContentField: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteContentField(ctx context.Context, ac audited.AuditContext, id types.ContentFieldID) error {
+	cmd := d.DeleteContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetContentField(id types.ContentFieldID) (*ContentFields, error) {
@@ -518,15 +498,13 @@ func (d PsqlDatabase) ListContentFieldsByContentData(contentDataID types.Nullabl
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateContentField(s UpdateContentFieldParams) (*string, error) {
-	params := d.MapUpdateContentFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d PsqlDatabase) UpdateContentField(ctx context.Context, ac audited.AuditContext, s UpdateContentFieldParams) (*string, error) {
+	cmd := d.UpdateContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update contentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field %v\n", s.ContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ContentFieldID)
+	return &msg, nil
 }
 
 // Utility function for backward compatibility

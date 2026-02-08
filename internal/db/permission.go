@@ -101,23 +101,19 @@ func (d Database) CreatePermissionTable() error {
 	return err
 }
 
-func (d Database) CreatePermission(s CreatePermissionParams) Permissions {
-	params := d.MapCreatePermissionParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreatePermission(d.Context, params)
+func (d Database) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreatePermission: %v\n", err)
+		return nil, fmt.Errorf("failed to create permission: %w", err)
 	}
-	return d.MapPermission(row)
+	r := d.MapPermission(result)
+	return &r, nil
 }
 
-func (d Database) DeletePermission(id types.PermissionID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeletePermission(d.Context, mdb.DeletePermissionParams{PermissionID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete permission: %v", id)
-	}
-	return nil
+func (d Database) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetPermission(id types.PermissionID) (*Permissions, error) {
@@ -144,15 +140,13 @@ func (d Database) ListPermissions() (*[]Permissions, error) {
 	return &res, nil
 }
 
-func (d Database) UpdatePermission(s UpdatePermissionParams) (*string, error) {
-	params := d.MapUpdatePermissionParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdatePermission(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update permission, %v", err)
+func (d Database) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -205,27 +199,19 @@ func (d MysqlDatabase) CreatePermissionTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
-	params := d.MapCreatePermissionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreatePermission(d.Context, params)
+func (d MysqlDatabase) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreatePermission: %v\n", err)
+		return nil, fmt.Errorf("failed to create permission: %w", err)
 	}
-	row, err := queries.GetPermission(d.Context, mdbm.GetPermissionParams{PermissionID: params.PermissionID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Permission: %v\n", err)
-	}
-	return d.MapPermission(row)
+	r := d.MapPermission(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeletePermission(id types.PermissionID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeletePermission(d.Context, mdbm.DeletePermissionParams{PermissionID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete permission: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetPermission(id types.PermissionID) (*Permissions, error) {
@@ -252,15 +238,13 @@ func (d MysqlDatabase) ListPermissions() (*[]Permissions, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, error) {
-	params := d.MapUpdatePermissionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdatePermission(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update permission, %v", err)
+func (d MysqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -313,23 +297,19 @@ func (d PsqlDatabase) CreatePermissionTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreatePermission(s CreatePermissionParams) Permissions {
-	params := d.MapCreatePermissionParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreatePermission(d.Context, params)
+func (d PsqlDatabase) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreatePermission: %v\n", err)
+		return nil, fmt.Errorf("failed to create permission: %w", err)
 	}
-	return d.MapPermission(row)
+	r := d.MapPermission(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeletePermission(id types.PermissionID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeletePermission(d.Context, mdbp.DeletePermissionParams{PermissionID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete permission: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetPermission(id types.PermissionID) (*Permissions, error) {
@@ -356,15 +336,13 @@ func (d PsqlDatabase) ListPermissions() (*[]Permissions, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdatePermission(s UpdatePermissionParams) (*string, error) {
-	params := d.MapUpdatePermissionParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdatePermission(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update permission, %v", err)
+func (d PsqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////

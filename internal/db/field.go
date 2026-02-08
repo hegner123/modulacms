@@ -152,24 +152,18 @@ func (d Database) CreateFieldTable() error {
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
-func (d Database) CreateField(s CreateFieldParams) Fields {
-	params := d.MapCreateFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateField(d.Context, params)
+func (d Database) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
+	cmd := d.NewFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateField  %v \n", err)
+		return nil, fmt.Errorf("failed to create field: %w", err)
 	}
-
-	return d.MapField(row)
+	r := d.MapField(result)
+	return &r, nil
 }
-func (d Database) DeleteField(id types.FieldID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteField(d.Context, mdb.DeleteFieldParams{FieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete field: %v\n", id)
-	}
-
-	return nil
+func (d Database) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
+	cmd := d.DeleteFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetField(id types.FieldID) (*Fields, error) {
@@ -210,15 +204,13 @@ func (d Database) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fields,
 	return &res, nil
 }
 
-func (d Database) UpdateField(s UpdateFieldParams) (*string, error) {
-	params := d.MapUpdateFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update field, %v", err)
+func (d Database) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
+	cmd := d.UpdateFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -285,27 +277,18 @@ func (d MysqlDatabase) CreateFieldTable() error {
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
-func (d MysqlDatabase) CreateField(s CreateFieldParams) Fields {
-	params := d.MapCreateFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateField(d.Context, params)
+func (d MysqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
+	cmd := d.NewFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateField: %v\n", err)
+		return nil, fmt.Errorf("failed to create field: %w", err)
 	}
-	row, err := queries.GetField(d.Context, mdbm.GetFieldParams{FieldID: params.FieldID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Field: %v\n", err)
-	}
-	return d.MapField(row)
+	r := d.MapField(result)
+	return &r, nil
 }
-func (d MysqlDatabase) DeleteField(id types.FieldID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteField(d.Context, mdbm.DeleteFieldParams{FieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete field: %v", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
+	cmd := d.DeleteFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d MysqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	queries := mdbm.New(d.Connection)
@@ -342,15 +325,13 @@ func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fi
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
-	params := d.MapUpdateFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update field, %v", err)
+func (d MysqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
+	cmd := d.UpdateFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -417,24 +398,18 @@ func (d PsqlDatabase) CreateFieldTable() error {
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
-func (d PsqlDatabase) CreateField(s CreateFieldParams) Fields {
-	params := d.MapCreateFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateField(d.Context, params)
+func (d PsqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
+	cmd := d.NewFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateField  %v \n", err)
+		return nil, fmt.Errorf("failed to create field: %w", err)
 	}
-
-	return d.MapField(row)
+	r := d.MapField(result)
+	return &r, nil
 }
-func (d PsqlDatabase) DeleteField(id types.FieldID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteField(d.Context, mdbp.DeleteFieldParams{FieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete field: %v", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
+	cmd := d.DeleteFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d PsqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	queries := mdbp.New(d.Connection)
@@ -471,15 +446,13 @@ func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableContentID) (*[]Fie
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) UpdateField(s UpdateFieldParams) (*string, error) {
-	params := d.MapUpdateFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update field, %v", err)
+func (d PsqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
+	cmd := d.UpdateFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update field: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
 }
 
 ///////////////////////////////

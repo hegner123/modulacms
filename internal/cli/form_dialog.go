@@ -34,6 +34,14 @@ const (
 	FORMDIALOGEDITUSER               FormDialogAction = "edit_user"
 	FORMDIALOGEDIITSINGLEFIELD       FormDialogAction = "edit_single_field"
 	FORMDIALOGADDCONTENTFIELD        FormDialogAction = "add_content_field"
+	FORMDIALOGCREATEADMINROUTE       FormDialogAction = "create_admin_route"
+	FORMDIALOGEDITADMINROUTE         FormDialogAction = "edit_admin_route"
+	FORMDIALOGCREATEADMINDATATYPE    FormDialogAction = "create_admin_datatype"
+	FORMDIALOGEDITADMINDATATYPE      FormDialogAction = "edit_admin_datatype"
+	FORMDIALOGCREATEADMINFIELD       FormDialogAction = "create_admin_field"
+	FORMDIALOGEDITADMINFIELD         FormDialogAction = "edit_admin_field"
+	FORMDIALOGDBINSERT               FormDialogAction = "db_insert"
+	FORMDIALOGDBUPDATE               FormDialogAction = "db_update"
 )
 
 // FormDialogField indices for focus navigation
@@ -427,7 +435,8 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	// Determine field labels based on action type
 	firstFieldLabel := "Label"
 	secondFieldLabel := "Type"
-	if d.Action == FORMDIALOGCREATEROUTE || d.Action == FORMDIALOGEDITROUTE {
+	if d.Action == FORMDIALOGCREATEROUTE || d.Action == FORMDIALOGEDITROUTE ||
+		d.Action == FORMDIALOGCREATEADMINROUTE || d.Action == FORMDIALOGEDITADMINROUTE {
 		firstFieldLabel = "Title"
 		secondFieldLabel = "Slug"
 	}

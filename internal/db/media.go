@@ -169,23 +169,19 @@ func (d Database) CreateMediaTable() error {
 	return err
 }
 
-func (d Database) CreateMedia(s CreateMediaParams) Media {
-	params := d.MapCreateMediaParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateMedia(d.Context, params)
+func (d Database) CreateMedia(ctx context.Context, ac audited.AuditContext, s CreateMediaParams) (*Media, error) {
+	cmd := d.NewMediaCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMedia: %v\n", err)
+		return nil, fmt.Errorf("failed to create media: %w", err)
 	}
-	return d.MapMedia(row)
+	r := d.MapMedia(result)
+	return &r, nil
 }
 
-func (d Database) DeleteMedia(id types.MediaID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteMedia(d.Context, mdb.DeleteMediaParams{MediaID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete Media: %v", id)
-	}
-	return nil
+func (d Database) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	cmd := d.DeleteMediaCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetMedia(id types.MediaID) (*Media, error) {
@@ -232,15 +228,13 @@ func (d Database) ListMedia() (*[]Media, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateMedia(s UpdateMediaParams) (*string, error) {
-	params := d.MapUpdateMediaParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateMedia(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update media, %v", err)
+func (d Database) UpdateMedia(ctx context.Context, ac audited.AuditContext, s UpdateMediaParams) (*string, error) {
+	cmd := d.UpdateMediaCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update media: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MediaID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -323,27 +317,19 @@ func (d MysqlDatabase) CreateMediaTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateMedia(s CreateMediaParams) Media {
-	params := d.MapCreateMediaParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateMedia(d.Context, params)
+func (d MysqlDatabase) CreateMedia(ctx context.Context, ac audited.AuditContext, s CreateMediaParams) (*Media, error) {
+	cmd := d.NewMediaCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMedia: %v\n", err)
+		return nil, fmt.Errorf("failed to create media: %w", err)
 	}
-	row, err := queries.GetMedia(d.Context, mdbm.GetMediaParams{MediaID: params.MediaID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Media: %v\n", err)
-	}
-	return d.MapMedia(row)
+	r := d.MapMedia(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteMedia(id types.MediaID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteMedia(d.Context, mdbm.DeleteMediaParams{MediaID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete Media: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	cmd := d.DeleteMediaCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetMedia(id types.MediaID) (*Media, error) {
@@ -390,15 +376,13 @@ func (d MysqlDatabase) ListMedia() (*[]Media, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
-	params := d.MapUpdateMediaParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateMedia(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update media, %v", err)
+func (d MysqlDatabase) UpdateMedia(ctx context.Context, ac audited.AuditContext, s UpdateMediaParams) (*string, error) {
+	cmd := d.UpdateMediaCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update media: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MediaID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -481,23 +465,19 @@ func (d PsqlDatabase) CreateMediaTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateMedia(s CreateMediaParams) Media {
-	params := d.MapCreateMediaParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateMedia(d.Context, params)
+func (d PsqlDatabase) CreateMedia(ctx context.Context, ac audited.AuditContext, s CreateMediaParams) (*Media, error) {
+	cmd := d.NewMediaCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMedia: %v\n", err)
+		return nil, fmt.Errorf("failed to create media: %w", err)
 	}
-	return d.MapMedia(row)
+	r := d.MapMedia(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteMedia(id types.MediaID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteMedia(d.Context, mdbp.DeleteMediaParams{MediaID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete Media: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	cmd := d.DeleteMediaCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetMedia(id types.MediaID) (*Media, error) {
@@ -544,15 +524,13 @@ func (d PsqlDatabase) ListMedia() (*[]Media, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateMedia(s UpdateMediaParams) (*string, error) {
-	params := d.MapUpdateMediaParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateMedia(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update media, %v", err)
+func (d PsqlDatabase) UpdateMedia(ctx context.Context, ac audited.AuditContext, s UpdateMediaParams) (*string, error) {
+	cmd := d.UpdateMediaCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update media: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Name)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MediaID)
+	return &msg, nil
 }
 
 ///////////////////////////////

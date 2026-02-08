@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -89,7 +90,8 @@ func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
-	createdUser, err := d.CreateUser(newUser)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdUser, err := d.CreateUser(r.Context(), ac, newUser)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -114,7 +116,8 @@ func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
-	updatedUser, err := d.UpdateUser(updateUser)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedUser, err := d.UpdateUser(r.Context(), ac, updateUser)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -138,7 +141,8 @@ func ApiDeleteUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteUser(uId)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err = d.DeleteUser(r.Context(), ac, uId)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

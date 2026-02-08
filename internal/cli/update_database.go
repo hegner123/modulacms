@@ -69,9 +69,23 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 			LogMessageCmd(fmt.Sprintf("Database create initiated: table %s with %d fields", msg.Table, len(msg.Columns))),
 		)
 	case DatabaseUpdateEntry:
+		// Convert string values to any map for the query builder
+		valuesMap := make(map[string]any, len(msg.Values))
+		for k, v := range msg.Values {
+			valuesMap[k] = v
+		}
+		// Parse rowID as int64 for SecureBuildUpdateQuery
+		var rowID int64
+		if _, err := fmt.Sscanf(msg.RowID, "%d", &rowID); err != nil {
+			return m, tea.Batch(
+				LoadingStopCmd(),
+				LogMessageCmd(fmt.Sprintf("Invalid row ID %q: %s", msg.RowID, err.Error())),
+			)
+		}
 		return m, tea.Batch(
-			LoadingStopCmd(),
-			LogMessageCmd(fmt.Sprintf("Database update initiated: table %s with %d fields", msg.Table, len(msg.Values))),
+			LoadingStartCmd(),
+			m.DatabaseUpdate(m.Config, msg.Table, rowID, valuesMap),
+			LogMessageCmd(fmt.Sprintf("Database update initiated: table %s row %s", msg.Table, msg.RowID)),
 		)
 	default:
 		return m, nil

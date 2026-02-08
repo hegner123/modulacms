@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	config "github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
@@ -85,60 +86,60 @@ type DbDriver interface {
 
 	// AdminContentData
 	CountAdminContentData() (*int64, error)
-	CreateAdminContentData(CreateAdminContentDataParams) AdminContentData
+	CreateAdminContentData(context.Context, audited.AuditContext, CreateAdminContentDataParams) (*AdminContentData, error)
 	CreateAdminContentDataTable() error
-	DeleteAdminContentData(types.AdminContentID) error
+	DeleteAdminContentData(context.Context, audited.AuditContext, types.AdminContentID) error
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentDataByRoute(string) (*[]AdminContentData, error)
-	UpdateAdminContentData(UpdateAdminContentDataParams) (*string, error)
+	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
 
 	// AdminContentFields
 	CountAdminContentFields() (*int64, error)
-	CreateAdminContentField(CreateAdminContentFieldParams) AdminContentFields
+	CreateAdminContentField(context.Context, audited.AuditContext, CreateAdminContentFieldParams) (*AdminContentFields, error)
 	CreateAdminContentFieldTable() error
-	DeleteAdminContentField(types.AdminContentFieldID) error
+	DeleteAdminContentField(context.Context, audited.AuditContext, types.AdminContentFieldID) error
 	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
-	UpdateAdminContentField(UpdateAdminContentFieldParams) (*string, error)
+	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminDatatypes
 	CountAdminDatatypes() (*int64, error)
-	CreateAdminDatatype(CreateAdminDatatypeParams) AdminDatatypes
+	CreateAdminDatatype(context.Context, audited.AuditContext, CreateAdminDatatypeParams) (*AdminDatatypes, error)
 	CreateAdminDatatypeTable() error
-	DeleteAdminDatatype(types.AdminDatatypeID) error
+	DeleteAdminDatatype(context.Context, audited.AuditContext, types.AdminDatatypeID) error
 	GetAdminDatatypeById(types.AdminDatatypeID) (*AdminDatatypes, error)
 	ListAdminDatatypes() (*[]AdminDatatypes, error)
-	UpdateAdminDatatype(UpdateAdminDatatypeParams) (*string, error)
+	UpdateAdminDatatype(context.Context, audited.AuditContext, UpdateAdminDatatypeParams) (*string, error)
 
 	// AdminDatatypeFields
 	CountAdminDatatypeFields() (*int64, error)
-	CreateAdminDatatypeField(CreateAdminDatatypeFieldParams) AdminDatatypeFields
+	CreateAdminDatatypeField(context.Context, audited.AuditContext, CreateAdminDatatypeFieldParams) (*AdminDatatypeFields, error)
 	CreateAdminDatatypeFieldTable() error
-	DeleteAdminDatatypeField(string) error
+	DeleteAdminDatatypeField(context.Context, audited.AuditContext, string) error
 	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByDatatypeID(types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByFieldID(types.NullableAdminFieldID) (*[]AdminDatatypeFields, error)
-	UpdateAdminDatatypeField(UpdateAdminDatatypeFieldParams) (*string, error)
+	UpdateAdminDatatypeField(context.Context, audited.AuditContext, UpdateAdminDatatypeFieldParams) (*string, error)
 
 	// AdminFields
 	CountAdminFields() (*int64, error)
-	CreateAdminField(CreateAdminFieldParams) AdminFields
+	CreateAdminField(context.Context, audited.AuditContext, CreateAdminFieldParams) (*AdminFields, error)
 	CreateAdminFieldTable() error
-	DeleteAdminField(types.AdminFieldID) error
+	DeleteAdminField(context.Context, audited.AuditContext, types.AdminFieldID) error
 	GetAdminField(types.AdminFieldID) (*AdminFields, error)
 	ListAdminFields() (*[]AdminFields, error)
-	UpdateAdminField(UpdateAdminFieldParams) (*string, error)
+	UpdateAdminField(context.Context, audited.AuditContext, UpdateAdminFieldParams) (*string, error)
 
 	// AdminRoutes
 	CountAdminRoutes() (*int64, error)
-	CreateAdminRoute(CreateAdminRouteParams) AdminRoutes
+	CreateAdminRoute(context.Context, audited.AuditContext, CreateAdminRouteParams) (*AdminRoutes, error)
 	CreateAdminRouteTable() error
-	DeleteAdminRoute(types.AdminRouteID) error
+	DeleteAdminRoute(context.Context, audited.AuditContext, types.AdminRouteID) error
 	GetAdminRoute(types.Slug) (*AdminRoutes, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
-	UpdateAdminRoute(UpdateAdminRouteParams) (*string, error)
+	UpdateAdminRoute(context.Context, audited.AuditContext, UpdateAdminRouteParams) (*string, error)
 
 	// Backups
 	CountBackups() (*int64, error)
@@ -179,173 +180,173 @@ type DbDriver interface {
 
 	// ContentData
 	CountContentData() (*int64, error)
-	CreateContentData(CreateContentDataParams) ContentData
+	CreateContentData(context.Context, audited.AuditContext, CreateContentDataParams) (*ContentData, error)
 	CreateContentDataTable() error
-	DeleteContentData(types.ContentID) error
+	DeleteContentData(context.Context, audited.AuditContext, types.ContentID) error
 	GetContentData(types.ContentID) (*ContentData, error)
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
 	ListRootContentSummary() (*[]RootContentSummary, error)
-	UpdateContentData(UpdateContentDataParams) (*string, error)
+	UpdateContentData(context.Context, audited.AuditContext, UpdateContentDataParams) (*string, error)
 
 	// ContentFields
 	CountContentFields() (*int64, error)
-	CreateContentField(CreateContentFieldParams) ContentFields
+	CreateContentField(context.Context, audited.AuditContext, CreateContentFieldParams) (*ContentFields, error)
 	CreateContentFieldTable() error
-	DeleteContentField(types.ContentFieldID) error
+	DeleteContentField(context.Context, audited.AuditContext, types.ContentFieldID) error
 	GetContentField(types.ContentFieldID) (*ContentFields, error)
 	GetContentFieldsByRoute(types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error)
 	ListContentFields() (*[]ContentFields, error)
 	ListContentFieldsByRoute(types.NullableRouteID) (*[]ContentFields, error)
 	ListContentFieldsByContentData(types.NullableContentID) (*[]ContentFields, error)
-	UpdateContentField(UpdateContentFieldParams) (*string, error)
+	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 
 	// Datatypes
 	CountDatatypes() (*int64, error)
-	CreateDatatype(CreateDatatypeParams) Datatypes
+	CreateDatatype(context.Context, audited.AuditContext, CreateDatatypeParams) (*Datatypes, error)
 	CreateDatatypeTable() error
-	DeleteDatatype(types.DatatypeID) error
+	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
 	GetDatatype(types.DatatypeID) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
 	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
-	UpdateDatatype(UpdateDatatypeParams) (*string, error)
+	UpdateDatatype(context.Context, audited.AuditContext, UpdateDatatypeParams) (*string, error)
 
 	// DatatypeFields
 	CountDatatypeFields() (*int64, error)
-	CreateDatatypeField(CreateDatatypeFieldParams) DatatypeFields
+	CreateDatatypeField(context.Context, audited.AuditContext, CreateDatatypeFieldParams) (*DatatypeFields, error)
 	CreateDatatypeFieldTable() error
-	DeleteDatatypeField(string) error
+	DeleteDatatypeField(context.Context, audited.AuditContext, string) error
 	GetMaxSortOrderByDatatypeID(types.NullableDatatypeID) (int64, error)
 	ListDatatypeField() (*[]DatatypeFields, error)
 	ListDatatypeFieldByDatatypeID(types.NullableDatatypeID) (*[]DatatypeFields, error)
 	ListDatatypeFieldByFieldID(types.NullableFieldID) (*[]DatatypeFields, error)
-	UpdateDatatypeField(UpdateDatatypeFieldParams) (*string, error)
-	UpdateDatatypeFieldSortOrder(string, int64) error
+	UpdateDatatypeField(context.Context, audited.AuditContext, UpdateDatatypeFieldParams) (*string, error)
+	UpdateDatatypeFieldSortOrder(context.Context, audited.AuditContext, string, int64) error
 
 	// Fields
 	CountFields() (*int64, error)
-	CreateField(CreateFieldParams) Fields
+	CreateField(context.Context, audited.AuditContext, CreateFieldParams) (*Fields, error)
 	CreateFieldTable() error
-	DeleteField(types.FieldID) error
+	DeleteField(context.Context, audited.AuditContext, types.FieldID) error
 	GetField(types.FieldID) (*Fields, error)
 	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
 	ListFields() (*[]Fields, error)
 	ListFieldsByDatatypeID(types.NullableContentID) (*[]Fields, error)
-	UpdateField(UpdateFieldParams) (*string, error)
+	UpdateField(context.Context, audited.AuditContext, UpdateFieldParams) (*string, error)
 
 	// Media
 	CountMedia() (*int64, error)
-	CreateMedia(CreateMediaParams) Media
+	CreateMedia(context.Context, audited.AuditContext, CreateMediaParams) (*Media, error)
 	CreateMediaTable() error
-	DeleteMedia(types.MediaID) error
+	DeleteMedia(context.Context, audited.AuditContext, types.MediaID) error
 	GetMedia(types.MediaID) (*Media, error)
 	GetMediaByName(string) (*Media, error)
 	GetMediaByURL(types.URL) (*Media, error)
 	ListMedia() (*[]Media, error)
-	UpdateMedia(UpdateMediaParams) (*string, error)
+	UpdateMedia(context.Context, audited.AuditContext, UpdateMediaParams) (*string, error)
 
 	// MediaDimensions
 	CountMediaDimensions() (*int64, error)
-	CreateMediaDimension(CreateMediaDimensionParams) MediaDimensions
+	CreateMediaDimension(context.Context, audited.AuditContext, CreateMediaDimensionParams) (*MediaDimensions, error)
 	CreateMediaDimensionTable() error
-	DeleteMediaDimension(string) error
+	DeleteMediaDimension(context.Context, audited.AuditContext, string) error
 	GetMediaDimension(string) (*MediaDimensions, error)
 	ListMediaDimensions() (*[]MediaDimensions, error)
-	UpdateMediaDimension(UpdateMediaDimensionParams) (*string, error)
+	UpdateMediaDimension(context.Context, audited.AuditContext, UpdateMediaDimensionParams) (*string, error)
 
 	// Permissions
 	CountPermissions() (*int64, error)
-	CreatePermission(CreatePermissionParams) Permissions
+	CreatePermission(context.Context, audited.AuditContext, CreatePermissionParams) (*Permissions, error)
 	CreatePermissionTable() error
-	DeletePermission(types.PermissionID) error
+	DeletePermission(context.Context, audited.AuditContext, types.PermissionID) error
 	GetPermission(types.PermissionID) (*Permissions, error)
 	ListPermissions() (*[]Permissions, error)
-	UpdatePermission(UpdatePermissionParams) (*string, error)
+	UpdatePermission(context.Context, audited.AuditContext, UpdatePermissionParams) (*string, error)
 
 	// Roles
 	CountRoles() (*int64, error)
-	CreateRole(CreateRoleParams) Roles
+	CreateRole(context.Context, audited.AuditContext, CreateRoleParams) (*Roles, error)
 	CreateRoleTable() error
-	DeleteRole(types.RoleID) error
+	DeleteRole(context.Context, audited.AuditContext, types.RoleID) error
 	GetRole(types.RoleID) (*Roles, error)
 	ListRoles() (*[]Roles, error)
-	UpdateRole(UpdateRoleParams) (*string, error)
+	UpdateRole(context.Context, audited.AuditContext, UpdateRoleParams) (*string, error)
 
 	// Routes
 	CountRoutes() (*int64, error)
-	CreateRoute(CreateRouteParams) Routes
+	CreateRoute(context.Context, audited.AuditContext, CreateRouteParams) (*Routes, error)
 	CreateRouteTable() error
-	DeleteRoute(types.RouteID) error
+	DeleteRoute(context.Context, audited.AuditContext, types.RouteID) error
 	GetContentTreeByRoute(types.NullableRouteID) (*[]GetContentTreeByRouteRow, error)
 	GetRoute(types.RouteID) (*Routes, error)
 	GetRouteID(string) (*types.RouteID, error)
 	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)
 	ListRoutes() (*[]Routes, error)
 	ListRoutesByDatatype(types.DatatypeID) (*[]Routes, error)
-	UpdateRoute(UpdateRouteParams) (*string, error)
+	UpdateRoute(context.Context, audited.AuditContext, UpdateRouteParams) (*string, error)
 
 	// Sessions
 	CountSessions() (*int64, error)
-	CreateSession(CreateSessionParams) (*Sessions, error)
+	CreateSession(context.Context, audited.AuditContext, CreateSessionParams) (*Sessions, error)
 	CreateSessionTable() error
-	DeleteSession(types.SessionID) error
+	DeleteSession(context.Context, audited.AuditContext, types.SessionID) error
 	GetSession(types.SessionID) (*Sessions, error)
 	GetSessionByUserId(types.NullableUserID) (*Sessions, error)
 	ListSessions() (*[]Sessions, error)
-	UpdateSession(UpdateSessionParams) (*string, error)
+	UpdateSession(context.Context, audited.AuditContext, UpdateSessionParams) (*string, error)
 
 	// Tables
 	CountTables() (*int64, error)
-	CreateTable(CreateTableParams) Tables
+	CreateTable(context.Context, audited.AuditContext, CreateTableParams) (*Tables, error)
 	CreateTableTable() error
-	DeleteTable(string) error
+	DeleteTable(context.Context, audited.AuditContext, string) error
 	GetTable(string) (*Tables, error)
 	ListTables() (*[]Tables, error)
-	UpdateTable(UpdateTableParams) (*string, error)
+	UpdateTable(context.Context, audited.AuditContext, UpdateTableParams) (*string, error)
 
 	// Tokens
 	CountTokens() (*int64, error)
-	CreateToken(CreateTokenParams) Tokens
+	CreateToken(context.Context, audited.AuditContext, CreateTokenParams) (*Tokens, error)
 	CreateTokenTable() error
-	DeleteToken(string) error
+	DeleteToken(context.Context, audited.AuditContext, string) error
 	GetToken(string) (*Tokens, error)
 	GetTokenByTokenValue(string) (*Tokens, error)
 	GetTokenByUserId(types.NullableUserID) (*[]Tokens, error)
 	ListTokens() (*[]Tokens, error)
-	UpdateToken(UpdateTokenParams) (*string, error)
+	UpdateToken(context.Context, audited.AuditContext, UpdateTokenParams) (*string, error)
 
 	// Users
 	CountUsers() (*int64, error)
-	CreateUser(CreateUserParams) (*Users, error)
+	CreateUser(context.Context, audited.AuditContext, CreateUserParams) (*Users, error)
 	CreateUserTable() error
-	DeleteUser(types.UserID) error
+	DeleteUser(context.Context, audited.AuditContext, types.UserID) error
 	GetUser(types.UserID) (*Users, error)
 	GetUserByEmail(types.Email) (*Users, error)
 	GetUserBySSHFingerprint(string) (*Users, error)
 	ListUsers() (*[]Users, error)
-	UpdateUser(UpdateUserParams) (*string, error)
+	UpdateUser(context.Context, audited.AuditContext, UpdateUserParams) (*string, error)
 
 	// UserOauths
 	CountUserOauths() (*int64, error)
-	CreateUserOauth(CreateUserOauthParams) (*UserOauth, error)
+	CreateUserOauth(context.Context, audited.AuditContext, CreateUserOauthParams) (*UserOauth, error)
 	CreateUserOauthTable() error
-	DeleteUserOauth(types.UserOauthID) error
+	DeleteUserOauth(context.Context, audited.AuditContext, types.UserOauthID) error
 	GetUserOauth(types.UserOauthID) (*UserOauth, error)
 	GetUserOauthByProviderID(string, string) (*UserOauth, error)
 	GetUserOauthByUserId(types.NullableUserID) (*UserOauth, error)
 	ListUserOauths() (*[]UserOauth, error)
-	UpdateUserOauth(UpdateUserOauthParams) (*string, error)
+	UpdateUserOauth(context.Context, audited.AuditContext, UpdateUserOauthParams) (*string, error)
 
 	// UserSshKeys
 	CountUserSshKeys() (*int64, error)
-	CreateUserSshKey(CreateUserSshKeyParams) (*UserSshKeys, error)
+	CreateUserSshKey(context.Context, audited.AuditContext, CreateUserSshKeyParams) (*UserSshKeys, error)
 	CreateUserSshKeyTable() error
-	DeleteUserSshKey(string) error
+	DeleteUserSshKey(context.Context, audited.AuditContext, string) error
 	GetUserSshKey(string) (*UserSshKeys, error)
 	GetUserSshKeyByFingerprint(string) (*UserSshKeys, error)
 	ListUserSshKeys(types.NullableUserID) (*[]UserSshKeys, error)
-	UpdateUserSshKeyLabel(string, string) error
+	UpdateUserSshKeyLabel(context.Context, audited.AuditContext, string, string) error
 	UpdateUserSshKeyLastUsed(string, string) error
 }
 
@@ -547,36 +548,48 @@ func (d Database) CreateAllTables() error {
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d Database) CreateBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
+
 	// 1. Create system admin permission (permission_id = 1)
-	permission := d.CreatePermission(CreatePermissionParams{
+	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
 		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin permission: %w", err)
+	}
 	if permission.PermissionID.IsZero() {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
 	// 2. Create system admin role (role_id = 1)
-	adminRole := d.CreateRole(CreateRoleParams{
+	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "system_admin",
 		Permissions: `{"system_admin": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin role: %w", err)
+	}
 	if adminRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
 	// 3. Create viewer role (role_id = 4)
-	viewerRole := d.CreateRole(CreateRoleParams{
+	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "viewer",
 		Permissions: `{"read": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create viewer role: %w", err)
+	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
 	}
 
 	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(CreateUserParams{
+	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
@@ -593,7 +606,7 @@ func (d Database) CreateBootstrapData() error {
 	}
 
 	// 5. Create default home route (route_id = 1) - Recommended
-	homeRoute := d.CreateRoute(CreateRouteParams{
+	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
 		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
@@ -601,12 +614,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default home route: %w", err)
+	}
 	if homeRoute.RouteID.IsZero() {
 		return fmt.Errorf("failed to create default home route")
 	}
 
 	// 6. Create default page datatype (datatype_id = 1)
-	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Page",
 		Type:         "page",
@@ -614,12 +630,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default page datatype: %w", err)
+	}
 	if pageDatatype.DatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default page datatype")
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
-	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+	adminRoute, err := d.CreateAdminRoute(ctx, ac, CreateAdminRouteParams{
 		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
@@ -627,12 +646,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin route: %w", err)
+	}
 	if adminRoute.AdminRouteID.IsZero() {
 		return fmt.Errorf("failed to create default admin route")
 	}
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
-	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
@@ -640,12 +662,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin datatype: %w", err)
+	}
 	if adminDatatype.AdminDatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
 	// 9. Create default admin field (admin_field_id = 1)
-	adminField := d.CreateAdminField(CreateAdminFieldParams{
+	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -654,12 +679,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin field: %w", err)
+	}
 	if adminField.AdminFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
 	// 10. Create default field (field_id = 1)
-	field := d.CreateField(CreateFieldParams{
+	field, err := d.CreateField(ctx, ac, CreateFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -668,12 +696,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default field: %w", err)
+	}
 	if field.FieldID.IsZero() {
 		return fmt.Errorf("failed to create default field")
 	}
 
 	// 11. Create default content_data record (content_data_id = 1)
-	contentData := d.CreateContentData(CreateContentDataParams{
+	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
 		FirstChildID:  sql.NullString{},
@@ -685,12 +716,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_data: %w", err)
+	}
 	if contentData.ContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
-	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
@@ -702,12 +736,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_data: %w", err)
+	}
 	if adminContentData.AdminContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
 	// 13. Create default content_field (content_field_id = 1)
-	contentField := d.CreateContentField(CreateContentFieldParams{
+	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
@@ -716,12 +753,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_field: %w", err)
+	}
 	if contentField.ContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default content_field")
 	}
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
-	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       sql.NullString{},
 		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
@@ -730,23 +770,29 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_field: %w", err)
+	}
 	if adminContentField.AdminContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_field")
 	}
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
-	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       StringToNullString("Default"),
 		Width:       Int64ToNullInt64(1920),
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media_dimension: %w", err)
+	}
 	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
 	// 16. Create default media record (media_id = 1) - Validation record
-	media := d.CreateMedia(CreateMediaParams{
+	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
 		Name:         StringToNullString("default"),
 		DisplayName:  StringToNullString("Default Media"),
 		Alt:          StringToNullString("Default"),
@@ -761,12 +807,15 @@ func (d Database) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media: %w", err)
+	}
 	if media.MediaID.IsZero() {
 		return fmt.Errorf("failed to create default media")
 	}
 
 	// 17. Create default token (id = 1) - Validation record
-	token := d.CreateToken(CreateTokenParams{
+	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
@@ -774,12 +823,15 @@ func (d Database) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default token: %w", err)
+	}
 	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
 	// 18. Create default session (session_id = 1) - Validation record
-	session, err := d.CreateSession(CreateSessionParams{
+	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		CreatedAt:   types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
@@ -796,7 +848,7 @@ func (d Database) CreateBootstrapData() error {
 	}
 
 	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
-	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+	userOauth, err := d.CreateUserOauth(ctx, ac, CreateUserOauthParams{
 		UserID:              types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		OauthProvider:       "bootstrap",
 		OauthProviderUserID: "bootstrap_user",
@@ -813,7 +865,7 @@ func (d Database) CreateBootstrapData() error {
 	}
 
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
-	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
 		KeyType:     "ssh-ed25519",
@@ -860,26 +912,35 @@ func (d Database) CreateBootstrapData() error {
 	}
 
 	for _, tableName := range tableNames {
-		table := d.CreateTable(CreateTableParams{Label: tableName})
+		table, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tableName})
+		if err != nil {
+			return fmt.Errorf("failed to register table in tables registry: %s: %w", tableName, err)
+		}
 		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
+	}
 	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
 	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
-	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
+	}
 	if adminDatatypeField.ID == "" {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
@@ -1182,36 +1243,48 @@ func (d MysqlDatabase) CreateAllTables() error {
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d MysqlDatabase) CreateBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
+
 	// 1. Create system admin permission (permission_id = 1)
-	permission := d.CreatePermission(CreatePermissionParams{
+	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
 		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin permission: %w", err)
+	}
 	if permission.PermissionID.IsZero() {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
 	// 2. Create system admin role (role_id = 1)
-	adminRole := d.CreateRole(CreateRoleParams{
+	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "system_admin",
 		Permissions: `{"system_admin": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin role: %w", err)
+	}
 	if adminRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
 	// 3. Create viewer role (role_id = 4)
-	viewerRole := d.CreateRole(CreateRoleParams{
+	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "viewer",
 		Permissions: `{"read": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create viewer role: %w", err)
+	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
 	}
 
 	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(CreateUserParams{
+	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
@@ -1228,7 +1301,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 5. Create default home route (route_id = 1) - Recommended
-	homeRoute := d.CreateRoute(CreateRouteParams{
+	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
 		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
@@ -1236,12 +1309,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default home route: %w", err)
+	}
 	if homeRoute.RouteID.IsZero() {
 		return fmt.Errorf("failed to create default home route")
 	}
 
 	// 6. Create default page datatype (datatype_id = 1)
-	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Page",
 		Type:         "page",
@@ -1249,12 +1325,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default page datatype: %w", err)
+	}
 	if pageDatatype.DatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default page datatype")
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
-	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+	adminRoute, err := d.CreateAdminRoute(ctx, ac, CreateAdminRouteParams{
 		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
@@ -1262,12 +1341,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin route: %w", err)
+	}
 	if adminRoute.AdminRouteID.IsZero() {
 		return fmt.Errorf("failed to create default admin route")
 	}
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
-	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
@@ -1275,12 +1357,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin datatype: %w", err)
+	}
 	if adminDatatype.AdminDatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
 	// 9. Create default admin field (admin_field_id = 1)
-	adminField := d.CreateAdminField(CreateAdminFieldParams{
+	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -1289,12 +1374,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin field: %w", err)
+	}
 	if adminField.AdminFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
 	// 10. Create default field (field_id = 1)
-	field := d.CreateField(CreateFieldParams{
+	field, err := d.CreateField(ctx, ac, CreateFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -1303,12 +1391,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default field: %w", err)
+	}
 	if field.FieldID.IsZero() {
 		return fmt.Errorf("failed to create default field")
 	}
 
 	// 11. Create default content_data record (content_data_id = 1)
-	contentData := d.CreateContentData(CreateContentDataParams{
+	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
 		FirstChildID:  sql.NullString{},
@@ -1320,12 +1411,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_data: %w", err)
+	}
 	if contentData.ContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
-	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
@@ -1337,12 +1431,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_data: %w", err)
+	}
 	if adminContentData.AdminContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
 	// 13. Create default content_field (content_field_id = 1)
-	contentField := d.CreateContentField(CreateContentFieldParams{
+	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
@@ -1351,12 +1448,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_field: %w", err)
+	}
 	if contentField.ContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default content_field")
 	}
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
-	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       sql.NullString{},
 		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
@@ -1365,23 +1465,29 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_field: %w", err)
+	}
 	if adminContentField.AdminContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_field")
 	}
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
-	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       StringToNullString("Default"),
 		Width:       Int64ToNullInt64(1920),
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media_dimension: %w", err)
+	}
 	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
 	// 16. Create default media record (media_id = 1) - Validation record
-	media := d.CreateMedia(CreateMediaParams{
+	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
 		Name:         StringToNullString("default"),
 		DisplayName:  StringToNullString("Default Media"),
 		Alt:          StringToNullString("Default"),
@@ -1396,12 +1502,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media: %w", err)
+	}
 	if media.MediaID.IsZero() {
 		return fmt.Errorf("failed to create default media")
 	}
 
 	// 17. Create default token (id = 1) - Validation record
-	token := d.CreateToken(CreateTokenParams{
+	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
@@ -1409,12 +1518,15 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default token: %w", err)
+	}
 	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
 	// 18. Create default session (session_id = 1) - Validation record
-	session, err := d.CreateSession(CreateSessionParams{
+	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		CreatedAt:   types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
@@ -1431,7 +1543,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
-	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+	userOauth, err := d.CreateUserOauth(ctx, ac, CreateUserOauthParams{
 		UserID:              types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		OauthProvider:       "bootstrap",
 		OauthProviderUserID: "bootstrap_user",
@@ -1448,7 +1560,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
-	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
 		KeyType:     "ssh-ed25519",
@@ -1495,26 +1607,35 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 	}
 
 	for _, tableName := range tableNames {
-		table := d.CreateTable(CreateTableParams{Label: tableName})
+		table, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tableName})
+		if err != nil {
+			return fmt.Errorf("failed to register table in tables registry: %s: %w", tableName, err)
+		}
 		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
+	}
 	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
 	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
-	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
+	}
 	if adminDatatypeField.ID == "" {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
@@ -1790,36 +1911,48 @@ func (d PsqlDatabase) CreateAllTables() error {
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d PsqlDatabase) CreateBootstrapData() error {
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
+
 	// 1. Create system admin permission (permission_id = 1)
-	permission := d.CreatePermission(CreatePermissionParams{
+	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
 		TableID: "",
 		Mode:    7,
 		Label:   "system_admin",
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin permission: %w", err)
+	}
 	if permission.PermissionID.IsZero() {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
 	// 2. Create system admin role (role_id = 1)
-	adminRole := d.CreateRole(CreateRoleParams{
+	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "system_admin",
 		Permissions: `{"system_admin": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create system admin role: %w", err)
+	}
 	if adminRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
 	// 3. Create viewer role (role_id = 4)
-	viewerRole := d.CreateRole(CreateRoleParams{
+	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
 		Label:       "viewer",
 		Permissions: `{"read": true}`,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create viewer role: %w", err)
+	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
 	}
 
 	// 4. Create system admin user (user_id = 1)
-	systemUser, err := d.CreateUser(CreateUserParams{
+	systemUser, err := d.CreateUser(ctx, ac, CreateUserParams{
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
@@ -1836,7 +1969,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 5. Create default home route (route_id = 1) - Recommended
-	homeRoute := d.CreateRoute(CreateRouteParams{
+	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
 		Slug:         types.Slug("home"),
 		Title:        "Home",
 		Status:       1,
@@ -1844,12 +1977,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default home route: %w", err)
+	}
 	if homeRoute.RouteID.IsZero() {
 		return fmt.Errorf("failed to create default home route")
 	}
 
 	// 6. Create default page datatype (datatype_id = 1)
-	pageDatatype := d.CreateDatatype(CreateDatatypeParams{
+	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Page",
 		Type:         "page",
@@ -1857,12 +1993,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default page datatype: %w", err)
+	}
 	if pageDatatype.DatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default page datatype")
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
-	adminRoute := d.CreateAdminRoute(CreateAdminRouteParams{
+	adminRoute, err := d.CreateAdminRoute(ctx, ac, CreateAdminRouteParams{
 		Slug:         types.Slug("admin"),
 		Title:        "Admin",
 		Status:       1,
@@ -1870,12 +2009,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin route: %w", err)
+	}
 	if adminRoute.AdminRouteID.IsZero() {
 		return fmt.Errorf("failed to create default admin route")
 	}
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
-	adminDatatype := d.CreateAdminDatatype(CreateAdminDatatypeParams{
+	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
@@ -1883,12 +2025,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin datatype: %w", err)
+	}
 	if adminDatatype.AdminDatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
 	// 9. Create default admin field (admin_field_id = 1)
-	adminField := d.CreateAdminField(CreateAdminFieldParams{
+	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -1897,12 +2042,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin field: %w", err)
+	}
 	if adminField.AdminFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
 	// 10. Create default field (field_id = 1)
-	field := d.CreateField(CreateFieldParams{
+	field, err := d.CreateField(ctx, ac, CreateFieldParams{
 		ParentID:     types.NullableContentID{},
 		Label:        "Content",
 		Data:         "",
@@ -1911,12 +2059,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default field: %w", err)
+	}
 	if field.FieldID.IsZero() {
 		return fmt.Errorf("failed to create default field")
 	}
 
 	// 11. Create default content_data record (content_data_id = 1)
-	contentData := d.CreateContentData(CreateContentDataParams{
+	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
 		FirstChildID:  sql.NullString{},
@@ -1928,12 +2079,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_data: %w", err)
+	}
 	if contentData.ContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default content_data")
 	}
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
-	adminContentData := d.CreateAdminContentData(CreateAdminContentDataParams{
+	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
@@ -1945,12 +2099,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_data: %w", err)
+	}
 	if adminContentData.AdminContentDataID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_data")
 	}
 
 	// 13. Create default content_field (content_field_id = 1)
-	contentField := d.CreateContentField(CreateContentFieldParams{
+	contentField, err := d.CreateContentField(ctx, ac, CreateContentFieldParams{
 		RouteID:       types.NullableRouteID{},
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
@@ -1959,12 +2116,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default content_field: %w", err)
+	}
 	if contentField.ContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default content_field")
 	}
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
-	adminContentField := d.CreateAdminContentField(CreateAdminContentFieldParams{
+	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
 		AdminRouteID:       sql.NullString{},
 		AdminContentDataID: adminContentData.AdminContentDataID.String(),
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
@@ -1973,23 +2133,29 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_content_field: %w", err)
+	}
 	if adminContentField.AdminContentFieldID.IsZero() {
 		return fmt.Errorf("failed to create default admin_content_field")
 	}
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
-	mediaDimension := d.CreateMediaDimension(CreateMediaDimensionParams{
+	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       StringToNullString("Default"),
 		Width:       Int64ToNullInt64(1920),
 		Height:      Int64ToNullInt64(1080),
 		AspectRatio: StringToNullString("16:9"),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media_dimension: %w", err)
+	}
 	if mediaDimension.MdID == "" {
 		return fmt.Errorf("failed to create default media_dimension")
 	}
 
 	// 16. Create default media record (media_id = 1) - Validation record
-	media := d.CreateMedia(CreateMediaParams{
+	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
 		Name:         StringToNullString("default"),
 		DisplayName:  StringToNullString("Default Media"),
 		Alt:          StringToNullString("Default"),
@@ -2004,12 +2170,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default media: %w", err)
+	}
 	if media.MediaID.IsZero() {
 		return fmt.Errorf("failed to create default media")
 	}
 
 	// 17. Create default token (id = 1) - Validation record
-	token := d.CreateToken(CreateTokenParams{
+	token, err := d.CreateToken(ctx, ac, CreateTokenParams{
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
@@ -2017,12 +2186,15 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default token: %w", err)
+	}
 	if token.ID == "" {
 		return fmt.Errorf("failed to create default token")
 	}
 
 	// 18. Create default session (session_id = 1) - Validation record
-	session, err := d.CreateSession(CreateSessionParams{
+	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		CreatedAt:   types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
@@ -2039,7 +2211,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 19. Create default user_oauth record (user_oauth_id = 1) - Validation record
-	userOauth, err := d.CreateUserOauth(CreateUserOauthParams{
+	userOauth, err := d.CreateUserOauth(ctx, ac, CreateUserOauthParams{
 		UserID:              types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		OauthProvider:       "bootstrap",
 		OauthProviderUserID: "bootstrap_user",
@@ -2056,7 +2228,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	}
 
 	// 19A. Create default user_ssh_key record (ssh_key_id = 1) - Validation record
-	userSshKey, err := d.CreateUserSshKey(CreateUserSshKeyParams{
+	userSshKey, err := d.CreateUserSshKey(ctx, ac, CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		PublicKey:   "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIBootstrapValidationKey bootstrap@modulacms",
 		KeyType:     "ssh-ed25519",
@@ -2103,26 +2275,35 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 	}
 
 	for _, tableName := range tableNames {
-		table := d.CreateTable(CreateTableParams{Label: tableName})
+		table, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tableName})
+		if err != nil {
+			return fmt.Errorf("failed to register table in tables registry: %s: %w", tableName, err)
+		}
 		if table.ID == "" {
 			return fmt.Errorf("failed to register table in tables registry: %s", tableName)
 		}
 	}
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
+	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
+	}
 	if datatypeField.ID == "" {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
 	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
-	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
+	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 	})
+	if err != nil {
+		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
+	}
 	if adminDatatypeField.ID == "" {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
@@ -2307,8 +2488,12 @@ func (d Database) SortTables() error {
 		st = append(st, t.Label)
 	}
 	sort.Strings(st)
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "sort-tables", "system")
 	for _, tt := range st {
-		d.CreateTable(CreateTableParams{Label: tt})
+		if _, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tt}); err != nil {
+			return fmt.Errorf("failed to re-create table entry %s: %w", tt, err)
+		}
 	}
 
 	return nil
@@ -2334,8 +2519,12 @@ func (d MysqlDatabase) SortTables() error {
 		st = append(st, t.Label)
 	}
 	sort.Strings(st)
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "sort-tables", "system")
 	for _, tt := range st {
-		d.CreateTable(CreateTableParams{Label: tt})
+		if _, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tt}); err != nil {
+			return fmt.Errorf("failed to re-create table entry %s: %w", tt, err)
+		}
 	}
 
 	return nil
@@ -2361,8 +2550,12 @@ func (d PsqlDatabase) SortTables() error {
 		st = append(st, t.Label)
 	}
 	sort.Strings(st)
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "sort-tables", "system")
 	for _, tt := range st {
-		d.CreateTable(CreateTableParams{Label: tt})
+		if _, err := d.CreateTable(ctx, ac, CreateTableParams{Label: tt}); err != nil {
+			return fmt.Errorf("failed to re-create table entry %s: %w", tt, err)
+		}
 	}
 
 	return nil

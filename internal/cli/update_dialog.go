@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -8,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -261,6 +263,51 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowDeleteAdminRouteDialogMsg:
+		dialog := NewDialog("Delete Admin Route", fmt.Sprintf("Delete admin route '%s'?\nThis cannot be undone.", msg.Title), true, DIALOGDELETEADMINROUTE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteAdminRouteContext = &DeleteAdminRouteContext{
+			AdminRouteID: msg.AdminRouteID,
+			Title:        msg.Title,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminDatatypeDialogMsg:
+		if msg.HasChildren {
+			dialog := NewDialog("Cannot Delete", fmt.Sprintf("Cannot delete '%s' because it has child datatypes.\nDelete child datatypes first.", msg.Label), false, DIALOGGENERIC)
+			return m, tea.Batch(
+				DialogSetCmd(&dialog),
+				DialogActiveSetCmd(true),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		dialog := NewDialog("Delete Admin Datatype", fmt.Sprintf("Delete admin datatype '%s'?\nThis will remove all field associations.", msg.Label), true, DIALOGDELETEADMINDATATYPE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteAdminDatatypeContext = &DeleteAdminDatatypeContext{
+			AdminDatatypeID: msg.AdminDatatypeID,
+			Label:           msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminFieldDialogMsg:
+		dialog := NewDialog("Delete Admin Field", fmt.Sprintf("Delete admin field '%s'?\nThis will unlink it from the datatype and remove the field.", msg.Label), true, DIALOGDELETEADMINFIELD)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteAdminFieldContext = &DeleteAdminFieldContext{
+			AdminFieldID:    msg.AdminFieldID,
+			AdminDatatypeID: msg.AdminDatatypeID,
+			Label:           msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case UserFormDialogSetMsg:
 		m.UserFormDialog = msg.Dialog
 		return m, nil
@@ -454,6 +501,51 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				DialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 			)
+		case DIALOGDELETEADMINROUTE:
+			if deleteAdminRouteContext != nil {
+				adminRouteID := deleteAdminRouteContext.AdminRouteID
+				deleteAdminRouteContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteAdminRouteCmd(adminRouteID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEADMINDATATYPE:
+			if deleteAdminDatatypeContext != nil {
+				adminDatatypeID := deleteAdminDatatypeContext.AdminDatatypeID
+				deleteAdminDatatypeContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteAdminDatatypeCmd(adminDatatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEADMINFIELD:
+			if deleteAdminFieldContext != nil {
+				ctx := deleteAdminFieldContext
+				deleteAdminFieldContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteAdminFieldCmd(ctx.AdminFieldID, ctx.AdminDatatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
 		case DIALOGDELETECONTENTFIELD:
 			if deleteContentFieldContext != nil {
 				ctx := deleteContentFieldContext
@@ -524,6 +616,78 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ShowEditRouteDialogMsg:
 		// Edit route dialog with pre-populated values
 		dialog := NewEditRouteDialog("Edit Route", FORMDIALOGEDITROUTE, msg.Route)
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowAdminFormDialogMsg:
+		// Admin form dialog with parent options from admin datatypes
+		parentOpts := []ParentOption{
+			{Label: "ROOT (no parent)", Value: ""},
+		}
+		for _, p := range msg.Parents {
+			parentOpts = append(parentOpts, ParentOption{
+				Label: p.Label,
+				Value: string(p.AdminDatatypeID),
+			})
+		}
+		dialog := NewFormDialog(msg.Title, msg.Action, nil)
+		dialog.ParentOptions = parentOpts
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminRouteDialogMsg:
+		// Edit admin route dialog with pre-populated values
+		dialog := NewRouteFormDialog("Edit Admin Route", FORMDIALOGEDITADMINROUTE)
+		dialog.LabelInput.SetValue(msg.Route.Title)
+		dialog.TypeInput.SetValue(string(msg.Route.Slug))
+		dialog.EntityID = string(msg.Route.AdminRouteID)
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminDatatypeDialogMsg:
+		// Edit admin datatype dialog with pre-populated values
+		parentOpts := []ParentOption{
+			{Label: "ROOT (no parent)", Value: ""},
+		}
+		for _, p := range msg.Parents {
+			if p.AdminDatatypeID == msg.Datatype.AdminDatatypeID {
+				continue // skip self to prevent circular reference
+			}
+			parentOpts = append(parentOpts, ParentOption{
+				Label: p.Label,
+				Value: string(p.AdminDatatypeID),
+			})
+		}
+		dialog := NewFormDialog("Edit Admin Datatype", FORMDIALOGEDITADMINDATATYPE, nil)
+		dialog.ParentOptions = parentOpts
+		dialog.LabelInput.SetValue(msg.Datatype.Label)
+		dialog.TypeInput.SetValue(msg.Datatype.Type)
+		dialog.EntityID = string(msg.Datatype.AdminDatatypeID)
+		if msg.Datatype.ParentID.Valid {
+			for i, opt := range dialog.ParentOptions {
+				if opt.Value == string(msg.Datatype.ParentID.ID) {
+					dialog.ParentIndex = i
+					break
+				}
+			}
+		}
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminFieldDialogMsg:
+		// Edit admin field dialog with pre-populated values
+		dialog := NewFieldFormDialog("Edit Admin Field", FORMDIALOGEDITADMINFIELD)
+		dialog.LabelInput.SetValue(msg.Field.Label)
+		dialog.TypeIndex = FieldInputTypeIndex(string(msg.Field.Type))
+		dialog.EntityID = string(msg.Field.AdminFieldID)
 		return m, tea.Batch(
 			FormDialogSetCmd(&dialog),
 			FormDialogActiveSetCmd(true),
@@ -686,6 +850,56 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGCREATEADMINROUTE:
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateAdminRouteFromDialogCmd(msg.Label, msg.Type),
+			)
+		case FORMDIALOGEDITADMINROUTE:
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateAdminRouteFromDialogCmd(msg.EntityID, msg.Label, msg.Type, msg.ParentID),
+			)
+		case FORMDIALOGCREATEADMINDATATYPE:
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateAdminDatatypeFromDialogCmd(msg.Label, msg.Type, msg.ParentID),
+			)
+		case FORMDIALOGEDITADMINDATATYPE:
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateAdminDatatypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type, msg.ParentID),
+			)
+		case FORMDIALOGCREATEADMINFIELD:
+			// Create a field and link it to the selected admin datatype
+			if len(m.AdminAllDatatypes) > 0 && m.Cursor < len(m.AdminAllDatatypes) {
+				dt := m.AdminAllDatatypes[m.Cursor]
+				return m, tea.Batch(
+					FormDialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					CreateAdminFieldFromDialogCmd(msg.Label, msg.Type, dt.AdminDatatypeID),
+				)
+			}
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case FORMDIALOGEDITADMINFIELD:
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateAdminFieldFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
 			)
 		default:
 			return m, tea.Batch(
@@ -900,6 +1114,115 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			LogMessageCmd(fmt.Sprintf("Media deleted: %s", msg.MediaID)),
 			MediaFetchCmd(),
 		)
+
+	// =========================================================================
+	// DATABASE FORM DIALOG
+	// =========================================================================
+	case DatabaseFormDialogSetMsg:
+		m.DatabaseFormDialog = msg.Dialog
+		return m, nil
+	case DatabaseFormDialogActiveSetMsg:
+		m.DatabaseFormDialogActive = msg.Active
+		return m, nil
+	case ShowDatabaseFormDialogMsg:
+		// Determine columns: prefer Columns, fall back to Headers
+		var columns []string
+		if m.TableState.Columns != nil {
+			columns = *m.TableState.Columns
+		} else if len(m.TableState.Headers) > 0 {
+			columns = m.TableState.Headers
+		} else {
+			// Last resort: derive from GenericHeaders
+			dbt := db.StringDBTable(m.TableState.Table)
+			columns = db.GenericHeaders(dbt)
+		}
+		if len(columns) == 0 {
+			return m, LogMessageCmd("No column metadata available")
+		}
+
+		switch msg.Action {
+		case FORMDIALOGDBINSERT:
+			dialog := NewDatabaseInsertDialog(msg.Title, msg.Table, columns, nil)
+			m.DatabaseFormDialog = &dialog
+			m.DatabaseFormDialogActive = true
+			return m, tea.Batch(
+				FocusSetCmd(DIALOGFOCUS),
+				StatusSetCmd(EDITING),
+			)
+		case FORMDIALOGDBUPDATE:
+			// Get current row data
+			if len(m.TableState.Rows) == 0 {
+				return m, LogMessageCmd("No rows available for update")
+			}
+			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
+			if recordIndex >= len(m.TableState.Rows) {
+				return m, LogMessageCmd("Row index out of range")
+			}
+			currentRow := m.TableState.Rows[recordIndex]
+			dialog := NewDatabaseUpdateDialog(msg.Title, msg.Table, columns, nil, currentRow)
+			m.DatabaseFormDialog = &dialog
+			m.DatabaseFormDialogActive = true
+			return m, tea.Batch(
+				FocusSetCmd(DIALOGFOCUS),
+				StatusSetCmd(EDITING),
+			)
+		default:
+			return m, LogMessageCmd(fmt.Sprintf("Unknown database form action: %s", msg.Action))
+		}
+	case DatabaseFormDialogAcceptMsg:
+		m.DatabaseFormDialogActive = false
+		m.DatabaseFormDialog = nil
+
+		switch msg.Action {
+		case FORMDIALOGDBINSERT:
+			// Build columns and values for insert
+			var insertColumns []string
+			var insertValues []*string
+			for i, col := range msg.Columns {
+				if isAutoFillColumn(col) {
+					insertColumns = append(insertColumns, col)
+					insertValues = append(insertValues, nil)
+					continue
+				}
+				insertColumns = append(insertColumns, col)
+				val := msg.Values[i]
+				insertValues = append(insertValues, &val)
+			}
+			return m, tea.Batch(
+				FocusSetCmd(PAGEFOCUS),
+				StatusSetCmd(OK),
+				LoadingStartCmd(),
+				DatabaseInsertCmd(msg.Table, insertColumns, insertValues),
+			)
+		case FORMDIALOGDBUPDATE:
+			// Build values map for update (non-auto columns only)
+			valuesMap := make(map[string]string)
+			for i, col := range msg.Columns {
+				if isAutoFillColumn(col) {
+					continue
+				}
+				valuesMap[col] = msg.Values[i]
+			}
+			return m, tea.Batch(
+				FocusSetCmd(PAGEFOCUS),
+				StatusSetCmd(OK),
+				LoadingStartCmd(),
+				DatabaseUpdateEntryCmd(msg.Table, msg.RowID, valuesMap),
+			)
+		default:
+			return m, tea.Batch(
+				FocusSetCmd(PAGEFOCUS),
+				StatusSetCmd(OK),
+			)
+		}
+	case DatabaseFormDialogCancelMsg:
+		m.DatabaseFormDialogActive = false
+		m.DatabaseFormDialog = nil
+		return m, tea.Batch(
+			FocusSetCmd(PAGEFOCUS),
+			StatusSetCmd(OK),
+		)
+
 	default:
 		return m, nil
 	}
@@ -957,6 +1280,8 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Prepare the type - default to ROOT if empty
 		dtype := msg.Type
@@ -990,7 +1315,13 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 			DateModified: types.TimestampNow(),
 		}
 
-		dt := d.CreateDatatype(params)
+		dt, err := d.CreateDatatype(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create datatype: %v", err),
+			}
+		}
 		return DatatypeCreatedFromDialogMsg{
 			DatatypeID: dt.DatatypeID,
 			Label:      dt.Label,
@@ -1051,6 +1382,17 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		// Verify the author user exists in the database before creating the field
+		authorUser, userErr := d.GetUser(authorID)
+		if userErr != nil || authorUser == nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Cannot create field: author user %s not found in database (run --install to bootstrap)", authorID),
+			}
+		}
 
 		// Prepare the field type - default to "text" if empty
 		fieldTypeStr := msg.Type
@@ -1077,11 +1419,15 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			DateModified: types.TimestampNow(),
 		}
 
-		field := d.CreateField(fieldParams)
-		if field.FieldID.IsZero() {
+		field, err := d.CreateField(ctx, ac, fieldParams)
+		if err != nil || field.FieldID.IsZero() {
+			errMsg := "Failed to create field in database"
+			if err != nil {
+				errMsg = fmt.Sprintf("Failed to create field: %v", err)
+			}
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: "Failed to create field in database",
+				Message: errMsg,
 			}
 		}
 
@@ -1091,8 +1437,8 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			ID:    msg.DatatypeID,
 			Valid: true,
 		}
-		maxSort, err := d.GetMaxSortOrderByDatatypeID(dtDatatypeID)
-		if err != nil {
+		maxSort, sortErr := d.GetMaxSortOrderByDatatypeID(dtDatatypeID)
+		if sortErr != nil {
 			maxSort = -1
 		}
 		dtFieldParams := db.CreateDatatypeFieldParams{
@@ -1105,7 +1451,13 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			SortOrder: maxSort + 1,
 		}
 
-		d.CreateDatatypeField(dtFieldParams)
+		_, dtfErr := d.CreateDatatypeField(ctx, ac, dtFieldParams)
+		if dtfErr != nil {
+			return ActionResultMsg{
+				Title:   "Warning",
+				Message: fmt.Sprintf("Field created but failed to link to datatype: %v", dtfErr),
+			}
+		}
 
 		return FieldCreatedFromDialogMsg{
 			FieldID:    field.FieldID,
@@ -1205,7 +1557,16 @@ func (m Model) HandleCreateRouteFromDialog(msg CreateRouteFromDialogRequestMsg) 
 			DateModified: types.TimestampNow(),
 		}
 
-		route := d.CreateRoute(params)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		route, err := d.CreateRoute(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create route: %v", err),
+			}
+		}
 		if route.RouteID.IsZero() {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1253,8 +1614,6 @@ func UpdateDatatypeFromDialogCmd(datatypeID, label, dtype, parentID string) tea.
 
 // HandleUpdateDatatypeFromDialog processes the datatype update request
 func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogRequestMsg) tea.Cmd {
-	// Capture values from model for use in closure
-	authorID := m.UserID
 	cfg := m.Config
 
 	// Validate config
@@ -1267,17 +1626,30 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		// Prepare the type - default to ROOT if empty
-		dtype := msg.Type
-		if dtype == "" {
-			dtype = "ROOT"
+		// Fetch existing datatype to preserve unchanged values
+		datatypeID := types.DatatypeID(msg.DatatypeID)
+		existing, err := d.GetDatatype(datatypeID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get datatype for update: %v", err),
+			}
 		}
 
-		// Prepare parent ID (uses NullableContentID per db package definition)
-		var parentID types.NullableContentID
+		// Prepare the type - default to existing type if empty
+		dtype := msg.Type
+		if dtype == "" {
+			dtype = existing.Type
+		}
+
+		// Prepare parent ID - use provided value or preserve existing
+		parentID := existing.ParentID
 		if msg.ParentID != "" {
 			parentID = types.NullableContentID{
 				ID:    types.ContentID(msg.ParentID),
@@ -1285,23 +1657,18 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 			}
 		}
 
-		// Set author ID
-		nullableAuthorID := types.NullableUserID{
-			ID:    authorID,
-			Valid: !authorID.IsZero(),
-		}
-
-		// Update the datatype
+		// Update only changed fields; preserve author and date_created
 		params := db.UpdateDatatypeParams{
-			DatatypeID:   types.DatatypeID(msg.DatatypeID),
+			DatatypeID:   datatypeID,
 			ParentID:     parentID,
 			Label:        msg.Label,
 			Type:         dtype,
-			AuthorID:     nullableAuthorID,
+			AuthorID:     existing.AuthorID,
+			DateCreated:  existing.DateCreated,
 			DateModified: types.TimestampNow(),
 		}
 
-		_, err := d.UpdateDatatype(params)
+		_, err = d.UpdateDatatype(ctx, ac, params)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1310,7 +1677,7 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		}
 
 		return DatatypeUpdatedFromDialogMsg{
-			DatatypeID: types.DatatypeID(msg.DatatypeID),
+			DatatypeID: datatypeID,
 			Label:      msg.Label,
 		}
 	}
@@ -1347,8 +1714,6 @@ func UpdateFieldFromDialogCmd(fieldID, label, fieldType string) tea.Cmd {
 
 // HandleUpdateFieldFromDialog processes the field update request
 func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) tea.Cmd {
-	// Capture values from model for use in closure
-	authorID := m.UserID
 	cfg := m.Config
 	// Capture the current datatype ID to refresh fields after update
 	var datatypeID types.DatatypeID
@@ -1366,32 +1731,42 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 		}
 	}
 
+	userID := m.UserID
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		// Prepare the field type - default to "text" if empty
+		// Fetch existing field to preserve unchanged values
+		fieldID := types.FieldID(msg.FieldID)
+		existing, err := d.GetField(fieldID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get field for update: %v", err),
+			}
+		}
+
+		// Prepare the field type - default to existing type if empty
 		fieldTypeStr := msg.Type
 		if fieldTypeStr == "" {
-			fieldTypeStr = "text"
+			fieldTypeStr = string(existing.Type)
 		}
 		fieldType := types.FieldType(fieldTypeStr)
 
-		// Set author ID
-		nullableAuthorID := types.NullableUserID{
-			ID:    authorID,
-			Valid: !authorID.IsZero(),
-		}
-
-		// Update the field
+		// Update only label, type, and date_modified; preserve everything else
 		params := db.UpdateFieldParams{
-			FieldID:      types.FieldID(msg.FieldID),
+			FieldID:      fieldID,
+			ParentID:     existing.ParentID,
 			Label:        msg.Label,
+			Data:         existing.Data,
 			Type:         fieldType,
-			AuthorID:     nullableAuthorID,
+			AuthorID:     existing.AuthorID,
+			DateCreated:  existing.DateCreated,
 			DateModified: types.TimestampNow(),
 		}
 
-		_, err := d.UpdateField(params)
+		_, err = d.UpdateField(ctx, ac, params)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1400,7 +1775,7 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 		}
 
 		return FieldUpdatedFromDialogMsg{
-			FieldID:    types.FieldID(msg.FieldID),
+			FieldID:    fieldID,
 			DatatypeID: datatypeID,
 			Label:      msg.Label,
 		}
@@ -1508,7 +1883,10 @@ func (m Model) HandleUpdateRouteFromDialog(msg UpdateRouteFromDialogRequestMsg) 
 			Slug_2:       existingRoute.Slug, // Original slug for WHERE clause
 		}
 
-		_, err = d.UpdateRoute(params)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		_, err = d.UpdateRoute(ctx, ac, params)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1622,7 +2000,16 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			DateModified: types.TimestampNow(),
 		}
 
-		route := d.CreateRoute(routeParams)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		route, routeErr := d.CreateRoute(ctx, ac, routeParams)
+		if routeErr != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create route: %v", routeErr),
+			}
+		}
 		if route.RouteID.IsZero() {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -1650,8 +2037,8 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 			DateModified: types.TimestampNow(),
 		}
 
-		contentData := d.CreateContentData(contentParams)
-		if contentData.ContentDataID.IsZero() {
+		contentData, contentErr := d.CreateContentData(ctx, ac, contentParams)
+		if contentErr != nil || contentData.ContentDataID.IsZero() {
 			return ActionResultMsg{
 				Title:   "Warning",
 				Message: fmt.Sprintf("Route created but failed to create initial content. Route: %s", route.Title),
@@ -2104,11 +2491,18 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 			DateModified: types.TimestampNow(),
 		}
 
-		contentData := d.CreateContentData(contentParams)
-		if contentData.ContentDataID.IsZero() {
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		contentData, contentErr := d.CreateContentData(ctx, ac, contentParams)
+		if contentErr != nil || contentData.ContentDataID.IsZero() {
+			errMsg := "Failed to create content in database"
+			if contentErr != nil {
+				errMsg = fmt.Sprintf("Failed to create content: %v", contentErr)
+			}
 			return ActionResultMsg{
 				Title:   "Error",
-				Message: "Failed to create content in database",
+				Message: errMsg,
 			}
 		}
 

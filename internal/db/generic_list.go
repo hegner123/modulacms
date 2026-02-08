@@ -1,5 +1,223 @@
 package db
 
+func GenericHeaders(t DBTable) []string {
+	switch t {
+	case Admin_content_data:
+		return []string{
+			"admin_content_data_id",
+			"parent_id",
+			"admin_route_id",
+			"admin_datatype_id",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Admin_content_fields:
+		return []string{
+			"admin_content_field_id",
+			"admin_route_id",
+			"admin_content_data_id",
+			"admin_field_id",
+			"admin_field_value",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Admin_datatype:
+		return []string{
+			"admin_datatype_id",
+			"parent_id",
+			"label",
+			"type",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Admin_field:
+		return []string{
+			"admin_field_id",
+			"parent_id",
+			"label",
+			"data",
+			"type",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Admin_datatype_fields:
+		return []string{
+			"id",
+			"admin_datatype_id",
+			"admin_field_id",
+		}
+	case Admin_route:
+		return []string{
+			"admin_route_id",
+			"slug",
+			"title",
+			"status",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Content_data:
+		return []string{
+			"content_data_id",
+			"parent_id",
+			"route_id",
+			"datatype_id",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Content_fields:
+		return []string{
+			"content_field_id",
+			"route_id",
+			"content_data_id",
+			"field_id",
+			"field_value",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Datatype_fields:
+		return []string{
+			"id",
+			"datatype_id",
+			"field_id",
+		}
+	case Datatype:
+		return []string{
+			"datatype_id",
+			"parent_id",
+			"label",
+			"type",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Field:
+		return []string{
+			"field_id",
+			"parent_id",
+			"label",
+			"data",
+			"type",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case MediaT:
+		return []string{
+			"media_id",
+			"name",
+			"display_name",
+			"alt",
+			"caption",
+			"description",
+			"class",
+			"mimetype",
+			"dimensions",
+			"url",
+			"srcset",
+			"author_id",
+			"date_created",
+			"date_modified",
+		}
+	case Media_dimension:
+		return []string{
+			"md_id",
+			"label",
+			"width",
+			"height",
+			"aspect_ratio",
+		}
+	case Permission:
+		return []string{
+			"permission_id",
+			"table_id",
+			"mode",
+			"label",
+		}
+	case Role:
+		return []string{
+			"role_id",
+			"label",
+			"permissions",
+		}
+	case Route:
+		return []string{
+			"route_id",
+			"slug",
+			"title",
+			"status",
+			"author_id",
+			"date_created",
+			"date_modified",
+			"history",
+		}
+	case Session:
+		return []string{
+			"session_id",
+			"user_id",
+			"created_at",
+			"expires_at",
+			"last_access",
+			"ip_address",
+			"user_agent",
+			"session_data",
+		}
+	case Table:
+		return []string{
+			"id",
+			"label",
+			"author_id",
+		}
+	case Token:
+		return []string{
+			"id",
+			"user_id",
+			"token_type",
+			"token",
+			"issued_at",
+			"expires_at",
+			"revoked",
+		}
+	case User:
+		return []string{
+			"user_id",
+			"username",
+			"name",
+			"email",
+			"hash",
+			"role",
+			"date_created",
+			"date_modified",
+		}
+	case User_oauth:
+		return []string{
+			"user_oauth_id",
+			"user_id",
+			"oauth_provider",
+			"oauth_provider_user_id",
+			"access_token",
+			"refresh_token",
+			"token_expires_at",
+			"date_created",
+		}
+	}
+	return nil
+}
+
 func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 	switch t {
 	case Admin_content_data:

@@ -7,6 +7,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -122,7 +123,8 @@ func apiUpdateTables(w http.ResponseWriter, r *http.Request, c config.Config) er
 		return err
 	}
 
-	updatedTable, err := d.UpdateTable(updateTable)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedTable, err := d.UpdateTable(r.Context(), ac, updateTable)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -145,7 +147,8 @@ func apiDeleteTable(w http.ResponseWriter, r *http.Request, c config.Config) err
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err := d.DeleteTable(tId)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err := d.DeleteTable(r.Context(), ac, tId)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

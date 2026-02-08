@@ -236,6 +236,10 @@ func (m Model) View() string {
 		return UserFormDialogOverlay(ui, *m.UserFormDialog, m.Width, m.Height)
 	}
 
+	if m.DatabaseFormDialogActive && m.DatabaseFormDialog != nil {
+		return DatabaseFormDialogOverlay(ui, *m.DatabaseFormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 

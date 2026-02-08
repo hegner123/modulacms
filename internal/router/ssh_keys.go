@@ -60,7 +60,8 @@ func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 
 	// Create SSH key record
-	sshKey, err := dbc.CreateUserSshKey(db.CreateUserSshKeyParams{
+	ac := middleware.AuditContextFromRequest(r, c)
+	sshKey, err := dbc.CreateUserSshKey(r.Context(), ac, db.CreateUserSshKeyParams{
 		UserID:      types.NullableUserID{ID: authUser.UserID, Valid: true},
 		PublicKey:   req.PublicKey,
 		KeyType:     keyType,
@@ -179,7 +180,8 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 	}
 
 	// Delete the SSH key
-	err = dbc.DeleteUserSshKey(keyID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err = dbc.DeleteUserSshKey(r.Context(), ac, keyID)
 	if err != nil {
 		utility.DefaultLogger.Error("Failed to delete SSH key", err)
 		http.Error(w, "Failed to delete SSH key", http.StatusInternalServerError)

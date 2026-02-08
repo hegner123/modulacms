@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT:
 		return true
 	default:
 		return false
@@ -92,6 +92,10 @@ func renderCMSPanelLayout(m Model) string {
 		return UserFormDialogOverlay(ui, *m.UserFormDialog, m.Width, m.Height)
 	}
 
+	if m.DatabaseFormDialogActive && m.DatabaseFormDialog != nil {
+		return DatabaseFormDialogOverlay(ui, *m.DatabaseFormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 
@@ -111,6 +115,12 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Datatypes", "Fields", "Actions"
 	case USERSADMIN:
 		return "Users", "Details", "Permissions"
+	case ADMINROUTES:
+		return "Admin Routes", "Details", "Actions"
+	case ADMINDATATYPES:
+		return "Admin Datatypes", "Fields", "Actions"
+	case ADMINCONTENT:
+		return "Admin Content", "Details", "Info"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -158,6 +168,21 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = renderDatatypesList(m)
 		center = renderDatatypeDetail(m)
 		right = renderDatatypeActions(m)
+
+	case ADMINROUTES:
+		left = renderAdminRoutesList(m)
+		center = renderAdminRouteDetail(m)
+		right = renderAdminRouteActions(m)
+
+	case ADMINDATATYPES:
+		left = renderAdminDatatypesList(m)
+		center = renderAdminDatatypeFields(m)
+		right = renderAdminDatatypeActions(m)
+
+	case ADMINCONTENT:
+		left = renderAdminContentList(m)
+		center = renderAdminContentDetail(m)
+		right = ""
 
 	default:
 		left = ""
@@ -320,6 +345,28 @@ func getContextControls(m Model) string {
 
 	case CMSPAGE, ADMINCMSPAGE:
 		return nav + " │ enter:select │ " + common
+
+	case ADMINROUTES:
+		return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
+
+	case ADMINDATATYPES:
+		switch m.PanelFocus {
+		case tui.TreePanel:
+			return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " +
+				km.HintString(config.ActionDelete) + ":delete │ " + common
+		case tui.ContentPanel:
+			return nav + " │ " + km.HintString(config.ActionNew) + ":new field │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " +
+				km.HintString(config.ActionDelete) + ":delete │ " + common
+		default:
+			return nav + " │ " + common
+		}
+
+	case ADMINCONTENT:
+		return nav + " │ " + km.HintString(config.ActionDelete) + ":delete │ " + common
 
 	default:
 		return common

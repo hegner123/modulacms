@@ -169,29 +169,23 @@ func (d Database) CountAdminContentData() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d Database) CreateAdminContentData(s CreateAdminContentDataParams) AdminContentData {
-	params := d.MapCreateAdminContentDataParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminContentData(d.Context, params)
+func (d Database) CreateAdminContentData(ctx context.Context, ac audited.AuditContext, s CreateAdminContentDataParams) (*AdminContentData, error) {
+	cmd := d.NewAdminContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatype  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminContentData: %w", err)
 	}
-
-	return d.MapAdminContentData(row)
+	r := d.MapAdminContentData(result)
+	return &r, nil
 }
 func (d Database) CreateAdminContentDataTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d Database) DeleteAdminContentData(id types.AdminContentID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, mdb.DeleteAdminContentDataParams{AdminContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content data: %v\n ", id)
-	}
-
-	return nil
+func (d Database) DeleteAdminContentData(ctx context.Context, ac audited.AuditContext, id types.AdminContentID) error {
+	cmd := d.DeleteAdminContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d Database) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdb.New(d.Connection)
@@ -228,15 +222,13 @@ func (d Database) ListAdminContentDataByRoute(id string) (*[]AdminContentData, e
 	}
 	return &res, nil
 }
-func (d Database) UpdateAdminContentData(s UpdateAdminContentDataParams) (*string, error) {
-	params := d.MapUpdateAdminContentDataParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d Database) UpdateAdminContentData(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentDataParams) (*string, error) {
+	cmd := d.UpdateAdminContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content Data id %v\n", s.AdminDatatypeID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -301,32 +293,23 @@ func (d MysqlDatabase) CountAdminContentData() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CreateAdminContentData(s CreateAdminContentDataParams) AdminContentData {
-	params := d.MapCreateAdminContentDataParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminContentData(d.Context, params)
+func (d MysqlDatabase) CreateAdminContentData(ctx context.Context, ac audited.AuditContext, s CreateAdminContentDataParams) (*AdminContentData, error) {
+	cmd := d.NewAdminContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminContentData: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminContentData: %w", err)
 	}
-	row, err := queries.GetAdminContentData(d.Context, mdbm.GetAdminContentDataParams{AdminContentDataID: params.AdminContentDataID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminContentData: %v\n", err)
-	}
-	return d.MapAdminContentData(row)
+	r := d.MapAdminContentData(result)
+	return &r, nil
 }
 func (d MysqlDatabase) CreateAdminContentDataTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d MysqlDatabase) DeleteAdminContentData(id types.AdminContentID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, mdbm.DeleteAdminContentDataParams{AdminContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content data: %v ", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteAdminContentData(ctx context.Context, ac audited.AuditContext, id types.AdminContentID) error {
+	cmd := d.DeleteAdminContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d MysqlDatabase) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdbm.New(d.Connection)
@@ -363,15 +346,13 @@ func (d MysqlDatabase) ListAdminContentDataByRoute(id string) (*[]AdminContentDa
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*string, error) {
-	params := d.MapUpdateAdminContentDataParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d MysqlDatabase) UpdateAdminContentData(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentDataParams) (*string, error) {
+	cmd := d.UpdateAdminContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content Data id %v\n", s.AdminDatatypeID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -436,29 +417,23 @@ func (d PsqlDatabase) CountAdminContentData() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d PsqlDatabase) CreateAdminContentData(s CreateAdminContentDataParams) AdminContentData {
-	params := d.MapCreateAdminContentDataParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminContentData(d.Context, params)
+func (d PsqlDatabase) CreateAdminContentData(ctx context.Context, ac audited.AuditContext, s CreateAdminContentDataParams) (*AdminContentData, error) {
+	cmd := d.NewAdminContentDataCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatype  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminContentData: %w", err)
 	}
-
-	return d.MapAdminContentData(row)
+	r := d.MapAdminContentData(result)
+	return &r, nil
 }
 func (d PsqlDatabase) CreateAdminContentDataTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateAdminContentDataTable(d.Context)
 	return err
 }
-func (d PsqlDatabase) DeleteAdminContentData(id types.AdminContentID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminContentData(d.Context, mdbp.DeleteAdminContentDataParams{AdminContentDataID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content data: %v ", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteAdminContentData(ctx context.Context, ac audited.AuditContext, id types.AdminContentID) error {
+	cmd := d.DeleteAdminContentDataCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d PsqlDatabase) GetAdminContentData(id types.AdminContentID) (*AdminContentData, error) {
 	queries := mdbp.New(d.Connection)
@@ -495,15 +470,13 @@ func (d PsqlDatabase) ListAdminContentDataByRoute(id string) (*[]AdminContentDat
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) UpdateAdminContentData(s UpdateAdminContentDataParams) (*string, error) {
-	params := d.MapUpdateAdminContentDataParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminContentData(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content data, %v", err)
+func (d PsqlDatabase) UpdateAdminContentData(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentDataParams) (*string, error) {
+	cmd := d.UpdateAdminContentDataCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentData: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content Data id %v\n", s.AdminDatatypeID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentDataID)
+	return &msg, nil
 }
 
 ///////////////////////////////

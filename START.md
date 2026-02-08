@@ -3,7 +3,7 @@
 ModulaCMS AI Agent Onboarding
 
 **Location:** /Users/home/Documents/Code/Go_dev/modulacms/START.md
-**Last Updated:** 2026-02-05
+**Last Updated:** 2026-02-07
 
 ---
 
@@ -69,7 +69,7 @@ This section tracks what the user is working on. It is for **user awareness only
 **ACTIVE — Work on this when asked:**
 | Project | Path | Status |
 |---------|------|--------|
-| TUI Content Editor | `/Users/home/Documents/Code/Go_dev/modulacms/TODO_EDITING.md` | Phase 2 in progress |
+| TUI Content Editor | `/Users/home/Documents/Code/Go_dev/modulacms/TODO_EDITING.md` | Phase 4 (advanced features) |
 
 **PAUSED — Do NOT resume unless user explicitly requests:**
 | Project | Path | Status | Notes |
@@ -93,18 +93,18 @@ Current task list for TUI content editor implementation. Full details in `/TODO_
 - [x] Delete datatype (tree panel, with child-check protection)
 - [x] Delete field (content panel, with junction cleanup)
 - [x] Delete route
-- [ ] Upload media — **deferred** (requires S3/bucket integration)
+- [x] Upload media (file picker overlay)
 - [x] Delete media
 - [x] Users admin CRUD (full UserFormDialogModel with create/edit/delete)
 
-### Phase 2 - Reorganization (in progress)
+### Phase 2 - Reorganization (complete)
 - [x] Move content (reparent) - press `m`, target selector
-- [ ] **Reorder siblings** ← next
-- [ ] Copy content
+- [x] Reorder siblings - tree pointer-based ordering
+- [x] Copy content
 
-### Phase 3 - Status Management
-- [ ] Publish/Unpublish
-- [ ] Draft/Archive states
+### Phase 3 - Status Management (complete)
+- [x] Publish/Unpublish toggle
+- [x] Draft/Archive states (archive/unarchive toggle)
 
 ### Phase 4 - Advanced Features
 - [ ] Version history
@@ -115,9 +115,17 @@ Current task list for TUI content editor implementation. Full details in `/TODO_
 - [x] Controls guide - Context-sensitive keybindings in status bar
 - [x] Quit confirmation - Confirm before quitting on content pages
 
+### Cross-Cutting (complete)
+- [x] Database CRUD dialog migration (DatabaseFormDialogModel replaces huh forms)
+- [x] Admin CMS CRUD (admin datatypes, fields, routes, content — full panel + dialog support)
+- [x] Atomic audit logging for all database mutations (change_events with request context)
+
 **COMPLETED — Historical reference only:**
 | Project | Path |
 |---------|------|
+| Atomic Audit Logging | committed: `0e4cc7c` — all db mutations log change_events atomically |
+| Database CRUD Dialog Migration | `~/.claude/plans/resilient-popping-wigderson.md` |
+| Admin CMS Panel CRUD | `internal/cli/admin_*.go` |
 | SQLC Type Unification | `/Users/home/Documents/Code/Go_dev/modulacms/ai/refactor/SQLC_REDUCTION/` |
 | CLI TableModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/TABLE_REFACTOR_PLAN.md` |
 | CLI FormModel Extraction | `/Users/home/Documents/Code/Go_dev/modulacms/ai/FORM_REFACTOR_PLAN.md` |

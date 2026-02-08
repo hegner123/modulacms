@@ -34,11 +34,9 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	case DATABASEPAGE:
 		return m.SelectTable(msg)
 	case TABLEPAGE:
-		return m.BasicControls(msg)
+		return m.TablePageControls(msg)
 	case DYNAMICPAGE:
 		return m.BasicDynamicControls(msg)
-	case CREATEPAGE:
-		return m.FormControls(msg)
 	case READPAGE:
 		return m.TableNavigationControls(msg)
 	case READSINGLEPAGE:
@@ -65,6 +63,12 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.UsersAdminControls(msg)
 	case MEDIA:
 		return m.MediaControls(msg)
+	case ADMINROUTES:
+		return m.AdminRoutesControls(msg)
+	case ADMINDATATYPES:
+		return m.AdminDatatypesControls(msg)
+	case ADMINCONTENT:
+		return m.AdminContentBrowserControls(msg)
 
 	}
 	return m, nil
@@ -107,6 +111,56 @@ func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 		if km.Matches(key, config.ActionSelect) {
 			if len(m.PageMenu) > 0 {
 				return m, NavigateToPageCmd(m.PageMenu[m.Cursor])
+			}
+		}
+	}
+	return m, nil
+}
+
+// TablePageControls handles TABLEPAGE key events, intercepting CREATE to show
+// the database insert dialog instead of navigating to the old form page.
+func (m Model) TablePageControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.PageMenu)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionPrevPanel) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			if len(m.PageMenu) > 0 {
+				selected := m.PageMenu[m.Cursor]
+				if selected.Index == CREATEPAGE {
+					// Intercept: show database insert dialog instead of navigating
+					return m, ShowDatabaseInsertDialogCmd(db.DBTable(m.TableState.Table))
+				}
+				return m, NavigateToPageCmd(selected)
 			}
 		}
 	}
@@ -170,6 +224,12 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, NavigateToPageCmd(m.PageMap[MEDIA])
 			case USERSADMIN:
 				return m, NavigateToPageCmd(m.PageMap[USERSADMIN])
+			case ADMINROUTES:
+				return m, NavigateToPageCmd(m.PageMap[ADMINROUTES])
+			case ADMINDATATYPES:
+				return m, NavigateToPageCmd(m.PageMap[ADMINDATATYPES])
+			case ADMINCONTENT:
+				return m, NavigateToPageCmd(m.PageMap[ADMINCONTENT])
 			default:
 				return m, nil
 			}
@@ -1158,40 +1218,6 @@ func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m Model) FormControls(msg tea.Msg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	newModel := m
-	newModel.Focus = FORMFOCUS
-
-	// Ensure form exists before updating
-	if newModel.FormState.Form == nil {
-		return newModel, nil
-	}
-
-	form, cmd := newModel.FormState.Form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		newModel.FormState.Form = f
-		if cmd != nil {
-			cmds = append(cmds, cmd)
-		}
-	}
-
-	// Handle form state changes
-	if newModel.FormState.Form.State == huh.StateAborted {
-		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
-		cmds = append(cmds, FormCompletedCmd(nil)) // Will try history pop, then home
-	}
-
-	if newModel.FormState.Form.State == huh.StateCompleted {
-		cmds = append(cmds, FocusSetCmd(PAGEFOCUS))
-		cmds = append(cmds, FormSubmitCmd())
-		// Note: Don't navigate here - let specific form completion messages
-		// (like ContentCreatedMsg) handle navigation after async operations complete
-	}
-
-	return newModel, tea.Batch(cmds...)
-}
-
 func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -1246,7 +1272,7 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 				case READPAGE:
 					cmds = append(cmds, NavigateToPageCmd(m.PageMap[READSINGLEPAGE]))
 				case UPDATEPAGE:
-					cmds = append(cmds, NavigateToPageCmd(m.PageMap[UPDATEFORMPAGE]))
+					cmds = append(cmds, ShowDatabaseUpdateDialogCmd(db.DBTable(m.TableState.Table), m.TableState.Rows[recordIndex][0]))
 				case DELETEPAGE:
 					cmds = append(cmds, ShowDialogCmd("Confirm Delete",
 						"Are you sure you want to delete this record? This action cannot be undone.", true, DIALOGDELETE))
@@ -1260,85 +1286,6 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PaginationUpdateCmd())
 		}
 	}
-	return m, tea.Batch(cmds...)
-}
-
-func (m Model) UpdateDatabaseUpdate(msg tea.Msg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	var rows [][]string
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		km := m.Config.KeyBindings
-		key := msg.String()
-
-		if km.Matches(key, config.ActionQuit) {
-			return m, tea.Quit
-		}
-		if km.Matches(key, config.ActionPagePrev) {
-			if m.PageMod > 0 {
-				m.PageMod--
-			}
-		}
-		if km.Matches(key, config.ActionPageNext) {
-			if m.PageMod < len(m.TableState.Rows)/m.MaxRows {
-				m.PageMod++
-			}
-		}
-		if key == "enter" || key == "l" {
-			rows = m.TableState.Rows
-			recordIndex := (m.PageMod * m.MaxRows) + m.Cursor
-			if recordIndex < len(m.TableState.Rows) {
-				m.Cursor = recordIndex
-			}
-			m.TableState.Row = &rows[recordIndex]
-			m.Cursor = 0
-			m.Page = m.Pages[UPDATEFORMPAGE]
-		}
-	}
-	var pcmd tea.Cmd
-	m.Paginator, pcmd = m.Paginator.Update(msg)
-	cmds = append(cmds, pcmd)
-	return m, tea.Batch(cmds...)
-}
-func (m Model) UpdateDatabaseFormUpdate(msg tea.Msg) (Model, tea.Cmd) {
-	var cmds []tea.Cmd
-	m.Focus = FORMFOCUS
-
-	logFile, err := tea.LogToFile("debug.log", "debug")
-	if err != nil {
-		os.Exit(1)
-	}
-	defer func() {
-		if err := logFile.Close(); err != nil {
-			m.Logger.Finfo("Tables Fetch ")
-		}
-	}()
-
-	// Update form with the message
-	form, cmd := m.FormState.Form.Update(msg)
-	if f, ok := form.(*huh.Form); ok {
-		m.FormState.Form = f
-		cmds = append(cmds, cmd)
-	}
-
-	// Handle form state changes
-	if m.FormState.Form.State == huh.StateAborted {
-		_ = tea.ClearScreen()
-		m.Focus = PAGEFOCUS
-		m.Page = m.Pages[UPDATEPAGE]
-	}
-
-	if m.FormState.Form.State == huh.StateCompleted {
-		_ = tea.ClearScreen()
-		m.Focus = PAGEFOCUS
-		m.Page = m.Pages[UPDATEPAGE]
-		cmd := m.DatabaseUpdate(m.Config, db.DBTable(m.TableState.Table))
-		cmds = append(cmds, cmd)
-	}
-	var scmd tea.Cmd
-	m.Spinner, scmd = m.Spinner.Update(msg)
-	cmds = append(cmds, scmd)
-
 	return m, tea.Batch(cmds...)
 }
 

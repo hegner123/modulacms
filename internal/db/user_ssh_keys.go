@@ -39,22 +39,14 @@ type CreateUserSshKeyParams struct {
 // SQLite Implementation
 // ============================================================================
 
-func (d Database) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateUserSshKey(d.Context, mdb.CreateUserSshKeyParams{
-		SSHKeyID:    string(types.NewUserSshKeyID()),
-		UserID:      params.UserID,
-		PublicKey:   params.PublicKey,
-		KeyType:     params.KeyType,
-		Fingerprint: params.Fingerprint,
-		Label:       sql.NullString{String: params.Label, Valid: params.Label != ""},
-		DateCreated: params.DateCreated,
-	})
+func (d Database) CreateUserSshKey(ctx context.Context, ac audited.AuditContext, params CreateUserSshKeyParams) (*UserSshKeys, error) {
+	cmd := d.NewUserSshKeyCmd(ctx, ac, params)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH key: %v", err)
+		return nil, fmt.Errorf("failed to create userSshKey: %w", err)
 	}
-	res := d.MapUserSshKeys(row)
-	return &res, nil
+	r := d.MapUserSshKeys(result)
+	return &r, nil
 }
 
 func (d Database) GetUserSshKey(id string) (*UserSshKeys, error) {
@@ -113,25 +105,14 @@ func (d Database) UpdateUserSshKeyLastUsed(id string, lastUsed string) error {
 	return nil
 }
 
-func (d Database) UpdateUserSshKeyLabel(id string, label string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateUserSshKeyLabel(d.Context, mdb.UpdateUserSshKeyLabelParams{
-		Label:    sql.NullString{String: label, Valid: label != ""},
-		SSHKeyID: id,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update SSH key label: %v", err)
-	}
-	return nil
+func (d Database) UpdateUserSshKeyLabel(ctx context.Context, ac audited.AuditContext, id string, label string) error {
+	cmd := d.UpdateUserSshKeyLabelCmd(ctx, ac, id, label)
+	return audited.Update(cmd)
 }
 
-func (d Database) DeleteUserSshKey(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, mdb.DeleteUserSshKeyParams{SSHKeyID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete SSH key: %v", err)
-	}
-	return nil
+func (d Database) DeleteUserSshKey(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteUserSshKeyCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) MapUserSshKeys(row mdb.UserSshKeys) UserSshKeys {
@@ -174,24 +155,14 @@ func (d Database) CountUserSshKeys() (*int64, error) {
 // MySQL Implementation
 // ============================================================================
 
-func (d MysqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
-	queries := mdbm.New(d.Connection)
-
-	sshKeyID := types.NewUserSshKeyID()
-	_, err := queries.CreateUserSshKey(d.Context, mdbm.CreateUserSshKeyParams{
-		SSHKeyID:    string(sshKeyID),
-		UserID:      params.UserID,
-		PublicKey:   params.PublicKey,
-		KeyType:     params.KeyType,
-		Fingerprint: params.Fingerprint,
-		Label:       sql.NullString{String: params.Label, Valid: params.Label != ""},
-		DateCreated: params.DateCreated,
-	})
+func (d MysqlDatabase) CreateUserSshKey(ctx context.Context, ac audited.AuditContext, params CreateUserSshKeyParams) (*UserSshKeys, error) {
+	cmd := d.NewUserSshKeyCmd(ctx, ac, params)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH key: %v", err)
+		return nil, fmt.Errorf("failed to create userSshKey: %w", err)
 	}
-
-	return d.GetUserSshKeyByFingerprint(params.Fingerprint)
+	r := d.MapUserSshKeys(result)
+	return &r, nil
 }
 
 func (d MysqlDatabase) GetUserSshKey(id string) (*UserSshKeys, error) {
@@ -261,25 +232,14 @@ func (d MysqlDatabase) UpdateUserSshKeyLastUsed(id string, lastUsed string) erro
 	return nil
 }
 
-func (d MysqlDatabase) UpdateUserSshKeyLabel(id string, label string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateUserSshKeyLabel(d.Context, mdbm.UpdateUserSshKeyLabelParams{
-		Label:    sql.NullString{String: label, Valid: label != ""},
-		SSHKeyID: id,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update SSH key label: %v", err)
-	}
-	return nil
+func (d MysqlDatabase) UpdateUserSshKeyLabel(ctx context.Context, ac audited.AuditContext, id string, label string) error {
+	cmd := d.UpdateUserSshKeyLabelCmd(ctx, ac, id, label)
+	return audited.Update(cmd)
 }
 
-func (d MysqlDatabase) DeleteUserSshKey(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, mdbm.DeleteUserSshKeyParams{SSHKeyID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete SSH key: %v", err)
-	}
-	return nil
+func (d MysqlDatabase) DeleteUserSshKey(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteUserSshKeyCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) MapUserSshKeys(row mdbm.UserSshKeys) UserSshKeys {
@@ -322,23 +282,14 @@ func (d MysqlDatabase) CountUserSshKeys() (*int64, error) {
 // PostgreSQL Implementation
 // ============================================================================
 
-func (d PsqlDatabase) CreateUserSshKey(params CreateUserSshKeyParams) (*UserSshKeys, error) {
-	queries := mdbp.New(d.Connection)
-
-	row, err := queries.CreateUserSshKey(d.Context, mdbp.CreateUserSshKeyParams{
-		SSHKeyID:    string(types.NewUserSshKeyID()),
-		UserID:      params.UserID,
-		PublicKey:   params.PublicKey,
-		KeyType:     params.KeyType,
-		Fingerprint: params.Fingerprint,
-		Label:       sql.NullString{String: params.Label, Valid: params.Label != ""},
-		DateCreated: params.DateCreated,
-	})
+func (d PsqlDatabase) CreateUserSshKey(ctx context.Context, ac audited.AuditContext, params CreateUserSshKeyParams) (*UserSshKeys, error) {
+	cmd := d.NewUserSshKeyCmd(ctx, ac, params)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		return nil, fmt.Errorf("failed to create SSH key: %v", err)
+		return nil, fmt.Errorf("failed to create userSshKey: %w", err)
 	}
-	res := d.MapUserSshKeys(row)
-	return &res, nil
+	r := d.MapUserSshKeys(result)
+	return &r, nil
 }
 
 func (d PsqlDatabase) GetUserSshKey(id string) (*UserSshKeys, error) {
@@ -408,25 +359,14 @@ func (d PsqlDatabase) UpdateUserSshKeyLastUsed(id string, lastUsed string) error
 	return nil
 }
 
-func (d PsqlDatabase) UpdateUserSshKeyLabel(id string, label string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateUserSshKeyLabel(d.Context, mdbp.UpdateUserSshKeyLabelParams{
-		Label:    sql.NullString{String: label, Valid: label != ""},
-		SSHKeyID: id,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to update SSH key label: %v", err)
-	}
-	return nil
+func (d PsqlDatabase) UpdateUserSshKeyLabel(ctx context.Context, ac audited.AuditContext, id string, label string) error {
+	cmd := d.UpdateUserSshKeyLabelCmd(ctx, ac, id, label)
+	return audited.Update(cmd)
 }
 
-func (d PsqlDatabase) DeleteUserSshKey(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteUserSshKey(d.Context, mdbp.DeleteUserSshKeyParams{SSHKeyID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete SSH key: %v", err)
-	}
-	return nil
+func (d PsqlDatabase) DeleteUserSshKey(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteUserSshKeyCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) MapUserSshKeys(row mdbp.UserSshKeys) UserSshKeys {
@@ -533,6 +473,44 @@ func (d Database) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited.Audi
 	return DeleteUserSshKeyCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
+// ----- SQLite UPDATE LABEL -----
+
+type UpdateUserSshKeyLabelCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	label    string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserSshKeyLabelCmd) Context() context.Context              { return c.ctx }
+func (c UpdateUserSshKeyLabelCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserSshKeyLabelCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserSshKeyLabelCmd) TableName() string                     { return "user_ssh_keys" }
+func (c UpdateUserSshKeyLabelCmd) Params() any {
+	return map[string]any{"id": c.id, "label": c.label}
+}
+func (c UpdateUserSshKeyLabelCmd) GetID() string { return c.id }
+
+func (c UpdateUserSshKeyLabelCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.UserSshKeys, error) {
+	queries := mdb.New(tx)
+	return queries.GetUserSshKey(ctx, mdb.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c UpdateUserSshKeyLabelCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateUserSshKeyLabel(ctx, mdb.UpdateUserSshKeyLabelParams{
+		Label:    sql.NullString{String: c.label, Valid: c.label != ""},
+		SSHKeyID: c.id,
+	})
+}
+
+func (d Database) UpdateUserSshKeyLabelCmd(ctx context.Context, auditCtx audited.AuditContext, id string, label string) UpdateUserSshKeyLabelCmd {
+	return UpdateUserSshKeyLabelCmd{ctx: ctx, auditCtx: auditCtx, id: id, label: label, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
 // ----- MySQL CREATE -----
 
 type NewUserSshKeyCmdMysql struct {
@@ -604,6 +582,44 @@ func (d MysqlDatabase) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited
 	return DeleteUserSshKeyCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
 
+// ----- MySQL UPDATE LABEL -----
+
+type UpdateUserSshKeyLabelCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	label    string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserSshKeyLabelCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateUserSshKeyLabelCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserSshKeyLabelCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserSshKeyLabelCmdMysql) TableName() string                     { return "user_ssh_keys" }
+func (c UpdateUserSshKeyLabelCmdMysql) Params() any {
+	return map[string]any{"id": c.id, "label": c.label}
+}
+func (c UpdateUserSshKeyLabelCmdMysql) GetID() string { return c.id }
+
+func (c UpdateUserSshKeyLabelCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.UserSshKeys, error) {
+	queries := mdbm.New(tx)
+	return queries.GetUserSshKey(ctx, mdbm.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c UpdateUserSshKeyLabelCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateUserSshKeyLabel(ctx, mdbm.UpdateUserSshKeyLabelParams{
+		Label:    sql.NullString{String: c.label, Valid: c.label != ""},
+		SSHKeyID: c.id,
+	})
+}
+
+func (d MysqlDatabase) UpdateUserSshKeyLabelCmd(ctx context.Context, auditCtx audited.AuditContext, id string, label string) UpdateUserSshKeyLabelCmdMysql {
+	return UpdateUserSshKeyLabelCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, label: label, conn: d.Connection, recorder: MysqlRecorder}
+}
+
 // ----- PostgreSQL CREATE -----
 
 type NewUserSshKeyCmdPsql struct {
@@ -668,4 +684,42 @@ func (c DeleteUserSshKeyCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 
 func (d PsqlDatabase) DeleteUserSshKeyCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteUserSshKeyCmdPsql {
 	return DeleteUserSshKeyCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE LABEL -----
+
+type UpdateUserSshKeyLabelCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	label    string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateUserSshKeyLabelCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateUserSshKeyLabelCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateUserSshKeyLabelCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateUserSshKeyLabelCmdPsql) TableName() string                     { return "user_ssh_keys" }
+func (c UpdateUserSshKeyLabelCmdPsql) Params() any {
+	return map[string]any{"id": c.id, "label": c.label}
+}
+func (c UpdateUserSshKeyLabelCmdPsql) GetID() string { return c.id }
+
+func (c UpdateUserSshKeyLabelCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.UserSshKeys, error) {
+	queries := mdbp.New(tx)
+	return queries.GetUserSshKey(ctx, mdbp.GetUserSshKeyParams{SSHKeyID: c.id})
+}
+
+func (c UpdateUserSshKeyLabelCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateUserSshKeyLabel(ctx, mdbp.UpdateUserSshKeyLabelParams{
+		Label:    sql.NullString{String: c.label, Valid: c.label != ""},
+		SSHKeyID: c.id,
+	})
+}
+
+func (d PsqlDatabase) UpdateUserSshKeyLabelCmd(ctx context.Context, auditCtx audited.AuditContext, id string, label string) UpdateUserSshKeyLabelCmdPsql {
+	return UpdateUserSshKeyLabelCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, label: label, conn: d.Connection, recorder: PsqlRecorder}
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -102,7 +103,13 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		newDatatype.DateModified = now
 	}
 
-	createdDatatype := d.CreateDatatype(newDatatype)
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdDatatype, err := d.CreateDatatype(r.Context(), ac, newDatatype)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -127,7 +134,8 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 
-	updatedDatatype, err := d.UpdateDatatype(updateDatatype)
+	ac := middleware.AuditContextFromRequest(r, c)
+	updatedDatatype, err := d.UpdateDatatype(r.Context(), ac, updateDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,7 +159,8 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
-	err = d.DeleteDatatype(dtID)
+	ac := middleware.AuditContextFromRequest(r, c)
+	err = d.DeleteDatatype(r.Context(), ac, dtID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

@@ -32,6 +32,15 @@ func (m Model) CmsMenuInit() []Page {
 	return CmsMenu
 }
 
+func (m Model) AdminCmsMenuInit() []Page {
+	AdminCmsMenu := []Page{
+		m.PageMap[ADMINCONTENT],
+		m.PageMap[ADMINDATATYPES],
+		m.PageMap[ADMINROUTES],
+	}
+	return AdminCmsMenu
+}
+
 func (m Model) ContentMenuInit() []Page {
 	ContentMenu := []Page{
 		m.PageMap[ROUTES],

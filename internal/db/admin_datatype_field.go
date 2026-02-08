@@ -89,23 +89,19 @@ func (d Database) CreateAdminDatatypeFieldTable() error {
 	return err
 }
 
-func (d Database) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams) AdminDatatypeFields {
-	params := d.MapCreateAdminDatatypeFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminDatatypeField(d.Context, params)
+func (d Database) CreateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeFieldParams) (*AdminDatatypeFields, error) {
+	cmd := d.NewAdminDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminDatatypeField: %w", err)
 	}
-	return d.MapAdminDatatypeField(row)
+	r := d.MapAdminDatatypeField(result)
+	return &r, nil
 }
 
-func (d Database) DeleteAdminDatatypeField(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, mdb.DeleteAdminDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
-	}
-	return nil
+func (d Database) DeleteAdminDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteAdminDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetAdminDatatypeField(id string) (*AdminDatatypeFields, error) {
@@ -165,15 +161,13 @@ func (d Database) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID)
 	return &res, nil
 }
 
-func (d Database) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d Database) UpdateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -223,27 +217,19 @@ func (d MysqlDatabase) CreateAdminDatatypeFieldTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams) AdminDatatypeFields {
-	params := d.MapCreateAdminDatatypeFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminDatatypeField(d.Context, params)
+func (d MysqlDatabase) CreateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeFieldParams) (*AdminDatatypeFields, error) {
+	cmd := d.NewAdminDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminDatatypeField: %w", err)
 	}
-	row, err := queries.GetAdminDatatypeField(d.Context, mdbm.GetAdminDatatypeFieldParams{ID: params.ID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminDatatypeField: %v\n", err)
-	}
-	return d.MapAdminDatatypeField(row)
+	r := d.MapAdminDatatypeField(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteAdminDatatypeField(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, mdbm.DeleteAdminDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteAdminDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteAdminDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetAdminDatatypeField(id string) (*AdminDatatypeFields, error) {
@@ -303,15 +289,13 @@ func (d MysqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdmin
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d MysqlDatabase) UpdateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -361,23 +345,19 @@ func (d PsqlDatabase) CreateAdminDatatypeFieldTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateAdminDatatypeField(s CreateAdminDatatypeFieldParams) AdminDatatypeFields {
-	params := d.MapCreateAdminDatatypeFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminDatatypeField(d.Context, params)
+func (d PsqlDatabase) CreateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s CreateAdminDatatypeFieldParams) (*AdminDatatypeFields, error) {
+	cmd := d.NewAdminDatatypeFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminDatatypeField: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminDatatypeField: %w", err)
 	}
-	return d.MapAdminDatatypeField(row)
+	r := d.MapAdminDatatypeField(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteAdminDatatypeField(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminDatatypeField(d.Context, mdbp.DeleteAdminDatatypeFieldParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete AdminDatatypeField: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteAdminDatatypeField(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteAdminDatatypeFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetAdminDatatypeField(id string) (*AdminDatatypeFields, error) {
@@ -437,15 +417,13 @@ func (d PsqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFiel
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams) (*string, error) {
-	params := d.MapUpdateAdminDatatypeFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminDatatypeField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update datatype, %v", err)
+func (d PsqlDatabase) UpdateAdminDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeFieldParams) (*string, error) {
+	cmd := d.UpdateAdminDatatypeFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminDatatypeField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -453,8 +431,6 @@ func (d PsqlDatabase) UpdateAdminDatatypeField(s UpdateAdminDatatypeFieldParams)
 //////////////////////////////
 
 // NewAdminDatatypeFieldCmd is an audited create command for admin_datatypes_fields (SQLite).
-// Note: Update and Delete commands are not implemented because no dedicated
-// GetAdminDatatypeField sqlc query exists for the GetBefore interface requirement.
 type NewAdminDatatypeFieldCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -482,6 +458,91 @@ func (c NewAdminDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) 
 
 func (d Database) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeFieldParams) NewAdminDatatypeFieldCmd {
 	return NewAdminDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+type UpdateAdminDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
+func (c UpdateAdminDatatypeFieldCmd) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeFieldCmd) GetID() string                         { return c.params.ID }
+
+func (c UpdateAdminDatatypeFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypesFields, error) {
+	queries := mdb.New(tx)
+	rows, err := queries.ListAdminDatatypeField(ctx)
+	if err != nil {
+		return mdb.AdminDatatypesFields{}, fmt.Errorf("list admin_datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.params.ID {
+			return v, nil
+		}
+	}
+	return mdb.AdminDatatypesFields{}, fmt.Errorf("admin_datatypes_fields not found: %v", c.params.ID)
+}
+
+func (c UpdateAdminDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateAdminDatatypeField(ctx, mdb.UpdateAdminDatatypeFieldParams{
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+		ID:              c.params.ID,
+	})
+}
+
+func (d Database) UpdateAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeFieldParams) UpdateAdminDatatypeFieldCmd {
+	return UpdateAdminDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+type DeleteAdminDatatypeFieldCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
+func (c DeleteAdminDatatypeFieldCmd) GetID() string                         { return c.id }
+
+func (c DeleteAdminDatatypeFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminDatatypesFields, error) {
+	queries := mdb.New(tx)
+	rows, err := queries.ListAdminDatatypeField(ctx)
+	if err != nil {
+		return mdb.AdminDatatypesFields{}, fmt.Errorf("list admin_datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdb.AdminDatatypesFields{}, fmt.Errorf("admin_datatypes_fields not found: %v", c.id)
+}
+
+func (c DeleteAdminDatatypeFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteAdminDatatypeField(ctx, mdb.DeleteAdminDatatypeFieldParams{ID: c.id})
+}
+
+func (d Database) DeleteAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteAdminDatatypeFieldCmd {
+	return DeleteAdminDatatypeFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 ///////////////////////////////
@@ -523,6 +584,73 @@ func (d MysqlDatabase) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx au
 	return NewAdminDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
+// ----- MySQL UPDATE -----
+
+type UpdateAdminDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
+func (c UpdateAdminDatatypeFieldCmdMysql) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeFieldCmdMysql) GetID() string                         { return c.params.ID }
+
+func (c UpdateAdminDatatypeFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypesFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminDatatypeField(ctx, mdbm.GetAdminDatatypeFieldParams{ID: c.params.ID})
+}
+
+func (c UpdateAdminDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateAdminDatatypeField(ctx, mdbm.UpdateAdminDatatypeFieldParams{
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+		ID:              c.params.ID,
+	})
+}
+
+func (d MysqlDatabase) UpdateAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeFieldParams) UpdateAdminDatatypeFieldCmdMysql {
+	return UpdateAdminDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+type DeleteAdminDatatypeFieldCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
+func (c DeleteAdminDatatypeFieldCmdMysql) GetID() string                         { return c.id }
+
+func (c DeleteAdminDatatypeFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminDatatypesFields, error) {
+	queries := mdbm.New(tx)
+	return queries.GetAdminDatatypeField(ctx, mdbm.GetAdminDatatypeFieldParams{ID: c.id})
+}
+
+func (c DeleteAdminDatatypeFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteAdminDatatypeField(ctx, mdbm.DeleteAdminDatatypeFieldParams{ID: c.id})
+}
+
+func (d MysqlDatabase) DeleteAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteAdminDatatypeFieldCmdMysql {
+	return DeleteAdminDatatypeFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
 ///////////////////////////////
 // AUDITED COMMANDS — POSTGRES
 //////////////////////////////
@@ -555,4 +683,89 @@ func (c NewAdminDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DB
 
 func (d PsqlDatabase) NewAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateAdminDatatypeFieldParams) NewAdminDatatypeFieldCmdPsql {
 	return NewAdminDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+type UpdateAdminDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateAdminDatatypeFieldParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c UpdateAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c UpdateAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c UpdateAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c UpdateAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }
+func (c UpdateAdminDatatypeFieldCmdPsql) Params() any                           { return c.params }
+func (c UpdateAdminDatatypeFieldCmdPsql) GetID() string                         { return c.params.ID }
+
+func (c UpdateAdminDatatypeFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypesFields, error) {
+	queries := mdbp.New(tx)
+	rows, err := queries.ListAdminDatatypeField(ctx)
+	if err != nil {
+		return mdbp.AdminDatatypesFields{}, fmt.Errorf("list admin_datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.params.ID {
+			return v, nil
+		}
+	}
+	return mdbp.AdminDatatypesFields{}, fmt.Errorf("admin_datatypes_fields not found: %v", c.params.ID)
+}
+
+func (c UpdateAdminDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateAdminDatatypeField(ctx, mdbp.UpdateAdminDatatypeFieldParams{
+		AdminDatatypeID: c.params.AdminDatatypeID,
+		AdminFieldID:    c.params.AdminFieldID,
+		ID:              c.params.ID,
+	})
+}
+
+func (d PsqlDatabase) UpdateAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateAdminDatatypeFieldParams) UpdateAdminDatatypeFieldCmdPsql {
+	return UpdateAdminDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+type DeleteAdminDatatypeFieldCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+func (c DeleteAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+func (c DeleteAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }
+func (c DeleteAdminDatatypeFieldCmdPsql) GetID() string                         { return c.id }
+
+func (c DeleteAdminDatatypeFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminDatatypesFields, error) {
+	queries := mdbp.New(tx)
+	rows, err := queries.ListAdminDatatypeField(ctx)
+	if err != nil {
+		return mdbp.AdminDatatypesFields{}, fmt.Errorf("list admin_datatypes_fields for before snapshot: %w", err)
+	}
+	for _, v := range rows {
+		if v.ID == c.id {
+			return v, nil
+		}
+	}
+	return mdbp.AdminDatatypesFields{}, fmt.Errorf("admin_datatypes_fields not found: %v", c.id)
+}
+
+func (c DeleteAdminDatatypeFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteAdminDatatypeField(ctx, mdbp.DeleteAdminDatatypeFieldParams{ID: c.id})
+}
+
+func (d PsqlDatabase) DeleteAdminDatatypeFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteAdminDatatypeFieldCmdPsql {
+	return DeleteAdminDatatypeFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

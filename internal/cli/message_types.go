@@ -119,7 +119,8 @@ type DatabaseInsertEntry struct {
 }
 type DatabaseUpdateEntry struct {
 	Table  db.DBTable
-	Values []*string
+	RowID  string
+	Values map[string]string
 }
 type DatabaseGetMsg struct {
 	Source FetchSource

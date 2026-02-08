@@ -186,23 +186,19 @@ func (d Database) CreateMediaDimensionTable() error {
 	return err
 }
 
-func (d Database) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimensions {
-	params := d.MapCreateMediaDimensionParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateMediaDimension(d.Context, params)
+func (d Database) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMediaDimension: %v\n", err)
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
 	}
-	return d.MapMediaDimension(row)
+	r := d.MapMediaDimension(result)
+	return &r, nil
 }
 
-func (d Database) DeleteMediaDimension(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, mdb.DeleteMediaDimensionParams{MdID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
-	}
-	return nil
+func (d Database) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetMediaDimension(id string) (*MediaDimensions, error) {
@@ -229,15 +225,13 @@ func (d Database) ListMediaDimensions() (*[]MediaDimensions, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, error) {
-	params := d.MapUpdateMediaDimensionParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateMediaDimension(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update mediadimenion, %v", err)
+func (d Database) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -291,27 +285,19 @@ func (d MysqlDatabase) CreateMediaDimensionTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimensions {
-	params := d.MapCreateMediaDimensionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateMediaDimension(d.Context, params)
+func (d MysqlDatabase) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMediaDimension: %v\n", err)
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
 	}
-	row, err := queries.GetMediaDimension(d.Context, mdbm.GetMediaDimensionParams{MdID: params.MdID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted MediaDimension: %v\n", err)
-	}
-	return d.MapMediaDimension(row)
+	r := d.MapMediaDimension(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteMediaDimension(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, mdbm.DeleteMediaDimensionParams{MdID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetMediaDimension(id string) (*MediaDimensions, error) {
@@ -338,15 +324,13 @@ func (d MysqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, error) {
-	params := d.MapUpdateMediaDimensionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateMediaDimension(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update media dimension, %v", err)
+func (d MysqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -400,23 +384,19 @@ func (d PsqlDatabase) CreateMediaDimensionTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateMediaDimension(s CreateMediaDimensionParams) MediaDimensions {
-	params := d.MapCreateMediaDimensionParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateMediaDimension(d.Context, params)
+func (d PsqlDatabase) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateMediaDimension: %v\n", err)
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
 	}
-	return d.MapMediaDimension(row)
+	r := d.MapMediaDimension(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteMediaDimension(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteMediaDimension(d.Context, mdbp.DeleteMediaDimensionParams{MdID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete MediaDimension: %v ", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetMediaDimension(id string) (*MediaDimensions, error) {
@@ -443,15 +423,13 @@ func (d PsqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateMediaDimension(s UpdateMediaDimensionParams) (*string, error) {
-	params := d.MapUpdateMediaDimensionParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateMediaDimension(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update media dimension, %v", err)
+func (d PsqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated %v\n", s.Label)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
 }
 
 ///////////////////////////////

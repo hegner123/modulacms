@@ -145,25 +145,19 @@ func (d Database) CreateSessionTable() error {
 	return err
 }
 
-func (d Database) CreateSession(s CreateSessionParams) (*Sessions, error) {
-	params := d.MapCreateSessionParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateSession(d.Context, params)
+func (d Database) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
+	cmd := d.NewSessionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
-	session := d.MapSession(row)
-	return &session, nil
+	r := d.MapSession(result)
+	return &r, nil
 }
 
-func (d Database) DeleteSession(id types.SessionID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteSession(d.Context, mdb.DeleteSessionParams{SessionID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Session: %v ", id)
-	}
-	return nil
+func (d Database) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
+	cmd := d.DeleteSessionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetSession(id types.SessionID) (*Sessions, error) {
@@ -200,15 +194,13 @@ func (d Database) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateSession(s UpdateSessionParams) (*string, error) {
-	params := d.MapUpdateSessionParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateSession(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update session, %v", err)
+func (d Database) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
+	cmd := d.UpdateSessionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated session %v\n", s.SessionID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -273,29 +265,19 @@ func (d MysqlDatabase) CreateSessionTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
-	params := d.MapCreateSessionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateSession(d.Context, params)
+func (d MysqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
+	cmd := d.NewSessionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
-	row, err := queries.GetSession(d.Context, mdbm.GetSessionParams{SessionID: params.SessionID})
-	if err != nil {
-		return nil, fmt.Errorf("Failed to get last inserted Session: %v\n", err)
-	}
-	session := d.MapSession(row)
-	return &session, nil
+	r := d.MapSession(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteSession(id types.SessionID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteSession(d.Context, mdbm.DeleteSessionParams{SessionID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Session: %v ", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
+	cmd := d.DeleteSessionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
@@ -332,15 +314,13 @@ func (d MysqlDatabase) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateSession(s UpdateSessionParams) (*string, error) {
-	params := d.MapUpdateSessionParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateSession(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update session, %v", err)
+func (d MysqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
+	cmd := d.UpdateSessionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated session %v\n", s.SessionID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -405,25 +385,19 @@ func (d PsqlDatabase) CreateSessionTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateSession(s CreateSessionParams) (*Sessions, error) {
-	params := d.MapCreateSessionParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateSession(d.Context, params)
+func (d PsqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
+	cmd := d.NewSessionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		e := fmt.Errorf("Failed to CreateSession.\n %v\n", err)
-		return nil, e
+		return nil, fmt.Errorf("failed to create session: %w", err)
 	}
-	session := d.MapSession(row)
-	return &session, nil
+	r := d.MapSession(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteSession(id types.SessionID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteSession(d.Context, mdbp.DeleteSessionParams{SessionID: id})
-	if err != nil {
-		return fmt.Errorf("Failed to Delete Session: %v ", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
+	cmd := d.DeleteSessionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
@@ -460,15 +434,13 @@ func (d PsqlDatabase) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateSession(s UpdateSessionParams) (*string, error) {
-	params := d.MapUpdateSessionParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateSession(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update session, %v", err)
+func (d PsqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
+	cmd := d.UpdateSessionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update session: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated session %v\n", s.SessionID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.SessionID)
+	return &msg, nil
 }
 
 ///////////////////////////////

@@ -140,27 +140,23 @@ func (d Database) CountAdminContentFields() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d Database) CreateAdminContentField(s CreateAdminContentFieldParams) AdminContentFields {
-	params := d.MapCreateAdminContentFieldParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateAdminContentField(d.Context, params)
+func (d Database) CreateAdminContentField(ctx context.Context, ac audited.AuditContext, s CreateAdminContentFieldParams) (*AdminContentFields, error) {
+	cmd := d.NewAdminContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("failed to create admin content field  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminContentField: %w", err)
 	}
-	return d.MapAdminContentField(row)
+	r := d.MapAdminContentField(result)
+	return &r, nil
 }
 func (d Database) CreateAdminContentFieldTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateAdminContentFieldTable(d.Context)
 	return err
 }
-func (d Database) DeleteAdminContentField(id types.AdminContentFieldID) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteAdminContentField(d.Context, mdb.DeleteAdminContentFieldParams{AdminContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content field: %v ", id)
-	}
-	return nil
+func (d Database) DeleteAdminContentField(ctx context.Context, ac audited.AuditContext, id types.AdminContentFieldID) error {
+	cmd := d.DeleteAdminContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d Database) GetAdminContentField(id types.AdminContentFieldID) (*AdminContentFields, error) {
 	queries := mdb.New(d.Connection)
@@ -197,15 +193,13 @@ func (d Database) ListAdminContentFieldsByRoute(id string) (*[]AdminContentField
 	}
 	return &res, nil
 }
-func (d Database) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*string, error) {
-	params := d.MapUpdateAdminContentFieldParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateAdminContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d Database) UpdateAdminContentField(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentFieldParams) (*string, error) {
+	cmd := d.UpdateAdminContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentFieldID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -261,18 +255,14 @@ func (d MysqlDatabase) CountAdminContentFields() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d MysqlDatabase) CreateAdminContentField(s CreateAdminContentFieldParams) AdminContentFields {
-	params := d.MapCreateAdminContentFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminContentField(d.Context, params)
+func (d MysqlDatabase) CreateAdminContentField(ctx context.Context, ac audited.AuditContext, s CreateAdminContentFieldParams) (*AdminContentFields, error) {
+	cmd := d.NewAdminContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminContentField: %v\n", err)
+		return nil, fmt.Errorf("failed to create adminContentField: %w", err)
 	}
-	row, err := queries.GetAdminContentField(d.Context, mdbm.GetAdminContentFieldParams{AdminContentFieldID: params.AdminContentFieldID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted AdminContentField: %v\n", err)
-	}
-	return d.MapAdminContentField(row)
+	r := d.MapAdminContentField(result)
+	return &r, nil
 }
 
 func (d MysqlDatabase) CreateAdminContentFieldTable() error {
@@ -280,14 +270,9 @@ func (d MysqlDatabase) CreateAdminContentFieldTable() error {
 	err := queries.CreateAdminContentFieldTable(d.Context)
 	return err
 }
-func (d MysqlDatabase) DeleteAdminContentField(id types.AdminContentFieldID) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteAdminContentField(d.Context, mdbm.DeleteAdminContentFieldParams{AdminContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content field: %v ", id)
-	}
-
-	return nil
+func (d MysqlDatabase) DeleteAdminContentField(ctx context.Context, ac audited.AuditContext, id types.AdminContentFieldID) error {
+	cmd := d.DeleteAdminContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d MysqlDatabase) GetAdminContentField(id types.AdminContentFieldID) (*AdminContentFields, error) {
 	queries := mdbm.New(d.Connection)
@@ -324,15 +309,13 @@ func (d MysqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContent
 	}
 	return &res, nil
 }
-func (d MysqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*string, error) {
-	params := d.MapUpdateAdminContentFieldParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateAdminContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d MysqlDatabase) UpdateAdminContentField(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentFieldParams) (*string, error) {
+	cmd := d.UpdateAdminContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentFieldID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -388,29 +371,23 @@ func (d PsqlDatabase) CountAdminContentFields() (*int64, error) {
 	}
 	return &c, nil
 }
-func (d PsqlDatabase) CreateAdminContentField(s CreateAdminContentFieldParams) AdminContentFields {
-	params := d.MapCreateAdminContentFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateAdminContentField(d.Context, params)
+func (d PsqlDatabase) CreateAdminContentField(ctx context.Context, ac audited.AuditContext, s CreateAdminContentFieldParams) (*AdminContentFields, error) {
+	cmd := d.NewAdminContentFieldCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateAdminContentField  %v \n", err)
+		return nil, fmt.Errorf("failed to create adminContentField: %w", err)
 	}
-
-	return d.MapAdminContentField(row)
+	r := d.MapAdminContentField(result)
+	return &r, nil
 }
 func (d PsqlDatabase) CreateAdminContentFieldTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateAdminContentFieldTable(d.Context)
 	return err
 }
-func (d PsqlDatabase) DeleteAdminContentField(id types.AdminContentFieldID) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteAdminContentField(d.Context, mdbp.DeleteAdminContentFieldParams{AdminContentFieldID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete admin content field: %v ", id)
-	}
-
-	return nil
+func (d PsqlDatabase) DeleteAdminContentField(ctx context.Context, ac audited.AuditContext, id types.AdminContentFieldID) error {
+	cmd := d.DeleteAdminContentFieldCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 func (d PsqlDatabase) GetAdminContentField(id types.AdminContentFieldID) (*AdminContentFields, error) {
 	queries := mdbp.New(d.Connection)
@@ -447,15 +424,13 @@ func (d PsqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContentF
 	}
 	return &res, nil
 }
-func (d PsqlDatabase) UpdateAdminContentField(s UpdateAdminContentFieldParams) (*string, error) {
-	params := d.MapUpdateAdminContentFieldParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateAdminContentField(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update content field, %v", err)
+func (d PsqlDatabase) UpdateAdminContentField(ctx context.Context, ac audited.AuditContext, s UpdateAdminContentFieldParams) (*string, error) {
+	cmd := d.UpdateAdminContentFieldCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update adminContentField: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated content field id %v\n", s.AdminContentFieldID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.AdminContentFieldID)
+	return &msg, nil
 }
 
 ///////////////////////////////

@@ -17,6 +17,7 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/router"
@@ -80,6 +81,11 @@ var serveCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		if cfg.Node_ID == "" {
+			cfg.Node_ID = string(types.NewNodeID())
+			utility.DefaultLogger.Finfo("No node_id configured, generated ephemeral node ID", "node_id", cfg.Node_ID)
+		}
 
 		logConfigSummary(cfg)
 

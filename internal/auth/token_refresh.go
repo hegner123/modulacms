@@ -7,6 +7,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"golang.org/x/oauth2"
 )
@@ -131,7 +132,9 @@ func (tr *TokenRefresher) updateTokens(userOauthID types.UserOauthID, token *oau
 	}
 
 	// Update in database
-	_, err := tr.driver.UpdateUserOauth(db.UpdateUserOauthParams{
+	ctx := context.Background()
+	ac := audited.Ctx(types.NodeID(tr.config.Node_ID), types.UserID(""), "token-refresh", "system")
+	_, err := tr.driver.UpdateUserOauth(ctx, ac, db.UpdateUserOauthParams{
 		UserOauthID:    userOauthID,
 		AccessToken:    token.AccessToken,
 		RefreshToken:   token.RefreshToken,

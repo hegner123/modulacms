@@ -189,8 +189,14 @@ func DatabaseInsertCmd(table db.DBTable, columns []string, values []*string) tea
 		}
 	}
 }
-func DatabaseUpdateEntryCmd(table db.DBTable, err error) tea.Cmd {
-	return func() tea.Msg { return DatabaseUpdateEntry{Table: table} }
+func DatabaseUpdateEntryCmd(table db.DBTable, rowID string, values map[string]string) tea.Cmd {
+	return func() tea.Msg {
+		return DatabaseUpdateEntry{
+			Table:  table,
+			RowID:  rowID,
+			Values: values,
+		}
+	}
 }
 
 // Data management constructors

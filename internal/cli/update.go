@@ -26,6 +26,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m, cmd := m.UpdateFetch(msg); cmd != nil {
 		return m, cmd
 	}
+	if m, cmd := m.UpdateAdminFetch(msg); cmd != nil {
+		return m, cmd
+	}
 	if m, cmd := m.UpdateForm(msg); cmd != nil {
 		return m, cmd
 	}
@@ -36,6 +39,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	}
 	if m, cmd := m.UpdateCms(msg); cmd != nil {
+		return m, cmd
+	}
+	if m, cmd := m.UpdateAdminCms(msg); cmd != nil {
 		return m, cmd
 	}
 	// When file picker is active, route all input to it.
@@ -98,6 +104,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			userFormDialog, cmd := m.UserFormDialog.Update(keyMsg)
 			m.UserFormDialog = &userFormDialog
+			return m, cmd
+		}
+	}
+
+	// When database form dialog is active, route all key input to the database form dialog and stop.
+	if m.DatabaseFormDialogActive && m.DatabaseFormDialog != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			dbFormDialog, cmd := m.DatabaseFormDialog.Update(keyMsg)
+			m.DatabaseFormDialog = &dbFormDialog
 			return m, cmd
 		}
 	}

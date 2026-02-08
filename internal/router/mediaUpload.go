@@ -12,6 +12,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/media"
+	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -106,7 +107,13 @@ func apiCreateMediaUpload(w http.ResponseWriter, r *http.Request, c config.Confi
 		DateModified: types.TimestampNow(),
 	}
 
-	row := d.CreateMedia(params)
+	ac := middleware.AuditContextFromRequest(r, c)
+	row, err := d.CreateMedia(r.Context(), ac, params)
+	if err != nil {
+		utility.DefaultLogger.Error("create media", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	tmp, err := os.MkdirTemp("", "modulacms-media")
 	if err != nil {

@@ -90,23 +90,19 @@ func (d Database) CreateTableTable() error {
 	return err
 }
 
-func (d Database) CreateTable(s CreateTableParams) Tables {
-	params := d.MapCreateTableParams(s)
-	queries := mdb.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, params)
+func (d Database) CreateTable(ctx context.Context, ac audited.AuditContext, s CreateTableParams) (*Tables, error) {
+	cmd := d.NewTableCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateTable: %v\n", err)
+		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
-	return d.MapTable(row)
+	r := d.MapTable(result)
+	return &r, nil
 }
 
-func (d Database) DeleteTable(id string) error {
-	queries := mdb.New(d.Connection)
-	err := queries.DeleteTable(d.Context, mdb.DeleteTableParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete table: %v", id)
-	}
-	return nil
+func (d Database) DeleteTable(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTableCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d Database) GetTable(id string) (*Tables, error) {
@@ -133,15 +129,13 @@ func (d Database) ListTables() (*[]Tables, error) {
 	return &res, nil
 }
 
-func (d Database) UpdateTable(s UpdateTableParams) (*string, error) {
-	params := d.MapUpdateTableParams(s)
-	queries := mdb.New(d.Connection)
-	err := queries.UpdateTable(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update table, %v", err)
+func (d Database) UpdateTable(ctx context.Context, ac audited.AuditContext, s UpdateTableParams) (*string, error) {
+	cmd := d.UpdateTableCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update table: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated table %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -189,27 +183,19 @@ func (d MysqlDatabase) CreateTableTable() error {
 	return err
 }
 
-func (d MysqlDatabase) CreateTable(s CreateTableParams) Tables {
-	params := d.MapCreateTableParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateTable(d.Context, params)
+func (d MysqlDatabase) CreateTable(ctx context.Context, ac audited.AuditContext, s CreateTableParams) (*Tables, error) {
+	cmd := d.NewTableCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateTable: %v\n", err)
+		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
-	row, err := queries.GetTable(d.Context, mdbm.GetTableParams{ID: params.ID})
-	if err != nil {
-		fmt.Printf("Failed to get last inserted Table: %v\n", err)
-	}
-	return d.MapTable(row)
+	r := d.MapTable(result)
+	return &r, nil
 }
 
-func (d MysqlDatabase) DeleteTable(id string) error {
-	queries := mdbm.New(d.Connection)
-	err := queries.DeleteTable(d.Context, mdbm.DeleteTableParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete table: %v", id)
-	}
-	return nil
+func (d MysqlDatabase) DeleteTable(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTableCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d MysqlDatabase) GetTable(id string) (*Tables, error) {
@@ -236,15 +222,13 @@ func (d MysqlDatabase) ListTables() (*[]Tables, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
-	params := d.MapUpdateTableParams(s)
-	queries := mdbm.New(d.Connection)
-	err := queries.UpdateTable(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update table, %v", err)
+func (d MysqlDatabase) UpdateTable(ctx context.Context, ac audited.AuditContext, s UpdateTableParams) (*string, error) {
+	cmd := d.UpdateTableCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update table: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated table %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////
@@ -292,23 +276,19 @@ func (d PsqlDatabase) CreateTableTable() error {
 	return err
 }
 
-func (d PsqlDatabase) CreateTable(s CreateTableParams) Tables {
-	params := d.MapCreateTableParams(s)
-	queries := mdbp.New(d.Connection)
-	row, err := queries.CreateTable(d.Context, params)
+func (d PsqlDatabase) CreateTable(ctx context.Context, ac audited.AuditContext, s CreateTableParams) (*Tables, error) {
+	cmd := d.NewTableCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
 	if err != nil {
-		fmt.Printf("Failed to CreateTable: %v\n", err)
+		return nil, fmt.Errorf("failed to create table: %w", err)
 	}
-	return d.MapTable(row)
+	r := d.MapTable(result)
+	return &r, nil
 }
 
-func (d PsqlDatabase) DeleteTable(id string) error {
-	queries := mdbp.New(d.Connection)
-	err := queries.DeleteTable(d.Context, mdbp.DeleteTableParams{ID: id})
-	if err != nil {
-		return fmt.Errorf("failed to delete table: %v", id)
-	}
-	return nil
+func (d PsqlDatabase) DeleteTable(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTableCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 func (d PsqlDatabase) GetTable(id string) (*Tables, error) {
@@ -335,15 +315,13 @@ func (d PsqlDatabase) ListTables() (*[]Tables, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) UpdateTable(s UpdateTableParams) (*string, error) {
-	params := d.MapUpdateTableParams(s)
-	queries := mdbp.New(d.Connection)
-	err := queries.UpdateTable(d.Context, params)
-	if err != nil {
-		return nil, fmt.Errorf("failed to update table, %v", err)
+func (d PsqlDatabase) UpdateTable(ctx context.Context, ac audited.AuditContext, s UpdateTableParams) (*string, error) {
+	cmd := d.UpdateTableCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update table: %w", err)
 	}
-	u := fmt.Sprintf("Successfully updated table %v\n", s.ID)
-	return &u, nil
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 ///////////////////////////////

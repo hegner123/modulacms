@@ -221,6 +221,28 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel.FormState.FormOptions = msg.Options
 		return newModel, NewStateUpdate()
 
+	// Admin CMS state setters
+	case AdminRoutesSet:
+		newModel := m
+		newModel.AdminRoutes = msg.AdminRoutes
+		return newModel, NewStateUpdate()
+	case AdminAllDatatypesSet:
+		newModel := m
+		newModel.AdminAllDatatypes = msg.AdminAllDatatypes
+		return newModel, NewStateUpdate()
+	case AdminDatatypeFieldsSet:
+		newModel := m
+		newModel.AdminSelectedDatatypeFields = msg.Fields
+		return newModel, NewStateUpdate()
+	case AdminContentDataSet:
+		newModel := m
+		newModel.AdminRootContentSummary = msg.AdminContentData
+		return newModel, NewStateUpdate()
+	case AdminLoadContentFieldsMsg:
+		newModel := m
+		newModel.AdminSelectedContentFields = msg.Fields
+		return newModel, NewStateUpdate()
+
 	case UpdateMaxCursorMsg:
 		cursorUpdate := func() tea.Msg {
 			if m.Cursor > msg.CursorMax-1 {
