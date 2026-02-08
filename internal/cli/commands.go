@@ -78,20 +78,17 @@ func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []stri
 			valuesMap[columns[i]] = *v
 		}
 	}
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildInsertQuery(string(table), valuesMap)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	res, err := db.QInsert(context.Background(), con, dialect, db.InsertParams{
+		Table:  string(table),
+		Values: valuesMap,
+	})
 	if err != nil {
 		return tea.Batch(
 			LogMessageCmd(err.Error()),
 			LogMessageCmd(fmt.Sprintln(valuesMap)),
 		)
 	}
-	res, err := sqb.SecureExecuteModifyQuery(query, args)
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-
 
 	return tea.Batch(
 		DbResultCmd(res, string(table)),
@@ -106,13 +103,12 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable, rowID int64, v
 		return LogMessageCmd(err.Error())
 	}
 
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildUpdateQuery(string(table), rowID, valuesMap)
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-	res, err := sqb.SecureExecuteModifyQuery(query, args)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	res, err := db.QUpdate(context.Background(), con, dialect, db.UpdateParams{
+		Table: string(table),
+		Set:   valuesMap,
+		Where: map[string]any{"id": rowID},
+	})
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
@@ -128,13 +124,11 @@ func (m Model) DatabaseGet(c *config.Config, source FetchSource, table db.DBTabl
 		return LogMessageCmd(err.Error())
 	}
 
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildSelectQuery(string(table), id)
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-	r, err := sqb.SecureExecuteSelectQuery(query, args)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	r, err := db.QSelectRows(context.Background(), con, dialect, db.SelectParams{
+		Table: string(table),
+		Where: map[string]any{"id": id},
+	})
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
@@ -156,13 +150,10 @@ func (m Model) DatabaseList(c *config.Config, source FetchSource, table db.DBTab
 		return LogMessageCmd(err.Error())
 	}
 
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildListQuery(string(table))
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-	r, err := sqb.SecureExecuteSelectQuery(query, args)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	r, err := db.QSelectRows(context.Background(), con, dialect, db.SelectParams{
+		Table: string(table),
+	})
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
@@ -184,13 +175,12 @@ func (m Model) DatabaseFilteredList(c *config.Config, source FetchSource, table 
 		return LogMessageCmd(err.Error())
 	}
 
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildSelectWithColumnsQuery(string(table), columns, whereColumn, value)
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-	r, err := sqb.SecureExecuteSelectQuery(query, args)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	r, err := db.QSelectRows(context.Background(), con, dialect, db.SelectParams{
+		Table:   string(table),
+		Columns: columns,
+		Where:   map[string]any{whereColumn: value},
+	})
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}
@@ -212,13 +202,11 @@ func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 		return LogMessageCmd(err.Error())
 	}
 
-	// Using secure query builder
-	sqb := db.NewSecureQueryBuilder(con)
-	query, args, err := sqb.SecureBuildDeleteQuery(string(table), id)
-	if err != nil {
-		return LogMessageCmd(err.Error())
-	}
-	res, err := sqb.SecureExecuteModifyQuery(query, args)
+	dialect := db.DialectFromString(string(c.Db_Driver))
+	res, err := db.QDelete(context.Background(), con, dialect, db.DeleteParams{
+		Table: string(table),
+		Where: map[string]any{"id": id},
+	})
 	if err != nil {
 		return LogMessageCmd(err.Error())
 	}

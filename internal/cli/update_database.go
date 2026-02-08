@@ -74,7 +74,7 @@ func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 		for k, v := range msg.Values {
 			valuesMap[k] = v
 		}
-		// Parse rowID as int64 for SecureBuildUpdateQuery
+		// Parse rowID as int64 for the update WHERE clause
 		var rowID int64
 		if _, err := fmt.Sscanf(msg.RowID, "%d", &rowID); err != nil {
 			return m, tea.Batch(

@@ -1,72 +1,230 @@
 package backup
 
 import (
-	"bytes"
-	"encoding/base64"
+	"archive/zip"
 	"encoding/json"
-	"net/http"
+	"fmt"
+	"io"
 	"os"
 	"os/exec"
-	"time"
+	"path/filepath"
 
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/file"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-type RestoreConfirmHash string
+// ReadManifest extracts and parses the manifest.json from a backup archive.
+func ReadManifest(backupPath string) (*BackupManifest, error) {
+	r, err := zip.OpenReader(backupPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open backup archive: %w", err)
+	}
+	defer r.Close()
 
-var RestoreHash RestoreConfirmHash
+	for _, f := range r.File {
+		if f.Name != "manifest.json" {
+			continue
+		}
+		rc, err := f.Open()
+		if err != nil {
+			return nil, fmt.Errorf("failed to open manifest.json: %w", err)
+		}
+		defer rc.Close()
 
-type RestoreCMD struct {
-	Path   string             `json:"path"`
-	Origin string             `json:"origin"`
-	Hash   RestoreConfirmHash `json:"hash"`
+		data, err := io.ReadAll(rc)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read manifest.json: %w", err)
+		}
+
+		var manifest BackupManifest
+		if err := json.Unmarshal(data, &manifest); err != nil {
+			return nil, fmt.Errorf("failed to parse manifest.json: %w", err)
+		}
+
+		return &manifest, nil
+	}
+
+	return nil, fmt.Errorf("manifest.json not found in backup archive")
 }
 
-func IssueRestoreRequest(environment string) error {
-	RestoreHash = createRestoreHash()
-	cmd := RestoreCMD{
-		Hash: RestoreHash,
-	}
-	j, err := json.Marshal(cmd)
+// RestoreFromBackup restores a backup archive to the configured database.
+// For SQLite, this replaces the database file.
+// For MySQL/PostgreSQL, this pipes the SQL dump into the respective client.
+func RestoreFromBackup(cfg config.Config, backupPath string) error {
+	// Read and verify manifest
+	manifest, err := ReadManifest(backupPath)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read backup manifest: %w", err)
 	}
-	r, err := http.Post(environment, utility.AppJson, bytes.NewBuffer(j))
+
+	if manifest.Driver != string(cfg.Db_Driver) {
+		return fmt.Errorf("backup driver mismatch: backup is %q but current config uses %q", manifest.Driver, cfg.Db_Driver)
+	}
+
+	// Create temp directory for extraction
+	tempDir, err := os.MkdirTemp("", "modulacms-restore-*")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temp directory: %w", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Extract zip to temp dir
+	if err := file.Unzip(backupPath, tempDir); err != nil {
+		return fmt.Errorf("failed to extract backup archive: %w", err)
+	}
+
+	// Restore database based on driver type
+	switch cfg.Db_Driver {
+	case config.Sqlite:
+		if err := restoreSQLite(cfg, tempDir); err != nil {
+			return fmt.Errorf("SQLite restore failed: %w", err)
+		}
+	case config.Mysql:
+		if err := restoreMySQL(cfg, tempDir); err != nil {
+			return fmt.Errorf("MySQL restore failed: %w", err)
+		}
+	case config.Psql:
+		if err := restorePostgres(cfg, tempDir); err != nil {
+			return fmt.Errorf("PostgreSQL restore failed: %w", err)
+		}
+	default:
+		return fmt.Errorf("unsupported database driver: %s", cfg.Db_Driver)
+	}
+
+	// Restore extra files if present
+	extraDir := filepath.Join(tempDir, "extra")
+	if utility.DirExists(extraDir) {
+		if err := restoreExtraFiles(extraDir); err != nil {
+			return fmt.Errorf("failed to restore extra files: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func restoreSQLite(cfg config.Config, tempDir string) error {
+	srcDB := filepath.Join(tempDir, "database.db")
+	if !utility.FileExists(srcDB) {
+		return fmt.Errorf("database.db not found in backup archive")
+	}
+
+	// Copy the database file to the configured location
+	src, err := os.Open(srcDB)
+	if err != nil {
+		return fmt.Errorf("failed to open backup database: %w", err)
+	}
+	defer src.Close()
+
+	dst, err := os.Create(cfg.Db_URL)
+	if err != nil {
+		return fmt.Errorf("failed to create destination database: %w", err)
 	}
 	defer func() {
-		if err := r.Body.Close(); err != nil {
-			utility.DefaultLogger.Error("", err)
+		if cerr := dst.Close(); cerr != nil && err == nil {
+			err = cerr
 		}
 	}()
 
+	if _, err = io.Copy(dst, src); err != nil {
+		return fmt.Errorf("failed to copy database file: %w", err)
+	}
+
 	return nil
 }
 
-func createRestoreHash() RestoreConfirmHash {
-	t := time.Now().String()
-	h := base64.NewEncoding(t)
-	s := h.EncodeToString([]byte(t))
-	return RestoreConfirmHash(s)
-}
+func restoreMySQL(cfg config.Config, tempDir string) error {
+	sqlFile := filepath.Join(tempDir, "database.sql")
+	if !utility.FileExists(sqlFile) {
+		return fmt.Errorf("database.sql not found in backup archive")
+	}
 
-func RestoreBackup(path string, tempDir string, appDir string) error {
-	err := file.Unzip(path, "./")
+	f, err := os.Open(sqlFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to open SQL dump: %w", err)
 	}
-	// Rsync the unzipped contents to the application working directory.
-	// The trailing "/" ensures rsync copies the directory contents.
-	rsyncCmd := exec.Command("rsync", "-av", tempDir+"/", appDir+"/")
-	rsyncCmd.Stdout = os.Stdout
-	rsyncCmd.Stderr = os.Stderr
+	defer f.Close()
 
-	if err := rsyncCmd.Run(); err != nil {
-		utility.DefaultLogger.Error("rsync failed", err)
+	cmd := exec.Command("mysql",
+		"-u", cfg.Db_User,
+		"-p"+cfg.Db_Password,
+		cfg.Db_Name,
+	)
+	cmd.Stdin = f
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("mysql restore failed: %w", err)
 	}
-	utility.DefaultLogger.Info("Files synchronized successfully to", appDir)
 
 	return nil
+}
+
+func restorePostgres(cfg config.Config, tempDir string) error {
+	sqlFile := filepath.Join(tempDir, "database.sql")
+	if !utility.FileExists(sqlFile) {
+		return fmt.Errorf("database.sql not found in backup archive")
+	}
+
+	f, err := os.Open(sqlFile)
+	if err != nil {
+		return fmt.Errorf("failed to open SQL dump: %w", err)
+	}
+	defer f.Close()
+
+	cmd := exec.Command("psql",
+		"-U", cfg.Db_User,
+		"-d", cfg.Db_Name,
+	)
+	cmd.Env = append(os.Environ(), "PGPASSWORD="+cfg.Db_Password)
+	cmd.Stdin = f
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("psql restore failed: %w", err)
+	}
+
+	return nil
+}
+
+func restoreExtraFiles(extraDir string) error {
+	return filepath.Walk(extraDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+
+		relPath, err := filepath.Rel(extraDir, path)
+		if err != nil {
+			return err
+		}
+
+		destPath := relPath
+		destDir := filepath.Dir(destPath)
+		if destDir != "." {
+			if mkErr := os.MkdirAll(destDir, 0o755); mkErr != nil {
+				return fmt.Errorf("failed to create directory %s: %w", destDir, mkErr)
+			}
+		}
+
+		src, err := os.Open(path)
+		if err != nil {
+			return fmt.Errorf("failed to open %s: %w", path, err)
+		}
+		defer src.Close()
+
+		dst, err := os.Create(destPath)
+		if err != nil {
+			return fmt.Errorf("failed to create %s: %w", destPath, err)
+		}
+		defer dst.Close()
+
+		if _, err = io.Copy(dst, src); err != nil {
+			return fmt.Errorf("failed to copy %s: %w", relPath, err)
+		}
+
+		return nil
+	})
 }

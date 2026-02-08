@@ -9,6 +9,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/auth"
+	"github.com/hegner123/modulacms/internal/backup"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -48,6 +49,8 @@ func ActionsMenu() []ActionItem {
 		{Label: "Validate Config", Description: "Validate the configuration file"},
 		{Label: "Generate API Token", Description: "Create a new API token for the current user"},
 		{Label: "Register SSH Key", Description: "Create a new user and register the current SSH key"},
+		{Label: "Create Backup", Description: "Create a backup of database and configured paths"},
+		{Label: "Restore Backup", Description: "Restore from a backup archive", Destructive: true},
 	}
 }
 
@@ -96,6 +99,8 @@ func RunActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 		return runGenerateAPIToken(p.Config, p.UserID)
 	case 9:
 		return runRegisterSSHKey(p)
+	case 10:
+		return runCreateBackup(p.Config)
 	default:
 		return nil
 	}
@@ -109,6 +114,10 @@ func RunDestructiveActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 		return runDBWipeRedeploy(p.Config)
 	case 3:
 		return runDBReset(p.Config)
+	case 11:
+		return func() tea.Msg {
+			return OpenFilePickerForRestoreMsg{}
+		}
 	default:
 		return nil
 	}
@@ -425,6 +434,78 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			Message: fmt.Sprintf("Token: %s\n\nExpires: %s\n\nUse as: Authorization: Bearer <token>\n\nCopy this token now — it cannot be shown again.", token, expiry.Format(time.RFC3339)),
 		}
 	}
+}
+
+func runCreateBackup(cfg *config.Config) tea.Cmd {
+	return func() tea.Msg {
+		driver := db.ConfigDB(*cfg)
+		backupID := types.NewBackupID()
+		startTime := time.Now().UTC()
+
+		_, recordErr := driver.CreateBackup(db.CreateBackupParams{
+			BackupID:    backupID,
+			NodeID:      types.NodeID(cfg.Node_ID),
+			BackupType:  types.BackupTypeFull,
+			Status:      types.BackupStatusInProgress,
+			StartedAt:   types.NewTimestamp(startTime),
+			StoragePath: "",
+			TriggeredBy: types.NullableString{String: "tui", Valid: true},
+			Metadata:    types.JSONData{Valid: false},
+		})
+
+		path, sizeBytes, err := backup.CreateFullBackup(*cfg)
+		if err != nil {
+			if recordErr == nil {
+				updateErr := driver.UpdateBackupStatus(db.UpdateBackupStatusParams{
+					BackupID:     backupID,
+					Status:       types.BackupStatusFailed,
+					CompletedAt:  types.NewTimestamp(time.Now().UTC()),
+					DurationMs:   types.NullableInt64{Int64: time.Since(startTime).Milliseconds(), Valid: true},
+					ErrorMessage: types.NullableString{String: err.Error(), Valid: true},
+				})
+				if updateErr != nil {
+					utility.DefaultLogger.Warn("Failed to record backup failure", updateErr)
+				}
+			}
+			return ActionResultMsg{
+				Title:   "Backup Failed",
+				Message: fmt.Sprintf("Failed to create backup:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		if recordErr == nil {
+			updateErr := driver.UpdateBackupStatus(db.UpdateBackupStatusParams{
+				BackupID:    backupID,
+				Status:      types.BackupStatusCompleted,
+				CompletedAt: types.NewTimestamp(time.Now().UTC()),
+				DurationMs:  types.NullableInt64{Int64: time.Since(startTime).Milliseconds(), Valid: true},
+				SizeBytes:   types.NullableInt64{Int64: sizeBytes, Valid: true},
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Warn("Failed to record backup completion", updateErr)
+			}
+		}
+
+		sizeStr := formatBackupSize(sizeBytes)
+		return ActionResultMsg{
+			Title:   "Backup Complete",
+			Message: fmt.Sprintf("Backup created successfully.\n\nPath: %s\nSize: %s", path, sizeStr),
+		}
+	}
+}
+
+func formatBackupSize(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
 func runRegisterSSHKey(p ActionParams) tea.Cmd {

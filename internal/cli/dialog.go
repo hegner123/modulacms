@@ -31,6 +31,7 @@ const (
 	DIALOGDELETEADMINDATATYPE    DialogAction = "delete_admin_datatype"
 	DIALOGDELETEADMINFIELD       DialogAction = "delete_admin_field"
 	DIALOGDELETEADMINCONTENT     DialogAction = "delete_admin_content"
+	DIALOGBACKUPRESTORE          DialogAction = "backup_restore"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -95,7 +96,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT,
 		DIALOGDELETEDATATYPE, DIALOGDELETEFIELD, DIALOGDELETEROUTE, DIALOGDELETEMEDIA, DIALOGDELETEUSER,
 		DIALOGDELETECONTENTFIELD, DIALOGDELETEADMINROUTE, DIALOGDELETEADMINDATATYPE, DIALOGDELETEADMINFIELD,
-		DIALOGDELETEADMINCONTENT:
+		DIALOGDELETEADMINCONTENT, DIALOGBACKUPRESTORE:
 		return d.ToggleControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc

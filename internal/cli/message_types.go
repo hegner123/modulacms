@@ -444,6 +444,11 @@ type UsersListSet struct {
 	UsersList []db.Users
 }
 
+// Backup/Restore messages
+type OpenFilePickerForRestoreMsg struct{}
+type RestoreBackupFromPathMsg struct{ Path string }
+type BackupRestoreCompleteMsg struct{ Path string }
+
 // Message types
 type BuildTreeFromRouteMsg struct {
 	RouteID int64

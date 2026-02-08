@@ -90,6 +90,9 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 	mux.HandleFunc("/api/v1/contentfields/", func(w http.ResponseWriter, r *http.Request) {
 		ContentFieldHandler(w, r, c)
 	})
+	mux.HandleFunc("POST /api/v1/content/batch", func(w http.ResponseWriter, r *http.Request) {
+		ContentBatchHandler(w, r, c)
+	})
 	mux.HandleFunc("/api/v1/datatype", func(w http.ResponseWriter, r *http.Request) {
 		DatatypesHandler(w, r, c)
 	})

@@ -45,6 +45,13 @@ const (
 type CliInterface string
 type InputType string
 
+type FilePickerPurpose int
+
+const (
+	FILEPICKER_MEDIA   FilePickerPurpose = iota
+	FILEPICKER_RESTORE
+)
+
 // ModelInterface defines the interface for interacting with CLI model
 type ModelInterface interface {
 	GetConfig() *config.Config
@@ -111,6 +118,7 @@ type Model struct {
 	MediaList              []db.Media
 	FilePicker             filepicker.Model
 	FilePickerActive       bool
+	FilePickerPurpose      FilePickerPurpose
 	RootContentSummary     []db.RootContentSummary
 	UsersList              []db.Users
 	UserFormDialog             *UserFormDialogModel

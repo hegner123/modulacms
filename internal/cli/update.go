@@ -56,7 +56,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			if didSelect, path := m.FilePicker.DidSelectFile(msg); didSelect {
 				m.FilePickerActive = false
-				return m, MediaUploadCmd(path)
+				switch m.FilePickerPurpose {
+				case FILEPICKER_RESTORE:
+					return m, RestoreBackupFromPathCmd(path)
+				default:
+					return m, MediaUploadCmd(path)
+				}
 			}
 
 			// Disabled file selection stays in picker (filepicker shows its own error)

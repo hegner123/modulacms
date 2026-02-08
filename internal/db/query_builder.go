@@ -1,4 +1,4 @@
-package generic
+package db
 
 import (
 	"context"
@@ -151,8 +151,9 @@ type ForeignKeyDef struct {
 	OnDelete  string // CASCADE, SET NULL, RESTRICT
 }
 
-// CreateTableParams configures a CREATE TABLE statement.
-type CreateTableParams struct {
+// DDLCreateTableParams configures a CREATE TABLE statement.
+// Named with DDL prefix to distinguish from the CMS entity CreateTableParams.
+type DDLCreateTableParams struct {
 	Table       string
 	Columns     []CreateColumnDef
 	Indexes     []IndexDef
@@ -160,8 +161,8 @@ type CreateTableParams struct {
 	IfNotExists bool
 }
 
-// CreateIndexParams configures a standalone CREATE INDEX statement.
-type CreateIndexParams struct {
+// DDLCreateIndexParams configures a standalone CREATE INDEX statement.
+type DDLCreateIndexParams struct {
 	Table       string
 	Columns     []string
 	Unique      bool
@@ -176,10 +177,10 @@ const maxColumns = 64
 
 // ===== DDL FUNCTIONS =====
 
-// CreateTable executes a CREATE TABLE statement with dialect-aware type mapping,
+// DDLCreateTable executes a CREATE TABLE statement with dialect-aware type mapping,
 // optional indexes, and optional foreign key constraints.
-func CreateTable(ctx context.Context, exec Executor, d Dialect, p CreateTableParams) error {
-	if err := validateCreateTableParams(p); err != nil {
+func DDLCreateTable(ctx context.Context, exec Executor, d Dialect, p DDLCreateTableParams) error {
+	if err := validateDDLCreateTableParams(p); err != nil {
 		return fmt.Errorf("create table: %w", err)
 	}
 
@@ -238,7 +239,7 @@ func CreateTable(ctx context.Context, exec Executor, d Dialect, p CreateTablePar
 	}
 
 	for _, idx := range p.Indexes {
-		err := CreateIndex(ctx, exec, d, CreateIndexParams{
+		err := DDLCreateIndex(ctx, exec, d, DDLCreateIndexParams{
 			Table:       p.Table,
 			Columns:     idx.Columns,
 			Unique:      idx.Unique,
@@ -252,9 +253,9 @@ func CreateTable(ctx context.Context, exec Executor, d Dialect, p CreateTablePar
 	return nil
 }
 
-// CreateIndex executes a standalone CREATE INDEX statement.
+// DDLCreateIndex executes a standalone CREATE INDEX statement.
 // Index names are auto-generated as idx_<table>_<col1>_<col2>.
-func CreateIndex(ctx context.Context, exec Executor, d Dialect, p CreateIndexParams) error {
+func DDLCreateIndex(ctx context.Context, exec Executor, d Dialect, p DDLCreateIndexParams) error {
 	if err := ValidTableName(p.Table); err != nil {
 		return fmt.Errorf("create index: invalid table: %w", err)
 	}
@@ -302,8 +303,8 @@ func CreateIndex(ctx context.Context, exec Executor, d Dialect, p CreateIndexPar
 	return nil
 }
 
-// validateCreateTableParams validates all fields of CreateTableParams.
-func validateCreateTableParams(p CreateTableParams) error {
+// validateDDLCreateTableParams validates all fields of DDLCreateTableParams.
+func validateDDLCreateTableParams(p DDLCreateTableParams) error {
 	if err := ValidTableName(p.Table); err != nil {
 		return fmt.Errorf("invalid table: %w", err)
 	}
@@ -497,8 +498,8 @@ func ValidColumnName(columnName string) error {
 
 // ===== QUERY FUNCTIONS =====
 
-// Select executes a SELECT query and returns all matching rows.
-func Select(ctx context.Context, exec Executor, d Dialect, p SelectParams) ([]Row, error) {
+// QSelect executes a SELECT query and returns all matching rows.
+func QSelect(ctx context.Context, exec Executor, d Dialect, p SelectParams) ([]Row, error) {
 	query, args, err := buildSelectQuery(d, p)
 	if err != nil {
 		return nil, err
@@ -506,9 +507,9 @@ func Select(ctx context.Context, exec Executor, d Dialect, p SelectParams) ([]Ro
 	return execQuery(ctx, exec, query, args)
 }
 
-// SelectRows executes a SELECT query and returns the raw *sql.Rows.
+// QSelectRows executes a SELECT query and returns the raw *sql.Rows.
 // Caller is responsible for closing the returned rows.
-func SelectRows(ctx context.Context, exec Executor, d Dialect, p SelectParams) (*sql.Rows, error) {
+func QSelectRows(ctx context.Context, exec Executor, d Dialect, p SelectParams) (*sql.Rows, error) {
 	query, args, err := buildSelectQuery(d, p)
 	if err != nil {
 		return nil, err
@@ -516,10 +517,10 @@ func SelectRows(ctx context.Context, exec Executor, d Dialect, p SelectParams) (
 	return exec.QueryContext(ctx, query, args...)
 }
 
-// SelectOne executes a SELECT query and returns the first matching row, or nil if no match.
-func SelectOne(ctx context.Context, exec Executor, d Dialect, p SelectParams) (Row, error) {
+// QSelectOne executes a SELECT query and returns the first matching row, or nil if no match.
+func QSelectOne(ctx context.Context, exec Executor, d Dialect, p SelectParams) (Row, error) {
 	p.Limit = 1
-	rows, err := Select(ctx, exec, d, p)
+	rows, err := QSelect(ctx, exec, d, p)
 	if err != nil {
 		return nil, err
 	}
@@ -529,8 +530,8 @@ func SelectOne(ctx context.Context, exec Executor, d Dialect, p SelectParams) (R
 	return rows[0], nil
 }
 
-// Insert executes an INSERT query.
-func Insert(ctx context.Context, exec Executor, d Dialect, p InsertParams) (sql.Result, error) {
+// QInsert executes an INSERT query.
+func QInsert(ctx context.Context, exec Executor, d Dialect, p InsertParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
 		return nil, fmt.Errorf("invalid table: %w", err)
 	}
@@ -561,8 +562,8 @@ func Insert(ctx context.Context, exec Executor, d Dialect, p InsertParams) (sql.
 	return exec.ExecContext(ctx, query, args...)
 }
 
-// Update executes an UPDATE query. Where must be non-empty to prevent accidental full-table updates.
-func Update(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql.Result, error) {
+// QUpdate executes an UPDATE query. Where must be non-empty to prevent accidental full-table updates.
+func QUpdate(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
 		return nil, fmt.Errorf("invalid table: %w", err)
 	}
@@ -603,8 +604,8 @@ func Update(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql.
 	return exec.ExecContext(ctx, query, args...)
 }
 
-// Delete executes a DELETE query. Where must be non-empty to prevent accidental full-table deletes.
-func Delete(ctx context.Context, exec Executor, d Dialect, p DeleteParams) (sql.Result, error) {
+// QDelete executes a DELETE query. Where must be non-empty to prevent accidental full-table deletes.
+func QDelete(ctx context.Context, exec Executor, d Dialect, p DeleteParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
 		return nil, fmt.Errorf("invalid table: %w", err)
 	}
@@ -623,8 +624,8 @@ func Delete(ctx context.Context, exec Executor, d Dialect, p DeleteParams) (sql.
 	return exec.ExecContext(ctx, query, args...)
 }
 
-// Count returns the number of rows matching the WHERE conditions. Pass nil where for total count.
-func Count(ctx context.Context, exec Executor, d Dialect, table string, where map[string]any) (int64, error) {
+// QCount returns the number of rows matching the WHERE conditions. Pass nil where for total count.
+func QCount(ctx context.Context, exec Executor, d Dialect, table string, where map[string]any) (int64, error) {
 	if err := ValidTableName(table); err != nil {
 		return 0, fmt.Errorf("invalid table: %w", err)
 	}
@@ -653,9 +654,9 @@ func Count(ctx context.Context, exec Executor, d Dialect, table string, where ma
 	return count, nil
 }
 
-// Exists returns true if at least one row matches the WHERE conditions.
+// QExists returns true if at least one row matches the WHERE conditions.
 // Uses SELECT 1 ... LIMIT 1 for early termination instead of COUNT(*).
-func Exists(ctx context.Context, exec Executor, d Dialect, table string, where map[string]any) (bool, error) {
+func QExists(ctx context.Context, exec Executor, d Dialect, table string, where map[string]any) (bool, error) {
 	if err := ValidTableName(table); err != nil {
 		return false, fmt.Errorf("invalid table: %w", err)
 	}

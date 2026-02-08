@@ -433,6 +433,13 @@ func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 	}
 }
 
+// Backup/Restore constructors
+func RestoreBackupFromPathCmd(path string) tea.Cmd {
+	return func() tea.Msg {
+		return RestoreBackupFromPathMsg{Path: path}
+	}
+}
+
 // Media constructors
 func MediaFetchCmd() tea.Cmd       { return func() tea.Msg { return MediaFetchMsg{} } }
 func MediaListSetCmd(media []db.Media) tea.Cmd {

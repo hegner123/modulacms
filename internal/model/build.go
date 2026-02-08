@@ -149,6 +149,9 @@ func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error)
 		parent.Nodes = append(parent.Nodes, node)
 	}
 
+	// Phase 2.5: Reorder children to match stored sibling pointer ordering.
+	reorderChildren(nodeIndex)
+
 	// Phase 3: Associate each field with its owning node.
 	// Field.Info.ParentID must match a node's Datatype.Content.ContentDataID.
 	// For admin fields, ParentID was rewritten in BuildAdminTree to point to
@@ -169,5 +172,78 @@ func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error)
 	}
 
 	return root, err
+}
+
+// reorderChildren sorts each node's Nodes slice to match the stored
+// sibling-pointer ordering (FirstChildID -> NextSiblingID chain).
+// Nodes not found in the chain are appended at the end, preserving
+// partial ordering when chains are incomplete.
+func reorderChildren(nodeIndex map[string]*Node) {
+	for _, node := range nodeIndex {
+		if len(node.Nodes) <= 1 {
+			continue
+		}
+		firstChildID := node.Datatype.Content.FirstChildID
+		if firstChildID == "" {
+			continue
+		}
+		chain := buildSiblingChain(firstChildID, nodeIndex)
+		if chain == nil {
+			continue
+		}
+		node.Nodes = mergeOrdered(chain, node.Nodes)
+	}
+}
+
+// buildSiblingChain follows the NextSiblingID chain starting from firstChildID
+// and returns nodes in correct display order. Returns nil on cycle detection
+// or if firstChildID is not found in the index.
+func buildSiblingChain(firstChildID string, nodeIndex map[string]*Node) []*Node {
+	first := nodeIndex[firstChildID]
+	if first == nil {
+		return nil
+	}
+
+	var chain []*Node
+	visited := make(map[string]bool)
+	current := first
+
+	for current != nil {
+		id := current.Datatype.Content.ContentDataID
+		if visited[id] {
+			return nil // cycle detected
+		}
+		visited[id] = true
+		chain = append(chain, current)
+
+		nextID := current.Datatype.Content.NextSiblingID
+		if nextID == "" {
+			break
+		}
+		current = nodeIndex[nextID]
+	}
+
+	return chain
+}
+
+// mergeOrdered returns a slice with chain nodes first, followed by any
+// nodes in existing that aren't in the chain. Preserves all children
+// even when the pointer chain is incomplete.
+func mergeOrdered(chain []*Node, existing []*Node) []*Node {
+	inChain := make(map[string]bool, len(chain))
+	for _, n := range chain {
+		inChain[n.Datatype.Content.ContentDataID] = true
+	}
+
+	result := make([]*Node, len(chain), len(existing))
+	copy(result, chain)
+
+	for _, n := range existing {
+		if !inChain[n.Datatype.Content.ContentDataID] {
+			result = append(result, n)
+		}
+	}
+
+	return result
 }
 

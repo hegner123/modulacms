@@ -29,6 +29,7 @@ func init() {
 	rootCmd.AddCommand(certCmd)
 	rootCmd.AddCommand(dbCmd)
 	rootCmd.AddCommand(configParentCmd)
+	rootCmd.AddCommand(backupCmd)
 }
 
 func Execute() error {

@@ -1,10 +1,9 @@
 package deploy
 
-import backup "github.com/hegner123/modulacms/internal/backup"
-
 func IssueMakeBackup() {}
 
 func DownloadBackup() {}
+
 /*
 func SyncToDev()  {
     //backup.CreateBackup()
@@ -21,19 +20,12 @@ func SyncToProd() {
 func SyncFromDev() error {
 	IssueMakeBackup()
 	DownloadBackup()
-	err := backup.RestoreBackup("", "", "")
-	if err != nil {
-		return err
-	}
+	// TODO: Integrate with backup.RestoreFromBackup(cfg, path) when deploy is implemented
 	return nil
 }
 func SyncFromProd() error {
 	IssueMakeBackup()
 	DownloadBackup()
-	err := backup.RestoreBackup("", "", "")
-	if err != nil {
-		return err
-	}
+	// TODO: Integrate with backup.RestoreFromBackup(cfg, path) when deploy is implemented
 	return nil
-
 }

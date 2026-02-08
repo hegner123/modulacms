@@ -1007,6 +1007,7 @@ func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 			fp.Height = m.Height - 4
 			m.FilePicker = fp
 			m.FilePickerActive = true
+			m.FilePickerPurpose = FILEPICKER_MEDIA
 			return m, m.FilePicker.Init()
 		}
 		if km.Matches(key, config.ActionDelete) {
