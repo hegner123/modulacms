@@ -6,7 +6,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -165,8 +164,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		datatypeID := msg.DatatypeID
 		return m, func() tea.Msg {
 			// Get field IDs from the join table
-			dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
-			dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
+			dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
@@ -177,8 +175,8 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			// Fetch actual field details for each field ID
 			var fields []db.Fields
 			for _, dtf := range *dtFields {
-				if dtf.FieldID.Valid {
-					field, err := d.GetField(dtf.FieldID.ID)
+				if !dtf.FieldID.IsZero() {
+					field, err := d.GetField(dtf.FieldID)
 					if err == nil && field != nil {
 						fields = append(fields, *field)
 					}
@@ -293,8 +291,7 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		return m, func() tea.Msg {
 			utility.DefaultLogger.Finfo("FetchContentFieldsMsg command executing...")
 			// Fetch field IDs from the datatypes_fields join table
-			dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
-			dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
+			dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
 			if err != nil {
 				utility.DefaultLogger.Ferror("ListDatatypeFieldByDatatypeID error", err)
 				return FetchErrMsg{Error: err}
@@ -313,8 +310,8 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			// Fetch actual field details for each field ID
 			var fields []db.Fields
 			for _, dtf := range *dtFields {
-				if dtf.FieldID.Valid {
-					field, err := d.GetField(dtf.FieldID.ID)
+				if !dtf.FieldID.IsZero() {
+					field, err := d.GetField(dtf.FieldID)
 					if err == nil && field != nil {
 						fields = append(fields, *field)
 					}

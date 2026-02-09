@@ -373,8 +373,7 @@ func (m Model) HandleDeleteAdminDatatype(msg DeleteAdminDatatypeRequestMsg) tea.
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Delete junction records first
-		dtID := types.NullableAdminDatatypeID{ID: msg.AdminDatatypeID, Valid: true}
-		dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(dtID)
+		dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(msg.AdminDatatypeID)
 		if err == nil && dtFields != nil {
 			for _, dtf := range *dtFields {
 				deleteErr := d.DeleteAdminDatatypeField(ctx, ac, dtf.ID)
@@ -475,14 +474,8 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 
 		// Link field to admin datatype via junction table
 		dtFieldParams := db.CreateAdminDatatypeFieldParams{
-			AdminDatatypeID: types.NullableAdminDatatypeID{
-				ID:    msg.AdminDatatypeID,
-				Valid: true,
-			},
-			AdminFieldID: types.NullableAdminFieldID{
-				ID:    field.AdminFieldID,
-				Valid: true,
-			},
+			AdminDatatypeID: msg.AdminDatatypeID,
+			AdminFieldID:    field.AdminFieldID,
 		}
 
 		_, dtfErr := d.CreateAdminDatatypeField(ctx, ac, dtFieldParams)
@@ -597,8 +590,7 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		// Delete junction records first
-		fieldID := types.NullableAdminFieldID{ID: msg.AdminFieldID, Valid: true}
-		dtFields, err := d.ListAdminDatatypeFieldByFieldID(fieldID)
+		dtFields, err := d.ListAdminDatatypeFieldByFieldID(msg.AdminFieldID)
 		if err == nil && dtFields != nil {
 			for _, dtf := range *dtFields {
 				deleteErr := d.DeleteAdminDatatypeField(ctx, ac, dtf.ID)

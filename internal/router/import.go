@@ -361,14 +361,8 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 
 	// Create the datatype_field linking the datatype to the field
 	_, dtfErr := ctx.driver.CreateDatatypeField(ctx.ctx, ctx.ac, db.CreateDatatypeFieldParams{
-		DatatypeID: types.NullableDatatypeID{
-			ID:    datatypeID,
-			Valid: true,
-		},
-		FieldID: types.NullableFieldID{
-			ID:    createdField.FieldID,
-			Valid: true,
-		},
+		DatatypeID: datatypeID,
+		FieldID:    createdField.FieldID,
 	})
 	if dtfErr != nil {
 		ctx.result.Errors = append(ctx.result.Errors,

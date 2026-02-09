@@ -231,8 +231,7 @@ func (m Model) GetFullTree(c *config.Config, id types.RouteID) tea.Cmd {
 	if err != nil {
 		return ErrorSetCmd(err)
 	}
-	out := db.LogRouteTree("GetFullTree", res)
-	return GetFullTreeResCMD(out, *res)
+	return GetFullTreeResCMD(*res)
 }
 
 func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
@@ -454,8 +453,7 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 		}
 
 		// Get field definitions for this datatype via junction table (ordered by id)
-		datatypeID := types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true}
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
+		dtFields, err := d.ListDatatypeFieldByDatatypeID(msg.DatatypeID)
 		if err != nil {
 			logger.Ferror("Failed to fetch datatype fields", err)
 			return ActionResultMsg{
@@ -479,10 +477,10 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 		existingFields := make([]ExistingContentField, 0)
 		if dtFields != nil {
 			for _, dtf := range *dtFields {
-				if !dtf.FieldID.Valid {
+				if dtf.FieldID.IsZero() {
 					continue
 				}
-				field, err := d.GetField(dtf.FieldID.ID)
+				field, err := d.GetField(dtf.FieldID)
 				if err != nil || field == nil {
 					continue
 				}
@@ -1118,7 +1116,7 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 		// Fetch field definitions for labels via junction table (sorted by sort_order, id)
 		var dtFields *[]db.DatatypeFields
 		if datatypeID.Valid {
-			dtFields, err = d.ListDatatypeFieldByDatatypeID(datatypeID)
+			dtFields, err = d.ListDatatypeFieldByDatatypeID(datatypeID.ID)
 			if err != nil {
 				dtFields = nil
 			}
@@ -1134,19 +1132,19 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 		var orderedFieldIDs []string
 		if dtFields != nil {
 			for _, dtf := range *dtFields {
-				if !dtf.FieldID.Valid {
+				if dtf.FieldID.IsZero() {
 					continue
 				}
-				field, fErr := d.GetField(dtf.FieldID.ID)
+				field, fErr := d.GetField(dtf.FieldID)
 				if fErr != nil || field == nil {
 					continue
 				}
-				fieldDefMap[string(dtf.FieldID.ID)] = fieldInfo{
+				fieldDefMap[string(dtf.FieldID)] = fieldInfo{
 					Label:           field.Label,
 					Type:            string(field.Type),
 					DatatypeFieldID: dtf.ID,
 				}
-				orderedFieldIDs = append(orderedFieldIDs, string(dtf.FieldID.ID))
+				orderedFieldIDs = append(orderedFieldIDs, string(dtf.FieldID))
 			}
 		}
 
@@ -1360,8 +1358,7 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 		}
 
 		// Delete all junction records (datatypes_fields) for this datatype
-		nullableDtID := types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true}
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(nullableDtID)
+		dtFields, err := d.ListDatatypeFieldByDatatypeID(msg.DatatypeID)
 		if err != nil {
 			logger.Ferror("Failed to list junction records", err)
 			return ActionResultMsg{
@@ -1407,8 +1404,7 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 		logger.Finfo(fmt.Sprintf("Deleting field: %s from datatype: %s", msg.FieldID, msg.DatatypeID))
 
 		// Delete junction record linking this field to the datatype
-		nullableFieldID := types.NullableFieldID{ID: msg.FieldID, Valid: true}
-		fieldJunctions, err := d.ListDatatypeFieldByFieldID(nullableFieldID)
+		fieldJunctions, err := d.ListDatatypeFieldByFieldID(msg.FieldID)
 		if err != nil {
 			logger.Ferror("Failed to list junction records for field", err)
 			return ActionResultMsg{
@@ -1419,7 +1415,7 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 
 		if fieldJunctions != nil {
 			for _, dtf := range *fieldJunctions {
-				if dtf.DatatypeID.Valid && dtf.DatatypeID.ID == msg.DatatypeID {
+				if !dtf.DatatypeID.IsZero() && dtf.DatatypeID == msg.DatatypeID {
 					if err := d.DeleteDatatypeField(ctx, ac, dtf.ID); err != nil {
 						logger.Ferror(fmt.Sprintf("Failed to delete junction record %s", dtf.ID), err)
 					}

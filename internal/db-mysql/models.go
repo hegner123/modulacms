@@ -40,7 +40,7 @@ type AdminContentRelations struct {
 	AdminContentRelationID types.AdminContentRelationID `json:"admin_content_relation_id"`
 	SourceContentID        types.AdminContentID         `json:"source_content_id"`
 	TargetContentID        types.AdminContentID         `json:"target_content_id"`
-	AdminFieldID           types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldID           types.AdminFieldID           `json:"admin_field_id"`
 	SortOrder              int32                        `json:"sort_order"`
 	DateCreated            types.Timestamp              `json:"date_created"`
 }
@@ -56,9 +56,9 @@ type AdminDatatypes struct {
 }
 
 type AdminDatatypesFields struct {
-	ID              string                        `json:"id"`
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	ID              string                `json:"id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
 }
 
 type AdminFields struct {
@@ -175,7 +175,7 @@ type ContentRelations struct {
 	ContentRelationID types.ContentRelationID `json:"content_relation_id"`
 	SourceContentID   types.ContentID         `json:"source_content_id"`
 	TargetContentID   types.ContentID         `json:"target_content_id"`
-	FieldID           types.NullableFieldID   `json:"field_id"`
+	FieldID           types.FieldID           `json:"field_id"`
 	SortOrder         int32                   `json:"sort_order"`
 	DateCreated       types.Timestamp         `json:"date_created"`
 }
@@ -191,10 +191,10 @@ type Datatypes struct {
 }
 
 type DatatypesFields struct {
-	ID         string                   `json:"id"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int32                    `json:"sort_order"`
+	ID         string           `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int32            `json:"sort_order"`
 }
 
 type Fields struct {

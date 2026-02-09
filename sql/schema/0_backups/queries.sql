@@ -16,8 +16,8 @@ DROP TABLE IF EXISTS backups;
 CREATE TABLE IF NOT EXISTS backups (
     backup_id       TEXT PRIMARY KEY CHECK (length(backup_id) = 26),
     node_id         TEXT NOT NULL CHECK (length(node_id) = 26),
-    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    status          TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    status          TEXT NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     started_at      TEXT NOT NULL,
     completed_at    TEXT,
     duration_ms     INTEGER,
@@ -110,7 +110,7 @@ WHERE backup_id = ?;
 
 -- name: DeleteOldBackups :exec
 DELETE FROM backups
-WHERE started_at < ? AND status IN ('completed', 'verified');
+WHERE started_at < ? AND status IN ('completed', 'failed');
 
 -- Backup Verifications CRUD
 

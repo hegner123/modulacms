@@ -17,24 +17,24 @@ import (
 //////////////////////////////
 
 type DatatypeFields struct {
-	ID         string                   `json:"id"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int64                    `json:"sort_order"`
+	ID         string           `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int64            `json:"sort_order"`
 }
 
 type CreateDatatypeFieldParams struct {
-	ID         string                   `json:"id"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int64                    `json:"sort_order"`
+	ID         string           `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int64            `json:"sort_order"`
 }
 
 type UpdateDatatypeFieldParams struct {
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int64                    `json:"sort_order"`
-	ID         string                   `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int64            `json:"sort_order"`
+	ID         string           `json:"id"`
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -46,8 +46,8 @@ type UpdateDatatypeFieldParams struct {
 func MapStringDatatypeField(a DatatypeFields) StringDatatypeFields {
 	return StringDatatypeFields{
 		ID:         a.ID,
-		DatatypeID: a.DatatypeID.String(),
-		FieldID:    a.FieldID.String(),
+		DatatypeID: string(a.DatatypeID),
+		FieldID:    string(a.FieldID),
 		SortOrder:  fmt.Sprintf("%d", a.SortOrder),
 	}
 }
@@ -135,7 +135,7 @@ func (d Database) ListDatatypeField() (*[]DatatypeFields, error) {
 	return &res, nil
 }
 
-func (d Database) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
+func (d Database) ListDatatypeFieldByDatatypeID(id types.DatatypeID) (*[]DatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdb.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
@@ -149,7 +149,7 @@ func (d Database) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[
 	return &res, nil
 }
 
-func (d Database) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
+func (d Database) ListDatatypeFieldByFieldID(id types.FieldID) (*[]DatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdb.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
@@ -177,7 +177,7 @@ func (d Database) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.A
 	return audited.Update(cmd)
 }
 
-func (d Database) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+func (d Database) GetMaxSortOrderByDatatypeID(datatypeID types.DatatypeID) (int64, error) {
 	queries := mdb.New(d.Connection)
 	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdb.GetMaxSortOrderByDatatypeIDParams{
 		DatatypeID: datatypeID,
@@ -278,7 +278,7 @@ func (d MysqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
+func (d MysqlDatabase) ListDatatypeFieldByFieldID(id types.FieldID) (*[]DatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdbm.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
@@ -292,7 +292,7 @@ func (d MysqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
+func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id types.DatatypeID) (*[]DatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdbm.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
@@ -320,7 +320,7 @@ func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audi
 	return audited.Update(cmd)
 }
 
-func (d MysqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+func (d MysqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.DatatypeID) (int64, error) {
 	queries := mdbm.New(d.Connection)
 	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdbm.GetMaxSortOrderByDatatypeIDParams{
 		DatatypeID: datatypeID,
@@ -423,7 +423,7 @@ func (d PsqlDatabase) ListDatatypeField() (*[]DatatypeFields, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID) (*[]DatatypeFields, error) {
+func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id types.DatatypeID) (*[]DatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByDatatypeID(d.Context, mdbp.ListDatatypeFieldByDatatypeIDParams{DatatypeID: id})
 	if err != nil {
@@ -437,7 +437,7 @@ func (d PsqlDatabase) ListDatatypeFieldByDatatypeID(id types.NullableDatatypeID)
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListDatatypeFieldByFieldID(id types.NullableFieldID) (*[]DatatypeFields, error) {
+func (d PsqlDatabase) ListDatatypeFieldByFieldID(id types.FieldID) (*[]DatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdbp.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
@@ -465,7 +465,7 @@ func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audit
 	return audited.Update(cmd)
 }
 
-func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.NullableDatatypeID) (int64, error) {
+func (d PsqlDatabase) GetMaxSortOrderByDatatypeID(datatypeID types.DatatypeID) (int64, error) {
 	queries := mdbp.New(d.Connection)
 	result, err := queries.GetMaxSortOrderByDatatypeID(d.Context, mdbp.GetMaxSortOrderByDatatypeIDParams{
 		DatatypeID: datatypeID,

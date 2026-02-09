@@ -151,15 +151,9 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		for _, fieldRef := range dt.FieldRefs {
 			fieldID := fieldIDMap[fieldRef]
 			created := driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
-				ID: string(types.NewDatatypeFieldID()),
-				DatatypeID: types.NullableDatatypeID{
-					ID:    datatypeID,
-					Valid: true,
-				},
-				FieldID: types.NullableFieldID{
-					ID:    fieldID,
-					Valid: true,
-				},
+				ID:         string(types.NewDatatypeFieldID()),
+				DatatypeID: datatypeID,
+				FieldID:    fieldID,
 			})
 			if created.ID == "" {
 				return InstallResult{}, fmt.Errorf("definitions: junction link for datatype %q field %q created with empty ID", key, fieldRef)

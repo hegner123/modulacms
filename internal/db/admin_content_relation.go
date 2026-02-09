@@ -71,7 +71,7 @@ func (d Database) MapAdminContentRelation(a mdb.AdminContentRelations) AdminCont
 		AdminContentRelationID: a.AdminContentRelationID,
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           a.AdminFieldID.ID,
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              a.SortOrder,
 		DateCreated:            a.DateCreated,
 	}
@@ -82,7 +82,7 @@ func (d Database) MapCreateAdminContentRelationParams(a CreateAdminContentRelati
 		AdminContentRelationID: types.NewAdminContentRelationID(),
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: a.AdminFieldID, Valid: !a.AdminFieldID.IsZero()},
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              a.SortOrder,
 		DateCreated:            a.DateCreated,
 	}
@@ -176,7 +176,7 @@ func (d Database) ListAdminContentRelationsBySourceAndField(contentID types.Admi
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminContentRelationsBySourceAndField(d.Context, mdb.ListAdminContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		AdminFieldID:    types.NullableAdminFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		AdminFieldID:    fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list admin content relations by source and field: %w", err)
@@ -199,7 +199,7 @@ func (d MysqlDatabase) MapAdminContentRelation(a mdbm.AdminContentRelations) Adm
 		AdminContentRelationID: a.AdminContentRelationID,
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           a.AdminFieldID.ID,
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              int64(a.SortOrder),
 		DateCreated:            a.DateCreated,
 	}
@@ -210,7 +210,7 @@ func (d MysqlDatabase) MapCreateAdminContentRelationParams(a CreateAdminContentR
 		AdminContentRelationID: types.NewAdminContentRelationID(),
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: a.AdminFieldID, Valid: !a.AdminFieldID.IsZero()},
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              int32(a.SortOrder),
 		DateCreated:            a.DateCreated,
 	}
@@ -304,7 +304,7 @@ func (d MysqlDatabase) ListAdminContentRelationsBySourceAndField(contentID types
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminContentRelationsBySourceAndField(d.Context, mdbm.ListAdminContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		AdminFieldID:    types.NullableAdminFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		AdminFieldID:    fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list admin content relations by source and field: %w", err)
@@ -327,7 +327,7 @@ func (d PsqlDatabase) MapAdminContentRelation(a mdbp.AdminContentRelations) Admi
 		AdminContentRelationID: a.AdminContentRelationID,
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           a.AdminFieldID.ID,
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              int64(a.SortOrder),
 		DateCreated:            a.DateCreated,
 	}
@@ -338,7 +338,7 @@ func (d PsqlDatabase) MapCreateAdminContentRelationParams(a CreateAdminContentRe
 		AdminContentRelationID: types.NewAdminContentRelationID(),
 		SourceContentID:        a.SourceContentID,
 		TargetContentID:        a.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: a.AdminFieldID, Valid: !a.AdminFieldID.IsZero()},
+		AdminFieldID:           a.AdminFieldID,
 		SortOrder:              int32(a.SortOrder),
 		DateCreated:            a.DateCreated,
 	}
@@ -432,7 +432,7 @@ func (d PsqlDatabase) ListAdminContentRelationsBySourceAndField(contentID types.
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminContentRelationsBySourceAndField(d.Context, mdbp.ListAdminContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		AdminFieldID:    types.NullableAdminFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		AdminFieldID:    fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list admin content relations by source and field: %w", err)
@@ -474,7 +474,7 @@ func (c NewAdminContentRelationCmd) Execute(ctx context.Context, tx audited.DBTX
 		AdminContentRelationID: types.NewAdminContentRelationID(),
 		SourceContentID:        c.params.SourceContentID,
 		TargetContentID:        c.params.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: c.params.AdminFieldID, Valid: !c.params.AdminFieldID.IsZero()},
+		AdminFieldID:           c.params.AdminFieldID,
 		SortOrder:              c.params.SortOrder,
 		DateCreated:            c.params.DateCreated,
 	})
@@ -585,7 +585,7 @@ func (c NewAdminContentRelationCmdMysql) Execute(ctx context.Context, tx audited
 		AdminContentRelationID: id,
 		SourceContentID:        c.params.SourceContentID,
 		TargetContentID:        c.params.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: c.params.AdminFieldID, Valid: !c.params.AdminFieldID.IsZero()},
+		AdminFieldID:           c.params.AdminFieldID,
 		SortOrder:              int32(c.params.SortOrder),
 		DateCreated:            c.params.DateCreated,
 	}
@@ -699,7 +699,7 @@ func (c NewAdminContentRelationCmdPsql) Execute(ctx context.Context, tx audited.
 		AdminContentRelationID: types.NewAdminContentRelationID(),
 		SourceContentID:        c.params.SourceContentID,
 		TargetContentID:        c.params.TargetContentID,
-		AdminFieldID:           types.NullableAdminFieldID{ID: c.params.AdminFieldID, Valid: !c.params.AdminFieldID.IsZero()},
+		AdminFieldID:           c.params.AdminFieldID,
 		SortOrder:              int32(c.params.SortOrder),
 		DateCreated:            c.params.DateCreated,
 	})

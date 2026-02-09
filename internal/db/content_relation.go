@@ -71,7 +71,7 @@ func (d Database) MapContentRelation(a mdb.ContentRelations) ContentRelations {
 		ContentRelationID: a.ContentRelationID,
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           a.FieldID.ID,
+		FieldID:           a.FieldID,
 		SortOrder:         a.SortOrder,
 		DateCreated:       a.DateCreated,
 	}
@@ -82,7 +82,7 @@ func (d Database) MapCreateContentRelationParams(a CreateContentRelationParams) 
 		ContentRelationID: types.NewContentRelationID(),
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: a.FieldID, Valid: !a.FieldID.IsZero()},
+		FieldID:           a.FieldID,
 		SortOrder:         a.SortOrder,
 		DateCreated:       a.DateCreated,
 	}
@@ -176,7 +176,7 @@ func (d Database) ListContentRelationsBySourceAndField(contentID types.ContentID
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentRelationsBySourceAndField(d.Context, mdb.ListContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		FieldID:         types.NullableFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		FieldID:         fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list content relations by source and field: %w", err)
@@ -199,7 +199,7 @@ func (d MysqlDatabase) MapContentRelation(a mdbm.ContentRelations) ContentRelati
 		ContentRelationID: a.ContentRelationID,
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           a.FieldID.ID,
+		FieldID:           a.FieldID,
 		SortOrder:         int64(a.SortOrder),
 		DateCreated:       a.DateCreated,
 	}
@@ -210,7 +210,7 @@ func (d MysqlDatabase) MapCreateContentRelationParams(a CreateContentRelationPar
 		ContentRelationID: types.NewContentRelationID(),
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: a.FieldID, Valid: !a.FieldID.IsZero()},
+		FieldID:           a.FieldID,
 		SortOrder:         int32(a.SortOrder),
 		DateCreated:       a.DateCreated,
 	}
@@ -304,7 +304,7 @@ func (d MysqlDatabase) ListContentRelationsBySourceAndField(contentID types.Cont
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListContentRelationsBySourceAndField(d.Context, mdbm.ListContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		FieldID:         types.NullableFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		FieldID:         fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list content relations by source and field: %w", err)
@@ -327,7 +327,7 @@ func (d PsqlDatabase) MapContentRelation(a mdbp.ContentRelations) ContentRelatio
 		ContentRelationID: a.ContentRelationID,
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           a.FieldID.ID,
+		FieldID:           a.FieldID,
 		SortOrder:         int64(a.SortOrder),
 		DateCreated:       a.DateCreated,
 	}
@@ -338,7 +338,7 @@ func (d PsqlDatabase) MapCreateContentRelationParams(a CreateContentRelationPara
 		ContentRelationID: types.NewContentRelationID(),
 		SourceContentID:   a.SourceContentID,
 		TargetContentID:   a.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: a.FieldID, Valid: !a.FieldID.IsZero()},
+		FieldID:           a.FieldID,
 		SortOrder:         int32(a.SortOrder),
 		DateCreated:       a.DateCreated,
 	}
@@ -432,7 +432,7 @@ func (d PsqlDatabase) ListContentRelationsBySourceAndField(contentID types.Conte
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListContentRelationsBySourceAndField(d.Context, mdbp.ListContentRelationsBySourceAndFieldParams{
 		SourceContentID: contentID,
-		FieldID:         types.NullableFieldID{ID: fieldID, Valid: !fieldID.IsZero()},
+		FieldID:         fieldID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list content relations by source and field: %w", err)
@@ -474,7 +474,7 @@ func (c NewContentRelationCmd) Execute(ctx context.Context, tx audited.DBTX) (md
 		ContentRelationID: types.NewContentRelationID(),
 		SourceContentID:   c.params.SourceContentID,
 		TargetContentID:   c.params.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: c.params.FieldID, Valid: !c.params.FieldID.IsZero()},
+		FieldID:           c.params.FieldID,
 		SortOrder:         c.params.SortOrder,
 		DateCreated:       c.params.DateCreated,
 	})
@@ -583,7 +583,7 @@ func (c NewContentRelationCmdMysql) Execute(ctx context.Context, tx audited.DBTX
 		ContentRelationID: id,
 		SourceContentID:   c.params.SourceContentID,
 		TargetContentID:   c.params.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: c.params.FieldID, Valid: !c.params.FieldID.IsZero()},
+		FieldID:           c.params.FieldID,
 		SortOrder:         int32(c.params.SortOrder),
 		DateCreated:       c.params.DateCreated,
 	}
@@ -695,7 +695,7 @@ func (c NewContentRelationCmdPsql) Execute(ctx context.Context, tx audited.DBTX)
 		ContentRelationID: types.NewContentRelationID(),
 		SourceContentID:   c.params.SourceContentID,
 		TargetContentID:   c.params.TargetContentID,
-		FieldID:           types.NullableFieldID{ID: c.params.FieldID, Valid: !c.params.FieldID.IsZero()},
+		FieldID:           c.params.FieldID,
 		SortOrder:         int32(c.params.SortOrder),
 		DateCreated:       c.params.DateCreated,
 	})

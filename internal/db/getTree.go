@@ -49,10 +49,10 @@ type GetContentFieldsByRouteRow struct {
 }
 
 type GetFieldDefinitionsByRouteRow struct {
-	FieldID    types.FieldID            `json:"field_id"`
-	Label      string                   `json:"label"`
-	Type       types.FieldType          `json:"type"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID   `json:"field_id"`
+	Label      string          `json:"label"`
+	Type       types.FieldType `json:"type"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
 }
 
 ///////////////////////////////

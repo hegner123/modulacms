@@ -48,17 +48,9 @@ func apiListDatatypeFields(w http.ResponseWriter, r *http.Request, c config.Conf
 	var err error
 
 	if datatypeIDStr != "" {
-		dtID := types.NullableDatatypeID{
-			ID:    types.DatatypeID(datatypeIDStr),
-			Valid: true,
-		}
-		datatypeFields, err = d.ListDatatypeFieldByDatatypeID(dtID)
+		datatypeFields, err = d.ListDatatypeFieldByDatatypeID(types.DatatypeID(datatypeIDStr))
 	} else if fieldIDStr != "" {
-		fID := types.NullableFieldID{
-			ID:    types.FieldID(fieldIDStr),
-			Valid: true,
-		}
-		datatypeFields, err = d.ListDatatypeFieldByFieldID(fID)
+		datatypeFields, err = d.ListDatatypeFieldByFieldID(types.FieldID(fieldIDStr))
 	} else {
 		datatypeFields, err = d.ListDatatypeField()
 	}

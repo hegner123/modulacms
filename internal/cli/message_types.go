@@ -253,8 +253,7 @@ type BuildTreeFromRows struct {
 	Rows []db.GetRouteTreeByRouteIDRow
 }
 type GetFullTreeResMsg struct {
-	Rows    []db.GetRouteTreeByRouteIDRow
-	Content string
+	Rows []db.GetRouteTreeByRouteIDRow
 }
 type DatabaseTreeMsg struct{}
 

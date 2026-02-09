@@ -131,8 +131,8 @@ type DbDriver interface {
 	CreateAdminDatatypeFieldTable() error
 	DeleteAdminDatatypeField(context.Context, audited.AuditContext, string) error
 	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByDatatypeID(types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByFieldID(types.NullableAdminFieldID) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByDatatypeID(types.AdminDatatypeID) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByFieldID(types.AdminFieldID) (*[]AdminDatatypeFields, error)
 	UpdateAdminDatatypeField(context.Context, audited.AuditContext, UpdateAdminDatatypeFieldParams) (*string, error)
 
 	// AdminFields
@@ -241,10 +241,10 @@ type DbDriver interface {
 	CreateDatatypeField(context.Context, audited.AuditContext, CreateDatatypeFieldParams) (*DatatypeFields, error)
 	CreateDatatypeFieldTable() error
 	DeleteDatatypeField(context.Context, audited.AuditContext, string) error
-	GetMaxSortOrderByDatatypeID(types.NullableDatatypeID) (int64, error)
+	GetMaxSortOrderByDatatypeID(types.DatatypeID) (int64, error)
 	ListDatatypeField() (*[]DatatypeFields, error)
-	ListDatatypeFieldByDatatypeID(types.NullableDatatypeID) (*[]DatatypeFields, error)
-	ListDatatypeFieldByFieldID(types.NullableFieldID) (*[]DatatypeFields, error)
+	ListDatatypeFieldByDatatypeID(types.DatatypeID) (*[]DatatypeFields, error)
+	ListDatatypeFieldByFieldID(types.FieldID) (*[]DatatypeFields, error)
 	UpdateDatatypeField(context.Context, audited.AuditContext, UpdateDatatypeFieldParams) (*string, error)
 	UpdateDatatypeFieldSortOrder(context.Context, audited.AuditContext, string, int64) error
 
@@ -962,8 +962,8 @@ func (d Database) CreateBootstrapData() error {
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
@@ -974,8 +974,8 @@ func (d Database) CreateBootstrapData() error {
 
 	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
@@ -1672,8 +1672,8 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
@@ -1684,8 +1684,8 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
@@ -2355,8 +2355,8 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		FieldID:    types.NullableFieldID{Valid: true, ID: field.FieldID},
+		DatatypeID: pageDatatype.DatatypeID,
+		FieldID:    field.FieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
@@ -2367,8 +2367,8 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AdminFieldID:    types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
+		AdminDatatypeID: adminDatatype.AdminDatatypeID,
+		AdminFieldID:    adminField.AdminFieldID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)

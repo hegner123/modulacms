@@ -1509,22 +1509,15 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 
 		// Link field to datatype via datatypes_fields join table
 		dtFieldID := string(types.NewDatatypeFieldID())
-		dtDatatypeID := types.NullableDatatypeID{
-			ID:    msg.DatatypeID,
-			Valid: true,
-		}
-		maxSort, sortErr := d.GetMaxSortOrderByDatatypeID(dtDatatypeID)
+		maxSort, sortErr := d.GetMaxSortOrderByDatatypeID(msg.DatatypeID)
 		if sortErr != nil {
 			maxSort = -1
 		}
 		dtFieldParams := db.CreateDatatypeFieldParams{
 			ID:         dtFieldID,
-			DatatypeID: dtDatatypeID,
-			FieldID: types.NullableFieldID{
-				ID:    field.FieldID,
-				Valid: true,
-			},
-			SortOrder: maxSort + 1,
+			DatatypeID: msg.DatatypeID,
+			FieldID:    field.FieldID,
+			SortOrder:  maxSort + 1,
 		}
 
 		_, dtfErr := d.CreateDatatypeField(ctx, ac, dtFieldParams)

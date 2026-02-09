@@ -17,20 +17,20 @@ import (
 //////////////////////////////
 
 type AdminDatatypeFields struct {
-	ID              string                        `json:"id"`
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	ID              string                `json:"id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
 }
 
 type CreateAdminDatatypeFieldParams struct {
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
 }
 
 type UpdateAdminDatatypeFieldParams struct {
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
-	ID              string                        `json:"id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
+	ID              string                `json:"id"`
 }
 
 // MapStringAdminDatatypeField converts AdminDatatypeFields to StringAdminDatatypeFields for display purposes
@@ -133,7 +133,7 @@ func (d Database) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	return &res, nil
 }
 
-func (d Database) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
+func (d Database) ListAdminDatatypeFieldByDatatypeID(id types.AdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdb.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
@@ -147,7 +147,7 @@ func (d Database) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatat
 	return &res, nil
 }
 
-func (d Database) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
+func (d Database) ListAdminDatatypeFieldByFieldID(id types.AdminFieldID) (*[]AdminDatatypeFields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdb.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
 	if err != nil {
@@ -261,7 +261,7 @@ func (d MysqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) 
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
+func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id types.AdminFieldID) (*[]AdminDatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdbm.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
 	if err != nil {
@@ -275,7 +275,7 @@ func (d MysqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFie
 	return &res, nil
 }
 
-func (d MysqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
+func (d MysqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.AdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdbm.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
@@ -389,7 +389,7 @@ func (d PsqlDatabase) ListAdminDatatypeField() (*[]AdminDatatypeFields, error) {
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminDatatypeID) (*[]AdminDatatypeFields, error) {
+func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.AdminDatatypeID) (*[]AdminDatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByDatatypeID(d.Context, mdbp.ListAdminDatatypeFieldByDatatypeIDParams{AdminDatatypeID: id})
 	if err != nil {
@@ -403,7 +403,7 @@ func (d PsqlDatabase) ListAdminDatatypeFieldByDatatypeID(id types.NullableAdminD
 	return &res, nil
 }
 
-func (d PsqlDatabase) ListAdminDatatypeFieldByFieldID(id types.NullableAdminFieldID) (*[]AdminDatatypeFields, error) {
+func (d PsqlDatabase) ListAdminDatatypeFieldByFieldID(id types.AdminFieldID) (*[]AdminDatatypeFields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListAdminDatatypeFieldByFieldID(d.Context, mdbp.ListAdminDatatypeFieldByFieldIDParams{AdminFieldID: id})
 	if err != nil {

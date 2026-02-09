@@ -1,8 +1,8 @@
 CREATE TABLE IF NOT EXISTS backups (
     backup_id       TEXT PRIMARY KEY CHECK (length(backup_id) = 26),
     node_id         TEXT NOT NULL CHECK (length(node_id) = 26),
-    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    status          TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    status          TEXT NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     started_at      TEXT NOT NULL,
     completed_at    TEXT,
     duration_ms     INTEGER,
@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS backup_verifications (
     restore_tested   INTEGER DEFAULT 0,
     checksum_valid   INTEGER DEFAULT 0,
     record_count_match INTEGER DEFAULT 0,
-    status           TEXT NOT NULL CHECK (status IN ('passed', 'failed')),
+    status           TEXT NOT NULL CHECK (status IN ('pending', 'verified', 'failed')),
     error_message    TEXT,
     duration_ms      INTEGER
 );
@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    TEXT PRIMARY KEY CHECK (length(backup_set_id) = 26),
     created_at       TEXT NOT NULL,
     hlc_timestamp    INTEGER NOT NULL,
-    status           TEXT NOT NULL CHECK (status IN ('pending', 'completed', 'failed')),
+    status           TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'partial')),
     backup_ids       TEXT NOT NULL,
     node_count       INTEGER NOT NULL,
     completed_count  INTEGER DEFAULT 0,

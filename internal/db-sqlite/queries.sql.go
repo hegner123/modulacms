@@ -675,7 +675,7 @@ type CreateAdminContentRelationParams struct {
 	AdminContentRelationID types.AdminContentRelationID `json:"admin_content_relation_id"`
 	SourceContentID        types.AdminContentID         `json:"source_content_id"`
 	TargetContentID        types.AdminContentID         `json:"target_content_id"`
-	AdminFieldID           types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldID           types.AdminFieldID           `json:"admin_field_id"`
 	SortOrder              int64                        `json:"sort_order"`
 	DateCreated            types.Timestamp              `json:"date_created"`
 }
@@ -792,9 +792,9 @@ INSERT INTO admin_datatypes_fields (
 `
 
 type CreateAdminDatatypeFieldParams struct {
-	ID              string                        `json:"id"`
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
+	ID              string                `json:"id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
 }
 
 func (q *Queries) CreateAdminDatatypeField(ctx context.Context, arg CreateAdminDatatypeFieldParams) (AdminDatatypesFields, error) {
@@ -1119,8 +1119,8 @@ const createBackupTables = `-- name: CreateBackupTables :exec
 CREATE TABLE IF NOT EXISTS backups (
     backup_id       TEXT PRIMARY KEY CHECK (length(backup_id) = 26),
     node_id         TEXT NOT NULL CHECK (length(node_id) = 26),
-    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'snapshot')),
-    status          TEXT NOT NULL CHECK (status IN ('started', 'completed', 'failed', 'verified')),
+    backup_type     TEXT NOT NULL CHECK (backup_type IN ('full', 'incremental', 'differential')),
+    status          TEXT NOT NULL CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
     started_at      TEXT NOT NULL,
     completed_at    TEXT,
     duration_ms     INTEGER,
@@ -1389,7 +1389,7 @@ type CreateContentRelationParams struct {
 	ContentRelationID types.ContentRelationID `json:"content_relation_id"`
 	SourceContentID   types.ContentID         `json:"source_content_id"`
 	TargetContentID   types.ContentID         `json:"target_content_id"`
-	FieldID           types.NullableFieldID   `json:"field_id"`
+	FieldID           types.FieldID           `json:"field_id"`
 	SortOrder         int64                   `json:"sort_order"`
 	DateCreated       types.Timestamp         `json:"date_created"`
 }
@@ -1507,10 +1507,10 @@ RETURNING id, datatype_id, field_id, sort_order
 `
 
 type CreateDatatypeFieldParams struct {
-	ID         string                   `json:"id"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int64                    `json:"sort_order"`
+	ID         string           `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int64            `json:"sort_order"`
 }
 
 func (q *Queries) CreateDatatypeField(ctx context.Context, arg CreateDatatypeFieldParams) (DatatypesFields, error) {
@@ -2758,7 +2758,7 @@ func (q *Queries) DeleteMediaDimension(ctx context.Context, arg DeleteMediaDimen
 
 const deleteOldBackups = `-- name: DeleteOldBackups :exec
 DELETE FROM backups
-WHERE started_at < ? AND status IN ('completed', 'verified')
+WHERE started_at < ? AND status IN ('completed', 'failed')
 `
 
 type DeleteOldBackupsParams struct {
@@ -4016,10 +4016,10 @@ type GetFieldDefinitionsByRouteParams struct {
 }
 
 type GetFieldDefinitionsByRouteRow struct {
-	FieldID    types.FieldID            `json:"field_id"`
-	Label      string                   `json:"label"`
-	Type       types.FieldType          `json:"type"`
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	Label      string           `json:"label"`
+	Type       types.FieldType  `json:"type"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
 }
 
 func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDefinitionsByRouteParams) ([]GetFieldDefinitionsByRouteRow, error) {
@@ -4157,7 +4157,7 @@ WHERE datatype_id = ?
 `
 
 type GetMaxSortOrderByDatatypeIDParams struct {
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
 }
 
 func (q *Queries) GetMaxSortOrderByDatatypeID(ctx context.Context, arg GetMaxSortOrderByDatatypeIDParams) (interface{}, error) {
@@ -5443,8 +5443,8 @@ ORDER BY sort_order
 `
 
 type ListAdminContentRelationsBySourceAndFieldParams struct {
-	SourceContentID types.AdminContentID       `json:"source_content_id"`
-	AdminFieldID    types.NullableAdminFieldID `json:"admin_field_id"`
+	SourceContentID types.AdminContentID `json:"source_content_id"`
+	AdminFieldID    types.AdminFieldID   `json:"admin_field_id"`
 }
 
 func (q *Queries) ListAdminContentRelationsBySourceAndField(ctx context.Context, arg ListAdminContentRelationsBySourceAndFieldParams) ([]AdminContentRelations, error) {
@@ -5628,7 +5628,7 @@ ORDER BY id
 `
 
 type ListAdminDatatypeFieldByDatatypeIDParams struct {
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
 }
 
 func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, arg ListAdminDatatypeFieldByDatatypeIDParams) ([]AdminDatatypesFields, error) {
@@ -5661,7 +5661,7 @@ ORDER BY id
 `
 
 type ListAdminDatatypeFieldByFieldIDParams struct {
-	AdminFieldID types.NullableAdminFieldID `json:"admin_field_id"`
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
 }
 
 func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, arg ListAdminDatatypeFieldByFieldIDParams) ([]AdminDatatypesFields, error) {
@@ -6385,8 +6385,8 @@ ORDER BY sort_order
 `
 
 type ListContentRelationsBySourceAndFieldParams struct {
-	SourceContentID types.ContentID       `json:"source_content_id"`
-	FieldID         types.NullableFieldID `json:"field_id"`
+	SourceContentID types.ContentID `json:"source_content_id"`
+	FieldID         types.FieldID   `json:"field_id"`
 }
 
 func (q *Queries) ListContentRelationsBySourceAndField(ctx context.Context, arg ListContentRelationsBySourceAndFieldParams) ([]ContentRelations, error) {
@@ -6577,7 +6577,7 @@ ORDER BY sort_order, id
 `
 
 type ListDatatypeFieldByDatatypeIDParams struct {
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
 }
 
 func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, arg ListDatatypeFieldByDatatypeIDParams) ([]DatatypesFields, error) {
@@ -6616,7 +6616,7 @@ ORDER BY sort_order, id
 `
 
 type ListDatatypeFieldByFieldIDParams struct {
-	FieldID types.NullableFieldID `json:"field_id"`
+	FieldID types.FieldID `json:"field_id"`
 }
 
 func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, arg ListDatatypeFieldByFieldIDParams) ([]DatatypesFields, error) {
@@ -7642,9 +7642,9 @@ WHERE id = ?
 `
 
 type UpdateAdminDatatypeFieldParams struct {
-	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.NullableAdminFieldID    `json:"admin_field_id"`
-	ID              string                        `json:"id"`
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
+	ID              string                `json:"id"`
 }
 
 func (q *Queries) UpdateAdminDatatypeField(ctx context.Context, arg UpdateAdminDatatypeFieldParams) error {
@@ -7951,10 +7951,10 @@ WHERE id = ?
 `
 
 type UpdateDatatypeFieldParams struct {
-	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
-	FieldID    types.NullableFieldID    `json:"field_id"`
-	SortOrder  int64                    `json:"sort_order"`
-	ID         string                   `json:"id"`
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID    `json:"field_id"`
+	SortOrder  int64            `json:"sort_order"`
+	ID         string           `json:"id"`
 }
 
 func (q *Queries) UpdateDatatypeField(ctx context.Context, arg UpdateDatatypeFieldParams) error {

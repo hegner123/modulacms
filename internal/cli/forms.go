@@ -314,8 +314,7 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 		logger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
 
 		// Fetch field IDs from the datatypes_fields join table
-		dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(dtID)
+		dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
 		if err != nil {
 			logger.Ferror("ListDatatypeFieldByDatatypeID error", err)
 			return FetchErrMsg{Error: err}
@@ -329,8 +328,8 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 		// Fetch actual field details for each field ID
 		var fields []db.Fields
 		for _, dtf := range *dtFields {
-			if dtf.FieldID.Valid {
-				field, err := d.GetField(dtf.FieldID.ID)
+			if !dtf.FieldID.IsZero() {
+				field, err := d.GetField(dtf.FieldID)
 				if err == nil && field != nil {
 					fields = append(fields, *field)
 				}

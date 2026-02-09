@@ -149,6 +149,19 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
+          - column: "datatypes_fields.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "datatypes_fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_datatypes_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "content_relations.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_content_relations.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -485,6 +498,19 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
+          - column: "datatypes_fields.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "datatypes_fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_datatypes_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "content_relations.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_content_relations.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -821,6 +847,19 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
+          # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
+          - column: "datatypes_fields.datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
+          - column: "datatypes_fields.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_datatypes_fields.admin_datatype_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
+          - column: "admin_datatypes_fields.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "content_relations.field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
+          - column: "admin_content_relations.admin_field_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true

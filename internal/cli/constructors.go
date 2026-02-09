@@ -344,14 +344,12 @@ func DbResultCmd(res sql.Result, table string) tea.Cmd {
 	}
 }
 
-func GetFullTreeResCMD(s string, rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
+func GetFullTreeResCMD(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
 	return func() tea.Msg {
 		return GetFullTreeResMsg{
-			Rows:    rows,
-			Content: s,
+			Rows: rows,
 		}
 	}
-
 }
 func BuildTreeFromRowsCmd(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
 	return func() tea.Msg {

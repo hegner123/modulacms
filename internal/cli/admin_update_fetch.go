@@ -5,7 +5,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // UpdateAdminFetch handles fetch messages for admin CMS entities.
@@ -76,8 +75,7 @@ func (m Model) UpdateAdminFetch(msg tea.Msg) (Model, tea.Cmd) {
 		datatypeID := msg.AdminDatatypeID
 		return m, func() tea.Msg {
 			// Get field IDs from the admin join table
-			dtID := types.NullableAdminDatatypeID{ID: datatypeID, Valid: true}
-			dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(dtID)
+			dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(datatypeID)
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
@@ -88,8 +86,8 @@ func (m Model) UpdateAdminFetch(msg tea.Msg) (Model, tea.Cmd) {
 			// Fetch actual field details for each field ID
 			var fields []db.AdminFields
 			for _, dtf := range *dtFields {
-				if dtf.AdminFieldID.Valid {
-					field, err := d.GetAdminField(dtf.AdminFieldID.ID)
+				if !dtf.AdminFieldID.IsZero() {
+					field, err := d.GetAdminField(dtf.AdminFieldID)
 					if err == nil && field != nil {
 						fields = append(fields, *field)
 					}
