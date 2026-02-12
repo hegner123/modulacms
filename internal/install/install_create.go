@@ -8,7 +8,7 @@ import (
 )
 
 // CreateDb creates database tables and bootstrap data with progress indicators
-func CreateDb(path string, c *config.Config) error {
+func CreateDb(path string, c *config.Config, adminHash string) error {
 	d := db.ConfigDB(*c)
 
 	progress := NewInstallProgress()
@@ -22,7 +22,7 @@ func CreateDb(path string, c *config.Config) error {
 	})
 
 	progress.AddStep("Bootstrap data", "Inserting bootstrap data", func() error {
-		err := d.CreateBootstrapData()
+		err := d.CreateBootstrapData(adminHash)
 		if err != nil {
 			return ErrDBBootstrap(err)
 		}
@@ -41,7 +41,7 @@ func CreateDb(path string, c *config.Config) error {
 }
 
 // CreateDbSimple creates database without progress indicators (for programmatic use)
-func CreateDbSimple(path string, c *config.Config) error {
+func CreateDbSimple(path string, c *config.Config, adminHash string) error {
 	d := db.ConfigDB(*c)
 
 	err := d.CreateAllTables()
@@ -49,7 +49,7 @@ func CreateDbSimple(path string, c *config.Config) error {
 		return ErrDBTables(err)
 	}
 
-	err = d.CreateBootstrapData()
+	err = d.CreateBootstrapData(adminHash)
 	if err != nil {
 		return ErrDBBootstrap(err)
 	}

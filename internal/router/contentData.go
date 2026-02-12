@@ -15,7 +15,11 @@ import (
 func ContentDatasHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListContentData(w, c)
+		if HasPaginationParams(r) {
+			apiListContentDataPaginated(w, r, c)
+		} else {
+			apiListContentData(w, c)
+		}
 	case http.MethodPost:
 		apiCreateContentData(w, r, c)
 	default:
@@ -153,5 +157,37 @@ func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListContentDataPaginated handles GET requests for listing content data with pagination.
+func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListContentDataPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountContentData()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.ContentData]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

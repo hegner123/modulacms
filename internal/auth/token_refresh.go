@@ -21,11 +21,11 @@ type TokenRefresher struct {
 	log    Logger
 }
 
-// NewTokenRefresher creates a new TokenRefresher with the given configuration and logger.
-func NewTokenRefresher(log Logger, c *config.Config) *TokenRefresher {
+// NewTokenRefresher creates a new TokenRefresher with the given configuration, logger, and database driver.
+func NewTokenRefresher(log Logger, c *config.Config, driver db.DbDriver) *TokenRefresher {
 	return &TokenRefresher{
 		config: c,
-		driver: db.ConfigDB(*c),
+		driver: driver,
 		log:    log,
 	}
 }
@@ -39,7 +39,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 	userOauth, err := tr.driver.GetUserOauthByUserId(types.NullableUserID{Valid: true, ID: userID})
 	if err != nil {
 		// User doesn't use OAuth - this is not an error
-		tr.log.Debug("No OAuth record for user %d", userID)
+		tr.log.Debug("No OAuth record for user %s", userID)
 		return nil
 	}
 
@@ -49,7 +49,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 
 	// Check if token has no expiry (GitHub tokens don't expire)
 	if userOauth.TokenExpiresAt == "" {
-		tr.log.Debug("Token for user %d has no expiry (long-lived token)", userID)
+		tr.log.Debug("Token for user %s has no expiry (long-lived token)", userID)
 		return nil // No refresh needed for long-lived tokens
 	}
 
@@ -66,17 +66,17 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 
 	// Double-check if token has no expiry
 	if expiresAt.IsZero() || expiresAt.Year() == 1 {
-		tr.log.Debug("Token for user %d has no expiry (long-lived token)", userID)
+		tr.log.Debug("Token for user %s has no expiry (long-lived token)", userID)
 		return nil // No refresh needed for long-lived tokens
 	}
 
 	// Check if token expires within 5 minutes
 	if time.Until(expiresAt) > 5*time.Minute {
-		tr.log.Debug("Token for user %d still valid for %s", userID, time.Until(expiresAt))
+		tr.log.Debug("Token for user %s still valid for %s", userID, time.Until(expiresAt))
 		return nil // Token still valid
 	}
 
-	tr.log.Info("Token for user %d expiring soon, refreshing...", userID)
+	tr.log.Info("Token for user %s expiring soon, refreshing...", userID)
 
 	// Refresh the token
 	newToken, err := tr.refreshToken(userOauth)
@@ -90,7 +90,7 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 		return fmt.Errorf("failed to update tokens: %w", err)
 	}
 
-	tr.log.Info("Token refreshed successfully for user %d", userID)
+	tr.log.Info("Token refreshed successfully for user %s", userID)
 	return nil
 }
 
@@ -112,7 +112,8 @@ func (tr *TokenRefresher) refreshToken(userOauth *db.UserOauth) (*oauth2.Token, 
 	}
 
 	// Refresh the token
-	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 	tokenSource := conf.TokenSource(ctx, token)
 	newToken, err := tokenSource.Token()
 	if err != nil {

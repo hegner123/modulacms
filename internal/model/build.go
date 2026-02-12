@@ -79,7 +79,7 @@ func BuildAdminTree(log Logger, cd []db.AdminContentData, dt []db.AdminDatatypes
 	// can match fields to the correct nodes by content instance ID.
 	for i, v := range cf {
 		info := db.MapAdminFieldJSON(df[i])
-		info.ParentID = v.AdminContentDataID
+		info.ParentID = v.AdminContentDataID.String()
 		f[i].Info = info
 		f[i].Content = db.MapAdminContentFieldJSON(v)
 	}

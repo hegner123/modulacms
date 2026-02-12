@@ -71,7 +71,7 @@ const (
 type DbDriver interface {
 	// Connection
 	CreateAllTables() error
-	CreateBootstrapData() error
+	CreateBootstrapData(adminHash string) error
 	DropAllTables() error
 	DumpSql(config.Config) error
 	ExecuteQuery(string, DBTable) (*sql.Rows, error)
@@ -92,6 +92,8 @@ type DbDriver interface {
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentDataByRoute(string) (*[]AdminContentData, error)
+	ListAdminContentDataPaginated(PaginationParams) (*[]AdminContentData, error)
+	ListAdminContentDataByRoutePaginated(ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error)
 	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
 
 	// AdminContentFields
@@ -102,6 +104,8 @@ type DbDriver interface {
 	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
+	ListAdminContentFieldsPaginated(PaginationParams) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRoutePaginated(ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error)
 	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminContentRelations
@@ -123,6 +127,8 @@ type DbDriver interface {
 	DeleteAdminDatatype(context.Context, audited.AuditContext, types.AdminDatatypeID) error
 	GetAdminDatatypeById(types.AdminDatatypeID) (*AdminDatatypes, error)
 	ListAdminDatatypes() (*[]AdminDatatypes, error)
+	ListAdminDatatypesPaginated(PaginationParams) (*[]AdminDatatypes, error)
+	ListAdminDatatypeChildrenPaginated(ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error)
 	UpdateAdminDatatype(context.Context, audited.AuditContext, UpdateAdminDatatypeParams) (*string, error)
 
 	// AdminDatatypeFields
@@ -133,6 +139,9 @@ type DbDriver interface {
 	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByDatatypeID(types.AdminDatatypeID) (*[]AdminDatatypeFields, error)
 	ListAdminDatatypeFieldByFieldID(types.AdminFieldID) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldPaginated(PaginationParams) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByDatatypeIDPaginated(ListAdminDatatypeFieldByDatatypeIDPaginatedParams) (*[]AdminDatatypeFields, error)
+	ListAdminDatatypeFieldByFieldIDPaginated(ListAdminDatatypeFieldByFieldIDPaginatedParams) (*[]AdminDatatypeFields, error)
 	UpdateAdminDatatypeField(context.Context, audited.AuditContext, UpdateAdminDatatypeFieldParams) (*string, error)
 
 	// AdminFields
@@ -142,6 +151,8 @@ type DbDriver interface {
 	DeleteAdminField(context.Context, audited.AuditContext, types.AdminFieldID) error
 	GetAdminField(types.AdminFieldID) (*AdminFields, error)
 	ListAdminFields() (*[]AdminFields, error)
+	ListAdminFieldsPaginated(PaginationParams) (*[]AdminFields, error)
+	ListAdminFieldsByParentIDPaginated(ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error)
 	UpdateAdminField(context.Context, audited.AuditContext, UpdateAdminFieldParams) (*string, error)
 
 	// AdminRoutes
@@ -151,6 +162,7 @@ type DbDriver interface {
 	DeleteAdminRoute(context.Context, audited.AuditContext, types.AdminRouteID) error
 	GetAdminRoute(types.Slug) (*AdminRoutes, error)
 	ListAdminRoutes() (*[]AdminRoutes, error)
+	ListAdminRoutesPaginated(PaginationParams) (*[]AdminRoutes, error)
 	UpdateAdminRoute(context.Context, audited.AuditContext, UpdateAdminRouteParams) (*string, error)
 
 	// Backups
@@ -198,6 +210,8 @@ type DbDriver interface {
 	GetContentData(types.ContentID) (*ContentData, error)
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
+	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
+	ListContentDataByRoutePaginated(ListContentDataByRoutePaginatedParams) (*[]ContentData, error)
 	ListRootContentSummary() (*[]RootContentSummary, error)
 	UpdateContentData(context.Context, audited.AuditContext, UpdateContentDataParams) (*string, error)
 
@@ -211,6 +225,9 @@ type DbDriver interface {
 	ListContentFields() (*[]ContentFields, error)
 	ListContentFieldsByRoute(types.NullableRouteID) (*[]ContentFields, error)
 	ListContentFieldsByContentData(types.NullableContentID) (*[]ContentFields, error)
+	ListContentFieldsPaginated(PaginationParams) (*[]ContentFields, error)
+	ListContentFieldsByRoutePaginated(ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error)
+	ListContentFieldsByContentDataPaginated(ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error)
 	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 
 	// ContentRelations
@@ -234,6 +251,8 @@ type DbDriver interface {
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
 	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
+	ListDatatypesPaginated(PaginationParams) (*[]Datatypes, error)
+	ListDatatypeChildrenPaginated(ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error)
 	UpdateDatatype(context.Context, audited.AuditContext, UpdateDatatypeParams) (*string, error)
 
 	// DatatypeFields
@@ -245,6 +264,9 @@ type DbDriver interface {
 	ListDatatypeField() (*[]DatatypeFields, error)
 	ListDatatypeFieldByDatatypeID(types.DatatypeID) (*[]DatatypeFields, error)
 	ListDatatypeFieldByFieldID(types.FieldID) (*[]DatatypeFields, error)
+	ListDatatypeFieldPaginated(PaginationParams) (*[]DatatypeFields, error)
+	ListDatatypeFieldByDatatypeIDPaginated(ListDatatypeFieldByDatatypeIDPaginatedParams) (*[]DatatypeFields, error)
+	ListDatatypeFieldByFieldIDPaginated(ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error)
 	UpdateDatatypeField(context.Context, audited.AuditContext, UpdateDatatypeFieldParams) (*string, error)
 	UpdateDatatypeFieldSortOrder(context.Context, audited.AuditContext, string, int64) error
 
@@ -257,6 +279,7 @@ type DbDriver interface {
 	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
 	ListFields() (*[]Fields, error)
 	ListFieldsByDatatypeID(types.NullableDatatypeID) (*[]Fields, error)
+	ListFieldsPaginated(PaginationParams) (*[]Fields, error)
 	UpdateField(context.Context, audited.AuditContext, UpdateFieldParams) (*string, error)
 
 	// Media
@@ -268,6 +291,7 @@ type DbDriver interface {
 	GetMediaByName(string) (*Media, error)
 	GetMediaByURL(types.URL) (*Media, error)
 	ListMedia() (*[]Media, error)
+	ListMediaPaginated(PaginationParams) (*[]Media, error)
 	UpdateMedia(context.Context, audited.AuditContext, UpdateMediaParams) (*string, error)
 
 	// MediaDimensions
@@ -308,6 +332,7 @@ type DbDriver interface {
 	GetRouteTreeByRouteID(types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error)
 	ListRoutes() (*[]Routes, error)
 	ListRoutesByDatatype(types.DatatypeID) (*[]Routes, error)
+	ListRoutesPaginated(PaginationParams) (*[]Routes, error)
 	UpdateRoute(context.Context, audited.AuditContext, UpdateRouteParams) (*string, error)
 
 	// Sessions
@@ -582,7 +607,7 @@ func (d Database) CreateAllTables() error {
 // CRITICAL: Must be called after CreateAllTables() succeeds.
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
-func (d Database) CreateBootstrapData() error {
+func (d Database) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
 	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
 
@@ -628,7 +653,7 @@ func (d Database) CreateBootstrapData() error {
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
-		Hash:         "",
+		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -658,7 +683,7 @@ func (d Database) CreateBootstrapData() error {
 
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -690,7 +715,7 @@ func (d Database) CreateBootstrapData() error {
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -764,11 +789,11 @@ func (d Database) CreateBootstrapData() error {
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
-		ParentID:        types.NullableContentID{},
+		ParentID:        types.NullableAdminContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
 		PrevSiblingID:   sql.NullString{},
-		AdminRouteID:    adminRoute.AdminRouteID.String(),
+		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:          types.ContentStatusDraft,
@@ -801,8 +826,8 @@ func (d Database) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullString{},
-		AdminContentDataID: adminContentData.AdminContentDataID.String(),
+		AdminRouteID:       types.NullableAdminRouteID{},
+		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1292,7 +1317,7 @@ func (d MysqlDatabase) CreateAllTables() error {
 // CRITICAL: Must be called after CreateAllTables() succeeds.
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
-func (d MysqlDatabase) CreateBootstrapData() error {
+func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
 	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
 
@@ -1338,7 +1363,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
-		Hash:         "",
+		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1368,7 +1393,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1400,7 +1425,7 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1474,11 +1499,11 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
-		ParentID:        types.NullableContentID{},
+		ParentID:        types.NullableAdminContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
 		PrevSiblingID:   sql.NullString{},
-		AdminRouteID:    adminRoute.AdminRouteID.String(),
+		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:          types.ContentStatusDraft,
@@ -1511,8 +1536,8 @@ func (d MysqlDatabase) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullString{},
-		AdminContentDataID: adminContentData.AdminContentDataID.String(),
+		AdminRouteID:       types.NullableAdminRouteID{},
+		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1975,7 +2000,7 @@ func (d PsqlDatabase) CreateAllTables() error {
 // CRITICAL: Must be called after CreateAllTables() succeeds.
 // Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
-func (d PsqlDatabase) CreateBootstrapData() error {
+func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
 	ac := audited.Ctx(types.NodeID(d.Config.Node_ID), types.UserID(""), "bootstrap", "system")
 
@@ -2021,7 +2046,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 		Username:     "system",
 		Name:         "System Administrator",
 		Email:        types.Email("system@modulacms.local"),
-		Hash:         "",
+		Hash:         adminHash,
 		Role:         adminRole.RoleID.String(),
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2051,7 +2076,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 6. Create default page datatype (datatype_id = 1)
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2083,7 +2108,7 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 8. Create default admin datatype (admin_datatype_id = 1)
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
-		ParentID:     types.NullableContentID{},
+		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "admin_page",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2157,11 +2182,11 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
-		ParentID:        types.NullableContentID{},
+		ParentID:        types.NullableAdminContentID{},
 		FirstChildID:    sql.NullString{},
 		NextSiblingID:   sql.NullString{},
 		PrevSiblingID:   sql.NullString{},
-		AdminRouteID:    adminRoute.AdminRouteID.String(),
+		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:          types.ContentStatusDraft,
@@ -2194,8 +2219,8 @@ func (d PsqlDatabase) CreateBootstrapData() error {
 
 	// 14. Create default admin_content_field (admin_content_field_id = 1)
 	adminContentField, err := d.CreateAdminContentField(ctx, ac, CreateAdminContentFieldParams{
-		AdminRouteID:       sql.NullString{},
-		AdminContentDataID: adminContentData.AdminContentDataID.String(),
+		AdminRouteID:       types.NullableAdminRouteID{},
+		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
 		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},

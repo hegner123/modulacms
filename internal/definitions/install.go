@@ -115,8 +115,8 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 			parentDatatypeID := datatypeIDMap[parentKey]
 			created := driver.CreateDatatype(db.CreateDatatypeParams{
 				DatatypeID: types.NewDatatypeID(),
-				ParentID: types.NullableContentID{
-					ID:    types.ContentID(parentDatatypeID),
+				ParentID: types.NullableDatatypeID{
+					ID:    types.DatatypeID(parentDatatypeID),
 					Valid: true,
 				},
 				Label:        dt.Label,

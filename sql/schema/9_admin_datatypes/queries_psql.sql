@@ -78,4 +78,13 @@ RETURNING *;
 DELETE FROM admin_datatypes
 WHERE admin_datatype_id = $1;
 
+-- name: ListAdminDatatypePaginated :many
+SELECT * FROM admin_datatypes
+ORDER BY admin_datatype_id
+LIMIT $1 OFFSET $2;
 
+-- name: ListAdminDatatypeChildrenPaginated :many
+SELECT * FROM admin_datatypes
+WHERE parent_id = $1
+ORDER BY admin_datatype_id
+LIMIT $2 OFFSET $3;

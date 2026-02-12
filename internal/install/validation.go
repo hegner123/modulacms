@@ -153,3 +153,15 @@ func ValidateCookieName(s string) error {
 	}
 	return nil
 }
+
+// ValidatePassword checks that a password meets minimum requirements.
+// Minimum 8 characters, maximum 72 bytes (bcrypt limit).
+func ValidatePassword(s string) error {
+	if len(s) < 8 {
+		return fmt.Errorf("password must be at least 8 characters")
+	}
+	if len(s) > 72 {
+		return fmt.Errorf("password must not exceed 72 bytes (bcrypt limit)")
+	}
+	return nil
+}

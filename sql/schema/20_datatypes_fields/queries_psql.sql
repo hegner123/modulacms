@@ -66,3 +66,20 @@ WHERE id = $2;
 SELECT COALESCE(MAX(sort_order), -1)
 FROM datatypes_fields
 WHERE datatype_id = $1;
+
+-- name: ListDatatypeFieldPaginated :many
+SELECT * FROM datatypes_fields
+ORDER BY sort_order, id
+LIMIT $1 OFFSET $2;
+
+-- name: ListDatatypeFieldByDatatypeIDPaginated :many
+SELECT * FROM datatypes_fields
+WHERE datatype_id = $1
+ORDER BY sort_order, id
+LIMIT $2 OFFSET $3;
+
+-- name: ListDatatypeFieldByFieldIDPaginated :many
+SELECT * FROM datatypes_fields
+WHERE field_id = $1
+ORDER BY sort_order, id
+LIMIT $2 OFFSET $3;

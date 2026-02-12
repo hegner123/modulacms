@@ -1363,11 +1363,11 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 			dtype = "ROOT"
 		}
 
-		// Prepare parent ID (uses NullableContentID per db package definition)
-		var parentID types.NullableContentID
+		// Prepare parent ID
+		var parentID types.NullableDatatypeID
 		if msg.ParentID != "" {
-			parentID = types.NullableContentID{
-				ID:    types.ContentID(msg.ParentID),
+			parentID = types.NullableDatatypeID{
+				ID:    types.DatatypeID(msg.ParentID),
 				Valid: true,
 			}
 		}
@@ -1720,8 +1720,8 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		// Prepare parent ID - use provided value or preserve existing
 		parentID := existing.ParentID
 		if msg.ParentID != "" {
-			parentID = types.NullableContentID{
-				ID:    types.ContentID(msg.ParentID),
+			parentID = types.NullableDatatypeID{
+				ID:    types.DatatypeID(msg.ParentID),
 				Valid: true,
 			}
 		}

@@ -100,3 +100,14 @@ WHERE admin_content_data_id = ?;
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data
 WHERE admin_content_data_id = ?;
+
+-- name: ListAdminContentDataPaginated :many
+SELECT * FROM admin_content_data
+ORDER BY admin_content_data_id
+LIMIT ? OFFSET ?;
+
+-- name: ListAdminContentDataByRoutePaginated :many
+SELECT * FROM admin_content_data
+WHERE admin_route_id = ?
+ORDER BY admin_content_data_id
+LIMIT ? OFFSET ?;

@@ -83,3 +83,14 @@ WHERE admin_field_id = $10;
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields
 WHERE admin_field_id = $1;
+
+-- name: ListAdminFieldPaginated :many
+SELECT * FROM admin_fields
+ORDER BY admin_field_id
+LIMIT $1 OFFSET $2;
+
+-- name: ListAdminFieldByParentIDPaginated :many
+SELECT * FROM admin_fields
+WHERE parent_id = $1
+ORDER BY admin_field_id
+LIMIT $2 OFFSET $3;

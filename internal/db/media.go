@@ -228,6 +228,23 @@ func (d Database) ListMedia() (*[]Media, error) {
 	return &res, nil
 }
 
+func (d Database) ListMediaPaginated(params PaginationParams) (*[]Media, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListMediaPaginated(d.Context, mdb.ListMediaPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Media paginated: %v", err)
+	}
+	res := []Media{}
+	for _, v := range rows {
+		m := d.MapMedia(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateMedia(ctx context.Context, ac audited.AuditContext, s UpdateMediaParams) (*string, error) {
 	cmd := d.UpdateMediaCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -376,6 +393,23 @@ func (d MysqlDatabase) ListMedia() (*[]Media, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListMediaPaginated(params PaginationParams) (*[]Media, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListMediaPaginated(d.Context, mdbm.ListMediaPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Media paginated: %v", err)
+	}
+	res := []Media{}
+	for _, v := range rows {
+		m := d.MapMedia(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateMedia(ctx context.Context, ac audited.AuditContext, s UpdateMediaParams) (*string, error) {
 	cmd := d.UpdateMediaCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -515,6 +549,23 @@ func (d PsqlDatabase) ListMedia() (*[]Media, error) {
 	rows, err := queries.ListMedia(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Media: %v\n", err)
+	}
+	res := []Media{}
+	for _, v := range rows {
+		m := d.MapMedia(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListMediaPaginated(params PaginationParams) (*[]Media, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListMediaPaginated(d.Context, mdbp.ListMediaPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Media paginated: %v", err)
 	}
 	res := []Media{}
 	for _, v := range rows {

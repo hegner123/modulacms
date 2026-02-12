@@ -52,16 +52,19 @@ func CreateFullBackup(cfg config.Config) (path string, sizeBytes int64, err erro
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to create backup file: %w", err)
 	}
+
+	zipClosed := false
 	defer func() {
-		if cerr := zipFile.Close(); cerr != nil && err == nil {
-			err = cerr
+		if !zipClosed {
+			zipFile.Close()
 		}
 	}()
 
 	zipWriter := zip.NewWriter(zipFile)
+	writerClosed := false
 	defer func() {
-		if cerr := zipWriter.Close(); cerr != nil && err == nil {
-			err = cerr
+		if !writerClosed {
+			zipWriter.Close()
 		}
 	}()
 
@@ -120,9 +123,11 @@ func CreateFullBackup(cfg config.Config) (path string, sizeBytes int64, err erro
 	if err = zipWriter.Close(); err != nil {
 		return "", 0, fmt.Errorf("failed to finalize zip: %w", err)
 	}
+	writerClosed = true
 	if err = zipFile.Close(); err != nil {
 		return "", 0, fmt.Errorf("failed to close zip file: %w", err)
 	}
+	zipClosed = true
 
 	// Get file size
 	info, err := os.Stat(fullPath)

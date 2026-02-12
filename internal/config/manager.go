@@ -21,11 +21,15 @@ func NewManager(provider Provider) *Manager {
 	}
 }
 
-// Load loads configuration from the provider
+// Load loads configuration from the provider.
 func (m *Manager) Load() error {
 	m.loadMutex.Lock()
 	defer m.loadMutex.Unlock()
+	return m.loadLocked()
+}
 
+// loadLocked performs the actual config loading. Caller must hold loadMutex.
+func (m *Manager) loadLocked() error {
 	config, err := m.provider.Get()
 	if err != nil {
 		return fmt.Errorf("loading configuration: %w", err)
@@ -47,11 +51,14 @@ func (m *Manager) Load() error {
 	return nil
 }
 
-// Config returns the loaded configuration
-// It loads the config if not already loaded
+// Config returns the loaded configuration.
+// It loads the config if not already loaded.
 func (m *Manager) Config() (*Config, error) {
+	m.loadMutex.Lock()
+	defer m.loadMutex.Unlock()
+
 	if !m.loaded {
-		if err := m.Load(); err != nil {
+		if err := m.loadLocked(); err != nil {
 			return nil, err
 		}
 	}

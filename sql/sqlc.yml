@@ -193,6 +193,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: datatypes.parent_id references datatypes, not content_data
+          - column: "datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_datatypes.parent_id references admin_datatypes, not content_data
+          - column: "admin_datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           # FIX: fields.parent_id references datatypes, not content_data
           - column: "fields.parent_id"
             nullable: true
@@ -201,6 +209,10 @@ sql:
           - column: "admin_fields.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          # FIX: admin_content_data.parent_id references admin_content_data, not content_data
+          - column: "admin_content_data.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -234,6 +246,18 @@ sql:
           - column: "*.admin_field_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "*.admin_route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminRouteID"}
+          - column: "*.admin_route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "*.admin_content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "*.admin_content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
@@ -542,6 +566,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: datatypes.parent_id references datatypes, not content_data
+          - column: "datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_datatypes.parent_id references admin_datatypes, not content_data
+          - column: "admin_datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           # FIX: fields.parent_id references datatypes, not content_data
           - column: "fields.parent_id"
             nullable: true
@@ -550,6 +582,10 @@ sql:
           - column: "admin_fields.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          # FIX: admin_content_data.parent_id references admin_content_data, not content_data
+          - column: "admin_content_data.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -583,6 +619,18 @@ sql:
           - column: "*.admin_field_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "*.admin_route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminRouteID"}
+          - column: "*.admin_route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "*.admin_content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "*.admin_content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
@@ -891,6 +939,14 @@ sql:
           - column: "*.content_data_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          # FIX: datatypes.parent_id references datatypes, not content_data
+          - column: "datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableDatatypeID"}
+          # FIX: admin_datatypes.parent_id references admin_datatypes, not content_data
+          - column: "admin_datatypes.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
           # FIX: fields.parent_id references datatypes, not content_data
           - column: "fields.parent_id"
             nullable: true
@@ -899,6 +955,10 @@ sql:
           - column: "admin_fields.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminDatatypeID"}
+          # FIX: admin_content_data.parent_id references admin_content_data, not content_data
+          - column: "admin_content_data.parent_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
           - column: "*.parent_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -932,6 +992,18 @@ sql:
           - column: "*.admin_field_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "*.admin_route_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminRouteID"}
+          - column: "*.admin_route_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminRouteID"}
+          - column: "*.admin_content_data_id"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableAdminContentID"}
+          - column: "*.admin_content_data_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TIMESTAMPS
           - column: "*.date_created"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}

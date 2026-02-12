@@ -37,6 +37,18 @@ type UpdateDatatypeFieldParams struct {
 	ID         string           `json:"id"`
 }
 
+type ListDatatypeFieldByDatatypeIDPaginatedParams struct {
+	DatatypeID types.DatatypeID
+	Limit      int64
+	Offset     int64
+}
+
+type ListDatatypeFieldByFieldIDPaginatedParams struct {
+	FieldID types.FieldID
+	Limit   int64
+	Offset  int64
+}
+
 // FormParams and JSON variants removed - use typed params directly
 
 // GENERIC section removed - FormParams and JSON variants deprecated
@@ -154,6 +166,59 @@ func (d Database) ListDatatypeFieldByFieldID(id types.FieldID) (*[]DatatypeField
 	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdb.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypeFieldPaginated(params PaginationParams) (*[]DatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldPaginated(d.Context, mdb.ListDatatypeFieldPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypeFieldByDatatypeIDPaginated(params ListDatatypeFieldByDatatypeIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByDatatypeIDPaginated(d.Context, mdb.ListDatatypeFieldByDatatypeIDPaginatedParams{
+		DatatypeID: params.DatatypeID,
+		Limit:      params.Limit,
+		Offset:     params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by datatype paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypeFieldByFieldIDPaginated(params ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByFieldIDPaginated(d.Context, mdb.ListDatatypeFieldByFieldIDPaginatedParams{
+		FieldID: params.FieldID,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by field paginated: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {
@@ -306,6 +371,59 @@ func (d MysqlDatabase) ListDatatypeFieldByDatatypeID(id types.DatatypeID) (*[]Da
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListDatatypeFieldPaginated(params PaginationParams) (*[]DatatypeFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldPaginated(d.Context, mdbm.ListDatatypeFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListDatatypeFieldByDatatypeIDPaginated(params ListDatatypeFieldByDatatypeIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByDatatypeIDPaginated(d.Context, mdbm.ListDatatypeFieldByDatatypeIDPaginatedParams{
+		DatatypeID: params.DatatypeID,
+		Limit:      int32(params.Limit),
+		Offset:     int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by datatype paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListDatatypeFieldByFieldIDPaginated(params ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByFieldIDPaginated(d.Context, mdbm.ListDatatypeFieldByFieldIDPaginatedParams{
+		FieldID: params.FieldID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by field paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateDatatypeField(ctx context.Context, ac audited.AuditContext, s UpdateDatatypeFieldParams) (*string, error) {
 	cmd := d.UpdateDatatypeFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -442,6 +560,59 @@ func (d PsqlDatabase) ListDatatypeFieldByFieldID(id types.FieldID) (*[]DatatypeF
 	rows, err := queries.ListDatatypeFieldByFieldID(d.Context, mdbp.ListDatatypeFieldByFieldIDParams{FieldID: id})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get DatatypeFields: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypeFieldPaginated(params PaginationParams) (*[]DatatypeFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldPaginated(d.Context, mdbp.ListDatatypeFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypeFieldByDatatypeIDPaginated(params ListDatatypeFieldByDatatypeIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByDatatypeIDPaginated(d.Context, mdbp.ListDatatypeFieldByDatatypeIDPaginatedParams{
+		DatatypeID: params.DatatypeID,
+		Limit:      int32(params.Limit),
+		Offset:     int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by datatype paginated: %v", err)
+	}
+	res := []DatatypeFields{}
+	for _, v := range rows {
+		m := d.MapDatatypeField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypeFieldByFieldIDPaginated(params ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeFieldByFieldIDPaginated(d.Context, mdbp.ListDatatypeFieldByFieldIDPaginatedParams{
+		FieldID: params.FieldID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get DatatypeFields by field paginated: %v", err)
 	}
 	res := []DatatypeFields{}
 	for _, v := range rows {

@@ -6,6 +6,7 @@ import (
 )
 
 var installYes bool
+var installAdminPassword string
 
 var installCmd = &cobra.Command{
 	Use:   "install",
@@ -13,10 +14,11 @@ var installCmd = &cobra.Command{
 	Long:  "Run the interactive installation process. Use --yes to accept all defaults.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
-		return install.RunInstall(&verbose, &installYes)
+		return install.RunInstall(&verbose, &installYes, &installAdminPassword)
 	},
 }
 
 func init() {
 	installCmd.Flags().BoolVarP(&installYes, "yes", "y", false, "Accept all defaults (non-interactive)")
+	installCmd.Flags().StringVar(&installAdminPassword, "admin-password", "", "System admin password (required for --yes mode)")
 }

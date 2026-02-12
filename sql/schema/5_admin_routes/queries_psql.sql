@@ -73,3 +73,8 @@ SET slug = $1,
 -- name: DeleteAdminRoute :exec
 DELETE FROM admin_routes
 WHERE admin_route_id = $1;
+
+-- name: ListAdminRoutePaginated :many
+SELECT * FROM admin_routes
+ORDER BY slug
+LIMIT $1 OFFSET $2;

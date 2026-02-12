@@ -97,3 +97,8 @@ WHERE media_id = $14;
 -- name: DeleteMedia :exec
 DELETE FROM media
 WHERE media_id = $1;
+
+-- name: ListMediaPaginated :many
+SELECT * FROM media
+ORDER BY name
+LIMIT $1 OFFSET $2;

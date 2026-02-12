@@ -72,6 +72,12 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 	mux.HandleFunc("/api/v1/adminfields/", func(w http.ResponseWriter, r *http.Request) {
 		AdminFieldHandler(w, r, c)
 	})
+	mux.HandleFunc("/api/v1/admindatatypefields", func(w http.ResponseWriter, r *http.Request) {
+		AdminDatatypeFieldsHandler(w, r, c)
+	})
+	mux.HandleFunc("/api/v1/admindatatypefields/", func(w http.ResponseWriter, r *http.Request) {
+		AdminDatatypeFieldHandler(w, r, c)
+	})
 	mux.HandleFunc("/api/v1/adminroutes", func(w http.ResponseWriter, r *http.Request) {
 		AdminRoutesHandler(w, r, c)
 	})

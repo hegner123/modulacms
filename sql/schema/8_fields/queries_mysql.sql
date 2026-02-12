@@ -81,3 +81,8 @@ set
 -- name: DeleteField :exec
 DELETE FROM fields
 WHERE field_id = ?;
+
+-- name: ListFieldPaginated :many
+SELECT * FROM fields
+ORDER BY field_id
+LIMIT ? OFFSET ?;

@@ -98,3 +98,14 @@ WHERE content_data_id = $11;
 -- name: DeleteContentData :exec
 DELETE FROM content_data
 WHERE content_data_id = $1;
+
+-- name: ListContentDataPaginated :many
+SELECT * FROM content_data
+ORDER BY content_data_id
+LIMIT $1 OFFSET $2;
+
+-- name: ListContentDataByRoutePaginated :many
+SELECT * FROM content_data
+WHERE route_id = $1
+ORDER BY content_data_id
+LIMIT $2 OFFSET $3;

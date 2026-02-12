@@ -64,8 +64,8 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 
 			parentID := existing.ParentID
 			if parentStr != "" {
-				parentID = types.NullableContentID{
-					ID:    types.ContentID(parentStr),
+				parentID = types.NullableDatatypeID{
+					ID:    types.DatatypeID(parentStr),
 					Valid: true,
 				}
 			}

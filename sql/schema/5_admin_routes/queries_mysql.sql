@@ -73,3 +73,8 @@ WHERE slug = ?;
 -- name: DeleteAdminRoute :exec
 DELETE FROM admin_routes
 WHERE admin_route_id = ?;
+
+-- name: ListAdminRoutePaginated :many
+SELECT * FROM admin_routes
+ORDER BY slug
+LIMIT ? OFFSET ?;

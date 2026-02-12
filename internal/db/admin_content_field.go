@@ -18,8 +18,8 @@ import (
 
 type AdminContentFields struct {
 	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID  string                     `json:"admin_content_data_id"`
+	AdminRouteID        types.NullableAdminRouteID `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
 	AdminFieldValue     string                     `json:"admin_field_value"`
 	AuthorID            types.NullableUserID       `json:"author_id"`
@@ -27,23 +27,29 @@ type AdminContentFields struct {
 	DateModified        types.Timestamp            `json:"date_modified"`
 }
 type CreateAdminContentFieldParams struct {
-	AdminRouteID       sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID string                     `json:"admin_content_data_id"`
-	AdminFieldID       types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue    string                     `json:"admin_field_value"`
-	AuthorID           types.NullableUserID       `json:"author_id"`
-	DateCreated        types.Timestamp            `json:"date_created"`
-	DateModified       types.Timestamp            `json:"date_modified"`
+	AdminRouteID       types.NullableAdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
+	AdminFieldID       types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldValue    string                       `json:"admin_field_value"`
+	AuthorID           types.NullableUserID         `json:"author_id"`
+	DateCreated        types.Timestamp              `json:"date_created"`
+	DateModified       types.Timestamp              `json:"date_modified"`
 }
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID  string                     `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue     string                     `json:"admin_field_value"`
-	AuthorID            types.NullableUserID       `json:"author_id"`
-	DateCreated         types.Timestamp            `json:"date_created"`
-	DateModified        types.Timestamp            `json:"date_modified"`
-	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldValue     string                       `json:"admin_field_value"`
+	AuthorID            types.NullableUserID         `json:"author_id"`
+	DateCreated         types.Timestamp              `json:"date_created"`
+	DateModified        types.Timestamp              `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
+}
+
+type ListAdminContentFieldsByRoutePaginatedParams struct {
+	AdminRouteID types.NullableAdminRouteID
+	Limit        int64
+	Offset       int64
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -68,14 +74,10 @@ func MapAdminContentFieldJSON(a AdminContentFields) ContentFieldsJSON {
 
 // MapStringAdminContentField converts AdminContentFields to StringAdminContentFields for table display
 func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
-	adminRouteID := ""
-	if a.AdminRouteID.Valid {
-		adminRouteID = a.AdminRouteID.String
-	}
 	return StringAdminContentFields{
 		AdminContentFieldID: a.AdminContentFieldID.String(),
-		AdminRouteID:        adminRouteID,
-		AdminContentDataID:  a.AdminContentDataID,
+		AdminRouteID:        a.AdminRouteID.String(),
+		AdminContentDataID:  a.AdminContentDataID.String(),
 		AdminFieldID:        a.AdminFieldID.String(),
 		AdminFieldValue:     a.AdminFieldValue,
 		AuthorID:            a.AuthorID.String(),
@@ -182,9 +184,42 @@ func (d Database) ListAdminContentFields() (*[]AdminContentFields, error) {
 }
 func (d Database) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdb.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdb.ListAdminContentFieldsByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListAdminContentFieldsPaginated(params PaginationParams) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsPaginated(d.Context, mdb.ListAdminContentFieldsPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields paginated: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListAdminContentFieldsByRoutePaginated(params ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRoutePaginated(d.Context, mdb.ListAdminContentFieldsByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        params.Limit,
+		Offset:       params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by route paginated: %v", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {
@@ -298,9 +333,42 @@ func (d MysqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
 }
 func (d MysqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbm.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbm.ListAdminContentFieldsByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d MysqlDatabase) ListAdminContentFieldsPaginated(params PaginationParams) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsPaginated(d.Context, mdbm.ListAdminContentFieldsPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields paginated: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d MysqlDatabase) ListAdminContentFieldsByRoutePaginated(params ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRoutePaginated(d.Context, mdbm.ListAdminContentFieldsByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        int32(params.Limit),
+		Offset:       int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by route paginated: %v", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {
@@ -413,9 +481,42 @@ func (d PsqlDatabase) ListAdminContentFields() (*[]AdminContentFields, error) {
 }
 func (d PsqlDatabase) ListAdminContentFieldsByRoute(id string) (*[]AdminContentFields, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbp.ListAdminContentFieldsByRouteParams{AdminRouteID: StringToNullString(id)})
+	rows, err := queries.ListAdminContentFieldsByRoute(d.Context, mdbp.ListAdminContentFieldsByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get content fields: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d PsqlDatabase) ListAdminContentFieldsPaginated(params PaginationParams) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsPaginated(d.Context, mdbp.ListAdminContentFieldsPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields paginated: %v", err)
+	}
+	res := []AdminContentFields{}
+	for _, v := range rows {
+		m := d.MapAdminContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d PsqlDatabase) ListAdminContentFieldsByRoutePaginated(params ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentFieldsByRoutePaginated(d.Context, mdbp.ListAdminContentFieldsByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        int32(params.Limit),
+		Offset:       int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentFields by route paginated: %v", err)
 	}
 	res := []AdminContentFields{}
 	for _, v := range rows {

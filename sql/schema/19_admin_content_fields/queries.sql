@@ -76,3 +76,14 @@ WHERE admin_content_field_id = ?;
 -- name: DeleteAdminContentField :exec
 DELETE FROM admin_content_fields
 WHERE admin_content_field_id = ?;
+
+-- name: ListAdminContentFieldsPaginated :many
+SELECT * FROM admin_content_fields
+ORDER BY admin_content_field_id
+LIMIT ? OFFSET ?;
+
+-- name: ListAdminContentFieldsByRoutePaginated :many
+SELECT * FROM admin_content_fields
+WHERE admin_route_id = ?
+ORDER BY admin_content_field_id
+LIMIT ? OFFSET ?;

@@ -17,7 +17,11 @@ import (
 func DatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListDatatypes(w, c)
+		if HasPaginationParams(r) {
+			apiListDatatypesPaginated(w, r, c)
+		} else {
+			apiListDatatypes(w, c)
+		}
 	case http.MethodPost:
 		apiCreateDatatype(w, r, c)
 	case http.MethodDelete:
@@ -171,5 +175,37 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(res)
+	return nil
+}
+
+// apiListDatatypesPaginated handles GET requests for listing datatypes with pagination.
+func apiListDatatypesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListDatatypesPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountDatatypes()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.Datatypes]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

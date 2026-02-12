@@ -16,9 +16,16 @@ import (
 func AdminContentFieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		err := apiListAdminContentFields(w, r, c)
-		if err != nil {
-			return
+		if HasPaginationParams(r) {
+			err := apiListAdminContentFieldsPaginated(w, r, c)
+			if err != nil {
+				return
+			}
+		} else {
+			err := apiListAdminContentFields(w, r, c)
+			if err != nil {
+				return
+			}
 		}
 	case http.MethodPost:
 		err := apiCreateAdminContentField(w, r, c)
@@ -194,5 +201,37 @@ func apiDeleteAdminContentField(w http.ResponseWriter, r *http.Request, c config
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListAdminContentFieldsPaginated handles GET requests for listing admin content fields with pagination
+func apiListAdminContentFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListAdminContentFieldsPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountAdminContentFields()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.AdminContentFields]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

@@ -77,3 +77,20 @@ WHERE content_field_id = ?;
 -- name: DeleteContentField :exec
 DELETE FROM content_fields
 WHERE content_field_id = ?;
+
+-- name: ListContentFieldsPaginated :many
+SELECT * FROM content_fields
+ORDER BY content_field_id
+LIMIT ? OFFSET ?;
+
+-- name: ListContentFieldsByRoutePaginated :many
+SELECT * FROM content_fields
+WHERE route_id = ?
+ORDER BY content_field_id
+LIMIT ? OFFSET ?;
+
+-- name: ListContentFieldsByContentDataPaginated :many
+SELECT * FROM content_fields
+WHERE content_data_id = ?
+ORDER BY content_field_id
+LIMIT ? OFFSET ?;

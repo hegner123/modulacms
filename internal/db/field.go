@@ -222,6 +222,23 @@ func (d Database) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields
 	return &res, nil
 }
 
+func (d Database) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListFieldPaginated(d.Context, mdb.ListFieldPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Fields paginated: %v", err)
+	}
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -349,6 +366,23 @@ func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]F
 	}
 	return &res, nil
 }
+func (d MysqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListFieldPaginated(d.Context, mdbm.ListFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Fields paginated: %v", err)
+	}
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -476,6 +510,23 @@ func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fi
 	}
 	return &res, nil
 }
+func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListFieldPaginated(d.Context, mdbp.ListFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Fields paginated: %v", err)
+	}
+	res := []Fields{}
+	for _, v := range rows {
+		m := d.MapField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d PsqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {

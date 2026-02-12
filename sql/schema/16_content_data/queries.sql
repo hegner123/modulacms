@@ -101,3 +101,14 @@ WHERE content_data_id = ?;
 -- name: DeleteContentData :exec
 DELETE FROM content_data
 WHERE content_data_id = ?;
+
+-- name: ListContentDataPaginated :many
+SELECT * FROM content_data
+ORDER BY content_data_id
+LIMIT ? OFFSET ?;
+
+-- name: ListContentDataByRoutePaginated :many
+SELECT * FROM content_data
+WHERE route_id = ?
+ORDER BY content_data_id
+LIMIT ? OFFSET ?;

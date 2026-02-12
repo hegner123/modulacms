@@ -125,7 +125,24 @@ func RunDestructiveActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 
 func runDBInit(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
-		if err := install.CreateDbSimple("config.json", cfg); err != nil {
+		randomPassword, err := utility.MakeRandomString()
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "DB Init Failed",
+				Message: fmt.Sprintf("Failed to generate admin password:\n%s", err),
+				IsError: true,
+			}
+		}
+		adminHash, err := auth.HashPassword(randomPassword)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "DB Init Failed",
+				Message: fmt.Sprintf("Failed to hash admin password:\n%s", err),
+				IsError: true,
+			}
+		}
+
+		if err := install.CreateDbSimple("config.json", cfg, adminHash); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Init Failed",
 				Message: fmt.Sprintf("Database initialization failed:\n%s", err),
@@ -134,7 +151,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:   "DB Init Complete",
-			Message: "Database tables created and bootstrap data loaded.",
+			Message: fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 		}
 	}
 }
@@ -158,6 +175,24 @@ func runDBWipe(cfg *config.Config) tea.Cmd {
 
 func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
+		// Generate a random password for the bootstrap admin user
+		randomPassword, err := utility.MakeRandomString()
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "DB Wipe & Redeploy Failed",
+				Message: fmt.Sprintf("Failed to generate admin password:\n%s", err),
+				IsError: true,
+			}
+		}
+		adminHash, err := auth.HashPassword(randomPassword)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "DB Wipe & Redeploy Failed",
+				Message: fmt.Sprintf("Failed to hash admin password:\n%s", err),
+				IsError: true,
+			}
+		}
+
 		driver := db.ConfigDB(*cfg)
 		if err := driver.DropAllTables(); err != nil {
 			return ActionResultMsg{
@@ -173,7 +208,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 				IsError: true,
 			}
 		}
-		if err := driver.CreateBootstrapData(); err != nil {
+		if err := driver.CreateBootstrapData(adminHash); err != nil {
 			return ActionResultMsg{
 				Title:   "DB Wipe & Redeploy Failed",
 				Message: fmt.Sprintf("Tables recreated but bootstrap data failed:\n%s", err),
@@ -189,7 +224,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:   "DB Wipe & Redeploy Complete",
-			Message: "Database wiped and redeployed successfully.",
+			Message: fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 		}
 	}
 }

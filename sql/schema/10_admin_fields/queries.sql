@@ -86,3 +86,14 @@ SET parent_id = ?,
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields
 WHERE admin_field_id = ?;
+
+-- name: ListAdminFieldPaginated :many
+SELECT * FROM admin_fields
+ORDER BY admin_field_id
+LIMIT ? OFFSET ?;
+
+-- name: ListAdminFieldByParentIDPaginated :many
+SELECT * FROM admin_fields
+WHERE parent_id = ?
+ORDER BY admin_field_id
+LIMIT ? OFFSET ?;

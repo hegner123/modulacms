@@ -18,11 +18,11 @@ import (
 
 type AdminContentData struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
-	ParentID           types.NullableContentID       `json:"parent_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       sql.NullString                `json:"first_child_id"`
 	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -30,11 +30,11 @@ type AdminContentData struct {
 	DateModified       types.Timestamp               `json:"date_modified"`
 }
 type CreateAdminContentDataParams struct {
-	ParentID        types.NullableContentID       `json:"parent_id"`
+	ParentID        types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID    sql.NullString                `json:"first_child_id"`
 	NextSiblingID   sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID   sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID    string                        `json:"admin_route_id"`
+	AdminRouteID    types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID        types.NullableUserID          `json:"author_id"`
 	Status          types.ContentStatus           `json:"status"`
@@ -42,11 +42,11 @@ type CreateAdminContentDataParams struct {
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
 type UpdateAdminContentDataParams struct {
-	ParentID           types.NullableContentID       `json:"parent_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       sql.NullString                `json:"first_child_id"`
 	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -54,6 +54,12 @@ type UpdateAdminContentDataParams struct {
 	DateModified       types.Timestamp               `json:"date_modified"`
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 }
+type ListAdminContentDataByRoutePaginatedParams struct {
+	AdminRouteID types.NullableAdminRouteID
+	Limit        int64
+	Offset       int64
+}
+
 // FormParams and JSON variants removed - use typed params directly
 
 // GENERIC section removed - FormParams and JSON variants deprecated
@@ -80,7 +86,7 @@ func MapAdminContentDataJSON(a AdminContentData) ContentDataJSON {
 		FirstChildID:  firstChildID,
 		NextSiblingID: nextSiblingID,
 		PrevSiblingID: prevSiblingID,
-		RouteID:       a.AdminRouteID,
+		RouteID:       a.AdminRouteID.String(),
 		DatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
 		Status:        string(a.Status),
@@ -94,7 +100,7 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 	return StringAdminContentData{
 		AdminContentDataID: a.AdminContentDataID.String(),
 		ParentID:           a.ParentID.String(),
-		AdminRouteID:       a.AdminRouteID,
+		AdminRouteID:       a.AdminRouteID.String(),
 		AdminDatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:           a.AuthorID.String(),
 		Status:             string(a.Status),
@@ -211,9 +217,42 @@ func (d Database) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d Database) ListAdminContentDataByRoute(id string) (*[]AdminContentData, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdb.ListAdminContentDataByRouteParams{AdminRouteID: id})
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdb.ListAdminContentDataByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListAdminContentDataPaginated(params PaginationParams) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentDataPaginated(d.Context, mdb.ListAdminContentDataPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData paginated: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d Database) ListAdminContentDataByRoutePaginated(params ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRoutePaginated(d.Context, mdb.ListAdminContentDataByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        params.Limit,
+		Offset:       params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData by route paginated: %v", err)
 	}
 	res := []AdminContentData{}
 	for _, v := range rows {
@@ -335,9 +374,42 @@ func (d MysqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d MysqlDatabase) ListAdminContentDataByRoute(id string) (*[]AdminContentData, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbm.ListAdminContentDataByRouteParams{AdminRouteID: id})
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbm.ListAdminContentDataByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d MysqlDatabase) ListAdminContentDataPaginated(params PaginationParams) (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentDataPaginated(d.Context, mdbm.ListAdminContentDataPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData paginated: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d MysqlDatabase) ListAdminContentDataByRoutePaginated(params ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRoutePaginated(d.Context, mdbm.ListAdminContentDataByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        int32(params.Limit),
+		Offset:       int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData by route paginated: %v", err)
 	}
 	res := []AdminContentData{}
 	for _, v := range rows {
@@ -459,9 +531,42 @@ func (d PsqlDatabase) ListAdminContentData() (*[]AdminContentData, error) {
 }
 func (d PsqlDatabase) ListAdminContentDataByRoute(id string) (*[]AdminContentData, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbp.ListAdminContentDataByRouteParams{AdminRouteID: id})
+	rows, err := queries.ListAdminContentDataByRoute(d.Context, mdbp.ListAdminContentDataByRouteParams{AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID(id), Valid: id != ""}})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get datatypes: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d PsqlDatabase) ListAdminContentDataPaginated(params PaginationParams) (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentDataPaginated(d.Context, mdbp.ListAdminContentDataPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData paginated: %v", err)
+	}
+	res := []AdminContentData{}
+	for _, v := range rows {
+		m := d.MapAdminContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+func (d PsqlDatabase) ListAdminContentDataByRoutePaginated(params ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentDataByRoutePaginated(d.Context, mdbp.ListAdminContentDataByRoutePaginatedParams{
+		AdminRouteID: params.AdminRouteID,
+		Limit:        int32(params.Limit),
+		Offset:       int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminContentData by route paginated: %v", err)
 	}
 	res := []AdminContentData{}
 	for _, v := range rows {

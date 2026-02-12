@@ -99,3 +99,14 @@ WHERE admin_content_data_id = $11;
 -- name: DeleteAdminContentData :exec
 DELETE FROM admin_content_data
 WHERE admin_content_data_id = $1;
+
+-- name: ListAdminContentDataPaginated :many
+SELECT * FROM admin_content_data
+ORDER BY admin_content_data_id
+LIMIT $1 OFFSET $2;
+
+-- name: ListAdminContentDataByRoutePaginated :many
+SELECT * FROM admin_content_data
+WHERE admin_route_id = $1
+ORDER BY admin_content_data_id
+LIMIT $2 OFFSET $3;

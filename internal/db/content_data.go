@@ -57,6 +57,12 @@ type UpdateContentDataParams struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 }
 
+type ListContentDataByRoutePaginatedParams struct {
+	RouteID types.NullableRouteID
+	Limit   int64
+	Offset  int64
+}
+
 // ContentDataJSON provides a string-based representation for JSON serialization
 type ContentDataJSON struct {
 	ContentDataID string `json:"content_data_id"`
@@ -255,6 +261,41 @@ func (d Database) ListContentDataByRoute(routeID types.NullableRouteID) (*[]Cont
 	return &res, nil
 }
 
+func (d Database) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataPaginated(d.Context, mdb.ListContentDataPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData paginated: %v", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdb.ListContentDataByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData by route paginated: %v", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
 	cmd := d.UpdateContentDataCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -388,6 +429,41 @@ func (d MysqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentDataPaginated(d.Context, mdbm.ListContentDataPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData paginated: %v", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdbm.ListContentDataByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData by route paginated: %v", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
 	cmd := d.UpdateContentDataCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -512,6 +588,41 @@ func (d PsqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]
 	rows, err := queries.ListContentDataByRoute(d.Context, mdbp.ListContentDataByRouteParams{RouteID: routeID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentData by route: %v\n", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentDataPaginated(d.Context, mdbp.ListContentDataPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData paginated: %v", err)
+	}
+	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdbp.ListContentDataByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData by route paginated: %v", err)
 	}
 	res := []ContentData{}
 	for _, v := range rows {

@@ -85,3 +85,8 @@ SET parent_id = $1,
 -- name: DeleteField :exec
 DELETE FROM fields
 WHERE field_id = $1;
+
+-- name: ListFieldPaginated :many
+SELECT * FROM fields
+ORDER BY field_id
+LIMIT $1 OFFSET $2;

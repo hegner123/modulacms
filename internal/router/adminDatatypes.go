@@ -16,7 +16,12 @@ import (
 func AdminDatatypesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		err := apiListAdminDatatypes(w, c)
+		var err error
+		if HasPaginationParams(r) {
+			err = apiListAdminDatatypesPaginated(w, r, c)
+		} else {
+			err = apiListAdminDatatypes(w, c)
+		}
 		fmt.Println(err)
 	case http.MethodPost:
 		apiCreateAdminDatatype(w, r, c)
@@ -153,5 +158,37 @@ func apiDeleteAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListAdminDatatypesPaginated handles GET requests for listing admin datatypes with pagination
+func apiListAdminDatatypesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListAdminDatatypesPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountAdminDatatypes()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.AdminDatatypes]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

@@ -72,3 +72,8 @@ RETURNING *;
 -- name: DeleteRoute :exec
 DELETE FROM routes
 WHERE route_id = ?;
+
+-- name: ListRoutePaginated :many
+SELECT * FROM routes
+ORDER BY slug
+LIMIT ? OFFSET ?;

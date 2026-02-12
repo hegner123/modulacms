@@ -14,11 +14,11 @@ import (
 
 type AdminContentData struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
-	ParentID           types.NullableContentID       `json:"parent_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       sql.NullString                `json:"first_child_id"`
 	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -27,14 +27,14 @@ type AdminContentData struct {
 }
 
 type AdminContentFields struct {
-	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID  string                     `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue     string                     `json:"admin_field_value"`
-	AuthorID            types.NullableUserID       `json:"author_id"`
-	DateCreated         types.Timestamp            `json:"date_created"`
-	DateModified        types.Timestamp            `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldValue     string                       `json:"admin_field_value"`
+	AuthorID            types.NullableUserID         `json:"author_id"`
+	DateCreated         types.Timestamp              `json:"date_created"`
+	DateModified        types.Timestamp              `json:"date_modified"`
 }
 
 type AdminContentRelations struct {
@@ -47,13 +47,13 @@ type AdminContentRelations struct {
 }
 
 type AdminDatatypes struct {
-	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
-	ParentID        types.NullableContentID `json:"parent_id"`
-	Label           string                  `json:"label"`
-	Type            string                  `json:"type"`
-	AuthorID        types.NullableUserID    `json:"author_id"`
-	DateCreated     types.Timestamp         `json:"date_created"`
-	DateModified    types.Timestamp         `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Label           string                        `json:"label"`
+	Type            string                        `json:"type"`
+	AuthorID        types.NullableUserID          `json:"author_id"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
 }
 
 type AdminDatatypesFields struct {
@@ -182,13 +182,13 @@ type ContentRelations struct {
 }
 
 type Datatypes struct {
-	DatatypeID   types.DatatypeID        `json:"datatype_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
-	Label        string                  `json:"label"`
-	Type         string                  `json:"type"`
-	AuthorID     types.NullableUserID    `json:"author_id"`
-	DateCreated  types.Timestamp         `json:"date_created"`
-	DateModified types.Timestamp         `json:"date_modified"`
+	DatatypeID   types.DatatypeID         `json:"datatype_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Label        string                   `json:"label"`
+	Type         string                   `json:"type"`
+	AuthorID     types.NullableUserID     `json:"author_id"`
+	DateCreated  types.Timestamp          `json:"date_created"`
+	DateModified types.Timestamp          `json:"date_modified"`
 }
 
 type DatatypesFields struct {

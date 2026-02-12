@@ -2,9 +2,11 @@ package install
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -18,11 +20,12 @@ const (
 )
 
 type InstallArguments struct {
-	UseDefaultConfig bool           `json:"use_default_config"`
-	ConfigPath       string         `json:"config_path"`
-	Config           config.Config  `json:"config"`
-	DB_Driver        DatabaseDriver `json:"db_driver"`
-	Create_Tables    bool           `json:"create_tables"`
+	UseDefaultConfig  bool           `json:"use_default_config"`
+	ConfigPath        string         `json:"config_path"`
+	Config            config.Config  `json:"config"`
+	DB_Driver         DatabaseDriver `json:"db_driver"`
+	Create_Tables     bool           `json:"create_tables"`
+	AdminPasswordHash string         `json:"-"`
 }
 
 func RunInstallIO() (*InstallArguments, error) {
@@ -82,6 +85,10 @@ func RunInstallIO() (*InstallArguments, error) {
 	}
 
 	if err := GetOAuthOptional(&iarg); err != nil {
+		return nil, err
+	}
+
+	if err := GetAdminPassword(&iarg); err != nil {
 		return nil, err
 	}
 
@@ -452,6 +459,47 @@ func GetOAuthOptional(i *InstallArguments) error {
 	}
 
 	return GetOAuth(i)
+}
+
+// GetAdminPassword prompts for the system admin password with confirmation,
+// validates it, and stores the bcrypt hash in InstallArguments.
+func GetAdminPassword(i *InstallArguments) error {
+	password := ""
+	confirm := ""
+
+	f1 := huh.NewInput().
+		Title("System admin password (min 8 characters)").
+		Value(&password).
+		EchoMode(huh.EchoModePassword).
+		Validate(ValidatePassword)
+
+	f2 := huh.NewInput().
+		Title("Confirm admin password").
+		Value(&confirm).
+		EchoMode(huh.EchoModePassword).
+		Validate(ValidatePassword)
+
+	g := huh.NewGroup(f1, f2)
+	f := huh.NewForm(g)
+	err := f.Run()
+	if err != nil {
+		if errors.Is(err, huh.ErrUserAborted) {
+			return ErrUserAborted()
+		}
+		return err
+	}
+
+	if password != confirm {
+		return fmt.Errorf("passwords do not match")
+	}
+
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return fmt.Errorf("failed to hash admin password: %w", err)
+	}
+
+	i.AdminPasswordHash = hash
+	return nil
 }
 
 func GetOAuth(i *InstallArguments) error {

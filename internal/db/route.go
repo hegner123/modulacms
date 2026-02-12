@@ -187,6 +187,23 @@ func (d Database) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Routes, 
 	return &res, nil
 }
 
+func (d Database) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListRoutePaginated(d.Context, mdb.ListRoutePaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
+	}
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
 	cmd := d.UpdateRouteCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -320,6 +337,23 @@ func (d MysqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Rou
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListRoutePaginated(d.Context, mdbm.ListRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
+	}
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateRoute(ctx context.Context, ac audited.AuditContext, s UpdateRouteParams) (*string, error) {
 	cmd := d.UpdateRouteCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -449,6 +483,23 @@ func (d PsqlDatabase) ListRoutesByDatatype(datatypeID types.DatatypeID) (*[]Rout
 	res := make([]Routes, 0, len(rows))
 	for _, v := range rows {
 		res = append(res, d.MapRoute(v))
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListRoutesPaginated(params PaginationParams) (*[]Routes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListRoutePaginated(d.Context, mdbp.ListRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Routes paginated: %v", err)
+	}
+	res := []Routes{}
+	for _, v := range rows {
+		m := d.MapRoute(v)
+		res = append(res, m)
 	}
 	return &res, nil
 }

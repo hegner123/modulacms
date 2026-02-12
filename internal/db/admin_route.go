@@ -164,6 +164,23 @@ func (d Database) ListAdminRoutes() (*[]AdminRoutes, error) {
 	return &res, nil
 }
 
+func (d Database) ListAdminRoutesPaginated(params PaginationParams) (*[]AdminRoutes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminRoutePaginated(d.Context, mdb.ListAdminRoutePaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminRoutes paginated: %v", err)
+	}
+	res := []AdminRoutes{}
+	for _, v := range rows {
+		m := d.MapAdminRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext, s UpdateAdminRouteParams) (*string, error) {
 	cmd := d.UpdateAdminRouteCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -271,6 +288,23 @@ func (d MysqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListAdminRoutesPaginated(params PaginationParams) (*[]AdminRoutes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminRoutePaginated(d.Context, mdbm.ListAdminRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminRoutes paginated: %v", err)
+	}
+	res := []AdminRoutes{}
+	for _, v := range rows {
+		m := d.MapAdminRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext, s UpdateAdminRouteParams) (*string, error) {
 	cmd := d.UpdateAdminRouteCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -369,6 +403,23 @@ func (d PsqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
 	rows, err := queries.ListAdminRoute(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Admin Routes: %v\n", err)
+	}
+	res := []AdminRoutes{}
+	for _, v := range rows {
+		m := d.MapAdminRoute(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminRoutesPaginated(params PaginationParams) (*[]AdminRoutes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminRoutePaginated(d.Context, mdbp.ListAdminRoutePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminRoutes paginated: %v", err)
 	}
 	res := []AdminRoutes{}
 	for _, v := range rows {

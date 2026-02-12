@@ -105,7 +105,7 @@ func OauthCallbackHandler(c config.Config) http.HandlerFunc {
 		client := conf.Client(ctx, token)
 
 		// Fetch user info from provider
-		provisioner := auth.NewUserProvisioner(utility.DefaultLogger, &c)
+		provisioner := auth.NewUserProvisioner(utility.DefaultLogger, &c, db.ConfigDB(c))
 		userInfo, err := provisioner.FetchUserInfo(client)
 		if err != nil {
 			utility.DefaultLogger.Error("Failed to fetch user info", err)

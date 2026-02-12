@@ -16,7 +16,11 @@ import (
 func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListFields(w, c)
+		if HasPaginationParams(r) {
+			apiListFieldsPaginated(w, r, c)
+		} else {
+			apiListFields(w, c)
+		}
 	case http.MethodPost:
 		apiCreateField(w, r, c)
 	default:
@@ -176,5 +180,37 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListFieldsPaginated handles GET requests for listing fields with pagination.
+func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListFieldsPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountFields()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.Fields]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

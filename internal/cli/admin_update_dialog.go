@@ -251,10 +251,10 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 			dtype = "ROOT"
 		}
 
-		var parentID types.NullableContentID
+		var parentID types.NullableAdminDatatypeID
 		if msg.ParentID != "" {
-			parentID = types.NullableContentID{
-				ID:    types.ContentID(msg.ParentID),
+			parentID = types.NullableAdminDatatypeID{
+				ID:    types.AdminDatatypeID(msg.ParentID),
 				Valid: true,
 			}
 		}
@@ -321,8 +321,8 @@ func (m Model) HandleUpdateAdminDatatypeFromDialog(msg UpdateAdminDatatypeFromDi
 
 		parentID := existing.ParentID
 		if msg.ParentID != "" {
-			parentID = types.NullableContentID{
-				ID:    types.ContentID(msg.ParentID),
+			parentID = types.NullableAdminDatatypeID{
+				ID:    types.AdminDatatypeID(msg.ParentID),
 				Valid: true,
 			}
 		}

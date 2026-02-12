@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/huh"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -14,23 +15,38 @@ const maxRetries = 3
 
 // RunInstall runs the interactive installation process with retry support.
 // When yes is non-nil and true, all prompts are skipped and defaults are used.
-func RunInstall(v *bool, yes *bool) error {
+// adminPassword provides the system admin password; required for non-interactive mode.
+func RunInstall(v *bool, yes *bool, adminPassword *string) error {
 	if yes != nil && *yes {
-		return runInstallDefaults(v)
+		return runInstallDefaults(v, adminPassword)
 	}
-	return runInstallWithRetry(v, maxRetries)
+	return runInstallWithRetry(v, adminPassword, maxRetries)
 }
 
-func runInstallDefaults(v *bool) error {
-	iarg := &InstallArguments{
-		UseDefaultConfig: true,
-		ConfigPath:       "config.json",
-		Config:           config.DefaultConfig(),
-		DB_Driver:        SQLITE,
-		Create_Tables:    true,
+func runInstallDefaults(v *bool, adminPassword *string) error {
+	if adminPassword == nil || *adminPassword == "" {
+		return fmt.Errorf("admin password is required for non-interactive install (use --admin-password)")
 	}
 
-	err := writeConfigFile(iarg)
+	if err := ValidatePassword(*adminPassword); err != nil {
+		return fmt.Errorf("invalid admin password: %w", err)
+	}
+
+	adminHash, err := auth.HashPassword(*adminPassword)
+	if err != nil {
+		return fmt.Errorf("failed to hash admin password: %w", err)
+	}
+
+	iarg := &InstallArguments{
+		UseDefaultConfig:  true,
+		ConfigPath:        "config.json",
+		Config:            config.DefaultConfig(),
+		DB_Driver:         SQLITE,
+		Create_Tables:     true,
+		AdminPasswordHash: adminHash,
+	}
+
+	err = writeConfigFile(iarg)
 	if err != nil {
 		PrintError(err.Error())
 		return err
@@ -44,7 +60,7 @@ func runInstallDefaults(v *bool) error {
 	})
 
 	progress.AddStep("Database setup", "Setting up database tables", func() error {
-		return CreateDbSimple(iarg.ConfigPath, &iarg.Config)
+		return CreateDbSimple(iarg.ConfigPath, &iarg.Config, iarg.AdminPasswordHash)
 	})
 
 	var bucketStatus string
@@ -64,7 +80,7 @@ func runInstallDefaults(v *bool) error {
 	return nil
 }
 
-func runInstallWithRetry(v *bool, retriesLeft int) error {
+func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error {
 	if retriesLeft <= 0 {
 		PrintError("Installation failed after maximum retries")
 		return ErrMaxRetries(maxRetries)
@@ -92,6 +108,18 @@ func runInstallWithRetry(v *bool, retriesLeft int) error {
 		return err
 	}
 
+	// If admin password was provided via flag, hash it and skip the interactive prompt
+	if adminPassword != nil && *adminPassword != "" {
+		if err := ValidatePassword(*adminPassword); err != nil {
+			return fmt.Errorf("invalid admin password: %w", err)
+		}
+		hash, err := auth.HashPassword(*adminPassword)
+		if err != nil {
+			return fmt.Errorf("failed to hash admin password: %w", err)
+		}
+		iarg.AdminPasswordHash = hash
+	}
+
 	// Write config file
 	err = writeConfigFile(iarg)
 	if err != nil {
@@ -108,7 +136,7 @@ func runInstallWithRetry(v *bool, retriesLeft int) error {
 	})
 
 	progress.AddStep("Database setup", "Setting up database tables", func() error {
-		return CreateDbSimple(iarg.ConfigPath, &iarg.Config)
+		return CreateDbSimple(iarg.ConfigPath, &iarg.Config, iarg.AdminPasswordHash)
 	})
 
 	// Run with warnings for optional checks
@@ -133,7 +161,7 @@ func runInstallWithRetry(v *bool, retriesLeft int) error {
 		}
 
 		if retry {
-			return runInstallWithRetry(v, retriesLeft-1)
+			return runInstallWithRetry(v, adminPassword, retriesLeft-1)
 		}
 		return err
 	}
@@ -211,6 +239,10 @@ func printInstallSummary(iarg *InstallArguments, bucketStatus string) {
 	} else {
 		b.WriteString("  OAuth:         Not configured\n")
 	}
+
+	b.WriteString("\n--- Admin Account ---\n")
+	b.WriteString("  Email:         system@modulacms.local\n")
+	b.WriteString("  Username:      system\n")
 
 	b.WriteString("\n--- Next Steps ---\n")
 	b.WriteString("  Gen certs:     ./modulacms-x86 cert generate\n")

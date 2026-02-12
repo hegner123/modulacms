@@ -1,6 +1,5 @@
 package config
 
-type ConfigOption string
 type Endpoint string
 
 type DbDriver string
@@ -110,8 +109,6 @@ type Config struct {
 
 	KeyBindings KeyMap `json:"keybindings"`
 }
-
-var DisableSystemTables ConfigOption = "disableSystemTables"
 
 // BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme
 // determined by Environment. Non-TLS environments get http, all others https.

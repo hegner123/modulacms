@@ -18,7 +18,7 @@ import (
 
 type Datatypes struct {
 	DatatypeID   types.DatatypeID        `json:"datatype_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Type         string                  `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
@@ -28,7 +28,7 @@ type Datatypes struct {
 
 type CreateDatatypeParams struct {
 	DatatypeID   types.DatatypeID        `json:"datatype_id"`
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Type         string                  `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
@@ -37,13 +37,19 @@ type CreateDatatypeParams struct {
 }
 
 type UpdateDatatypeParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Type         string                  `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
 	DateCreated  types.Timestamp         `json:"date_created"`
 	DateModified types.Timestamp         `json:"date_modified"`
 	DatatypeID   types.DatatypeID        `json:"datatype_id"`
+}
+
+type ListDatatypeChildrenPaginatedParams struct {
+	ParentID types.DatatypeID
+	Limit    int64
+	Offset   int64
 }
 
 // DatatypeJSON provides a string-based representation for JSON serialization
@@ -202,13 +208,48 @@ func (d Database) ListDatatypesRoot() (*[]Datatypes, error) {
 
 func (d Database) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
 	queries := mdb.New(d.Connection)
-	// Convert DatatypeID to NullableContentID for the query (sqlc generates this param type)
+	// Convert DatatypeID to NullableDatatypeID for the query parameter
 	params := mdb.ListDatatypeChildrenParams{
-		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+		ParentID: types.NullableDatatypeID{ID: parentID, Valid: true},
 	}
 	rows, err := queries.ListDatatypeChildren(d.Context, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypePaginated(d.Context, mdb.ListDatatypePaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes paginated: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListDatatypeChildrenPaginated(params ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListDatatypeChildrenPaginated(d.Context, mdb.ListDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    params.Limit,
+		Offset:   params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes paginated: %v", err)
 	}
 	res := []Datatypes{}
 	for _, v := range rows {
@@ -342,11 +383,46 @@ func (d MysqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
 func (d MysqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
 	queries := mdbm.New(d.Connection)
 	params := mdbm.ListDatatypeChildrenParams{
-		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+		ParentID: types.NullableDatatypeID{ID: parentID, Valid: true},
 	}
 	rows, err := queries.ListDatatypeChildren(d.Context, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypePaginated(d.Context, mdbm.ListDatatypePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes paginated: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListDatatypeChildrenPaginated(params ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListDatatypeChildrenPaginated(d.Context, mdbm.ListDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes paginated: %v", err)
 	}
 	res := []Datatypes{}
 	for _, v := range rows {
@@ -484,11 +560,46 @@ func (d PsqlDatabase) ListDatatypesRoot() (*[]Datatypes, error) {
 func (d PsqlDatabase) ListDatatypeChildren(parentID types.DatatypeID) (*[]Datatypes, error) {
 	queries := mdbp.New(d.Connection)
 	params := mdbp.ListDatatypeChildrenParams{
-		ParentID: types.NullableContentID{ID: types.ContentID(parentID), Valid: true},
+		ParentID: types.NullableDatatypeID{ID: parentID, Valid: true},
 	}
 	rows, err := queries.ListDatatypeChildren(d.Context, params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get child datatypes: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypesPaginated(params PaginationParams) (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypePaginated(d.Context, mdbp.ListDatatypePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get Datatypes paginated: %v", err)
+	}
+	res := []Datatypes{}
+	for _, v := range rows {
+		m := d.MapDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListDatatypeChildrenPaginated(params ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListDatatypeChildrenPaginated(d.Context, mdbp.ListDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child datatypes paginated: %v", err)
 	}
 	res := []Datatypes{}
 	for _, v := range rows {

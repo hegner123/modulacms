@@ -16,6 +16,7 @@ import (
 	"github.com/charmbracelet/ssh"
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
@@ -59,14 +60,19 @@ var serveCmd = &cobra.Command{
 
 		// Setup: wizard mode runs interactive install, otherwise auto-create defaults if config missing
 		if wizard {
-			if err := install.RunInstall(&verbose, nil); err != nil {
+			if err := install.RunInstall(&verbose, nil, nil); err != nil {
 				return fmt.Errorf("wizard setup failed: %w", err)
 			}
 		} else {
 			if _, statErr := os.Stat(cfgPath); errors.Is(statErr, os.ErrNotExist) {
 				utility.DefaultLogger.Info("No config found, creating defaults...", "path", cfgPath)
 				yes := true
-				if err := install.RunInstall(&verbose, &yes); err != nil {
+				autoPassword, err := utility.MakeRandomString()
+				if err != nil {
+					return fmt.Errorf("failed to generate admin password: %w", err)
+				}
+				utility.DefaultLogger.Finfo("Generated system admin password", "email", "system@modulacms.local", "password", autoPassword)
+				if err := install.RunInstall(&verbose, &yes, &autoPassword); err != nil {
 					return fmt.Errorf("auto-setup failed: %w", err)
 				}
 			}
@@ -108,7 +114,16 @@ var serveCmd = &cobra.Command{
 		initStatus, err := install.CheckInstall(cfg, &verbose)
 		if err != nil {
 			utility.DefaultLogger.Warn("Installation check reported issues, attempting DB setup", err)
-			if setupErr := install.CreateDbSimple(cfgPath, cfg); setupErr != nil {
+			fallbackPassword, pwErr := utility.MakeRandomString()
+			if pwErr != nil {
+				return fmt.Errorf("failed to generate admin password: %w", pwErr)
+			}
+			fallbackHash, pwErr := auth.HashPassword(fallbackPassword)
+			if pwErr != nil {
+				return fmt.Errorf("failed to hash admin password: %w", pwErr)
+			}
+			utility.DefaultLogger.Finfo("Generated system admin password for DB setup", "email", "system@modulacms.local", "password", fallbackPassword)
+			if setupErr := install.CreateDbSimple(cfgPath, cfg, fallbackHash); setupErr != nil {
 				return fmt.Errorf("database setup failed: %w", setupErr)
 			}
 		}

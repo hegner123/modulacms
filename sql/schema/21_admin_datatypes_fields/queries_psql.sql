@@ -49,3 +49,20 @@ WHERE id = $3;
 -- name: DeleteAdminDatatypeField :exec
 DELETE FROM admin_datatypes_fields
 WHERE id = $1;
+
+-- name: ListAdminDatatypeFieldPaginated :many
+SELECT * FROM admin_datatypes_fields
+ORDER BY id
+LIMIT $1 OFFSET $2;
+
+-- name: ListAdminDatatypeFieldByDatatypeIDPaginated :many
+SELECT * FROM admin_datatypes_fields
+WHERE admin_datatype_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;
+
+-- name: ListAdminDatatypeFieldByFieldIDPaginated :many
+SELECT * FROM admin_datatypes_fields
+WHERE admin_field_id = $1
+ORDER BY id
+LIMIT $2 OFFSET $3;

@@ -49,6 +49,18 @@ type UpdateContentFieldParams struct {
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 }
 
+type ListContentFieldsByRoutePaginatedParams struct {
+	RouteID types.NullableRouteID
+	Limit   int64
+	Offset  int64
+}
+
+type ListContentFieldsByContentDataPaginatedParams struct {
+	ContentDataID types.NullableContentID
+	Limit         int64
+	Offset        int64
+}
+
 // FormParams and JSON variants removed - use typed params directly
 
 // ContentFieldsJSON is used for JSON serialization in model package
@@ -225,6 +237,59 @@ func (d Database) ListContentFieldsByContentData(contentDataID types.NullableCon
 	return &res, nil
 }
 
+func (d Database) ListContentFieldsPaginated(params PaginationParams) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsPaginated(d.Context, mdb.ListContentFieldsPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListContentFieldsByRoutePaginated(params ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRoutePaginated(d.Context, mdb.ListContentFieldsByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   params.Limit,
+		Offset:  params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by route paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListContentFieldsByContentDataPaginated(params ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentDataPaginated(d.Context, mdb.ListContentFieldsByContentDataPaginatedParams{
+		ContentDataID: params.ContentDataID,
+		Limit:         params.Limit,
+		Offset:        params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateContentField(ctx context.Context, ac audited.AuditContext, s UpdateContentFieldParams) (*string, error) {
 	cmd := d.UpdateContentFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -350,6 +415,59 @@ func (d MysqlDatabase) ListContentFieldsByContentData(contentDataID types.Nullab
 	rows, err := queries.ListContentFieldsByContentData(d.Context, mdbm.ListContentFieldsByContentDataParams{ContentDataID: contentDataID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by content data: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListContentFieldsPaginated(params PaginationParams) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsPaginated(d.Context, mdbm.ListContentFieldsPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListContentFieldsByRoutePaginated(params ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRoutePaginated(d.Context, mdbm.ListContentFieldsByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by route paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListContentFieldsByContentDataPaginated(params ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentDataPaginated(d.Context, mdbm.ListContentFieldsByContentDataPaginatedParams{
+		ContentDataID: params.ContentDataID,
+		Limit:         int32(params.Limit),
+		Offset:        int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data paginated: %v", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {
@@ -489,6 +607,59 @@ func (d PsqlDatabase) ListContentFieldsByContentData(contentDataID types.Nullabl
 	rows, err := queries.ListContentFieldsByContentData(d.Context, mdbp.ListContentFieldsByContentDataParams{ContentDataID: contentDataID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to get ContentFields by content data: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentFieldsPaginated(params PaginationParams) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsPaginated(d.Context, mdbp.ListContentFieldsPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentFieldsByRoutePaginated(params ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByRoutePaginated(d.Context, mdbp.ListContentFieldsByRoutePaginatedParams{
+		RouteID: params.RouteID,
+		Limit:   int32(params.Limit),
+		Offset:  int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by route paginated: %v", err)
+	}
+	res := []ContentFields{}
+	for _, v := range rows {
+		m := d.MapContentField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListContentFieldsByContentDataPaginated(params ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentFieldsByContentDataPaginated(d.Context, mdbp.ListContentFieldsByContentDataPaginatedParams{
+		ContentDataID: params.ContentDataID,
+		Limit:         int32(params.Limit),
+		Offset:        int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentFields by content data paginated: %v", err)
 	}
 	res := []ContentFields{}
 	for _, v := range rows {

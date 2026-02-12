@@ -79,3 +79,14 @@ SET parent_id = $1,
 DELETE FROM datatypes
 WHERE datatype_id = $1;
 
+-- name: ListDatatypePaginated :many
+SELECT * FROM datatypes
+ORDER BY datatype_id
+LIMIT $1 OFFSET $2;
+
+-- name: ListDatatypeChildrenPaginated :many
+SELECT * FROM datatypes
+WHERE parent_id = $1
+ORDER BY label
+LIMIT $2 OFFSET $3;
+

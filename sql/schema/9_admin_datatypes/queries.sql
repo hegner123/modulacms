@@ -79,3 +79,14 @@ SET parent_id = ?,
 DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?;
 
+-- name: ListAdminDatatypePaginated :many
+SELECT * FROM admin_datatypes
+ORDER BY admin_datatype_id
+LIMIT ? OFFSET ?;
+
+-- name: ListAdminDatatypeChildrenPaginated :many
+SELECT * FROM admin_datatypes
+WHERE parent_id = ?
+ORDER BY admin_datatype_id
+LIMIT ? OFFSET ?;
+

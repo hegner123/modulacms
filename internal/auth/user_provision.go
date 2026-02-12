@@ -15,6 +15,9 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// defaultRoleLabel is the role assigned to new OAuth users.
+const defaultRoleLabel = "viewer"
+
 // UserInfo represents the standardized user information retrieved from OAuth providers.
 // This struct is provider-agnostic and maps common fields from various OAuth providers.
 type UserInfo struct {
@@ -35,11 +38,11 @@ type UserProvisioner struct {
 	log    Logger
 }
 
-// NewUserProvisioner creates a new UserProvisioner with the given configuration and logger.
-func NewUserProvisioner(log Logger, c *config.Config) *UserProvisioner {
+// NewUserProvisioner creates a new UserProvisioner with the given configuration, logger, and database driver.
+func NewUserProvisioner(log Logger, c *config.Config, driver db.DbDriver) *UserProvisioner {
 	return &UserProvisioner{
 		config: c,
-		driver: db.ConfigDB(*c),
+		driver: driver,
 		log:    log,
 	}
 }
@@ -61,7 +64,7 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		err := fmt.Errorf("userinfo request failed: %s - %s", resp.Status, body)
 		up.log.Error("Userinfo request failed", err)
 		return nil, err
@@ -84,7 +87,7 @@ func (up *UserProvisioner) FetchUserInfo(client *http.Client) (*UserInfo, error)
 		userInfo.ProviderUserID = fmt.Sprintf("%d", userInfo.ID)
 	}
 
-	up.log.Info("Fetched user info - Email: %s, Username: %s, ProviderID: %s",
+	up.log.Debug("Fetched user info - Email: %s, Username: %s, ProviderID: %s",
 		userInfo.Email, userInfo.Username, userInfo.ProviderUserID)
 
 	// If email is missing, try to fetch from GitHub's /user/emails endpoint
@@ -123,7 +126,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(io.LimitReader(resp.Body, 4096))
 		return "", fmt.Errorf("emails request failed: %s - %s", resp.Status, body)
 	}
 
@@ -135,7 +138,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	// Find primary verified email
 	for _, email := range emails {
 		if email.Primary && email.Verified {
-			up.log.Info("Found primary verified email: %s", email.Email)
+			up.log.Debug("Found primary verified email: %s", email.Email)
 			return email.Email, nil
 		}
 	}
@@ -143,7 +146,7 @@ func (up *UserProvisioner) fetchGitHubEmail(client *http.Client) (string, error)
 	// Fallback to first verified email
 	for _, email := range emails {
 		if email.Verified {
-			up.log.Info("Using first verified email: %s", email.Email)
+			up.log.Debug("Using first verified email: %s", email.Email)
 			return email.Email, nil
 		}
 	}
@@ -177,7 +180,7 @@ func (up *UserProvisioner) ProvisionUser(
 		up.log.Warn("OAuth provider didn't provide 'sub', using email as provider ID", nil)
 	}
 
-	up.log.Info("Provisioning user - Email: %s, ProviderUserID: %s", userInfo.Email, providerUserID)
+	up.log.Debug("Provisioning user - Email: %s, ProviderUserID: %s", userInfo.Email, providerUserID)
 
 	// Check if user already linked via OAuth
 	existingOauth, err := up.driver.GetUserOauthByProviderID(provider, providerUserID)
@@ -187,7 +190,8 @@ func (up *UserProvisioner) ProvisionUser(
 		// User exists, update tokens
 		err = up.updateTokens(existingOauth.UserOauthID, token)
 		if err != nil {
-			up.log.Warn("Failed to update tokens: %v", err)
+			up.log.Warn("Failed to update tokens", err)
+			return nil, fmt.Errorf("failed to update OAuth tokens: %w", err)
 		}
 
 		// Return existing user
@@ -197,13 +201,13 @@ func (up *UserProvisioner) ProvisionUser(
 	// Check if user exists by email
 	existingUser, err := up.driver.GetUserByEmail(types.Email(userInfo.Email))
 	if err == nil && existingUser != nil {
-		up.log.Info("Found existing user by email: %s", userInfo.Email)
+		up.log.Debug("Found existing user by email: %s", userInfo.Email)
 		// Link OAuth to existing user
 		return up.linkOAuthToUser(existingUser, userInfo, token, provider, providerUserID)
 	}
 
 	// Create new user
-	up.log.Info("Creating new user for: %s", userInfo.Email)
+	up.log.Debug("Creating new user for: %s", userInfo.Email)
 	return up.createNewUser(userInfo, token, provider, providerUserID)
 }
 
@@ -231,7 +235,7 @@ func (up *UserProvisioner) createNewUser(
 	roles, err := up.driver.ListRoles()
 	if err == nil && roles != nil {
 		for _, r := range *roles {
-			if r.Label == "viewer" {
+			if r.Label == defaultRoleLabel {
 				viewerRoleID = r.RoleID.String()
 				break
 			}
@@ -279,7 +283,7 @@ func (up *UserProvisioner) createNewUser(
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 
-	up.log.Info("Created new user via OAuth: %s (user_id: %d)", userInfo.Email, user.UserID)
+	up.log.Debug("Created new user via OAuth: %s (user_id: %s)", userInfo.Email, user.UserID)
 	return user, nil
 }
 
@@ -313,7 +317,7 @@ func (up *UserProvisioner) linkOAuthToUser(
 		return nil, fmt.Errorf("failed to link OAuth: %w", err)
 	}
 
-	up.log.Info("Linked OAuth to existing user: %s (user_id: %d)", userInfo.Email, user.UserID)
+	up.log.Debug("Linked OAuth to existing user: %s (user_id: %s)", userInfo.Email, user.UserID)
 	return user, nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/charmbracelet/huh"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -28,8 +29,38 @@ var dbInitCmd = &cobra.Command{
 			return fmt.Errorf("loading configuration: %w", err)
 		}
 
+		// Collect admin password for the bootstrap user
+		adminPassword := ""
+		adminConfirm := ""
+		pwForm := huh.NewForm(huh.NewGroup(
+			huh.NewInput().
+				Title("System admin password (min 8 characters)").
+				Value(&adminPassword).
+				EchoMode(huh.EchoModePassword).
+				Validate(install.ValidatePassword),
+			huh.NewInput().
+				Title("Confirm admin password").
+				Value(&adminConfirm).
+				EchoMode(huh.EchoModePassword).
+				Validate(install.ValidatePassword),
+		))
+		if err := pwForm.Run(); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				utility.DefaultLogger.Info("Database init cancelled")
+				return nil
+			}
+			return fmt.Errorf("password form error: %w", err)
+		}
+		if adminPassword != adminConfirm {
+			return fmt.Errorf("passwords do not match")
+		}
+		adminHash, err := auth.HashPassword(adminPassword)
+		if err != nil {
+			return fmt.Errorf("failed to hash admin password: %w", err)
+		}
+
 		utility.DefaultLogger.Info("Initializing database tables and bootstrap data...")
-		if err := install.CreateDbSimple(cfgPath, cfg); err != nil {
+		if err := install.CreateDbSimple(cfgPath, cfg, adminHash); err != nil {
 			return fmt.Errorf("database initialization failed: %w", err)
 		}
 
@@ -112,6 +143,36 @@ var dbWipeRedeployCmd = &cobra.Command{
 			return nil
 		}
 
+		// Collect admin password for the new bootstrap user
+		adminPassword := ""
+		adminConfirm := ""
+		pwForm := huh.NewForm(huh.NewGroup(
+			huh.NewInput().
+				Title("New system admin password (min 8 characters)").
+				Value(&adminPassword).
+				EchoMode(huh.EchoModePassword).
+				Validate(install.ValidatePassword),
+			huh.NewInput().
+				Title("Confirm admin password").
+				Value(&adminConfirm).
+				EchoMode(huh.EchoModePassword).
+				Validate(install.ValidatePassword),
+		))
+		if err := pwForm.Run(); err != nil {
+			if errors.Is(err, huh.ErrUserAborted) {
+				utility.DefaultLogger.Info("Wipe-redeploy cancelled")
+				return nil
+			}
+			return fmt.Errorf("password form error: %w", err)
+		}
+		if adminPassword != adminConfirm {
+			return fmt.Errorf("passwords do not match")
+		}
+		adminHash, err := auth.HashPassword(adminPassword)
+		if err != nil {
+			return fmt.Errorf("failed to hash admin password: %w", err)
+		}
+
 		driver := db.ConfigDB(*cfg)
 		if err := driver.DropAllTables(); err != nil {
 			return fmt.Errorf("failed to drop tables: %w", err)
@@ -121,7 +182,7 @@ var dbWipeRedeployCmd = &cobra.Command{
 		if err := driver.CreateAllTables(); err != nil {
 			return fmt.Errorf("failed to recreate tables: %w", err)
 		}
-		if err := driver.CreateBootstrapData(); err != nil {
+		if err := driver.CreateBootstrapData(adminHash); err != nil {
 			return fmt.Errorf("failed to create bootstrap data: %w", err)
 		}
 		if err := driver.ValidateBootstrapData(); err != nil {

@@ -494,11 +494,11 @@ INSERT INTO admin_content_data (
 
 type CreateAdminContentDataParams struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
-	ParentID           types.NullableContentID       `json:"parent_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       sql.NullString                `json:"first_child_id"`
 	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -589,14 +589,14 @@ INSERT INTO admin_content_fields (
 `
 
 type CreateAdminContentFieldParams struct {
-	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
-	AdminRouteID        sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID  string                     `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue     string                     `json:"admin_field_value"`
-	AuthorID            types.NullableUserID       `json:"author_id"`
-	DateCreated         types.Timestamp            `json:"date_created"`
-	DateModified        types.Timestamp            `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldValue     string                       `json:"admin_field_value"`
+	AuthorID            types.NullableUserID         `json:"author_id"`
+	DateCreated         types.Timestamp              `json:"date_created"`
+	DateModified        types.Timestamp              `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminContentFieldParams) error {
@@ -734,13 +734,13 @@ INSERT INTO admin_datatypes (
 `
 
 type CreateAdminDatatypeParams struct {
-	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
-	ParentID        types.NullableContentID `json:"parent_id"`
-	Label           string                  `json:"label"`
-	Type            string                  `json:"type"`
-	AuthorID        types.NullableUserID    `json:"author_id"`
-	DateCreated     types.Timestamp         `json:"date_created"`
-	DateModified    types.Timestamp         `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Label           string                        `json:"label"`
+	Type            string                        `json:"type"`
+	AuthorID        types.NullableUserID          `json:"author_id"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
 }
 
 func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDatatypeParams) error {
@@ -1354,11 +1354,11 @@ INSERT INTO datatypes (
 `
 
 type CreateDatatypeParams struct {
-	DatatypeID types.DatatypeID        `json:"datatype_id"`
-	ParentID   types.NullableContentID `json:"parent_id"`
-	Label      string                  `json:"label"`
-	Type       string                  `json:"type"`
-	AuthorID   types.NullableUserID    `json:"author_id"`
+	DatatypeID types.DatatypeID         `json:"datatype_id"`
+	ParentID   types.NullableDatatypeID `json:"parent_id"`
+	Label      string                   `json:"label"`
+	Type       string                   `json:"type"`
+	AuthorID   types.NullableUserID     `json:"author_id"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) error {
@@ -4983,11 +4983,105 @@ ORDER BY admin_content_data_id
 `
 
 type ListAdminContentDataByRouteParams struct {
-	AdminRouteID string `json:"admin_route_id"`
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
 }
 
 func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdminContentDataByRouteParams) ([]AdminContentData, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoute, arg.AdminRouteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentData{}
+	for rows.Next() {
+		var i AdminContentData
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentDataByRoutePaginated = `-- name: ListAdminContentDataByRoutePaginated :many
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+WHERE admin_route_id = ?
+ORDER BY admin_content_data_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminContentDataByRoutePaginatedParams struct {
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
+	Limit        int32                      `json:"limit"`
+	Offset       int32                      `json:"offset"`
+}
+
+func (q *Queries) ListAdminContentDataByRoutePaginated(ctx context.Context, arg ListAdminContentDataByRoutePaginatedParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataByRoutePaginated, arg.AdminRouteID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentData{}
+	for rows.Next() {
+		var i AdminContentData
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentDataPaginated = `-- name: ListAdminContentDataPaginated :many
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+ORDER BY admin_content_data_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminContentDataPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdminContentDataPaginatedParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataPaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -5065,11 +5159,99 @@ ORDER BY admin_content_field_id
 `
 
 type ListAdminContentFieldsByRouteParams struct {
-	AdminRouteID sql.NullString `json:"admin_route_id"`
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
 }
 
 func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdminContentFieldsByRouteParams) ([]AdminContentFields, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRoute, arg.AdminRouteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsByRoutePaginated = `-- name: ListAdminContentFieldsByRoutePaginated :many
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+WHERE admin_route_id = ?
+ORDER BY admin_content_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminContentFieldsByRoutePaginatedParams struct {
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
+	Limit        int32                      `json:"limit"`
+	Offset       int32                      `json:"offset"`
+}
+
+func (q *Queries) ListAdminContentFieldsByRoutePaginated(ctx context.Context, arg ListAdminContentFieldsByRoutePaginatedParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRoutePaginated, arg.AdminRouteID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsPaginated = `-- name: ListAdminContentFieldsPaginated :many
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+ORDER BY admin_content_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminContentFieldsPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListAdminContentFieldsPaginatedParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsPaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -5263,11 +5445,55 @@ WHERE parent_id = ?
 `
 
 type ListAdminDatatypeChildrenParams struct {
-	ParentID types.NullableContentID `json:"parent_id"`
+	ParentID types.NullableAdminDatatypeID `json:"parent_id"`
 }
 
 func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDatatypeChildrenParams) ([]AdminDatatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildren, arg.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminDatatypes{}
+	for rows.Next() {
+		var i AdminDatatypes
+		if err := rows.Scan(
+			&i.AdminDatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeChildrenPaginated = `-- name: ListAdminDatatypeChildrenPaginated :many
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+WHERE parent_id = ?
+ORDER BY admin_datatype_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminDatatypeChildrenPaginatedParams struct {
+	ParentID types.NullableAdminDatatypeID `json:"parent_id"`
+	Limit    int32                         `json:"limit"`
+	Offset   int32                         `json:"offset"`
+}
+
+func (q *Queries) ListAdminDatatypeChildrenPaginated(ctx context.Context, arg ListAdminDatatypeChildrenPaginatedParams) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeChildrenPaginated, arg.ParentID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -5358,6 +5584,42 @@ func (q *Queries) ListAdminDatatypeFieldByDatatypeID(ctx context.Context, arg Li
 	return items, nil
 }
 
+const listAdminDatatypeFieldByDatatypeIDPaginated = `-- name: ListAdminDatatypeFieldByDatatypeIDPaginated :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+WHERE admin_datatype_id = ?
+ORDER BY id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminDatatypeFieldByDatatypeIDPaginatedParams struct {
+	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
+	Limit           int32                 `json:"limit"`
+	Offset          int32                 `json:"offset"`
+}
+
+func (q *Queries) ListAdminDatatypeFieldByDatatypeIDPaginated(ctx context.Context, arg ListAdminDatatypeFieldByDatatypeIDPaginatedParams) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByDatatypeIDPaginated, arg.AdminDatatypeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminDatatypesFields{}
+	for rows.Next() {
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminDatatypeFieldByFieldID = `-- name: ListAdminDatatypeFieldByFieldID :many
 SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
 WHERE admin_field_id = ?
@@ -5391,6 +5653,76 @@ func (q *Queries) ListAdminDatatypeFieldByFieldID(ctx context.Context, arg ListA
 	return items, nil
 }
 
+const listAdminDatatypeFieldByFieldIDPaginated = `-- name: ListAdminDatatypeFieldByFieldIDPaginated :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+WHERE admin_field_id = ?
+ORDER BY id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminDatatypeFieldByFieldIDPaginatedParams struct {
+	AdminFieldID types.AdminFieldID `json:"admin_field_id"`
+	Limit        int32              `json:"limit"`
+	Offset       int32              `json:"offset"`
+}
+
+func (q *Queries) ListAdminDatatypeFieldByFieldIDPaginated(ctx context.Context, arg ListAdminDatatypeFieldByFieldIDPaginatedParams) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldByFieldIDPaginated, arg.AdminFieldID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminDatatypesFields{}
+	for rows.Next() {
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypeFieldPaginated = `-- name: ListAdminDatatypeFieldPaginated :many
+SELECT id, admin_datatype_id, admin_field_id FROM admin_datatypes_fields
+ORDER BY id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminDatatypeFieldPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminDatatypeFieldPaginated(ctx context.Context, arg ListAdminDatatypeFieldPaginatedParams) ([]AdminDatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypeFieldPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminDatatypesFields{}
+	for rows.Next() {
+		var i AdminDatatypesFields
+		if err := rows.Scan(&i.ID, &i.AdminDatatypeID, &i.AdminFieldID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminDatatypeGlobal = `-- name: ListAdminDatatypeGlobal :many
 SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE type = 'GLOBAL' LIMIT 1
@@ -5398,6 +5730,48 @@ WHERE type = 'GLOBAL' LIMIT 1
 
 func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminDatatypeGlobal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminDatatypes{}
+	for rows.Next() {
+		var i AdminDatatypes
+		if err := rows.Scan(
+			&i.AdminDatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminDatatypePaginated = `-- name: ListAdminDatatypePaginated :many
+SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+ORDER BY admin_datatype_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminDatatypePaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminDatatypePaginated(ctx context.Context, arg ListAdminDatatypePaginatedParams) ([]AdminDatatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminDatatypePaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -5546,6 +5920,98 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 	return items, nil
 }
 
+const listAdminFieldByParentIDPaginated = `-- name: ListAdminFieldByParentIDPaginated :many
+SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+WHERE parent_id = ?
+ORDER BY admin_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminFieldByParentIDPaginatedParams struct {
+	ParentID types.NullableAdminDatatypeID `json:"parent_id"`
+	Limit    int32                         `json:"limit"`
+	Offset   int32                         `json:"offset"`
+}
+
+func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg ListAdminFieldByParentIDPaginatedParams) ([]AdminFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldByParentIDPaginated, arg.ParentID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminFields{}
+	for rows.Next() {
+		var i AdminFields
+		if err := rows.Scan(
+			&i.AdminFieldID,
+			&i.ParentID,
+			&i.Label,
+			&i.Data,
+			&i.Validation,
+			&i.UiConfig,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminFieldPaginated = `-- name: ListAdminFieldPaginated :many
+SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+ORDER BY admin_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListAdminFieldPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFieldPaginatedParams) ([]AdminFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminFields{}
+	for rows.Next() {
+		var i AdminFields
+		if err := rows.Scan(
+			&i.AdminFieldID,
+			&i.ParentID,
+			&i.Label,
+			&i.Data,
+			&i.Validation,
+			&i.UiConfig,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminRoute = `-- name: ListAdminRoute :many
 SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified FROM admin_routes
 ORDER BY slug
@@ -5553,6 +6019,48 @@ ORDER BY slug
 
 func (q *Queries) ListAdminRoute(ctx context.Context) ([]AdminRoutes, error) {
 	rows, err := q.db.QueryContext(ctx, listAdminRoute)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminRoutes{}
+	for rows.Next() {
+		var i AdminRoutes
+		if err := rows.Scan(
+			&i.AdminRouteID,
+			&i.Slug,
+			&i.Title,
+			&i.Status,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminRoutePaginated = `-- name: ListAdminRoutePaginated :many
+SELECT admin_route_id, slug, title, status, author_id, date_created, date_modified FROM admin_routes
+ORDER BY slug
+LIMIT ? OFFSET ?
+`
+
+type ListAdminRoutePaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListAdminRoutePaginated(ctx context.Context, arg ListAdminRoutePaginatedParams) ([]AdminRoutes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminRoutePaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -5918,6 +6426,100 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 	return items, nil
 }
 
+const listContentDataByRoutePaginated = `-- name: ListContentDataByRoutePaginated :many
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+WHERE route_id = ?
+ORDER BY content_data_id
+LIMIT ? OFFSET ?
+`
+
+type ListContentDataByRoutePaginatedParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
+	Limit   int32                 `json:"limit"`
+	Offset  int32                 `json:"offset"`
+}
+
+func (q *Queries) ListContentDataByRoutePaginated(ctx context.Context, arg ListContentDataByRoutePaginatedParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataByRoutePaginated, arg.RouteID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentDataPaginated = `-- name: ListContentDataPaginated :many
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+ORDER BY content_data_id
+LIMIT ? OFFSET ?
+`
+
+type ListContentDataPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentDataPaginatedParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentFields = `-- name: ListContentFields :many
 SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
 ORDER BY content_field_id
@@ -5997,6 +6599,51 @@ func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListCo
 	return items, nil
 }
 
+const listContentFieldsByContentDataPaginated = `-- name: ListContentFieldsByContentDataPaginated :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+WHERE content_data_id = ?
+ORDER BY content_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListContentFieldsByContentDataPaginatedParams struct {
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+	Limit         int32                   `json:"limit"`
+	Offset        int32                   `json:"offset"`
+}
+
+func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, arg ListContentFieldsByContentDataPaginatedParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByContentDataPaginated, arg.ContentDataID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
 SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ?
@@ -6009,6 +6656,94 @@ type ListContentFieldsByRouteParams struct {
 
 func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentFieldsByRouteParams) ([]ContentFields, error) {
 	rows, err := q.db.QueryContext(ctx, listContentFieldsByRoute, arg.RouteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsByRoutePaginated = `-- name: ListContentFieldsByRoutePaginated :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+WHERE route_id = ?
+ORDER BY content_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListContentFieldsByRoutePaginatedParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
+	Limit   int32                 `json:"limit"`
+	Offset  int32                 `json:"offset"`
+}
+
+func (q *Queries) ListContentFieldsByRoutePaginated(ctx context.Context, arg ListContentFieldsByRoutePaginatedParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByRoutePaginated, arg.RouteID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsPaginated = `-- name: ListContentFieldsPaginated :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+ORDER BY content_field_id
+LIMIT ? OFFSET ?
+`
+
+type ListContentFieldsPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListContentFieldsPaginated(ctx context.Context, arg ListContentFieldsPaginatedParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsPaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -6203,11 +6938,55 @@ ORDER BY label
 `
 
 type ListDatatypeChildrenParams struct {
-	ParentID types.NullableContentID `json:"parent_id"`
+	ParentID types.NullableDatatypeID `json:"parent_id"`
 }
 
 func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChildrenParams) ([]Datatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listDatatypeChildren, arg.ParentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Datatypes{}
+	for rows.Next() {
+		var i Datatypes
+		if err := rows.Scan(
+			&i.DatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeChildrenPaginated = `-- name: ListDatatypeChildrenPaginated :many
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+WHERE parent_id = ?
+ORDER BY label
+LIMIT ? OFFSET ?
+`
+
+type ListDatatypeChildrenPaginatedParams struct {
+	ParentID types.NullableDatatypeID `json:"parent_id"`
+	Limit    int32                    `json:"limit"`
+	Offset   int32                    `json:"offset"`
+}
+
+func (q *Queries) ListDatatypeChildrenPaginated(ctx context.Context, arg ListDatatypeChildrenPaginatedParams) ([]Datatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeChildrenPaginated, arg.ParentID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -6308,6 +7087,47 @@ func (q *Queries) ListDatatypeFieldByDatatypeID(ctx context.Context, arg ListDat
 	return items, nil
 }
 
+const listDatatypeFieldByDatatypeIDPaginated = `-- name: ListDatatypeFieldByDatatypeIDPaginated :many
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
+WHERE datatype_id = ?
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?
+`
+
+type ListDatatypeFieldByDatatypeIDPaginatedParams struct {
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+	Limit      int32            `json:"limit"`
+	Offset     int32            `json:"offset"`
+}
+
+func (q *Queries) ListDatatypeFieldByDatatypeIDPaginated(ctx context.Context, arg ListDatatypeFieldByDatatypeIDPaginatedParams) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByDatatypeIDPaginated, arg.DatatypeID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DatatypesFields{}
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDatatypeFieldByFieldID = `-- name: ListDatatypeFieldByFieldID :many
 SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
 WHERE field_id = ?
@@ -6346,6 +7166,86 @@ func (q *Queries) ListDatatypeFieldByFieldID(ctx context.Context, arg ListDataty
 	return items, nil
 }
 
+const listDatatypeFieldByFieldIDPaginated = `-- name: ListDatatypeFieldByFieldIDPaginated :many
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
+WHERE field_id = ?
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?
+`
+
+type ListDatatypeFieldByFieldIDPaginatedParams struct {
+	FieldID types.FieldID `json:"field_id"`
+	Limit   int32         `json:"limit"`
+	Offset  int32         `json:"offset"`
+}
+
+func (q *Queries) ListDatatypeFieldByFieldIDPaginated(ctx context.Context, arg ListDatatypeFieldByFieldIDPaginatedParams) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldByFieldIDPaginated, arg.FieldID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DatatypesFields{}
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypeFieldPaginated = `-- name: ListDatatypeFieldPaginated :many
+SELECT id, datatype_id, field_id, sort_order FROM datatypes_fields
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?
+`
+
+type ListDatatypeFieldPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListDatatypeFieldPaginated(ctx context.Context, arg ListDatatypeFieldPaginatedParams) ([]DatatypesFields, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypeFieldPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []DatatypesFields{}
+	for rows.Next() {
+		var i DatatypesFields
+		if err := rows.Scan(
+			&i.ID,
+			&i.DatatypeID,
+			&i.FieldID,
+			&i.SortOrder,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDatatypeGlobal = `-- name: ListDatatypeGlobal :many
 SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = 'GLOBAL'
@@ -6354,6 +7254,48 @@ ORDER BY datatype_id
 
 func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 	rows, err := q.db.QueryContext(ctx, listDatatypeGlobal)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Datatypes{}
+	for rows.Next() {
+		var i Datatypes
+		if err := rows.Scan(
+			&i.DatatypeID,
+			&i.ParentID,
+			&i.Label,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listDatatypePaginated = `-- name: ListDatatypePaginated :many
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+ORDER BY datatype_id
+LIMIT ? OFFSET ?
+`
+
+type ListDatatypePaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePaginatedParams) ([]Datatypes, error) {
+	rows, err := q.db.QueryContext(ctx, listDatatypePaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -6503,6 +7445,51 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 	return items, nil
 }
 
+const listFieldPaginated = `-- name: ListFieldPaginated :many
+SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+ORDER BY field_id
+LIMIT ? OFFSET ?
+`
+
+type ListFieldPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginatedParams) ([]Fields, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Fields{}
+	for rows.Next() {
+		var i Fields
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.ParentID,
+			&i.Label,
+			&i.Data,
+			&i.Validation,
+			&i.UiConfig,
+			&i.Type,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMedia = `-- name: ListMedia :many
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
 ORDER BY name
@@ -6566,6 +7553,55 @@ func (q *Queries) ListMediaDimension(ctx context.Context) ([]MediaDimensions, er
 			&i.Width,
 			&i.Height,
 			&i.AspectRatio,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listMediaPaginated = `-- name: ListMediaPaginated :many
+SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, author_id, date_created, date_modified FROM media
+ORDER BY name
+LIMIT ? OFFSET ?
+`
+
+type ListMediaPaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListMediaPaginated(ctx context.Context, arg ListMediaPaginatedParams) ([]Media, error) {
+	rows, err := q.db.QueryContext(ctx, listMediaPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Media{}
+	for rows.Next() {
+		var i Media
+		if err := rows.Scan(
+			&i.MediaID,
+			&i.Name,
+			&i.DisplayName,
+			&i.Alt,
+			&i.Caption,
+			&i.Description,
+			&i.Class,
+			&i.Mimetype,
+			&i.Dimensions,
+			&i.URL,
+			&i.Srcset,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
 		); err != nil {
 			return nil, err
 		}
@@ -6708,6 +7744,48 @@ ORDER BY slug
 
 func (q *Queries) ListRoute(ctx context.Context) ([]Routes, error) {
 	rows, err := q.db.QueryContext(ctx, listRoute)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Routes{}
+	for rows.Next() {
+		var i Routes
+		if err := rows.Scan(
+			&i.RouteID,
+			&i.Slug,
+			&i.Title,
+			&i.Status,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRoutePaginated = `-- name: ListRoutePaginated :many
+SELECT route_id, slug, title, status, author_id, date_created, date_modified FROM routes
+ORDER BY slug
+LIMIT ? OFFSET ?
+`
+
+type ListRoutePaginatedParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListRoutePaginated(ctx context.Context, arg ListRoutePaginatedParams) ([]Routes, error) {
+	rows, err := q.db.QueryContext(ctx, listRoutePaginated, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -7192,11 +8270,11 @@ WHERE admin_content_data_id = ?
 `
 
 type UpdateAdminContentDataParams struct {
-	ParentID           types.NullableContentID       `json:"parent_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
 	FirstChildID       sql.NullString                `json:"first_child_id"`
 	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
 	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
-	AdminRouteID       string                        `json:"admin_route_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
@@ -7235,14 +8313,14 @@ WHERE admin_content_field_id = ?
 `
 
 type UpdateAdminContentFieldParams struct {
-	AdminRouteID        sql.NullString             `json:"admin_route_id"`
-	AdminContentDataID  string                     `json:"admin_content_data_id"`
-	AdminFieldID        types.NullableAdminFieldID `json:"admin_field_id"`
-	AdminFieldValue     string                     `json:"admin_field_value"`
-	AuthorID            types.NullableUserID       `json:"author_id"`
-	DateCreated         types.Timestamp            `json:"date_created"`
-	DateModified        types.Timestamp            `json:"date_modified"`
-	AdminContentFieldID types.AdminContentFieldID  `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
+	AdminFieldValue     string                       `json:"admin_field_value"`
+	AuthorID            types.NullableUserID         `json:"author_id"`
+	DateCreated         types.Timestamp              `json:"date_created"`
+	DateModified        types.Timestamp              `json:"date_modified"`
+	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
 }
 
 func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminContentFieldParams) error {
@@ -7287,13 +8365,13 @@ WHERE admin_datatype_id = ?
 `
 
 type UpdateAdminDatatypeParams struct {
-	ParentID        types.NullableContentID `json:"parent_id"`
-	Label           string                  `json:"label"`
-	Type            string                  `json:"type"`
-	AuthorID        types.NullableUserID    `json:"author_id"`
-	DateCreated     types.Timestamp         `json:"date_created"`
-	DateModified    types.Timestamp         `json:"date_modified"`
-	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Label           string                        `json:"label"`
+	Type            string                        `json:"type"`
+	AuthorID        types.NullableUserID          `json:"author_id"`
+	DateCreated     types.Timestamp               `json:"date_created"`
+	DateModified    types.Timestamp               `json:"date_modified"`
+	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 }
 
 func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDatatypeParams) error {
@@ -7585,11 +8663,11 @@ set
 `
 
 type UpdateDatatypeParams struct {
-	ParentID   types.NullableContentID `json:"parent_id"`
-	Label      string                  `json:"label"`
-	Type       string                  `json:"type"`
-	AuthorID   types.NullableUserID    `json:"author_id"`
-	DatatypeID types.DatatypeID        `json:"datatype_id"`
+	ParentID   types.NullableDatatypeID `json:"parent_id"`
+	Label      string                   `json:"label"`
+	Type       string                   `json:"type"`
+	AuthorID   types.NullableUserID     `json:"author_id"`
+	DatatypeID types.DatatypeID         `json:"datatype_id"`
 }
 
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {

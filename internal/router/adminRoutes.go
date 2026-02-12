@@ -20,6 +20,8 @@ func AdminRoutesHandler(w http.ResponseWriter, r *http.Request, c config.Config)
 	case http.MethodGet:
 		if r.URL.Query().Get("ordered") == "true" {
 			apiListOrderedAdminRoutes(w, r, c)
+		} else if HasPaginationParams(r) {
+			apiListAdminRoutesPaginated(w, r, c)
 		} else {
 			apiListAdminRoutes(w, c)
 		}
@@ -156,7 +158,7 @@ func apiListOrderedAdminRoutes(w http.ResponseWriter, r *http.Request, c config.
 			}
 
 			for _, cf := range *contentFields {
-				if cf.AdminContentDataID == rootContentDataID &&
+				if cf.AdminContentDataID.String() == rootContentDataID &&
 					cf.AdminFieldID.Valid &&
 					cf.AdminFieldID.ID == orderFieldID {
 					parsed, parseErr := strconv.Atoi(cf.AdminFieldValue)
@@ -259,5 +261,37 @@ func apiDeleteAdminRoute(w http.ResponseWriter, r *http.Request, c config.Config
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListAdminRoutesPaginated handles GET requests for listing admin routes with pagination
+func apiListAdminRoutesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListAdminRoutesPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountAdminRoutes()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.AdminRoutes]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

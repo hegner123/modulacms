@@ -16,7 +16,11 @@ import (
 func RoutesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		apiListRoutes(w, c)
+		if HasPaginationParams(r) {
+			apiListRoutesPaginated(w, r, c)
+		} else {
+			apiListRoutes(w, c)
+		}
 	case http.MethodPost:
 		apiCreateRoute(w, r, c)
 	default:
@@ -163,5 +167,37 @@ func apiDeleteRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListRoutesPaginated handles GET requests for listing routes with pagination.
+func apiListRoutesPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListRoutesPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountRoutes()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.Routes]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }

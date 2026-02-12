@@ -69,3 +69,20 @@ WHERE id = ?;
 SELECT COALESCE(MAX(sort_order), -1)
 FROM datatypes_fields
 WHERE datatype_id = ?;
+
+-- name: ListDatatypeFieldPaginated :many
+SELECT * FROM datatypes_fields
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?;
+
+-- name: ListDatatypeFieldByDatatypeIDPaginated :many
+SELECT * FROM datatypes_fields
+WHERE datatype_id = ?
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?;
+
+-- name: ListDatatypeFieldByFieldIDPaginated :many
+SELECT * FROM datatypes_fields
+WHERE field_id = ?
+ORDER BY sort_order, id
+LIMIT ? OFFSET ?;

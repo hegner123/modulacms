@@ -18,7 +18,7 @@ import (
 
 type AdminDatatypes struct {
 	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
-	ParentID        types.NullableContentID `json:"parent_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                  `json:"label"`
 	Type            string                  `json:"type"`
 	AuthorID        types.NullableUserID    `json:"author_id"`
@@ -26,7 +26,7 @@ type AdminDatatypes struct {
 	DateModified    types.Timestamp         `json:"date_modified"`
 }
 type CreateAdminDatatypeParams struct {
-	ParentID     types.NullableContentID `json:"parent_id"`
+	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
 	Type         string                  `json:"type"`
 	AuthorID     types.NullableUserID    `json:"author_id"`
@@ -36,12 +36,12 @@ type CreateAdminDatatypeParams struct {
 type ListAdminDatatypeByRouteIdRow struct {
 	AdminDatatypeID types.AdminDatatypeID   `json:"admin_datatype_id"`
 	AdminRouteID    types.NullableRouteID   `json:"admin_route_id"`
-	ParentID        types.NullableContentID `json:"parent_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                  `json:"label"`
 	Type            string                  `json:"type"`
 }
 type UpdateAdminDatatypeParams struct {
-	ParentID        types.NullableContentID `json:"parent_id"`
+	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                  `json:"label"`
 	Type            string                  `json:"type"`
 	AuthorID        types.NullableUserID    `json:"author_id"`
@@ -52,6 +52,12 @@ type UpdateAdminDatatypeParams struct {
 type UtilityGetAdminDatatypesRow struct {
 	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
 	Label           string                `json:"label"`
+}
+
+type ListAdminDatatypeChildrenPaginatedParams struct {
+	ParentID types.AdminDatatypeID
+	Limit    int64
+	Offset   int64
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -195,6 +201,41 @@ func (d Database) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	return &res, nil
 }
 
+func (d Database) ListAdminDatatypesPaginated(params PaginationParams) (*[]AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypePaginated(d.Context, mdb.ListAdminDatatypePaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypes paginated: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListAdminDatatypeChildrenPaginated(params ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeChildrenPaginated(d.Context, mdb.ListAdminDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    params.Limit,
+		Offset:   params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child admin datatypes paginated: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateAdminDatatype(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeParams) (*string, error) {
 	cmd := d.UpdateAdminDatatypeCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -302,6 +343,41 @@ func (d MysqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListAdminDatatypesPaginated(params PaginationParams) (*[]AdminDatatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminDatatypePaginated(d.Context, mdbm.ListAdminDatatypePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypes paginated: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListAdminDatatypeChildrenPaginated(params ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeChildrenPaginated(d.Context, mdbm.ListAdminDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child admin datatypes paginated: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateAdminDatatype(ctx context.Context, ac audited.AuditContext, s UpdateAdminDatatypeParams) (*string, error) {
 	cmd := d.UpdateAdminDatatypeCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -400,6 +476,41 @@ func (d PsqlDatabase) ListAdminDatatypes() (*[]AdminDatatypes, error) {
 	rows, err := queries.ListAdminDatatype(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get admin datatypes: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminDatatypesPaginated(params PaginationParams) (*[]AdminDatatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminDatatypePaginated(d.Context, mdbp.ListAdminDatatypePaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminDatatypes paginated: %v", err)
+	}
+	res := []AdminDatatypes{}
+	for _, v := range rows {
+		m := d.MapAdminDatatype(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminDatatypeChildrenPaginated(params ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminDatatypeChildrenPaginated(d.Context, mdbp.ListAdminDatatypeChildrenPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get child admin datatypes paginated: %v", err)
 	}
 	res := []AdminDatatypes{}
 	for _, v := range rows {

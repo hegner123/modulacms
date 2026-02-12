@@ -64,6 +64,12 @@ type ListAdminFieldByRouteIdRow struct {
 	Type         types.FieldType         `json:"type"`
 }
 
+type ListAdminFieldsByParentIDPaginatedParams struct {
+	ParentID types.AdminDatatypeID
+	Limit    int64
+	Offset   int64
+}
+
 type ListAdminFieldsByDatatypeIDRow struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
@@ -225,6 +231,41 @@ func (d Database) ListAdminFields() (*[]AdminFields, error) {
 	return &res, nil
 }
 
+func (d Database) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldPaginated(d.Context, mdb.ListAdminFieldPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields paginated: %v", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d Database) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentIDPaginated(d.Context, mdb.ListAdminFieldByParentIDPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    params.Limit,
+		Offset:   params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields by parent paginated: %v", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d Database) UpdateAdminField(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldParams) (*string, error) {
 	cmd := d.UpdateAdminFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -341,6 +382,41 @@ func (d MysqlDatabase) ListAdminFields() (*[]AdminFields, error) {
 	return &res, nil
 }
 
+func (d MysqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbm.ListAdminFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields paginated: %v", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d MysqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentIDPaginated(d.Context, mdbm.ListAdminFieldByParentIDPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields by parent paginated: %v", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 func (d MysqlDatabase) UpdateAdminField(ctx context.Context, ac audited.AuditContext, s UpdateAdminFieldParams) (*string, error) {
 	cmd := d.UpdateAdminFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -448,6 +524,41 @@ func (d PsqlDatabase) ListAdminFields() (*[]AdminFields, error) {
 	rows, err := queries.ListAdminField(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get Admin Fields: %v\n", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminFieldsPaginated(params PaginationParams) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldPaginated(d.Context, mdbp.ListAdminFieldPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields paginated: %v", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+func (d PsqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentIDPaginated(d.Context, mdbp.ListAdminFieldByParentIDPaginatedParams{
+		ParentID: types.NullableAdminDatatypeID{ID: params.ParentID, Valid: true},
+		Limit:    int32(params.Limit),
+		Offset:   int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get AdminFields by parent paginated: %v", err)
 	}
 	res := []AdminFields{}
 	for _, v := range rows {

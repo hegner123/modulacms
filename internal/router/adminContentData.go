@@ -16,9 +16,16 @@ import (
 func AdminContentDatasHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	switch r.Method {
 	case http.MethodGet:
-		err := apiListAdminContentData(w, r, c)
-		if err != nil {
-			return
+		if HasPaginationParams(r) {
+			err := apiListAdminContentDataPaginated(w, r, c)
+			if err != nil {
+				return
+			}
+		} else {
+			err := apiListAdminContentData(w, r, c)
+			if err != nil {
+				return
+			}
 		}
 	case http.MethodPost:
 		err := apiCreateAdminContentData(w, r, c)
@@ -182,5 +189,37 @@ func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	return nil
+}
+
+// apiListAdminContentDataPaginated handles GET requests for listing admin content data with pagination
+func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+	params := ParsePaginationParams(r)
+
+	items, err := d.ListAdminContentDataPaginated(params)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	total, err := d.CountAdminContentData()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	response := db.PaginatedResponse[db.AdminContentData]{
+		Data:   *items,
+		Total:  *total,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
 	return nil
 }
