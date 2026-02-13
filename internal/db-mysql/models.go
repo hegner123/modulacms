@@ -6,6 +6,7 @@ package mdbm
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -243,9 +244,9 @@ type Permissions struct {
 }
 
 type Roles struct {
-	RoleID      types.RoleID   `json:"role_id"`
-	Label       string         `json:"label"`
-	Permissions sql.NullString `json:"permissions"`
+	RoleID      types.RoleID    `json:"role_id"`
+	Label       string          `json:"label"`
+	Permissions json.RawMessage `json:"permissions"`
 }
 
 type Routes struct {

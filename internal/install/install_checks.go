@@ -3,6 +3,7 @@ package install
 import (
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	"github.com/hegner123/modulacms/internal/bucket"
@@ -110,6 +111,25 @@ func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 	status.Err = nil
 
 	return status, nil
+}
+
+// CheckBackupTools verifies that the required database client tool (pg_dump, mysqldump)
+// is available in $PATH for the configured database driver. SQLite needs no external tool.
+// Returns a warning string (empty if OK) and an error if the tool is missing.
+func CheckBackupTools(driver config.DbDriver) (warning string, err error) {
+	switch driver {
+	case config.Psql:
+		if _, err := exec.LookPath("pg_dump"); err != nil {
+			return "", fmt.Errorf("pg_dump not found in $PATH (required for PostgreSQL backups). Install postgresql-client")
+		}
+	case config.Mysql:
+		if _, err := exec.LookPath("mysqldump"); err != nil {
+			return "", fmt.Errorf("mysqldump not found in $PATH (required for MySQL backups). Install default-mysql-client")
+		}
+	case config.Sqlite:
+		// No external tool needed
+	}
+	return "", nil
 }
 
 func CheckCerts(path string) bool {

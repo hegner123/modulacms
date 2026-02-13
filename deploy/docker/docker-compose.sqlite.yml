@@ -1,7 +1,33 @@
+name: modulacms-sqlite
+
 services:
+  modulacms:
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
+        COMMIT: ${COMMIT:-unknown}
+        BUILD_DATE: ${BUILD_DATE:-unknown}
+    container_name: modula_cms_sqlite
+    ports:
+      - "8080:8080"
+      - "4000:4000"
+      - "2233:2233"
+    volumes:
+      - sqlite_cms_data:/app/data
+      - sqlite_cms_ssh:/app/.ssh
+      - sqlite_cms_backups:/app/backups
+      - ./config.sqlite.json:/app/config.json:ro
+    env_file:
+      - .env
+    depends_on:
+      minio:
+        condition: service_healthy
+
   minio:
     image: minio/minio:latest
-    container_name: modula_minio
+    container_name: modula_minio_sqlite
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-modulacms}
@@ -10,7 +36,7 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - sqlite_minio_data:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
@@ -18,4 +44,7 @@ services:
       retries: 5
 
 volumes:
-  minio_data:
+  sqlite_cms_data:
+  sqlite_cms_ssh:
+  sqlite_cms_backups:
+  sqlite_minio_data:

@@ -18,7 +18,7 @@ services:
       - cms_data:/app/data
       - cms_ssh:/app/.ssh
       - cms_backups:/app/backups
-      - ../../config.docker.json:/app/config.json:ro
+      - ./config.postgres.json:/app/config.json:ro
     depends_on:
       minio:
         condition: service_healthy

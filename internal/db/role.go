@@ -145,7 +145,7 @@ func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 	return Roles{
 		RoleID:      a.RoleID,
 		Label:       a.Label,
-		Permissions: a.Permissions.String,
+		Permissions: string(a.Permissions),
 	}
 }
 
@@ -153,14 +153,14 @@ func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRolePa
 	return mdbm.CreateRoleParams{
 		RoleID:      types.NewRoleID(),
 		Label:       a.Label,
-		Permissions: StringToNullString(a.Permissions),
+		Permissions: json.RawMessage(a.Permissions),
 	}
 }
 
 func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
 	return mdbm.UpdateRoleParams{
 		Label:       a.Label,
-		Permissions: StringToNullString(a.Permissions),
+		Permissions: json.RawMessage(a.Permissions),
 		RoleID:      a.RoleID,
 	}
 }
@@ -453,7 +453,7 @@ func (c NewRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Rol
 	err := queries.CreateRole(ctx, mdbm.CreateRoleParams{
 		RoleID:      id,
 		Label:       c.params.Label,
-		Permissions: StringToNullString(c.params.Permissions),
+		Permissions: json.RawMessage(c.params.Permissions),
 	})
 	if err != nil {
 		return mdbm.Roles{}, fmt.Errorf("Failed to CreateRole: %w", err)
@@ -490,7 +490,7 @@ func (c UpdateRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error 
 	queries := mdbm.New(tx)
 	return queries.UpdateRole(ctx, mdbm.UpdateRoleParams{
 		Label:       c.params.Label,
-		Permissions: StringToNullString(c.params.Permissions),
+		Permissions: json.RawMessage(c.params.Permissions),
 		RoleID:      c.params.RoleID,
 	})
 }

@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
-    type VARCHAR(255) DEFAULT 'text' NOT NULL,
+    type VARCHAR(20) DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,

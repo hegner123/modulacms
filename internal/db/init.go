@@ -78,10 +78,10 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	ctx := context.Background()
 
 	// Create connection string
-	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", d.Config.Db_User, d.Config.Db_Password, d.Config.Db_URL, d.Config.Db_Name)
 
 	// Hide password in logs
-	sanitizedDsn := fmt.Sprintf("%s:****@tcp(%s)/%s", d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
+	sanitizedDsn := fmt.Sprintf("%s:****@tcp(%s)/%s?parseTime=true", d.Config.Db_User, d.Config.Db_URL, d.Config.Db_Name)
 	utility.DefaultLogger.Info("Preparing MySQL connection", "dsn", sanitizedDsn)
 
 	// Open database connection
@@ -254,7 +254,7 @@ func buildDSN(cfg config.Config) (driverName string, dsn string, err error) {
 		return "sqlite3", src, nil
 
 	case config.Mysql:
-		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s", cfg.Db_User, cfg.Db_Password, cfg.Db_URL, cfg.Db_Name)
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?parseTime=true", cfg.Db_User, cfg.Db_Password, cfg.Db_URL, cfg.Db_Name)
 		return "mysql", dsn, nil
 
 	case config.Psql:

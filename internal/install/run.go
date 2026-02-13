@@ -75,6 +75,11 @@ func runInstallDefaults(v *bool, adminPassword *string) error {
 		return err
 	}
 
+	// Check backup tool availability (non-fatal warning)
+	if _, toolErr := CheckBackupTools(iarg.Config.Db_Driver); toolErr != nil {
+		PrintWarning(fmt.Sprintf("Backup tools: %v", toolErr))
+	}
+
 	PrintSuccess("Installation completed successfully!")
 	printInstallSummary(iarg, bucketStatus)
 	return nil
@@ -171,6 +176,11 @@ func runInstallWithRetry(v *bool, adminPassword *string, retriesLeft int) error 
 
 	if bucketStatus != "Connected" && bucketStatus != "" {
 		PrintWarning(fmt.Sprintf("S3 bucket: %s (media storage will be unavailable)", bucketStatus))
+	}
+
+	// Check backup tool availability (non-fatal warning)
+	if _, toolErr := CheckBackupTools(iarg.Config.Db_Driver); toolErr != nil {
+		PrintWarning(fmt.Sprintf("Backup tools: %v", toolErr))
 	}
 
 	printInstallSummary(iarg, bucketStatus)

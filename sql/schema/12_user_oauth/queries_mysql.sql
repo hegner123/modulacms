@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS user_oauth (
     oauth_provider_user_id VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT NOT NULL,
-    token_expires_at TIMESTAMP NOT NULL,
+    token_expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT user_oauth_ibfk_1
         FOREIGN KEY (user_id) REFERENCES users (user_id)

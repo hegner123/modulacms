@@ -8,6 +8,7 @@ package mdbm
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"strings"
 	"time"
 
@@ -694,7 +695,6 @@ CREATE TABLE IF NOT EXISTS admin_content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (admin_content_relation_id),
-    CONSTRAINT chk_admin_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_admin_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES admin_content_data(admin_content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
@@ -787,7 +787,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_admin_datatypes_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
@@ -886,7 +886,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
-    type VARCHAR(255) DEFAULT 'text' NOT NULL,
+    type VARCHAR(20) DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -955,8 +955,8 @@ CREATE TABLE IF NOT EXISTS admin_routes (
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT slug
         UNIQUE (slug),
@@ -1049,7 +1049,7 @@ CREATE TABLE IF NOT EXISTS backups (
     node_id         CHAR(26) NOT NULL,
     backup_type     VARCHAR(20) NOT NULL,
     status          VARCHAR(20) NOT NULL,
-    started_at      TIMESTAMP NOT NULL,
+    started_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at    TIMESTAMP NULL,
     duration_ms     INTEGER,
     record_count    BIGINT,
@@ -1318,7 +1318,6 @@ CREATE TABLE IF NOT EXISTS content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (content_relation_id),
-    CONSTRAINT chk_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES content_data(content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
@@ -1411,7 +1410,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_dt_datatypes_parent
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
@@ -1511,7 +1510,7 @@ CREATE TABLE IF NOT EXISTS fields (
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
-    type TEXT NOT NULL,
+    type VARCHAR(20) NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -1732,9 +1731,9 @@ INSERT INTO roles (role_id, label, permissions) VALUES (?,?,?)
 `
 
 type CreateRoleParams struct {
-	RoleID      types.RoleID   `json:"role_id"`
-	Label       string         `json:"label"`
-	Permissions sql.NullString `json:"permissions"`
+	RoleID      types.RoleID    `json:"role_id"`
+	Label       string          `json:"label"`
+	Permissions json.RawMessage `json:"permissions"`
 }
 
 func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) error {
@@ -1746,8 +1745,7 @@ const createRoleTable = `-- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
     role_id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NOT NULL,
-    permissions LONGTEXT COLLATE utf8mb4_bin NULL
-        CHECK (JSON_VALID(` + "`" + `permissions` + "`" + `)),
+    permissions JSON NULL,
     CONSTRAINT label
         UNIQUE (label)
 )
@@ -1876,7 +1874,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     session_id VARCHAR(26) PRIMARY KEY NOT NULL,
     user_id VARCHAR(26) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     ip_address VARCHAR(45) NULL,
     user_agent TEXT NULL,
@@ -1980,7 +1978,7 @@ CREATE TABLE IF NOT EXISTS tokens (
     token_type VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL,
     issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP DEFAULT '0000-00-00 00:00:00' NOT NULL,
+    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     revoked TINYINT(1) DEFAULT 0 NOT NULL,
     CONSTRAINT token
         UNIQUE (token),
@@ -2097,7 +2095,7 @@ CREATE TABLE IF NOT EXISTS user_oauth (
     oauth_provider_user_id VARCHAR(255) NOT NULL,
     access_token TEXT NOT NULL,
     refresh_token TEXT NOT NULL,
-    token_expires_at TIMESTAMP NOT NULL,
+    token_expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     CONSTRAINT user_oauth_ibfk_1
         FOREIGN KEY (user_id) REFERENCES users (user_id)
@@ -2155,7 +2153,7 @@ CREATE TABLE IF NOT EXISTS user_ssh_keys (
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
 `
 
 func (q *Queries) CreateUserSshKeyTable(ctx context.Context) error {
@@ -2172,12 +2170,12 @@ CREATE TABLE IF NOT EXISTS users (
     hash TEXT NOT NULL,
     role VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT username
         UNIQUE (username),
     CONSTRAINT fk_users_role
         FOREIGN KEY (role) REFERENCES roles (role_id)
-            ON UPDATE CASCADE ON DELETE SET DEFAULT
+            ON UPDATE CASCADE ON DELETE RESTRICT
 )
 `
 
@@ -8882,9 +8880,9 @@ WHERE role_id = ?
 `
 
 type UpdateRoleParams struct {
-	Label       string         `json:"label"`
-	Permissions sql.NullString `json:"permissions"`
-	RoleID      types.RoleID   `json:"role_id"`
+	Label       string          `json:"label"`
+	Permissions json.RawMessage `json:"permissions"`
+	RoleID      types.RoleID    `json:"role_id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {

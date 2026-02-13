@@ -69,6 +69,7 @@ type ActionResultMsg struct {
 	Title   string
 	Message string
 	IsError bool
+	Width   int // optional dialog width override (0 = default)
 }
 
 // ActionConfirmMsg is sent when a destructive action needs confirmation.
@@ -467,6 +468,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 		return ActionResultMsg{
 			Title:   "API Token Generated",
 			Message: fmt.Sprintf("Token: %s\n\nExpires: %s\n\nUse as: Authorization: Bearer <token>\n\nCopy this token now — it cannot be shown again.", token, expiry.Format(time.RFC3339)),
+			Width:   70,
 		}
 	}
 }

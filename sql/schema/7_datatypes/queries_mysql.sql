@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT fk_dt_datatypes_parent
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)

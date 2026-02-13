@@ -6,7 +6,6 @@ CREATE TABLE IF NOT EXISTS content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (content_relation_id),
-    CONSTRAINT chk_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES content_data(content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,

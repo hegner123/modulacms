@@ -65,11 +65,14 @@ LABEL org.opencontainers.image.description="Headless CMS with HTTP, HTTPS, and S
 LABEL org.opencontainers.image.source="https://github.com/hegner123/modulacms"
 LABEL org.opencontainers.image.licenses="AGPL-3.0"
 
-# Runtime dependencies: TLS certs, timezone data, and shared libraries for CGO
+# Runtime dependencies: TLS certs, timezone data, shared libraries for CGO,
+# and database client tools for backup/restore (pg_dump, mysqldump)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     tzdata \
     libwebp7 \
+    postgresql-client \
+    default-mysql-client \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 

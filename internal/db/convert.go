@@ -82,13 +82,22 @@ func PSQLstring(pS pqtype.NullRawMessage) string {
 }
 
 func StringToNTime(dateStr string) sql.NullTime {
-	st := sql.NullTime{}
-	err := st.Scan(dateStr)
-	if err != nil {
-		st.Valid = false
-		return st
+	if dateStr == "" {
+		return sql.NullTime{Valid: false}
 	}
-	return st
+	// Try parsing as Unix timestamp (numeric string)
+	if unix, err := strconv.ParseInt(dateStr, 10, 64); err == nil {
+		return sql.NullTime{Time: time.Unix(unix, 0).UTC(), Valid: true}
+	}
+	// Try RFC3339
+	if t, err := time.Parse(time.RFC3339, dateStr); err == nil {
+		return sql.NullTime{Time: t, Valid: true}
+	}
+	// Try common datetime format
+	if t, err := time.Parse("2006-01-02 15:04:05", dateStr); err == nil {
+		return sql.NullTime{Time: t, Valid: true}
+	}
+	return sql.NullTime{Valid: false}
 }
 
 func NullTimeToString(t sql.NullTime) string {

@@ -2,9 +2,11 @@ package backup
 
 import (
 	"archive/zip"
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +15,16 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 )
+
+// splitHostPort splits a "host:port" string. If no port is present, defaultPort is used.
+func splitHostPort(addr, defaultPort string) (host, port string) {
+	h, p, err := net.SplitHostPort(addr)
+	if err != nil {
+		// No port in addr
+		return addr, defaultPort
+	}
+	return h, p
+}
 
 type backupName func(string, string) string
 
@@ -162,15 +174,21 @@ func addSQLiteDB(zw *zip.Writer, dbPath string) error {
 }
 
 func addMySQLDump(zw *zip.Writer, cfg config.Config) error {
-	cmd := exec.Command("mysqldump",
+	host, port := splitHostPort(cfg.Db_URL, "3306")
+	args := []string{
+		"-h", host,
+		"-P", port,
 		"-u", cfg.Db_User,
-		"-p"+cfg.Db_Password,
+		"-p" + cfg.Db_Password,
 		cfg.Db_Name,
-	)
+	}
+	cmd := exec.Command("mysqldump", args...)
 
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("mysqldump failed: %w", err)
+		return fmt.Errorf("mysqldump failed: %w: %s", err, stderr.String())
 	}
 
 	w, err := zw.Create("database.sql")
@@ -186,15 +204,20 @@ func addMySQLDump(zw *zip.Writer, cfg config.Config) error {
 }
 
 func addPostgresDump(zw *zip.Writer, cfg config.Config) error {
+	host, port := splitHostPort(cfg.Db_URL, "5432")
 	cmd := exec.Command("pg_dump",
+		"-h", host,
+		"-p", port,
 		"-U", cfg.Db_User,
 		"-d", cfg.Db_Name,
 	)
 	cmd.Env = append(os.Environ(), "PGPASSWORD="+cfg.Db_Password)
 
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("pg_dump failed: %w", err)
+		return fmt.Errorf("pg_dump failed: %w: %s", err, stderr.String())
 	}
 
 	w, err := zw.Create("database.sql")

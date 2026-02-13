@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS admin_content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (admin_content_relation_id),
-    CONSTRAINT chk_admin_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_admin_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES admin_content_data(admin_content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,

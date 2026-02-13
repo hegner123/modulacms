@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS user_ssh_keys (
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Index for fast lookup by fingerprint during SSH auth
 CREATE INDEX idx_ssh_keys_fingerprint ON user_ssh_keys(fingerprint);

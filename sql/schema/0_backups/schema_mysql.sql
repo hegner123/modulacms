@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS backups (
     node_id         CHAR(26) NOT NULL,
     backup_type     VARCHAR(20) NOT NULL,
     status          VARCHAR(20) NOT NULL,
-    started_at      TIMESTAMP NOT NULL,
+    started_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at    TIMESTAMP NULL,
     duration_ms     INTEGER,
     record_count    BIGINT,
@@ -26,7 +26,7 @@ CREATE INDEX idx_backups_hlc ON backups(hlc_timestamp);
 CREATE TABLE IF NOT EXISTS backup_verifications (
     verification_id  CHAR(26) PRIMARY KEY,
     backup_id        CHAR(26) NOT NULL,
-    verified_at      TIMESTAMP NOT NULL,
+    verified_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     verified_by      VARCHAR(64),
     restore_tested   BOOLEAN DEFAULT FALSE,
     checksum_valid   BOOLEAN DEFAULT FALSE,
@@ -42,7 +42,7 @@ CREATE INDEX idx_verifications_backup ON backup_verifications(backup_id, verifie
 
 CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    CHAR(26) PRIMARY KEY,
-    created_at       TIMESTAMP NOT NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     hlc_timestamp    BIGINT NOT NULL,
     status           VARCHAR(20) NOT NULL,
     backup_ids       JSON NOT NULL,

@@ -8,8 +8,8 @@ CREATE TABLE IF NOT EXISTS admin_routes (
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
-    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP() NOT NULL ON UPDATE CURRENT_TIMESTAMP(),
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
     CONSTRAINT slug
         UNIQUE (slug),
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
 );
 
 -- name: CreateAdminRouteSlugIndex :exec
-CREATE INDEX IF NOT EXISTS idx_admin_routes_slug
+CREATE INDEX idx_admin_routes_slug
 ON admin_routes(slug);
 
 -- name: CountAdminroute :one

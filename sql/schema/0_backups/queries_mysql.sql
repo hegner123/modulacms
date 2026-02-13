@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS backups (
     node_id         CHAR(26) NOT NULL,
     backup_type     VARCHAR(20) NOT NULL,
     status          VARCHAR(20) NOT NULL,
-    started_at      TIMESTAMP NOT NULL,
+    started_at      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     completed_at    TIMESTAMP NULL,
     duration_ms     INTEGER,
     record_count    BIGINT,

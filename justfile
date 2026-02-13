@@ -9,7 +9,10 @@ version := env_var_or_default("VERSION", "0.0.0")
 service_port := env_var_or_default("SERVICE_PORT", "3000")
 docker_registry := env_var_or_default("DOCKER_REGISTRY", "")
 export_result := env_var_or_default("EXPORT_RESULT", "false")
-compose_file := "deploy/docker/docker-compose.yml"
+compose_file := "deploy/docker/docker-compose.full.yml"
+compose_sqlite := "deploy/docker/docker-compose.sqlite.yml"
+compose_mysql := "deploy/docker/docker-compose.mysql.yml"
+compose_postgres := "deploy/docker/docker-compose.postgres.yml"
 dealer_compose := "docker compose -p modulacms-dealer"
 
 # Show available recipes
@@ -183,6 +186,63 @@ docker-release:
     docker tag modulacms {{docker_registry}}modulacms:{{version}}
     docker push {{docker_registry}}modulacms:latest
     docker push {{docker_registry}}modulacms:{{version}}
+
+# [Docker:SQLite] Start SQLite stack (CMS + MinIO)
+docker-sqlite-up:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_sqlite}} up -d --build
+
+# [Docker:SQLite] Stop SQLite stack, keep volumes
+docker-sqlite-down:
+    docker compose -f {{compose_sqlite}} down
+
+# [Docker:SQLite] Stop SQLite stack and delete volumes
+docker-sqlite-reset:
+    docker compose -f {{compose_sqlite}} down -v
+
+# [Docker:SQLite] Wipe volumes and rebuild SQLite stack
+docker-sqlite-dev: docker-sqlite-reset docker-sqlite-up
+
+# [Docker:SQLite] Tail SQLite stack CMS logs
+docker-sqlite-logs:
+    docker compose -f {{compose_sqlite}} logs -f modulacms
+
+# [Docker:MySQL] Start MySQL stack (CMS + MySQL + MinIO)
+docker-mysql-up:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_mysql}} up -d --build
+
+# [Docker:MySQL] Stop MySQL stack, keep volumes
+docker-mysql-down:
+    docker compose -f {{compose_mysql}} down
+
+# [Docker:MySQL] Stop MySQL stack and delete volumes
+docker-mysql-reset:
+    docker compose -f {{compose_mysql}} down -v
+
+# [Docker:MySQL] Wipe volumes and rebuild MySQL stack
+docker-mysql-dev: docker-mysql-reset docker-mysql-up
+
+# [Docker:MySQL] Tail MySQL stack CMS logs
+docker-mysql-logs:
+    docker compose -f {{compose_mysql}} logs -f modulacms
+
+# [Docker:Postgres] Start PostgreSQL stack (CMS + PostgreSQL + MinIO)
+docker-postgres-up:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_postgres}} up -d --build
+
+# [Docker:Postgres] Stop PostgreSQL stack, keep volumes
+docker-postgres-down:
+    docker compose -f {{compose_postgres}} down
+
+# [Docker:Postgres] Stop PostgreSQL stack and delete volumes
+docker-postgres-reset:
+    docker compose -f {{compose_postgres}} down -v
+
+# [Docker:Postgres] Wipe volumes and rebuild PostgreSQL stack
+docker-postgres-dev: docker-postgres-reset docker-postgres-up
+
+# [Docker:Postgres] Tail PostgreSQL stack CMS logs
+docker-postgres-logs:
+    docker compose -f {{compose_postgres}} logs -f modulacms
 
 # [Dealer] Start dealer CMS container
 dealer-up:

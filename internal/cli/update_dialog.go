@@ -97,6 +97,9 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ActionResultMsg:
 		// Show result dialog after an action completes
 		dialog := NewDialog(msg.Title, msg.Message, false, DIALOGGENERIC)
+		if msg.Width > 0 {
+			dialog.Width = msg.Width
+		}
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			DialogSetCmd(&dialog),

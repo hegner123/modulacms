@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS user_ssh_keys (
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     last_used TIMESTAMP NULL,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE INDEX idx_ssh_keys_fingerprint ON user_ssh_keys(fingerprint);
 CREATE INDEX idx_ssh_keys_user_id ON user_ssh_keys(user_id);
@@ -208,8 +208,8 @@ CREATE TABLE IF NOT EXISTS tokens (
     user_id INT NOT NULL,
     token_type VARCHAR(255) NOT NULL,
     token VARCHAR(255) NOT NULL UNIQUE,
-    issued_at TIMESTAMP NOT NULL,
-    expires_at TIMESTAMP NOT NULL,
+    issued_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     revoked TINYINT(1) DEFAULT 0,
     CONSTRAINT fk_tokens_users FOREIGN KEY (user_id)
         REFERENCES users(user_id)
@@ -369,7 +369,6 @@ CREATE TABLE IF NOT EXISTS content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (content_relation_id),
-    CONSTRAINT chk_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES content_data(content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
@@ -395,7 +394,6 @@ CREATE TABLE IF NOT EXISTS admin_content_relations (
     sort_order INT NOT NULL DEFAULT 0,
     date_created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (admin_content_relation_id),
-    CONSTRAINT chk_admin_content_relations_no_self_ref CHECK (source_content_id != target_content_id),
     CONSTRAINT fk_admin_content_relations_source FOREIGN KEY (source_content_id)
         REFERENCES admin_content_data(admin_content_data_id)
         ON UPDATE CASCADE ON DELETE CASCADE,
