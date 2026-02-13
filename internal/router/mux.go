@@ -129,9 +129,6 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 	mux.HandleFunc("/api/v1/mediadimensions/", func(w http.ResponseWriter, r *http.Request) {
 		MediaDimensionHandler(w, r, c)
 	})
-	mux.HandleFunc("/api/v1/mediaupload/", func(w http.ResponseWriter, r *http.Request) {
-		MediaUploadHandler(w, r, c)
-	})
 	mux.HandleFunc("/api/v1/routes", func(w http.ResponseWriter, r *http.Request) {
 		RoutesHandler(w, r, c)
 	})

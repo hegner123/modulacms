@@ -37,6 +37,18 @@ template-test:
 test-development:
     {{gotest}} -v ./internal/development
 
+# [Test] Start MinIO container for integration tests
+test-minio:
+    docker compose -f {{compose_sqlite}} up -d minio
+
+# [Test] Run S3 integration tests (requires MinIO running)
+test-integration:
+    {{gotest}} -tags integration -v -count=1 ./internal/media/ -run TestIntegration
+
+# [Test] Stop MinIO after integration tests
+test-minio-down:
+    docker compose -f {{compose_sqlite}} down minio
+
 # [Test] Run the tests and export coverage
 coverage:
     {{gotest}} -cover -covermode=count -coverprofile=profile.cov ./...

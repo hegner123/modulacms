@@ -2,13 +2,13 @@ package router
 
 import (
 	"encoding/json"
-	"io"
+	"errors"
 	"net/http"
-	"os"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/media"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -84,68 +84,58 @@ func apiListMedia(w http.ResponseWriter, c config.Config) error {
 	return nil
 }
 
-// apiCreateMedia handles POST requests to create a new media item
-func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) error {
-	d := db.ConfigDB(c)
-
-	// Parse the multipart form with a max memory of 10 MB
-	err := r.ParseMultipartForm(10 << 20) // 10 MB
+// apiCreateMedia handles POST requests to upload and create a new media item.
+// Accepts multipart form with a "file" field. Delegates validation, DB creation,
+// and pipeline execution to media.ProcessMediaUpload.
+func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) {
+	err := r.ParseMultipartForm(media.MaxUploadSize)
 	if err != nil {
-		http.Error(w, "Error parsing multipart form", http.StatusBadRequest)
-		return err
+		utility.DefaultLogger.Error("parse form", err)
+		http.Error(w, "File too large or invalid multipart form", http.StatusBadRequest)
+		return
 	}
 
-	// Retrieve the file from the parsed multipart form using the key "file"
 	file, header, err := r.FormFile("file")
 	if err != nil {
-		http.Error(w, "Error retrieving the file", http.StatusBadRequest)
-		return err
-	}
-	defer func() {
-		if closeErr := file.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
-
-	// Create a destination file on the server
-	dst, err := os.Create("./uploaded_" + header.Filename)
-	if err != nil {
-		http.Error(w, "Unable to create the file", http.StatusInternalServerError)
-		return err
-	}
-
-	defer func() {
-		if closeErr := dst.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
-
-	// Copy the uploaded file data to the destination file
-	if _, err := io.Copy(dst, file); err != nil {
-		http.Error(w, "Error saving the file", http.StatusInternalServerError)
-		return err
-	}
-
-	var newMedia db.CreateMediaParams
-	err = json.NewDecoder(r.Body).Decode(&newMedia)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
+		utility.DefaultLogger.Error("parse file", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		return err
+		return
+	}
+	defer file.Close()
+
+	d := db.ConfigDB(c)
+	ac := middleware.AuditContextFromRequest(r, c)
+
+	pipeline := func(srcFile string, dstPath string) error {
+		return media.HandleMediaUpload(srcFile, dstPath, c)
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	createdMedia, err := d.CreateMedia(r.Context(), ac, newMedia)
+	row, err := media.ProcessMediaUpload(r.Context(), ac, file, header, d, pipeline)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+		var dupErr media.DuplicateMediaError
+		var mimeErr media.InvalidMediaTypeError
+		var sizeErr media.FileTooLargeError
+
+		switch {
+		case errors.As(err, &dupErr):
+			utility.DefaultLogger.Error("duplicate media", err)
+			http.Error(w, err.Error(), http.StatusConflict)
+		case errors.As(err, &mimeErr):
+			utility.DefaultLogger.Error("invalid content type", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case errors.As(err, &sizeErr):
+			utility.DefaultLogger.Error("file too large", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			utility.DefaultLogger.Error("create media", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(createdMedia)
-	return nil
+	json.NewEncoder(w).Encode(row)
 }
 
 // apiUpdateMedia handles PUT requests to update an existing media item
