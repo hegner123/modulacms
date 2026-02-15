@@ -64,8 +64,8 @@ func TestBuildDSN_MySQL(t *testing.T) {
 	if driver != "mysql" {
 		t.Errorf("driver = %q, want %q", driver, "mysql")
 	}
-	if dsn != "root:secret@tcp(localhost:3306)/cms" {
-		t.Errorf("dsn = %q, want %q", dsn, "root:secret@tcp(localhost:3306)/cms")
+	if dsn != "root:secret@tcp(localhost:3306)/cms?parseTime=true" {
+		t.Errorf("dsn = %q, want %q", dsn, "root:secret@tcp(localhost:3306)/cms?parseTime=true")
 	}
 }
 
