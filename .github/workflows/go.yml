@@ -17,10 +17,21 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v5
       with:
-        go-version: '1.24.2'
+        go-version: '1.26'
+
+    - name: Prepare test directories
+      run: |
+        mkdir -p testdb backups
 
     - name: Test
-      run: make test
+      run: |
+        touch testdb/create_tests.db
+        touch testdb/testing2348263.db
+        rm -f testdb/*.db
+        touch backups/tmp.zip
+        rm -f backups/*.zip
+        go test -v ./...
+        rm -f testdb/*.db
 
   build:
     needs: test
@@ -31,15 +42,20 @@ jobs:
           - os: macos-latest
             goos: darwin
             goarch: amd64
+            cc: clang
           - os: macos-latest
             goos: darwin
             goarch: arm64
+            cc: clang
           - os: ubuntu-latest
             goos: linux
             goarch: amd64
+            cc: gcc
           - os: ubuntu-latest
             goos: linux
             goarch: arm64
+            cc: aarch64-linux-gnu-gcc
+            packages: gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
 
     runs-on: ${{ matrix.os }}
 
@@ -49,13 +65,20 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'
+          go-version: '1.26'
+
+      - name: Install cross-compiler
+        if: matrix.packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.packages }}
 
       - name: Build
         env:
           CGO_ENABLED: 1
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
+          CC: ${{ matrix.cc }}
         run: |
           VERSION="${{ github.ref_name }}"
           if [[ ! "$VERSION" =~ ^v[0-9] ]]; then
@@ -64,11 +87,11 @@ jobs:
           COMMIT=$(git rev-parse --short HEAD)
           BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
 
-          go build \
+          go build -mod vendor \
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modulacms-${{ matrix.goos }}-${{ matrix.goarch }} cmd/main.go
+            -o modulacms-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
           chmod +x modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
 
       - name: Upload artifact
@@ -92,7 +115,7 @@ jobs:
           merge-multiple: true
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*
           generate_release_notes: true
@@ -110,7 +133,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.24.2'
+          go-version: '1.26'
 
       - name: Install dependencies
         run: |
