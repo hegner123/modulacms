@@ -4,8 +4,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-// CollectFieldValuesFromForm extracts field values from form state
-// Returns map[field_id]field_value
+// CollectFieldValuesFromForm extracts field values from form state and returns map[field_id]field_value.
 func (m Model) CollectFieldValuesFromForm() map[types.FieldID]string {
 	fieldValues := make(map[types.FieldID]string)
 

@@ -16,7 +16,7 @@ import (
 // DATABASE FORM DIALOG
 // =============================================================================
 
-// DatabaseColumnInput holds a single column's metadata and text input.
+// DatabaseColumnInput holds column metadata and input state for a database form.
 type DatabaseColumnInput struct {
 	Column   string          // Column name
 	TypeName string          // Database type (TEXT, INTEGER, etc.)
@@ -25,7 +25,7 @@ type DatabaseColumnInput struct {
 	Hidden   bool            // true for auto-filled columns (ID, dates, history)
 }
 
-// DatabaseFormDialogModel represents a form dialog for database table INSERT/UPDATE.
+// DatabaseFormDialogModel represents a form dialog for database table INSERT/UPDATE operations.
 type DatabaseFormDialogModel struct {
 	dialogStyles
 
@@ -38,7 +38,7 @@ type DatabaseFormDialogModel struct {
 	focusIndex int
 }
 
-// autoFillColumns are columns that should be hidden and auto-filled.
+// autoFillColumns maps column names that should be hidden and auto-filled.
 var autoFillColumns = map[string]bool{
 	"id":            true,
 	"date_created":  true,
@@ -195,7 +195,7 @@ func NewDatabaseUpdateDialog(title string, table db.DBTable, columns []string, c
 	}
 }
 
-// visibleFields returns the slice of non-hidden field indices.
+// visibleFields returns indices of non-hidden fields.
 func (d *DatabaseFormDialogModel) visibleFields() []int {
 	var indices []int
 	for i, f := range d.Fields {
@@ -258,7 +258,7 @@ func (d *DatabaseFormDialogModel) Update(msg tea.Msg) (DatabaseFormDialogModel, 
 	return *d, nil
 }
 
-// buildAcceptCmd constructs the accept message with all column/value pairs.
+// buildAcceptCmd creates a command returning the accept message with column/value pairs.
 func (d *DatabaseFormDialogModel) buildAcceptCmd() tea.Cmd {
 	columns := make([]string, 0, len(d.Fields))
 	values := make([]string, 0, len(d.Fields))
@@ -277,18 +277,21 @@ func (d *DatabaseFormDialogModel) buildAcceptCmd() tea.Cmd {
 	}
 }
 
+// dbFormFocusNext advances focus to the next focusable element, wrapping at the end.
 func (d *DatabaseFormDialogModel) dbFormFocusNext() {
 	total := d.totalFocusable()
 	d.focusIndex = (d.focusIndex + 1) % total
 	d.dbFormUpdateFocus()
 }
 
+// dbFormFocusPrev moves focus to the previous focusable element, wrapping at the start.
 func (d *DatabaseFormDialogModel) dbFormFocusPrev() {
 	total := d.totalFocusable()
 	d.focusIndex = (d.focusIndex + total - 1) % total
 	d.dbFormUpdateFocus()
 }
 
+// dbFormUpdateFocus applies focus styling to the currently focused input field.
 func (d *DatabaseFormDialogModel) dbFormUpdateFocus() {
 	visible := d.visibleFields()
 	// Blur all
@@ -340,7 +343,7 @@ func (d DatabaseFormDialogModel) Render(windowWidth, windowHeight int) string {
 	return d.borderStyle.Width(contentWidth).Render(content)
 }
 
-// DatabaseFormDialogOverlay positions the database form dialog over existing content.
+// DatabaseFormDialogOverlay positions a database form dialog over existing content.
 func DatabaseFormDialogOverlay(content string, dialog DatabaseFormDialogModel, width, height int) string {
 	dialogContent := dialog.Render(width, height)
 	dialogW := lipgloss.Width(dialogContent)
@@ -368,7 +371,7 @@ func DatabaseFormDialogOverlay(content string, dialog DatabaseFormDialogModel, w
 // MESSAGES
 // =============================================================================
 
-// DatabaseFormDialogAcceptMsg is sent when the database form dialog is confirmed.
+// DatabaseFormDialogAcceptMsg carries acceptance data from a database form dialog.
 type DatabaseFormDialogAcceptMsg struct {
 	Action  FormDialogAction
 	Table   db.DBTable
@@ -377,10 +380,10 @@ type DatabaseFormDialogAcceptMsg struct {
 	Values  []string
 }
 
-// DatabaseFormDialogCancelMsg is sent when the database form dialog is cancelled.
+// DatabaseFormDialogCancelMsg is sent when a database form dialog is cancelled.
 type DatabaseFormDialogCancelMsg struct{}
 
-// ShowDatabaseFormDialogMsg triggers showing a database form dialog.
+// ShowDatabaseFormDialogMsg triggers display of a database form dialog.
 type ShowDatabaseFormDialogMsg struct {
 	Action FormDialogAction
 	Title  string
@@ -388,12 +391,12 @@ type ShowDatabaseFormDialogMsg struct {
 	RowID  string // For UPDATE: selected row ID
 }
 
-// DatabaseFormDialogSetMsg carries the dialog model.
+// DatabaseFormDialogSetMsg carries a database form dialog model to update.
 type DatabaseFormDialogSetMsg struct {
 	Dialog *DatabaseFormDialogModel
 }
 
-// DatabaseFormDialogActiveSetMsg carries the active state.
+// DatabaseFormDialogActiveSetMsg carries the active state for a database form dialog.
 type DatabaseFormDialogActiveSetMsg struct {
 	Active bool
 }
@@ -402,7 +405,7 @@ type DatabaseFormDialogActiveSetMsg struct {
 // COMMANDS
 // =============================================================================
 
-// ShowDatabaseInsertDialogCmd creates a command to show the insert dialog.
+// ShowDatabaseInsertDialogCmd creates a command to show an insert dialog.
 func ShowDatabaseInsertDialogCmd(table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDatabaseFormDialogMsg{
@@ -413,7 +416,7 @@ func ShowDatabaseInsertDialogCmd(table db.DBTable) tea.Cmd {
 	}
 }
 
-// ShowDatabaseUpdateDialogCmd creates a command to show the update dialog.
+// ShowDatabaseUpdateDialogCmd creates a command to show an update dialog.
 func ShowDatabaseUpdateDialogCmd(table db.DBTable, rowID string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDatabaseFormDialogMsg{
@@ -425,12 +428,12 @@ func ShowDatabaseUpdateDialogCmd(table db.DBTable, rowID string) tea.Cmd {
 	}
 }
 
-// DatabaseFormDialogSetCmd sets the database form dialog model.
+// DatabaseFormDialogSetCmd creates a command to set the database form dialog model.
 func DatabaseFormDialogSetCmd(dialog *DatabaseFormDialogModel) tea.Cmd {
 	return func() tea.Msg { return DatabaseFormDialogSetMsg{Dialog: dialog} }
 }
 
-// DatabaseFormDialogActiveSetCmd sets the database form dialog active state.
+// DatabaseFormDialogActiveSetCmd creates a command to set the database form dialog active state.
 func DatabaseFormDialogActiveSetCmd(active bool) tea.Cmd {
 	return func() tea.Msg { return DatabaseFormDialogActiveSetMsg{Active: active} }
 }

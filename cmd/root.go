@@ -32,6 +32,7 @@ func init() {
 	rootCmd.AddCommand(backupCmd)
 }
 
+// Execute runs the root CLI command and returns any error encountered.
 func Execute() error {
 	return rootCmd.Execute()
 }

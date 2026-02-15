@@ -10,12 +10,14 @@ import (
 	"github.com/muesli/reflow/truncate"
 )
 
+// Exported variables for status bar rendering.
 var ellipsis string = "..."
 var statusBarNoteStyle = lipgloss.NewStyle().
 	Foreground(lipgloss.Color("#ffffff")).
 	Background(lipgloss.Color("#000000")).
 	Render
 
+// RenderStatusTable renders a debug table with application status information.
 func (m Model) RenderStatusTable() string {
 	doc := strings.Builder{}
 	var selected string
@@ -56,6 +58,7 @@ func (m Model) RenderStatusTable() string {
 	return doc.String()
 }
 
+// getMenuLabels returns a formatted string of menu labels and indices.
 func getMenuLabels(m []Page) string {
 	var labels string
 	if m != nil {
@@ -70,6 +73,7 @@ func getMenuLabels(m []Page) string {
 
 }
 
+// StatusBarView appends formatted status bar content to a strings.Builder.
 func (m Model) StatusBarView(b *strings.Builder) {
 	const (
 		minPercent               float64 = 0.0

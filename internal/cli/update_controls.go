@@ -14,14 +14,17 @@ import (
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
+// ControlUpdate signals that page-specific key handling should proceed.
 type ControlUpdate struct{}
 
+// NewControlUpdate returns a command that creates a ControlUpdate message.
 func NewControlUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return ControlUpdate{}
 	}
 }
 
+// PageSpecificMsgHandlers routes keyboard events to the appropriate page handler.
 func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd) {
 
 	switch m.Page.Index {
@@ -74,6 +77,7 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 	return m, nil
 }
 
+// BasicControls handles keyboard navigation for simple menu-based pages.
 func (m Model) BasicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -167,6 +171,7 @@ func (m Model) TablePageControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+// BasicCMSControls handles keyboard navigation for the CMS main page with 3-panel layout.
 func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -301,6 +306,7 @@ func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 //   - TreePanel (left): Navigate datatypes list, 'n' creates new datatype
 //   - ContentPanel (center): Navigate fields list, 'n' creates new field
 //   - RoutePanel (right): Actions panel (info only)
+// DatatypesControls handles keyboard navigation for the datatypes page.
 func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -385,7 +391,7 @@ func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsUp handles up navigation based on panel focus
+// datatypesControlsUp handles upward cursor movement based on active panel.
 func (m Model) datatypesControlsUp() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -409,7 +415,7 @@ func (m Model) datatypesControlsUp() (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsDown handles down navigation based on panel focus
+// datatypesControlsDown handles downward cursor movement based on active panel.
 func (m Model) datatypesControlsDown() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -434,7 +440,7 @@ func (m Model) datatypesControlsDown() (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsNew handles 'n' key based on panel focus
+// datatypesControlsNew handles creation key based on active panel.
 func (m Model) datatypesControlsNew() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -449,7 +455,7 @@ func (m Model) datatypesControlsNew() (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsEdit handles 'e' key based on panel focus
+// datatypesControlsEdit handles edit key based on active panel.
 func (m Model) datatypesControlsEdit() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -467,7 +473,7 @@ func (m Model) datatypesControlsEdit() (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsDelete handles 'd' key based on panel focus
+// datatypesControlsDelete handles deletion key based on active panel.
 func (m Model) datatypesControlsDelete() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -498,7 +504,7 @@ func (m Model) datatypesControlsDelete() (Model, tea.Cmd) {
 	return m, nil
 }
 
-// datatypesControlsSelect handles enter key based on panel focus
+// datatypesControlsSelect handles selection key based on active panel.
 func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
 	switch m.PanelFocus {
 	case tui.TreePanel:
@@ -832,7 +838,7 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// contentBrowserCursorUpCmd returns CursorUpCmd + LoadContentFieldsCmd for the node at cursor-1.
+// contentBrowserCursorUpCmd returns a command to move cursor up and load fields for the previous node.
 func contentBrowserCursorUpCmd(m Model) tea.Cmd {
 	newCursor := m.Cursor - 1
 	node := m.Root.NodeAtIndex(newCursor)
@@ -842,7 +848,7 @@ func contentBrowserCursorUpCmd(m Model) tea.Cmd {
 	return CursorUpCmd()
 }
 
-// contentBrowserCursorDownCmd returns CursorDownCmd + LoadContentFieldsCmd for the node at cursor+1.
+// contentBrowserCursorDownCmd returns a command to move cursor down and load fields for the next node.
 func contentBrowserCursorDownCmd(m Model) tea.Cmd {
 	newCursor := m.Cursor + 1
 	node := m.Root.NodeAtIndex(newCursor)
@@ -929,7 +935,7 @@ func (m Model) contentFieldDelete() (Model, tea.Cmd) {
 	return m, ShowDeleteContentFieldDialogCmd(cf, node.Instance.ContentDataID, m.PageRouteId, node.Instance.DatatypeID)
 }
 
-// contentFieldReorderUp swaps the current field with the one above.
+// contentFieldReorderUp moves the current field up one position in the field list.
 func (m Model) contentFieldReorderUp() (Model, tea.Cmd) {
 	if m.FieldCursor <= 0 || len(m.SelectedContentFields) < 2 {
 		return m, nil
@@ -949,7 +955,7 @@ func (m Model) contentFieldReorderUp() (Model, tea.Cmd) {
 	)
 }
 
-// contentFieldReorderDown swaps the current field with the one below.
+// contentFieldReorderDown moves the current field down one position in the field list.
 func (m Model) contentFieldReorderDown() (Model, tea.Cmd) {
 	if m.FieldCursor >= len(m.SelectedContentFields)-1 || len(m.SelectedContentFields) < 2 {
 		return m, nil
@@ -967,7 +973,7 @@ func (m Model) contentFieldReorderDown() (Model, tea.Cmd) {
 	)
 }
 
-// MediaControls handles keyboard navigation for the media library page.
+// MediaControls handles keyboard navigation and actions for the media library page.
 func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -1036,7 +1042,7 @@ func (m Model) MediaControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// UsersAdminControls handles keyboard navigation for the users admin page.
+// UsersAdminControls handles keyboard navigation and actions for the users admin page.
 func (m Model) UsersAdminControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -1097,6 +1103,7 @@ func (m Model) UsersAdminControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+// BasicContentControls handles keyboard navigation for content-related pages.
 func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -1143,6 +1150,7 @@ func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 }
 
 
+// BasicDynamicControls handles keyboard navigation for dynamic pages.
 func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -1187,6 +1195,7 @@ func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	return m, nil
 }
+// SelectTable handles keyboard navigation for selecting a database table.
 func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -1219,6 +1228,7 @@ func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// TableNavigationControls handles keyboard navigation for browsing table rows.
 func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -1290,6 +1300,7 @@ func (m Model) TableNavigationControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// UpdateDatabaseDelete handles keyboard events for confirming a record deletion.
 func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := msg.(type) {
@@ -1324,6 +1335,7 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, pcmd)
 	return m, tea.Batch(cmds...)
 }
+// DefineDatatypeControls handles keyboard events for the datatype definition form.
 func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	cmds = append(cmds, FocusSetCmd(FORMFOCUS))
@@ -1362,6 +1374,7 @@ func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// DevelopmentInterface handles keyboard events for the development/debug page.
 func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	switch msg := message.(type) {
@@ -1388,6 +1401,7 @@ func DevelopmentInterface(m Model, message tea.Msg) (Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// ActionsControls handles keyboard navigation for the actions menu page.
 func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 	actions := ActionsMenu()
 	switch msg := msg.(type) {
@@ -1439,6 +1453,7 @@ func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
+// ConfigControls handles viewport scrolling for the configuration display page.
 func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
 	newModel := m
 

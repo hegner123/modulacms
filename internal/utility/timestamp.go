@@ -15,10 +15,12 @@ const (
 	DbPsql   DbDriverType = "postgres"
 )
 
+// TimestampI returns the current Unix timestamp as an integer.
 func TimestampI() int64 {
 	return time.Now().Unix()
 }
 
+// TimestampS returns the current Unix timestamp as a string.
 func TimestampS() string {
 	return strconv.FormatInt(time.Now().Unix(), 10)
 }
@@ -114,6 +116,7 @@ func ParseDBTimestampString(timestamp string, dbDriver string) (*time.Time, erro
 	}
 }
 
+// ParseTimeReadable parses an RFC3339 timestamp string and returns a time.Time pointer, or nil on error.
 func ParseTimeReadable(s string) *time.Time {
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
@@ -122,12 +125,14 @@ func ParseTimeReadable(s string) *time.Time {
 	return &t
 }
 
+// TokenExpiredTime returns the expiration time for a token (168 hours from now) as both string and int64 Unix timestamps.
 func TokenExpiredTime() (string, int64) {
 	now := time.Now()
 	t := now.Add(168 * time.Hour).Unix()
 	return strconv.FormatInt(t, 10), t
 }
 
+// TimestampLessThan returns true if the given timestamp string is less than the current time.
 func TimestampLessThan(a string) bool {
 	aInt, err := strconv.ParseInt(a, 10, 64)
 	if err != nil {

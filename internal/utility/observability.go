@@ -151,10 +151,12 @@ func (c *ObservabilityClient) SendError(err error, context map[string]any) error
 // ConsoleProvider is a simple provider that logs metrics to console (useful for development)
 type ConsoleProvider struct{}
 
+// NewConsoleProvider creates a new console observability provider.
 func NewConsoleProvider() *ConsoleProvider {
 	return &ConsoleProvider{}
 }
 
+// SendMetric logs a metric to the console.
 func (p *ConsoleProvider) SendMetric(metric Metric) error {
 	DefaultLogger.Info("METRIC",
 		"name", metric.Name,
@@ -165,15 +167,18 @@ func (p *ConsoleProvider) SendMetric(metric Metric) error {
 	return nil
 }
 
+// SendError logs an error event to the console.
 func (p *ConsoleProvider) SendError(err error, context map[string]any) error {
 	DefaultLogger.Error("OBSERVABILITY ERROR", err, "context", context)
 	return nil
 }
 
+// Flush is a no-op for the console provider.
 func (p *ConsoleProvider) Flush(timeout time.Duration) error {
 	return nil
 }
 
+// Close is a no-op for the console provider.
 func (p *ConsoleProvider) Close() error {
 	return nil
 }
@@ -185,6 +190,7 @@ type SentryProvider struct {
 	// In production: add sentry.Client here
 }
 
+// NewSentryProvider creates a new Sentry observability provider.
 func NewSentryProvider(config ObservabilityConfig) (*SentryProvider, error) {
 	// In production, initialize Sentry SDK here:
 	// err := sentry.Init(sentry.ClientOptions{
@@ -202,6 +208,7 @@ func NewSentryProvider(config ObservabilityConfig) (*SentryProvider, error) {
 	}, nil
 }
 
+// SendMetric sends a metric to Sentry.
 func (p *SentryProvider) SendMetric(metric Metric) error {
 	// In production, send to Sentry:
 	// sentry.CaptureMessage(fmt.Sprintf("%s: %f", metric.Name, metric.Value))
@@ -218,6 +225,7 @@ func (p *SentryProvider) SendMetric(metric Metric) error {
 	return nil
 }
 
+// SendError sends an error event to Sentry.
 func (p *SentryProvider) SendError(err error, context map[string]any) error {
 	// In production:
 	// sentry.WithScope(func(scope *sentry.Scope) {
@@ -231,18 +239,20 @@ func (p *SentryProvider) SendError(err error, context map[string]any) error {
 	return nil
 }
 
+// Flush flushes all pending data to Sentry.
 func (p *SentryProvider) Flush(timeout time.Duration) error {
 	// In production:
 	// return sentry.Flush(timeout)
 	return nil
 }
 
+// Close closes the Sentry provider connection.
 func (p *SentryProvider) Close() error {
 	// In production: cleanup Sentry client
 	return nil
 }
 
-// Helper function to capture errors with context
+// CaptureError sends an error to the global observability provider with optional context.
 func CaptureError(err error, context map[string]any) {
 	// This would be called throughout the app to send errors to observability
 	if GlobalObservability != nil {

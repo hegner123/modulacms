@@ -1,3 +1,5 @@
+// Package install provides the interactive installation workflow for ModulaCMS,
+// including database setup, configuration file generation, and validation of required services.
 package install
 
 import (
@@ -11,6 +13,7 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// maxRetries defines the maximum number of installation attempts before failure.
 const maxRetries = 3
 
 // RunInstall runs the interactive installation process with retry support.

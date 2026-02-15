@@ -1,3 +1,7 @@
+// Package backup provides backup and restore functionality for ModulaCMS databases.
+// It supports SQLite, MySQL, and PostgreSQL, and can include additional paths
+// in backup archives. Backups are created as zip files containing database dumps
+// and metadata.
 package backup
 
 import (
@@ -37,6 +41,7 @@ type BackupManifest struct {
 	DbName    string `json:"db_name"`
 }
 
+// TimestampBackupName returns a backup filename with the given output directory and timestamp.
 func TimestampBackupName(output string, timestamp string) string {
 	return fmt.Sprintf("%s_%s.zip", output, timestamp)
 }

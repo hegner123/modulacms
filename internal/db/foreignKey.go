@@ -7,6 +7,7 @@ import (
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
+// SqliteForeignKeyQueryRow represents a row from SQLite's PRAGMA foreign_key_list query.
 type SqliteForeignKeyQueryRow struct {
 	id        int
 	seq       int
@@ -18,6 +19,7 @@ type SqliteForeignKeyQueryRow struct {
 	match     string
 }
 
+// Foreign key query constants for each database driver.
 const (
 	sqliteQuery = "PRAGMA foreign_key_list('%s');"
 	mysqlQuery  = `
@@ -58,6 +60,7 @@ const (
         AND kcu.column_name = '%s';`
 )
 
+// GetForeignKeys retrieves foreign key information for a table from SQLite.
 func (d Database) GetForeignKeys(args []string) *sql.Rows {
 	if len(args) != 1 {
 		return nil
@@ -74,6 +77,7 @@ func (d Database) GetForeignKeys(args []string) *sql.Rows {
 	return s
 }
 
+// GetForeignKeys retrieves foreign key information for a table from MySQL.
 func (d MysqlDatabase) GetForeignKeys(args []string) *sql.Rows {
 	if len(args) != 3 {
 		return nil
@@ -91,6 +95,7 @@ func (d MysqlDatabase) GetForeignKeys(args []string) *sql.Rows {
 
 }
 
+// GetForeignKeys retrieves foreign key information for a table from PostgreSQL.
 func (d PsqlDatabase) GetForeignKeys(args []string) *sql.Rows {
 	if len(args) != 3 {
 		return nil
@@ -108,6 +113,7 @@ func (d PsqlDatabase) GetForeignKeys(args []string) *sql.Rows {
 
 }
 
+// ScanForeignKeyQueryRows scans foreign key query results from SQLite into structs.
 func (d Database) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow {
 	row := SqliteForeignKeyQueryRow{}
 	foreignKeys := make([]SqliteForeignKeyQueryRow, 0)
@@ -124,6 +130,7 @@ func (d Database) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQuer
 
 }
 
+// SelectColumnFromTable retrieves and logs column data from a table.
 func (d Database) SelectColumnFromTable(table string, column string) {
 	t := StringDBTable(table)
 	s, err := GenericList(t, d)
@@ -135,6 +142,7 @@ func (d Database) SelectColumnFromTable(table string, column string) {
 	}
 }
 
+// ScanForeignKeyQueryRows scans foreign key query results from MySQL into structs.
 func (d MysqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow {
 	row := SqliteForeignKeyQueryRow{}
 	foreignKeys := make([]SqliteForeignKeyQueryRow, 0)
@@ -152,6 +160,7 @@ func (d MysqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKe
 
 }
 
+// SelectColumnFromTable retrieves and logs column data from a table.
 func (d MysqlDatabase) SelectColumnFromTable(table string, column string) {
 	t := StringDBTable(table)
 	s, err := GenericList(t, d)
@@ -163,6 +172,7 @@ func (d MysqlDatabase) SelectColumnFromTable(table string, column string) {
 	}
 }
 
+// ScanForeignKeyQueryRows scans foreign key query results from PostgreSQL into structs.
 func (d PsqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKeyQueryRow {
 	row := SqliteForeignKeyQueryRow{}
 	foreignKeys := make([]SqliteForeignKeyQueryRow, 0)
@@ -180,6 +190,7 @@ func (d PsqlDatabase) ScanForeignKeyQueryRows(rows *sql.Rows) []SqliteForeignKey
 
 }
 
+// SelectColumnFromTable retrieves and logs column data from a table.
 func (d PsqlDatabase) SelectColumnFromTable(table string, column string) {
 	t := StringDBTable(table)
 	s, err := GenericList(t, d)

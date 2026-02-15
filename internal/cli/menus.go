@@ -7,6 +7,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
+// HomepageMenuInit initializes the menu for the homepage with main navigation pages.
 func (m Model) HomepageMenuInit() []Page {
 	HomepageMenu := []Page{
 		m.PageMap[CMSPAGE],
@@ -21,6 +22,7 @@ func (m Model) HomepageMenuInit() []Page {
 	return HomepageMenu
 }
 
+// CmsMenuInit initializes the menu for CMS navigation with content management pages.
 func (m Model) CmsMenuInit() []Page {
 	CmsMenu := []Page{
 		m.PageMap[CONTENT],
@@ -32,6 +34,7 @@ func (m Model) CmsMenuInit() []Page {
 	return CmsMenu
 }
 
+// AdminCmsMenuInit initializes the menu for admin CMS navigation.
 func (m Model) AdminCmsMenuInit() []Page {
 	AdminCmsMenu := []Page{
 		m.PageMap[ADMINCONTENT],
@@ -41,6 +44,7 @@ func (m Model) AdminCmsMenuInit() []Page {
 	return AdminCmsMenu
 }
 
+// ContentMenuInit initializes the menu for content navigation.
 func (m Model) ContentMenuInit() []Page {
 	ContentMenu := []Page{
 		m.PageMap[ROUTES],
@@ -48,6 +52,7 @@ func (m Model) ContentMenuInit() []Page {
 	return ContentMenu
 }
 
+// DatabaseMenuInit initializes the menu for database operations navigation.
 func (m Model) DatabaseMenuInit() []Page {
 	DatabaseMenu := []Page{
 		m.PageMap[CREATEPAGE],
@@ -58,6 +63,7 @@ func (m Model) DatabaseMenuInit() []Page {
 	return DatabaseMenu
 }
 
+// BuildDatatypeMenu builds a menu of ROOT datatype pages from the provided datatypes.
 func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []Page {
 	out := make([]Page, 0)
 	for _, item := range datatypes {
@@ -69,6 +75,7 @@ func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []Page {
 	return out
 }
 
+// BuildContentDataMenu builds a menu of content data pages that are children of the specified root.
 func (m Model) BuildContentDataMenu(contentData []db.ContentData, root types.ContentID) []Page {
 	out := make([]Page, 0)
 	for _, item := range contentData {

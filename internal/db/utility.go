@@ -12,10 +12,13 @@ import (
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
+// ColumnNameType maps column names to their data types.
 type ColumnNameType map[string]string
+
+// ColumnIndexName maps column indices to their names.
 type ColumnIndexName map[int]string
 
-
+// CopyDb creates a test database copy from a SQL dump file.
 func CopyDb(dbName string, useDefault bool) (string, error) {
 	times := utility.TimestampS()
 	backup := "../../testdb/backups/"
@@ -47,7 +50,7 @@ func CopyDb(dbName string, useDefault bool) (string, error) {
 	return dstDbName, nil
 }
 
-// GetTableColumns retrieves the columns and their types for a given table.
+// GetTableColumns retrieves column names and types for a table using PRAGMA table_info.
 func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (ColumnNameType, ColumnIndexName, error) {
 	// Optionally: validate tableName here to avoid SQL injection.
 	if tableName == "" {
@@ -97,6 +100,7 @@ func GetTableColumns(ctx context.Context, db *sql.DB, tableName string) (ColumnN
 	return columnsNT, columnsIN, nil
 }
 
+// GetColumnRowsString retrieves all values from a specific column as strings.
 func GetColumnRowsString(dbc *sql.DB, ctx context.Context, tableName string, columnName string) ([]string, error) {
 	// Optionally: validate tableName here to avoid SQL injection.
 	if tableName == "" {

@@ -5,6 +5,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+// GetSuggestionsString retrieves column value suggestions from the database.
 func (m Model) GetSuggestionsString(c *config.Config, column string) []string {
 	d := db.ConfigDB(*c)
 	con, ctx, _ := d.GetConnection()

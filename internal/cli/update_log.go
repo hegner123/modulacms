@@ -7,6 +7,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// UpdateLog handles log messages and database error logging.
 func (m Model) UpdateLog(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case LogModelMsg:

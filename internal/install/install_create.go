@@ -62,6 +62,7 @@ func CreateDbSimple(path string, c *config.Config, adminHash string) error {
 	return nil
 }
 
+// CreateDefaultConfig writes a default configuration file to the given path.
 func CreateDefaultConfig(path string) error {
 	var file *os.File
 	c := config.DefaultConfig().JSON()

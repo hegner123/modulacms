@@ -8,6 +8,7 @@ import (
 	install "github.com/hegner123/modulacms/internal/install"
 )
 
+// StatusBlock renders a configuration status block displaying admin site, client site, SSH, bucket, and database information.
 func StatusBlock(c *config.Config) string {
 	verbose := false
 	bucketStatus, _ := install.CheckBucket(&verbose, c)

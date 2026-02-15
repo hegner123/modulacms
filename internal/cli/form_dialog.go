@@ -17,6 +17,7 @@ import (
 // FormDialogAction identifies the type of form dialog
 type FormDialogAction string
 
+// FormDialogAction constants identify dialog types for operations across entities.
 const (
 	FORMDIALOGCREATEDATATYPE         FormDialogAction = "create_datatype"
 	FORMDIALOGEDITDATATYPE           FormDialogAction = "edit_datatype"
@@ -44,7 +45,7 @@ const (
 	FORMDIALOGDBUPDATE               FormDialogAction = "db_update"
 )
 
-// FormDialogField indices for focus navigation
+// FormDialogField constants define focus indices for dialog fields.
 const (
 	FormDialogFieldLabel = iota
 	FormDialogFieldType
@@ -379,6 +380,7 @@ func (d *FormDialogModel) updateChildDatatypeSelection(msg tea.KeyMsg) (FormDial
 	return *d, nil
 }
 
+// focusNext advances focus to the next focusable element, wrapping at the end.
 func (d *FormDialogModel) focusNext() {
 	d.focusIndex++
 	// Skip parent field if no parent options
@@ -391,6 +393,7 @@ func (d *FormDialogModel) focusNext() {
 	d.updateFocus()
 }
 
+// focusPrev moves focus to the previous focusable element, wrapping at the start.
 func (d *FormDialogModel) focusPrev() {
 	d.focusIndex--
 	// Skip parent field if no parent options
@@ -403,6 +406,7 @@ func (d *FormDialogModel) focusPrev() {
 	d.updateFocus()
 }
 
+// updateFocus applies focus styling to the currently focused element.
 func (d *FormDialogModel) updateFocus() {
 	d.LabelInput.Blur()
 	if !d.HasTypeSelector() {
@@ -558,6 +562,7 @@ func (d FormDialogModel) renderChildDatatypeSelection(windowWidth, windowHeight 
 	return dialogBox
 }
 
+// renderCancelButton returns the styled cancel button view.
 func (d FormDialogModel) renderCancelButton() string {
 	style := d.cancelButtonStyle
 	if d.focusIndex == FormDialogButtonCancel {
@@ -569,6 +574,7 @@ func (d FormDialogModel) renderCancelButton() string {
 	return style.Render("Cancel")
 }
 
+// renderConfirmButton returns the styled confirm button view.
 func (d FormDialogModel) renderConfirmButton() string {
 	style := d.confirmButtonStyle
 	if d.focusIndex == FormDialogButtonConfirm {
@@ -604,7 +610,7 @@ func FormDialogOverlay(content string, dialog FormDialogModel, width, height int
 	})
 }
 
-// Form dialog messages
+// FormDialogAcceptMsg carries form dialog acceptance data.
 type FormDialogAcceptMsg struct {
 	Action   FormDialogAction
 	EntityID string // ID of entity being edited (empty for create)
@@ -613,15 +619,17 @@ type FormDialogAcceptMsg struct {
 	ParentID string
 }
 
+// FormDialogCancelMsg is sent when a form dialog is cancelled.
 type FormDialogCancelMsg struct{}
 
+// ShowFormDialogMsg triggers display of a form dialog.
 type ShowFormDialogMsg struct {
 	Action  FormDialogAction
 	Title   string
 	Parents []db.Datatypes
 }
 
-// Commands
+// ShowFormDialogCmd creates a command to display a form dialog.
 func ShowFormDialogCmd(action FormDialogAction, title string, parents []db.Datatypes) tea.Cmd {
 	return func() tea.Msg {
 		return ShowFormDialogMsg{
@@ -670,14 +678,17 @@ func FormDialogSetCmd(dialog *FormDialogModel) tea.Cmd {
 	}
 }
 
+// FormDialogSetMsg carries a form dialog model to update.
 type FormDialogSetMsg struct {
 	Dialog *FormDialogModel
 }
 
+// FormDialogActiveSetMsg carries the active state for a form dialog.
 type FormDialogActiveSetMsg struct {
 	Active bool
 }
 
+// FormDialogActiveSetCmd creates a command to set the form dialog active state.
 func FormDialogActiveSetCmd(active bool) tea.Cmd {
 	return func() tea.Msg {
 		return FormDialogActiveSetMsg{Active: active}
@@ -1033,7 +1044,7 @@ func NewMoveContentDialog(title string, sourceContentID string, routeID string, 
 // ContentFormDialogModel - Dynamic content fields dialog
 // =============================================================================
 
-// ContentFieldInput represents a single field input in the content form
+// ContentFieldInput represents a single field input in the content form.
 type ContentFieldInput struct {
 	FieldID types.FieldID
 	Label   string
@@ -1041,7 +1052,7 @@ type ContentFieldInput struct {
 	Input   textinput.Model
 }
 
-// ContentFormDialogModel represents a form dialog with dynamic content fields
+// ContentFormDialogModel represents a form dialog with dynamic content fields.
 type ContentFormDialogModel struct {
 	dialogStyles
 
@@ -1169,6 +1180,7 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 	return *d, nil
 }
 
+// focusNext advances focus to the next focusable element in the content form, wrapping at the end.
 func (d *ContentFormDialogModel) focusNext() {
 	d.focusIndex++
 	if d.focusIndex > d.ButtonConfirmIndex() {
@@ -1177,6 +1189,7 @@ func (d *ContentFormDialogModel) focusNext() {
 	d.updateFocus()
 }
 
+// focusPrev moves focus to the previous focusable element in the content form, wrapping at the start.
 func (d *ContentFormDialogModel) focusPrev() {
 	d.focusIndex--
 	if d.focusIndex < 0 {
@@ -1185,6 +1198,7 @@ func (d *ContentFormDialogModel) focusPrev() {
 	d.updateFocus()
 }
 
+// updateFocus applies focus styling to the currently focused field in the content form.
 func (d *ContentFormDialogModel) updateFocus() {
 	// Blur all fields
 	for i := range d.Fields {
@@ -1232,6 +1246,7 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 	return dialogBox
 }
 
+// renderCancelButton returns the styled cancel button view for the content form.
 func (d ContentFormDialogModel) renderCancelButton() string {
 	style := d.cancelButtonStyle
 	if d.focusIndex == d.ButtonCancelIndex() {
@@ -1243,6 +1258,7 @@ func (d ContentFormDialogModel) renderCancelButton() string {
 	return style.Render("Cancel")
 }
 
+// renderConfirmButton returns the styled confirm button view for the content form.
 func (d ContentFormDialogModel) renderConfirmButton() string {
 	style := d.confirmButtonStyle
 	if d.focusIndex == d.ButtonConfirmIndex() {
@@ -1278,7 +1294,7 @@ func ContentFormDialogOverlay(content string, dialog ContentFormDialogModel, wid
 	})
 }
 
-// Content form dialog messages
+// ContentFormDialogAcceptMsg carries content form dialog acceptance data.
 type ContentFormDialogAcceptMsg struct {
 	Action      FormDialogAction
 	DatatypeID  types.DatatypeID
@@ -1288,8 +1304,10 @@ type ContentFormDialogAcceptMsg struct {
 	FieldValues map[types.FieldID]string
 }
 
+// ContentFormDialogCancelMsg is sent when a content form dialog is cancelled.
 type ContentFormDialogCancelMsg struct{}
 
+// ShowContentFormDialogMsg triggers display of a content form dialog.
 type ShowContentFormDialogMsg struct {
 	Action     FormDialogAction
 	Title      string
@@ -1299,7 +1317,7 @@ type ShowContentFormDialogMsg struct {
 	Fields     []db.Fields
 }
 
-// Commands
+// ShowContentFormDialogCmd creates a command to display a content form dialog.
 func ShowContentFormDialogCmd(action FormDialogAction, title string, datatypeID types.DatatypeID, routeID types.RouteID, parentID types.NullableContentID, fields []db.Fields) tea.Cmd {
 	return func() tea.Msg {
 		return ShowContentFormDialogMsg{
@@ -1313,27 +1331,31 @@ func ShowContentFormDialogCmd(action FormDialogAction, title string, datatypeID 
 	}
 }
 
+// ContentFormDialogSetCmd creates a command to set the content form dialog model.
 func ContentFormDialogSetCmd(dialog *ContentFormDialogModel) tea.Cmd {
 	return func() tea.Msg {
 		return ContentFormDialogSetMsg{Dialog: dialog}
 	}
 }
 
+// ContentFormDialogSetMsg carries a content form dialog model to update.
 type ContentFormDialogSetMsg struct {
 	Dialog *ContentFormDialogModel
 }
 
+// ContentFormDialogActiveSetMsg carries the active state for a content form dialog.
 type ContentFormDialogActiveSetMsg struct {
 	Active bool
 }
 
+// ContentFormDialogActiveSetCmd creates a command to set the content form dialog active state.
 func ContentFormDialogActiveSetCmd(active bool) tea.Cmd {
 	return func() tea.Msg {
 		return ContentFormDialogActiveSetMsg{Active: active}
 	}
 }
 
-// CreateContentFromDialogRequestMsg is sent to create content from the dialog
+// CreateContentFromDialogRequestMsg triggers content creation from the dialog.
 type CreateContentFromDialogRequestMsg struct {
 	DatatypeID  types.DatatypeID
 	RouteID     types.RouteID
@@ -1341,7 +1363,7 @@ type CreateContentFromDialogRequestMsg struct {
 	FieldValues map[types.FieldID]string
 }
 
-// CreateContentFromDialogCmd creates a command to create content from dialog values
+// CreateContentFromDialogCmd creates a command to create content from dialog values.
 func CreateContentFromDialogCmd(datatypeID types.DatatypeID, routeID types.RouteID, parentID types.NullableContentID, fieldValues map[types.FieldID]string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateContentFromDialogRequestMsg{
@@ -1353,7 +1375,7 @@ func CreateContentFromDialogCmd(datatypeID types.DatatypeID, routeID types.Route
 	}
 }
 
-// ContentCreatedFromDialogMsg is sent after content is successfully created
+// ContentCreatedFromDialogMsg is sent after content is successfully created from dialog.
 type ContentCreatedFromDialogMsg struct {
 	ContentID  types.ContentID
 	DatatypeID types.DatatypeID
@@ -1361,7 +1383,7 @@ type ContentCreatedFromDialogMsg struct {
 	FieldCount int
 }
 
-// FetchContentFieldsMsg triggers fetching fields for a datatype to show the content form
+// FetchContentFieldsMsg triggers fetching fields for a datatype to show the content form.
 type FetchContentFieldsMsg struct {
 	DatatypeID types.DatatypeID
 	RouteID    types.RouteID
@@ -1369,7 +1391,7 @@ type FetchContentFieldsMsg struct {
 	Title      string
 }
 
-// FetchContentFieldsCmd creates a command to fetch fields for content form
+// FetchContentFieldsCmd creates a command to fetch fields for content form.
 func FetchContentFieldsCmd(datatypeID types.DatatypeID, routeID types.RouteID, parentID types.NullableContentID, title string) tea.Cmd {
 	return func() tea.Msg {
 		return FetchContentFieldsMsg{
@@ -1385,7 +1407,7 @@ func FetchContentFieldsCmd(datatypeID types.DatatypeID, routeID types.RouteID, p
 // EDIT CONTENT FORM DIALOG
 // =============================================================================
 
-// ExistingContentField represents a field with its current value for editing
+// ExistingContentField represents a field with its current value for editing.
 type ExistingContentField struct {
 	ContentFieldID types.ContentFieldID
 	FieldID        types.FieldID
@@ -1428,7 +1450,7 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 	}
 }
 
-// ShowEditContentFormDialogMsg is the message for showing an edit content form dialog
+// ShowEditContentFormDialogMsg triggers display of an edit content form dialog.
 type ShowEditContentFormDialogMsg struct {
 	Title          string
 	ContentID      types.ContentID
@@ -1437,7 +1459,7 @@ type ShowEditContentFormDialogMsg struct {
 	ExistingFields []ExistingContentField
 }
 
-// ShowEditContentFormDialogCmd shows a content form dialog pre-populated for editing
+// ShowEditContentFormDialogCmd creates a command to show a content form dialog pre-populated for editing.
 func ShowEditContentFormDialogCmd(title string, contentID types.ContentID, datatypeID types.DatatypeID, routeID types.RouteID, existingFields []ExistingContentField) tea.Cmd {
 	return func() tea.Msg {
 		return ShowEditContentFormDialogMsg{
@@ -1450,7 +1472,7 @@ func ShowEditContentFormDialogCmd(title string, contentID types.ContentID, datat
 	}
 }
 
-// FetchContentForEditMsg triggers fetching content fields for editing
+// FetchContentForEditMsg triggers fetching content fields for editing.
 type FetchContentForEditMsg struct {
 	ContentID  types.ContentID
 	DatatypeID types.DatatypeID
@@ -1458,7 +1480,7 @@ type FetchContentForEditMsg struct {
 	Title      string
 }
 
-// FetchContentForEditCmd creates a command to fetch content fields for editing
+// FetchContentForEditCmd creates a command to fetch content fields for editing.
 func FetchContentForEditCmd(contentID types.ContentID, datatypeID types.DatatypeID, routeID types.RouteID, title string) tea.Cmd {
 	return func() tea.Msg {
 		return FetchContentForEditMsg{
@@ -1470,7 +1492,7 @@ func FetchContentForEditCmd(contentID types.ContentID, datatypeID types.Datatype
 	}
 }
 
-// UpdateContentFromDialogRequestMsg is sent to update content from the dialog
+// UpdateContentFromDialogRequestMsg triggers content update from the dialog.
 type UpdateContentFromDialogRequestMsg struct {
 	ContentID   types.ContentID
 	DatatypeID  types.DatatypeID
@@ -1478,7 +1500,7 @@ type UpdateContentFromDialogRequestMsg struct {
 	FieldValues map[types.FieldID]string
 }
 
-// UpdateContentFromDialogCmd creates a command to update content from dialog values
+// UpdateContentFromDialogCmd creates a command to update content from dialog values.
 func UpdateContentFromDialogCmd(contentID types.ContentID, datatypeID types.DatatypeID, routeID types.RouteID, fieldValues map[types.FieldID]string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateContentFromDialogRequestMsg{
@@ -1490,7 +1512,7 @@ func UpdateContentFromDialogCmd(contentID types.ContentID, datatypeID types.Data
 	}
 }
 
-// ContentUpdatedFromDialogMsg is sent after content is successfully updated
+// ContentUpdatedFromDialogMsg is sent after content is successfully updated from dialog.
 type ContentUpdatedFromDialogMsg struct {
 	ContentID    types.ContentID
 	DatatypeID   types.DatatypeID
@@ -1502,7 +1524,7 @@ type ContentUpdatedFromDialogMsg struct {
 // USER FORM DIALOG
 // =============================================================================
 
-// UserFormDialogModel represents a form dialog for user CRUD operations
+// UserFormDialogModel represents a form dialog for user CRUD operations.
 type UserFormDialogModel struct {
 	dialogStyles
 
@@ -1649,16 +1671,19 @@ func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd)
 	return *d, cmd
 }
 
+// userFormFocusNext advances focus to the next focusable element in the user form, wrapping at the end.
 func (d *UserFormDialogModel) userFormFocusNext() {
 	d.focusIndex = (d.focusIndex + 1) % 6
 	d.userFormUpdateFocus()
 }
 
+// userFormFocusPrev moves focus to the previous focusable element in the user form, wrapping at the start.
 func (d *UserFormDialogModel) userFormFocusPrev() {
 	d.focusIndex = (d.focusIndex + 5) % 6
 	d.userFormUpdateFocus()
 }
 
+// userFormUpdateFocus applies focus styling to the currently focused field in the user form.
 func (d *UserFormDialogModel) userFormUpdateFocus() {
 	d.UsernameInput.Blur()
 	d.NameInput.Blur()
@@ -1726,7 +1751,7 @@ func (d UserFormDialogModel) Render(windowWidth, windowHeight int) string {
 	return d.borderStyle.Width(contentWidth).Render(content)
 }
 
-// UserFormDialogAcceptMsg is sent when the user form dialog is confirmed
+// UserFormDialogAcceptMsg is sent when the user form dialog is confirmed.
 type UserFormDialogAcceptMsg struct {
 	Action   FormDialogAction
 	EntityID string
@@ -1736,40 +1761,40 @@ type UserFormDialogAcceptMsg struct {
 	Role     string
 }
 
-// UserFormDialogCancelMsg is sent when the user form dialog is cancelled
+// UserFormDialogCancelMsg is sent when the user form dialog is cancelled.
 type UserFormDialogCancelMsg struct{}
 
-// ShowUserFormDialogMsg triggers showing a user form dialog
+// ShowUserFormDialogMsg triggers showing a user form dialog.
 type ShowUserFormDialogMsg struct {
 	Title string
 }
 
-// ShowEditUserDialogMsg triggers showing an edit user dialog
+// ShowEditUserDialogMsg triggers showing an edit user dialog.
 type ShowEditUserDialogMsg struct {
 	User db.Users
 }
 
-// UserFormDialogSetCmd sets the user form dialog model
+// UserFormDialogSetCmd creates a command to set the user form dialog model.
 func UserFormDialogSetCmd(dialog *UserFormDialogModel) tea.Cmd {
 	return func() tea.Msg { return UserFormDialogSetMsg{Dialog: dialog} }
 }
 
-// UserFormDialogActiveSetCmd sets the user form dialog active state
+// UserFormDialogActiveSetCmd creates a command to set the user form dialog active state.
 func UserFormDialogActiveSetCmd(active bool) tea.Cmd {
 	return func() tea.Msg { return UserFormDialogActiveSetMsg{Active: active} }
 }
 
-// UserFormDialogSetMsg carries the dialog model
+// UserFormDialogSetMsg carries the dialog model to update.
 type UserFormDialogSetMsg struct {
 	Dialog *UserFormDialogModel
 }
 
-// UserFormDialogActiveSetMsg carries the active state
+// UserFormDialogActiveSetMsg carries the active state for a user form dialog.
 type UserFormDialogActiveSetMsg struct {
 	Active bool
 }
 
-// UserFormDialogOverlay positions a user form dialog over existing content
+// UserFormDialogOverlay positions a user form dialog over existing content.
 func UserFormDialogOverlay(content string, dialog UserFormDialogModel, width, height int) string {
 	dialogContent := dialog.Render(width, height)
 	dialogW := lipgloss.Width(dialogContent)
@@ -1797,7 +1822,7 @@ func UserFormDialogOverlay(content string, dialog UserFormDialogModel, width, he
 // SINGLE CONTENT FIELD EDIT DIALOG
 // =============================================================================
 
-// ShowEditSingleFieldDialogMsg triggers showing the single-field edit dialog.
+// ShowEditSingleFieldDialogMsg triggers showing a single-field edit dialog.
 type ShowEditSingleFieldDialogMsg struct {
 	Field      ContentFieldDisplay
 	ContentID  types.ContentID
@@ -1805,7 +1830,7 @@ type ShowEditSingleFieldDialogMsg struct {
 	DatatypeID types.NullableDatatypeID
 }
 
-// ShowEditSingleFieldDialogCmd creates a command to show the single-field edit dialog.
+// ShowEditSingleFieldDialogCmd creates a command to show a single-field edit dialog.
 func ShowEditSingleFieldDialogCmd(cf ContentFieldDisplay, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return ShowEditSingleFieldDialogMsg{
@@ -1817,7 +1842,7 @@ func ShowEditSingleFieldDialogCmd(cf ContentFieldDisplay, contentID types.Conten
 	}
 }
 
-// EditSingleFieldAcceptMsg is sent when the single-field edit dialog is accepted.
+// EditSingleFieldAcceptMsg carries acceptance data from a single-field edit dialog.
 type EditSingleFieldAcceptMsg struct {
 	ContentFieldID types.ContentFieldID
 	ContentID      types.ContentID
@@ -1831,7 +1856,7 @@ type EditSingleFieldAcceptMsg struct {
 // ADD CONTENT FIELD DIALOG (picker for multiple missing fields)
 // =============================================================================
 
-// ShowAddContentFieldDialogMsg triggers showing the add-field picker dialog.
+// ShowAddContentFieldDialogMsg triggers showing an add-field picker dialog.
 type ShowAddContentFieldDialogMsg struct {
 	Options    []huh.Option[string]
 	ContentID  types.ContentID
@@ -1839,7 +1864,7 @@ type ShowAddContentFieldDialogMsg struct {
 	DatatypeID types.NullableDatatypeID
 }
 
-// ShowAddContentFieldDialogCmd creates a command to show the add-field picker.
+// ShowAddContentFieldDialogCmd creates a command to show an add-field picker.
 func ShowAddContentFieldDialogCmd(options []huh.Option[string], contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return ShowAddContentFieldDialogMsg{
@@ -1855,7 +1880,7 @@ func ShowAddContentFieldDialogCmd(options []huh.Option[string], contentID types.
 // DELETE CONTENT FIELD DIALOG
 // =============================================================================
 
-// DeleteContentFieldContext stores context for deleting a content field.
+// DeleteContentFieldContext stores context for a content field deletion operation.
 type DeleteContentFieldContext struct {
 	ContentFieldID types.ContentFieldID
 	ContentID      types.ContentID
@@ -1863,7 +1888,7 @@ type DeleteContentFieldContext struct {
 	DatatypeID     types.NullableDatatypeID
 }
 
-// ShowDeleteContentFieldDialogMsg triggers showing the delete content field confirmation dialog.
+// ShowDeleteContentFieldDialogMsg triggers showing a delete content field confirmation dialog.
 type ShowDeleteContentFieldDialogMsg struct {
 	Field      ContentFieldDisplay
 	ContentID  types.ContentID
@@ -1871,7 +1896,7 @@ type ShowDeleteContentFieldDialogMsg struct {
 	DatatypeID types.NullableDatatypeID
 }
 
-// ShowDeleteContentFieldDialogCmd creates a command to show the delete content field dialog.
+// ShowDeleteContentFieldDialogCmd creates a command to show a delete content field dialog.
 func ShowDeleteContentFieldDialogCmd(cf ContentFieldDisplay, contentID types.ContentID, routeID types.RouteID, datatypeID types.NullableDatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteContentFieldDialogMsg{

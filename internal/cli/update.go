@@ -4,6 +4,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// Update dispatches messages through the update handler chain and returns the updated model and command.
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	// Handle user provisioning first if needed
 	if m, cmd := m.UpdateProvisioning(msg); cmd != nil {

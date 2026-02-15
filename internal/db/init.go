@@ -16,6 +16,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// dbInstance, dbOnce, and dbInitErr manage the singleton database connection pool.
 var (
 	dbInstance DbDriver
 	dbOnce    sync.Once
@@ -23,6 +24,7 @@ var (
 )
 
 
+// GetDb initializes a SQLite database connection and configures connection pooling.
 func (d Database) GetDb(verbose *bool) DbDriver {
 	if *verbose {
 		utility.DefaultLogger.Info("Connecting to SQLite database...")
@@ -71,6 +73,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	d.Err = nil
 	return d
 }
+// GetDb initializes a MySQL database connection and configures connection pooling.
 func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
 		utility.DefaultLogger.Info("Connecting to MySQL database...")
@@ -112,6 +115,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	d.Err = nil
 	return d
 }
+// GetDb initializes a PostgreSQL database connection and configures connection pooling.
 func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
 		utility.DefaultLogger.Info("Connecting to PostgreSQL database...")
@@ -327,6 +331,7 @@ func OpenPool(cfg config.Config, pc PoolConfig) (*sql.DB, error) {
 	return pool, nil
 }
 
+// GenerateKey generates a cryptographically random 32-byte key.
 func GenerateKey() []byte {
 	key := make([]byte, 32)
 	_, err := rand.Read(key)

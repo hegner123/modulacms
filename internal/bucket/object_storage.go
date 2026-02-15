@@ -1,3 +1,5 @@
+// Package bucket provides S3-compatible object storage integration for ModulaCMS,
+// including client initialization, bucket operations, and file upload functionality.
 package bucket
 
 import (
@@ -11,8 +13,10 @@ import (
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
+// Metadata represents object metadata as key-value pairs.
 type Metadata map[string]string
 
+// GetBucket establishes and returns an S3 client session using the stored credentials.
 func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 	region := cs.Region
 	if region == "" {
@@ -33,6 +37,7 @@ func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 	return s3.New(sess), nil
 }
 
+// UploadPrep prepares an S3 PutObjectInput for file upload with the specified path, bucket, file data, and ACL.
 func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string) (*s3.PutObjectInput, error) {
 	upload := &s3.PutObjectInput{
 		Bucket: aws.String(bucketName),
@@ -43,6 +48,7 @@ func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string)
 	return upload, nil
 }
 
+// PrintBuckets lists all available S3 buckets and logs their names and creation dates.
 func PrintBuckets(s3 *s3.S3) {
 	// Example: List buckets
 	result, err := s3.ListBuckets(nil)
@@ -58,8 +64,9 @@ func PrintBuckets(s3 *s3.S3) {
 	}
 }
 
-// Must use output of GetBucket as s3 argument
-// Must use output of bucket.UploadPrep frunction as payload
+// ObjectUpload executes an S3 object upload using the provided client and upload configuration.
+// Must use output of GetBucket as s3 argument.
+// Must use output of bucket.UploadPrep function as payload.
 func ObjectUpload(s3 *s3.S3, payload *s3.PutObjectInput) (*s3.PutObjectOutput, error) {
 	upload, err := s3.PutObject(payload)
 	if err != nil {

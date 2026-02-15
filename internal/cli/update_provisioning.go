@@ -5,7 +5,7 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
-// UpdateProvisioning handles user provisioning flow
+// UpdateProvisioning handles the initial SSH user provisioning flow for first-time setup.
 func (m Model) UpdateProvisioning(msg tea.Msg) (Model, tea.Cmd) {
 	// If provisioning is complete, we're done
 	if !m.NeedsProvisioning {

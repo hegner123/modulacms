@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS media(
     url TEXT
         UNIQUE,
     srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
     author_id TEXT NOT NULL
     REFERENCES users
     ON DELETE SET NULL,
@@ -56,10 +58,14 @@ INSERT INTO media (
     dimensions,
     url,
     srcset,
+    focal_x,
+    focal_y,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -89,6 +95,8 @@ SET name = ?,
     dimensions = ?,
     url = ?,
     srcset = ?,
+    focal_x = ?,
+    focal_y = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?

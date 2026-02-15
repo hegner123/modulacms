@@ -9,14 +9,17 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// FetchUpdate signals a data fetch operation.
 type FetchUpdate struct{}
 
+// NewFetchUpdate returns a command that creates a FetchUpdate message.
 func NewFetchUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return FetchUpdate{}
 	}
 }
 
+// UpdateFetch handles data fetching pipelines for routes, datatypes, content, media, and users.
 func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case FetchHeadersRows:

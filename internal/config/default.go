@@ -10,6 +10,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
+// DefaultConfig returns a Config with sensible defaults for development.
 func DefaultConfig() Config {
 	salt := time.Now().Unix()
 	saltString := strconv.FormatInt(salt, 10)
@@ -93,6 +94,7 @@ func DefaultConfig() Config {
 	return c
 }
 
+// JSON returns the Config marshaled to JSON bytes.
 func (c Config) JSON() []byte {
 	j, err := json.Marshal(c)
 	if err != nil {

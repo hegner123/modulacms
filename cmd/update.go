@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// updateCmd provides the CLI command to check for and apply updates to ModulaCMS.
 var updateCmd = &cobra.Command{
 	Use:   "update",
 	Short: "Check for and apply updates",

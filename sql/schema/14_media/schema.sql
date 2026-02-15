@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
     author_id TEXT NOT NULL
     REFERENCES users
     ON DELETE SET NULL,

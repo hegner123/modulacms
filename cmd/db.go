@@ -13,11 +13,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// dbCmd is the root command for database management operations.
 var dbCmd = &cobra.Command{
 	Use:   "db",
 	Short: "Database management commands",
 }
 
+// dbInitCmd creates database tables and bootstrap data after prompting for admin credentials.
 var dbInitCmd = &cobra.Command{
 	Use:   "init",
 	Short: "Create database tables and bootstrap data",
@@ -69,6 +71,7 @@ var dbInitCmd = &cobra.Command{
 	},
 }
 
+// dbWipeCmd drops all database tables after user confirmation.
 var dbWipeCmd = &cobra.Command{
 	Use:   "wipe",
 	Short: "Drop all database tables (data is lost)",
@@ -111,6 +114,7 @@ var dbWipeCmd = &cobra.Command{
 	},
 }
 
+// dbWipeRedeployCmd drops all tables, recreates the schema, and initializes bootstrap data with a new admin password.
 var dbWipeRedeployCmd = &cobra.Command{
 	Use:   "wipe-redeploy",
 	Short: "Drop all tables and recreate schema with bootstrap data",
@@ -194,6 +198,7 @@ var dbWipeRedeployCmd = &cobra.Command{
 	},
 }
 
+// dbResetCmd deletes the database file (SQLite only).
 var dbResetCmd = &cobra.Command{
 	Use:   "reset",
 	Short: "Delete the database file (SQLite only)",
@@ -215,6 +220,7 @@ var dbResetCmd = &cobra.Command{
 	},
 }
 
+// dbExportCmd exports the database schema and data as SQL to a file.
 var dbExportCmd = &cobra.Command{
 	Use:   "export",
 	Short: "Dump database SQL to file",

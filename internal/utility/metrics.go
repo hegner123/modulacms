@@ -180,7 +180,7 @@ func MeasureTimeCtx(name string, labels Labels, fn func() error) error {
 	return err
 }
 
-// Common metric names (constants for consistency)
+// Standard metric names for application monitoring.
 const (
 	MetricHTTPRequests      = "http.requests"
 	MetricHTTPDuration      = "http.duration"

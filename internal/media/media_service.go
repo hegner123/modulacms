@@ -1,3 +1,6 @@
+// Package media provides media upload validation, persistence, and optimization pipeline coordination.
+// It validates file types and sizes, creates database records, and orchestrates the upload pipeline
+// for processing images into optimized variants stored in S3-compatible object storage.
 package media
 
 import (
@@ -32,6 +35,7 @@ type DuplicateMediaError struct {
 	Name string
 }
 
+// Error returns a formatted error message for duplicate media entries.
 func (e DuplicateMediaError) Error() string {
 	return fmt.Sprintf("duplicate entry found for %s", e.Name)
 }
@@ -41,6 +45,7 @@ type InvalidMediaTypeError struct {
 	ContentType string
 }
 
+// Error returns a formatted error message for invalid media types.
 func (e InvalidMediaTypeError) Error() string {
 	return fmt.Sprintf("invalid file type: %s. Only images allowed.", e.ContentType)
 }
@@ -51,6 +56,7 @@ type FileTooLargeError struct {
 	MaxSize int64
 }
 
+// Error returns a formatted error message for files exceeding size limits.
 func (e FileTooLargeError) Error() string {
 	return fmt.Sprintf("file size %d exceeds maximum %d", e.Size, e.MaxSize)
 }

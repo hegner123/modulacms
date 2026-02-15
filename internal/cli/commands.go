@@ -19,8 +19,10 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// DatabaseCMD specifies the type of database operation.
 type DatabaseCMD string
 
+// Database command types.
 const (
 	INSERT DatabaseCMD = "insert"
 	SELECT DatabaseCMD = "select"
@@ -29,20 +31,24 @@ const (
 	BATCH  DatabaseCMD = "batch"
 )
 
+// FetchErrMsg carries an error from a failed fetch operation.
 type FetchErrMsg struct {
 	Error error
 }
 
+// ForeignKeyReference describes a foreign key constraint.
 type ForeignKeyReference struct {
 	From   string
 	Table  string // Referenced table name.
 	Column string // Referenced column name.
 }
 
+// FetchTables carries table names from a fetch operation.
 type FetchTables struct {
 	Tables []string
 }
 
+// GetTablesCMD creates a command to fetch all table names from the database.
 func GetTablesCMD(c *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		var (
@@ -64,6 +70,7 @@ func GetTablesCMD(c *config.Config) tea.Cmd {
 }
 
 // TODO Add default case for generic operations
+// DatabaseInsert creates a command to insert a row into the specified table.
 func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []string, values []*string) tea.Cmd {
 	d := db.ConfigDB(*c)
 	con, _, err := d.GetConnection()
@@ -95,6 +102,7 @@ func (m Model) DatabaseInsert(c *config.Config, table db.DBTable, columns []stri
 	)
 }
 
+// DatabaseUpdate creates a command to update a row in the specified table.
 func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable, rowID int64, valuesMap map[string]any) tea.Cmd {
 	d := db.ConfigDB(*c)
 
@@ -116,6 +124,7 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable, rowID int64, v
 	m.Logger.Finfo("CLI Update successful", nil)
 	return DbResultCmd(res, string(table))
 }
+// DatabaseGet creates a command to fetch a single row by ID from the specified table.
 func (m Model) DatabaseGet(c *config.Config, source FetchSource, table db.DBTable, id int64) tea.Cmd {
 	d := db.ConfigDB(*c)
 
@@ -142,6 +151,7 @@ func (m Model) DatabaseGet(c *config.Config, source FetchSource, table db.DBTabl
 
 }
 
+// DatabaseList creates a command to fetch all rows from the specified table.
 func (m Model) DatabaseList(c *config.Config, source FetchSource, table db.DBTable) tea.Cmd {
 	d := db.ConfigDB(*c)
 
@@ -167,6 +177,7 @@ func (m Model) DatabaseList(c *config.Config, source FetchSource, table db.DBTab
 
 }
 
+// DatabaseFilteredList creates a command to fetch filtered rows from the specified table.
 func (m Model) DatabaseFilteredList(c *config.Config, source FetchSource, table db.DBTable, columns []string, whereColumn string, value any) tea.Cmd {
 	d := db.ConfigDB(*c)
 
@@ -193,6 +204,7 @@ func (m Model) DatabaseFilteredList(c *config.Config, source FetchSource, table 
 	return DatabaseListRowsCmd(source, out, table)
 }
 
+// DatabaseDelete creates a command to delete the current row from the specified table.
 func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 	id := m.GetCurrentRowId()
 	d := db.ConfigDB(*c)
@@ -214,6 +226,7 @@ func (m Model) DatabaseDelete(c *config.Config, table db.DBTable) tea.Cmd {
 	return DbResultCmd(res, string(table))
 }
 
+// GetContentField marshals the current row to JSON bytes.
 func (m Model) GetContentField(node *string) []byte {
 	row := m.TableState.Rows[m.Cursor]
 	j, err := json.Marshal(row)
@@ -223,6 +236,7 @@ func (m Model) GetContentField(node *string) []byte {
 	return j
 }
 
+// GetFullTree creates a command to fetch the full content tree for a route.
 func (m Model) GetFullTree(c *config.Config, id types.RouteID) tea.Cmd {
 	// TODO: Implement tree retrieval logic
 	d := db.ConfigDB(*c)
@@ -234,6 +248,7 @@ func (m Model) GetFullTree(c *config.Config, id types.RouteID) tea.Cmd {
 	return GetFullTreeResCMD(*res)
 }
 
+// GetContentInstances creates a command to fetch content instances (stub for future implementation).
 func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
 	//	d := db.ConfigDB(*c)
 	//TODO JOIN STATEMENTS FOR CONTENT DATA AND DATATYPES

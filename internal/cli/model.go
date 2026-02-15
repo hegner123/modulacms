@@ -1,3 +1,6 @@
+// Package cli implements the terminal user interface for ModulaCMS using Charmbracelet Bubbletea.
+// It provides an SSH-accessible TUI for managing content, datatypes, media, routes, and users
+// through a Model-Update-View architecture with typed message flows and database abstraction.
 package cli
 
 import (
@@ -23,10 +26,16 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// FocusKey represents which UI component has keyboard focus.
 type FocusKey int
+
+// ApplicationState represents the current operational state of the TUI.
 type ApplicationState int
+
+// FormOptionsMap maps form field names to their available select options.
 type FormOptionsMap map[string][]huh.Option[string]
 
+// Focus key constants define which UI component has keyboard focus.
 const (
 	PAGEFOCUS FocusKey = iota
 	TABLEFOCUS
@@ -34,6 +43,7 @@ const (
 	DIALOGFOCUS
 )
 
+// Application state constants define the current operational state of the TUI.
 const (
 	OK ApplicationState = iota
 	EDITING
@@ -42,11 +52,16 @@ const (
 	ERROR
 )
 
+// CliInterface represents the type of CLI interface being used.
 type CliInterface string
+
+// InputType represents the type of input field in a form.
 type InputType string
 
+// FilePickerPurpose indicates the intended use of the file picker dialog.
 type FilePickerPurpose int
 
+// File picker purpose constants define how the file picker will be used.
 const (
 	FILEPICKER_MEDIA   FilePickerPurpose = iota
 	FILEPICKER_RESTORE
@@ -60,6 +75,7 @@ type ModelInterface interface {
 	SetError(err error)
 }
 
+// Model is the root Bubbletea model for the ModulaCMS TUI, containing all application state, UI components, and database connections.
 type Model struct {
 	DB           db.DbDriver
 	Config       *config.Config
@@ -155,6 +171,7 @@ type ContentFieldDisplay struct {
 	Value          string
 }
 
+// CliContinue controls whether the CLI should continue running after processing a command.
 var CliContinue bool = false
 
 // ShowDialog creates a command to show a dialog
@@ -168,6 +185,7 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 	}
 }
 
+// InitialModel creates and initializes a new Model with the provided configuration, database driver, and logger.
 func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) (Model, tea.Cmd) {
 	// Use provided logger or fall back to utility.DefaultLogger
 	if logger == nil {
@@ -241,6 +259,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) 
 	)
 }
 
+// ModelPostInit performs post-initialization setup for the model, initializing menus and logging.
 func ModelPostInit(m Model) tea.Cmd {
 	return tea.Batch(
 		LogMessageCmd("Test Menu Init"),
@@ -248,6 +267,7 @@ func ModelPostInit(m Model) tea.Cmd {
 	)
 }
 
+// ParseTitles extracts font names from title file entries by removing the .txt extension and splitting on underscores.
 func ParseTitles(f []fs.DirEntry) []string {
 	var fonts []string
 
@@ -263,6 +283,7 @@ func ParseTitles(f []fs.DirEntry) []string {
 	return fonts
 }
 
+// LoadTitles reads ASCII art title files from the embedded filesystem for the given font names.
 func LoadTitles(f []string) []string {
 	var titles []string
 	for _, font := range f {
@@ -277,6 +298,7 @@ func LoadTitles(f []string) []string {
 	return titles
 }
 
+// GetStatus returns a styled status string based on the current application state.
 func (m Model) GetStatus() string {
 	switch m.Status {
 	case EDITING:
@@ -297,7 +319,7 @@ func (m Model) GetStatus() string {
 	}
 }
 
-// Implement cms.ModelInterface for Model
+// GetConfig returns the model's configuration, implementing the cms.ModelInterface.
 func (m *Model) GetConfig() *config.Config {
 	return m.Config
 }

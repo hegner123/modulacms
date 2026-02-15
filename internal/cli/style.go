@@ -9,11 +9,13 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 )
 
+// Active renders a string in the primary color.
 func Active(s string) string {
 	a := lipgloss.NewStyle().Foreground(config.DefaultStyle.Primary)
 	return a.Render(s)
 }
 
+// TableRender creates a styled table with headers and rows, highlighting the active row.
 func TableRender(hdrs []string, r [][]string, index int) *table.Table {
 	var headers []string
 	var rows [][]string
@@ -66,6 +68,7 @@ func TableRender(hdrs []string, r [][]string, index int) *table.Table {
 	return t
 }
 
+// RenderEntry renders a list of key-value pairs vertically.
 func RenderEntry(h []string, e []string) string {
 	var row []string
 	keyStyle := lipgloss.NewStyle().Width(20).Align(lipgloss.Left, lipgloss.Top).Foreground(config.DefaultStyle.Primary)
@@ -86,18 +89,22 @@ func RenderEntry(h []string, e []string) string {
 
 }
 
+// RenderTitle renders a string in the accent color.
 func RenderTitle(s string) string {
 	titleStyle := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Accent2)
 
 	return titleStyle.Render(s)
 }
+
+// RenderFooter renders a string in the secondary color.
 func RenderFooter(s string) string {
 	footerStyle := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Secondary)
 	return footerStyle.Render(s)
 }
 
+// RenderHeading renders a bold string in the secondary color.
 func RenderHeading(s string) string {
 	headingStyle := lipgloss.NewStyle().
 		Bold(true).
@@ -105,6 +112,7 @@ func RenderHeading(s string) string {
 	return headingStyle.Render(s)
 }
 
+// RenderBorderFlex renders a bordered string with flexible sizing.
 func RenderBorderFlex(s string) string {
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
@@ -112,6 +120,8 @@ func RenderBorderFlex(s string) string {
 		Padding(1)
 	return style.Render(s)
 }
+
+// RenderBlockFlex renders a bordered block with flexible sizing and background color.
 func RenderBlockFlex(s string) string {
 	blockStyle := lipgloss.NewStyle().
 		Align(lipgloss.Center).
@@ -122,6 +132,8 @@ func RenderBlockFlex(s string) string {
 		Padding(1)
 	return blockStyle.Render(s)
 }
+
+// RenderBorderFixed renders a bordered string with fixed dimensions.
 func RenderBorderFixed(s string) string {
 	style := lipgloss.NewStyle().
 		BorderStyle(lipgloss.NormalBorder()).
@@ -131,6 +143,8 @@ func RenderBorderFixed(s string) string {
 		Height(20)
 	return style.Render(s)
 }
+
+// RenderBlockFixed renders a bordered block with fixed dimensions and background color.
 func RenderBlockFixed(s string) string {
 	blockStyle := lipgloss.NewStyle().
 		Align(lipgloss.Center).
@@ -144,11 +158,13 @@ func RenderBlockFixed(s string) string {
 	return blockStyle.Render(s)
 }
 
+// RenderSpace renders vertical space to fill remaining viewport height.
 func (m Model) RenderSpace(content string) string {
 	spaceStyle := lipgloss.NewStyle().Height(m.Height - lipgloss.Height(content) - 2)
 	return spaceStyle.Render("")
 }
 
+// RenderStatusBar renders the application status bar.
 func (m Model) RenderStatusBar() string {
 	doc := strings.Builder{}
 	status := []string{"Page", "Table", "Form", "Dialog"}
@@ -202,11 +218,14 @@ func (m Model) RenderStatusBar() string {
 	return statusBarStyle.Render(doc.String())
 
 }
+
+// HorizontalSpace returns a string of repeated spaces for layout.
 func HorizontalSpace(i int) string {
 	s := strings.Repeat(" ", i)
 	return s
 }
 
+// RenderBorderBlock renders a string in a styled block.
 func RenderBorderBlock(s string) string {
 	borderStyle := lipgloss.NewStyle().
 		BorderForeground(config.DefaultStyle.Tertiary)
@@ -221,6 +240,7 @@ func RenderBorderBlock(s string) string {
 
 }
 
+// RenderButton renders an unselected button.
 func RenderButton(s string) string {
 	style := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Secondary).
@@ -230,6 +250,7 @@ func RenderButton(s string) string {
 	return style.Render(s)
 }
 
+// RenderActiveButton renders a selected/active button.
 func RenderActiveButton(s string) string {
 	style := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Tertiary).

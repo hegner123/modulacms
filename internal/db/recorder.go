@@ -9,7 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 )
 
-// Package-level recorder instances for reuse by command factories.
+// Package-level change event recorder instances for each database driver.
 var (
 	SQLiteRecorder audited.ChangeEventRecorder = sqliteRecorder{}
 	MysqlRecorder  audited.ChangeEventRecorder = mysqlRecorder{}

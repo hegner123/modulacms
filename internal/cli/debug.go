@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// Stringify returns a formatted debug string representation of the model.
 func (m Model) Stringify() string {
 	out := make([]string, 0)
 
@@ -259,6 +260,7 @@ func (m Model) Stringify() string {
 	return lipgloss.JoinVertical(lipgloss.Top, out...)
 }
 
+// ValidString returns the string if non-empty, otherwise returns "(empty)".
 func ValidString(s string) string {
 	if len(s) < 1 {
 		return "(empty)"
@@ -267,6 +269,7 @@ func ValidString(s string) string {
 	}
 }
 
+// DebugString returns a formatted debug string representation of the Page.
 func (p Page) DebugString() string {
 	out := make([]string, 0)
 
@@ -279,6 +282,7 @@ func (p Page) DebugString() string {
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
 
+// DebugStringPtr returns a formatted debug string of a Page pointer, or "(nil)" if nil.
 func (p *Page) DebugStringPtr() string {
 	if p == nil {
 		return "(nil)"
@@ -286,6 +290,7 @@ func (p *Page) DebugStringPtr() string {
 	return p.DebugString()
 }
 
+// HuhGroupDebugString returns a formatted debug string representation of a huh.Group.
 func HuhGroupDebugString(g huh.Group) string {
 	out := make([]string, 0)
 
@@ -295,6 +300,7 @@ func HuhGroupDebugString(g huh.Group) string {
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
 
+// HuhFieldDebugString returns a formatted debug string representation of a huh.Field.
 func HuhFieldDebugString(f huh.Field) string {
 	out := make([]string, 0)
 
@@ -307,6 +313,7 @@ func HuhFieldDebugString(f huh.Field) string {
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
 
+// PageHistoryDebugString returns a formatted debug string representation of PageHistory.
 func PageHistoryDebugString(ph PageHistory) string {
 	out := make([]string, 0)
 
@@ -319,6 +326,7 @@ func PageHistoryDebugString(ph PageHistory) string {
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
 
+// SqlRowDebugString returns a formatted debug string representation of a sql.Row.
 func SqlRowDebugString(row sql.Row) string {
 	out := make([]string, 0)
 
@@ -327,6 +335,7 @@ func SqlRowDebugString(row sql.Row) string {
 
 	return lipgloss.JoinVertical(lipgloss.Left, out...)
 }
+
 /*
 func DbContentFieldsDebugString(cf db.ContentFields) string {
 	out := make([]string, 0)
@@ -490,6 +499,7 @@ func DbFieldsDebugString(f db.Fields) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }*/
 
+// HuhGroupSliceDebugString returns a formatted debug string representation of a huh.Group slice.
 func HuhGroupSliceDebugString(groups []huh.Group) string {
 	if len(groups) == 0 {
 		return "(empty slice)"
@@ -506,6 +516,7 @@ func HuhGroupSliceDebugString(groups []huh.Group) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }
 
+// HuhFieldSliceDebugString returns a formatted debug string representation of a huh.Field slice.
 func HuhFieldSliceDebugString(fields []huh.Field) string {
 	if len(fields) == 0 {
 		return "(empty slice)"
@@ -522,6 +533,7 @@ func HuhFieldSliceDebugString(fields []huh.Field) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }
 
+// PageHistorySliceDebugString returns a formatted debug string representation of a PageHistory slice.
 func PageHistorySliceDebugString(history []PageHistory) string {
 	if len(history) == 0 {
 		return "(empty slice)"
@@ -538,6 +550,7 @@ func PageHistorySliceDebugString(history []PageHistory) string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, columns...)
 }
 
+// SqlRowSliceDebugString returns a formatted debug string representation of a sql.Row slice.
 func SqlRowSliceDebugString(rows []sql.Row) string {
 	if len(rows) == 0 {
 		return "(empty slice)"

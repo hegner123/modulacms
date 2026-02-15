@@ -14,13 +14,13 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// UserProvisioningCompleteMsg is sent when user provisioning is complete
+// UserProvisioningCompleteMsg is sent when user provisioning is complete or encounters an error.
 type UserProvisioningCompleteMsg struct {
 	UserID types.UserID
 	Error  error
 }
 
-// NewUserProvisioningForm creates a form for provisioning a new SSH user
+// NewUserProvisioningForm creates an interactive form for setting up a new SSH user account.
 func NewUserProvisioningForm(m Model) *huh.Form {
 	var (
 		username string
@@ -110,7 +110,7 @@ func NewUserProvisioningForm(m Model) *huh.Form {
 	return form
 }
 
-// ProvisionSSHUser creates a new user and registers their SSH key
+// ProvisionSSHUser creates a new user account and registers their SSH key in the database.
 func ProvisionSSHUser(m Model) tea.Cmd {
 	logger := m.Logger
 	return func() tea.Msg {

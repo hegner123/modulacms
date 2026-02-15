@@ -210,20 +210,22 @@ type Fields struct {
 }
 
 type Media struct {
-	MediaID      types.MediaID        `json:"media_id"`
-	Name         sql.NullString       `json:"name"`
-	DisplayName  sql.NullString       `json:"display_name"`
-	Alt          sql.NullString       `json:"alt"`
-	Caption      sql.NullString       `json:"caption"`
-	Description  sql.NullString       `json:"description"`
-	Class        sql.NullString       `json:"class"`
-	Mimetype     sql.NullString       `json:"mimetype"`
-	Dimensions   sql.NullString       `json:"dimensions"`
-	URL          types.URL            `json:"url"`
-	Srcset       sql.NullString       `json:"srcset"`
-	AuthorID     types.NullableUserID `json:"author_id"`
-	DateCreated  types.Timestamp      `json:"date_created"`
-	DateModified types.Timestamp      `json:"date_modified"`
+	MediaID      types.MediaID         `json:"media_id"`
+	Name         sql.NullString        `json:"name"`
+	DisplayName  sql.NullString        `json:"display_name"`
+	Alt          sql.NullString        `json:"alt"`
+	Caption      sql.NullString        `json:"caption"`
+	Description  sql.NullString        `json:"description"`
+	Class        sql.NullString        `json:"class"`
+	Mimetype     sql.NullString        `json:"mimetype"`
+	Dimensions   sql.NullString        `json:"dimensions"`
+	URL          types.URL             `json:"url"`
+	Srcset       sql.NullString        `json:"srcset"`
+	FocalX       types.NullableFloat64 `json:"focal_x"`
+	FocalY       types.NullableFloat64 `json:"focal_y"`
+	AuthorID     types.NullableUserID  `json:"author_id"`
+	DateCreated  types.Timestamp       `json:"date_created"`
+	DateModified types.Timestamp       `json:"date_modified"`
 }
 
 type MediaDimensions struct {

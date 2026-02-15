@@ -1,3 +1,5 @@
+// Package db provides a multi-database abstraction layer for ModulaCMS supporting SQLite, MySQL, and PostgreSQL.
+// It defines the DbDriver interface and wrapper types that convert sqlc-generated types to application-level types with custom validation and auditing.
 package db
 
 import (
@@ -19,6 +21,7 @@ import (
 //go:embed sql
 var sqlFiles embed.FS
 
+// Historied defines the interface for entities that track their modification history.
 type Historied interface {
 	GetHistory() string
 	MapHistoryEntry() string
@@ -61,6 +64,7 @@ type PsqlDatabase struct {
 // DbStatus represents the status of a database connection
 type DbStatus string
 
+// Database connection status constants.
 const (
 	Open   DbStatus = "open"
 	Closed DbStatus = "closed"
@@ -685,7 +689,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -717,7 +721,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "admin_page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1395,7 +1399,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1427,7 +1431,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "admin_page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2078,7 +2082,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2110,7 +2114,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "admin_page",
+		Type:         "ROOT",
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),

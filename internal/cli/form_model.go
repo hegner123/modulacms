@@ -16,8 +16,7 @@ type FormModel struct {
 }
 
 // NewFormModel creates a new FormModel with safe defaults.
-// FormMap is initialized as an empty slice, FormSubmit is false.
-// Other fields are initialized to their zero values.
+// FormMap is initialized as an empty slice, FormSubmit is false, other fields are zero values.
 func NewFormModel() *FormModel {
 	return &FormModel{
 		FormMap:    make([]string, 0),

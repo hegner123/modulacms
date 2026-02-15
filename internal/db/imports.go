@@ -4,11 +4,14 @@ package db
 
 // Resource types
 
+// StringAdminDatatypeFields represents admin datatype field data as strings for TUI display.
 type StringAdminDatatypeFields struct {
 	ID              string `json:"id"`
 	AdminDatatypeID string `json:"admin_datatype_id"`
 	AdminFieldID    string `json:"admin_field_id"`
 }
+
+// StringUsers represents user data as strings for TUI display.
 type StringUsers struct {
 	UserID       string `json:"user_id"`
 	Username     string `json:"username"`
@@ -20,6 +23,7 @@ type StringUsers struct {
 	DateModified string `json:"date_modified"`
 }
 
+// StringRoutes represents route data as strings for TUI display.
 type StringRoutes struct {
 	RouteID      string `json:"route_id"`
 	Slug         string `json:"slug"`
@@ -31,6 +35,7 @@ type StringRoutes struct {
 	History      string `json:"history"`
 }
 
+// StringFields represents field data as strings for TUI display.
 type StringFields struct {
 	FieldID      string `json:"field_id"`
 	ParentID     string `json:"parent_id"`
@@ -45,6 +50,7 @@ type StringFields struct {
 	History      string `json:"history"`
 }
 
+// StringMedia represents media data as strings for TUI display.
 type StringMedia struct {
 	MediaID      string `json:"media_id"`
 	Name         string `json:"name"`
@@ -57,11 +63,14 @@ type StringMedia struct {
 	Dimensions   string `json:"dimensions"`
 	Url          string `json:"url"`
 	Srcset       string `json:"srcset"`
+	FocalX       string `json:"focal_x"`
+	FocalY       string `json:"focal_y"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 }
 
+// StringMediaDimensions represents media dimension data as strings for TUI display.
 type StringMediaDimensions struct {
 	MdID        string `json:"md_id"`
 	Label       string `json:"label"`
@@ -70,6 +79,7 @@ type StringMediaDimensions struct {
 	AspectRatio string `json:"aspect_ratio"`
 }
 
+// StringTokens represents token data as strings for TUI display.
 type StringTokens struct {
 	ID        string `json:"id"`
 	UserID    string `json:"user_id"`
@@ -80,6 +90,7 @@ type StringTokens struct {
 	Revoked   string `json:"revoked"`
 }
 
+// StringDatatypes represents datatype data as strings for TUI display.
 type StringDatatypes struct {
 	DatatypeID   string `json:"datatype_id"`
 	ParentID     string `json:"parent_id"`
@@ -91,6 +102,7 @@ type StringDatatypes struct {
 	History      string `json:"history"`
 }
 
+// StringDatatypeFields represents datatype field junction data as strings for TUI display.
 type StringDatatypeFields struct {
 	ID         string `json:"id"`
 	DatatypeID string `json:"datatype_id"`
@@ -98,6 +110,7 @@ type StringDatatypeFields struct {
 	SortOrder  string `json:"sort_order"`
 }
 
+// StringSessions represents session data as strings for TUI display.
 type StringSessions struct {
 	SessionID   string `json:"session_id"`
 	UserID      string `json:"user_id"`
@@ -109,12 +122,14 @@ type StringSessions struct {
 	SessionData string `json:"session_data"`
 }
 
+// StringRoles represents role data as strings for TUI display.
 type StringRoles struct {
 	RoleID      string `json:"role_id"`
 	Label       string `json:"label"`
 	Permissions string `json:"permissions"`
 }
 
+// StringPermissions represents permission data as strings for TUI display.
 type StringPermissions struct {
 	PermissionID string `json:"permission_id"`
 	TableID      string `json:"table_id"`
@@ -122,6 +137,7 @@ type StringPermissions struct {
 	Label        string `json:"label"`
 }
 
+// StringContentData represents content data as strings for TUI display.
 type StringContentData struct {
 	ContentDataID string `json:"content_data_id"`
 	RouteID       string `json:"route_id"`
@@ -137,6 +153,7 @@ type StringContentData struct {
 	History       string `json:"history"`
 }
 
+// StringContentFields represents content field data as strings for TUI display.
 type StringContentFields struct {
 	ContentFieldID string `json:"content_field_id"`
 	RouteID        string `json:"route_id"`
@@ -149,6 +166,7 @@ type StringContentFields struct {
 	History        string `json:"history"`
 }
 
+// StringAdminRoutes represents admin route data as strings for TUI display.
 type StringAdminRoutes struct {
 	AdminRouteID string `json:"admin_route_id"`
 	Slug         string `json:"slug"`
@@ -160,6 +178,7 @@ type StringAdminRoutes struct {
 	History      string `json:"history"`
 }
 
+// StringAdminFields represents admin field data as strings for TUI display.
 type StringAdminFields struct {
 	AdminFieldID string `json:"admin_field_id"`
 	ParentID     string `json:"parent_id"`
@@ -174,6 +193,7 @@ type StringAdminFields struct {
 	History      string `json:"history"`
 }
 
+// StringAdminDatatypes represents admin datatype data as strings for TUI display.
 type StringAdminDatatypes struct {
 	AdminDatatypeID string `json:"admin_datatype_id"`
 	ParentID        string `json:"parent_id"`
@@ -185,6 +205,7 @@ type StringAdminDatatypes struct {
 	History         string `json:"history"`
 }
 
+// StringAdminContentData represents admin content data as strings for TUI display.
 type StringAdminContentData struct {
 	AdminContentDataID string `json:"admin_content_data_id"`
 	ParentID           string `json:"parent_id"`
@@ -197,6 +218,7 @@ type StringAdminContentData struct {
 	History            string `json:"history"`
 }
 
+// StringAdminContentFields represents admin content field data as strings for TUI display.
 type StringAdminContentFields struct {
 	AdminContentFieldID string `json:"admin_content_field_id"`
 	AdminRouteID        string `json:"admin_route_id"`
@@ -209,12 +231,14 @@ type StringAdminContentFields struct {
 	History             string `json:"history"`
 }
 
+// StringTables represents table data as strings for TUI display.
 type StringTables struct {
 	ID       string `json:"id"`
 	Label    string `json:"label"`
 	AuthorID string `json:"author_id"`
 }
 
+// StringUserOauth represents user OAuth data as strings for TUI display.
 type StringUserOauth struct {
 	UserOauthID         string `json:"user_oauth_id"`
 	UserID              string `json:"user_id"`

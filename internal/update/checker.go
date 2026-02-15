@@ -1,3 +1,5 @@
+// Package update provides functionality for checking and downloading ModulaCMS updates
+// from the GitHub release API, including version comparison and platform-specific binary selection.
 package update
 
 import (

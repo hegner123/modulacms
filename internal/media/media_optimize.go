@@ -12,18 +12,24 @@ import (
 	"strconv"
 	"strings"
 
-	config "github.com/hegner123/modulacms/internal/config"
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	webpenc "github.com/kolesa-team/go-webp/encoder"
 	"golang.org/x/image/draw"
 	"golang.org/x/image/webp"
 )
 
-// srcFile is the source file
-// dstPath is the location of optimized files
-func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string, error) {
-	d := db.ConfigDB(c)
+// DimensionLister provides access to media dimension presets.
+// All three DB drivers (Database, MysqlDatabase, PsqlDatabase) satisfy this.
+type DimensionLister interface {
+	ListMediaDimensions() (*[]db.MediaDimensions, error)
+}
 
+// OptimizeUpload generates multiple image resolutions from srcFile.
+// It decodes the source, validates dimensions, copies the original to dstPath,
+// then crops (centered on focalPoint if non-nil, else image center) and scales
+// to each dimension from the lister.
+func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, focalPoint *image.Point) (*[]string, error) {
 	// Open the source file.
 	file, err := os.Open(srcFile)
 	if err != nil {
@@ -32,7 +38,7 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 	defer file.Close()
 
 	// Get the dimensions.
-	dimensions, err := d.ListMediaDimensions()
+	dimensions, err := lister.ListMediaDimensions()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list media dimensions: %w", err)
 	}
@@ -94,6 +100,10 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 	validDimensions := []db.MediaDimensions{}
 	centerX := (bounds.Min.X + bounds.Max.X) / 2
 	centerY := (bounds.Min.Y + bounds.Max.Y) / 2
+	if focalPoint != nil {
+		centerX = focalPoint.X
+		centerY = focalPoint.Y
+	}
 
 	// Crop and scale images.
 	for _, dim := range *dimensions {
@@ -115,8 +125,22 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 
 		x0 := centerX - cropWidth/2
 		y0 := centerY - cropHeight/2
+
+		// Clamp the crop window to stay within bounds without shrinking
+		if x0 < bounds.Min.X {
+			x0 = bounds.Min.X
+		}
+		if x0+cropWidth > bounds.Max.X {
+			x0 = bounds.Max.X - cropWidth
+		}
+		if y0 < bounds.Min.Y {
+			y0 = bounds.Min.Y
+		}
+		if y0+cropHeight > bounds.Max.Y {
+			y0 = bounds.Max.Y - cropHeight
+		}
+
 		cropRect := image.Rect(x0, y0, x0+cropWidth, y0+cropHeight)
-		cropRect = cropRect.Intersect(bounds)
 
 		dstRect := image.Rect(0, 0, cropWidth, cropHeight)
 		img := image.NewRGBA(dstRect)
@@ -182,6 +206,37 @@ func OptimizeUpload(srcFile string, dstPath string, c config.Config) (*[]string,
 	}
 
 	return &files, nil
+}
+
+// FocalPointToPixels converts normalized focal point coordinates (0.0-1.0) to
+// pixel coordinates within the given image bounds. Returns nil if either
+// coordinate is not Valid.
+func FocalPointToPixels(focalX, focalY types.NullableFloat64, bounds image.Rectangle) *image.Point {
+	if !focalX.Valid || !focalY.Valid {
+		return nil
+	}
+
+	fx := focalX.Float64
+	fy := focalY.Float64
+
+	// Clamp to [0.0, 1.0]
+	if fx < 0 {
+		fx = 0
+	}
+	if fx > 1 {
+		fx = 1
+	}
+	if fy < 0 {
+		fy = 0
+	}
+	if fy > 1 {
+		fy = 1
+	}
+
+	px := bounds.Min.X + int(fx*float64(bounds.Dx()))
+	py := bounds.Min.Y + int(fy*float64(bounds.Dy()))
+
+	return &image.Point{X: px, Y: py}
 }
 
 // copyFile copies a file from src to dst

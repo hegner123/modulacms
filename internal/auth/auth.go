@@ -1,3 +1,6 @@
+// Package auth provides password hashing and verification using bcrypt.
+// It offers secure password storage with configurable cost factors and
+// validates password length constraints to prevent bcrypt limitations.
 package auth
 
 import (

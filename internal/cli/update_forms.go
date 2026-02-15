@@ -7,14 +7,17 @@ import (
 	"github.com/charmbracelet/huh"
 )
 
+// UpdatedForm signals that a form has been updated.
 type UpdatedForm struct{}
 
+// NewUpdatedForm creates a command returning an UpdatedForm message.
 func NewUpdatedForm() tea.Cmd {
 	return func() tea.Msg {
 		return UpdatedForm{}
 	}
 }
 
+// UpdateForm handles form-related messages and state updates.
 func (m Model) UpdateForm(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 

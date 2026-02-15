@@ -24,7 +24,7 @@ func CorsMiddleware(c *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-// CorsHandler sets CORS headers based on configuration
+// Cors sets CORS headers based on configuration.
 func Cors(w http.ResponseWriter, r *http.Request, c *config.Config) {
 	CorsWithConfig(w, r, c)
 }

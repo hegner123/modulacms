@@ -9,14 +9,17 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+// TeaUpdate signals a Tea framework update, triggered by window size changes.
 type TeaUpdate struct{}
 
+// NewTea returns a command that creates a TeaUpdate message.
 func NewTea() tea.Cmd {
 	return func() tea.Msg {
 		return TeaUpdate{}
 	}
 }
 
+// UpdateTea handles window resize messages from Tea framework.
 func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -41,6 +44,7 @@ func (m Model) UpdateTea(msg tea.Msg) (Model, tea.Cmd) {
 	}
 }
 
+// titleStyle and infoStyle are Lipgloss styles for rendering the header and footer.
 var (
 	titleStyle = func() lipgloss.Style {
 		b := lipgloss.RoundedBorder()
@@ -55,6 +59,7 @@ var (
 	}()
 )
 
+// headerView renders the viewport header with title and horizontal line.
 func (m Model) headerView() string {
 	var titleText string
 
@@ -66,6 +71,7 @@ func (m Model) headerView() string {
 	return lipgloss.JoinHorizontal(lipgloss.Center, title, line)
 }
 
+// footerView renders the viewport footer showing scroll percentage.
 func (m Model) footerView() string {
 	info := infoStyle.Render(fmt.Sprintf("%3.f%%", m.Viewport.ScrollPercent()*100))
 	line := strings.Repeat("─", max(0, m.Viewport.Width-lipgloss.Width(info)))

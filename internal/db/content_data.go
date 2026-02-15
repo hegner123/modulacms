@@ -16,6 +16,7 @@ import (
 // STRUCTS
 //////////////////////////////
 
+// ContentData represents a content entry in the tree-based content structure.
 type ContentData struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
@@ -30,6 +31,7 @@ type ContentData struct {
 	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
+// CreateContentDataParams holds parameters for creating a new content_data record.
 type CreateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
@@ -43,6 +45,7 @@ type CreateContentDataParams struct {
 	DateModified  types.Timestamp          `json:"date_modified"`
 }
 
+// UpdateContentDataParams holds parameters for updating an existing content_data record.
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
@@ -57,6 +60,7 @@ type UpdateContentDataParams struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 }
 
+// ListContentDataByRoutePaginatedParams holds parameters for paginated listing of content_data by route.
 type ListContentDataByRoutePaginatedParams struct {
 	RouteID types.NullableRouteID
 	Limit   int64
@@ -143,6 +147,7 @@ func MapStringContentData(a ContentData) StringContentData {
 
 // MAPS
 
+// MapContentData converts a sqlc-generated type to the wrapper type.
 func (d Database) MapContentData(a mdb.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
@@ -159,6 +164,7 @@ func (d Database) MapContentData(a mdb.ContentData) ContentData {
 	}
 }
 
+// MapCreateContentDataParams converts wrapper params to sqlc-generated create params.
 func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.CreateContentDataParams {
 	return mdb.CreateContentDataParams{
 		ContentDataID: types.NewContentID(),
@@ -175,6 +181,7 @@ func (d Database) MapCreateContentDataParams(a CreateContentDataParams) mdb.Crea
 	}
 }
 
+// MapUpdateContentDataParams converts wrapper params to sqlc-generated update params.
 func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.UpdateContentDataParams {
 	return mdb.UpdateContentDataParams{
 		RouteID:       a.RouteID,
@@ -193,6 +200,7 @@ func (d Database) MapUpdateContentDataParams(a UpdateContentDataParams) mdb.Upda
 
 // QUERIES
 
+// CountContentData returns the total count of content_data records.
 func (d Database) CountContentData() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -202,12 +210,14 @@ func (d Database) CountContentData() (*int64, error) {
 	return &c, nil
 }
 
+// CreateContentDataTable creates the content_data table.
 func (d Database) CreateContentDataTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateContentDataTable(d.Context)
 	return err
 }
 
+// CreateContentData inserts a new content_data record with audit tracking.
 func (d Database) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
 	cmd := d.NewContentDataCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -218,11 +228,13 @@ func (d Database) CreateContentData(ctx context.Context, ac audited.AuditContext
 	return &r, nil
 }
 
+// DeleteContentData removes a content_data record with audit tracking.
 func (d Database) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
 	cmd := d.DeleteContentDataCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetContentData retrieves a content_data record by ID.
 func (d Database) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetContentData(d.Context, mdb.GetContentDataParams{ContentDataID: id})
@@ -233,6 +245,7 @@ func (d Database) GetContentData(id types.ContentID) (*ContentData, error) {
 	return &res, nil
 }
 
+// ListContentData returns all content_data records.
 func (d Database) ListContentData() (*[]ContentData, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentData(d.Context)
@@ -247,6 +260,7 @@ func (d Database) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
+// ListContentDataByRoute returns all content_data records for a given route.
 func (d Database) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentDataByRoute(d.Context, mdb.ListContentDataByRouteParams{RouteID: routeID})
@@ -261,6 +275,7 @@ func (d Database) ListContentDataByRoute(routeID types.NullableRouteID) (*[]Cont
 	return &res, nil
 }
 
+// ListContentDataPaginated returns a paginated subset of content_data records.
 func (d Database) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentDataPaginated(d.Context, mdb.ListContentDataPaginatedParams{
@@ -278,6 +293,7 @@ func (d Database) ListContentDataPaginated(params PaginationParams) (*[]ContentD
 	return &res, nil
 }
 
+// ListContentDataByRoutePaginated returns a paginated subset of content_data records for a given route.
 func (d Database) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdb.ListContentDataByRoutePaginatedParams{
@@ -296,6 +312,7 @@ func (d Database) ListContentDataByRoutePaginated(params ListContentDataByRouteP
 	return &res, nil
 }
 
+// UpdateContentData modifies an existing content_data record with audit tracking.
 func (d Database) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
 	cmd := d.UpdateContentDataCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -311,6 +328,7 @@ func (d Database) UpdateContentData(ctx context.Context, ac audited.AuditContext
 
 // MAPS
 
+// MapContentData converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
@@ -327,6 +345,7 @@ func (d MysqlDatabase) MapContentData(a mdbm.ContentData) ContentData {
 	}
 }
 
+// MapCreateContentDataParams converts wrapper params to sqlc-generated create params.
 func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbm.CreateContentDataParams {
 	return mdbm.CreateContentDataParams{
 		ContentDataID: types.NewContentID(),
@@ -343,6 +362,7 @@ func (d MysqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdb
 	}
 }
 
+// MapUpdateContentDataParams converts wrapper params to sqlc-generated update params.
 func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbm.UpdateContentDataParams {
 	return mdbm.UpdateContentDataParams{
 		RouteID:       a.RouteID,
@@ -361,6 +381,7 @@ func (d MysqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdb
 
 // QUERIES
 
+// CountContentData returns the total count of content_data records.
 func (d MysqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -370,12 +391,14 @@ func (d MysqlDatabase) CountContentData() (*int64, error) {
 	return &c, nil
 }
 
+// CreateContentDataTable creates the content_data table.
 func (d MysqlDatabase) CreateContentDataTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateContentDataTable(d.Context)
 	return err
 }
 
+// CreateContentData inserts a new content_data record with audit tracking.
 func (d MysqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
 	cmd := d.NewContentDataCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -386,11 +409,13 @@ func (d MysqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditCo
 	return &r, nil
 }
 
+// DeleteContentData removes a content_data record with audit tracking.
 func (d MysqlDatabase) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
 	cmd := d.DeleteContentDataCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetContentData retrieves a content_data record by ID.
 func (d MysqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetContentData(d.Context, mdbm.GetContentDataParams{ContentDataID: id})
@@ -401,6 +426,7 @@ func (d MysqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) 
 	return &res, nil
 }
 
+// ListContentData returns all content_data records.
 func (d MysqlDatabase) ListContentData() (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListContentData(d.Context)
@@ -415,6 +441,7 @@ func (d MysqlDatabase) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
+// ListContentDataByRoute returns all content_data records for a given route.
 func (d MysqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListContentDataByRoute(d.Context, mdbm.ListContentDataByRouteParams{RouteID: routeID})
@@ -429,6 +456,7 @@ func (d MysqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[
 	return &res, nil
 }
 
+// ListContentDataPaginated returns a paginated subset of content_data records.
 func (d MysqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListContentDataPaginated(d.Context, mdbm.ListContentDataPaginatedParams{
@@ -446,6 +474,7 @@ func (d MysqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]Con
 	return &res, nil
 }
 
+// ListContentDataByRoutePaginated returns a paginated subset of content_data records for a given route.
 func (d MysqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdbm.ListContentDataByRoutePaginatedParams{
@@ -464,6 +493,7 @@ func (d MysqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByR
 	return &res, nil
 }
 
+// UpdateContentData modifies an existing content_data record with audit tracking.
 func (d MysqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
 	cmd := d.UpdateContentDataCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -479,6 +509,7 @@ func (d MysqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditCo
 
 // MAPS
 
+// MapContentData converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	return ContentData{
 		ContentDataID: a.ContentDataID,
@@ -495,6 +526,7 @@ func (d PsqlDatabase) MapContentData(a mdbp.ContentData) ContentData {
 	}
 }
 
+// MapCreateContentDataParams converts wrapper params to sqlc-generated create params.
 func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp.CreateContentDataParams {
 	return mdbp.CreateContentDataParams{
 		ContentDataID: types.NewContentID(),
@@ -511,6 +543,7 @@ func (d PsqlDatabase) MapCreateContentDataParams(a CreateContentDataParams) mdbp
 	}
 }
 
+// MapUpdateContentDataParams converts wrapper params to sqlc-generated update params.
 func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp.UpdateContentDataParams {
 	return mdbp.UpdateContentDataParams{
 		RouteID:       a.RouteID,
@@ -529,6 +562,7 @@ func (d PsqlDatabase) MapUpdateContentDataParams(a UpdateContentDataParams) mdbp
 
 // QUERIES
 
+// CountContentData returns the total count of content_data records.
 func (d PsqlDatabase) CountContentData() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountContentData(d.Context)
@@ -538,12 +572,14 @@ func (d PsqlDatabase) CountContentData() (*int64, error) {
 	return &c, nil
 }
 
+// CreateContentDataTable creates the content_data table.
 func (d PsqlDatabase) CreateContentDataTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateContentDataTable(d.Context)
 	return err
 }
 
+// CreateContentData inserts a new content_data record with audit tracking.
 func (d PsqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditContext, s CreateContentDataParams) (*ContentData, error) {
 	cmd := d.NewContentDataCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -554,11 +590,13 @@ func (d PsqlDatabase) CreateContentData(ctx context.Context, ac audited.AuditCon
 	return &r, nil
 }
 
+// DeleteContentData removes a content_data record with audit tracking.
 func (d PsqlDatabase) DeleteContentData(ctx context.Context, ac audited.AuditContext, id types.ContentID) error {
 	cmd := d.DeleteContentDataCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetContentData retrieves a content_data record by ID.
 func (d PsqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetContentData(d.Context, mdbp.GetContentDataParams{ContentDataID: id})
@@ -569,6 +607,7 @@ func (d PsqlDatabase) GetContentData(id types.ContentID) (*ContentData, error) {
 	return &res, nil
 }
 
+// ListContentData returns all content_data records.
 func (d PsqlDatabase) ListContentData() (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListContentData(d.Context)
@@ -583,6 +622,7 @@ func (d PsqlDatabase) ListContentData() (*[]ContentData, error) {
 	return &res, nil
 }
 
+// ListContentDataByRoute returns all content_data records for a given route.
 func (d PsqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListContentDataByRoute(d.Context, mdbp.ListContentDataByRouteParams{RouteID: routeID})
@@ -597,6 +637,7 @@ func (d PsqlDatabase) ListContentDataByRoute(routeID types.NullableRouteID) (*[]
 	return &res, nil
 }
 
+// ListContentDataPaginated returns a paginated subset of content_data records.
 func (d PsqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListContentDataPaginated(d.Context, mdbp.ListContentDataPaginatedParams{
@@ -614,6 +655,7 @@ func (d PsqlDatabase) ListContentDataPaginated(params PaginationParams) (*[]Cont
 	return &res, nil
 }
 
+// ListContentDataByRoutePaginated returns a paginated subset of content_data records for a given route.
 func (d PsqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRoutePaginatedParams) (*[]ContentData, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListContentDataByRoutePaginated(d.Context, mdbp.ListContentDataByRoutePaginatedParams{
@@ -632,6 +674,7 @@ func (d PsqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRo
 	return &res, nil
 }
 
+// UpdateContentData modifies an existing content_data record with audit tracking.
 func (d PsqlDatabase) UpdateContentData(ctx context.Context, ac audited.AuditContext, s UpdateContentDataParams) (*string, error) {
 	cmd := d.UpdateContentDataCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -659,6 +702,7 @@ type RootContentSummary struct {
 
 // SQLITE - ListRootContentSummary
 
+// MapRootContentSummary converts a sqlc-generated type to the wrapper type.
 func (d Database) MapRootContentSummary(a mdb.ListRootContentSummaryRow) RootContentSummary {
 	return RootContentSummary{
 		ContentDataID: a.ContentDataID,
@@ -672,6 +716,7 @@ func (d Database) MapRootContentSummary(a mdb.ListRootContentSummaryRow) RootCon
 	}
 }
 
+// ListRootContentSummary returns all root content entries with route and datatype information.
 func (d Database) ListRootContentSummary() (*[]RootContentSummary, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListRootContentSummary(d.Context)
@@ -688,6 +733,7 @@ func (d Database) ListRootContentSummary() (*[]RootContentSummary, error) {
 
 // MYSQL - ListRootContentSummary
 
+// MapRootContentSummary converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapRootContentSummary(a mdbm.ListRootContentSummaryRow) RootContentSummary {
 	return RootContentSummary{
 		ContentDataID: a.ContentDataID,
@@ -701,6 +747,7 @@ func (d MysqlDatabase) MapRootContentSummary(a mdbm.ListRootContentSummaryRow) R
 	}
 }
 
+// ListRootContentSummary returns all root content entries with route and datatype information.
 func (d MysqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListRootContentSummary(d.Context)
@@ -717,6 +764,7 @@ func (d MysqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
 
 // PSQL - ListRootContentSummary
 
+// MapRootContentSummary converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapRootContentSummary(a mdbp.ListRootContentSummaryRow) RootContentSummary {
 	return RootContentSummary{
 		ContentDataID: a.ContentDataID,
@@ -730,6 +778,7 @@ func (d PsqlDatabase) MapRootContentSummary(a mdbp.ListRootContentSummaryRow) Ro
 	}
 }
 
+// ListRootContentSummary returns all root content entries with route and datatype information.
 func (d PsqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListRootContentSummary(d.Context)
@@ -757,14 +806,28 @@ type NewContentDataCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c NewContentDataCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewContentDataCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c NewContentDataCmd) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c NewContentDataCmd) Params() any                           { return c.params }
+
+// GetID returns the ID from the created record.
 func (c NewContentDataCmd) GetID(row mdb.ContentData) string      { return string(row.ContentDataID) }
 
+// Execute creates the record in the database.
 func (c NewContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
 	queries := mdb.New(tx)
 	return queries.CreateContentData(ctx, mdb.CreateContentDataParams{
@@ -782,6 +845,7 @@ func (c NewContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Co
 	})
 }
 
+// NewContentDataCmd creates a new audited create command.
 func (d Database) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmd {
 	return NewContentDataCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
@@ -795,19 +859,34 @@ type UpdateContentDataCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c UpdateContentDataCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateContentDataCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c UpdateContentDataCmd) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c UpdateContentDataCmd) Params() any                           { return c.params }
+
+// GetID returns the record ID being updated.
 func (c UpdateContentDataCmd) GetID() string                         { return string(c.params.ContentDataID) }
 
+// GetBefore retrieves the record before modification.
 func (c UpdateContentDataCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
 	queries := mdb.New(tx)
 	return queries.GetContentData(ctx, mdb.GetContentDataParams{ContentDataID: c.params.ContentDataID})
 }
 
+// Execute updates the record in the database.
 func (c UpdateContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateContentData(ctx, mdb.UpdateContentDataParams{
@@ -825,6 +904,7 @@ func (c UpdateContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) erro
 	})
 }
 
+// UpdateContentDataCmd creates a new audited update command.
 func (d Database) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmd {
 	return UpdateContentDataCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
@@ -838,23 +918,37 @@ type DeleteContentDataCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c DeleteContentDataCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteContentDataCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteContentDataCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteContentDataCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c DeleteContentDataCmd) TableName() string                     { return "content_data" }
+
+// GetID returns the record ID being deleted.
 func (c DeleteContentDataCmd) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the record before deletion.
 func (c DeleteContentDataCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentData, error) {
 	queries := mdb.New(tx)
 	return queries.GetContentData(ctx, mdb.GetContentDataParams{ContentDataID: c.id})
 }
 
+// Execute deletes the record from the database.
 func (c DeleteContentDataCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.DeleteContentData(ctx, mdb.DeleteContentDataParams{ContentDataID: c.id})
 }
 
+// DeleteContentDataCmd creates a new audited delete command.
 func (d Database) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmd {
 	return DeleteContentDataCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
@@ -872,14 +966,28 @@ type NewContentDataCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c NewContentDataCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c NewContentDataCmdMysql) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c NewContentDataCmdMysql) Params() any                           { return c.params }
+
+// GetID returns the ID from the created record.
 func (c NewContentDataCmdMysql) GetID(row mdbm.ContentData) string     { return string(row.ContentDataID) }
 
+// Execute creates the record in the database.
 func (c NewContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
 	id := types.NewContentID()
 	queries := mdbm.New(tx)
@@ -902,6 +1010,7 @@ func (c NewContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (m
 	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: id})
 }
 
+// NewContentDataCmd creates a new audited create command.
 func (d MysqlDatabase) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmdMysql {
 	return NewContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
@@ -915,19 +1024,34 @@ type UpdateContentDataCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c UpdateContentDataCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c UpdateContentDataCmdMysql) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c UpdateContentDataCmdMysql) Params() any                           { return c.params }
+
+// GetID returns the record ID being updated.
 func (c UpdateContentDataCmdMysql) GetID() string                         { return string(c.params.ContentDataID) }
 
+// GetBefore retrieves the record before modification.
 func (c UpdateContentDataCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
 	queries := mdbm.New(tx)
 	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: c.params.ContentDataID})
 }
 
+// Execute updates the record in the database.
 func (c UpdateContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateContentData(ctx, mdbm.UpdateContentDataParams{
@@ -945,6 +1069,7 @@ func (c UpdateContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX)
 	})
 }
 
+// UpdateContentDataCmd creates a new audited update command.
 func (d MysqlDatabase) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmdMysql {
 	return UpdateContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
@@ -958,23 +1083,37 @@ type DeleteContentDataCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c DeleteContentDataCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteContentDataCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteContentDataCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteContentDataCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c DeleteContentDataCmdMysql) TableName() string                     { return "content_data" }
+
+// GetID returns the record ID being deleted.
 func (c DeleteContentDataCmdMysql) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the record before deletion.
 func (c DeleteContentDataCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentData, error) {
 	queries := mdbm.New(tx)
 	return queries.GetContentData(ctx, mdbm.GetContentDataParams{ContentDataID: c.id})
 }
 
+// Execute deletes the record from the database.
 func (c DeleteContentDataCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteContentData(ctx, mdbm.DeleteContentDataParams{ContentDataID: c.id})
 }
 
+// DeleteContentDataCmd creates a new audited delete command.
 func (d MysqlDatabase) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmdMysql {
 	return DeleteContentDataCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
@@ -992,14 +1131,28 @@ type NewContentDataCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c NewContentDataCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c NewContentDataCmdPsql) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c NewContentDataCmdPsql) Params() any                           { return c.params }
+
+// GetID returns the ID from the created record.
 func (c NewContentDataCmdPsql) GetID(row mdbp.ContentData) string     { return string(row.ContentDataID) }
 
+// Execute creates the record in the database.
 func (c NewContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateContentData(ctx, mdbp.CreateContentDataParams{
@@ -1017,6 +1170,7 @@ func (c NewContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (md
 	})
 }
 
+// NewContentDataCmd creates a new audited create command.
 func (d PsqlDatabase) NewContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateContentDataParams) NewContentDataCmdPsql {
 	return NewContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
@@ -1030,19 +1184,34 @@ type UpdateContentDataCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c UpdateContentDataCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c UpdateContentDataCmdPsql) TableName() string                     { return "content_data" }
+
+// Params returns the command parameters.
 func (c UpdateContentDataCmdPsql) Params() any                           { return c.params }
+
+// GetID returns the record ID being updated.
 func (c UpdateContentDataCmdPsql) GetID() string                         { return string(c.params.ContentDataID) }
 
+// GetBefore retrieves the record before modification.
 func (c UpdateContentDataCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
 	queries := mdbp.New(tx)
 	return queries.GetContentData(ctx, mdbp.GetContentDataParams{ContentDataID: c.params.ContentDataID})
 }
 
+// Execute updates the record in the database.
 func (c UpdateContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateContentData(ctx, mdbp.UpdateContentDataParams{
@@ -1060,6 +1229,7 @@ func (c UpdateContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) 
 	})
 }
 
+// UpdateContentDataCmd creates a new audited update command.
 func (d PsqlDatabase) UpdateContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateContentDataParams) UpdateContentDataCmdPsql {
 	return UpdateContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
@@ -1073,23 +1243,37 @@ type DeleteContentDataCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the command context.
 func (c DeleteContentDataCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteContentDataCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteContentDataCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteContentDataCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the target table name.
 func (c DeleteContentDataCmdPsql) TableName() string                     { return "content_data" }
+
+// GetID returns the record ID being deleted.
 func (c DeleteContentDataCmdPsql) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the record before deletion.
 func (c DeleteContentDataCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentData, error) {
 	queries := mdbp.New(tx)
 	return queries.GetContentData(ctx, mdbp.GetContentDataParams{ContentDataID: c.id})
 }
 
+// Execute deletes the record from the database.
 func (c DeleteContentDataCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteContentData(ctx, mdbp.DeleteContentDataParams{ContentDataID: c.id})
 }
 
+// DeleteContentDataCmd creates a new audited delete command.
 func (d PsqlDatabase) DeleteContentDataCmd(ctx context.Context, auditCtx audited.AuditContext, id types.ContentID) DeleteContentDataCmdPsql {
 	return DeleteContentDataCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

@@ -13,11 +13,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// backupCmd represents the backup root command for creating, restoring, and listing backups.
 var backupCmd = &cobra.Command{
 	Use:   "backup",
 	Short: "Backup and restore commands",
 }
 
+// backupCreateCmd represents the backup create subcommand that creates a full backup of the database and configured paths.
 var backupCreateCmd = &cobra.Command{
 	Use:   "create",
 	Short: "Create a full backup of the database and configured paths",
@@ -93,6 +95,7 @@ var backupCreateCmd = &cobra.Command{
 	},
 }
 
+// backupRestoreCmd represents the backup restore subcommand that restores the database from a backup archive.
 var backupRestoreCmd = &cobra.Command{
 	Use:   "restore <path>",
 	Short: "Restore from a backup archive",
@@ -148,6 +151,7 @@ var backupRestoreCmd = &cobra.Command{
 	},
 }
 
+// backupListCmd represents the backup list subcommand that displays backup history from the database.
 var backupListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List backup history from the database",
@@ -198,6 +202,7 @@ var backupListCmd = &cobra.Command{
 	},
 }
 
+// formatBytes converts a byte count to a human-readable format with appropriate units (B, KB, MB, etc.).
 func formatBytes(b int64) string {
 	const unit = 1024
 	if b < unit {

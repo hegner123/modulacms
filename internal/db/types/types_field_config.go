@@ -11,11 +11,13 @@ const EmptyJSON = "{}"
 // Cardinality describes whether a relation targets one or many items.
 type Cardinality string
 
+// Cardinality constants for one-to-one and one-to-many relations.
 const (
 	CardinalityOne  Cardinality = "one"
 	CardinalityMany Cardinality = "many"
 )
 
+// Validate checks whether c is a valid Cardinality value.
 func (c Cardinality) Validate() error {
 	switch c {
 	case CardinalityOne, CardinalityMany:

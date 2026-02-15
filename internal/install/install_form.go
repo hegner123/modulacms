@@ -11,14 +11,17 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// DatabaseDriver represents the type of database backend to use.
 type DatabaseDriver string
 
+// Supported database driver options.
 const (
 	SQLITE   DatabaseDriver = "sqlite"
 	MYSQL    DatabaseDriver = "mysql"
 	POSTGRES DatabaseDriver = "postgres"
 )
 
+// InstallArguments holds configuration parameters gathered during the installation wizard.
 type InstallArguments struct {
 	UseDefaultConfig  bool           `json:"use_default_config"`
 	ConfigPath        string         `json:"config_path"`
@@ -28,6 +31,7 @@ type InstallArguments struct {
 	AdminPasswordHash string         `json:"-"`
 }
 
+// RunInstallIO prompts the user through an interactive installation wizard and returns the gathered configuration arguments.
 func RunInstallIO() (*InstallArguments, error) {
 	iarg := InstallArguments{}
 
@@ -95,6 +99,7 @@ func RunInstallIO() (*InstallArguments, error) {
 	return &iarg, nil
 }
 
+// GetUseDefault prompts the user to choose between default or custom configuration.
 func GetUseDefault(i *InstallArguments) error {
 	var useDefault bool
 	f := huh.NewSelect[bool]()
@@ -119,6 +124,7 @@ func GetUseDefault(i *InstallArguments) error {
 	return nil
 }
 
+// GetConfigPath prompts the user for the desired configuration file save location.
 func GetConfigPath(i *InstallArguments) error {
 	path := "config.json"
 	f := huh.NewInput().
@@ -138,6 +144,7 @@ func GetConfigPath(i *InstallArguments) error {
 	return nil
 }
 
+// GetEnvironments prompts the user to enter environment URLs for development, staging, and production.
 func GetEnvironments(i *InstallArguments) error {
 	environments := map[string]string{}
 	devUrl := "localhost"
@@ -165,6 +172,7 @@ func GetEnvironments(i *InstallArguments) error {
 	return nil
 }
 
+// GetPorts prompts the user to enter HTTP, HTTPS, and SSH port numbers.
 func GetPorts(i *InstallArguments) error {
 	httpPort := "1234"
 	httpsPort := "4000"
@@ -190,6 +198,7 @@ func GetPorts(i *InstallArguments) error {
 	return nil
 }
 
+// GetDbDriver prompts the user to select a database driver: SQLite, MySQL, or PostgreSQL.
 func GetDbDriver(i *InstallArguments) error {
 	var driver rune
 	f := huh.NewSelect[rune]()
@@ -226,6 +235,7 @@ func GetDbDriver(i *InstallArguments) error {
 	return nil
 }
 
+// GetFullSqlSetup prompts the user for MySQL or PostgreSQL connection details including host, database name, user, and password.
 func GetFullSqlSetup(i *InstallArguments) error {
 	fUrl := "localhost"
 	fName := "modula_db"
@@ -257,6 +267,7 @@ func GetFullSqlSetup(i *InstallArguments) error {
 	return nil
 }
 
+// GetLiteSqlSetup prompts the user for SQLite database file path and database name.
 func GetLiteSqlSetup(i *InstallArguments) error {
 	fUrl := "modula.db"
 	fName := "modula_db"
@@ -279,6 +290,7 @@ func GetLiteSqlSetup(i *InstallArguments) error {
 	return nil
 }
 
+// GetBuckets prompts the user for S3-compatible bucket credentials and configuration including access key, secret key, region, endpoint, and media/backup paths.
 func GetBuckets(i *InstallArguments) error {
 	bAccess := ""
 	bSecret := ""
@@ -316,6 +328,7 @@ func GetBuckets(i *InstallArguments) error {
 	return nil
 }
 
+// GetDomains prompts the user to enter client and admin site domains.
 func GetDomains(i *InstallArguments) error {
 	clientSite := "localhost"
 	adminSite := "localhost"
@@ -338,6 +351,7 @@ func GetDomains(i *InstallArguments) error {
 	return nil
 }
 
+// GetCORS prompts the user to configure CORS settings including allowed origins and credential permissions.
 func GetCORS(i *InstallArguments) error {
 	origins := "http://localhost:3000"
 	credentials := false
@@ -367,6 +381,7 @@ func GetCORS(i *InstallArguments) error {
 	return nil
 }
 
+// GetCertDir prompts the user for the certificate directory path.
 func GetCertDir(i *InstallArguments) error {
 	certDir := "./"
 
@@ -387,6 +402,7 @@ func GetCertDir(i *InstallArguments) error {
 	return nil
 }
 
+// GetCookie prompts the user to enter a cookie name for session management.
 func GetCookie(i *InstallArguments) error {
 	cookieName := "modula_cms"
 
@@ -407,6 +423,7 @@ func GetCookie(i *InstallArguments) error {
 	return nil
 }
 
+// GetOutputFormat prompts the user to select the content API output format.
 func GetOutputFormat(i *InstallArguments) error {
 	var format string
 	f := huh.NewSelect[string]().
@@ -433,6 +450,7 @@ func GetOutputFormat(i *InstallArguments) error {
 	return nil
 }
 
+// GetOAuthOptional prompts the user whether to configure OAuth and sets default empty values if not.
 func GetOAuthOptional(i *InstallArguments) error {
 	configureOAuth := false
 	f := huh.NewConfirm().
@@ -461,8 +479,7 @@ func GetOAuthOptional(i *InstallArguments) error {
 	return GetOAuth(i)
 }
 
-// GetAdminPassword prompts for the system admin password with confirmation,
-// validates it, and stores the bcrypt hash in InstallArguments.
+// GetAdminPassword prompts for the system admin password with confirmation, validates it, and stores the bcrypt hash.
 func GetAdminPassword(i *InstallArguments) error {
 	password := ""
 	confirm := ""
@@ -502,6 +519,7 @@ func GetAdminPassword(i *InstallArguments) error {
 	return nil
 }
 
+// GetOAuth prompts the user for OAuth provider configuration including provider name, client credentials, and endpoint URLs.
 func GetOAuth(i *InstallArguments) error {
 	providerName := ""
 	clientID := ""

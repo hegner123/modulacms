@@ -2,8 +2,7 @@ package cli
 
 import tea "github.com/charmbracelet/bubbletea"
 
-// FieldBubble is the interface that field input components must satisfy
-// to be usable in content entry forms.
+// FieldBubble is the interface that field input components must satisfy for content entry forms.
 type FieldBubble interface {
 	// Update handles a Bubbletea message, returning the updated bubble and command.
 	Update(msg tea.Msg) (FieldBubble, tea.Cmd)

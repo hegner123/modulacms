@@ -44,6 +44,7 @@ func TimestampNow() Timestamp {
 	return Timestamp{Time: time.Now().UTC(), Valid: true}
 }
 
+// String returns the RFC3339 representation of the timestamp or "null" if invalid.
 func (t Timestamp) String() string {
 	if !t.Valid {
 		return "null"
@@ -56,6 +57,7 @@ func (t Timestamp) IsZero() bool {
 	return !t.Valid || t.Time.IsZero()
 }
 
+// Value returns the database driver value for storage or nil if invalid.
 func (t Timestamp) Value() (driver.Value, error) {
 	if !t.Valid {
 		return nil, nil

@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
     author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
@@ -56,6 +58,8 @@ INSERT INTO media (
     mimetype,
     dimensions,
     srcset,
+    focal_x,
+    focal_y,
     author_id,
     date_created,
     date_modified
@@ -73,7 +77,9 @@ INSERT INTO media (
     $11,
     $12,
     $13,
-    $14
+    $14,
+    $15,
+    $16
 )
 RETURNING *;
 
@@ -89,10 +95,12 @@ SET name = $1,
     mimetype = $8,
     dimensions = $9,
     srcset = $10,
-    author_id = $11,
-    date_created = $12,
-    date_modified = $13
-WHERE media_id = $14;
+    focal_x = $11,
+    focal_y = $12,
+    author_id = $13,
+    date_created = $14,
+    date_modified = $15
+WHERE media_id = $16;
 
 -- name: DeleteMedia :exec
 DELETE FROM media

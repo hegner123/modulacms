@@ -16,6 +16,7 @@ import (
 // STRUCTS
 //////////////////////////////
 
+// UserOauth represents an OAuth token record for a user.
 type UserOauth struct {
 	UserOauthID         types.UserOauthID    `json:"user_oauth_id"`
 	UserID              types.NullableUserID `json:"user_id"`
@@ -27,6 +28,7 @@ type UserOauth struct {
 	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
+// CreateUserOauthParams contains the parameters for creating a new user OAuth record.
 type CreateUserOauthParams struct {
 	UserID              types.NullableUserID `json:"user_id"`
 	OauthProvider       string               `json:"oauth_provider"`
@@ -37,6 +39,7 @@ type CreateUserOauthParams struct {
 	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
+// UpdateUserOauthParams contains the parameters for updating a user OAuth record.
 type UpdateUserOauthParams struct {
 	AccessToken    string            `json:"access_token"`
 	RefreshToken   string            `json:"refresh_token"`
@@ -49,7 +52,7 @@ type UpdateUserOauthParams struct {
 // GENERIC section removed - FormParams deprecated
 // Use types package for direct type conversion
 
-// MapStringUserOauth converts UserOauth to StringUserOauth for table display
+// MapStringUserOauth converts UserOauth to StringUserOauth for table display.
 func MapStringUserOauth(a UserOauth) StringUserOauth {
 	return StringUserOauth{
 		UserOauthID:         a.UserOauthID.String(),
@@ -69,6 +72,7 @@ func MapStringUserOauth(a UserOauth) StringUserOauth {
 
 // MAPS
 
+// MapUserOauth converts a sqlc-generated type to the wrapper type.
 func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
 	return UserOauth{
 		UserOauthID:         a.UserOAuthID,
@@ -82,6 +86,7 @@ func (d Database) MapUserOauth(a mdb.UserOauth) UserOauth {
 	}
 }
 
+// MapCreateUserOauthParams converts wrapper params to sqlc params for SQLite.
 func (d Database) MapCreateUserOauthParams(a CreateUserOauthParams) mdb.CreateUserOauthParams {
 	return mdb.CreateUserOauthParams{
 		UserOAuthID:         types.NewUserOauthID(),
@@ -95,6 +100,7 @@ func (d Database) MapCreateUserOauthParams(a CreateUserOauthParams) mdb.CreateUs
 	}
 }
 
+// MapUpdateUserOauthParams converts wrapper params to sqlc params for SQLite.
 func (d Database) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdb.UpdateUserOauthParams {
 	return mdb.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
@@ -106,6 +112,7 @@ func (d Database) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdb.UpdateUs
 
 // QUERIES
 
+// CountUserOauths returns the total count of user OAuth records.
 func (d Database) CountUserOauths() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -115,12 +122,14 @@ func (d Database) CountUserOauths() (*int64, error) {
 	return &c, nil
 }
 
+// CreateUserOauthTable creates the user_oauth table.
 func (d Database) CreateUserOauthTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateUserOauthTable(d.Context)
 	return err
 }
 
+// CreateUserOauth creates a new user OAuth record with audit trail.
 func (d Database) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
 	cmd := d.NewUserOauthCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -131,11 +140,13 @@ func (d Database) CreateUserOauth(ctx context.Context, ac audited.AuditContext, 
 	return &r, nil
 }
 
+// DeleteUserOauth deletes a user OAuth record with audit trail.
 func (d Database) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
 	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetUserOauth retrieves a user OAuth record by ID.
 func (d Database) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetUserOauth(d.Context, mdb.GetUserOauthParams{UserOAuthID: id})
@@ -146,6 +157,7 @@ func (d Database) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	return &res, nil
 }
 
+// GetUserOauthByUserId retrieves a user OAuth record by user ID.
 func (d Database) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetUserOauthByUserId(d.Context, mdb.GetUserOauthByUserIdParams{UserID: userID})
@@ -156,6 +168,7 @@ func (d Database) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth,
 	return &res, nil
 }
 
+// GetUserOauthByProviderID retrieves a user OAuth record by OAuth provider and provider user ID.
 func (d Database) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdb.GetUserOauthByProviderIDParams{
@@ -169,6 +182,7 @@ func (d Database) GetUserOauthByProviderID(provider string, providerUserID strin
 	return &res, nil
 }
 
+// ListUserOauths retrieves all user OAuth records.
 func (d Database) ListUserOauths() (*[]UserOauth, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListUserOauth(d.Context)
@@ -183,6 +197,7 @@ func (d Database) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
+// UpdateUserOauth updates a user OAuth record with audit trail.
 func (d Database) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
 	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -198,6 +213,7 @@ func (d Database) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, 
 
 // MAPS
 
+// MapUserOauth converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 	return UserOauth{
 		UserOauthID:         a.UserOAuthID,
@@ -211,6 +227,7 @@ func (d MysqlDatabase) MapUserOauth(a mdbm.UserOauth) UserOauth {
 	}
 }
 
+// MapCreateUserOauthParams converts wrapper params to sqlc params for MySQL.
 func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.CreateUserOauthParams {
 	return mdbm.CreateUserOauthParams{
 		UserOAuthID:         types.NewUserOauthID(),
@@ -224,6 +241,7 @@ func (d MysqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbm.Cr
 	}
 }
 
+// MapUpdateUserOauthParams converts wrapper params to sqlc params for MySQL.
 func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.UpdateUserOauthParams {
 	return mdbm.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
@@ -235,6 +253,7 @@ func (d MysqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbm.Up
 
 // QUERIES
 
+// CountUserOauths returns the total count of user OAuth records.
 func (d MysqlDatabase) CountUserOauths() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -244,12 +263,14 @@ func (d MysqlDatabase) CountUserOauths() (*int64, error) {
 	return &c, nil
 }
 
+// CreateUserOauthTable creates the user_oauth table.
 func (d MysqlDatabase) CreateUserOauthTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateUserOauthTable(d.Context)
 	return err
 }
 
+// CreateUserOauth creates a new user OAuth record with audit trail.
 func (d MysqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
 	cmd := d.NewUserOauthCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -260,11 +281,13 @@ func (d MysqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditCont
 	return &r, nil
 }
 
+// DeleteUserOauth deletes a user OAuth record with audit trail.
 func (d MysqlDatabase) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
 	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetUserOauth retrieves a user OAuth record by ID.
 func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetUserOauth(d.Context, mdbm.GetUserOauthParams{UserOAuthID: id})
@@ -275,6 +298,7 @@ func (d MysqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	return &res, nil
 }
 
+// GetUserOauthByUserId retrieves a user OAuth record by user ID.
 func (d MysqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetUserOauthByUserId(d.Context, mdbm.GetUserOauthByUserIdParams{UserID: userID})
@@ -285,6 +309,7 @@ func (d MysqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserO
 	return &res, nil
 }
 
+// GetUserOauthByProviderID retrieves a user OAuth record by OAuth provider and provider user ID.
 func (d MysqlDatabase) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdbm.GetUserOauthByProviderIDParams{
@@ -298,6 +323,7 @@ func (d MysqlDatabase) GetUserOauthByProviderID(provider string, providerUserID 
 	return &res, nil
 }
 
+// ListUserOauths retrieves all user OAuth records.
 func (d MysqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListUserOauth(d.Context)
@@ -312,6 +338,7 @@ func (d MysqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
+// UpdateUserOauth updates a user OAuth record with audit trail.
 func (d MysqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
 	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -327,6 +354,7 @@ func (d MysqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditCont
 
 // MAPS
 
+// MapUserOauth converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 	return UserOauth{
 		UserOauthID:         a.UserOAuthID,
@@ -340,6 +368,7 @@ func (d PsqlDatabase) MapUserOauth(a mdbp.UserOauth) UserOauth {
 	}
 }
 
+// MapCreateUserOauthParams converts wrapper params to sqlc params for PostgreSQL.
 func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.CreateUserOauthParams {
 	return mdbp.CreateUserOauthParams{
 		UserOAuthID:         types.NewUserOauthID(),
@@ -353,6 +382,7 @@ func (d PsqlDatabase) MapCreateUserOauthParams(a CreateUserOauthParams) mdbp.Cre
 	}
 }
 
+// MapUpdateUserOauthParams converts wrapper params to sqlc params for PostgreSQL.
 func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.UpdateUserOauthParams {
 	return mdbp.UpdateUserOauthParams{
 		AccessToken:    a.AccessToken,
@@ -364,6 +394,7 @@ func (d PsqlDatabase) MapUpdateUserOauthParams(a UpdateUserOauthParams) mdbp.Upd
 
 // QUERIES
 
+// CountUserOauths returns the total count of user OAuth records.
 func (d PsqlDatabase) CountUserOauths() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountUserOauths(d.Context)
@@ -373,12 +404,14 @@ func (d PsqlDatabase) CountUserOauths() (*int64, error) {
 	return &c, nil
 }
 
+// CreateUserOauthTable creates the user_oauth table.
 func (d PsqlDatabase) CreateUserOauthTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateUserOauthTable(d.Context)
 	return err
 }
 
+// CreateUserOauth creates a new user OAuth record with audit trail.
 func (d PsqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditContext, s CreateUserOauthParams) (*UserOauth, error) {
 	cmd := d.NewUserOauthCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -389,11 +422,13 @@ func (d PsqlDatabase) CreateUserOauth(ctx context.Context, ac audited.AuditConte
 	return &r, nil
 }
 
+// DeleteUserOauth deletes a user OAuth record with audit trail.
 func (d PsqlDatabase) DeleteUserOauth(ctx context.Context, ac audited.AuditContext, id types.UserOauthID) error {
 	cmd := d.DeleteUserOauthCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetUserOauth retrieves a user OAuth record by ID.
 func (d PsqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetUserOauth(d.Context, mdbp.GetUserOauthParams{UserOAuthID: id})
@@ -404,6 +439,7 @@ func (d PsqlDatabase) GetUserOauth(id types.UserOauthID) (*UserOauth, error) {
 	return &res, nil
 }
 
+// GetUserOauthByUserId retrieves a user OAuth record by user ID.
 func (d PsqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetUserOauthByUserId(d.Context, mdbp.GetUserOauthByUserIdParams{UserID: userID})
@@ -414,6 +450,7 @@ func (d PsqlDatabase) GetUserOauthByUserId(userID types.NullableUserID) (*UserOa
 	return &res, nil
 }
 
+// GetUserOauthByProviderID retrieves a user OAuth record by OAuth provider and provider user ID.
 func (d PsqlDatabase) GetUserOauthByProviderID(provider string, providerUserID string) (*UserOauth, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetUserOauthByProviderID(d.Context, mdbp.GetUserOauthByProviderIDParams{
@@ -427,6 +464,7 @@ func (d PsqlDatabase) GetUserOauthByProviderID(provider string, providerUserID s
 	return &res, nil
 }
 
+// ListUserOauths retrieves all user OAuth records.
 func (d PsqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListUserOauth(d.Context)
@@ -441,6 +479,7 @@ func (d PsqlDatabase) ListUserOauths() (*[]UserOauth, error) {
 	return &res, nil
 }
 
+// UpdateUserOauth updates a user OAuth record with audit trail.
 func (d PsqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditContext, s UpdateUserOauthParams) (*string, error) {
 	cmd := d.UpdateUserOauthCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -454,6 +493,7 @@ func (d PsqlDatabase) UpdateUserOauth(ctx context.Context, ac audited.AuditConte
 
 // ----- SQLite CREATE -----
 
+// NewUserOauthCmd is an audited command for creating a user OAuth record.
 type NewUserOauthCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -462,14 +502,28 @@ type NewUserOauthCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c NewUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c NewUserOauthCmd) Connection() *sql.DB                   { return c.conn }
-func (c NewUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c NewUserOauthCmd) TableName() string                     { return "user_oauth" }
-func (c NewUserOauthCmd) Params() any                           { return c.params }
-func (c NewUserOauthCmd) GetID(u mdb.UserOauth) string          { return string(u.UserOAuthID) }
+// Context returns the context for the command.
+func (c NewUserOauthCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c NewUserOauthCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewUserOauthCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c NewUserOauthCmd) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c NewUserOauthCmd) Params() any { return c.params }
+
+// GetID returns the ID from the created record.
+func (c NewUserOauthCmd) GetID(u mdb.UserOauth) string { return string(u.UserOAuthID) }
+
+// Execute creates a new user OAuth record in the database.
 func (c NewUserOauthCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.UserOauth, error) {
 	queries := mdb.New(tx)
 	return queries.CreateUserOauth(ctx, mdb.CreateUserOauthParams{
@@ -484,12 +538,14 @@ func (c NewUserOauthCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.User
 	})
 }
 
+// NewUserOauthCmd creates a new create command for user OAuth.
 func (d Database) NewUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserOauthParams) NewUserOauthCmd {
 	return NewUserOauthCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- SQLite UPDATE -----
 
+// UpdateUserOauthCmd is an audited command for updating a user OAuth record.
 type UpdateUserOauthCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -498,19 +554,34 @@ type UpdateUserOauthCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c UpdateUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c UpdateUserOauthCmd) Connection() *sql.DB                   { return c.conn }
-func (c UpdateUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c UpdateUserOauthCmd) TableName() string                     { return "user_oauth" }
-func (c UpdateUserOauthCmd) Params() any                           { return c.params }
-func (c UpdateUserOauthCmd) GetID() string                         { return string(c.params.UserOauthID) }
+// Context returns the context for the command.
+func (c UpdateUserOauthCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c UpdateUserOauthCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateUserOauthCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c UpdateUserOauthCmd) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c UpdateUserOauthCmd) Params() any { return c.params }
+
+// GetID returns the record ID.
+func (c UpdateUserOauthCmd) GetID() string { return string(c.params.UserOauthID) }
+
+// GetBefore retrieves the record before the update.
 func (c UpdateUserOauthCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.UserOauth, error) {
 	queries := mdb.New(tx)
 	return queries.GetUserOauth(ctx, mdb.GetUserOauthParams{UserOAuthID: c.params.UserOauthID})
 }
 
+// Execute updates the user OAuth record in the database.
 func (c UpdateUserOauthCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateUserOauth(ctx, mdb.UpdateUserOauthParams{
@@ -521,12 +592,14 @@ func (c UpdateUserOauthCmd) Execute(ctx context.Context, tx audited.DBTX) error 
 	})
 }
 
+// UpdateUserOauthCmd creates a new update command for user OAuth.
 func (d Database) UpdateUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserOauthParams) UpdateUserOauthCmd {
 	return UpdateUserOauthCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- SQLite DELETE -----
 
+// DeleteUserOauthCmd is an audited command for deleting a user OAuth record.
 type DeleteUserOauthCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -535,29 +608,44 @@ type DeleteUserOauthCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c DeleteUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c DeleteUserOauthCmd) Connection() *sql.DB                   { return c.conn }
-func (c DeleteUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c DeleteUserOauthCmd) TableName() string                     { return "user_oauth" }
-func (c DeleteUserOauthCmd) GetID() string                         { return string(c.id) }
+// Context returns the context for the command.
+func (c DeleteUserOauthCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c DeleteUserOauthCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteUserOauthCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c DeleteUserOauthCmd) TableName() string { return "user_oauth" }
+
+// GetID returns the record ID.
+func (c DeleteUserOauthCmd) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the record before the delete.
 func (c DeleteUserOauthCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.UserOauth, error) {
 	queries := mdb.New(tx)
 	return queries.GetUserOauth(ctx, mdb.GetUserOauthParams{UserOAuthID: c.id})
 }
 
+// Execute deletes the user OAuth record from the database.
 func (c DeleteUserOauthCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.DeleteUserOauth(ctx, mdb.DeleteUserOauthParams{UserOAuthID: c.id})
 }
 
+// DeleteUserOauthCmd creates a new delete command for user OAuth.
 func (d Database) DeleteUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserOauthID) DeleteUserOauthCmd {
 	return DeleteUserOauthCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- MySQL CREATE -----
 
+// NewUserOauthCmdMysql is an audited command for creating a user OAuth record on MySQL.
 type NewUserOauthCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -566,14 +654,28 @@ type NewUserOauthCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c NewUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c NewUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
-func (c NewUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c NewUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
-func (c NewUserOauthCmdMysql) Params() any                           { return c.params }
-func (c NewUserOauthCmdMysql) GetID(u mdbm.UserOauth) string        { return string(u.UserOAuthID) }
+// Context returns the context for the command.
+func (c NewUserOauthCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c NewUserOauthCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewUserOauthCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c NewUserOauthCmdMysql) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c NewUserOauthCmdMysql) Params() any { return c.params }
+
+// GetID returns the ID from the created record.
+func (c NewUserOauthCmdMysql) GetID(u mdbm.UserOauth) string { return string(u.UserOAuthID) }
+
+// Execute creates a new user OAuth record in the database.
 func (c NewUserOauthCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.UserOauth, error) {
 	queries := mdbm.New(tx)
 	id := types.NewUserOauthID()
@@ -593,12 +695,14 @@ func (c NewUserOauthCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	return queries.GetUserOauth(ctx, mdbm.GetUserOauthParams{UserOAuthID: id})
 }
 
+// NewUserOauthCmd creates a new create command for user OAuth on MySQL.
 func (d MysqlDatabase) NewUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserOauthParams) NewUserOauthCmdMysql {
 	return NewUserOauthCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- MySQL UPDATE -----
 
+// UpdateUserOauthCmdMysql is an audited command for updating a user OAuth record on MySQL.
 type UpdateUserOauthCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -607,19 +711,34 @@ type UpdateUserOauthCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c UpdateUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c UpdateUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
-func (c UpdateUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c UpdateUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
-func (c UpdateUserOauthCmdMysql) Params() any                           { return c.params }
-func (c UpdateUserOauthCmdMysql) GetID() string                         { return string(c.params.UserOauthID) }
+// Context returns the context for the command.
+func (c UpdateUserOauthCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c UpdateUserOauthCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateUserOauthCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c UpdateUserOauthCmdMysql) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c UpdateUserOauthCmdMysql) Params() any { return c.params }
+
+// GetID returns the record ID.
+func (c UpdateUserOauthCmdMysql) GetID() string { return string(c.params.UserOauthID) }
+
+// GetBefore retrieves the record before the update.
 func (c UpdateUserOauthCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.UserOauth, error) {
 	queries := mdbm.New(tx)
 	return queries.GetUserOauth(ctx, mdbm.GetUserOauthParams{UserOAuthID: c.params.UserOauthID})
 }
 
+// Execute updates the user OAuth record in the database.
 func (c UpdateUserOauthCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateUserOauth(ctx, mdbm.UpdateUserOauthParams{
@@ -630,12 +749,14 @@ func (c UpdateUserOauthCmdMysql) Execute(ctx context.Context, tx audited.DBTX) e
 	})
 }
 
+// UpdateUserOauthCmd creates a new update command for user OAuth on MySQL.
 func (d MysqlDatabase) UpdateUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserOauthParams) UpdateUserOauthCmdMysql {
 	return UpdateUserOauthCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- MySQL DELETE -----
 
+// DeleteUserOauthCmdMysql is an audited command for deleting a user OAuth record on MySQL.
 type DeleteUserOauthCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -644,29 +765,44 @@ type DeleteUserOauthCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c DeleteUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c DeleteUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
-func (c DeleteUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c DeleteUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
-func (c DeleteUserOauthCmdMysql) GetID() string                         { return string(c.id) }
+// Context returns the context for the command.
+func (c DeleteUserOauthCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c DeleteUserOauthCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteUserOauthCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c DeleteUserOauthCmdMysql) TableName() string { return "user_oauth" }
+
+// GetID returns the record ID.
+func (c DeleteUserOauthCmdMysql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the record before the delete.
 func (c DeleteUserOauthCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.UserOauth, error) {
 	queries := mdbm.New(tx)
 	return queries.GetUserOauth(ctx, mdbm.GetUserOauthParams{UserOAuthID: c.id})
 }
 
+// Execute deletes the user OAuth record from the database.
 func (c DeleteUserOauthCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteUserOauth(ctx, mdbm.DeleteUserOauthParams{UserOAuthID: c.id})
 }
 
+// DeleteUserOauthCmd creates a new delete command for user OAuth on MySQL.
 func (d MysqlDatabase) DeleteUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserOauthID) DeleteUserOauthCmdMysql {
 	return DeleteUserOauthCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- PostgreSQL CREATE -----
 
+// NewUserOauthCmdPsql is an audited command for creating a user OAuth record on PostgreSQL.
 type NewUserOauthCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -675,14 +811,28 @@ type NewUserOauthCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c NewUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c NewUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
-func (c NewUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c NewUserOauthCmdPsql) TableName() string                     { return "user_oauth" }
-func (c NewUserOauthCmdPsql) Params() any                           { return c.params }
-func (c NewUserOauthCmdPsql) GetID(u mdbp.UserOauth) string        { return string(u.UserOAuthID) }
+// Context returns the context for the command.
+func (c NewUserOauthCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c NewUserOauthCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewUserOauthCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c NewUserOauthCmdPsql) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c NewUserOauthCmdPsql) Params() any { return c.params }
+
+// GetID returns the ID from the created record.
+func (c NewUserOauthCmdPsql) GetID(u mdbp.UserOauth) string { return string(u.UserOAuthID) }
+
+// Execute creates a new user OAuth record in the database.
 func (c NewUserOauthCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.UserOauth, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateUserOauth(ctx, mdbp.CreateUserOauthParams{
@@ -697,12 +847,14 @@ func (c NewUserOauthCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp
 	})
 }
 
+// NewUserOauthCmd creates a new create command for user OAuth on PostgreSQL.
 func (d PsqlDatabase) NewUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateUserOauthParams) NewUserOauthCmdPsql {
 	return NewUserOauthCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
 // ----- PostgreSQL UPDATE -----
 
+// UpdateUserOauthCmdPsql is an audited command for updating a user OAuth record on PostgreSQL.
 type UpdateUserOauthCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -711,19 +863,34 @@ type UpdateUserOauthCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c UpdateUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c UpdateUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
-func (c UpdateUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c UpdateUserOauthCmdPsql) TableName() string                     { return "user_oauth" }
-func (c UpdateUserOauthCmdPsql) Params() any                           { return c.params }
-func (c UpdateUserOauthCmdPsql) GetID() string                         { return string(c.params.UserOauthID) }
+// Context returns the context for the command.
+func (c UpdateUserOauthCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c UpdateUserOauthCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateUserOauthCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c UpdateUserOauthCmdPsql) TableName() string { return "user_oauth" }
+
+// Params returns the command parameters.
+func (c UpdateUserOauthCmdPsql) Params() any { return c.params }
+
+// GetID returns the record ID.
+func (c UpdateUserOauthCmdPsql) GetID() string { return string(c.params.UserOauthID) }
+
+// GetBefore retrieves the record before the update.
 func (c UpdateUserOauthCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.UserOauth, error) {
 	queries := mdbp.New(tx)
 	return queries.GetUserOauth(ctx, mdbp.GetUserOauthParams{UserOAuthID: c.params.UserOauthID})
 }
 
+// Execute updates the user OAuth record in the database.
 func (c UpdateUserOauthCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateUserOauth(ctx, mdbp.UpdateUserOauthParams{
@@ -734,12 +901,14 @@ func (c UpdateUserOauthCmdPsql) Execute(ctx context.Context, tx audited.DBTX) er
 	})
 }
 
+// UpdateUserOauthCmd creates a new update command for user OAuth on PostgreSQL.
 func (d PsqlDatabase) UpdateUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateUserOauthParams) UpdateUserOauthCmdPsql {
 	return UpdateUserOauthCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
 // ----- PostgreSQL DELETE -----
 
+// DeleteUserOauthCmdPsql is an audited command for deleting a user OAuth record on PostgreSQL.
 type DeleteUserOauthCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -748,23 +917,37 @@ type DeleteUserOauthCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-func (c DeleteUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c DeleteUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
-func (c DeleteUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c DeleteUserOauthCmdPsql) TableName() string                     { return "user_oauth" }
-func (c DeleteUserOauthCmdPsql) GetID() string                         { return string(c.id) }
+// Context returns the context for the command.
+func (c DeleteUserOauthCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context for the command.
+func (c DeleteUserOauthCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteUserOauthCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
+func (c DeleteUserOauthCmdPsql) TableName() string { return "user_oauth" }
+
+// GetID returns the record ID.
+func (c DeleteUserOauthCmdPsql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the record before the delete.
 func (c DeleteUserOauthCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.UserOauth, error) {
 	queries := mdbp.New(tx)
 	return queries.GetUserOauth(ctx, mdbp.GetUserOauthParams{UserOAuthID: c.id})
 }
 
+// Execute deletes the user OAuth record from the database.
 func (c DeleteUserOauthCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteUserOauth(ctx, mdbp.DeleteUserOauthParams{UserOAuthID: c.id})
 }
 
+// DeleteUserOauthCmd creates a new delete command for user OAuth on PostgreSQL.
 func (d PsqlDatabase) DeleteUserOauthCmd(ctx context.Context, auditCtx audited.AuditContext, id types.UserOauthID) DeleteUserOauthCmdPsql {
 	return DeleteUserOauthCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

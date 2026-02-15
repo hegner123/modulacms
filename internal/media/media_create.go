@@ -10,6 +10,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
+// CreateMedia creates a new media record with the given name using the provided config.
 func CreateMedia(name string, c config.Config) (string, error) {
 	d := db.ConfigDB(c)
 	params := db.CreateMediaParams{

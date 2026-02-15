@@ -16,9 +16,10 @@ import (
 	"github.com/muesli/termenv"
 )
 
+// timeMsg is a message type for periodic time updates.
 type timeMsg time.Time
 
-// Wish Middleware launches CLI program
+// CliMiddleware returns a Wish middleware that launches the CLI TUI application for SSH sessions.
 func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger) wish.Middleware {
 	newProg := func(m tea.Model, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)

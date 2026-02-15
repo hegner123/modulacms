@@ -10,12 +10,14 @@ import (
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
+// ReadSingleRow represents a single row displayed in read single page view.
 type ReadSingleRow struct {
 	Index int
 	Key   string
 	Value string
 }
 
+// ViewPageMenus renders the page menu bar from model menu items.
 func ViewPageMenus(m Model) string {
 	out := strings.Builder{}
 	for _, item := range m.PageMenu {
@@ -245,9 +247,11 @@ func (m Model) View() string {
 
 // Rendering utilities
 
+// TitleFile embeds title graphics from the titles directory.
 //go:embed titles
 var TitleFile embed.FS
 
+// RenderUI renders the main UI for the model.
 func (m Model) RenderUI() string {
 	docStyle := lipgloss.NewStyle()
 	docStyle = docStyle.Width(m.Width).Height(m.Height)
@@ -268,6 +272,7 @@ func (m Model) RenderUI() string {
 	return renderedDoc
 }
 
+// formatJSON marshals config to formatted JSON.
 func formatJSON(b *config.Config) (string, error) {
 	formatted, err := json.MarshalIndent(*b, "", "  ")
 	if err != nil {

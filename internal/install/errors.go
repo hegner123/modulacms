@@ -9,6 +9,7 @@ type InstallError struct {
 	Hint      string
 }
 
+// Error returns the formatted error message including operation, cause, and hint if available.
 func (e *InstallError) Error() string {
 	if e.Hint != "" {
 		return fmt.Sprintf("%s: %v\nHint: %s", e.Operation, e.Cause, e.Hint)
@@ -16,6 +17,7 @@ func (e *InstallError) Error() string {
 	return fmt.Sprintf("%s: %v", e.Operation, e.Cause)
 }
 
+// Unwrap returns the underlying error cause for error chain inspection.
 func (e *InstallError) Unwrap() error {
 	return e.Cause
 }

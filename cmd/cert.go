@@ -8,11 +8,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// certCmd is the root command for certificate management operations.
 var certCmd = &cobra.Command{
 	Use:   "cert",
 	Short: "Certificate management commands",
 }
 
+// certGenerateCmd generates self-signed SSL certificates for local development use.
 var certGenerateCmd = &cobra.Command{
 	Use:   "generate",
 	Short: "Generate self-signed SSL certificates for local development",

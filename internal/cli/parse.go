@@ -8,8 +8,8 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
-// Parse scans sql.Rows into appropriate structs based on the DBTable type
-// Returns a slice of results or falls back to map[string]any for unknown tables
+// Parse scans sql.Rows into appropriate structs based on the DBTable type.
+// Returns a slice of results or falls back to map[string]any for unknown tables.
 func Parse(rows *sql.Rows, table db.DBTable) (any, error) {
 	if rows == nil {
 		return nil, fmt.Errorf("rows cannot be nil")

@@ -17,14 +17,17 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// UpdatedDialog signals that a dialog has been updated.
 type UpdatedDialog struct{}
 
+// NewDialogUpdate creates a command returning an UpdatedDialog message.
 func NewDialogUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return UpdatedDialog{}
 	}
 }
 
+// UpdateDialog handles dialog-related messages and state updates.
 func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case DialogReadyOKSet:
@@ -1305,13 +1308,13 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	}
 }
 
-// DatatypeCreatedFromDialogMsg is sent after a datatype is created from the form dialog
+// DatatypeCreatedFromDialogMsg is sent after a datatype is successfully created from dialog.
 type DatatypeCreatedFromDialogMsg struct {
 	DatatypeID types.DatatypeID
 	Label      string
 }
 
-// CreateDatatypeFromDialogCmd creates a datatype from form dialog input
+// CreateDatatypeFromDialogCmd creates a command to create a datatype from dialog input.
 func CreateDatatypeFromDialogCmd(label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateDatatypeFromDialogRequestMsg{
@@ -1322,14 +1325,14 @@ func CreateDatatypeFromDialogCmd(label, dtype, parentID string) tea.Cmd {
 	}
 }
 
-// CreateDatatypeFromDialogRequestMsg triggers datatype creation
+// CreateDatatypeFromDialogRequestMsg triggers datatype creation from dialog.
 type CreateDatatypeFromDialogRequestMsg struct {
 	Label    string
 	Type     string
 	ParentID string
 }
 
-// HandleCreateDatatypeFromDialog processes the creation request
+// HandleCreateDatatypeFromDialog processes the datatype creation request.
 func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID
@@ -1406,14 +1409,14 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 	}
 }
 
-// FieldCreatedFromDialogMsg is sent after a field is created from the form dialog
+// FieldCreatedFromDialogMsg is sent after a field is successfully created from dialog.
 type FieldCreatedFromDialogMsg struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
 	Label      string
 }
 
-// CreateFieldFromDialogCmd creates a field and links it to a datatype
+// CreateFieldFromDialogCmd creates a command to create a field and link it to a datatype.
 func CreateFieldFromDialogCmd(label, fieldType string, datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return CreateFieldFromDialogRequestMsg{
@@ -1424,14 +1427,14 @@ func CreateFieldFromDialogCmd(label, fieldType string, datatypeID types.Datatype
 	}
 }
 
-// CreateFieldFromDialogRequestMsg triggers field creation
+// CreateFieldFromDialogRequestMsg triggers field creation from dialog.
 type CreateFieldFromDialogRequestMsg struct {
 	Label      string
 	Type       string
 	DatatypeID types.DatatypeID
 }
 
-// HandleCreateFieldFromDialog processes the field creation request
+// HandleCreateFieldFromDialog processes the field creation request.
 func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID
@@ -1539,14 +1542,14 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 	}
 }
 
-// RouteCreatedFromDialogMsg is sent after a route is created from the form dialog
+// RouteCreatedFromDialogMsg is sent after a route is successfully created from dialog.
 type RouteCreatedFromDialogMsg struct {
 	RouteID types.RouteID
 	Title   string
 	Slug    string
 }
 
-// CreateRouteFromDialogCmd creates a route from form dialog input
+// CreateRouteFromDialogCmd creates a command to create a route from dialog input.
 func CreateRouteFromDialogCmd(title, slug string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateRouteFromDialogRequestMsg{
@@ -1556,13 +1559,13 @@ func CreateRouteFromDialogCmd(title, slug string) tea.Cmd {
 	}
 }
 
-// CreateRouteFromDialogRequestMsg triggers route creation
+// CreateRouteFromDialogRequestMsg triggers route creation from dialog.
 type CreateRouteFromDialogRequestMsg struct {
 	Title string
 	Slug  string
 }
 
-// HandleCreateRouteFromDialog processes the route creation request
+// HandleCreateRouteFromDialog processes the route creation request.
 func (m Model) HandleCreateRouteFromDialog(msg CreateRouteFromDialogRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID
@@ -1658,13 +1661,13 @@ func (m Model) HandleCreateRouteFromDialog(msg CreateRouteFromDialogRequestMsg) 
 // UPDATE DATATYPE FROM DIALOG
 // =============================================================================
 
-// DatatypeUpdatedFromDialogMsg is sent after a datatype is updated from the form dialog
+// DatatypeUpdatedFromDialogMsg is sent after a datatype is successfully updated from dialog.
 type DatatypeUpdatedFromDialogMsg struct {
 	DatatypeID types.DatatypeID
 	Label      string
 }
 
-// UpdateDatatypeFromDialogRequestMsg triggers datatype update
+// UpdateDatatypeFromDialogRequestMsg triggers datatype update from dialog.
 type UpdateDatatypeFromDialogRequestMsg struct {
 	DatatypeID string
 	Label      string
@@ -1672,7 +1675,7 @@ type UpdateDatatypeFromDialogRequestMsg struct {
 	ParentID   string
 }
 
-// UpdateDatatypeFromDialogCmd creates a command to update a datatype from form dialog input
+// UpdateDatatypeFromDialogCmd creates a command to update a datatype from dialog input.
 func UpdateDatatypeFromDialogCmd(datatypeID, label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateDatatypeFromDialogRequestMsg{
@@ -1684,7 +1687,7 @@ func UpdateDatatypeFromDialogCmd(datatypeID, label, dtype, parentID string) tea.
 	}
 }
 
-// HandleUpdateDatatypeFromDialog processes the datatype update request
+// HandleUpdateDatatypeFromDialog processes the datatype update request.
 func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogRequestMsg) tea.Cmd {
 	cfg := m.Config
 
@@ -1759,21 +1762,21 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 // UPDATE FIELD FROM DIALOG
 // =============================================================================
 
-// FieldUpdatedFromDialogMsg is sent after a field is updated from the form dialog
+// FieldUpdatedFromDialogMsg is sent after a field is successfully updated from dialog.
 type FieldUpdatedFromDialogMsg struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
 	Label      string
 }
 
-// UpdateFieldFromDialogRequestMsg triggers field update
+// UpdateFieldFromDialogRequestMsg triggers field update from dialog.
 type UpdateFieldFromDialogRequestMsg struct {
 	FieldID string
 	Label   string
 	Type    string
 }
 
-// UpdateFieldFromDialogCmd creates a command to update a field from form dialog input
+// UpdateFieldFromDialogCmd creates a command to update a field from dialog input.
 func UpdateFieldFromDialogCmd(fieldID, label, fieldType string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateFieldFromDialogRequestMsg{
@@ -1784,7 +1787,7 @@ func UpdateFieldFromDialogCmd(fieldID, label, fieldType string) tea.Cmd {
 	}
 }
 
-// HandleUpdateFieldFromDialog processes the field update request
+// HandleUpdateFieldFromDialog processes the field update request.
 func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) tea.Cmd {
 	cfg := m.Config
 	// Capture the current datatype ID to refresh fields after update
@@ -1860,21 +1863,21 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 // UPDATE ROUTE FROM DIALOG
 // =============================================================================
 
-// RouteUpdatedFromDialogMsg is sent after a route is updated from the form dialog
+// RouteUpdatedFromDialogMsg is sent after a route is successfully updated from dialog.
 type RouteUpdatedFromDialogMsg struct {
 	RouteID types.RouteID
 	Title   string
 	Slug    string
 }
 
-// UpdateRouteFromDialogRequestMsg triggers route update
+// UpdateRouteFromDialogRequestMsg triggers route update from dialog.
 type UpdateRouteFromDialogRequestMsg struct {
 	RouteID string
 	Title   string
 	Slug    string
 }
 
-// UpdateRouteFromDialogCmd creates a command to update a route from form dialog input
+// UpdateRouteFromDialogCmd creates a command to update a route from dialog input.
 func UpdateRouteFromDialogCmd(routeID, title, slug string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateRouteFromDialogRequestMsg{
@@ -1885,7 +1888,7 @@ func UpdateRouteFromDialogCmd(routeID, title, slug string) tea.Cmd {
 	}
 }
 
-// HandleUpdateRouteFromDialog processes the route update request
+// HandleUpdateRouteFromDialog processes the route update request.
 func (m Model) HandleUpdateRouteFromDialog(msg UpdateRouteFromDialogRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID
@@ -1980,7 +1983,7 @@ func (m Model) HandleUpdateRouteFromDialog(msg UpdateRouteFromDialogRequestMsg) 
 // CREATE ROUTE WITH CONTENT
 // =============================================================================
 
-// RouteWithContentCreatedMsg is sent after a route and initial content are created
+// RouteWithContentCreatedMsg is sent after a route and initial content are successfully created.
 type RouteWithContentCreatedMsg struct {
 	RouteID       types.RouteID
 	ContentDataID types.ContentID
@@ -1989,14 +1992,14 @@ type RouteWithContentCreatedMsg struct {
 	Slug          string
 }
 
-// CreateRouteWithContentRequestMsg triggers route and content creation
+// CreateRouteWithContentRequestMsg triggers route and content creation from dialog.
 type CreateRouteWithContentRequestMsg struct {
 	Title      string
 	Slug       string
 	DatatypeID string
 }
 
-// CreateRouteWithContentCmd creates a command to create a route with initial content
+// CreateRouteWithContentCmd creates a command to create a route with initial content.
 func CreateRouteWithContentCmd(title, slug, datatypeID string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateRouteWithContentRequestMsg{
@@ -2007,7 +2010,7 @@ func CreateRouteWithContentCmd(title, slug, datatypeID string) tea.Cmd {
 	}
 }
 
-// HandleCreateRouteWithContent processes the route with content creation request
+// HandleCreateRouteWithContent processes the route with content creation request.
 func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID
@@ -2133,26 +2136,26 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 // INITIALIZE ROUTE CONTENT
 // =============================================================================
 
-// InitializeRouteContentContext stores context for initializing route content
+// InitializeRouteContentContext stores context for route content initialization.
 type InitializeRouteContentContext struct {
 	Route      db.Routes
 	DatatypeID string
 }
 
-// Global variable to store the context (will be set before dialog is shown)
+// Global variable to store the context for route content initialization.
 var initializeRouteContentContext *InitializeRouteContentContext
 
 // =============================================================================
 // DELETE CONTENT
 // =============================================================================
 
-// DeleteContentContext stores context for deleting content
+// DeleteContentContext stores context for a content deletion operation.
 type DeleteContentContext struct {
 	ContentID string
 	RouteID   string
 }
 
-// Restore backup context
+// RestoreBackupContext stores context for a backup restore operation.
 type RestoreBackupContext struct {
 	Path string
 }
@@ -2160,13 +2163,13 @@ type RestoreBackupContext struct {
 var restoreBackupContext *RestoreBackupContext
 var restoreRequiresQuit bool
 
-// Global variable to store the delete context
+// Global variable to store delete context for content deletion.
 var deleteContentContext *DeleteContentContext
 
-// Global variable to store delete content field context
+// Global variable to store delete content field context.
 var deleteContentFieldContext *DeleteContentFieldContext
 
-// editSingleFieldContext stores context for the single-field edit dialog
+// editSingleFieldCtx stores context for the single-field edit dialog.
 type editSingleFieldCtx struct {
 	ContentFieldID types.ContentFieldID
 	ContentID      types.ContentID
@@ -2177,7 +2180,7 @@ type editSingleFieldCtx struct {
 
 var editSingleFieldContext *editSingleFieldCtx
 
-// addContentFieldContext stores context for the add content field operation
+// addContentFieldCtx stores context for the add content field operation.
 type addContentFieldCtx struct {
 	ContentID  types.ContentID
 	RouteID    types.RouteID
@@ -2190,7 +2193,7 @@ var addContentFieldContext *addContentFieldCtx
 // DELETE DATATYPE
 // =============================================================================
 
-// DeleteDatatypeContext stores context for deleting a datatype
+// DeleteDatatypeContext stores context for a datatype deletion operation.
 type DeleteDatatypeContext struct {
 	DatatypeID types.DatatypeID
 	Label      string
@@ -2198,14 +2201,14 @@ type DeleteDatatypeContext struct {
 
 var deleteDatatypeContext *DeleteDatatypeContext
 
-// ShowDeleteDatatypeDialogMsg triggers showing a delete datatype confirmation dialog
+// ShowDeleteDatatypeDialogMsg triggers showing a delete datatype confirmation dialog.
 type ShowDeleteDatatypeDialogMsg struct {
 	DatatypeID  types.DatatypeID
 	Label       string
 	HasChildren bool
 }
 
-// ShowDeleteDatatypeDialogCmd creates a command to show a delete datatype confirmation dialog
+// ShowDeleteDatatypeDialogCmd creates a command to show a delete datatype confirmation dialog.
 func ShowDeleteDatatypeDialogCmd(datatypeID types.DatatypeID, label string, hasChildren bool) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteDatatypeDialogMsg{
@@ -2216,17 +2219,17 @@ func ShowDeleteDatatypeDialogCmd(datatypeID types.DatatypeID, label string, hasC
 	}
 }
 
-// DeleteDatatypeRequestMsg triggers datatype deletion
+// DeleteDatatypeRequestMsg triggers datatype deletion.
 type DeleteDatatypeRequestMsg struct {
 	DatatypeID types.DatatypeID
 }
 
-// DatatypeDeletedMsg is sent after a datatype is successfully deleted
+// DatatypeDeletedMsg is sent after a datatype is successfully deleted.
 type DatatypeDeletedMsg struct {
 	DatatypeID types.DatatypeID
 }
 
-// DeleteDatatypeCmd creates a command to delete a datatype
+// DeleteDatatypeCmd creates a command to delete a datatype.
 func DeleteDatatypeCmd(datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteDatatypeRequestMsg{DatatypeID: datatypeID}
@@ -2237,7 +2240,7 @@ func DeleteDatatypeCmd(datatypeID types.DatatypeID) tea.Cmd {
 // DELETE FIELD
 // =============================================================================
 
-// DeleteFieldContext stores context for deleting a field from a datatype
+// DeleteFieldContext stores context for a field deletion operation.
 type DeleteFieldContext struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
@@ -2246,14 +2249,14 @@ type DeleteFieldContext struct {
 
 var deleteFieldContext *DeleteFieldContext
 
-// ShowDeleteFieldDialogMsg triggers showing a delete field confirmation dialog
+// ShowDeleteFieldDialogMsg triggers showing a delete field confirmation dialog.
 type ShowDeleteFieldDialogMsg struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
 	Label      string
 }
 
-// ShowDeleteFieldDialogCmd creates a command to show a delete field confirmation dialog
+// ShowDeleteFieldDialogCmd creates a command to show a delete field confirmation dialog.
 func ShowDeleteFieldDialogCmd(fieldID types.FieldID, datatypeID types.DatatypeID, label string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteFieldDialogMsg{
@@ -2264,19 +2267,19 @@ func ShowDeleteFieldDialogCmd(fieldID types.FieldID, datatypeID types.DatatypeID
 	}
 }
 
-// DeleteFieldRequestMsg triggers field deletion
+// DeleteFieldRequestMsg triggers field deletion.
 type DeleteFieldRequestMsg struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
 }
 
-// FieldDeletedMsg is sent after a field is successfully deleted
+// FieldDeletedMsg is sent after a field is successfully deleted.
 type FieldDeletedMsg struct {
 	FieldID    types.FieldID
 	DatatypeID types.DatatypeID
 }
 
-// DeleteFieldCmd creates a command to delete a field
+// DeleteFieldCmd creates a command to delete a field.
 func DeleteFieldCmd(fieldID types.FieldID, datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteFieldRequestMsg{FieldID: fieldID, DatatypeID: datatypeID}
@@ -2287,7 +2290,7 @@ func DeleteFieldCmd(fieldID types.FieldID, datatypeID types.DatatypeID) tea.Cmd 
 // DELETE ROUTE
 // =============================================================================
 
-// DeleteRouteContext stores context for deleting a route
+// DeleteRouteContext stores context for a route deletion operation.
 type DeleteRouteContext struct {
 	RouteID types.RouteID
 	Title   string
@@ -2295,13 +2298,13 @@ type DeleteRouteContext struct {
 
 var deleteRouteContext *DeleteRouteContext
 
-// ShowDeleteRouteDialogMsg triggers showing a delete route confirmation dialog
+// ShowDeleteRouteDialogMsg triggers showing a delete route confirmation dialog.
 type ShowDeleteRouteDialogMsg struct {
 	RouteID types.RouteID
 	Title   string
 }
 
-// ShowDeleteRouteDialogCmd creates a command to show a delete route confirmation dialog
+// ShowDeleteRouteDialogCmd creates a command to show a delete route confirmation dialog.
 func ShowDeleteRouteDialogCmd(routeID types.RouteID, title string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteRouteDialogMsg{
@@ -2311,17 +2314,17 @@ func ShowDeleteRouteDialogCmd(routeID types.RouteID, title string) tea.Cmd {
 	}
 }
 
-// DeleteRouteRequestMsg triggers route deletion
+// DeleteRouteRequestMsg triggers route deletion.
 type DeleteRouteRequestMsg struct {
 	RouteID types.RouteID
 }
 
-// RouteDeletedMsg is sent after a route is successfully deleted
+// RouteDeletedMsg is sent after a route is successfully deleted.
 type RouteDeletedMsg struct {
 	RouteID types.RouteID
 }
 
-// DeleteRouteCmd creates a command to delete a route
+// DeleteRouteCmd creates a command to delete a route.
 func DeleteRouteCmd(routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteRouteRequestMsg{RouteID: routeID}
@@ -2332,7 +2335,7 @@ func DeleteRouteCmd(routeID types.RouteID) tea.Cmd {
 // DELETE MEDIA
 // =============================================================================
 
-// DeleteMediaContext stores context for deleting a media item
+// DeleteMediaContext stores context for a media deletion operation.
 type DeleteMediaContext struct {
 	MediaID types.MediaID
 	Label   string
@@ -2340,13 +2343,13 @@ type DeleteMediaContext struct {
 
 var deleteMediaContext *DeleteMediaContext
 
-// ShowDeleteMediaDialogMsg triggers showing a delete media confirmation dialog
+// ShowDeleteMediaDialogMsg triggers showing a delete media confirmation dialog.
 type ShowDeleteMediaDialogMsg struct {
 	MediaID types.MediaID
 	Label   string
 }
 
-// ShowDeleteMediaDialogCmd creates a command to show a delete media confirmation dialog
+// ShowDeleteMediaDialogCmd creates a command to show a delete media confirmation dialog.
 func ShowDeleteMediaDialogCmd(mediaID types.MediaID, label string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteMediaDialogMsg{
@@ -2356,17 +2359,17 @@ func ShowDeleteMediaDialogCmd(mediaID types.MediaID, label string) tea.Cmd {
 	}
 }
 
-// DeleteMediaRequestMsg triggers media deletion
+// DeleteMediaRequestMsg triggers media deletion.
 type DeleteMediaRequestMsg struct {
 	MediaID types.MediaID
 }
 
-// MediaDeletedMsg is sent after a media item is successfully deleted
+// MediaDeletedMsg is sent after a media item is successfully deleted.
 type MediaDeletedMsg struct {
 	MediaID types.MediaID
 }
 
-// DeleteMediaCmd creates a command to delete a media item
+// DeleteMediaCmd creates a command to delete a media item.
 func DeleteMediaCmd(mediaID types.MediaID) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteMediaRequestMsg{MediaID: mediaID}
@@ -2377,7 +2380,7 @@ func DeleteMediaCmd(mediaID types.MediaID) tea.Cmd {
 // DELETE USER
 // =============================================================================
 
-// DeleteUserContext stores context for deleting a user
+// DeleteUserContext stores context for a user deletion operation.
 type DeleteUserContext struct {
 	UserID   types.UserID
 	Username string
@@ -2385,13 +2388,13 @@ type DeleteUserContext struct {
 
 var deleteUserContext *DeleteUserContext
 
-// ShowDeleteUserDialogMsg triggers showing a delete user confirmation dialog
+// ShowDeleteUserDialogMsg triggers showing a delete user confirmation dialog.
 type ShowDeleteUserDialogMsg struct {
 	UserID   types.UserID
 	Username string
 }
 
-// ShowDeleteUserDialogCmd creates a command to show a delete user confirmation dialog
+// ShowDeleteUserDialogCmd creates a command to show a delete user confirmation dialog.
 func ShowDeleteUserDialogCmd(userID types.UserID, username string) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteUserDialogMsg{
@@ -2401,17 +2404,17 @@ func ShowDeleteUserDialogCmd(userID types.UserID, username string) tea.Cmd {
 	}
 }
 
-// DeleteUserRequestMsg triggers user deletion
+// DeleteUserRequestMsg triggers user deletion.
 type DeleteUserRequestMsg struct {
 	UserID types.UserID
 }
 
-// UserDeletedMsg is sent after a user is successfully deleted
+// UserDeletedMsg is sent after a user is successfully deleted.
 type UserDeletedMsg struct {
 	UserID types.UserID
 }
 
-// DeleteUserCmd creates a command to delete a user
+// DeleteUserCmd creates a command to delete a user.
 func DeleteUserCmd(userID types.UserID) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteUserRequestMsg{UserID: userID}
@@ -2422,7 +2425,7 @@ func DeleteUserCmd(userID types.UserID) tea.Cmd {
 // CREATE/UPDATE USER
 // =============================================================================
 
-// CreateUserFromDialogRequestMsg triggers user creation
+// CreateUserFromDialogRequestMsg triggers user creation from dialog.
 type CreateUserFromDialogRequestMsg struct {
 	Username string
 	Name     string
@@ -2430,13 +2433,13 @@ type CreateUserFromDialogRequestMsg struct {
 	Role     string
 }
 
-// UserCreatedFromDialogMsg is sent after a user is created from the form dialog
+// UserCreatedFromDialogMsg is sent after a user is successfully created from dialog.
 type UserCreatedFromDialogMsg struct {
 	UserID   types.UserID
 	Username string
 }
 
-// UpdateUserFromDialogRequestMsg triggers user update
+// UpdateUserFromDialogRequestMsg triggers user update from dialog.
 type UpdateUserFromDialogRequestMsg struct {
 	UserID   string
 	Username string
@@ -2445,27 +2448,27 @@ type UpdateUserFromDialogRequestMsg struct {
 	Role     string
 }
 
-// UserUpdatedFromDialogMsg is sent after a user is updated from the form dialog
+// UserUpdatedFromDialogMsg is sent after a user is successfully updated from dialog.
 type UserUpdatedFromDialogMsg struct {
 	UserID   types.UserID
 	Username string
 }
 
-// ShowCreateUserDialogCmd creates a command to show user creation dialog
+// ShowCreateUserDialogCmd creates a command to show a user creation dialog.
 func ShowCreateUserDialogCmd() tea.Cmd {
 	return func() tea.Msg {
 		return ShowUserFormDialogMsg{Title: "New User"}
 	}
 }
 
-// ShowEditUserDialogCmd creates a command to show user edit dialog
+// ShowEditUserDialogCmd creates a command to show a user edit dialog.
 func ShowEditUserDialogCmd(user db.Users) tea.Cmd {
 	return func() tea.Msg {
 		return ShowEditUserDialogMsg{User: user}
 	}
 }
 
-// CreateUserFromDialogCmd creates a command to trigger user creation
+// CreateUserFromDialogCmd creates a command to trigger user creation from dialog.
 func CreateUserFromDialogCmd(username, name, email, role string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateUserFromDialogRequestMsg{
@@ -2477,7 +2480,7 @@ func CreateUserFromDialogCmd(username, name, email, role string) tea.Cmd {
 	}
 }
 
-// UpdateUserFromDialogCmd creates a command to trigger user update
+// UpdateUserFromDialogCmd creates a command to trigger user update from dialog.
 func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateUserFromDialogRequestMsg{
@@ -2490,7 +2493,7 @@ func UpdateUserFromDialogCmd(userID, username, name, email, role string) tea.Cmd
 	}
 }
 
-// InitializeRouteContentContextCmd stores the context for route content initialization
+// InitializeRouteContentContextCmd creates a command to store the context for route content initialization.
 func InitializeRouteContentContextCmd(route db.Routes, datatypeID string) tea.Cmd {
 	return func() tea.Msg {
 		initializeRouteContentContext = &InitializeRouteContentContext{
@@ -2501,7 +2504,7 @@ func InitializeRouteContentContextCmd(route db.Routes, datatypeID string) tea.Cm
 	}
 }
 
-// RouteContentInitializedMsg is sent after content is initialized for a route
+// RouteContentInitializedMsg is sent after content is successfully initialized for a route.
 type RouteContentInitializedMsg struct {
 	RouteID       types.RouteID
 	ContentDataID types.ContentID
@@ -2509,13 +2512,13 @@ type RouteContentInitializedMsg struct {
 	Title         string
 }
 
-// InitializeRouteContentRequestMsg triggers content initialization for a route
+// InitializeRouteContentRequestMsg triggers content initialization for a route.
 type InitializeRouteContentRequestMsg struct {
 	RouteID    types.RouteID
 	DatatypeID string
 }
 
-// InitializeRouteContentCmd creates a command to initialize content for a route
+// InitializeRouteContentCmd creates a command to initialize content for a route.
 func InitializeRouteContentCmd(routeID types.RouteID, datatypeID string) tea.Cmd {
 	return func() tea.Msg {
 		return InitializeRouteContentRequestMsg{
@@ -2525,7 +2528,7 @@ func InitializeRouteContentCmd(routeID types.RouteID, datatypeID string) tea.Cmd
 	}
 }
 
-// HandleInitializeRouteContent processes the route content initialization request
+// HandleInitializeRouteContent processes the route content initialization request.
 func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg) tea.Cmd {
 	// Capture values from model for use in closure
 	authorID := m.UserID

@@ -2,8 +2,10 @@ package db
 
 import "reflect"
 
+// DBTable represents a database table name.
 type DBTable string
 
+// Database table name constants.
 const (
 	Admin_content_data    DBTable = "admin_content_data"
 	Admin_content_fields  DBTable = "admin_content_fields"

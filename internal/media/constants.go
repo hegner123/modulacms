@@ -1,5 +1,6 @@
 package media
 
+// Media operation limits and configuration defaults.
 const (
 	// File size limits
 	MaxUploadSize = 10 << 20 // 10 MB

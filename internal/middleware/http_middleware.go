@@ -147,6 +147,7 @@ type responseWriter struct {
 	statusCode int
 }
 
+// WriteHeader captures the HTTP status code before delegating to the underlying ResponseWriter.
 func (rw *responseWriter) WriteHeader(code int) {
 	rw.statusCode = code
 	rw.ResponseWriter.WriteHeader(code)

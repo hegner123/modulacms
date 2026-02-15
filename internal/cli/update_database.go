@@ -7,22 +7,27 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+// FetchSource identifies the context in which a database fetch was initiated.
 type FetchSource string
 
+// FetchSource constants indicate the originating context of a database operation.
 const (
 	DATATYPEMENU    FetchSource = "datatype_menu"
 	BUILDTREE       FetchSource = "build_tree"
 	PICKCONTENTDATA FetchSource = "fetch_source"
 )
 
+// DatabaseUpdate signals a legacy database operation, now being phased out.
 type DatabaseUpdate struct{}
 
+// NewDatabaseUpdate returns a command that creates a DatabaseUpdate message.
 func NewDatabaseUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return DatabaseUpdate{}
 	}
 }
 
+// UpdateDatabase handles legacy database operations using generic query builders.
 func (m Model) UpdateDatabase(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case DatabaseGetMsg:

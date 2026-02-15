@@ -2,6 +2,7 @@ package config
 
 import "github.com/charmbracelet/lipgloss"
 
+// Color constants and default UI style for TUI components.
 var (
 	White       = lipgloss.CompleteColor{TrueColor: "#FFFFFF", ANSI256: "15", ANSI: "15"}
 	LightGray   = lipgloss.CompleteColor{TrueColor: "#c0c0c0", ANSI256: "254", ANSI: "7"}
@@ -103,6 +104,7 @@ var (
 	}
 )
 
+// Color defines the UI color palette for light and dark themes.
 type Color struct {
 	Primary       lipgloss.CompleteAdaptiveColor `json:"primary"`
 	PrimaryBG     lipgloss.CompleteAdaptiveColor `json:"primary_background"`

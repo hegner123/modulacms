@@ -16,6 +16,7 @@ import (
 // STRUCTS
 //////////////////////////////
 
+// Fields represents a field entity.
 type Fields struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
@@ -28,6 +29,8 @@ type Fields struct {
 	DateCreated  types.Timestamp         `json:"date_created"`
 	DateModified types.Timestamp         `json:"date_modified"`
 }
+
+// CreateFieldParams contains parameters for creating a field.
 type CreateFieldParams struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
@@ -40,6 +43,8 @@ type CreateFieldParams struct {
 	DateCreated  types.Timestamp         `json:"date_created"`
 	DateModified types.Timestamp         `json:"date_modified"`
 }
+
+// UpdateFieldParams contains parameters for updating a field.
 type UpdateFieldParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                  `json:"label"`
@@ -105,6 +110,7 @@ func MapStringField(a Fields) StringFields {
 
 // MAPS
 
+// MapField converts a sqlc-generated SQLite type to the wrapper type.
 func (d Database) MapField(a mdb.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
@@ -120,6 +126,7 @@ func (d Database) MapField(a mdb.Fields) Fields {
 	}
 }
 
+// MapCreateFieldParams converts wrapper create parameters to sqlc-generated SQLite type.
 func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParams {
 	id := a.FieldID
 	if id.IsZero() {
@@ -139,6 +146,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 	}
 }
 
+// MapUpdateFieldParams converts wrapper update parameters to sqlc-generated SQLite type.
 func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParams {
 	return mdb.UpdateFieldParams{
 		ParentID:     a.ParentID,
@@ -156,6 +164,7 @@ func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParam
 
 // QUERIES
 
+// CountFields returns the count of all fields.
 func (d Database) CountFields() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountField(d.Context)
@@ -165,11 +174,14 @@ func (d Database) CountFields() (*int64, error) {
 	return &c, nil
 }
 
+// CreateFieldTable creates the fields table.
 func (d Database) CreateFieldTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
+
+// CreateField inserts a new field and records an audit event.
 func (d Database) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
 	cmd := d.NewFieldCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -179,11 +191,14 @@ func (d Database) CreateField(ctx context.Context, ac audited.AuditContext, s Cr
 	r := d.MapField(result)
 	return &r, nil
 }
+
+// DeleteField removes a field and records an audit event.
 func (d Database) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
 	cmd := d.DeleteFieldCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetField retrieves a field by ID.
 func (d Database) GetField(id types.FieldID) (*Fields, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetField(d.Context, mdb.GetFieldParams{FieldID: id})
@@ -194,6 +209,7 @@ func (d Database) GetField(id types.FieldID) (*Fields, error) {
 	return &res, nil
 }
 
+// ListFields returns all fields.
 func (d Database) ListFields() (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListField(d.Context)
@@ -208,6 +224,7 @@ func (d Database) ListFields() (*[]Fields, error) {
 	return &res, nil
 }
 
+// ListFieldsByDatatypeID returns fields for a given datatype ID.
 func (d Database) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdb.ListFieldByDatatypeIDParams{ParentID: id})
@@ -222,6 +239,7 @@ func (d Database) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields
 	return &res, nil
 }
 
+// ListFieldsPaginated returns a paginated list of fields.
 func (d Database) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListFieldPaginated(d.Context, mdb.ListFieldPaginatedParams{
@@ -239,6 +257,7 @@ func (d Database) ListFieldsPaginated(params PaginationParams) (*[]Fields, error
 	return &res, nil
 }
 
+// UpdateField modifies a field and records an audit event.
 func (d Database) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -254,6 +273,7 @@ func (d Database) UpdateField(ctx context.Context, ac audited.AuditContext, s Up
 
 // MAPS
 
+// MapField converts a sqlc-generated MySQL type to the wrapper type.
 func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
@@ -269,6 +289,7 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	}
 }
 
+// MapCreateFieldParams converts wrapper create parameters to sqlc-generated MySQL type.
 func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFieldParams {
 	id := a.FieldID
 	if id.IsZero() {
@@ -288,6 +309,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 	}
 }
 
+// MapUpdateFieldParams converts wrapper update parameters to sqlc-generated MySQL type.
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
 		ParentID:     a.ParentID,
@@ -305,6 +327,7 @@ func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFiel
 
 // QUERIES
 
+// CountFields returns the count of all fields.
 func (d MysqlDatabase) CountFields() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountField(d.Context)
@@ -313,11 +336,15 @@ func (d MysqlDatabase) CountFields() (*int64, error) {
 	}
 	return &c, nil
 }
+
+// CreateFieldTable creates the fields table.
 func (d MysqlDatabase) CreateFieldTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
+
+// CreateField inserts a new field and records an audit event.
 func (d MysqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
 	cmd := d.NewFieldCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -327,10 +354,14 @@ func (d MysqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext,
 	r := d.MapField(result)
 	return &r, nil
 }
+
+// DeleteField removes a field and records an audit event.
 func (d MysqlDatabase) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
 	cmd := d.DeleteFieldCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
+
+// GetField retrieves a field by ID.
 func (d MysqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetField(d.Context, mdbm.GetFieldParams{FieldID: id})
@@ -340,6 +371,8 @@ func (d MysqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	res := d.MapField(row)
 	return &res, nil
 }
+
+// ListFields returns all fields.
 func (d MysqlDatabase) ListFields() (*[]Fields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListField(d.Context)
@@ -353,6 +386,8 @@ func (d MysqlDatabase) ListFields() (*[]Fields, error) {
 	}
 	return &res, nil
 }
+
+// ListFieldsByDatatypeID returns fields for a given datatype ID.
 func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdbm.ListFieldByDatatypeIDParams{ParentID: id})
@@ -366,6 +401,8 @@ func (d MysqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]F
 	}
 	return &res, nil
 }
+
+// ListFieldsPaginated returns a paginated list of fields.
 func (d MysqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListFieldPaginated(d.Context, mdbm.ListFieldPaginatedParams{
@@ -383,6 +420,7 @@ func (d MysqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, 
 	return &res, nil
 }
 
+// UpdateField modifies a field and records an audit event.
 func (d MysqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -398,6 +436,7 @@ func (d MysqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext,
 
 // MAPS
 
+// MapField converts a sqlc-generated PostgreSQL type to the wrapper type.
 func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
@@ -413,6 +452,7 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	}
 }
 
+// MapCreateFieldParams converts wrapper create parameters to sqlc-generated PostgreSQL type.
 func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateFieldParams {
 	id := a.FieldID
 	if id.IsZero() {
@@ -432,6 +472,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 	}
 }
 
+// MapUpdateFieldParams converts wrapper update parameters to sqlc-generated PostgreSQL type.
 func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateFieldParams {
 	return mdbp.UpdateFieldParams{
 		ParentID:     a.ParentID,
@@ -449,6 +490,7 @@ func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateField
 
 // QUERIES
 
+// CountFields returns the count of all fields.
 func (d PsqlDatabase) CountFields() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountField(d.Context)
@@ -457,11 +499,15 @@ func (d PsqlDatabase) CountFields() (*int64, error) {
 	}
 	return &c, nil
 }
+
+// CreateFieldTable creates the fields table.
 func (d PsqlDatabase) CreateFieldTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateFieldTable(d.Context)
 	return err
 }
+
+// CreateField inserts a new field and records an audit event.
 func (d PsqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext, s CreateFieldParams) (*Fields, error) {
 	cmd := d.NewFieldCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -471,10 +517,14 @@ func (d PsqlDatabase) CreateField(ctx context.Context, ac audited.AuditContext, 
 	r := d.MapField(result)
 	return &r, nil
 }
+
+// DeleteField removes a field and records an audit event.
 func (d PsqlDatabase) DeleteField(ctx context.Context, ac audited.AuditContext, id types.FieldID) error {
 	cmd := d.DeleteFieldCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
+
+// GetField retrieves a field by ID.
 func (d PsqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetField(d.Context, mdbp.GetFieldParams{FieldID: id})
@@ -484,6 +534,8 @@ func (d PsqlDatabase) GetField(id types.FieldID) (*Fields, error) {
 	res := d.MapField(row)
 	return &res, nil
 }
+
+// ListFields returns all fields.
 func (d PsqlDatabase) ListFields() (*[]Fields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListField(d.Context)
@@ -497,6 +549,8 @@ func (d PsqlDatabase) ListFields() (*[]Fields, error) {
 	}
 	return &res, nil
 }
+
+// ListFieldsByDatatypeID returns fields for a given datatype ID.
 func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListFieldByDatatypeID(d.Context, mdbp.ListFieldByDatatypeIDParams{ParentID: id})
@@ -510,6 +564,8 @@ func (d PsqlDatabase) ListFieldsByDatatypeID(id types.NullableDatatypeID) (*[]Fi
 	}
 	return &res, nil
 }
+
+// ListFieldsPaginated returns a paginated list of fields.
 func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListFieldPaginated(d.Context, mdbp.ListFieldPaginatedParams{
@@ -527,6 +583,7 @@ func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, e
 	return &res, nil
 }
 
+// UpdateField modifies a field and records an audit event.
 func (d PsqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, s UpdateFieldParams) (*string, error) {
 	cmd := d.UpdateFieldCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -542,6 +599,7 @@ func (d PsqlDatabase) UpdateField(ctx context.Context, ac audited.AuditContext, 
 
 // ----- SQLite CREATE -----
 
+// NewFieldCmd is an audited command for creating fields.
 type NewFieldCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -550,12 +608,25 @@ type NewFieldCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c NewFieldCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewFieldCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c NewFieldCmd) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c NewFieldCmd) Params() any                           { return c.params }
+
+// GetID returns the ID of the created field.
 func (c NewFieldCmd) GetID(f mdb.Fields) string             { return string(f.FieldID) }
 
 func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
@@ -578,12 +649,14 @@ func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, 
 	})
 }
 
+// NewFieldCmd creates a new field command.
 func (d Database) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmd {
 	return NewFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- SQLite UPDATE -----
 
+// UpdateFieldCmd is an audited command for updating fields.
 type UpdateFieldCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -592,14 +665,28 @@ type UpdateFieldCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c UpdateFieldCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateFieldCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c UpdateFieldCmd) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c UpdateFieldCmd) Params() any                           { return c.params }
+
+// GetID returns the field ID.
 func (c UpdateFieldCmd) GetID() string                         { return string(c.params.FieldID) }
 
+// GetBefore retrieves the field before the update.
 func (c UpdateFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
 	queries := mdb.New(tx)
 	return queries.GetField(ctx, mdb.GetFieldParams{FieldID: c.params.FieldID})
@@ -621,12 +708,14 @@ func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	})
 }
 
+// UpdateFieldCmd creates an update field command.
 func (d Database) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmd {
 	return UpdateFieldCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- SQLite DELETE -----
 
+// DeleteFieldCmd is an audited command for deleting fields.
 type DeleteFieldCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -635,13 +724,25 @@ type DeleteFieldCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c DeleteFieldCmd) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteFieldCmd) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c DeleteFieldCmd) TableName() string                     { return "fields" }
+
+// GetID returns the field ID.
 func (c DeleteFieldCmd) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the field before the delete.
 func (c DeleteFieldCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Fields, error) {
 	queries := mdb.New(tx)
 	return queries.GetField(ctx, mdb.GetFieldParams{FieldID: c.id})
@@ -652,12 +753,14 @@ func (c DeleteFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	return queries.DeleteField(ctx, mdb.DeleteFieldParams{FieldID: c.id})
 }
 
+// DeleteFieldCmd creates a delete field command.
 func (d Database) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmd {
 	return DeleteFieldCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
 }
 
 // ----- MySQL CREATE -----
 
+// NewFieldCmdMysql is an audited command for creating fields on MySQL.
 type NewFieldCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -666,12 +769,25 @@ type NewFieldCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c NewFieldCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c NewFieldCmdMysql) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c NewFieldCmdMysql) Params() any                           { return c.params }
+
+// GetID returns the ID of the created field.
 func (c NewFieldCmdMysql) GetID(f mdbm.Fields) string            { return string(f.FieldID) }
 
 func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
@@ -698,12 +814,14 @@ func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fi
 	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: params.FieldID})
 }
 
+// NewFieldCmd creates a new field command for MySQL.
 func (d MysqlDatabase) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmdMysql {
 	return NewFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- MySQL UPDATE -----
 
+// UpdateFieldCmdMysql is an audited command for updating fields on MySQL.
 type UpdateFieldCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -712,14 +830,28 @@ type UpdateFieldCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c UpdateFieldCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c UpdateFieldCmdMysql) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c UpdateFieldCmdMysql) Params() any                           { return c.params }
+
+// GetID returns the field ID.
 func (c UpdateFieldCmdMysql) GetID() string                         { return string(c.params.FieldID) }
 
+// GetBefore retrieves the field before the update.
 func (c UpdateFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
 	queries := mdbm.New(tx)
 	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: c.params.FieldID})
@@ -741,12 +873,14 @@ func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 	})
 }
 
+// UpdateFieldCmd creates an update field command for MySQL.
 func (d MysqlDatabase) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmdMysql {
 	return UpdateFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- MySQL DELETE -----
 
+// DeleteFieldCmdMysql is an audited command for deleting fields on MySQL.
 type DeleteFieldCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -755,13 +889,25 @@ type DeleteFieldCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c DeleteFieldCmdMysql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c DeleteFieldCmdMysql) TableName() string                     { return "fields" }
+
+// GetID returns the field ID.
 func (c DeleteFieldCmdMysql) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the field before the delete.
 func (c DeleteFieldCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Fields, error) {
 	queries := mdbm.New(tx)
 	return queries.GetField(ctx, mdbm.GetFieldParams{FieldID: c.id})
@@ -772,12 +918,14 @@ func (c DeleteFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 	return queries.DeleteField(ctx, mdbm.DeleteFieldParams{FieldID: c.id})
 }
 
+// DeleteFieldCmd creates a delete field command for MySQL.
 func (d MysqlDatabase) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmdMysql {
 	return DeleteFieldCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
 }
 
 // ----- PostgreSQL CREATE -----
 
+// NewFieldCmdPsql is an audited command for creating fields on PostgreSQL.
 type NewFieldCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -786,12 +934,25 @@ type NewFieldCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c NewFieldCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c NewFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c NewFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c NewFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c NewFieldCmdPsql) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c NewFieldCmdPsql) Params() any                           { return c.params }
+
+// GetID returns the ID of the created field.
 func (c NewFieldCmdPsql) GetID(f mdbp.Fields) string            { return string(f.FieldID) }
 
 func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
@@ -814,12 +975,14 @@ func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fie
 	})
 }
 
+// NewFieldCmd creates a new field command for PostgreSQL.
 func (d PsqlDatabase) NewFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateFieldParams) NewFieldCmdPsql {
 	return NewFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
 // ----- PostgreSQL UPDATE -----
 
+// UpdateFieldCmdPsql is an audited command for updating fields on PostgreSQL.
 type UpdateFieldCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -828,14 +991,28 @@ type UpdateFieldCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c UpdateFieldCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c UpdateFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c UpdateFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c UpdateFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c UpdateFieldCmdPsql) TableName() string                     { return "fields" }
+
+// Params returns the command parameters.
 func (c UpdateFieldCmdPsql) Params() any                           { return c.params }
+
+// GetID returns the field ID.
 func (c UpdateFieldCmdPsql) GetID() string                         { return string(c.params.FieldID) }
 
+// GetBefore retrieves the field before the update.
 func (c UpdateFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
 	queries := mdbp.New(tx)
 	return queries.GetField(ctx, mdbp.GetFieldParams{FieldID: c.params.FieldID})
@@ -857,12 +1034,14 @@ func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 	})
 }
 
+// UpdateFieldCmd creates an update field command for PostgreSQL.
 func (d PsqlDatabase) UpdateFieldCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateFieldParams) UpdateFieldCmdPsql {
 	return UpdateFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
 }
 
 // ----- PostgreSQL DELETE -----
 
+// DeleteFieldCmdPsql is an audited command for deleting fields on PostgreSQL.
 type DeleteFieldCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -871,13 +1050,25 @@ type DeleteFieldCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
+// Context returns the context.
 func (c DeleteFieldCmdPsql) Context() context.Context              { return c.ctx }
+
+// AuditContext returns the audit context.
 func (c DeleteFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+
+// Connection returns the database connection.
 func (c DeleteFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
+
+// Recorder returns the change event recorder.
 func (c DeleteFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name.
 func (c DeleteFieldCmdPsql) TableName() string                     { return "fields" }
+
+// GetID returns the field ID.
 func (c DeleteFieldCmdPsql) GetID() string                         { return string(c.id) }
 
+// GetBefore retrieves the field before the delete.
 func (c DeleteFieldCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Fields, error) {
 	queries := mdbp.New(tx)
 	return queries.GetField(ctx, mdbp.GetFieldParams{FieldID: c.id})
@@ -888,6 +1079,7 @@ func (c DeleteFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 	return queries.DeleteField(ctx, mdbp.DeleteFieldParams{FieldID: c.id})
 }
 
+// DeleteFieldCmd creates a delete field command for PostgreSQL.
 func (d PsqlDatabase) DeleteFieldCmd(ctx context.Context, auditCtx audited.AuditContext, id types.FieldID) DeleteFieldCmdPsql {
 	return DeleteFieldCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

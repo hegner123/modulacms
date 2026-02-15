@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,10 +22,10 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	utility "github.com/hegner123/modulacms/internal/utility"
+	_ "golang.org/x/image/webp"
 )
 
-//srcFile is the source file
-//dstPath is the local destination for optimized files before uploading
+// HandleMediaUpload optimizes and uploads media files to S3, then updates the database with the resulting srcset.
 func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	d := db.ConfigDB(c)
 	bucketDir := c.Bucket_Media
@@ -32,8 +36,32 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	filename := filepath.Base(srcFile)
 	baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
 
-	// Step 1: Optimize images
-	optimized, err := OptimizeUpload(srcFile, dstPath, c)
+	// Step 1a: Fetch media record to get focal point
+	utility.DefaultLogger.Debug(fmt.Sprintf("Fetching media record for: %s", baseName))
+	rowPtr, err := d.GetMediaByName(baseName)
+	if err != nil {
+		return fmt.Errorf("failed to get media record: %w", err)
+	}
+	row := *rowPtr
+
+	// Step 1b: Decode image headers to get bounds for focal point conversion
+	var focalPoint *image.Point
+	if row.FocalX.Valid && row.FocalY.Valid {
+		headerFile, err := os.Open(srcFile)
+		if err != nil {
+			return fmt.Errorf("failed to open file for header decode: %w", err)
+		}
+		imgConfig, _, err := image.DecodeConfig(headerFile)
+		headerFile.Close()
+		if err != nil {
+			return fmt.Errorf("failed to decode image config: %w", err)
+		}
+		imgBounds := image.Rect(0, 0, imgConfig.Width, imgConfig.Height)
+		focalPoint = FocalPointToPixels(row.FocalX, row.FocalY, imgBounds)
+	}
+
+	// Step 1c: Optimize images
+	optimized, err := OptimizeUpload(srcFile, dstPath, d, focalPoint)
 	if err != nil {
 		return fmt.Errorf("optimization failed: %w", err)
 	}
@@ -98,14 +126,6 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 		return fmt.Errorf("failed to marshal srcset: %w", err)
 	}
 
-	utility.DefaultLogger.Debug(fmt.Sprintf("Fetching media record for: %s", baseName))
-	rowPtr, err := d.GetMediaByName(baseName)
-	if err != nil {
-		rollbackS3Uploads(s3Session, c.Bucket_Media, uploadedKeys)
-		return fmt.Errorf("failed to get media record: %w", err)
-	}
-
-	row := *rowPtr
 	params := MapMediaParams(row)
 	params.Srcset = db.StringToNullString(string(srcsetJSON))
 
@@ -135,6 +155,7 @@ func rollbackS3Uploads(s3Session *s3.S3, bucketName string, keys []string) {
 	}
 }
 
+// MapMediaParams converts a Media record to UpdateMediaParams, updating the modification timestamp.
 func MapMediaParams(a db.Media) db.UpdateMediaParams {
 	return db.UpdateMediaParams{
 		Name:         a.Name,
@@ -147,6 +168,8 @@ func MapMediaParams(a db.Media) db.UpdateMediaParams {
 		Mimetype:     a.Mimetype,
 		Dimensions:   a.Dimensions,
 		Srcset:       a.Srcset,
+		FocalX:       a.FocalX,
+		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: types.TimestampNow(),

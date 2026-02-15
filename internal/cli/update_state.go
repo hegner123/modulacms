@@ -5,14 +5,17 @@ import (
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
+// StateUpdated signals that model state has been updated.
 type StateUpdated struct{}
 
+// NewStateUpdate returns a command that creates a StateUpdated message.
 func NewStateUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return StateUpdated{}
 	}
 }
 
+// UpdateState handles all model state mutations including cursor, loading, pagination, and data setters.
 func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 

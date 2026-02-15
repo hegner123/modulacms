@@ -4,14 +4,17 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 )
 
+// NavigationUpdated signals that page navigation has been processed.
 type NavigationUpdated struct{}
 
+// NewNavUpdate returns a command that creates a NavigationUpdated message.
 func NewNavUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return NavigationUpdated{}
 	}
 }
 
+// UpdateNavigation handles page navigation transitions and initialization.
 func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case NavigateToPage:

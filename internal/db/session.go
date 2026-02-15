@@ -16,6 +16,7 @@ import (
 // STRUCTS
 //////////////////////////////
 
+// Sessions represents a user session with metadata.
 type Sessions struct {
 	SessionID   types.SessionID      `json:"session_id"`
 	UserID      types.NullableUserID `json:"user_id"`
@@ -27,6 +28,7 @@ type Sessions struct {
 	SessionData sql.NullString       `json:"session_data"`
 }
 
+// CreateSessionParams holds parameters for creating a new session.
 type CreateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	CreatedAt   types.Timestamp      `json:"created_at"`
@@ -37,6 +39,7 @@ type CreateSessionParams struct {
 	SessionData sql.NullString       `json:"session_data"`
 }
 
+// UpdateSessionParams holds parameters for updating an existing session.
 type UpdateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	CreatedAt   types.Timestamp      `json:"created_at"`
@@ -89,6 +92,7 @@ func MapStringSession(a Sessions) StringSessions {
 
 // MAPS
 
+// MapSession converts a sqlc-generated SQLite session to the wrapper type.
 func (d Database) MapSession(a mdb.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
@@ -102,6 +106,7 @@ func (d Database) MapSession(a mdb.Sessions) Sessions {
 	}
 }
 
+// MapCreateSessionParams converts wrapper params to sqlc-generated SQLite params.
 func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessionParams {
 	return mdb.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
@@ -115,6 +120,7 @@ func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessio
 	}
 }
 
+// MapUpdateSessionParams converts wrapper params to sqlc-generated SQLite update params.
 func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessionParams {
 	return mdb.UpdateSessionParams{
 		UserID:      a.UserID,
@@ -130,6 +136,7 @@ func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessio
 
 // QUERIES
 
+// CountSessions returns the total number of sessions.
 func (d Database) CountSessions() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -139,12 +146,14 @@ func (d Database) CountSessions() (*int64, error) {
 	return &c, nil
 }
 
+// CreateSessionTable creates the sessions table.
 func (d Database) CreateSessionTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateSessionTable(d.Context)
 	return err
 }
 
+// CreateSession creates a new session with audit tracking.
 func (d Database) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
 	cmd := d.NewSessionCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -155,11 +164,13 @@ func (d Database) CreateSession(ctx context.Context, ac audited.AuditContext, s 
 	return &r, nil
 }
 
+// DeleteSession deletes a session with audit tracking.
 func (d Database) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
 	cmd := d.DeleteSessionCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetSession retrieves a session by ID.
 func (d Database) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetSession(d.Context, mdb.GetSessionParams{SessionID: id})
@@ -170,6 +181,7 @@ func (d Database) GetSession(id types.SessionID) (*Sessions, error) {
 	return &res, nil
 }
 
+// GetSessionByUserId retrieves a session by user ID.
 func (d Database) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, mdb.GetSessionByUserIdParams{UserID: userID})
@@ -180,6 +192,7 @@ func (d Database) GetSessionByUserId(userID types.NullableUserID) (*Sessions, er
 	return &res, nil
 }
 
+// ListSessions returns all sessions.
 func (d Database) ListSessions() (*[]Sessions, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListSession(d.Context)
@@ -194,6 +207,7 @@ func (d Database) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
+// UpdateSession updates an existing session with audit tracking.
 func (d Database) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
 	cmd := d.UpdateSessionCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -209,6 +223,7 @@ func (d Database) UpdateSession(ctx context.Context, ac audited.AuditContext, s 
 
 // MAPS
 
+// MapSession converts a sqlc-generated MySQL session to the wrapper type.
 func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
@@ -222,6 +237,7 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	}
 }
 
+// MapCreateSessionParams converts wrapper params to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.CreateSessionParams {
 	return mdbm.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
@@ -235,6 +251,7 @@ func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.Create
 	}
 }
 
+// MapUpdateSessionParams converts wrapper params to sqlc-generated MySQL update params.
 func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.UpdateSessionParams {
 	return mdbm.UpdateSessionParams{
 		UserID:      a.UserID,
@@ -250,6 +267,7 @@ func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.Update
 
 // QUERIES
 
+// CountSessions returns the total number of sessions.
 func (d MysqlDatabase) CountSessions() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -259,12 +277,14 @@ func (d MysqlDatabase) CountSessions() (*int64, error) {
 	return &c, nil
 }
 
+// CreateSessionTable creates the sessions table.
 func (d MysqlDatabase) CreateSessionTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateSessionTable(d.Context)
 	return err
 }
 
+// CreateSession creates a new session with audit tracking.
 func (d MysqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
 	cmd := d.NewSessionCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -275,11 +295,13 @@ func (d MysqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContex
 	return &r, nil
 }
 
+// DeleteSession deletes a session with audit tracking.
 func (d MysqlDatabase) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
 	cmd := d.DeleteSessionCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetSession retrieves a session by ID.
 func (d MysqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetSession(d.Context, mdbm.GetSessionParams{SessionID: id})
@@ -290,6 +312,7 @@ func (d MysqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	return &res, nil
 }
 
+// GetSessionByUserId retrieves a session by user ID.
 func (d MysqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, mdbm.GetSessionByUserIdParams{UserID: userID})
@@ -300,6 +323,7 @@ func (d MysqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Session
 	return &res, nil
 }
 
+// ListSessions returns all sessions.
 func (d MysqlDatabase) ListSessions() (*[]Sessions, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListSession(d.Context)
@@ -314,6 +338,7 @@ func (d MysqlDatabase) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
+// UpdateSession updates an existing session with audit tracking.
 func (d MysqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
 	cmd := d.UpdateSessionCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -329,6 +354,7 @@ func (d MysqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContex
 
 // MAPS
 
+// MapSession converts a sqlc-generated PostgreSQL session to the wrapper type.
 func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
@@ -342,6 +368,7 @@ func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 	}
 }
 
+// MapCreateSessionParams converts wrapper params to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateSessionParams {
 	return mdbp.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
@@ -355,6 +382,7 @@ func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateS
 	}
 }
 
+// MapUpdateSessionParams converts wrapper params to sqlc-generated PostgreSQL update params.
 func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateSessionParams {
 	return mdbp.UpdateSessionParams{
 		UserID:      a.UserID,
@@ -370,6 +398,7 @@ func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateS
 
 // QUERIES
 
+// CountSessions returns the total number of sessions.
 func (d PsqlDatabase) CountSessions() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountSession(d.Context)
@@ -379,12 +408,14 @@ func (d PsqlDatabase) CountSessions() (*int64, error) {
 	return &c, nil
 }
 
+// CreateSessionTable creates the sessions table.
 func (d PsqlDatabase) CreateSessionTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateSessionTable(d.Context)
 	return err
 }
 
+// CreateSession creates a new session with audit tracking.
 func (d PsqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContext, s CreateSessionParams) (*Sessions, error) {
 	cmd := d.NewSessionCmd(ctx, ac, s)
 	result, err := audited.Create(cmd)
@@ -395,11 +426,13 @@ func (d PsqlDatabase) CreateSession(ctx context.Context, ac audited.AuditContext
 	return &r, nil
 }
 
+// DeleteSession deletes a session with audit tracking.
 func (d PsqlDatabase) DeleteSession(ctx context.Context, ac audited.AuditContext, id types.SessionID) error {
 	cmd := d.DeleteSessionCmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
 
+// GetSession retrieves a session by ID.
 func (d PsqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetSession(d.Context, mdbp.GetSessionParams{SessionID: id})
@@ -410,6 +443,7 @@ func (d PsqlDatabase) GetSession(id types.SessionID) (*Sessions, error) {
 	return &res, nil
 }
 
+// GetSessionByUserId retrieves a session by user ID.
 func (d PsqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Sessions, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetSessionByUserId(d.Context, mdbp.GetSessionByUserIdParams{UserID: userID})
@@ -420,6 +454,7 @@ func (d PsqlDatabase) GetSessionByUserId(userID types.NullableUserID) (*Sessions
 	return &res, nil
 }
 
+// ListSessions returns all sessions.
 func (d PsqlDatabase) ListSessions() (*[]Sessions, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListSession(d.Context)
@@ -434,6 +469,7 @@ func (d PsqlDatabase) ListSessions() (*[]Sessions, error) {
 	return &res, nil
 }
 
+// UpdateSession updates an existing session with audit tracking.
 func (d PsqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext, s UpdateSessionParams) (*string, error) {
 	cmd := d.UpdateSessionCmd(ctx, ac, s)
 	if err := audited.Update(cmd); err != nil {
@@ -449,7 +485,7 @@ func (d PsqlDatabase) UpdateSession(ctx context.Context, ac audited.AuditContext
 
 // ===== SQLITE =====
 
-// NewSessionCmd implements audited.CreateCommand[mdb.Sessions] for SQLite.
+// NewSessionCmd is an audited command for creating sessions in SQLite.
 type NewSessionCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -457,17 +493,30 @@ type NewSessionCmd struct {
 	conn     *sql.DB
 }
 
-func (c NewSessionCmd) Context() context.Context                    { return c.ctx }
-func (c NewSessionCmd) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c NewSessionCmd) Connection() *sql.DB                         { return c.conn }
-func (c NewSessionCmd) Recorder() audited.ChangeEventRecorder       { return SQLiteRecorder }
-func (c NewSessionCmd) TableName() string                           { return "sessions" }
-func (c NewSessionCmd) Params() any                                 { return c.params }
+// Context returns the command context.
+func (c NewSessionCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c NewSessionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewSessionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
+
+// TableName returns the table name.
+func (c NewSessionCmd) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c NewSessionCmd) Params() any { return c.params }
+
+// GetID extracts the ID from a created session.
 func (c NewSessionCmd) GetID(x mdb.Sessions) string {
 	return x.SessionID.String()
 }
 
+// Execute performs the create operation.
 func (c NewSessionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Sessions, error) {
 	queries := mdb.New(tx)
 	return queries.CreateSession(ctx, mdb.CreateSessionParams{
@@ -482,11 +531,12 @@ func (c NewSessionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Sessio
 	})
 }
 
+// NewSessionCmd creates a new create command.
 func (d Database) NewSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateSessionParams) NewSessionCmd {
 	return NewSessionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// UpdateSessionCmd implements audited.UpdateCommand[mdb.Sessions] for SQLite.
+// UpdateSessionCmd is an audited command for updating sessions in SQLite.
 type UpdateSessionCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -494,19 +544,34 @@ type UpdateSessionCmd struct {
 	conn     *sql.DB
 }
 
-func (c UpdateSessionCmd) Context() context.Context                    { return c.ctx }
-func (c UpdateSessionCmd) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c UpdateSessionCmd) Connection() *sql.DB                         { return c.conn }
-func (c UpdateSessionCmd) Recorder() audited.ChangeEventRecorder       { return SQLiteRecorder }
-func (c UpdateSessionCmd) TableName() string                           { return "sessions" }
-func (c UpdateSessionCmd) Params() any                                 { return c.params }
-func (c UpdateSessionCmd) GetID() string                               { return c.params.SessionID.String() }
+// Context returns the command context.
+func (c UpdateSessionCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c UpdateSessionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateSessionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
+
+// TableName returns the table name.
+func (c UpdateSessionCmd) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c UpdateSessionCmd) Params() any { return c.params }
+
+// GetID returns the session ID being updated.
+func (c UpdateSessionCmd) GetID() string { return c.params.SessionID.String() }
+
+// GetBefore retrieves the pre-update session state.
 func (c UpdateSessionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Sessions, error) {
 	queries := mdb.New(tx)
 	return queries.GetSession(ctx, mdb.GetSessionParams{SessionID: c.params.SessionID})
 }
 
+// Execute performs the update operation.
 func (c UpdateSessionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateSession(ctx, mdb.UpdateSessionParams{
@@ -521,11 +586,12 @@ func (c UpdateSessionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	})
 }
 
+// UpdateSessionCmd creates a new update command.
 func (d Database) UpdateSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateSessionParams) UpdateSessionCmd {
 	return UpdateSessionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// DeleteSessionCmd implements audited.DeleteCommand[mdb.Sessions] for SQLite.
+// DeleteSessionCmd is an audited command for deleting sessions in SQLite.
 type DeleteSessionCmd struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -533,30 +599,44 @@ type DeleteSessionCmd struct {
 	conn     *sql.DB
 }
 
-func (c DeleteSessionCmd) Context() context.Context                    { return c.ctx }
-func (c DeleteSessionCmd) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c DeleteSessionCmd) Connection() *sql.DB                         { return c.conn }
-func (c DeleteSessionCmd) Recorder() audited.ChangeEventRecorder       { return SQLiteRecorder }
-func (c DeleteSessionCmd) TableName() string                           { return "sessions" }
-func (c DeleteSessionCmd) GetID() string                               { return c.id.String() }
+// Context returns the command context.
+func (c DeleteSessionCmd) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c DeleteSessionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteSessionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
+
+// TableName returns the table name.
+func (c DeleteSessionCmd) TableName() string { return "sessions" }
+
+// GetID returns the session ID being deleted.
+func (c DeleteSessionCmd) GetID() string { return c.id.String() }
+
+// GetBefore retrieves the session before deletion.
 func (c DeleteSessionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Sessions, error) {
 	queries := mdb.New(tx)
 	return queries.GetSession(ctx, mdb.GetSessionParams{SessionID: c.id})
 }
 
+// Execute performs the delete operation.
 func (c DeleteSessionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.DeleteSession(ctx, mdb.DeleteSessionParams{SessionID: c.id})
 }
 
+// DeleteSessionCmd creates a new delete command.
 func (d Database) DeleteSessionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.SessionID) DeleteSessionCmd {
 	return DeleteSessionCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection}
 }
 
 // ===== MYSQL =====
 
-// NewSessionCmdMysql implements audited.CreateCommand[mdbm.Sessions] for MySQL.
+// NewSessionCmdMysql is an audited command for creating sessions in MySQL.
 type NewSessionCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -564,17 +644,30 @@ type NewSessionCmdMysql struct {
 	conn     *sql.DB
 }
 
-func (c NewSessionCmdMysql) Context() context.Context                    { return c.ctx }
-func (c NewSessionCmdMysql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c NewSessionCmdMysql) Connection() *sql.DB                         { return c.conn }
-func (c NewSessionCmdMysql) Recorder() audited.ChangeEventRecorder       { return MysqlRecorder }
-func (c NewSessionCmdMysql) TableName() string                           { return "sessions" }
-func (c NewSessionCmdMysql) Params() any                                 { return c.params }
+// Context returns the command context.
+func (c NewSessionCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c NewSessionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewSessionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
+
+// TableName returns the table name.
+func (c NewSessionCmdMysql) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c NewSessionCmdMysql) Params() any { return c.params }
+
+// GetID extracts the ID from a created session.
 func (c NewSessionCmdMysql) GetID(x mdbm.Sessions) string {
 	return x.SessionID.String()
 }
 
+// Execute performs the create operation.
 func (c NewSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Sessions, error) {
 	id := types.NewSessionID()
 	queries := mdbm.New(tx)
@@ -594,11 +687,12 @@ func (c NewSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.
 	return queries.GetSession(ctx, mdbm.GetSessionParams{SessionID: id})
 }
 
+// NewSessionCmd creates a new create command.
 func (d MysqlDatabase) NewSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateSessionParams) NewSessionCmdMysql {
 	return NewSessionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// UpdateSessionCmdMysql implements audited.UpdateCommand[mdbm.Sessions] for MySQL.
+// UpdateSessionCmdMysql is an audited command for updating sessions in MySQL.
 type UpdateSessionCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -606,19 +700,34 @@ type UpdateSessionCmdMysql struct {
 	conn     *sql.DB
 }
 
-func (c UpdateSessionCmdMysql) Context() context.Context                    { return c.ctx }
-func (c UpdateSessionCmdMysql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c UpdateSessionCmdMysql) Connection() *sql.DB                         { return c.conn }
-func (c UpdateSessionCmdMysql) Recorder() audited.ChangeEventRecorder       { return MysqlRecorder }
-func (c UpdateSessionCmdMysql) TableName() string                           { return "sessions" }
-func (c UpdateSessionCmdMysql) Params() any                                 { return c.params }
-func (c UpdateSessionCmdMysql) GetID() string                               { return c.params.SessionID.String() }
+// Context returns the command context.
+func (c UpdateSessionCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c UpdateSessionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateSessionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
+
+// TableName returns the table name.
+func (c UpdateSessionCmdMysql) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c UpdateSessionCmdMysql) Params() any { return c.params }
+
+// GetID returns the session ID being updated.
+func (c UpdateSessionCmdMysql) GetID() string { return c.params.SessionID.String() }
+
+// GetBefore retrieves the pre-update session state.
 func (c UpdateSessionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Sessions, error) {
 	queries := mdbm.New(tx)
 	return queries.GetSession(ctx, mdbm.GetSessionParams{SessionID: c.params.SessionID})
 }
 
+// Execute performs the update operation.
 func (c UpdateSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateSession(ctx, mdbm.UpdateSessionParams{
@@ -633,11 +742,12 @@ func (c UpdateSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) err
 	})
 }
 
+// UpdateSessionCmd creates a new update command.
 func (d MysqlDatabase) UpdateSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateSessionParams) UpdateSessionCmdMysql {
 	return UpdateSessionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// DeleteSessionCmdMysql implements audited.DeleteCommand[mdbm.Sessions] for MySQL.
+// DeleteSessionCmdMysql is an audited command for deleting sessions in MySQL.
 type DeleteSessionCmdMysql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -645,30 +755,44 @@ type DeleteSessionCmdMysql struct {
 	conn     *sql.DB
 }
 
-func (c DeleteSessionCmdMysql) Context() context.Context                    { return c.ctx }
-func (c DeleteSessionCmdMysql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c DeleteSessionCmdMysql) Connection() *sql.DB                         { return c.conn }
-func (c DeleteSessionCmdMysql) Recorder() audited.ChangeEventRecorder       { return MysqlRecorder }
-func (c DeleteSessionCmdMysql) TableName() string                           { return "sessions" }
-func (c DeleteSessionCmdMysql) GetID() string                               { return c.id.String() }
+// Context returns the command context.
+func (c DeleteSessionCmdMysql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c DeleteSessionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteSessionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
+
+// TableName returns the table name.
+func (c DeleteSessionCmdMysql) TableName() string { return "sessions" }
+
+// GetID returns the session ID being deleted.
+func (c DeleteSessionCmdMysql) GetID() string { return c.id.String() }
+
+// GetBefore retrieves the session before deletion.
 func (c DeleteSessionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Sessions, error) {
 	queries := mdbm.New(tx)
 	return queries.GetSession(ctx, mdbm.GetSessionParams{SessionID: c.id})
 }
 
+// Execute performs the delete operation.
 func (c DeleteSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteSession(ctx, mdbm.DeleteSessionParams{SessionID: c.id})
 }
 
+// DeleteSessionCmd creates a new delete command.
 func (d MysqlDatabase) DeleteSessionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.SessionID) DeleteSessionCmdMysql {
 	return DeleteSessionCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection}
 }
 
 // ===== POSTGRESQL =====
 
-// NewSessionCmdPsql implements audited.CreateCommand[mdbp.Sessions] for PostgreSQL.
+// NewSessionCmdPsql is an audited command for creating sessions in PostgreSQL.
 type NewSessionCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -676,17 +800,30 @@ type NewSessionCmdPsql struct {
 	conn     *sql.DB
 }
 
-func (c NewSessionCmdPsql) Context() context.Context                    { return c.ctx }
-func (c NewSessionCmdPsql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c NewSessionCmdPsql) Connection() *sql.DB                         { return c.conn }
-func (c NewSessionCmdPsql) Recorder() audited.ChangeEventRecorder       { return PsqlRecorder }
-func (c NewSessionCmdPsql) TableName() string                           { return "sessions" }
-func (c NewSessionCmdPsql) Params() any                                 { return c.params }
+// Context returns the command context.
+func (c NewSessionCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c NewSessionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewSessionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
+
+// TableName returns the table name.
+func (c NewSessionCmdPsql) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c NewSessionCmdPsql) Params() any { return c.params }
+
+// GetID extracts the ID from a created session.
 func (c NewSessionCmdPsql) GetID(x mdbp.Sessions) string {
 	return x.SessionID.String()
 }
 
+// Execute performs the create operation.
 func (c NewSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Sessions, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateSession(ctx, mdbp.CreateSessionParams{
@@ -701,11 +838,12 @@ func (c NewSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.S
 	})
 }
 
+// NewSessionCmd creates a new create command.
 func (d PsqlDatabase) NewSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateSessionParams) NewSessionCmdPsql {
 	return NewSessionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// UpdateSessionCmdPsql implements audited.UpdateCommand[mdbp.Sessions] for PostgreSQL.
+// UpdateSessionCmdPsql is an audited command for updating sessions in PostgreSQL.
 type UpdateSessionCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -713,19 +851,34 @@ type UpdateSessionCmdPsql struct {
 	conn     *sql.DB
 }
 
-func (c UpdateSessionCmdPsql) Context() context.Context                    { return c.ctx }
-func (c UpdateSessionCmdPsql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c UpdateSessionCmdPsql) Connection() *sql.DB                         { return c.conn }
-func (c UpdateSessionCmdPsql) Recorder() audited.ChangeEventRecorder       { return PsqlRecorder }
-func (c UpdateSessionCmdPsql) TableName() string                           { return "sessions" }
-func (c UpdateSessionCmdPsql) Params() any                                 { return c.params }
-func (c UpdateSessionCmdPsql) GetID() string                               { return c.params.SessionID.String() }
+// Context returns the command context.
+func (c UpdateSessionCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c UpdateSessionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateSessionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
+
+// TableName returns the table name.
+func (c UpdateSessionCmdPsql) TableName() string { return "sessions" }
+
+// Params returns the command parameters.
+func (c UpdateSessionCmdPsql) Params() any { return c.params }
+
+// GetID returns the session ID being updated.
+func (c UpdateSessionCmdPsql) GetID() string { return c.params.SessionID.String() }
+
+// GetBefore retrieves the pre-update session state.
 func (c UpdateSessionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Sessions, error) {
 	queries := mdbp.New(tx)
 	return queries.GetSession(ctx, mdbp.GetSessionParams{SessionID: c.params.SessionID})
 }
 
+// Execute performs the update operation.
 func (c UpdateSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateSession(ctx, mdbp.UpdateSessionParams{
@@ -740,11 +893,12 @@ func (c UpdateSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) erro
 	})
 }
 
+// UpdateSessionCmd creates a new update command.
 func (d PsqlDatabase) UpdateSessionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateSessionParams) UpdateSessionCmdPsql {
 	return UpdateSessionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection}
 }
 
-// DeleteSessionCmdPsql implements audited.DeleteCommand[mdbp.Sessions] for PostgreSQL.
+// DeleteSessionCmdPsql is an audited command for deleting sessions in PostgreSQL.
 type DeleteSessionCmdPsql struct {
 	ctx      context.Context
 	auditCtx audited.AuditContext
@@ -752,23 +906,37 @@ type DeleteSessionCmdPsql struct {
 	conn     *sql.DB
 }
 
-func (c DeleteSessionCmdPsql) Context() context.Context                    { return c.ctx }
-func (c DeleteSessionCmdPsql) AuditContext() audited.AuditContext           { return c.auditCtx }
-func (c DeleteSessionCmdPsql) Connection() *sql.DB                         { return c.conn }
-func (c DeleteSessionCmdPsql) Recorder() audited.ChangeEventRecorder       { return PsqlRecorder }
-func (c DeleteSessionCmdPsql) TableName() string                           { return "sessions" }
-func (c DeleteSessionCmdPsql) GetID() string                               { return c.id.String() }
+// Context returns the command context.
+func (c DeleteSessionCmdPsql) Context() context.Context { return c.ctx }
 
+// AuditContext returns the audit context.
+func (c DeleteSessionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteSessionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
+
+// TableName returns the table name.
+func (c DeleteSessionCmdPsql) TableName() string { return "sessions" }
+
+// GetID returns the session ID being deleted.
+func (c DeleteSessionCmdPsql) GetID() string { return c.id.String() }
+
+// GetBefore retrieves the session before deletion.
 func (c DeleteSessionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Sessions, error) {
 	queries := mdbp.New(tx)
 	return queries.GetSession(ctx, mdbp.GetSessionParams{SessionID: c.id})
 }
 
+// Execute performs the delete operation.
 func (c DeleteSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteSession(ctx, mdbp.DeleteSessionParams{SessionID: c.id})
 }
 
+// DeleteSessionCmd creates a new delete command.
 func (d PsqlDatabase) DeleteSessionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.SessionID) DeleteSessionCmdPsql {
 	return DeleteSessionCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection}
 }

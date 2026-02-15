@@ -8,6 +8,7 @@ import (
 	"strconv"
 )
 
+// TrimStringEnd removes the last l characters from str.
 func TrimStringEnd(str string, l int) string {
 	if len(str) > 0 {
 		newStr := str[:len(str)-l]
@@ -17,11 +18,13 @@ func TrimStringEnd(str string, l int) string {
 	}
 }
 
+// IsInt reports whether s represents a valid integer.
 func IsInt(s string) bool {
 	_, err := strconv.Atoi(s)
 	return err == nil
 }
 
+// FormatJSON returns a formatted JSON string with indentation.
 func FormatJSON(b any) (string, error) {
 	formatted, err := json.MarshalIndent(b, "", "    ")
 	if err != nil {

@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
+    focal_x REAL,
+    focal_y REAL,
     author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users

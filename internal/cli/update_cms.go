@@ -11,14 +11,17 @@ import (
 	"github.com/hegner123/modulacms/internal/tree"
 )
 
+// CmsUpdate signals a CMS-specific operation update.
 type CmsUpdate struct{}
 
+// NewCmsUpdate returns a command that creates a CmsUpdate message.
 func NewCmsUpdate() tea.Cmd {
 	return func() tea.Msg {
 		return CmsUpdate{}
 	}
 }
 
+// UpdateCms handles CMS-specific operations including content tree, datatypes, routes, media, and users.
 func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case BuildTreeFromRouteMsg:

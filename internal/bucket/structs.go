@@ -4,6 +4,7 @@ import (
 	config "github.com/hegner123/modulacms/internal/config"
 )
 
+// S3Credentials holds S3-compatible object storage configuration.
 type S3Credentials struct {
 	AccessKey      string
 	SecretKey      string
@@ -12,6 +13,7 @@ type S3Credentials struct {
 	ForcePathStyle bool
 }
 
+// GetS3Creds extracts S3 credentials from the application configuration.
 func GetS3Creds(c *config.Config) *S3Credentials {
 	var S3Creds = S3Credentials{
 		AccessKey:      c.Bucket_Access_Key,

@@ -84,6 +84,7 @@ type ActionConfirmedMsg struct {
 
 // --- Action execution commands ---
 
+// RunActionCmd creates a command to run a non-destructive action by index.
 func RunActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	switch actionIndex {
 	case 0:
@@ -107,6 +108,7 @@ func RunActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	}
 }
 
+// RunDestructiveActionCmd creates a command to run a destructive action by index.
 func RunDestructiveActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	switch actionIndex {
 	case 1:
@@ -124,6 +126,7 @@ func RunDestructiveActionCmd(p ActionParams, actionIndex int) tea.Cmd {
 	}
 }
 
+// runDBInit creates a command to initialize the database with schema and bootstrap data.
 func runDBInit(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		randomPassword, err := utility.MakeRandomString()
@@ -157,6 +160,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runDBWipe creates a command to drop all database tables.
 func runDBWipe(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
@@ -174,6 +178,7 @@ func runDBWipe(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runDBWipeRedeploy creates a command to drop, recreate, and bootstrap the database.
 func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		// Generate a random password for the bootstrap admin user
@@ -230,6 +235,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runDBReset creates a command to delete the SQLite database file.
 func runDBReset(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		if err := os.Remove(cfg.Db_URL); err != nil {
@@ -246,6 +252,7 @@ func runDBReset(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runDBExport creates a command to dump database schema and data to a SQL file.
 func runDBExport(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
@@ -263,6 +270,7 @@ func runDBExport(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runGenerateCerts creates a command to generate self-signed SSL certificates.
 func runGenerateCerts(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		certDir := "./certs"
@@ -293,6 +301,7 @@ func runGenerateCerts(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runCheckForUpdates creates a command to check for and apply application updates.
 func runCheckForUpdates() tea.Cmd {
 	return func() tea.Msg {
 		currentVersion := utility.GetCurrentVersion()
@@ -345,6 +354,7 @@ func runCheckForUpdates() tea.Cmd {
 	}
 }
 
+// runValidateConfig creates a command to validate the configuration file.
 func runValidateConfig(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		var errs []string
@@ -381,6 +391,7 @@ func runValidateConfig(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// runGenerateAPIToken creates a command to generate a new API token for the current user.
 func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
@@ -473,6 +484,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 	}
 }
 
+// runCreateBackup creates a command to create a full database and file backup.
 func runCreateBackup(cfg *config.Config) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
@@ -532,6 +544,7 @@ func runCreateBackup(cfg *config.Config) tea.Cmd {
 	}
 }
 
+// formatBackupSize formats bytes to human-readable size string.
 func formatBackupSize(b int64) string {
 	const unit = 1024
 	if b < unit {
@@ -545,6 +558,7 @@ func formatBackupSize(b int64) string {
 	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }
 
+// runRegisterSSHKey creates a command to register the current SSH key as a new user.
 func runRegisterSSHKey(p ActionParams) tea.Cmd {
 	return func() tea.Msg {
 		if p.SSHFingerprint == "" {

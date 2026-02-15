@@ -13,6 +13,7 @@ import (
 // Dialect determines SQL placeholder and identifier quoting syntax.
 type Dialect int
 
+// Dialect constants define the supported database systems.
 const (
 	DialectSQLite   Dialect = iota
 	DialectMySQL    Dialect = iota
@@ -55,6 +56,7 @@ func placeholder(d Dialect, index int) string {
 // ColumnType represents an abstract column type for cross-dialect DDL.
 type ColumnType string
 
+// ColumnType constants define the abstract column types supported across all database dialects.
 const (
 	ColText      ColumnType = "text"
 	ColInteger   ColumnType = "integer"

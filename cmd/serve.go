@@ -28,12 +28,14 @@ import (
 	"golang.org/x/crypto/acme/autocert"
 )
 
+// wizard indicates whether to run the interactive configuration wizard before starting.
 var wizard bool
 
 func init() {
 	serveCmd.Flags().BoolVar(&wizard, "wizard", false, "Run interactive configuration wizard before starting")
 }
 
+// serveCmd starts the HTTP, HTTPS, and SSH servers for ModulaCMS.
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Start the HTTP, HTTPS, and SSH servers",

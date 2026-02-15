@@ -1,12 +1,15 @@
 package cli
 
+// PageIndex represents a page identifier in the application.
 type PageIndex int
 
+// Page represents a navigable page with an index and label.
 type Page struct {
 	Index PageIndex
 	Label string
 }
 
+// Page index constants define all available pages in the application.
 const (
 	HOMEPAGE PageIndex = iota
 	CMSPAGE
@@ -40,6 +43,7 @@ const (
 	ADMINCONTENT
 )
 
+// NewDatatypePage creates a new datatype page with the specified label.
 func NewDatatypePage(label string) Page {
 	return Page{
 		Index: DATATYPE,
@@ -47,6 +51,7 @@ func NewDatatypePage(label string) Page {
 	}
 }
 
+// NewDynamicPage creates a new dynamic page with the specified label.
 func NewDynamicPage(label string) Page {
 	return Page{
 		Index: DYNAMICPAGE,
@@ -54,6 +59,7 @@ func NewDynamicPage(label string) Page {
 	}
 }
 
+// NewPickContentPage creates a new content picker page with the specified label.
 func NewPickContentPage(label string) Page {
 	return Page{
 		Index: PICKCONTENT,
@@ -61,10 +67,12 @@ func NewPickContentPage(label string) Page {
 	}
 }
 
+// NewPage creates a new page with the specified index and label.
 func NewPage(index PageIndex, label string) Page {
 	return Page{Index: index, Label: label}
 }
 
+// InitPages initializes and returns a map of all application pages.
 func InitPages() *map[PageIndex]Page {
 	homePage := NewPage(HOMEPAGE, "Home")
 	cmsPage := NewPage(CMSPAGE, "CMS")

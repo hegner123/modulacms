@@ -1,5 +1,6 @@
 package db
 
+// GenericHeaders returns the column header names for the given table.
 func GenericHeaders(t DBTable) []string {
 	switch t {
 	case Admin_content_data:
@@ -218,6 +219,7 @@ func GenericHeaders(t DBTable) []string {
 	return nil
 }
 
+// GenericList retrieves all rows from the given table as string slices for TUI display.
 func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 	switch t {
 	case Admin_content_data:

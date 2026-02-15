@@ -379,6 +379,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
           - column: "media.url"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
 
   # ---------- MySQL ----------
   - engine: "mysql"
@@ -752,6 +756,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
           - column: "media.url"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
 
   # ---------- PostgreSQL ----------
   - engine: "postgresql"
@@ -1125,3 +1133,7 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Email"}
           - column: "media.url"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "URL"}
+          - column: "media.focal_x"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          - column: "media.focal_y"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}

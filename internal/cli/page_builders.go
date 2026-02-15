@@ -15,6 +15,7 @@ import (
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
+// PageUI defines the interface for page rendering components.
 type PageUI interface {
 	AddTitle(string)
 	AddHeader(string)
@@ -24,6 +25,7 @@ type PageUI interface {
 	Render(int) string
 }
 
+// BasePage is the base structure for all page types with common UI elements.
 type BasePage struct {
 	Title    string
 	Header   string
@@ -32,6 +34,7 @@ type BasePage struct {
 	Status   string
 }
 
+// NewBasePage creates a new BasePage with empty fields.
 func NewBasePage() BasePage {
 	return BasePage{
 		Title:    "",
@@ -42,27 +45,37 @@ func NewBasePage() BasePage {
 	}
 }
 
+// StaticPage is a page type for displaying static content.
 type StaticPage struct {
 	BasePage
 }
 
+// AddTitle adds a title to the static page.
 func (s *StaticPage) AddTitle(t string) {
 	s.Title += t
 }
 
+// AddHeader adds a header to the static page.
 func (s *StaticPage) AddHeader(h string) {
 	s.Header += h
 }
+
+// AddBody adds body content to the static page.
 func (s *StaticPage) AddBody(b string) {
 	s.Body += b
 }
+
+// AddControls adds control text to the static page.
 func (s *StaticPage) AddControls(c string) {
 	s.Controls += c
 }
+
+// AddStatus adds status text to the static page.
 func (s *StaticPage) AddStatus(st string) {
 	s.Status += st
 }
 
+// Render returns the rendered representation of the static page.
 func (s StaticPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	rows := []string{RenderTitle(s.Title), RenderHeading(s.Header), s.Body}
@@ -86,6 +99,7 @@ func (s StaticPage) Render(model Model) string {
 	)
 }
 
+// NewStaticPage creates a new StaticPage.
 func NewStaticPage() StaticPage {
 	page := NewBasePage()
 	return StaticPage{
@@ -94,31 +108,43 @@ func NewStaticPage() StaticPage {
 
 }
 
+// MenuPage is a page type for displaying a menu of options.
 type MenuPage struct {
 	BasePage
 	Menu []string
 }
 
+// AddTitle adds a title to the menu page.
 func (s *MenuPage) AddTitle(t string) {
 	s.Title += t
 }
 
+// AddHeader adds a header to the menu page.
 func (m *MenuPage) AddHeader(h string) {
 	m.Header += h
 }
+
+// AddBody adds body content to the menu page.
 func (m *MenuPage) AddBody(b string) {
 	m.Body += b
 }
+
+// AddControls adds control text to the menu page.
 func (m *MenuPage) AddControls(c string) {
 	m.Controls += c
 }
+
+// AddStatus adds status text to the menu page.
 func (m *MenuPage) AddStatus(st string) {
 	m.Status += st
 }
 
+// AddMenu adds a menu to the menu page.
 func (m *MenuPage) AddMenu(menu []string) {
 	m.Menu = menu
 }
+
+// RenderBody renders the body of the menu page with formatted menu items.
 func (m *MenuPage) RenderBody(model Model) string {
 	r := make([]string, len(m.Body)+len(m.Menu))
 	var row []string
@@ -145,6 +171,7 @@ func (m *MenuPage) RenderBody(model Model) string {
 
 }
 
+// Render returns the rendered representation of the menu page.
 func (m MenuPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	s := lipgloss.JoinVertical(
@@ -165,6 +192,7 @@ func (m MenuPage) Render(model Model) string {
 	)
 }
 
+// NewMenuPage creates a new MenuPage.
 func NewMenuPage() MenuPage {
 	basePage := NewBasePage()
 	m := make([]string, 0)
@@ -174,6 +202,7 @@ func NewMenuPage() MenuPage {
 	}
 }
 
+// TablePage is a page type for displaying tabular data.
 type TablePage struct {
 	BasePage
 	Table        string
@@ -183,33 +212,42 @@ type TablePage struct {
 	PageMod      int
 }
 
+// AddTitle adds a title to the table page.
 func (s *TablePage) AddTitle(t string) {
 	s.Title += t
 }
 
+// AddHeader adds a header to the table page.
 func (t *TablePage) AddHeader(h string) {
 	t.Header += h
 }
 
+// AddHeaders adds table column headers to the table page.
 func (t *TablePage) AddHeaders(h []string) {
 	t.TableHeaders = h
 }
+
+// AddRows adds table rows to the table page.
 func (t *TablePage) AddRows(r [][]string) {
 	t.TableRows = r
 }
 
+// AddControls adds control text to the table page.
 func (t *TablePage) AddControls(c string) {
 	t.Controls += c
 }
 
+// AddStatus adds status text to the table page.
 func (t *TablePage) AddStatus(st string) {
 	t.Status += st
 }
 
+// AddBody adds body content to the table page.
 func (t *TablePage) AddBody(b string) {
 	t.Body += b
 }
 
+// RenderBody renders the body of the table page with paginated table data.
 func (t *TablePage) RenderBody(m Model) string {
 	if len(t.TableHeaders) == 0 {
 		return t.Body
@@ -230,6 +268,7 @@ func (t *TablePage) RenderBody(m Model) string {
 	return b
 }
 
+// Render returns the rendered representation of the table page.
 func (t TablePage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	s := lipgloss.JoinVertical(
@@ -256,6 +295,7 @@ func (t TablePage) Render(model Model) string {
 	return content
 }
 
+// NewTablePage creates a new TablePage.
 func NewTablePage() TablePage {
 	basePage := NewBasePage()
 	return TablePage{
@@ -266,29 +306,38 @@ func NewTablePage() TablePage {
 	}
 }
 
+// FormPage is a page type for displaying forms.
 type FormPage struct {
 	BasePage
 	Form *huh.Form
 }
 
+// AddTitle adds a title to the form page.
 func (s *FormPage) AddTitle(t string) {
 	s.Title += t
 }
+
+// AddHeader adds a header to the form page.
 func (f *FormPage) AddHeader(h string) {
 	f.Header += h
 }
 
+// AddControls adds control text to the form page.
 func (f *FormPage) AddControls(c string) {
 	f.Controls += c
 }
 
+// AddStatus adds status text to the form page.
 func (f *FormPage) AddStatus(st string) {
 	f.Status += st
 }
+
+// AddBody adds body content to the form page.
 func (f *FormPage) AddBody(b string) {
 	f.Body += b
 }
 
+// Render returns the rendered representation of the form page.
 func (f FormPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	form := ""
@@ -314,6 +363,7 @@ func (f FormPage) Render(model Model) string {
 	)
 }
 
+// NewFormPage creates a new FormPage.
 func NewFormPage() FormPage {
 	basePage := NewBasePage()
 	return FormPage{
@@ -321,6 +371,7 @@ func NewFormPage() FormPage {
 	}
 }
 
+// DisplayMode represents the current display mode of the CMS page.
 type DisplayMode int
 
 const (
@@ -331,32 +382,39 @@ const (
 	FindDatatype             // Corresponds to a dialog where you type and it finds fields that match, entering on one makes it active.
 )
 
+// CMSPage is a page type for displaying the CMS content tree interface.
 type CMSPage struct {
 	BasePage
 	Tree    tree.Root
 	Display DisplayMode
 }
 
+// AddTitle adds a title to the CMS page.
 func (s *CMSPage) AddTitle(t string) {
 	s.Title += t
 }
 
+// AddHeader adds a header to the CMS page.
 func (c *CMSPage) AddHeader(h string) {
 	c.Header += h
 }
 
+// AddControls adds control text to the CMS page.
 func (c *CMSPage) AddControls(controls string) {
 	c.Controls += controls
 }
 
+// AddStatus adds status text to the CMS page.
 func (c *CMSPage) AddStatus(st string) {
 	c.Status += st
 }
 
+// AddBody adds body content to the CMS page.
 func (c *CMSPage) AddBody(b string) {
 	c.Body += b
 }
 
+// RenderColumn renders a styled column with the specified width and content.
 func (c *CMSPage) RenderColumn(width int, content string) string {
 	colStyle := lipgloss.NewStyle().
 		Background(config.DefaultStyle.PrimaryBG).
@@ -365,6 +423,7 @@ func (c *CMSPage) RenderColumn(width int, content string) string {
 	return colStyle.Render(content)
 }
 
+// ProcessTreeDatatypes processes and renders the content tree from the model.
 func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 	if model.PageRouteId.IsZero() {
 		return "No route selected\n\nPlease select a route to view content."
@@ -381,12 +440,12 @@ func (c CMSPage) ProcessTreeDatatypes(model Model) string {
 	return lipgloss.JoinVertical(lipgloss.Top, display...)
 }
 
-// traverseTree recursively renders the tree with proper indentation and cursor
+// traverseTree recursively renders the tree with proper indentation and cursor.
 func (c CMSPage) traverseTree(node *tree.Node, display *[]string, cursor int, currentIndex *int) {
 	c.traverseTreeWithDepth(node, display, cursor, currentIndex, 0)
 }
 
-// traverseTreeWithDepth recursively renders the tree tracking depth for indentation
+// traverseTreeWithDepth recursively renders the tree tracking depth for indentation.
 func (c CMSPage) traverseTreeWithDepth(node *tree.Node, display *[]string, cursor int, currentIndex *int, depth int) {
 	if node == nil {
 		return
@@ -408,7 +467,7 @@ func (c CMSPage) traverseTreeWithDepth(node *tree.Node, display *[]string, curso
 	}
 }
 
-// FormatTreeRow formats a single tree node with cursor and indentation
+// FormatTreeRow formats a single tree node with cursor and indentation.
 func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) string {
 	indent := strings.Repeat("  ", depth)
 
@@ -446,6 +505,7 @@ func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) stri
 	return cursor + indent + icon + " " + statusMark + name
 }
 
+// FormatRow formats a tree node as a string row with indentation and wrapping.
 func FormatRow(node *tree.Node) string {
 	row := ""
 	//HasChildrenCollapsed := "+"
@@ -459,6 +519,7 @@ func FormatRow(node *tree.Node) string {
 	return row
 }
 
+// DecideNodeName determines the display name for a tree node based on its fields and datatype.
 func DecideNodeName(node tree.Node) string {
 	var out string
 	if index := slices.IndexFunc(node.Fields, FieldMatchesLabel); index > -1 {
@@ -480,11 +541,13 @@ func DecideNodeName(node tree.Node) string {
 	return out
 }
 
+// FieldMatchesLabel checks if a field's label matches a label field identifier.
 func FieldMatchesLabel(field db.Fields) bool {
 	ValidLabelFields := []string{"Label", "label", "Title", "title", "Name", "name"}
 	return slices.Contains(ValidLabelFields, field.Label)
 }
 
+// ProcessContentPreview generates a preview of the selected content node.
 func (c CMSPage) ProcessContentPreview(model Model) string {
 	node := model.Root.NodeAtIndex(model.Cursor)
 	if node == nil {
@@ -547,6 +610,7 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 	return lipgloss.JoinVertical(lipgloss.Left, preview...)
 }
 
+// ProcessFields renders the fields of the selected content node.
 func (c CMSPage) ProcessFields(model Model) string {
 	if len(model.SelectedContentFields) == 0 {
 		return "No fields"
@@ -572,6 +636,7 @@ func (c CMSPage) ProcessFields(model Model) string {
 	return lipgloss.JoinVertical(lipgloss.Left, fields...)
 }
 
+// CenterColumn processes the center column based on the current display mode.
 func (c CMSPage) CenterColumn(content string) string {
 	switch c.Display {
 	case Main:
@@ -582,6 +647,7 @@ func (c CMSPage) CenterColumn(content string) string {
 
 }
 
+// Render returns the rendered representation of the CMS page with three-panel layout.
 func (c CMSPage) Render(model Model) string {
 	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
 	col1 := c.ProcessTreeDatatypes(model)
@@ -611,6 +677,7 @@ func (c CMSPage) Render(model Model) string {
 	)
 }
 
+// NewCMSPage creates a new CMSPage.
 func NewCMSPage() CMSPage {
 	b := NewBasePage()
 	p := CMSPage{

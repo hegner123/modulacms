@@ -14,6 +14,7 @@ import (
 //STRUCTS
 //////////////////////////////
 
+// GetRouteTreeByRouteIDRow represents a row from the route tree query with datatype and field metadata.
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID types.ContentID         `json:"content_data_id"`
 	ParentID      types.NullableContentID `json:"parent_id"`
@@ -26,6 +27,8 @@ type GetRouteTreeByRouteIDRow struct {
 	FieldType     types.FieldType         `json:"field_type"`
 	FieldValue    sql.NullString          `json:"field_value"`
 }
+
+// GetContentTreeByRouteRow represents a content tree node with datatype information.
 type GetContentTreeByRouteRow struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
@@ -42,12 +45,14 @@ type GetContentTreeByRouteRow struct {
 	DatatypeType  string                   `json:"datatype_type"`
 }
 
+// GetContentFieldsByRouteRow represents a content field value for a specific content node.
 type GetContentFieldsByRouteRow struct {
 	ContentDataID types.NullableContentID `json:"content_data_id"`
 	FieldID       types.NullableFieldID   `json:"field_id"`
 	FieldValue    string                  `json:"field_value"`
 }
 
+// GetFieldDefinitionsByRouteRow represents a field definition with its associated datatype.
 type GetFieldDefinitionsByRouteRow struct {
 	FieldID    types.FieldID   `json:"field_id"`
 	Label      string          `json:"label"`
@@ -59,6 +64,7 @@ type GetFieldDefinitionsByRouteRow struct {
 //SQLITE
 //////////////////////////////
 
+// MapGetRouteTreeByRouteIDRow maps SQLite route tree row to wrapper struct.
 func (d Database) MapGetRouteTreeByRouteIDRow(a mdb.GetRouteTreeByRouteIDRow) GetRouteTreeByRouteIDRow {
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: a.ContentDataID,
@@ -74,7 +80,7 @@ func (d Database) MapGetRouteTreeByRouteIDRow(a mdb.GetRouteTreeByRouteIDRow) Ge
 	}
 }
 
-// GetContentTreeByRouteRow
+// MapGetContentTreeByRouteRow maps SQLite content tree row to wrapper struct.
 func (d Database) MapGetContentTreeByRouteRow(a mdb.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
 	return GetContentTreeByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -93,7 +99,7 @@ func (d Database) MapGetContentTreeByRouteRow(a mdb.GetContentTreeByRouteRow) Ge
 	}
 }
 
-// GetFieldDefinitionsByRouteRow
+// MapGetFieldDefinitionsByRouteRow maps SQLite field definitions row to wrapper struct.
 func (d Database) MapGetFieldDefinitionsByRouteRow(a mdb.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
 	return GetFieldDefinitionsByRouteRow{
 		Label:      a.Label,
@@ -103,7 +109,7 @@ func (d Database) MapGetFieldDefinitionsByRouteRow(a mdb.GetFieldDefinitionsByRo
 	}
 }
 
-// GetContentFieldsByRouteRow
+// MapGetContentFieldsByRouteRow maps SQLite content fields row to wrapper struct.
 func (d Database) MapGetContentFieldsByRouteRow(a mdb.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
 	return GetContentFieldsByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -112,6 +118,7 @@ func (d Database) MapGetContentFieldsByRouteRow(a mdb.GetContentFieldsByRouteRow
 	}
 }
 
+// GetRouteTreeByRouteID retrieves the complete route tree including field values for a route.
 func (d Database) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdb.GetRouteTreeByRouteIDParams{RouteID: routeID})
@@ -126,6 +133,7 @@ func (d Database) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRo
 	return &res, nil
 }
 
+// GetContentTreeByRoute retrieves all content nodes for a route with datatype metadata.
 func (d Database) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetContentTreeByRoute(d.Context, mdb.GetContentTreeByRouteParams{RouteID: routeID})
@@ -140,6 +148,7 @@ func (d Database) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetCo
 	return &res, nil
 }
 
+// GetFieldDefinitionsByRoute retrieves all field definitions associated with a route.
 func (d Database) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdb.GetFieldDefinitionsByRouteParams{RouteID: routeID})
@@ -154,6 +163,7 @@ func (d Database) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]
 	return &res, nil
 }
 
+// GetContentFieldsByRoute retrieves all content field values for a route.
 func (d Database) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetContentFieldsByRoute(d.Context, mdb.GetContentFieldsByRouteParams{RouteID: routeID})
@@ -172,6 +182,7 @@ func (d Database) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]Get
 //MYSQL
 //////////////////////////////
 
+// MapGetRouteTreeByRouteIDRow maps MySQL route tree row to wrapper struct.
 func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDRow) GetRouteTreeByRouteIDRow {
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: a.ContentDataID,
@@ -187,7 +198,7 @@ func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDR
 	}
 }
 
-// GetContentTreeByRouteRow
+// MapGetContentTreeByRouteRow maps MySQL content tree row to wrapper struct.
 func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
 	return GetContentTreeByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -206,7 +217,7 @@ func (d MysqlDatabase) MapGetContentTreeByRouteRow(a mdbm.GetContentTreeByRouteR
 	}
 }
 
-// GetFieldDefinitionsByRouteRow
+// MapGetFieldDefinitionsByRouteRow maps MySQL field definitions row to wrapper struct.
 func (d MysqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbm.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
 	return GetFieldDefinitionsByRouteRow{
 		FieldID:    a.FieldID,
@@ -216,7 +227,7 @@ func (d MysqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbm.GetFieldDefinitio
 	}
 }
 
-// GetContentFieldsByRouteRow
+// MapGetContentFieldsByRouteRow maps MySQL content fields row to wrapper struct.
 func (d MysqlDatabase) MapGetContentFieldsByRouteRow(a mdbm.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
 	return GetContentFieldsByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -225,6 +236,7 @@ func (d MysqlDatabase) MapGetContentFieldsByRouteRow(a mdbm.GetContentFieldsByRo
 	}
 }
 
+// GetRouteTreeByRouteID retrieves the complete route tree including field values for a route.
 func (d MysqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdbm.GetRouteTreeByRouteIDParams{RouteID: routeID})
@@ -238,6 +250,8 @@ func (d MysqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]
 	}
 	return &res, nil
 }
+
+// GetContentTreeByRoute retrieves all content nodes for a route with datatype metadata.
 func (d MysqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetContentTreeByRoute(d.Context, mdbm.GetContentTreeByRouteParams{RouteID: routeID})
@@ -251,6 +265,8 @@ func (d MysqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]
 	}
 	return &res, nil
 }
+
+// GetFieldDefinitionsByRoute retrieves all field definitions associated with a route.
 func (d MysqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdbm.GetFieldDefinitionsByRouteParams{RouteID: routeID})
@@ -264,6 +280,8 @@ func (d MysqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID)
 	}
 	return &res, nil
 }
+
+// GetContentFieldsByRoute retrieves all content field values for a route.
 func (d MysqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetContentFieldsByRoute(d.Context, mdbm.GetContentFieldsByRouteParams{RouteID: routeID})
@@ -282,6 +300,7 @@ func (d MysqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*
 //POSTGRES
 //////////////////////////////
 
+// MapGetRouteTreeByRouteIDRow maps PostgreSQL route tree row to wrapper struct.
 func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRow) GetRouteTreeByRouteIDRow {
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: a.ContentDataID,
@@ -296,6 +315,8 @@ func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRo
 		FieldValue:    a.FieldValue,
 	}
 }
+
+// MapGetContentTreeByRouteRow maps PostgreSQL content tree row to wrapper struct.
 func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRow) GetContentTreeByRouteRow {
 	return GetContentTreeByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -314,7 +335,7 @@ func (d PsqlDatabase) MapGetContentTreeByRouteRow(a mdbp.GetContentTreeByRouteRo
 	}
 }
 
-// GetFieldDefinitionsByRouteRow
+// MapGetFieldDefinitionsByRouteRow maps PostgreSQL field definitions row to wrapper struct.
 func (d PsqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbp.GetFieldDefinitionsByRouteRow) GetFieldDefinitionsByRouteRow {
 	return GetFieldDefinitionsByRouteRow{
 		FieldID:    a.FieldID,
@@ -324,7 +345,7 @@ func (d PsqlDatabase) MapGetFieldDefinitionsByRouteRow(a mdbp.GetFieldDefinition
 	}
 }
 
-// GetContentFieldsByRouteRow
+// MapGetContentFieldsByRouteRow maps PostgreSQL content fields row to wrapper struct.
 func (d PsqlDatabase) MapGetContentFieldsByRouteRow(a mdbp.GetContentFieldsByRouteRow) GetContentFieldsByRouteRow {
 	return GetContentFieldsByRouteRow{
 		ContentDataID: a.ContentDataID,
@@ -333,6 +354,7 @@ func (d PsqlDatabase) MapGetContentFieldsByRouteRow(a mdbp.GetContentFieldsByRou
 	}
 }
 
+// GetRouteTreeByRouteID retrieves the complete route tree including field values for a route.
 func (d PsqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]GetRouteTreeByRouteIDRow, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetRouteTreeByRouteID(d.Context, mdbp.GetRouteTreeByRouteIDParams{RouteID: routeID})
@@ -346,6 +368,8 @@ func (d PsqlDatabase) GetRouteTreeByRouteID(routeID types.NullableRouteID) (*[]G
 	}
 	return &res, nil
 }
+
+// GetContentTreeByRoute retrieves all content nodes for a route with datatype metadata.
 func (d PsqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]GetContentTreeByRouteRow, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetContentTreeByRoute(d.Context, mdbp.GetContentTreeByRouteParams{RouteID: routeID})
@@ -359,6 +383,8 @@ func (d PsqlDatabase) GetContentTreeByRoute(routeID types.NullableRouteID) (*[]G
 	}
 	return &res, nil
 }
+
+// GetFieldDefinitionsByRoute retrieves all field definitions associated with a route.
 func (d PsqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetFieldDefinitionsByRoute(d.Context, mdbp.GetFieldDefinitionsByRouteParams{RouteID: routeID})
@@ -372,6 +398,8 @@ func (d PsqlDatabase) GetFieldDefinitionsByRoute(routeID types.NullableRouteID) 
 	}
 	return &res, nil
 }
+
+// GetContentFieldsByRoute retrieves all content field values for a route.
 func (d PsqlDatabase) GetContentFieldsByRoute(routeID types.NullableRouteID) (*[]GetContentFieldsByRouteRow, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetContentFieldsByRoute(d.Context, mdbp.GetContentFieldsByRouteParams{RouteID: routeID})

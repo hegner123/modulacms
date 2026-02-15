@@ -13,6 +13,7 @@ import (
 // STRUCTS
 //////////////////////////////
 
+// ChangeEvent represents an audit trail entry for database mutations.
 type ChangeEvent struct {
 	EventID       types.EventID        `json:"event_id"`
 	HlcTimestamp  types.HLC            `json:"hlc_timestamp"`
@@ -32,6 +33,7 @@ type ChangeEvent struct {
 	ConsumedAt    types.Timestamp      `json:"consumed_at"`
 }
 
+// RecordChangeEventParams contains the parameters to record a change event.
 type RecordChangeEventParams struct {
 	EventID      types.EventID        `json:"event_id"`
 	HlcTimestamp types.HLC            `json:"hlc_timestamp"`
@@ -48,17 +50,20 @@ type RecordChangeEventParams struct {
 	IP           types.NullableString `json:"ip"`
 }
 
+// ListChangeEventsParams contains pagination parameters for listing change events.
 type ListChangeEventsParams struct {
 	Limit  int64 `json:"limit"`
 	Offset int64 `json:"offset"`
 }
 
+// ListChangeEventsByUserParams contains parameters to list change events filtered by user.
 type ListChangeEventsByUserParams struct {
 	UserID types.NullableUserID `json:"user_id"`
 	Limit  int64                `json:"limit"`
 	Offset int64                `json:"offset"`
 }
 
+// ListChangeEventsByActionParams contains parameters to list change events filtered by action.
 type ListChangeEventsByActionParams struct {
 	Action types.Action `json:"action"`
 	Limit  int64        `json:"limit"`
@@ -71,6 +76,7 @@ type ListChangeEventsByActionParams struct {
 
 // MAPS
 
+// MapChangeEvent converts a sqlc-generated SQLite ChangeEvent to the wrapper type.
 func (d Database) MapChangeEvent(a mdb.ChangeEvent) ChangeEvent {
 	return ChangeEvent{
 		EventID:       a.EventID,
@@ -92,6 +98,7 @@ func (d Database) MapChangeEvent(a mdb.ChangeEvent) ChangeEvent {
 	}
 }
 
+// MapRecordChangeEventParams converts wrapper params to a sqlc-generated SQLite type.
 func (d Database) MapRecordChangeEventParams(a RecordChangeEventParams) mdb.RecordChangeEventParams {
 	return mdb.RecordChangeEventParams{
 		EventID:      a.EventID,
@@ -112,16 +119,19 @@ func (d Database) MapRecordChangeEventParams(a RecordChangeEventParams) mdb.Reco
 
 // QUERIES
 
+// CreateChangeEventsTable creates the change_events table in SQLite.
 func (d Database) CreateChangeEventsTable() error {
 	queries := mdb.New(d.Connection)
 	return queries.CreateChangeEventsTable(d.Context)
 }
 
+// DropChangeEventsTable drops the change_events table from SQLite.
 func (d Database) DropChangeEventsTable() error {
 	queries := mdb.New(d.Connection)
 	return queries.DropChangeEventsTable(d.Context)
 }
 
+// RecordChangeEvent records a new change event in SQLite and returns the created event.
 func (d Database) RecordChangeEvent(params RecordChangeEventParams) (*ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.RecordChangeEvent(d.Context, d.MapRecordChangeEventParams(params))
@@ -132,6 +142,7 @@ func (d Database) RecordChangeEvent(params RecordChangeEventParams) (*ChangeEven
 	return &res, nil
 }
 
+// GetChangeEvent retrieves a single change event by ID from SQLite.
 func (d Database) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	row, err := queries.GetChangeEvent(d.Context, mdb.GetChangeEventParams{EventID: id})
@@ -142,6 +153,7 @@ func (d Database) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetChangeEventsByRecord retrieves all change events for a specific record from SQLite.
 func (d Database) GetChangeEventsByRecord(tableName string, recordID string) (*[]ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetChangeEventsByRecord(d.Context, mdb.GetChangeEventsByRecordParams{
@@ -158,6 +170,7 @@ func (d Database) GetChangeEventsByRecord(tableName string, recordID string) (*[
 	return &res, nil
 }
 
+// GetUnsyncedEvents retrieves unsynced change events up to the specified limit from SQLite.
 func (d Database) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetUnsyncedEvents(d.Context, mdb.GetUnsyncedEventsParams{Limit: limit})
@@ -171,6 +184,7 @@ func (d Database) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetUnconsumedEvents retrieves unconsumed change events up to the specified limit from SQLite.
 func (d Database) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.GetUnconsumedEvents(d.Context, mdb.GetUnconsumedEventsParams{Limit: limit})
@@ -184,16 +198,19 @@ func (d Database) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) {
 	return &res, nil
 }
 
+// MarkEventSynced marks a change event as synced in SQLite.
 func (d Database) MarkEventSynced(id types.EventID) error {
 	queries := mdb.New(d.Connection)
 	return queries.MarkEventSynced(d.Context, mdb.MarkEventSyncedParams{EventID: id})
 }
 
+// MarkEventConsumed marks a change event as consumed in SQLite.
 func (d Database) MarkEventConsumed(id types.EventID) error {
 	queries := mdb.New(d.Connection)
 	return queries.MarkEventConsumed(d.Context, mdb.MarkEventConsumedParams{EventID: id})
 }
 
+// ListChangeEvents retrieves paginated change events from SQLite.
 func (d Database) ListChangeEvents(params ListChangeEventsParams) (*[]ChangeEvent, error) {
 	queries := mdb.New(d.Connection)
 	rows, err := queries.ListChangeEvents(d.Context, mdb.ListChangeEventsParams{
@@ -210,6 +227,7 @@ func (d Database) ListChangeEvents(params ListChangeEventsParams) (*[]ChangeEven
 	return &res, nil
 }
 
+// CountChangeEvents returns the total count of change events in SQLite.
 func (d Database) CountChangeEvents() (*int64, error) {
 	queries := mdb.New(d.Connection)
 	c, err := queries.CountChangeEvents(d.Context)
@@ -219,6 +237,7 @@ func (d Database) CountChangeEvents() (*int64, error) {
 	return &c, nil
 }
 
+// DeleteChangeEvent deletes a change event by ID from SQLite.
 func (d Database) DeleteChangeEvent(id types.EventID) error {
 	queries := mdb.New(d.Connection)
 	return queries.DeleteChangeEvent(d.Context, mdb.DeleteChangeEventParams{EventID: id})
@@ -230,6 +249,7 @@ func (d Database) DeleteChangeEvent(id types.EventID) error {
 
 // MAPS
 
+// MapChangeEvent converts a sqlc-generated MySQL ChangeEvent to the wrapper type.
 func (d MysqlDatabase) MapChangeEvent(a mdbm.ChangeEvent) ChangeEvent {
 	return ChangeEvent{
 		EventID:       a.EventID,
@@ -251,6 +271,7 @@ func (d MysqlDatabase) MapChangeEvent(a mdbm.ChangeEvent) ChangeEvent {
 	}
 }
 
+// MapRecordChangeEventParams converts wrapper params to a sqlc-generated MySQL type.
 func (d MysqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdbm.RecordChangeEventParams {
 	return mdbm.RecordChangeEventParams{
 		EventID:      a.EventID,
@@ -271,16 +292,19 @@ func (d MysqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdb
 
 // QUERIES
 
+// CreateChangeEventsTable creates the change_events table in MySQL.
 func (d MysqlDatabase) CreateChangeEventsTable() error {
 	queries := mdbm.New(d.Connection)
 	return queries.CreateChangeEventsTable(d.Context)
 }
 
+// DropChangeEventsTable drops the change_events table from MySQL.
 func (d MysqlDatabase) DropChangeEventsTable() error {
 	queries := mdbm.New(d.Connection)
 	return queries.DropChangeEventsTable(d.Context)
 }
 
+// RecordChangeEvent records a new change event in MySQL and returns the created event.
 func (d MysqlDatabase) RecordChangeEvent(params RecordChangeEventParams) (*ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	err := queries.RecordChangeEvent(d.Context, d.MapRecordChangeEventParams(params))
@@ -295,6 +319,7 @@ func (d MysqlDatabase) RecordChangeEvent(params RecordChangeEventParams) (*Chang
 	return &res, nil
 }
 
+// GetChangeEvent retrieves a single change event by ID from MySQL.
 func (d MysqlDatabase) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	row, err := queries.GetChangeEvent(d.Context, mdbm.GetChangeEventParams{EventID: id})
@@ -305,6 +330,7 @@ func (d MysqlDatabase) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetChangeEventsByRecord retrieves all change events for a specific record from MySQL.
 func (d MysqlDatabase) GetChangeEventsByRecord(tableName string, recordID string) (*[]ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetChangeEventsByRecord(d.Context, mdbm.GetChangeEventsByRecordParams{
@@ -321,6 +347,7 @@ func (d MysqlDatabase) GetChangeEventsByRecord(tableName string, recordID string
 	return &res, nil
 }
 
+// GetUnsyncedEvents retrieves unsynced change events up to the specified limit from MySQL.
 func (d MysqlDatabase) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetUnsyncedEvents(d.Context, mdbm.GetUnsyncedEventsParams{Limit: int32(limit)})
@@ -334,6 +361,7 @@ func (d MysqlDatabase) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetUnconsumedEvents retrieves unconsumed change events up to the specified limit from MySQL.
 func (d MysqlDatabase) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.GetUnconsumedEvents(d.Context, mdbm.GetUnconsumedEventsParams{Limit: int32(limit)})
@@ -347,16 +375,19 @@ func (d MysqlDatabase) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) 
 	return &res, nil
 }
 
+// MarkEventSynced marks a change event as synced in MySQL.
 func (d MysqlDatabase) MarkEventSynced(id types.EventID) error {
 	queries := mdbm.New(d.Connection)
 	return queries.MarkEventSynced(d.Context, mdbm.MarkEventSyncedParams{EventID: id})
 }
 
+// MarkEventConsumed marks a change event as consumed in MySQL.
 func (d MysqlDatabase) MarkEventConsumed(id types.EventID) error {
 	queries := mdbm.New(d.Connection)
 	return queries.MarkEventConsumed(d.Context, mdbm.MarkEventConsumedParams{EventID: id})
 }
 
+// ListChangeEvents retrieves paginated change events from MySQL.
 func (d MysqlDatabase) ListChangeEvents(params ListChangeEventsParams) (*[]ChangeEvent, error) {
 	queries := mdbm.New(d.Connection)
 	rows, err := queries.ListChangeEvents(d.Context, mdbm.ListChangeEventsParams{
@@ -373,6 +404,7 @@ func (d MysqlDatabase) ListChangeEvents(params ListChangeEventsParams) (*[]Chang
 	return &res, nil
 }
 
+// CountChangeEvents returns the total count of change events in MySQL.
 func (d MysqlDatabase) CountChangeEvents() (*int64, error) {
 	queries := mdbm.New(d.Connection)
 	c, err := queries.CountChangeEvents(d.Context)
@@ -382,6 +414,7 @@ func (d MysqlDatabase) CountChangeEvents() (*int64, error) {
 	return &c, nil
 }
 
+// DeleteChangeEvent deletes a change event by ID from MySQL.
 func (d MysqlDatabase) DeleteChangeEvent(id types.EventID) error {
 	queries := mdbm.New(d.Connection)
 	return queries.DeleteChangeEvent(d.Context, mdbm.DeleteChangeEventParams{EventID: id})
@@ -393,6 +426,7 @@ func (d MysqlDatabase) DeleteChangeEvent(id types.EventID) error {
 
 // MAPS
 
+// MapChangeEvent converts a sqlc-generated PostgreSQL ChangeEvent to the wrapper type.
 func (d PsqlDatabase) MapChangeEvent(a mdbp.ChangeEvent) ChangeEvent {
 	return ChangeEvent{
 		EventID:       a.EventID,
@@ -414,6 +448,7 @@ func (d PsqlDatabase) MapChangeEvent(a mdbp.ChangeEvent) ChangeEvent {
 	}
 }
 
+// MapRecordChangeEventParams converts wrapper params to a sqlc-generated PostgreSQL type.
 func (d PsqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdbp.RecordChangeEventParams {
 	return mdbp.RecordChangeEventParams{
 		EventID:      a.EventID,
@@ -434,16 +469,19 @@ func (d PsqlDatabase) MapRecordChangeEventParams(a RecordChangeEventParams) mdbp
 
 // QUERIES
 
+// CreateChangeEventsTable creates the change_events table in PostgreSQL.
 func (d PsqlDatabase) CreateChangeEventsTable() error {
 	queries := mdbp.New(d.Connection)
 	return queries.CreateChangeEventsTable(d.Context)
 }
 
+// DropChangeEventsTable drops the change_events table from PostgreSQL.
 func (d PsqlDatabase) DropChangeEventsTable() error {
 	queries := mdbp.New(d.Connection)
 	return queries.DropChangeEventsTable(d.Context)
 }
 
+// RecordChangeEvent records a new change event in PostgreSQL and returns the created event.
 func (d PsqlDatabase) RecordChangeEvent(params RecordChangeEventParams) (*ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.RecordChangeEvent(d.Context, d.MapRecordChangeEventParams(params))
@@ -454,6 +492,7 @@ func (d PsqlDatabase) RecordChangeEvent(params RecordChangeEventParams) (*Change
 	return &res, nil
 }
 
+// GetChangeEvent retrieves a single change event by ID from PostgreSQL.
 func (d PsqlDatabase) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	row, err := queries.GetChangeEvent(d.Context, mdbp.GetChangeEventParams{EventID: id})
@@ -464,6 +503,7 @@ func (d PsqlDatabase) GetChangeEvent(id types.EventID) (*ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetChangeEventsByRecord retrieves all change events for a specific record from PostgreSQL.
 func (d PsqlDatabase) GetChangeEventsByRecord(tableName string, recordID string) (*[]ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetChangeEventsByRecord(d.Context, mdbp.GetChangeEventsByRecordParams{
@@ -480,6 +520,7 @@ func (d PsqlDatabase) GetChangeEventsByRecord(tableName string, recordID string)
 	return &res, nil
 }
 
+// GetUnsyncedEvents retrieves unsynced change events up to the specified limit from PostgreSQL.
 func (d PsqlDatabase) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetUnsyncedEvents(d.Context, mdbp.GetUnsyncedEventsParams{Limit: int32(limit)})
@@ -493,6 +534,7 @@ func (d PsqlDatabase) GetUnsyncedEvents(limit int64) (*[]ChangeEvent, error) {
 	return &res, nil
 }
 
+// GetUnconsumedEvents retrieves unconsumed change events up to the specified limit from PostgreSQL.
 func (d PsqlDatabase) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.GetUnconsumedEvents(d.Context, mdbp.GetUnconsumedEventsParams{Limit: int32(limit)})
@@ -506,16 +548,19 @@ func (d PsqlDatabase) GetUnconsumedEvents(limit int64) (*[]ChangeEvent, error) {
 	return &res, nil
 }
 
+// MarkEventSynced marks a change event as synced in PostgreSQL.
 func (d PsqlDatabase) MarkEventSynced(id types.EventID) error {
 	queries := mdbp.New(d.Connection)
 	return queries.MarkEventSynced(d.Context, mdbp.MarkEventSyncedParams{EventID: id})
 }
 
+// MarkEventConsumed marks a change event as consumed in PostgreSQL.
 func (d PsqlDatabase) MarkEventConsumed(id types.EventID) error {
 	queries := mdbp.New(d.Connection)
 	return queries.MarkEventConsumed(d.Context, mdbp.MarkEventConsumedParams{EventID: id})
 }
 
+// ListChangeEvents retrieves paginated change events from PostgreSQL.
 func (d PsqlDatabase) ListChangeEvents(params ListChangeEventsParams) (*[]ChangeEvent, error) {
 	queries := mdbp.New(d.Connection)
 	rows, err := queries.ListChangeEvents(d.Context, mdbp.ListChangeEventsParams{
@@ -532,6 +577,7 @@ func (d PsqlDatabase) ListChangeEvents(params ListChangeEventsParams) (*[]Change
 	return &res, nil
 }
 
+// CountChangeEvents returns the total count of change events in PostgreSQL.
 func (d PsqlDatabase) CountChangeEvents() (*int64, error) {
 	queries := mdbp.New(d.Connection)
 	c, err := queries.CountChangeEvents(d.Context)
@@ -541,6 +587,7 @@ func (d PsqlDatabase) CountChangeEvents() (*int64, error) {
 	return &c, nil
 }
 
+// DeleteChangeEvent deletes a change event by ID from PostgreSQL.
 func (d PsqlDatabase) DeleteChangeEvent(id types.EventID) error {
 	queries := mdbp.New(d.Connection)
 	return queries.DeleteChangeEvent(d.Context, mdbp.DeleteChangeEventParams{EventID: id})

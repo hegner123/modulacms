@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-// unzip extracts a zip archive, moving all files and folders
+// Unzip extracts a zip archive, moving all files and folders
 // to a destination directory.
 func Unzip(src, dest string) error {
     r, err := zip.OpenReader(src)

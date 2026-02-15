@@ -12,12 +12,14 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// DBStatus contains the result of a database connection check.
 type DBStatus struct {
 	Driver string
 	URL    string
 	Err    error
 }
 
+// CheckConfigExists verifies that a configuration file exists at the specified path.
 func CheckConfigExists(path string) error {
 	var p string
 	if path != "" {
@@ -33,6 +35,7 @@ func CheckConfigExists(path string) error {
 	return nil
 }
 
+// CheckBucket verifies that S3-compatible bucket credentials are valid and accessible.
 func CheckBucket(v *bool, c *config.Config) (string, error) {
 	verbose := false
 	if v != nil {
@@ -66,6 +69,7 @@ func CheckBucket(v *bool, c *config.Config) (string, error) {
 	return "Connected", nil
 }
 
+// CheckOauth verifies that OAuth configuration fields are populated.
 func CheckOauth(v *bool, c *config.Config) (string, error) {
 	verbose := false
 	if v != nil {
@@ -84,6 +88,7 @@ func CheckOauth(v *bool, c *config.Config) (string, error) {
 	return "Connected", nil
 }
 
+// CheckDb verifies that a database connection can be established with the configured credentials.
 func CheckDb(v *bool, c config.Config) (DBStatus, error) {
 	verbose := false
 	status := DBStatus{}
@@ -132,6 +137,7 @@ func CheckBackupTools(driver config.DbDriver) (warning string, err error) {
 	return "", nil
 }
 
+// CheckCerts checks whether the required SSL certificate files exist at the specified path.
 func CheckCerts(path string) bool {
 	certPath := filepath.Join(path, "localhost.crt")
 	keyPath := filepath.Join(path, "localhost.key")

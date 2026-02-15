@@ -26,7 +26,7 @@ type ChangeEvent struct {
 	ConsumedAt    Timestamp      `json:"consumed_at,omitempty"`
 }
 
-// EventLogger interface for change event operations
+// EventLogger provides operations for managing change events used in audit trails, replication, and webhooks.
 type EventLogger interface {
 	// LogEvent records a change event
 	LogEvent(ctx context.Context, event ChangeEvent) error

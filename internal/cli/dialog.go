@@ -14,6 +14,7 @@ import (
 // DialogAction represents the type of action this dialog performs
 type DialogAction string
 
+// Dialog action types.
 const (
 	DIALOGGENERIC        DialogAction = "generic"
 	DIALOGDELETE         DialogAction = "delete"
@@ -79,18 +80,21 @@ func NewDialog(title, message string, showCancel bool, action DialogAction) Dial
 }
 
 // SetSize sets the dialog size
+// SetSize sets the dialog size.
 func (d *DialogModel) SetSize(width, height int) {
 	d.Width = width
 	d.Height = height
 }
 
 // SetButtons sets the dialog button text
+// SetButtons sets the dialog button text.
 func (d *DialogModel) SetButtons(okText, cancelText string) {
 	d.OkText = okText
 	d.CancelText = cancelText
 }
 
 // Update handles user input for the dialog
+// Update handles user input for the dialog and returns the updated model and command.
 func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch d.Action {
 	case DIALOGDELETE, DIALOGACTIONCONFIRM, DIALOGINITCONTENT, DIALOGQUITCONFIRM, DIALOGDELETECONTENT,
@@ -112,6 +116,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 	}
 }
 
+// ToggleControls handles navigation and selection within the dialog.
 func (d *DialogModel) ToggleControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -135,6 +140,7 @@ func (d *DialogModel) ToggleControls(msg tea.Msg) (DialogModel, tea.Cmd) {
 }
 
 // Render renders the dialog
+// Render renders the dialog with its title, message, and buttons.
 func (d DialogModel) Render(windowWidth, windowHeight int) string {
 	// Calculate position
 	contentWidth := d.Width
@@ -208,18 +214,26 @@ func DialogOverlay(content string, dialog DialogModel, width, height int) string
 }
 
 // Dialog-related messages
+
+// DialogAcceptMsg signals that a dialog was accepted.
 type DialogAcceptMsg struct {
 	Action DialogAction
 }
+
+// DialogCancelMsg signals that a dialog was cancelled.
 type DialogCancelMsg struct{}
+
+// DialogReadyOK signals that a dialog is ready to accept input.
 type DialogReadyOK struct{}
+
+// ShowDialogMsg triggers showing a dialog.
 type ShowDialogMsg struct {
 	Title      string
 	Message    string
 	ShowCancel bool
 }
 
-// HandleShowDialog creates a command to show a dialog
+// HandleShowDialog creates a command to show a generic dialog.
 func HandleShowDialog(title, message string, showCancel bool) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDialogMsg{
@@ -230,24 +244,24 @@ func HandleShowDialog(title, message string, showCancel bool) tea.Cmd {
 	}
 }
 
-// ShowQuitConfirmDialogMsg triggers showing a quit confirmation dialog
+// ShowQuitConfirmDialogMsg triggers showing a quit confirmation dialog.
 type ShowQuitConfirmDialogMsg struct{}
 
-// ShowQuitConfirmDialogCmd creates a command to show a quit confirmation dialog
+// ShowQuitConfirmDialogCmd creates a command to show a quit confirmation dialog.
 func ShowQuitConfirmDialogCmd() tea.Cmd {
 	return func() tea.Msg {
 		return ShowQuitConfirmDialogMsg{}
 	}
 }
 
-// ShowDeleteContentDialogMsg triggers showing a delete content confirmation dialog
+// ShowDeleteContentDialogMsg triggers showing a delete content confirmation dialog.
 type ShowDeleteContentDialogMsg struct {
 	ContentID   string
 	ContentName string
 	HasChildren bool
 }
 
-// ShowDeleteContentDialogCmd creates a command to show a delete content confirmation dialog
+// ShowDeleteContentDialogCmd creates a command to show a delete content confirmation dialog.
 func ShowDeleteContentDialogCmd(contentID, contentName string, hasChildren bool) tea.Cmd {
 	return func() tea.Msg {
 		return ShowDeleteContentDialogMsg{
@@ -258,13 +272,13 @@ func ShowDeleteContentDialogCmd(contentID, contentName string, hasChildren bool)
 	}
 }
 
-// DeleteContentRequestMsg triggers content deletion
+// DeleteContentRequestMsg triggers content deletion.
 type DeleteContentRequestMsg struct {
 	ContentID string
 	RouteID   string
 }
 
-// DeleteContentCmd creates a command to delete content
+// DeleteContentCmd creates a command to delete content.
 func DeleteContentCmd(contentID, routeID string) tea.Cmd {
 	return func() tea.Msg {
 		return DeleteContentRequestMsg{
@@ -274,7 +288,7 @@ func DeleteContentCmd(contentID, routeID string) tea.Cmd {
 	}
 }
 
-// ContentDeletedMsg is sent after content is successfully deleted
+// ContentDeletedMsg is sent after content is successfully deleted.
 type ContentDeletedMsg struct {
 	ContentID string
 	RouteID   string

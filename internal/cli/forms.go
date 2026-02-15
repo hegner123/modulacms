@@ -10,8 +10,10 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// FormIndex enumerates form type indices.
 type FormIndex int
 
+// FormIndex constants define form types.
 const (
 	DATABASECREATE FormIndex = iota
 	DATABASEUPDATE
@@ -19,7 +21,7 @@ const (
 	CMSUPDATE
 )
 
-// TODO add argument for admin / client specific action
+// NewDefineDatatypeForm creates a form for defining a new datatype.
 func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 	values := make([]*string, 8)
 	columns := []string{
@@ -95,6 +97,7 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 	return form, len(values), values
 }
 
+// NewEditDatatypeForm creates a form for editing an existing datatype.
 func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 	values := make([]*string, 8)
 
@@ -170,8 +173,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 	return form, len(values), values
 }
 
-// Field Form for adding fields to a Datatype
-
+// CreateDatatypeForm creates a form for creating a new datatype.
 func CreateDatatypeForm(m Model) (*huh.Form, int) {
 	logger := m.Logger
 	var (
@@ -210,6 +212,7 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 
 	return form, 3 // 3 fields
 }
+// CreateFieldForm creates a form for adding a field to a datatype.
 func CreateFieldForm(m Model) (*huh.Form, int) {
 	logger := m.Logger
 	var (
@@ -254,7 +257,7 @@ func CreateFieldForm(m Model) (*huh.Form, int) {
 	return form, 4 // 4 fields
 }
 
-// BuildCMSFieldForm creates a form for CMS fields
+// BuildCMSFieldForm creates a command to build a form for CMS fields.
 func (m Model) BuildCMSFieldForm() tea.Cmd {
 	return func() tea.Msg {
 		form, count := CreateFieldForm(m)
@@ -265,7 +268,7 @@ func (m Model) BuildCMSFieldForm() tea.Cmd {
 	}
 }
 
-// CMSFormControls handles the UI controls for CMS forms
+// CMSFormControls handles the UI controls for CMS forms.
 func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
 	m.Focus = FORMFOCUS
@@ -292,8 +295,7 @@ func (m Model) CMSFormControls(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-// Database form builders
-
+// NewFormMsg carries a newly constructed form and field metadata.
 type NewFormMsg struct {
 	Form        *huh.Form
 	FieldsCount int
@@ -302,7 +304,7 @@ type NewFormMsg struct {
 }
 
 
-// BuildContentFieldsForm creates a dynamic form for content creation based on datatype fields
+// BuildContentFieldsForm creates a command to build a dynamic form for content creation.
 func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {
 	logger := m.Logger
 	if logger == nil {

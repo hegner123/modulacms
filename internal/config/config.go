@@ -1,23 +1,32 @@
+// Package config provides configuration management for ModulaCMS, including
+// database drivers, OAuth endpoints, S3-compatible storage buckets, CORS
+// settings, SSL/TLS configuration, plugin runtime options, and observability.
 package config
 
+// Endpoint identifies OAuth provider endpoint types.
 type Endpoint string
 
+// DbDriver specifies which database backend to use.
 type DbDriver string
 
+// OutputFormat defines the API response structure for content endpoints.
 type OutputFormat string
 
+// OAuth endpoint keys used in the Oauth_Endpoint configuration map.
 const (
 	OauthAuthURL     Endpoint = "oauth_auth_url"
 	OauthTokenURL    Endpoint = "oauth_token_url"
 	OauthUserInfoURL Endpoint = "oauth_userinfo_url"
 )
 
+// Supported database drivers for ModulaCMS.
 const (
 	Sqlite DbDriver = "sqlite"
 	Mysql  DbDriver = "mysql"
 	Psql   DbDriver = "postgres"
 )
 
+// Output formats for content API responses mimicking popular CMS structures.
 const (
 	FormatContentful OutputFormat = "contentful"
 	FormatSanity     OutputFormat = "sanity"
@@ -28,6 +37,9 @@ const (
 	FormatDefault    OutputFormat = "" // Empty string defaults to raw
 )
 
+// Config holds all runtime configuration for ModulaCMS including server settings,
+// database credentials, OAuth providers, S3-compatible storage, CORS policies,
+// plugin runtime limits, and observability integration.
 type Config struct {
 	Environment         string              `json:"environment"`
 	OS                  string              `json:"os"`

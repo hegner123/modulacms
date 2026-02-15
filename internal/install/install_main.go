@@ -5,6 +5,7 @@ import (
 	utility "github.com/hegner123/modulacms/internal/utility"
 )
 
+// ModulaInit represents the installation status of various system components.
 type ModulaInit struct {
 	UseSSL          bool
 	DbFileExists    bool
@@ -16,6 +17,7 @@ type ModulaInit struct {
 	OauthConnected  bool
 }
 
+// CheckInstall validates the installation status of the ModulaCMS system by checking configuration, database, bucket, OAuth, and SSL certificates.
 func CheckInstall(c *config.Config, v *bool) (ModulaInit, error) {
 	Status := ModulaInit{}
 

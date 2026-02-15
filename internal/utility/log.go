@@ -1,3 +1,5 @@
+// Package utility provides logging utilities for the ModulaCMS application.
+// It includes a structured logger with severity levels, file logging, and styled output.
 package utility
 
 import (
@@ -16,6 +18,7 @@ import (
 type LogLevel int
 
 const (
+	// LogLevel constants define the severity levels from BLANK to FATAL.
 	BLANK LogLevel = iota
 	DEBUG
 	INFO
@@ -24,6 +27,7 @@ const (
 	FATAL
 )
 
+// NewLogFile creates and returns a log file for debug output.
 func NewLogFile() *os.File {
 	logField, err := tea.LogToFile("debug.log", "debug")
 	if err != nil {
@@ -39,6 +43,7 @@ type Logger struct {
 	logFile *os.File
 }
 
+// DefaultLogger is the default logger instance used throughout the application.
 var DefaultLogger = NewLogger(INFO)
 
 // NewLogger creates a new logger with the specified minimum level
