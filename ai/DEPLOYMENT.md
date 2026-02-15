@@ -296,11 +296,11 @@ If you prefer to deploy manually:
 
 ```bash
 # From your local machine
-make build
+just build
 
 # This will:
 # - Build the binary
-# - rsync to your server (configured in Makefile)
+# - rsync to your server (configured in justfile)
 ```
 
 ### Creating Production Releases
@@ -414,7 +414,7 @@ chmod +x /root/app/modula/modulacms-amd
 **Solution:**
 The workflow installs cross-compilation tools automatically. If issues persist:
 1. Check Go version matches (1.24.2)
-2. Ensure vendor directory is up to date: `make vendor`
+2. Ensure vendor directory is up to date: `just vendor`
 3. Verify `go.mod` has correct CGO settings
 
 ## Security Best Practices

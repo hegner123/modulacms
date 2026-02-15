@@ -111,7 +111,7 @@ func TestPublicAPI(t *testing.T) {
 
 ```bash
 # Run all tests
-make test
+just test
 
 # Run tests with verbose output
 go test -v ./...
@@ -130,7 +130,7 @@ go test -v ./internal/db -run TestCreate
 go test -race ./...
 
 # Run tests with coverage
-make coverage
+just coverage
 ```
 
 ### Test Targets in Makefile
@@ -1108,7 +1108,7 @@ func TestDatabaseMigration(t *testing.T) {
 
 ```bash
 # Generate coverage report
-make coverage
+just coverage
 
 # View coverage in browser
 go test -coverprofile=coverage.out ./...
@@ -1538,10 +1538,10 @@ jobs:
         mkdir -p backups
 
     - name: Run tests
-      run: make test
+      run: just test
 
     - name: Run coverage
-      run: make coverage
+      run: just coverage
 
     - name: Upload coverage
       uses: codecov/codecov-action@v3
@@ -1558,7 +1558,7 @@ jobs:
 
 # Run tests before commit
 echo "Running tests..."
-make test
+just test
 
 if [ $? -ne 0 ]; then
     echo "Tests failed. Commit aborted."
@@ -1674,7 +1674,7 @@ Use this checklist when adding tests:
 
 ```bash
 # Run all tests
-make test
+just test
 
 # Run with verbose output
 go test -v ./...
@@ -1683,7 +1683,7 @@ go test -v ./...
 go test -run TestName ./path/to/package
 
 # Run with coverage
-make coverage
+just coverage
 
 # Run benchmarks
 go test -bench=. ./...

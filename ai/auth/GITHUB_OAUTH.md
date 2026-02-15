@@ -193,7 +193,7 @@ Your device will show the user verification code and prompt the user to enter th
 POST https://github.com/login/oauth/access_token
 ```
 
-Your app will make device authorization requests that poll `POST https://github.com/login/oauth/access_token`, until the device and user codes expire or the user has successfully authorized the app with a valid user code. The app must use the minimum polling `interval` retrieved in step 1 to avoid rate limit errors. For more information, see [Rate limits for the device flow](#rate-limits-for-the-device-flow).
+Your app will just device authorization requests that poll `POST https://github.com/login/oauth/access_token`, until the device and user codes expire or the user has successfully authorized the app with a valid user code. The app must use the minimum polling `interval` retrieved in step 1 to avoid rate limit errors. For more information, see [Rate limits for the device flow](#rate-limits-for-the-device-flow).
 
 The user must enter a valid code within 15 minutes (or 900 seconds). After 15 minutes, you will need to request a new device authorization code with `POST https://github.com/login/device/code`.
 

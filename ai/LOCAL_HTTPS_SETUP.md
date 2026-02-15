@@ -63,7 +63,7 @@ Update your `config.json`:
 ### 3. Run ModulaCMS
 
 ```bash
-make dev
+just dev
 ./modulacms-x86
 ```
 
@@ -218,7 +218,7 @@ mkcert -key-file certs/localhost.key -cert-file certs/localhost.crt modulacms.lo
 ### 4. Run ModulaCMS
 
 ```bash
-make dev
+just dev
 ./modulacms-x86
 ```
 

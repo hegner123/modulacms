@@ -663,7 +663,7 @@ ORDER BY cd.date_created DESC;
 
 ```bash
 cd sql
-make sqlc
+just sqlc
 ```
 
 This generates methods in `internal/db-mysql/content.sql.go`:
@@ -1077,7 +1077,7 @@ func (d *Driver) GetContent(ctx context.Context, id int64) (db.ContentData, erro
 ### Adding New Methods
 
 1. Write SQL query (`sql/mysql/*.sql`, `sql/postgres/*.sql`)
-2. Run `make sqlc`
+2. Run `just sqlc`
 3. Add to DbDriver interface
 4. Implement in all three drivers
 5. Write tests

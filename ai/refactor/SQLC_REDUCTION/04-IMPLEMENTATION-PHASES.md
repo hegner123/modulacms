@@ -25,7 +25,7 @@
 - **Scope:** validation
 - **Status:** Complete - `e9da301`
 - **Tasks:**
-  - Run `make sqlc` on current configuration
+  - Run `just sqlc` on current configuration
   - Document any existing generation errors
   - Run `make check` to verify current compile status
   - Document baseline line counts:
@@ -56,7 +56,7 @@ These schema changes are free now but expensive with production data. Complete b
   - Create change_events table per "Schema Improvements" section (audit + replication + webhooks)
   - Add all indexes (idx_change_hlc, idx_change_table_record, idx_change_node, idx_change_unsynced, idx_change_unconsumed)
   - Add SQLC queries: RecordChangeEvent, GetChangeEventsByRecord, GetUnsyncedEvents, MarkEventSynced, GetUnconsumedEvents, MarkEventConsumed
-  - Run `make sqlc` to verify generation
+  - Run `just sqlc` to verify generation
 - **Commit message:** "feat(schema): add change_events table for audit, replication, and webhooks"
 
 ### Step 0b: Define Schema Without history Columns ✅
@@ -69,7 +69,7 @@ These schema changes are free now but expensive with production data. Complete b
   - Tables affected: datatypes, content_data, admin_content_data, users, media, etc.
   - History/audit tracking now via change_events table
   - No migration needed (no production data)
-  - Run `make sqlc` to regenerate code
+  - Run `just sqlc` to regenerate code
   - Run `make check` to find compilation errors from missing field
 - **Note:** Wrapper layer will need updates to use change_events instead of history (handled in Phase 3)
 - **Commit message:** "refactor(schema): define schema without history TEXT columns (use change_events)"
@@ -91,7 +91,7 @@ These schema changes are free now but expensive with production data. Complete b
     - user_ssh_keys: user_id
     - routes: content_data_id
     - All admin_* tables: corresponding FK columns
-  - Run `make sqlc` to verify
+  - Run `just sqlc` to verify
 - **Commit message:** "perf(schema): add FK indexes for query optimization"
 
 ### Step 0d: Add Database Constraints ✅
@@ -106,7 +106,7 @@ These schema changes are free now but expensive with production data. Complete b
     - `route_type` column: `CHECK (route_type IN (...))`
   - Add PostgreSQL DOMAINs for slug, email (optional - CHECK constraints work too)
   - Add SQLite triggers for `date_modified` ON UPDATE behavior
-  - Run `make sqlc` to verify
+  - Run `just sqlc` to verify
 - **Commit message:** "feat(schema): add CHECK constraints matching Go validation types"
 
 ### Step 0e: Create Backup Tables ✅
@@ -124,7 +124,7 @@ These schema changes are free now but expensive with production data. Complete b
   - Create backups, backup_verifications, backup_sets tables per "Schema Improvements" section
   - Add all indexes for node/status/hlc queries
   - Add SQLC queries: CreateBackup, UpdateBackupStatus, GetBackupsByNode, GetLatestBackup, CreateVerification, GetBackupSet, CreateBackupSet, etc.
-  - Run `make sqlc` to verify generation
+  - Run `just sqlc` to verify generation
 - **Commit message:** "feat(schema): add backup tables for distributed restore coordination"
 
 ---
@@ -242,7 +242,7 @@ These schema changes are free now but expensive with production data. Complete b
 - **Status:** In Progress - uncommitted regenerated files
 - **Depends on:** [14]
 - **Tasks:**
-  - Run `make sqlc`
+  - Run `just sqlc`
   - Fix any generation errors (may need to adjust column names in config)
   - Verify all three packages generate: `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
   - Commit generated code
@@ -386,7 +386,7 @@ These schema changes are free now but expensive with production data. Complete b
 - **Status:** Not Started
 - **Depends on:** [40, 41]
 - **Tasks:**
-  - `make test`
+  - `just test`
   - Test JSON serialization/deserialization with custom types
   - Test validation (invalid IDs, emails, slugs, etc.)
   - Test Timestamp parsing (strict RFC3339 for input, legacy for DB reads)

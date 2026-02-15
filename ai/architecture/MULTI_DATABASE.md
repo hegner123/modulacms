@@ -687,7 +687,7 @@ After modifying schema files or queries:
 
 ```bash
 cd sql
-make sqlc
+just sqlc
 ```
 
 This runs sqlc for all three database engines and regenerates type-safe Go code.
@@ -879,7 +879,7 @@ func ReadSchemaFiles(verbose *bool) (string, error) {
 
 8. **Create query directory:** `sql/cockroachdb/`
 
-9. **Run sqlc generation:** `make sqlc`
+9. **Run sqlc generation:** `just sqlc`
 
 10. **Test all operations** with the new driver
 
@@ -1094,7 +1094,7 @@ db.SetMaxIdleConns(10)
 **Solution:**
 - Verify all three schema files exist for each migration
 - Check for syntax differences (AUTO_INCREMENT vs SERIAL)
-- Regenerate sqlc code: `make sqlc`
+- Regenerate sqlc code: `just sqlc`
 - Test with all three databases in CI/CD
 
 ---

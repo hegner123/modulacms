@@ -774,7 +774,7 @@ func TestAuditedOperations_AllDrivers(t *testing.T) {
 
 2. **Add RecordChangeEventTx to sqlc**
    - Add query to all three driver query files
-   - Run `make sqlc`
+   - Run `just sqlc`
 
 3. **Implement Users entity commands**
    - Add NewUserCmd, UpdateUserCmd, DeleteUserCmd to `internal/db/user.go`

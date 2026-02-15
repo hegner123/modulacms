@@ -228,7 +228,7 @@ ai/
   - Add status column to content_data
   - Create migration (sql/schema/23_content_status/)
   - Write queries (sql/mysql/content.sql)
-  - Generate code (make sqlc)
+  - Generate code (just sqlc)
   - Update DbDriver interface
   - Implement in drivers
   - Add to Model
@@ -336,7 +336,7 @@ ai/
 - Index strategy
 - Updating combined schema files
 - Writing sqlc queries
-- Running make sqlc
+- Running just sqlc
 - Adding to DbDriver interface
 - Implementing in all drivers
 - Writing tests
@@ -375,7 +375,7 @@ ai/
 **Contents:**
 - Testing philosophy for the project
 - Test organization (package_test.go)
-- Running tests (make test, go test patterns)
+- Running tests (just test, go test patterns)
 - Database testing with SQLite :memory:
 - Mocking database drivers
 - Testing TUI components

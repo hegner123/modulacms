@@ -4,7 +4,7 @@ Complete directory structure of ModulaCMS with full absolute paths and detailed 
 
 ## Project Root
 **Path:** `/Users/home/Documents/Code/Go_dev/modulacms`
-**Description:** Root directory of ModulaCMS project. Contains Go modules, Makefile, configuration files, and all source code.
+**Description:** Root directory of ModulaCMS project. Contains Go modules, justfile, configuration files, and all source code.
 
 ---
 
@@ -436,7 +436,7 @@ DbDriver interface (defined in `internal/db/`) provides 150+ methods implemented
 Schema migrations are embedded in binary using `//go:embed` directives. Migrations run in numbered order (1-22) on application startup.
 
 ### sqlc Integration
-SQL queries in `sql/mysql/`, `sql/postgres/` directories are processed by sqlc to generate type-safe Go functions. Run `make sqlc` to regenerate.
+SQL queries in `sql/mysql/`, `sql/postgres/` directories are processed by sqlc to generate type-safe Go functions. Run `just sqlc` to regenerate.
 
 ### TUI Architecture
 CLI uses Elm Architecture (Model-Update-View) via Charmbracelet Bubbletea. All state lives in Model, changes via Update function, rendering via View function.

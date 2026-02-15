@@ -1,5 +1,7 @@
 # New sqlc.yml Configuration
 
+> **Status: COMPLETED** — This plan has been implemented. Some type overrides shown here (e.g. NullableContentID) have since been split into entity-specific types. See `sql/sqlc.yml` for the current configuration.
+
 This configuration replaces the current `sql/sqlc.yml` to use custom types across all three database engines.
 
 ```yaml

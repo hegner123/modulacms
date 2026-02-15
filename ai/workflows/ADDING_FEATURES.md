@@ -260,7 +260,7 @@ WHERE route_id = $1
 cd sql
 
 # Generate Go code from SQL queries
-make sqlc
+just sqlc
 
 # Or use sqlc directly
 sqlc generate
@@ -748,7 +748,7 @@ func TestValidateStatus(t *testing.T) {
 
 ```bash
 # Run all tests
-make test
+just test
 
 # Run specific package tests
 go test -v ./internal/model
@@ -847,10 +847,10 @@ EOF
 
 ```bash
 # Build for development
-make dev
+just dev
 
 # Build for production (AMD64 and x86)
-make build
+just build
 ```
 
 ### 10.2 Test Locally
@@ -872,7 +872,7 @@ ssh user@localhost -p 2222
 
 ```bash
 # Deploy using Makefile
-make build  # Builds and rsyncs to remote server
+just build  # Builds and rsyncs to remote server
 
 # Or manually:
 scp modulacms-amd64 user@server:/path/to/app/
@@ -905,7 +905,7 @@ ssh -p 2222 user@server
 2. Add ALTER TABLE statements (all 3 databases)
 3. Update combined schema files
 4. Add queries if needed (usually UPDATE and SELECT)
-5. Run `make sqlc`
+5. Run `just sqlc`
 6. Update DbDriver interface (if new queries)
 7. Implement in all drivers
 8. Update business logic
@@ -929,7 +929,7 @@ ssh -p 2222 user@server
 3. Add foreign keys to related tables
 4. Update combined schema files
 5. Write CRUD queries
-6. Run `make sqlc`
+6. Run `just sqlc`
 7. Add methods to DbDriver interface
 8. Implement in all drivers
 9. Create model functions
@@ -994,8 +994,8 @@ Before considering feature complete:
 - [ ] Edge cases tested (empty data, invalid input, etc.)
 - [ ] Performance tested with realistic data volume
 - [ ] Logging added for debugging
-- [ ] `make test` passes
-- [ ] `make lint` passes
+- [ ] `just test` passes
+- [ ] `just lint` passes
 - [ ] Documentation updated
 
 ---
@@ -1009,7 +1009,7 @@ Before considering feature complete:
 **Solution:**
 - Always implement DbDriver methods in all three drivers
 - Test with all three databases before deploying
-- Run `make test` which uses SQLite
+- Run `just test` which uses SQLite
 - Manually test with MySQL and PostgreSQL in dev
 
 ### Pitfall 2: SQL Differences Between Databases
@@ -1036,7 +1036,7 @@ Before considering feature complete:
 **Problem:** New feature breaks existing code.
 
 **Solution:**
-- Run full test suite before committing: `make test`
+- Run full test suite before committing: `just test`
 - Test TUI manually for regressions
 - Check that existing API endpoints still work
 - Review git diff carefully
@@ -1150,11 +1150,11 @@ tail -f logs/http.log
 ### Key Commands
 
 ```bash
-make sqlc          # Generate Go code from SQL
-make test          # Run all tests
-make lint          # Run linters
-make dev           # Build local binary
-make build         # Build and deploy production
+just sqlc          # Generate Go code from SQL
+just test          # Run all tests
+just lint          # Run linters
+just dev           # Build local binary
+just build         # Build and deploy production
 ./modulacms-x86    # Run locally
 ```
 

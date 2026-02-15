@@ -389,7 +389,7 @@ func NewMockDbDriver() *MockDbDriver {
 
 ---
 
-## Makefile Targets
+## Justfile Recipes
 
 ```makefile
 test-utility:
@@ -465,5 +465,5 @@ test-all-layers: test-layer0 test-layer1 test-layer2 test-layer3 test-layer4
 1. Create `internal/testutil/` package with mock infrastructure
 2. Restore tests from `.trash/` directory
 3. Update tests to use new mock patterns
-4. Add Makefile targets for layer-by-layer testing
+4. Add justfile recipes for layer-by-layer testing
 5. Implement CI pipeline running tests in dependency order

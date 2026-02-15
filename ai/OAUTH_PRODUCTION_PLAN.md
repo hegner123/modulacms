@@ -1216,7 +1216,7 @@ type Config struct {
 **MySQL:** `sql/mysql/auth_audit.sql` (NEW)
 - `CreateAuthAudit`
 
-Run `make sqlc` after adding queries.
+Run `just sqlc` after adding queries.
 
 ---
 

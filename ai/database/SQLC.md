@@ -21,7 +21,7 @@ sqlc generates type-safe Go code from SQL. You write SQL queries with special an
 
 **Workflow:**
 1. Write SQL queries in `.sql` files with sqlc annotations
-2. Run `sqlc generate` (or `make sqlc`)
+2. Run `sqlc generate` (or `just sqlc`)
 3. sqlc generates Go code with type-safe functions
 4. Import and use generated functions in your code
 
@@ -1227,7 +1227,7 @@ schema:
 
 ```bash
 # From project root
-make sqlc
+just sqlc
 ```
 
 ### Manually

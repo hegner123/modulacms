@@ -207,7 +207,7 @@ A SQL compiler that generates type-safe Go code from SQL queries. ModulaCMS uses
 
 **Configuration:** `/Users/home/Documents/Code/Go_dev/modulacms/sql/sqlc.yml`
 
-**Command:** `make sqlc`
+**Command:** `just sqlc`
 
 **Annotations:**
 - `-- name: GetUser :one` (returns single row)
@@ -816,11 +816,11 @@ C code interoperability in Go programs. Required by ModulaCMS for SQLite driver 
 Build automation file defining common development tasks.
 
 **Commands:**
-- `make build` - Build production binaries
-- `make dev` - Build local development binary
-- `make test` - Run all tests
-- `make sqlc` - Generate sqlc code
-- `make lint` - Run linters
+- `just build` - Build production binaries
+- `just dev` - Build local development binary
+- `just test` - Run all tests
+- `just sqlc` - Generate sqlc code
+- `just lint` - Run linters
 
 **Related:** Build, Development, Testing
 
@@ -840,7 +840,7 @@ A temporary SQLite database created during test runs. Located in `testdb/` direc
 ### Vendor
 A Go module pattern where dependencies are copied into the project repository. Useful for reproducible builds and offline development.
 
-**Command:** `make vendor`
+**Command:** `just vendor`
 
 **Related:** Go Modules, Dependencies
 

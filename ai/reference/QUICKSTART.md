@@ -12,10 +12,10 @@
 
 Before starting, ensure you have:
 
-- **Go 1.23.0 or later** (project uses toolchain go1.24.2)
+- **Go 1.26.0 or later**
 - **Git** for cloning the repository
 - **SQLite** (built into Go with CGO, no separate install needed for development)
-- **Make** for running build commands
+- **[just](https://github.com/casey/just)** command runner for build commands
 - **Text editor** (vim, emacs, nano, VS Code, whatever you prefer)
 
 **Optional for production:**
@@ -41,15 +41,15 @@ git clone https://github.com/hegner123/modulacms.git
 cd modulacms
 
 # Build for local development (creates modulacms-x86 binary)
-make dev
+just dev
 
 # OR build for production (creates both x86 and AMD64 binaries)
-make build
+just build
 ```
 
 **What this does:**
-- `make dev` - Quick local build using Go modules, outputs `modulacms-x86` in project root
-- `make build` - Full production build, outputs to `out/bin/`, cross-compiles for AMD64 Linux
+- `just dev` - Quick local build using Go modules, outputs `modulacms-x86` in project root
+- `just build` - Full production build, outputs to `out/bin/`, cross-compiles for AMD64 Linux
 
 **Build time:** ~30 seconds on first build (downloads dependencies), ~5 seconds on subsequent builds
 
@@ -165,7 +165,7 @@ Admin site domain? admin.localhost:1234
 ### Run All Tests
 
 ```bash
-make test
+just test
 ```
 
 **What this does:**
@@ -204,7 +204,7 @@ go test -v ./internal/cli
 ### Run Coverage Report
 
 ```bash
-make coverage
+just coverage
 ```
 
 **Output:** Shows test coverage percentage for each package.
@@ -212,7 +212,7 @@ make coverage
 ### Run Development Tests Only
 
 ```bash
-make test-development
+just test-development
 ```
 
 **Use case:** Quick tests during active development without full test suite.
@@ -235,16 +235,16 @@ vim internal/model/content.go
 vim sql/mysql/content.sql
 
 # Regenerate Go code from SQL
-make sqlc
+just sqlc
 ```
 
 **3. Rebuild and Test**
 ```bash
 # Quick rebuild
-make dev
+just dev
 
 # Run tests
-make test
+just test
 
 # Run the binary
 ./modulacms-x86 --cli
@@ -261,13 +261,13 @@ Repeat steps 1-3 until feature is complete.
 echo "" > debug.log
 
 # Build and run
-make run
+just run
 
 # In another terminal, tail the debug log
 tail -f debug.log
 ```
 
-**Note:** ModulaCMS doesn't have built-in hot reload. Use `make run` to rebuild and restart manually.
+**Note:** ModulaCMS doesn't have built-in hot reload. Use `just run` to rebuild and restart manually.
 
 ---
 
@@ -276,25 +276,25 @@ tail -f debug.log
 ### Build Commands
 
 ```bash
-make dev              # Fast local build (x86)
-make build            # Production build (x86 + AMD64)
-make run              # Build and immediately run
+just dev              # Fast local build (x86)
+just build            # Production build (x86 + AMD64)
+just run              # Build and immediately run
 make clean            # Remove build artifacts
 ```
 
 ### Test Commands
 
 ```bash
-make test             # Run all tests
-make test-development # Run development package tests only
-make coverage         # Run tests with coverage report
+just test             # Run all tests
+just test-development # Run development package tests only
+just coverage         # Run tests with coverage report
 make template-test    # Run template-specific tests
 ```
 
 ### Database Commands
 
 ```bash
-make sqlc             # Generate Go code from SQL queries
+just sqlc             # Generate Go code from SQL queries
 make dump             # Dump SQLite database to SQL file
 make docker-db        # Start database containers
 ```
@@ -302,9 +302,9 @@ make docker-db        # Start database containers
 ### Code Quality Commands
 
 ```bash
-make lint             # Run all linters
-make lint-go          # Lint Go code only
-make vendor           # Update vendor directory
+just lint             # Run all linters
+just lint-go          # Lint Go code only
+just vendor           # Update vendor directory
 ```
 
 ### Running the Application
@@ -360,7 +360,7 @@ ORDER BY date_modified DESC;
 **Step 3: Generate Go Code**
 
 ```bash
-make sqlc
+just sqlc
 ```
 
 **Result:** New methods added to database driver interfaces:
@@ -404,10 +404,10 @@ case tea.KeyMsg:
 
 ```bash
 # Run tests
-make test
+just test
 
 # Build and run
-make run
+just run
 
 # In TUI, press 'f' on selected content to toggle featured status
 ```
@@ -422,7 +422,7 @@ make run
 
 **1. Build for Production**
 ```bash
-make build
+just build
 ```
 
 **Output:**
@@ -536,7 +536,7 @@ internal/db/db.go:5:2: cannot find package "github.com/mattn/go-sqlite3"
 ```bash
 go mod download
 go mod vendor
-make dev
+just dev
 ```
 
 ---
@@ -549,7 +549,7 @@ error: undefined: sqlite3.SQLiteDriver
 **Solution:** Ensure CGO is enabled
 ```bash
 export CGO_ENABLED=1
-make dev
+just dev
 ```
 
 ---
@@ -592,7 +592,7 @@ Error: unable to open database file
 **Solution:** Clean test artifacts and retry
 ```bash
 rm -rf testdb/*.db backups/*.zip
-make test
+just test
 ```
 
 ---
@@ -669,12 +669,12 @@ After completing this quickstart, explore these resources:
 
 ```bash
 # Development
-make dev              # Build for local development
-make run              # Build and run immediately
-make test             # Run all tests
+just dev              # Build for local development
+just run              # Build and run immediately
+just test             # Run all tests
 
 # Database
-make sqlc             # Regenerate Go code from SQL
+just sqlc             # Regenerate Go code from SQL
 make dump             # Export SQLite to SQL file
 
 # Application

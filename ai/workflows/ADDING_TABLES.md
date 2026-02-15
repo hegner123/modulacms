@@ -15,7 +15,7 @@ Adding a new table in ModulaCMS involves:
 1. **Determining the migration number** for your new table
 2. **Creating schema files** for all three databases (SQLite, MySQL, PostgreSQL)
 3. **Writing sqlc query annotations** for CRUD operations
-4. **Generating Go code** with `make sqlc`
+4. **Generating Go code** with `just sqlc`
 5. **Adding methods to DbDriver interface** for abstraction
 6. **Implementing methods** in all three database drivers
 7. **Creating data structures** in internal/db
@@ -526,7 +526,7 @@ Once your schema and queries are written, generate type-safe Go code.
 
 ```bash
 cd /Users/home/Documents/Code/Go_dev/modulacms/sql
-make sqlc
+just sqlc
 ```
 
 Or directly:
@@ -556,7 +556,7 @@ sqlc generates Go code in three packages:
 
 ### Generated Struct Example
 
-After running `make sqlc`, the `Comments` struct will be generated in `internal/db-sqlite/models.go`:
+After running `just sqlc`, the `Comments` struct will be generated in `internal/db-sqlite/models.go`:
 
 ```go
 type Comments struct {
@@ -1315,7 +1315,7 @@ func TestCommentCRUD(t *testing.T) {
 
 ```bash
 cd /Users/home/Documents/Code/Go_dev/modulacms
-make test
+just test
 ```
 
 Or test only your new code:
@@ -1432,7 +1432,7 @@ DateCreated: NullTimeToString(a.DateCreated)
 
 ### 5. sqlc Generation Errors
 
-**Problem:** `make sqlc` fails with parsing errors
+**Problem:** `just sqlc` fails with parsing errors
 
 **Solution:**
 - Check SQL syntax in schema files
@@ -1511,12 +1511,12 @@ Use this checklist when adding a new table:
 - [ ] Update all_schema.sql
 - [ ] Update all_schema_mysql.sql
 - [ ] Update all_schema_psql.sql
-- [ ] Run `make sqlc` to generate Go code
+- [ ] Run `just sqlc` to generate Go code
 - [ ] Create `internal/db/{table}.go` with structs and implementations
 - [ ] Add methods to DbDriver interface in `internal/db/db.go`
 - [ ] Add table creation to `CreateAllTables()` for all three databases
 - [ ] Write tests in `internal/db/{table}_test.go`
-- [ ] Run `make test` to verify
+- [ ] Run `just test` to verify
 - [ ] Use table in application code
 - [ ] Test with all three databases
 - [ ] Document any special considerations
@@ -1573,16 +1573,16 @@ internal/db-psql/
 
 ```bash
 # Generate code from SQL
-cd sql && make sqlc
+cd sql && just sqlc
 
 # Run tests
-make test
+just test
 
 # Test specific package
 go test -v ./internal/db -run TestCommentCRUD
 
 # Build and run
-make dev
+just dev
 ./modulacms-x86 --cli
 ```
 

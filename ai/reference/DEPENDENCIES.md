@@ -872,7 +872,7 @@ go list -u -m all
 2. **Check for breaking changes** in changelogs
 3. **Backup go.mod and go.sum** (`cp go.mod go.mod.backup`)
 4. **Update in isolation** (one dependency at a time for major versions)
-5. **Run full test suite** (`make test`)
+5. **Run full test suite** (`just test`)
 6. **Test manually** with `--cli` mode
 7. **Check build size** (`ls -lh modulacms-x86`)
 8. **Commit with detailed message** explaining what was updated and why
@@ -889,7 +889,7 @@ go mod tidy
 go mod verify
 
 # Run tests
-make test
+just test
 
 # Check for vulnerabilities
 govulncheck ./...

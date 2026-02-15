@@ -304,7 +304,7 @@ WHERE email = $1 AND role_id = $2;
 **Command:**
 ```bash
 # From project root
-make sqlc
+just sqlc
 
 # Or manually:
 cd sql
@@ -344,7 +344,7 @@ SELECT ...
 
 **Step 4: Generate Go code**
 ```bash
-make sqlc
+just sqlc
 ```
 
 **Step 5: Use generated function**
@@ -395,7 +395,7 @@ The generated function will be available in the database driver package (db-mysq
 1. Decide database type (MySQL or PostgreSQL)
 2. Create or edit .sql file in appropriate directory
 3. Write query with sqlc annotation
-4. Run `make sqlc` to generate Go code
+4. Run `just sqlc` to generate Go code
 5. Use generated function in Go code
 
 ### Task: Modify existing table
@@ -429,7 +429,7 @@ docker-compose up -d
 
 # Run application
 cd /Users/home/Documents/Code/Go_dev/modulacms
-make dev
+just dev
 ./modulacms-x86 --cli
 ```
 
@@ -797,7 +797,7 @@ SELECT * FROM datatypes WHERE datatype_id = 1;
 ### Key Commands
 ```bash
 # Generate Go code from SQL
-make sqlc
+just sqlc
 
 # Update combined schemas
 cat sql/schema/*/schema.sql > sql/all_schema.sql
@@ -806,7 +806,7 @@ cat sql/schema/*/schema.sql > sql/all_schema.sql
 cd sql && docker-compose up -d
 
 # Run tests
-make test
+just test
 ```
 
 ### Key Paths

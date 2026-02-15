@@ -1,5 +1,7 @@
 # Plan: Field Config Separation & Content Relations Tables
 
+> **Status: COMPLETED** — The NullableContentID → NullableDatatypeID/NullableAdminDatatypeID migrations described here have been applied. This document is retained for historical reference.
+
 ## Context
 
 The `fields.data` column currently serves as a catch-all JSON blob for type-specific config, validation rules, UI hints, and relation metadata. This overloads a single column with multiple concerns. Additionally, relation fields store target content IDs as serialized strings in `content_fields.field_value`, preventing indexed reverse lookups and referential integrity.

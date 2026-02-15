@@ -38,7 +38,7 @@ You are modifying database schema files to add enterprise-grade improvements.
 - PostgreSQL can use DOMAINs (optional)
 
 **Verification:**
-1. `make sqlc` succeeds for all three engines
+1. `just sqlc` succeeds for all three engines
 2. `make check` compiles (may have errors from removed history field - expected)
 3. Syntax correct for all three database dialects
 
@@ -158,7 +158,7 @@ You are simplifying the database wrapper for the <TABLE> table.
 - [ ] ChangeEvent struct correctly handles all fields
 
 ### Code Generation
-- [ ] `make sqlc` succeeds for all three engines
+- [ ] `just sqlc` succeeds for all three engines
 - [ ] Generated code uses custom types (check models.go in each package)
 - [ ] No raw int64 for ID columns
 - [ ] No sql.NullX types in generated code
@@ -172,7 +172,7 @@ You are simplifying the database wrapper for the <TABLE> table.
 
 ### Integration
 - [ ] `make check` passes
-- [ ] `make test` passes
+- [ ] `just test` passes
 - [ ] API handlers use ParseXID functions
 - [ ] CLI operations use ParseXID functions
 - [ ] Error messages include type names
@@ -207,7 +207,7 @@ You are simplifying the database wrapper for the <TABLE> table.
 2. **Return to working state**
    ```bash
    git checkout main -- sql/sqlc.yml
-   make sqlc  # Verify original config still works
+   just sqlc  # Verify original config still works
    ```
 
 3. **Diagnose the issue**
@@ -220,7 +220,7 @@ You are simplifying the database wrapper for the <TABLE> table.
 
 4. **Incremental approach**
    - Add overrides in batches of 5-10 columns
-   - Run `make sqlc` after each batch
+   - Run `just sqlc` after each batch
    - Commit working batches
    - This isolates which override causes failure
 

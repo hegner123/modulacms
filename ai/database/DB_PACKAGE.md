@@ -351,7 +351,7 @@ See **SQL_DIRECTORY.md** for details on writing SQL queries.
 
 Run sqlc to generate type-safe Go functions:
 ```bash
-make sqlc
+just sqlc
 ```
 
 ### Step 3: Add Method to DbDriver Interface
@@ -753,7 +753,7 @@ func (m *MockDriver) GetUserByID(ctx context.Context, userID int64) (*db.User, e
 ### Task: Add a new database operation
 
 1. Write SQL query (see SQL_DIRECTORY.md)
-2. Run `make sqlc` to generate Go code
+2. Run `just sqlc` to generate Go code
 3. Add method to DbDriver interface
 4. Implement in all three drivers
 5. Write tests
@@ -856,10 +856,10 @@ cat /Users/home/Documents/Code/Go_dev/modulacms/internal/db/driver.go
 ### Key Commands
 ```bash
 # Generate Go code from SQL
-make sqlc
+just sqlc
 
 # Run tests
-make test
+just test
 
 # Run specific package tests
 go test -v ./internal/db-sqlite/

@@ -45,7 +45,7 @@ cd ..
 go build ./cmd
 ```
 
-**Prevention:** Always run `make sqlc` after modifying `.sql` files.
+**Prevention:** Always run `just sqlc` after modifying `.sql` files.
 
 ---
 
@@ -116,7 +116,7 @@ go build ./cmd
 
 **Symptoms:**
 ```
-make build
+just build
 # Fails on: CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build
 ```
 
@@ -402,7 +402,7 @@ JOIN content_fields cf ON cf.content_data_id = cd.content_data_id;
 
 **Symptoms:**
 ```
-make sqlc
+just sqlc
 cd ./sql && sqlc generate && echo "generated coded successfully"
 sqlc.yml not found
 ```
@@ -417,7 +417,7 @@ sqlc generate
 cd ..
 
 # Or use make
-make sqlc
+just sqlc
 ```
 
 **File Location:** `/Users/home/Documents/Code/Go_dev/modulacms/sql/sqlc.yml`
@@ -1423,7 +1423,7 @@ cd sql && sqlc generate && cd ..
 
 # Fresh build
 make clean
-make dev
+just dev
 
 # View logs
 tail -f debug.log

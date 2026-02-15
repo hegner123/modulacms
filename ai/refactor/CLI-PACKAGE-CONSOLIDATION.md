@@ -485,7 +485,7 @@ update_cms.go → update_cms_controls.go (if created in 2.2)
 
 ### Before Refactoring
 1. **Create a refactoring branch:** `git checkout -b refactor/cli-consolidation`
-2. **Run all tests:** `make test` (ensure baseline passes)
+2. **Run all tests:** `just test` (ensure baseline passes)
 3. **Commit frequently:** After each file consolidation
 4. **Keep refactors atomic:** One consolidation per commit
 
@@ -497,10 +497,10 @@ update_cms.go → update_cms_controls.go (if created in 2.2)
 5. **Use IDE refactoring tools:** For reliable rename/move
 
 ### After Refactoring
-1. **Full test pass:** `make test`
+1. **Full test pass:** `just test`
 2. **Check for unused imports:** `go mod tidy`
-3. **Run linter:** `make lint`
-4. **Build and test CLI:** `make dev && ./modulacms-x86 --cli`
+3. **Run linter:** `just lint`
+4. **Build and test CLI:** `just dev && ./modulacms-x86 --cli`
 5. **Document changes:** Update CLAUDE.md with new file structure
 
 ---

@@ -1,5 +1,7 @@
 # Custom Type System
 
+> **Status: COMPLETED** — This plan has been implemented. Some type names referenced here (e.g. NullableContentID) have since been split into entity-specific types (NullableAdminContentID, NullableDatatypeID, etc.). See `sql/sqlc.yml` for current overrides.
+
 This document defines all custom Go types that will be shared across all three database engines (SQLite, MySQL, PostgreSQL) via sqlc type overrides.
 
 ---

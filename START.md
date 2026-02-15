@@ -206,15 +206,15 @@ All paths are absolute from project root: `/Users/home/Documents/Code/Go_dev/mod
 ### Packages
 | Document | Path | Description |
 |----------|------|-------------|
-| CLI Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/CLI_PACKAGE.md` | TUI implementation |
-| Model Struct Guide ⭐ | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/MODEL_STRUCT_GUIDE.md` | Model struct field reference |
-| Update Section Review | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/UPDATE_SECTION_REVIEW.md` | Update handler analysis |
-| Message Flow Guide ⭐ | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/DATABASE_MESSAGE_FLOW_GUIDE.md` | Database and CMS message patterns |
-| Model Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/MODEL_PACKAGE.md` | Business logic and data structures |
-| Middleware Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/MIDDLEWARE_PACKAGE.md` | HTTP middleware |
-| Plugin Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/PLUGIN_PACKAGE.md` | Lua plugin system |
-| Auth Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/AUTH_PACKAGE.md` | OAuth and authentication |
-| Media Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/packages/MEDIA_PACKAGE.md` | Media processing and S3 |
+| CLI Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/CLI_PACKAGE.md` | TUI implementation |
+| Model Struct Guide ⭐ | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/MODEL_STRUCT_GUIDE.md` | Model struct field reference |
+| Update Section Review | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/UPDATE_SECTION_REVIEW.md` | Update handler analysis |
+| Message Flow Guide ⭐ | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/DATABASE_MESSAGE_FLOW_GUIDE.md` | Database and CMS message patterns |
+| Model Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/MODEL_PACKAGE.md` | Business logic and data structures |
+| Middleware Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/MIDDLEWARE_PACKAGE.md` | HTTP middleware |
+| Plugin Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/PLUGIN_PACKAGE.md` | Lua plugin system |
+| Auth Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/AUTH_PACKAGE.md` | OAuth and authentication |
+| Media Package | `/Users/home/Documents/Code/Go_dev/modulacms/ai/docs/MEDIA_PACKAGE.md` | Media processing and S3 |
 
 ### Database
 | Document | Path | Description |
