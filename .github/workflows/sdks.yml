@@ -1,0 +1,46 @@
+name: TypeScript SDKs
+
+on:
+  push:
+    branches: [ "main", "develop", "dev" ]
+    paths:
+      - 'sdks/typescript/**'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'sdks/typescript/**'
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: sdks/typescript/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: sdks/typescript
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: sdks/typescript
+        run: pnpm typecheck
+
+      - name: Build
+        working-directory: sdks/typescript
+        run: pnpm build
+
+      - name: Test
+        working-directory: sdks/typescript
+        run: pnpm test

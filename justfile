@@ -121,6 +121,26 @@ release:
 sqlc:
     cd ./sql && sqlc generate && echo "generated code successfully"
 
+# [SDK] Install TypeScript SDK dependencies
+sdk-install:
+    cd sdks/typescript && pnpm install
+
+# [SDK] Build all TypeScript SDK packages
+sdk-build:
+    cd sdks/typescript && pnpm build
+
+# [SDK] Run TypeScript SDK tests
+sdk-test:
+    cd sdks/typescript && pnpm test
+
+# [SDK] Typecheck all TypeScript SDK packages
+sdk-typecheck:
+    cd sdks/typescript && pnpm typecheck
+
+# [SDK] Clean TypeScript SDK build artifacts
+sdk-clean:
+    cd sdks/typescript && pnpm clean
+
 # [Lint] Run all available linters
 lint: lint-go lint-dockerfile lint-yaml
 

@@ -1,0 +1,20 @@
+{
+  "name": "modulacms-sdks",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ModulaCMS TypeScript SDK workspace",
+  "scripts": {
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "tsup": "^8.4.0",
+    "vitest": "^4.0.18"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

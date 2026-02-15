@@ -24,8 +24,10 @@ ModulaCMS decouples the admin panel from the CMS backend, allowing agencies to b
 
 - Go 1.24+
 - CGO enabled (required for SQLite driver)
+- [just](https://github.com/casey/just) command runner
 - Linux or macOS (Windows is not currently supported)
 - For production: MySQL or PostgreSQL recommended
+- For SDK development: Node.js 22+, pnpm 9+
 
 ## Quick Start
 
@@ -37,7 +39,7 @@ git clone https://github.com/hegner123/modulacms.git
 cd modulacms
 
 # Build for development
-make dev
+just dev
 
 # Run the installation wizard
 ./modulacms-x86 --install
@@ -155,75 +157,101 @@ See [API Documentation](ai/api/API_CONTRACT.md) for complete reference.
 
 ## Development
 
+ModulaCMS uses [just](https://github.com/casey/just) as its command runner. Run `just` to see all available recipes.
+
 ### Build Commands
 
 ```bash
-make dev        # Build local binary (./modulacms-x86)
-make build      # Build production binaries (x86 + AMD64)
-make run        # Build and run
-make clean      # Remove build artifacts
+just dev        # Build local binary (./modulacms-x86) with version info
+just build      # Build production binary to out/bin/
+just run        # Build and run
+just check      # Compile-check without producing artifacts
+just clean      # Remove build artifacts
 ```
 
 ### Testing
 
-> **Note:** Test suite is a work in progress. Coverage is incomplete.
-
 ```bash
-make test              # Run all tests
-make test-development  # Run development package tests
-make coverage          # Run tests with coverage report
+just test              # Run all Go tests
+just coverage          # Run tests with coverage report
+just test-integration  # S3 integration tests (requires MinIO: just test-minio first)
 ```
 
 ### Database
 
 ```bash
-make sqlc      # Generate Go code from SQL queries
-make dump      # Dump SQLite database to SQL file
-make docker-db # Start database containers
+just sqlc      # Generate Go code from SQL queries
+just dump      # Dump SQLite database to SQL file
 ```
 
 ### Code Quality
 
 ```bash
-make lint      # Run all linters
-make lint-go   # Lint Go code
-make vendor    # Update vendor directory
+just lint      # Run all linters (go, dockerfile, yaml)
+just lint-go   # Lint Go code via Docker
+just vendor    # Update vendor directory
+```
+
+### TypeScript SDKs
+
+The `sdks/typescript/` directory contains a pnpm workspace with three packages:
+
+| Package | Description |
+|---------|-------------|
+| `@modulacms/types` | Shared entity types, branded IDs, enums |
+| `@modulacms/sdk` | Read-only content delivery SDK |
+| `@modulacms/admin-sdk` | Full admin CRUD SDK |
+
+```bash
+just sdk-install    # Install dependencies (pnpm)
+just sdk-build      # Build all packages
+just sdk-test       # Run all SDK tests (Vitest)
+just sdk-typecheck  # Typecheck all packages
+just sdk-clean      # Clean build artifacts
 ```
 
 ## Architecture
 
 ```
-cmd/main.go              - Application entry point
+cmd/                     - Cobra CLI commands (serve, install, tui, etc.)
 internal/
 ├── cli/                 - TUI implementation (Bubbletea)
-├── router/              - REST API handlers
-├── db/                  - Database interface
-├── db-sqlite/           - SQLite driver
-├── db-mysql/            - MySQL driver
-├── db-psql/             - PostgreSQL driver
-├── model/               - Business logic
-├── auth/                - OAuth authentication
-├── backup/              - Backup/restore
+├── router/              - REST API handlers (stdlib ServeMux)
+├── db/                  - Database interface (DbDriver, wrapper structs)
+├── db/types/            - ULID-based typed IDs, enums, field configs
+├── db/audited/          - Audited command pattern for change events
+├── db-sqlite/           - SQLite driver (sqlc-generated, do not edit)
+├── db-mysql/            - MySQL driver (sqlc-generated, do not edit)
+├── db-psql/             - PostgreSQL driver (sqlc-generated, do not edit)
+├── model/               - Domain structs (Root, Node, Datatype, Field)
+├── auth/                - OAuth authentication (Google/GitHub/Azure)
+├── backup/              - Backup/restore (SQL dump + media, local or S3)
 ├── bucket/              - S3 storage integration
 ├── config/              - Configuration management
-├── media/               - Media processing
-├── middleware/          - HTTP/SSH middleware
-├── plugin/              - Lua plugin system
-└── utility/             - Shared utilities
+├── media/               - Image optimization, preset dimensions, S3 upload
+├── middleware/           - CORS, rate limiting, sessions, audit logging
+├── plugin/              - Lua plugin system (gopher-lua)
+└── utility/             - Logging (slog), version info, helpers
 sql/
-├── schema/              - Database migrations
-├── mysql/               - MySQL queries
-└── postgres/            - PostgreSQL queries
+└── schema/              - Numbered schema directories (DDL + sqlc queries)
+sdks/
+└── typescript/          - pnpm workspace (Node 22+, pnpm 9+)
+    ├── types/           - @modulacms/types (shared entity types, branded IDs)
+    ├── modulacms-sdk/   - @modulacms/sdk (read-only content delivery)
+    └── modulacms-admin-sdk/ - @modulacms/admin-sdk (full admin CRUD)
 ```
 
 ### Key Technologies
 
+- **Build Runner**: [just](https://github.com/casey/just)
 - **TUI Framework**: [Charmbracelet Bubbletea](https://github.com/charmbracelet/bubbletea) (Elm Architecture)
 - **SSH Server**: [Charmbracelet Wish](https://github.com/charmbracelet/wish)
 - **Forms**: [Charmbracelet Huh](https://github.com/charmbracelet/huh)
 - **Styling**: [Charmbracelet Lipgloss](https://github.com/charmbracelet/lipgloss)
 - **Database**: [sqlc](https://sqlc.dev/) for type-safe SQL
 - **Plugins**: [gopher-lua](https://github.com/yuin/gopher-lua)
+- **SDK Build**: [tsup](https://tsup.egoist.dev/) (dual ESM+CJS), [Vitest](https://vitest.dev/) for tests
+- **SDK Workspace**: [pnpm](https://pnpm.io/) workspace monorepo
 
 ## Documentation
 
@@ -240,7 +268,7 @@ Additional documentation is available in the `ai/` directory:
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/name`)
 3. Make your changes
-4. Run linters (`make lint`)
+4. Run linters (`just lint`)
 5. Commit your changes
 6. Push to the branch
 7. Open a Pull Request
@@ -250,7 +278,7 @@ Additional documentation is available in the `ai/` directory:
 - Use `go fmt` for formatting
 - Use tabs for indentation
 - Follow existing naming conventions
-- Run `make lint` before committing
+- Run `just lint` before committing
 
 ## License
 

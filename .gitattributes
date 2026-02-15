@@ -6,12 +6,15 @@ sql/**/*_mysql.sql linguist-language=SQL
 internal/db-sqlite/** linguist-generated=true
 internal/db-mysql/** linguist-generated=true
 internal/db-psql/** linguist-generated=true
+sdks/**/dist/** linguist-generated=true
 
 # Vendored dependencies
 vendor/** linguist-vendored=true
+sdks/**/node_modules/** linguist-vendored=true
 
 # Line ending normalization
 *.go text eol=lf
+*.ts text eol=lf
 *.sql text eol=lf
 *.sh text eol=lf
 *.md text eol=lf
@@ -38,3 +41,5 @@ go.sum merge=union
 testdb/** export-ignore
 ai/** export-ignore
 .github/** export-ignore
+sdks/**/dist/** export-ignore
+sdks/**/node_modules/** export-ignore

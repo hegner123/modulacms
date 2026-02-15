@@ -61,7 +61,6 @@ testing-config.json
 *.log
 *.g
 *_tes.go
-*_test.go
 
 #certs
 certs/
@@ -86,3 +85,7 @@ CLAUDE.md
 .trash/
 trash/
 ~/
+
+# TypeScript SDKs
+sdks/**/dist/
+sdks/**/*.tgz

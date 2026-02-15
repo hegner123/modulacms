@@ -1,0 +1,4 @@
+packages:
+  - 'types'
+  - 'modulacms-sdk'
+  - 'modulacms-admin-sdk'

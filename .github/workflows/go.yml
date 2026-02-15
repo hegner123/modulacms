@@ -3,10 +3,14 @@ name: CI/CD
 on:
   push:
     branches: [ "main", "develop", "dev" ]
+    paths-ignore:
+      - 'sdks/**'
     tags:
       - 'v*'
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'sdks/**'
 
 jobs:
   test:
