@@ -1,5 +1,7 @@
 # ModulaCMS
 
+[![CI/CD](https://github.com/hegner123/modulacms/actions/workflows/go.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/go.yml)
+
 A headless CMS written in Go that serves content over HTTP/HTTPS and provides SSH access for backend management.
 
 ## Overview
