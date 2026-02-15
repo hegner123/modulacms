@@ -1,17 +1,19 @@
-name: TypeScript SDKs
+name: SDKs
 
 on:
   push:
     branches: [ "main", "develop", "dev" ]
     paths:
       - 'sdks/typescript/**'
+      - 'sdks/go/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'sdks/typescript/**'
+      - 'sdks/go/**'
 
 jobs:
-  build-and-test:
+  typescript-sdk:
     runs-on: ubuntu-latest
 
     steps:
@@ -44,3 +46,23 @@ jobs:
       - name: Test
         working-directory: sdks/typescript
         run: pnpm test
+
+  go-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache-dependency-path: sdks/go/go.sum
+
+      - name: Vet
+        working-directory: sdks/go
+        run: go vet ./...
+
+      - name: Test
+        working-directory: sdks/go
+        run: go test -v ./...

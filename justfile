@@ -141,6 +141,14 @@ sdk-typecheck:
 sdk-clean:
     cd sdks/typescript && pnpm clean
 
+# [SDK] Run Go SDK tests
+sdk-go-test:
+    cd sdks/go && go test -v ./...
+
+# [SDK] Vet Go SDK
+sdk-go-vet:
+    cd sdks/go && go vet ./...
+
 # [Lint] Run all available linters
 lint: lint-go lint-dockerfile lint-yaml
 

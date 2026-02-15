@@ -71,7 +71,6 @@ config.json
 config.*.json
 bookmark.md
 test.png
-test-*.png
 testSite/
 .ssh/
 demo.tape
