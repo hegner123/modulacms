@@ -35,7 +35,7 @@ var certGenerateCmd = &cobra.Command{
 				if cfg.Cert_Dir != "" {
 					certDir = cfg.Cert_Dir
 				}
-				if cfg.Client_Site != "" && cfg.Client_Site != "localhost" {
+				if cfg.Client_Site != "" && cfg.Client_Site != "localhost" && cfg.Client_Site != "0.0.0.0" && cfg.Client_Site != "127.0.0.1" {
 					domain = cfg.Client_Site
 				}
 			}

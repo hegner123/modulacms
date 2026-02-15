@@ -15,4 +15,6 @@ export type {
   MediaDimension,
   Datatype,
   Field,
+  PaginationParams,
+  PaginatedResponse,
 } from "@modulacms/types";

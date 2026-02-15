@@ -3,7 +3,6 @@
 package db
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -25,9 +24,9 @@ func TestDatabase_CRUD_ContentField(t *testing.T) {
 	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       routeID,
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullString{},
-		NextSiblingID: sql.NullString{},
-		PrevSiblingID: sql.NullString{},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    datatypeID,
 		AuthorID:      authorID,
 		Status:        types.ContentStatusDraft,

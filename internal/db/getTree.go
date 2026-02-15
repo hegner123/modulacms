@@ -18,9 +18,9 @@ import (
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID types.ContentID         `json:"content_data_id"`
 	ParentID      types.NullableContentID `json:"parent_id"`
-	FirstChildID  sql.NullString          `json:"first_child_id"`
-	NextSiblingID sql.NullString          `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString          `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID `json:"first_child_id"`
+	NextSiblingID types.NullableContentID `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID `json:"prev_sibling_id"`
 	DatatypeLabel string                  `json:"datatype_label"`
 	DatatypeType  string                  `json:"datatype_type"`
 	FieldLabel    string                  `json:"field_label"`
@@ -32,9 +32,9 @@ type GetRouteTreeByRouteIDRow struct {
 type GetContentTreeByRouteRow struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`

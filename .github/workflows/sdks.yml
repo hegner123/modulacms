@@ -6,11 +6,13 @@ on:
     paths:
       - 'sdks/typescript/**'
       - 'sdks/go/**'
+      - 'sdks/swift/**'
   pull_request:
     branches: [ "main" ]
     paths:
       - 'sdks/typescript/**'
       - 'sdks/go/**'
+      - 'sdks/swift/**'
 
 jobs:
   typescript-sdk:
@@ -66,3 +68,22 @@ jobs:
       - name: Test
         working-directory: sdks/go
         run: go test -v ./...
+
+  swift-sdk:
+    runs-on: macos-14
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '15.4'
+
+      - name: Build
+        working-directory: sdks/swift
+        run: swift build
+
+      - name: Test
+        working-directory: sdks/swift
+        run: swift test

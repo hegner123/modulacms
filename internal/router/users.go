@@ -2,8 +2,10 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -82,12 +84,42 @@ func ApiListUsers(w http.ResponseWriter, r *http.Request, c config.Config) error
 func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	var newUser db.CreateUserParams
-	err := json.NewDecoder(r.Body).Decode(&newUser)
+	var req struct {
+		Username     string          `json:"username"`
+		Name         string          `json:"name"`
+		Email        types.Email     `json:"email"`
+		Password     string          `json:"password"`
+		Role         string          `json:"role"`
+		DateCreated  types.Timestamp `json:"date_created"`
+		DateModified types.Timestamp `json:"date_modified"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if req.Password == "" {
+		http.Error(w, "password is required", http.StatusBadRequest)
+		return fmt.Errorf("password is required")
+	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, "failed to hash password", http.StatusInternalServerError)
+		return err
+	}
+
+	newUser := db.CreateUserParams{
+		Username:     req.Username,
+		Name:         req.Name,
+		Email:        req.Email,
+		Hash:         hash,
+		Role:         req.Role,
+		DateCreated:  req.DateCreated,
+		DateModified: req.DateModified,
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
@@ -108,12 +140,51 @@ func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	var updateUser db.UpdateUserParams
-	err := json.NewDecoder(r.Body).Decode(&updateUser)
+	var req struct {
+		Username     string          `json:"username"`
+		Name         string          `json:"name"`
+		Email        types.Email     `json:"email"`
+		Password     string          `json:"password"`
+		Role         string          `json:"role"`
+		DateCreated  types.Timestamp `json:"date_created"`
+		DateModified types.Timestamp `json:"date_modified"`
+		UserID       types.UserID    `json:"user_id"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	var hash string
+	if req.Password != "" {
+		h, hashErr := auth.HashPassword(req.Password)
+		if hashErr != nil {
+			utility.DefaultLogger.Error("", hashErr)
+			http.Error(w, "failed to hash password", http.StatusInternalServerError)
+			return hashErr
+		}
+		hash = h
+	} else {
+		existing, getErr := d.GetUser(req.UserID)
+		if getErr != nil {
+			utility.DefaultLogger.Error("", getErr)
+			http.Error(w, "user not found", http.StatusNotFound)
+			return getErr
+		}
+		hash = existing.Hash
+	}
+
+	updateUser := db.UpdateUserParams{
+		Username:     req.Username,
+		Name:         req.Name,
+		Email:        req.Email,
+		Hash:         hash,
+		Role:         req.Role,
+		DateCreated:  req.DateCreated,
+		DateModified: req.DateModified,
+		UserID:       req.UserID,
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)

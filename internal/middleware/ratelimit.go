@@ -9,15 +9,23 @@ import (
 	"golang.org/x/time/rate"
 )
 
+// ipLimiterEntry pairs a token-bucket limiter with its last-seen timestamp
+// so the cleanup goroutine can evict stale entries.
+type ipLimiterEntry struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 // RateLimiter implements per-IP rate limiting using the token bucket algorithm.
 // It tracks individual limiters for each IP address and enforces configurable
 // rate limits to prevent abuse of authentication endpoints.
 type RateLimiter struct {
 	mu       sync.Mutex
-	limiters map[string]*rate.Limiter
+	limiters map[string]*ipLimiterEntry
 	rate     rate.Limit
 	burst    int
 	cleanup  time.Duration
+	done     chan struct{} // closed to stop cleanup goroutine
 }
 
 // NewRateLimiter creates a new rate limiter with the specified rate and burst size.
@@ -26,10 +34,11 @@ type RateLimiter struct {
 // Example: NewRateLimiter(0.16667, 10) allows 10 requests per minute with burst of 10.
 func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 	rl := &RateLimiter{
-		limiters: make(map[string]*rate.Limiter),
+		limiters: make(map[string]*ipLimiterEntry),
 		rate:     r,
 		burst:    b,
 		cleanup:  time.Minute * 10, // Cleanup unused limiters every 10 minutes
+		done:     make(chan struct{}),
 	}
 
 	// Start background cleanup goroutine
@@ -39,18 +48,23 @@ func NewRateLimiter(r rate.Limit, b int) *RateLimiter {
 }
 
 // getLimiter retrieves or creates a rate limiter for a specific IP address.
-// Each IP gets its own independent rate limiter.
+// Each IP gets its own independent rate limiter with a tracked last-seen time.
 func (rl *RateLimiter) getLimiter(ip string) *rate.Limiter {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
 
-	limiter, exists := rl.limiters[ip]
+	entry, exists := rl.limiters[ip]
 	if !exists {
-		limiter = rate.NewLimiter(rl.rate, rl.burst)
-		rl.limiters[ip] = limiter
+		entry = &ipLimiterEntry{
+			limiter:  rate.NewLimiter(rl.rate, rl.burst),
+			lastSeen: time.Now(),
+		}
+		rl.limiters[ip] = entry
+		return entry.limiter
 	}
 
-	return limiter
+	entry.lastSeen = time.Now()
+	return entry.limiter
 }
 
 // Middleware returns an HTTP middleware handler that enforces rate limits.
@@ -91,18 +105,31 @@ func getIP(r *http.Request) string {
 }
 
 // cleanupLimiters periodically removes unused rate limiters to prevent memory leaks.
-// Limiters that haven't been used recently are removed from the map.
+// Limiters whose lastSeen timestamp is older than the cleanup interval are evicted.
 func (rl *RateLimiter) cleanupLimiters() {
 	ticker := time.NewTicker(rl.cleanup)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		rl.mu.Lock()
-		// In production, you would track last access time and remove stale entries.
-		// For simplicity, this implementation keeps all limiters.
-		// TODO: Add last access tracking and removal of stale limiters
-		rl.mu.Unlock()
+	for {
+		select {
+		case <-rl.done:
+			return
+		case <-ticker.C:
+			cutoff := time.Now().Add(-rl.cleanup)
+			rl.mu.Lock()
+			for ip, entry := range rl.limiters {
+				if entry.lastSeen.Before(cutoff) {
+					delete(rl.limiters, ip)
+				}
+			}
+			rl.mu.Unlock()
+		}
 	}
+}
+
+// Close stops the background cleanup goroutine. It is safe to call once.
+func (rl *RateLimiter) Close() {
+	close(rl.done)
 }
 
 // Size returns the number of active rate limiters.
@@ -118,5 +145,5 @@ func (rl *RateLimiter) Size() int {
 func (rl *RateLimiter) Clear() {
 	rl.mu.Lock()
 	defer rl.mu.Unlock()
-	rl.limiters = make(map[string]*rate.Limiter)
+	rl.limiters = make(map[string]*ipLimiterEntry)
 }

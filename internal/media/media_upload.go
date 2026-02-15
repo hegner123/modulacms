@@ -10,7 +10,6 @@ import (
 	_ "image/png"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -34,11 +33,10 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	month := now.Month()
 
 	filename := filepath.Base(srcFile)
-	baseName := strings.TrimSuffix(filename, filepath.Ext(filename))
 
 	// Step 1a: Fetch media record to get focal point
-	utility.DefaultLogger.Debug(fmt.Sprintf("Fetching media record for: %s", baseName))
-	rowPtr, err := d.GetMediaByName(baseName)
+	utility.DefaultLogger.Debug(fmt.Sprintf("Fetching media record for: %s", filename))
+	rowPtr, err := d.GetMediaByName(filename)
 	if err != nil {
 		return fmt.Errorf("failed to get media record: %w", err)
 	}

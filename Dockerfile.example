@@ -27,6 +27,8 @@ ARG BUILD_DATE=unknown
 
 WORKDIR /app
 
+ENV TERM=xterm-256color
+
 # Install cross-compilers for different architectures
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-arm-linux-gnueabihf \
@@ -69,6 +71,8 @@ RUN case "${TARGETARCH}" in \
 # Stage 2: Runtime
 # -----------------------------------------------------------------------------
 FROM debian:bookworm-slim AS runtime
+
+ENV TERM=xterm-256color
 
 # Labels
 LABEL org.opencontainers.image.title="ModulaCMS"

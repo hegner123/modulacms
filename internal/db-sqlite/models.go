@@ -13,9 +13,9 @@ import (
 type AdminContentData struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       sql.NullString                `json:"first_child_id"`
-	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
@@ -148,9 +148,9 @@ type ChangeEvent struct {
 type ContentData struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`

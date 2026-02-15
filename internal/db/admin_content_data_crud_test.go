@@ -3,7 +3,6 @@
 package db
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -32,9 +31,9 @@ func TestDatabase_CRUD_AdminContentData(t *testing.T) {
 	// --- Create ---
 	created, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
-		FirstChildID:    sql.NullString{},
-		NextSiblingID:   sql.NullString{},
-		PrevSiblingID:   sql.NullString{},
+		FirstChildID:    types.NullableAdminContentID{},
+		NextSiblingID:   types.NullableAdminContentID{},
+		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    adminRouteID,
 		AdminDatatypeID: adminDatatypeID,
 		AuthorID:        authorID,
@@ -130,9 +129,9 @@ func TestDatabase_CRUD_AdminContentData(t *testing.T) {
 	// --- Update ---
 	updateResult, err := d.UpdateAdminContentData(ctx, ac, UpdateAdminContentDataParams{
 		ParentID:           types.NullableAdminContentID{},
-		FirstChildID:       sql.NullString{},
-		NextSiblingID:      sql.NullString{},
-		PrevSiblingID:      sql.NullString{},
+		FirstChildID:       types.NullableAdminContentID{},
+		NextSiblingID:      types.NullableAdminContentID{},
+		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       adminRouteID,
 		AdminDatatypeID:    adminDatatypeID,
 		AuthorID:           authorID,

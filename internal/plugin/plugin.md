@@ -1,229 +1,272 @@
 # plugin
 
-ModulaCMS Lua plugin system enabling runtime-extensible database tables, queries, and CMS integration. Provides sandboxed Lua VM pools, a query builder API, structured logging, and lifecycle management.
+The plugin package implements the ModulaCMS Lua plugin system for runtime extension of the CMS with sandboxed Lua plugins that can define database tables, execute queries, register HTTP handlers, and integrate with the CMS lifecycle.
 
 ## Overview
 
-The plugin system architecture consists of Manager for discovery and lifecycle, VMPool for concurrent VM management, sandboxed stdlib with db and log modules, and isolated table namespacing. Plugins define tables with prefix enforcement, execute queries via a builder API, and integrate with CMS via lifecycle hooks.
+The plugin system extends ModulaCMS with runtime Lua plugins that run in sandboxed virtual machines with controlled access to database operations, logging, and HTTP routing. Plugins are loaded from directories containing init.lua files, validated, topologically sorted by dependencies, and executed with per-plugin VM pools for concurrency.
+
+Architecture flow: Manager discovers plugins, creates VMPool per plugin with sandboxed LState instances, applies sandbox restrictions via ApplySandbox, registers db log http APIs, freezes modules via read-only proxies, runs on_init lifecycle hook, and snapshots global state for VM restoration on checkout return.
 
-All plugin tables use the prefix plugin_pluginname_. The query builder validates identifiers, preventing SQL injection and namespace violations. Plugins cannot access core CMS tables or other plugins' tables. VM pooling enables concurrent execution with per-checkout operation budgets and health validation.
+All plugin tables are prefixed with plugin_pluginname_ and validated via query builder identifier checks. Plugins cannot access core CMS tables or other plugins' tables.
+
+### Constants
 
-## Constants
+```go
+const (
+    StateDiscovered PluginState = iota
+    StateLoading
+    StateRunning
+    StateFailed
+    StateStopped
+)
+```
 
-ErrPoolExhausted signals VM pool exhaustion after 100ms timeout. Callers treat this as backpressure. HTTP bridge translates to 503 Service Unavailable.
+PluginState enum representing plugin lifecycle states. StateDiscovered means manifest extracted but not yet loaded. StateLoading means dependencies validated and VMPool creation in progress. StateRunning means on_init succeeded and plugin is active. StateFailed means loading or init failed with reason in FailedReason field. StateStopped means on_shutdown has run.
 
-ErrOpLimitExceeded signals per-checkout operation budget exhaustion. Check via errors.Is(). Budget resets on next VMPool.Get() via ResetOpCount().
+```go
+const (
+    MaxPluginRequestBody  = 1 << 20
+    MaxPluginResponseBody = 5 << 20
+    DefaultPluginRateLimit = 100
+    PluginRoutePrefix     = "/api/v1/plugins/"
+)
+```
 
-acquireTimeout is 100 milliseconds for VM acquisition. Provides backpressure under load rather than tying up goroutines for full execution timeout.
+HTTP bridge constants for request body size limit 1 MB, response body size limit 5 MB, default rate limit per IP 100 requests per second, and route prefix for all plugin HTTP endpoints.
 
-## Types
+```go
+const MaxRoutesPerPlugin = 50
+```
 
-### PluginState
+Maximum number of HTTP routes a single plugin can register via http.handle. Exceeding this limit raises a Lua error.
 
-PluginState represents lifecycle state using iota enum. States are StateDiscovered, StateLoading, StateRunning, StateFailed, StateStopped.
+```go
+const acquireTimeout = 100 * time.Millisecond
+```
 
-#### String
+Maximum time VMPool.Get waits for an available VM. Provides backpressure under load rather than tying up goroutines for the full execution timeout.
 
-String() returns human-readable state name. Returns unknown(N) for invalid values.
+### Variables
 
-### PluginInfo
+```go
+var ErrPoolExhausted = errors.New("VM pool exhausted")
+```
 
-PluginInfo holds manifest metadata extracted from plugin_info global. Contains Name, Version, Description, Author, License, MinCMSVersion, Dependencies slice.
+Returned by VMPool.Get when no VM is available within acquisition timeout. Caller should treat as backpressure. HTTP bridge translates to 503 Service Unavailable with Retry-After header.
 
-### PluginInstance
+```go
+var ErrOpLimitExceeded = errors.New("operation limit exceeded")
+```
 
-PluginInstance represents loaded plugin with state and resources. Fields include Info, State, Dir as absolute path, InitPath to init.lua, FailedReason for human-readable failure, Pool, and dbAPIs map linking each LState to its DatabaseAPI for op count reset.
+Returned when a plugin's per-checkout operation budget is exhausted. Callers can check with errors.Is. Budget resets on next VMPool.Get via DatabaseAPI.ResetOpCount.
 
-### ManagerConfig
+```go
+var reservedColumns = map[string]bool{
+    "id":         true,
+    "created_at": true,
+    "updated_at": true,
+}
+```
 
-ManagerConfig controls runtime behavior. Enabled bool, Directory string, MaxVMsPerPlugin default 4, ExecTimeoutSec default 5, MaxOpsPerExec default 1000 per VM checkout.
+Columns auto-injected by schema_api.go that plugins cannot define. Plugins including these names in columns list receive validation error.
 
-### Manager
+```go
+var validMethods = map[string]bool{
+    "GET":    true,
+    "POST":   true,
+    "PUT":    true,
+    "DELETE": true,
+    "PATCH":  true,
+}
+```
 
-Manager coordinates plugin discovery, loading, lifecycle, and shutdown. No stored context field. All I/O methods accept ctx as first parameter. Fields include cfg, db as separate pool via db.OpenPool(), dialect, plugins map, mu sync.RWMutex, loadOrder preserving topologically sorted successful loads for reverse-order shutdown.
+Allowlist of HTTP methods accepted by http.handle. Other methods raise Lua error.
 
-#### NewManager
+```go
+var strippedGlobals = []string{
+    "dofile", "loadfile", "load",
+    "rawget", "rawset", "rawequal", "rawlen",
+}
+```
 
-NewManager creates Manager with config and DB pool. Zero-value fields replaced with defaults. MaxVMsPerPlugin default 4, ExecTimeoutSec default 5, MaxOpsPerExec default 1000.
+Dangerous base library globals removed after OpenBase. These allow arbitrary code loading or bypass metatable protections. setmetatable and getmetatable are intentionally kept for proxy freezing.
 
-#### LoadAll
+```go
+var blockedResponseHeaders = map[string]bool{
+    "access-control-allow-origin": true,
+    "access-control-allow-credentials": true,
+    "set-cookie": true,
+    "transfer-encoding": true,
+    "content-length": true,
+    "cache-control": true,
+}
+```
 
-LoadAll discovers plugins in cfg.Directory, validates manifests, resolves dependencies via topological sort, loads each in dependency order. Failed plugins marked StateFailed without preventing others.
+Response headers that Lua plugins cannot set. Prevents CORS bypass, session fixation, response smuggling, and cache poisoning.
 
-Loading sequence per plugin: scan for init.lua subdirectories, create temp sandboxed VM to extract and validate plugin_info, topologically sort by dependencies detecting cycles, create VMPool for each in dependency order, run on_init, snapshot globals.
+#### func NewManager
 
-#### GetPlugin
+```go
+func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect) *Manager
+```
 
-GetPlugin returns instance by name or nil if not found. Thread-safe via read lock.
+Creates a new plugin Manager with the given configuration. Zero-value config fields are replaced with defaults. MaxVMsPerPlugin defaults to 4, ExecTimeoutSec to 5, MaxOpsPerExec to 1000. The db pool must be a separate connection opened via db.OpenPool for isolation.
 
-#### ListPlugins
+#### func NewVMPool
 
-ListPlugins returns all loaded instances. Thread-safe via read lock.
+```go
+func NewVMPool(size int, factory func() *lua.LState, initPath string, pluginName string) *VMPool
+```
 
-#### Shutdown
+Creates a pool of size pre-initialized Lua VMs using provided factory function. Factory must produce fully sandboxed VMs with ApplySandbox, RegisterPluginRequire, RegisterDBAPI, RegisterLogAPI, RegisterHTTPAPI, and FreezeModule all applied. initPath is absolute path to plugin's init.lua for diagnostic logging. pluginName is used in log messages when unhealthy VMs are detected. Global snapshot is NOT taken here, happens after on_init in manager because on_init may define new globals that should be part of baseline.
 
-Shutdown gracefully shuts down all plugins in reverse dependency order. For each plugin checks out VM, calls on_shutdown if defined, returns VM. After all on_shutdown calls closes all VM pools and plugin DB pool.
+#### func NewDatabaseAPI
 
-### VMPool
+```go
+func NewDatabaseAPI(conn *sql.DB, pluginName string, dialect db.Dialect, maxOpsPerExec int) *DatabaseAPI
+```
 
-VMPool provides goroutine-safe pool of pre-initialized LState instances for single plugin. Uses buffered channel for lock-free checkout and return. Validates VM health on every Put.
+Creates a new DatabaseAPI bound to given connection and plugin. INVARIANT: each DatabaseAPI instance is bound to exactly one LState, never share across VMs. maxOpsPerExec defaults to 1000 if zero or negative.
 
-Lifecycle: NewVMPool creates pool and fills with factory VMs. Get(ctx) checks out VM setting caller's context. Put(L) clears stack, restores globals to post-init state, validates health, returns to pool or replaces if corrupted. Close() drains all VMs preventing further returns.
+#### func NewHTTPBridge
 
-Thread safety via channel synchronization. initGlobals map written once by SnapshotGlobals and read on every Put. Caller ensures SnapshotGlobals called before concurrent Put.
+```go
+func NewHTTPBridge(manager *Manager, pool *sql.DB, dialect db.Dialect) *HTTPBridge
+```
 
-Fields include states channel, factory function, size int, initPath and pluginName for diagnostics, closed atomic bool, initGlobals map for snapshot after on_init.
+Creates a new HTTPBridge tied to given Manager. Config field wiring for Plugin_Max_Request_Body, Plugin_Max_Response_Body, Plugin_Rate_Limit, Plugin_Trusted_Proxies uses package-level constants as defaults. Starts background cleanup goroutine for stale IP rate limiters every 5 minutes, removing entries not seen for more than 10 minutes.
 
-#### NewVMPool
+#### func ApplySandbox
 
-NewVMPool creates pool of size VMs using factory. Factory must produce fully sandboxed VMs with ApplySandbox, RegisterPluginRequire, RegisterDBAPI, RegisterLogAPI, FreezeModule applied. Global snapshot NOT taken here, happens after on_init in manager.
+```go
+func ApplySandbox(L *lua.LState, cfg SandboxConfig)
+```
 
-#### Get
+Configures a Lua VM with a safe stdlib subset. Loads only base, table, string, math libraries, plus coroutine if cfg.AllowCoroutine is true. Dangerous globals are stripped after loading. The io, os, package, debug, and channel libraries are never loaded. The LState must have been created with SkipOpenLibs set to true.
 
-Get checks out VM from pool with 100ms acquisition timeout for backpressure. On success sets caller's context via L.SetContext(ctx) for execution timeout. Caller MUST call Put(L) when done even on Lua execution failure. Caller should call DatabaseAPI.ResetOpCount() after Get() to reset per-checkout operation budget. Returns ErrPoolExhausted if no VM available.
+#### func RegisterPluginRequire
 
-#### Put
+```go
+func RegisterPluginRequire(L *lua.LState, pluginDir string)
+```
 
-Put returns VM to pool after use. Steps: clear Lua stack, restore global snapshot removing any created after on_init, validate VM health verifying db and log modules intact, return to channel if healthy and pool not closed, close VM directly if healthy and pool closed, close and replace if unhealthy.
+Replaces the global require with a sandboxed loader. Only resolves modules from pluginDir/lib/name.lua. Module names must be simple identifiers, path traversal characters rejected. Loaded modules are cached, subsequent require calls for same name return cached value. Uses L.ArgError for validation failures like bad module name or module not found. Uses L.RaiseError for load failures like syntax error in module file.
 
-Put never blocks. If channel full VM closed with warning logged.
+#### func FreezeModule
 
-#### Close
+```go
+func FreezeModule(L *lua.LState, moduleName string)
+```
 
-Close drains all VMs from pool and prevents further returns. VMs currently checked out closed when returned via Put checking closed flag. Logs diagnostic if pool not fully drained indicating VMs checked out at shutdown.
+Replaces a global module table with a read-only proxy. Real functions are moved to hidden backing table, proxy delegates reads via __index metatable and rejects writes via __newindex. __metatable prevents getmetatable/setmetatable from inspecting or replacing the metatable. After freezing, db.query works via __index delegation, db.query assignment raises error, getmetatable returns "protected" string, setmetatable raises error. Limitation: pairs returns nothing because proxy is empty, documented DX tradeoff.
 
-#### SnapshotGlobals
+#### func RegisterDBAPI
 
-SnapshotGlobals records all current global names on given VM. Must be called once after on_init on first VM. Snapshot shared across all pool VMs since all loaded same init.lua. After this call Put removes any global not in snapshot.
+```go
+func RegisterDBAPI(L *lua.LState, api *DatabaseAPI)
+```
 
-### SandboxConfig
+Creates a db Lua table with all database operation functions and sets it as a global. Provided DatabaseAPI instance must be bound to exactly one LState and must not be shared. After calling RegisterDBAPI, the caller should call FreezeModule(L, "db") to make the module read-only.
 
-SandboxConfig controls sandbox behavior. AllowCoroutine enables coroutine library, disabled by default. ExecTimeout as maximum wall-clock duration for single plugin execution via LState.SetContext(ctx), default 5s.
+#### func RegisterLogAPI
 
-### DatabaseAPI
+```go
+func RegisterLogAPI(L *lua.LState, pluginName string)
+```
 
-DatabaseAPI provides sandboxed db module for single plugin. INVARIANT: each instance bound to exactly one LState, never shared across VMs. 1:1 binding means no concurrent access to currentExec, inTx, or opCount.
+Creates a log Lua table with info, warn, error, and debug functions bound to utility.DefaultLogger. Plugin name is included as structured field on every log call so operators can trace log output back to originating plugin. Each Lua function signature: log.level(message, context_table). message is string required, context_table is table optional with key-value pairs appended as structured args.
 
-Fields include conn, currentExec normally conn swapped to sql.Tx inside transactions, pluginName, dialect, maxRows default 100 hard cap 10000, maxTxOps default 10, inTx preventing nested transactions, opCount incremented on every db call reset on Get, maxOpsPerExec default 1000 configurable via ManagerConfig.
+#### func RegisterHTTPAPI
 
-#### NewDatabaseAPI
+```go
+func RegisterHTTPAPI(L *lua.LState, pluginName string)
+```
 
-NewDatabaseAPI creates instance bound to connection and plugin. INVARIANT: each instance bound to exactly one LState, never shared. maxOpsPerExec default 1000 if zero.
+Creates an http global Lua table with handle and use functions. Also creates three hidden global tables used by HTTPBridge to read registered routes at load time: __http_handlers maps "METHOD /path" to handler LFunction, __http_route_meta maps "METHOD /path" to metadata table with public flag, __http_middleware is ordered array of middleware LFunctions. These tables are part of global snapshot taken by SnapshotGlobals and must NOT be modified after snapshot. Bridge reads them on every request dispatch to look up correct handler for checked-out VM.
 
-#### ResetOpCount
+#### func BuildLuaRequest
 
-ResetOpCount resets per-checkout operation counter to zero. Called by Manager after VMPool.Get() before plugin code executes.
+```go
+func BuildLuaRequest(L *lua.LState, r *http.Request, clientIP string) (*lua.LTable, error)
+```
 
-### TableDefinition
+Converts http.Request into Lua table suitable for passing to plugin handler function. clientIP parameter is proxy-aware IP extracted by extractClientIP with no port. Returned table fields: method string, path string from r.URL.Path, body string from raw body bytes always set regardless of Content-Type, client_ip string from provided parameter, headers table with all request headers keys normalized to lowercase, query table from r.URL.Query flattened to first value per key, params table with path parameters from r.Pattern via r.PathValue, json field with parsed JSON body ONLY when Content-Type starts with application/json. Returns nil and error if body cannot be read like http.MaxBytesError from body size enforcement. Caller is responsible for writing 400 response.
 
-TableDefinition holds parsed and validated schema for plugin-defined table. Fields include PluginName, TableName without prefix, FullName as plugin_name_table, Columns slice, Indexes slice, ForeignKeys slice.
+#### func WriteLuaResponse
 
-## Functions
+```go
+func WriteLuaResponse(w http.ResponseWriter, L *lua.LState, responseTbl *lua.LTable, maxRespSize int64, requestID string) error
+```
 
-### ApplySandbox
+Reads Lua response table and writes HTTP response. Response table expected fields: status number defaults to 200, headers table optional, body string optional, json any optional takes priority over body if both present. Enforces response size limits, filters blocked headers, sets default security headers. Returns error if response exceeds maxRespSize. Security headers always present: X-Content-Type-Options nosniff, X-Frame-Options DENY, Cache-Control no-store. Plugin headers filtered against blockedResponseHeaders list. JSON responses get Content-Type application/json.
 
-ApplySandbox configures VM with safe stdlib subset. Loads base, table, string, math libraries plus coroutine if cfg.AllowCoroutine. Strips dofile, loadfile, load, rawget, rawset, rawequal, rawlen. Never loads io, os, package, debug, channel. LState must have SkipOpenLibs true.
+## Database Operations
 
-### RegisterPluginRequire
+The db module provides query, query_one, count, exists, insert, update, delete, transaction, ulid, timestamp, and define_table functions to Lua plugins. All table names are automatically prefixed with plugin_pluginname_ and validated. Operations are counted per VM checkout with configurable limit.
 
-RegisterPluginRequire replaces global require with sandboxed loader. Resolves modules only from pluginDir/lib/name.lua. Module names must be simple identifiers, path traversal rejected. Loaded modules cached, subsequent require returns cached value. Uses L.ArgError for validation failures, L.RaiseError for load failures.
+#### db.query
 
-### FreezeModule
+`db.query(table, opts) -> sequence table of row tables | nil, errmsg`
 
-FreezeModule replaces global module table with read-only proxy. Real functions moved to hidden backing table. Proxy delegates reads via __index, rejects writes via __newindex, __metatable prevents inspection or replacement.
+Queries rows from plugin table. opts fields: where table optional, order_by string optional, limit number optional defaults to 100, offset number optional. Returns empty table on no matches, nil plus errmsg on error. Empty or nil where allowed returns all rows up to limit.
 
-After freezing db.query(...) works via delegation, db.query = nil raises error, getmetatable(db) returns protected string, setmetatable(db, {}) raises error, pairs(db) returns nothing as documented DX limitation.
+#### db.query_one
 
-### RegisterDBAPI
+`db.query_one(table, opts) -> row table | nil | nil, errmsg`
 
-RegisterDBAPI creates db Lua table with all database operations and sets as global. DatabaseAPI instance must be bound to exactly one LState, never shared. After calling should call FreezeModule(L, db) for read-only.
+Queries single row from plugin table. opts fields: where table optional, order_by string optional. Returns nil on no match, nil plus errmsg on error. Empty or nil where allowed returns arbitrary row.
 
-DB module provides query, query_one, count, exists, insert, update, delete, transaction, ulid, timestamp, define_table.
+#### db.count
 
-### RegisterLogAPI
+`db.count(table, opts) -> integer | nil, errmsg`
 
-RegisterLogAPI creates log Lua table with info, warn, error, debug functions bound to utility.DefaultLogger. Plugin name included as structured field on every log call. Each function signature log.level(message, context_table) where context_table optional key-value pairs.
+Counts rows in plugin table. opts fields: where table optional. Empty or nil where allowed returns total row count.
 
-### LuaTableToMap
+#### db.exists
 
-LuaTableToMap converts Lua table with string keys to Go map. Non-string keys skipped. Nested tables recursively converted via LuaValueToGo.
+`db.exists(table, opts) -> boolean | nil, errmsg`
 
-### MapToLuaTable
+Checks if any row exists in plugin table. opts fields: where table optional. Empty or nil where allowed returns true if table has any rows.
 
-MapToLuaTable converts Go map string any to Lua table. Values converted via GoValueToLua.
+#### db.insert
 
-### GoValueToLua
+`db.insert(table, values) -> nil | nil, errmsg`
 
-GoValueToLua converts Go value to Lua value. Supported types: string to LString, int64 float64 int int32 to LNumber, bool to LBool, nil to LNil, bytes to LString, map string any to recursive MapToLuaTable, slice any to sequence table 1-indexed, slice map string any to sequence table of tables 1-indexed.
+Inserts row into plugin table. Auto-sets id as ULID, created_at and updated_at as RFC3339 UTC if not provided. Explicit values never overridden. Returns nothing on success, nil plus errmsg on error.
 
-Unsupported types return LNil. Plugin code never sees Go-internal types. Silently converting to nil safer than panicking in production.
+#### db.update
 
-### LuaValueToGo
+`db.update(table, opts) -> nil | nil, errmsg`
 
-LuaValueToGo converts Lua value to Go value. LString to string, LNumber to float64, LBool to bool, LNil to nil, LTable to map string any if any string key or slice any if pure sequence.
+Updates rows in plugin table. opts fields: set table required non-empty, where table required non-empty. Auto-sets updated_at in set map if not provided. Empty where raises error for safety prevents full-table update. Returns nothing on success, nil plus errmsg on error.
 
-For tables: any string keys converts to map including integer-keyed entries with string-converted keys. Only consecutive integer keys starting at 1 converts to slice any.
+#### db.delete
 
-### RowsToLuaTable
+`db.delete(table, opts) -> nil | nil, errmsg`
 
-RowsToLuaTable converts slice of db.Row results to Lua sequence table. Each row becomes Lua table. Empty slices return empty table never nil. Query result contract allows safe use of #results, ipairs(results), results[1].
+Deletes rows from plugin table. opts fields: where table required non-empty. Empty where raises error for safety prevents full-table delete. Returns nothing on success, nil plus errmsg on error.
 
-Converts from already-scanned Go representation avoiding coupling to sql.Rows lifecycle management.
+#### db.transaction
 
-## Query Operations
+`db.transaction(fn) -> true, nil | false, errmsg`
 
-Query functions accept table name and optional opts table. Table names auto-prefixed with plugin_pluginname_. Where clauses as key-value maps. Returns empty table on no matches, nil plus error message on error.
+Executes fn inside a database transaction. Nested transactions rejected with error. Inside callback, all db calls automatically route through the transaction. Returns true and nil on commit, false and errmsg on rollback.
 
-db.query(table, opts) returns sequence table of row tables. opts fields: where map, order_by string, limit int default 100, offset int. Empty where allowed returning all rows up to limit.
+#### db.ulid
 
-db.query_one(table, opts) returns single row table or nil. opts fields: where map, order_by string. Empty where allowed returning arbitrary row.
+`db.ulid() -> string`
 
-db.count(table, opts) returns integer. opts field: where map. Empty where allowed returning total row count.
+Generates a new ULID using thread-safe types.NewULID function. Returns 26-character string.
 
-db.exists(table, opts) returns boolean. opts field: where map. Empty where allowed returning true if table has any rows.
+#### db.timestamp
 
-## Mutation Operations
+`db.timestamp() -> string`
 
-db.insert(table, values) auto-sets id as ULID, created_at and updated_at as RFC3339 UTC if not provided. Explicit values never overridden. Returns nothing on success, nil plus error message on error.
+Returns current time as RFC3339 UTC string. Replaces os.date which is sandboxed out.
 
-db.update(table, opts) requires non-empty set map and non-empty where map. Empty where raises error preventing full-table update. Auto-sets updated_at in set if not provided. Returns nothing on success, nil plus error message on error.
+#### db.define_table
 
-db.delete(table, opts) requires non-empty where map. Empty where raises error preventing full-table delete. Returns nothing on success, nil plus error message on error.
+`db.define_table(tableName, definition) -> nil | raises error`
 
-db.transaction(fn) executes function in transaction. Nested transactions rejected. Inside callback all db calls route through sql.Tx via executor swap. Returns true nil on success, false error message on error.
-
-## Utility Operations
-
-db.ulid() returns string. Generates new ULID using thread-safe types.NewULID().
-
-db.timestamp() returns string. Returns current time as RFC3339 UTC. Replaces sandboxed os.date().
-
-db.define_table(tableName, definition) parses arguments, validates and prefixes table name, auto-injects id created_at updated_at columns, validates FK namespace isolation, executes DDLCreateTable with IfNotExists true.
-
-Definition table fields: columns sequence required each with name type not_null default unique, indexes sequence optional each with columns sequence and unique bool, foreign_keys sequence optional each with column ref_table ref_column on_delete.
-
-Reserved columns id created_at updated_at auto-injected, cannot be manually defined. FK namespace isolation requires ref_table start with plugin_pluginname_ prefix preventing reference to core CMS or other plugins.
-
-## VM Factory Call Sequence
-
-Factory produces fully sandboxed VMs following roadmap-specified order: ApplySandbox, RegisterPluginRequire, RegisterDBAPI, RegisterLogAPI, FreezeModule(db), FreezeModule(log). Execute init.lua to define globals. Clear context after factory init, caller sets via Get().
-
-Store dbAPI mapping on instance for op count reset. VM usable even if init.lua partially executes, health check on Put catches critical corruption.
-
-## Health Validation
-
-validateVM checks db and log modules intact. Validates db global is LTable, db.query db.query_one db.count db.exists db.insert db.update db.delete db.transaction db.define_table all LFunction with IsG true, log global is LTable, log.info is LFunction with IsG true.
-
-IsG true only for Go-bound functions. Catches replacement with pure Lua functions or non-function values without storing original pointers. Lightweight approximately 11 GetGlobal/GetField calls plus type assertions. No Lua execution, no allocations. Nanosecond-scale overhead per Put.
-
-## Manifest Validation
-
-extractManifest creates temp sandboxed VM, executes init.lua, reads plugin_info global, validates manifest fields. Temp VM discarded after extraction. Applies sandbox and RegisterPluginRequire so plugins using require at file scope can have manifest extracted. No db or log APIs during manifest extraction.
-
-validateManifest checks required fields Name Version Description present and valid. Name max 32 chars, lowercase alphanumeric underscore only, no trailing underscore preventing prefix collisions.
-
-## Dependency Resolution
-
-topologicalSort orders plugins by dependency relationships using Kahn algorithm. Returns error if circular dependency detected. Builds adjacency list and in-degree count. Edge A to B means A depends on B, B must load before A.
-
-Start with nodes having in-degree zero. Sort initial queue for deterministic ordering. Process dependents reducing in-degree. If not all plugins processed cycle exists, find participants for error message.
+Creates plugin table with auto-injected id, created_at, updated_at columns. definition fields: columns sequence required non-empty with each entry having name string, type string, not_null bool optional, default string or number optional, unique bool optional. indexes sequence optional with each entry having columns sequence and unique bool. foreign_keys sequence optional with each entry having column string, ref_table string, ref_column string, on_delete string optional. Reserved column names id, created_at, updated_at rejected. Column types validated via db.ValidateColumnType. Foreign key ref_table must start with same plugin prefix for namespace isolation. Executes DDL with IfNotExists true.

@@ -10,6 +10,9 @@ services:
         COMMIT: ${COMMIT:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}
     container_name: modula_cms_mysql
+    environment:
+      - TERM=xterm-256color
+      - CLICOLOR_FORCE=1
     ports:
       - "8080:8080"
       - "4000:4000"

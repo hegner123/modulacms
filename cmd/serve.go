@@ -17,12 +17,15 @@ import (
 	"github.com/charmbracelet/wish"
 	"github.com/charmbracelet/wish/logging"
 	"github.com/hegner123/modulacms/internal/auth"
+	"github.com/hegner123/modulacms/internal/bucket"
+	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/router"
-	"github.com/hegner123/modulacms/internal/cli"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/acme/autocert"
@@ -97,9 +100,6 @@ var serveCmd = &cobra.Command{
 		}
 		defer pluginPoolCleanup()
 		pluginManager := initPluginManager(rootCtx, cfg, pluginPool)
-		if pluginManager != nil {
-			defer pluginManager.Shutdown(rootCtx)
-		}
 
 		if cfg.Node_ID == "" {
 			cfg.Node_ID = string(types.NewNodeID())
@@ -130,6 +130,30 @@ var serveCmd = &cobra.Command{
 			}
 		}
 
+		// Ensure S3 buckets exist (media + backup)
+		if cfg.BucketEndpointURL() != "" {
+			s3Creds := bucket.S3Credentials{
+				AccessKey:      cfg.Bucket_Access_Key,
+				SecretKey:      cfg.Bucket_Secret_Key,
+				URL:            cfg.BucketEndpointURL(),
+				Region:         cfg.Bucket_Region,
+				ForcePathStyle: cfg.Bucket_Force_Path_Style,
+			}
+			s3Session, s3Err := s3Creds.GetBucket()
+			if s3Err != nil {
+				utility.DefaultLogger.Warn("S3 connection failed, media uploads will be unavailable", s3Err)
+			} else {
+				for _, name := range []string{cfg.Bucket_Media, cfg.Bucket_Backup} {
+					if name == "" {
+						continue
+					}
+					if bErr := bucket.EnsureBucket(s3Session, name); bErr != nil {
+						utility.DefaultLogger.Warn("Failed to ensure bucket", bErr, "bucket", name)
+					}
+				}
+			}
+		}
+
 		// SSH server
 		sshServer, err := wish.NewServer(
 			wish.WithAddress(net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port)),
@@ -148,8 +172,23 @@ var serveCmd = &cobra.Command{
 		}
 
 		// HTTP router and middleware
-		mux := router.NewModulacmsMux(*cfg)
-		middlewareHandler := middleware.DefaultMiddlewareChain(cfg)(mux)
+		var bridge *plugin.HTTPBridge
+		if pluginManager != nil {
+			bridge = pluginManager.Bridge()
+		}
+		mux := router.NewModulacmsMux(*cfg, bridge)
+
+		// Phase 3: Inject HookRunner into request context so that audited
+		// operations can dispatch content lifecycle hooks. The HookRunnerMiddleware
+		// is applied before the default chain so the runner is available to all
+		// downstream middleware and handlers.
+		var hookRunner audited.HookRunner
+		if pluginManager != nil {
+			hookRunner = pluginManager.HookEngine()
+		}
+		middlewareHandler := middleware.Chain(
+			middleware.HookRunnerMiddleware(hookRunner),
+		)(middleware.DefaultMiddlewareChain(cfg)(mux))
 
 		manager := autocert.Manager{
 			Prompt: autocert.AcceptTOS,
@@ -169,9 +208,9 @@ var serveCmd = &cobra.Command{
 			httpHost = "0.0.0.0"
 		}
 
-		// TLS config: use autocert for non-local, nil for local
+		// TLS config: use autocert for production, nil for local/docker (self-signed)
 		var tlsConfig *tls.Config
-		if cfg.Environment != "local" {
+		if cfg.Environment != "local" && cfg.Environment != "docker" {
 			tlsConfig = manager.TLSConfig()
 		}
 
@@ -195,7 +234,7 @@ var serveCmd = &cobra.Command{
 		}()
 
 		// Start HTTPS server if configured
-		if !initStatus.UseSSL && cfg.Environment != "http-only" && cfg.Environment != "docker" {
+		if !initStatus.UseSSL && cfg.Environment != "http-only" {
 			go func() {
 				utility.DefaultLogger.Info("Starting HTTPS server", "address", httpsServer.Addr)
 				httpsErr := httpsServer.ListenAndServeTLS(
@@ -240,6 +279,24 @@ var serveCmd = &cobra.Command{
 		if err := sshServer.Shutdown(shutdownCtx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {
 			utility.DefaultLogger.Error("SSH server shutdown error:", err)
 			return err
+		}
+
+		// Shut down plugin subsystems after HTTP servers are drained so
+		// in-flight plugin requests can complete.
+		// S11 shutdown order: StopWatcher (stop file polling) -> bridge
+		// (stop accepting new plugin HTTP requests) -> hook engine (drain
+		// after-hooks) -> manager (close VM pools and DB).
+		if pluginManager != nil {
+			pluginManager.StopWatcher()
+		}
+		if bridge != nil {
+			bridge.Close(shutdownCtx)
+		}
+		if pluginManager != nil {
+			if hookEngine := pluginManager.HookEngine(); hookEngine != nil {
+				hookEngine.Close(shutdownCtx)
+			}
+			pluginManager.Shutdown(shutdownCtx)
 		}
 
 		utility.DefaultLogger.Info("Servers gracefully stopped.")

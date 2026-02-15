@@ -2,7 +2,6 @@ package router
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -236,9 +235,9 @@ func (ctx *importContext) importNode(node *model.Node, parentID types.NullableCo
 		},
 		AuthorID:      ctx.authorID,
 		Status:        types.ContentStatusDraft,
-		FirstChildID:  sql.NullString{Valid: false},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DateCreated:   now,
 		DateModified:  now,
 	})
@@ -387,7 +386,7 @@ func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs [
 		ContentDataID: parent.ContentDataID,
 		RouteID:       parent.RouteID,
 		ParentID:      parent.ParentID,
-		FirstChildID:  sql.NullString{String: childIDs[0].String(), Valid: true},
+		FirstChildID:  types.NullableContentID{ID: childIDs[0], Valid: true},
 		NextSiblingID: parent.NextSiblingID,
 		PrevSiblingID: parent.PrevSiblingID,
 		DatatypeID:    parent.DatatypeID,
@@ -403,14 +402,14 @@ func (ctx *importContext) patchSiblingPointers(parent db.ContentData, childIDs [
 
 	// Link each child with sibling pointers
 	for i, childID := range childIDs {
-		prevSibling := sql.NullString{Valid: false}
+		prevSibling := types.NullableContentID{}
 		if i > 0 {
-			prevSibling = sql.NullString{String: childIDs[i-1].String(), Valid: true}
+			prevSibling = types.NullableContentID{ID: childIDs[i-1], Valid: true}
 		}
 
-		nextSibling := sql.NullString{Valid: false}
+		nextSibling := types.NullableContentID{}
 		if i < len(childIDs)-1 {
-			nextSibling = sql.NullString{String: childIDs[i+1].String(), Valid: true}
+			nextSibling = types.NullableContentID{ID: childIDs[i+1], Valid: true}
 		}
 
 		// We need the full row to update — fetch it first

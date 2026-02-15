@@ -1,6 +1,6 @@
 /**
  * Media upload resource for uploading files via multipart/form-data
- * to `POST /mediaupload/`.
+ * to `POST /media`.
  *
  * @remarks The initial upload response may return `srcset: null` because
  * responsive image variants are generated asynchronously. Poll
@@ -12,6 +12,7 @@
 
 import type { HttpClient } from '../http.js'
 import type { ApiError, RequestOptions } from '../types/common.js'
+import { isApiError } from '../types/common.js'
 import type { Media } from '../types/media.js'
 
 /**
@@ -78,7 +79,7 @@ function createMediaUploadResource(
         signal = AbortSignal.timeout(defaultTimeout)
       }
 
-      const response = await http.raw('/mediaupload/', {
+      const response = await http.raw('/media', {
         method: 'POST',
         headers,
         credentials,
@@ -89,11 +90,21 @@ function createMediaUploadResource(
       if (!response.ok) {
         const ct = response.headers.get('content-type')
         const isJson = ct !== null && ct.includes('application/json')
-        const body: unknown = isJson ? await response.json() : undefined
+        let body: unknown
+        let message = response.statusText
+        if (isJson) {
+          body = await response.json()
+        } else {
+          const text = await response.text()
+          if (text) {
+            message = text.trim()
+            body = text.trim()
+          }
+        }
         const err: ApiError = {
           _tag: 'ApiError' as const,
           status: response.status,
-          message: response.statusText,
+          message,
           body,
         }
         throw err
@@ -104,5 +115,29 @@ function createMediaUploadResource(
   }
 }
 
+/**
+ * Check if an error is a duplicate media conflict (HTTP 409).
+ * Thrown when uploading a file that already exists in the media library.
+ */
+function isDuplicateMedia(err: unknown): err is ApiError {
+  return isApiError(err) && err.status === 409
+}
+
+/**
+ * Check if an error is an invalid media type rejection (HTTP 400).
+ * Thrown when the uploaded file's MIME type is not allowed.
+ */
+function isInvalidMediaType(err: unknown): err is ApiError {
+  return isApiError(err) && err.status === 400 && typeof err.message === 'string' && err.message.toLowerCase().includes('content type')
+}
+
+/**
+ * Check if an error is a file-too-large rejection (HTTP 400).
+ * Thrown when the uploaded file exceeds the server's size limit.
+ */
+function isFileTooLarge(err: unknown): err is ApiError {
+  return isApiError(err) && err.status === 400 && typeof err.message === 'string' && err.message.toLowerCase().includes('too large')
+}
+
 export type { MediaUploadResource }
-export { createMediaUploadResource }
+export { createMediaUploadResource, isDuplicateMedia, isInvalidMediaType, isFileTooLarge }

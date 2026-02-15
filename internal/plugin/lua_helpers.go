@@ -1,6 +1,8 @@
 package plugin
 
 import (
+	"encoding/json"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -37,6 +39,7 @@ func MapToLuaTable(L *lua.LState, m map[string]any) *lua.LTable {
 //   - bool          -> lua.LBool
 //   - nil           -> lua.LNil
 //   - []byte        -> lua.LString
+//   - json.Number   -> lua.LNumber (M7: preserved from structToMap's UseNumber decoder)
 //   - map[string]any -> recursive MapToLuaTable
 //   - []any         -> Lua sequence table (1-indexed)
 //   - []map[string]any -> Lua sequence table of tables (1-indexed)
@@ -44,6 +47,11 @@ func MapToLuaTable(L *lua.LState, m map[string]any) *lua.LTable {
 // Unsupported types return lua.LNil. This is intentional: plugin code
 // should never see Go-internal types, and silently converting to nil
 // is safer than panicking in production.
+//
+// Note on json.Number (M7): StructToMap uses json.NewDecoder with UseNumber()
+// to preserve numeric precision. All Go numeric fields become Lua numbers
+// (float64). CMS IDs are ULID strings, so integer precision loss does not
+// affect them. Integers up to 2^53 are lossless in float64.
 func GoValueToLua(L *lua.LState, v any) lua.LValue {
 	if v == nil {
 		return lua.LNil
@@ -64,6 +72,14 @@ func GoValueToLua(L *lua.LState, v any) lua.LValue {
 		return lua.LBool(val)
 	case []byte:
 		return lua.LString(string(val))
+	case json.Number:
+		// json.Number is a string-backed numeric type. Convert to float64 for Lua.
+		// If conversion fails (should not happen with valid JSON), fall through to nil.
+		f, err := val.Float64()
+		if err != nil {
+			return lua.LNil
+		}
+		return lua.LNumber(f)
 	case map[string]any:
 		return MapToLuaTable(L, val)
 	case []any:

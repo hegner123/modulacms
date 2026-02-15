@@ -1,5 +1,5 @@
 import { ModulaError } from "./errors.js";
-import type { ContentFormat, ContentData, ContentField, Route, Media, MediaDimension, Datatype, Field } from "@modulacms/types";
+import type { ContentFormat, ContentData, ContentField, Route, Media, MediaDimension, Datatype, Field, PaginationParams, PaginatedResponse } from "@modulacms/types";
 
 /**
  * A type predicate function used to validate API response data at runtime.
@@ -275,6 +275,20 @@ export class ModulaClient {
    */
   async getMedia(id: string): Promise<Media> {
     return this.request<Media>("/api/v1/media/", { q: id });
+  }
+
+  /**
+   * List media items with pagination.
+   *
+   * @param params - Pagination parameters (limit and offset).
+   * @returns A paginated envelope containing the data page and total count.
+   * @throws {@link ModulaError} On non-2xx response.
+   */
+  async listMediaPaginated(params: PaginationParams): Promise<PaginatedResponse<Media>> {
+    return this.request<PaginatedResponse<Media>>("/api/v1/media", {
+      limit: String(params.limit),
+      offset: String(params.offset),
+    });
   }
 
   /**

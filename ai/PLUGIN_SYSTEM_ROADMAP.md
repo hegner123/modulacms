@@ -810,67 +810,60 @@ internal/plugin/testdata/plugins/
 
 ---
 
-## Phase 2: HTTP Integration
+## Phase 2: HTTP Integration — COMPLETE (2026-02-15)
 
 **Goal:** Plugins register HTTP endpoints served via existing `net/http.ServeMux`. All plugin routes namespaced under `/api/v1/plugins/<plugin_name>/`.
 
-### New Files
+**Status: IMPLEMENTED** — Full implementation plan in `ai/plans/plugin/PLUGIN_PHASE_2.md` (768 lines).
 
-#### `internal/plugin/http_api.go` -- XL
-Route registration and request/response marshaling.
+### Implementation Summary
 
-**Lua API:**
-```lua
-http.handle("GET", "/tasks", function(req)
-    local tasks = db.query("tasks", {order_by = "created_at", limit = 50})
-    return {status = 200, json = tasks}
-end)
+Implemented via 6 parallel/sequential agents (A-F). All tests pass, no regressions.
 
-http.handle("POST", "/tasks", function(req)
-    local body = req.json
-    db.insert("tasks", {id = db.ulid(), title = body.title, status = "pending"})
-    return {status = 201, json = {message = "created"}}
-end)
-```
+#### New Files Created
 
-```go
-type LuaRequest struct {
-    Method, Path, Body, RemoteAddr, UserID string
-    Headers, Query, PathParams map[string]string
-    JSON any
-}
+| File | Lines | Purpose |
+|------|-------|---------|
+| `internal/plugin/http_api.go` | 213 | Lua `http.handle()` and `http.use()` registration with method/path validation, phase guard, duplicate detection, route count limit (50/plugin) |
+| `internal/plugin/http_request.go` | 437 | Request/response Go↔Lua conversion, `PluginErrorResponse` JSON schema, blocked response headers (11 entries), `extractClientIP` with trusted proxy support, `BuildLuaRequest`/`WriteLuaResponse` |
+| `internal/plugin/http_bridge.go` | 882 | Central coordinator: `plugin_routes` DB table (3-dialect DDL), route approval workflow, ServeMux dispatch (20-step request lifecycle), per-IP rate limiting with cleanup, body/response size limits, auth enforcement, graceful shutdown with inflight drain |
+| `internal/plugin/http_api_test.go` | 620 | Unit tests for Lua API registration (66 test cases) |
+| `internal/plugin/http_request_test.go` | 1117 | Unit tests for request/response conversion (36 tests) |
+| `internal/plugin/http_bridge_test.go` | 1826 | Unit tests for bridge dispatch, approval, auth, rate limiting, security headers, middleware chain (30+ tests) |
+| `internal/plugin/http_integration_test.go` | ~350 | End-to-end tests using external fixture plugins (7 integration tests) |
 
-type LuaResponse struct {
-    Status  int
-    Headers map[string]string
-    Body    string
-    JSON    any
-}
+**Test fixtures** (7 plugins in `internal/plugin/testdata/plugins/`):
+- `http_plugin/` — Task tracker with GET/POST /tasks, middleware enrichment
+- `http_public_plugin/` — Public routes (webhook, status)
+- `http_params_plugin/` — Path parameter extraction via `{id}`
+- `http_error_plugin/` — Handler `error()` produces generic 500
+- `http_timeout_plugin/` — Infinite loop triggers 504 HANDLER_TIMEOUT
+- `http_middleware_plugin/` — Middleware enriches request, handler reads enriched field
+- `http_blocked_headers/` — Blocked header filtering (Set-Cookie, CORS stripped)
 
-type HTTPBridge struct {
-    manager *Manager
-    mux     *http.ServeMux
-    routes  []RouteRegistration
-}
-```
+#### Existing Files Modified
 
-**Request flow:** HTTP -> ServeMux -> Bridge extracts plugin name -> checks out VM from pool -> converts Request to LuaRequest -> calls Lua handler -> converts LuaResponse -> writes HTTP response -> returns VM
+| File | Changes |
+|------|---------|
+| `internal/plugin/manager.go` | Bridge field + SetBridge/Bridge methods, `RegisterHTTPAPI` in VM factory, `FreezeModule(http)`, phase flag (`in_init`) before/after `on_init()`, `bridge.RegisterRoutes` call, idempotent Shutdown via `sync.Once` |
+| `internal/plugin/pool.go` | HTTP module health check in `validateVM` (verifies `http` table and `http.handle` is Go-bound) |
+| `internal/plugin/pool_test.go` | HTTP module stubs in test VM factory |
+| `internal/config/config.go` | 5 new fields: `Plugin_Max_Request_Body`, `Plugin_Max_Response_Body`, `Plugin_Rate_Limit`, `Plugin_Max_Routes`, `Plugin_Trusted_Proxies` |
+| `internal/middleware/http_middleware.go` | `SetAuthenticatedUser` helper for test injection, plugin prefix exemption in `HTTPPublicEndpointMiddleware` |
+| `internal/middleware/ratelimit.go` | `ipLimiterEntry` with `lastSeen` tracking, cleanup goroutine eviction, `Close()` method |
+| `internal/router/mux.go` | Bridge mounting, 3 admin endpoints (list/approve/revoke routes), `adminOnly` wrapper |
+| `cmd/serve.go` | Bridge wiring, explicit ordered shutdown (bridge.Close → manager.Shutdown) |
+| `cmd/helpers.go` | Bridge creation before `LoadAll` |
 
-#### `internal/plugin/http_middleware.go` -- M
-Plugin-scoped middleware.
+#### Key Architecture Decisions
 
-```lua
-http.use(function(req)
-    if not req.headers["X-API-Key"] then
-        return {status = 401, json = {error = "API key required"}}
-    end
-    return nil  -- continue to handler
-end)
-```
-
-### Existing Files to Modify
-- `internal/router/mux.go` -- Accept optional `*plugin.HTTPBridge`, mount catch-all handler (M)
-- `cmd/serve.go` -- Wire bridge to mux constructor (S)
+- **Admin approval workflow**: Routes start unapproved, admin approves via `POST /api/v1/admin/plugins/routes/approve`. Unapproved routes return uniform 404 (prevents enumeration).
+- **Version change re-approval**: Plugin version bump deletes all routes from `plugin_routes` DB table, forces admin re-approval.
+- **Per-VM handler binding**: Each VM has its own `__http_handlers` Lua table. Route metadata registered once (first VM), but handler lookup uses the checked-out VM's table.
+- **Public flag change revokes approval**: If a route changes between public/authenticated, approval is revoked for that specific route.
+- **Bridge owns auth for plugin routes**: `HTTPPublicEndpointMiddleware` exempts `/api/v1/plugins/` prefix; the bridge enforces public/authenticated distinctions per-route.
+- **Trusted proxy IP extraction**: New `extractClientIP` (right-to-left X-Forwarded-For) replaces middleware `getIP` which blindly trusts XFF.
+- **gopher-lua timeout detection**: `errors.Is(callErr, context.DeadlineExceeded)` fails because `*lua.ApiError` doesn't implement `Unwrap()`. Fixed with `execCtx.Err()` fallback check.
 
 ---
 

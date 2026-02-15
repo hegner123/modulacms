@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -28,9 +27,9 @@ func contentDataFixture() (ContentData, types.ContentID, types.Timestamp) {
 	cd := ContentData{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "first-child-001", Valid: true},
-		NextSiblingID: sql.NullString{String: "next-sibling-001", Valid: true},
-		PrevSiblingID: sql.NullString{String: "prev-sibling-001", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("first-child-001"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("next-sibling-001"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("prev-sibling-001"), Valid: true},
 		RouteID:       routeID,
 		DatatypeID:    datatypeID,
 		AuthorID:      authorID,
@@ -49,9 +48,9 @@ func contentDataFixtureNulls() ContentData {
 	return ContentData{
 		ContentDataID: contentID,
 		ParentID:      types.NullableContentID{Valid: false},
-		FirstChildID:  sql.NullString{Valid: false},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{Valid: false},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NullableUserID{Valid: false},
@@ -150,7 +149,7 @@ func TestMapContentDataJSON_ZeroValue(t *testing.T) {
 	if got.ParentID != "null" {
 		t.Errorf("ParentID = %q, want %q", got.ParentID, "null")
 	}
-	// sql.NullString zero value has Valid=false, so FirstChildID should be ""
+	// NullableContentID zero value has Valid=false, so FirstChildID should be ""
 	if got.FirstChildID != "" {
 		t.Errorf("FirstChildID = %q, want empty string", got.FirstChildID)
 	}
@@ -161,13 +160,13 @@ func TestMapContentDataJSON_ZeroValue(t *testing.T) {
 
 func TestMapContentDataJSON_ValidButEmptyNullString(t *testing.T) {
 	t.Parallel()
-	// sql.NullString{String: "", Valid: true} means the column is NOT NULL
+	// NullableContentID{ID: "", Valid: true} means the column is NOT NULL
 	// but contains an empty string. MapContentDataJSON should produce "".
 	cd := ContentData{
 		ContentDataID: types.NewContentID(),
-		FirstChildID:  sql.NullString{String: "", Valid: true},
-		NextSiblingID: sql.NullString{String: "", Valid: true},
-		PrevSiblingID: sql.NullString{String: "", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID(""), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID(""), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID(""), Valid: true},
 		Status:        types.ContentStatus("draft"),
 	}
 
@@ -300,7 +299,7 @@ func TestMapStringContentData_NullSiblingFieldsEmpty(t *testing.T) {
 
 	got := MapStringContentData(cd)
 
-	// sql.NullString with Valid=false should produce empty string
+	// NullableContentID with Valid=false should produce empty string
 	if got.FirstChildID != "" {
 		t.Errorf("FirstChildID = %q, want empty string for null", got.FirstChildID)
 	}
@@ -327,9 +326,9 @@ func TestDatabase_MapContentData_AllFields(t *testing.T) {
 	input := mdb.ContentData{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "child-1", Valid: true},
-		NextSiblingID: sql.NullString{String: "next-1", Valid: true},
-		PrevSiblingID: sql.NullString{String: "prev-1", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("child-1"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("next-1"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("prev-1"), Valid: true},
 		RouteID:       routeID,
 		DatatypeID:    datatypeID,
 		AuthorID:      authorID,
@@ -406,9 +405,9 @@ func TestDatabase_MapCreateContentDataParams_GeneratesNewID(t *testing.T) {
 
 	input := CreateContentDataParams{
 		ParentID:      types.NullableContentID{Valid: false},
-		FirstChildID:  sql.NullString{Valid: false},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -455,9 +454,9 @@ func TestDatabase_MapCreateContentDataParams_PreservesNullableFields(t *testing.
 	t.Parallel()
 	d := Database{}
 	parentID := types.NullableContentID{ID: types.ContentID("parent-123"), Valid: true}
-	firstChild := sql.NullString{String: "child-abc", Valid: true}
-	nextSibling := sql.NullString{String: "next-def", Valid: true}
-	prevSibling := sql.NullString{String: "prev-ghi", Valid: true}
+	firstChild := types.NullableContentID{ID: types.ContentID("child-abc"), Valid: true}
+	nextSibling := types.NullableContentID{ID: types.ContentID("next-def"), Valid: true}
+	prevSibling := types.NullableContentID{ID: types.ContentID("prev-ghi"), Valid: true}
 	routeID := types.NullableRouteID{ID: types.RouteID("route-456"), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.DatatypeID("dt-789"), Valid: true}
 
@@ -505,9 +504,9 @@ func TestDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateContentDataParams{
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "updated-child", Valid: true},
-		NextSiblingID: sql.NullString{String: "updated-next", Valid: true},
-		PrevSiblingID: sql.NullString{String: "updated-prev", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("updated-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("updated-next"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("updated-prev"), Valid: true},
 		RouteID:       routeID,
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      authorID,
@@ -525,8 +524,8 @@ func TestDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.ParentID != parentID {
 		t.Errorf("ParentID = %v, want %v", got.ParentID, parentID)
 	}
-	if got.FirstChildID.String != "updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "updated-child")
+	if got.FirstChildID.ID != types.ContentID("updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.ContentID("updated-child"))
 	}
 	if got.RouteID != routeID {
 		t.Errorf("RouteID = %v, want %v", got.RouteID, routeID)
@@ -560,9 +559,9 @@ func TestMysqlDatabase_MapContentData_AllFields(t *testing.T) {
 	input := mdbm.ContentData{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "mysql-child", Valid: true},
-		NextSiblingID: sql.NullString{String: "mysql-next", Valid: true},
-		PrevSiblingID: sql.NullString{String: "mysql-prev", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("mysql-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("mysql-next"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("mysql-prev"), Valid: true},
 		RouteID:       routeID,
 		DatatypeID:    datatypeID,
 		AuthorID:      authorID,
@@ -655,9 +654,9 @@ func TestMysqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateContentDataParams{
 		ParentID:      types.NullableContentID{Valid: false},
-		FirstChildID:  sql.NullString{String: "mysql-updated-child", Valid: true},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("mysql-updated-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NullableUserID{Valid: false},
@@ -678,8 +677,8 @@ func TestMysqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.Status != types.ContentStatus("archived") {
 		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
 	}
-	if got.FirstChildID.String != "mysql-updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "mysql-updated-child")
+	if got.FirstChildID.ID != types.ContentID("mysql-updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.ContentID("mysql-updated-child"))
 	}
 }
 
@@ -698,9 +697,9 @@ func TestPsqlDatabase_MapContentData_AllFields(t *testing.T) {
 	input := mdbp.ContentData{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "psql-child", Valid: true},
-		NextSiblingID: sql.NullString{String: "psql-next", Valid: true},
-		PrevSiblingID: sql.NullString{String: "psql-prev", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("psql-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("psql-next"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("psql-prev"), Valid: true},
 		RouteID:       routeID,
 		DatatypeID:    datatypeID,
 		AuthorID:      authorID,
@@ -793,9 +792,9 @@ func TestPsqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateContentDataParams{
 		ParentID:      types.NullableContentID{Valid: false},
-		FirstChildID:  sql.NullString{String: "psql-updated-child", Valid: true},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("psql-updated-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NullableUserID{Valid: false},
@@ -816,8 +815,8 @@ func TestPsqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.Status != types.ContentStatus("pending") {
 		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("pending"))
 	}
-	if got.FirstChildID.String != "psql-updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "psql-updated-child")
+	if got.FirstChildID.ID != types.ContentID("psql-updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.ContentID("psql-updated-child"))
 	}
 }
 
@@ -832,9 +831,9 @@ func TestCrossDatabaseMapContentData_Consistency(t *testing.T) {
 	routeID := types.NullableRouteID{ID: types.RouteID("route-cross"), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.DatatypeID("dt-cross"), Valid: true}
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
-	firstChild := sql.NullString{String: "cross-child", Valid: true}
-	nextSibling := sql.NullString{String: "cross-next", Valid: true}
-	prevSibling := sql.NullString{String: "cross-prev", Valid: true}
+	firstChild := types.NullableContentID{ID: types.ContentID("cross-child"), Valid: true}
+	nextSibling := types.NullableContentID{ID: types.ContentID("cross-next"), Valid: true}
+	prevSibling := types.NullableContentID{ID: types.ContentID("cross-prev"), Valid: true}
 
 	sqliteInput := mdb.ContentData{
 		ContentDataID: contentID, ParentID: parentID,
@@ -1867,36 +1866,36 @@ func TestMapContentDataJSON_MapStringContentData_SiblingFieldConsistency(t *test
 
 	tests := []struct {
 		name          string
-		firstChild    sql.NullString
-		nextSibling   sql.NullString
-		prevSibling   sql.NullString
+		firstChild    types.NullableContentID
+		nextSibling   types.NullableContentID
+		prevSibling   types.NullableContentID
 		wantFirstJSON string
 		wantNextJSON  string
 		wantPrevJSON  string
 	}{
 		{
 			name:          "all valid",
-			firstChild:    sql.NullString{String: "fc-1", Valid: true},
-			nextSibling:   sql.NullString{String: "ns-1", Valid: true},
-			prevSibling:   sql.NullString{String: "ps-1", Valid: true},
+			firstChild:    types.NullableContentID{ID: types.ContentID("fc-1"), Valid: true},
+			nextSibling:   types.NullableContentID{ID: types.ContentID("ns-1"), Valid: true},
+			prevSibling:   types.NullableContentID{ID: types.ContentID("ps-1"), Valid: true},
 			wantFirstJSON: "fc-1",
 			wantNextJSON:  "ns-1",
 			wantPrevJSON:  "ps-1",
 		},
 		{
 			name:          "all null",
-			firstChild:    sql.NullString{Valid: false},
-			nextSibling:   sql.NullString{Valid: false},
-			prevSibling:   sql.NullString{Valid: false},
+			firstChild:    types.NullableContentID{},
+			nextSibling:   types.NullableContentID{},
+			prevSibling:   types.NullableContentID{},
 			wantFirstJSON: "",
 			wantNextJSON:  "",
 			wantPrevJSON:  "",
 		},
 		{
 			name:          "mixed",
-			firstChild:    sql.NullString{String: "fc-mix", Valid: true},
-			nextSibling:   sql.NullString{Valid: false},
-			prevSibling:   sql.NullString{String: "ps-mix", Valid: true},
+			firstChild:    types.NullableContentID{ID: types.ContentID("fc-mix"), Valid: true},
+			nextSibling:   types.NullableContentID{},
+			prevSibling:   types.NullableContentID{ID: types.ContentID("ps-mix"), Valid: true},
 			wantFirstJSON: "fc-mix",
 			wantNextJSON:  "",
 			wantPrevJSON:  "ps-mix",

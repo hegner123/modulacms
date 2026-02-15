@@ -8,9 +8,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	"github.com/hegner123/modulacms/internal/config"
-	"github.com/hegner123/modulacms/internal/file"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -70,7 +70,7 @@ func RestoreFromBackup(cfg config.Config, backupPath string) error {
 	defer os.RemoveAll(tempDir)
 
 	// Extract zip to temp dir
-	if err := file.Unzip(backupPath, tempDir); err != nil {
+	if err := unzip(backupPath, tempDir); err != nil {
 		return fmt.Errorf("failed to extract backup archive: %w", err)
 	}
 
@@ -182,6 +182,63 @@ func restorePostgres(cfg config.Config, tempDir string) error {
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("psql restore failed: %w", err)
+	}
+
+	return nil
+}
+
+// unzip extracts a zip archive to dest. It validates that all extracted paths
+// remain within dest to prevent zip slip (CWE-22) path traversal attacks.
+func unzip(src, dest string) error {
+	r, err := zip.OpenReader(src)
+	if err != nil {
+		return fmt.Errorf("opening archive: %w", err)
+	}
+	defer r.Close()
+
+	// Clean once for all path checks.
+	cleanDest := filepath.Clean(dest) + string(os.PathSeparator)
+
+	for _, f := range r.File {
+		fpath := filepath.Join(dest, f.Name)
+
+		// Zip slip guard: resolved path must stay within dest.
+		if !strings.HasPrefix(filepath.Clean(fpath)+string(os.PathSeparator), cleanDest) {
+			return fmt.Errorf("illegal file path in archive: %s", f.Name)
+		}
+
+		if f.FileInfo().IsDir() {
+			if mkErr := os.MkdirAll(fpath, 0o755); mkErr != nil {
+				return fmt.Errorf("creating directory %s: %w", f.Name, mkErr)
+			}
+			continue
+		}
+
+		if mkErr := os.MkdirAll(filepath.Dir(fpath), 0o755); mkErr != nil {
+			return fmt.Errorf("creating parent directory for %s: %w", f.Name, mkErr)
+		}
+
+		rc, openErr := f.Open()
+		if openErr != nil {
+			return fmt.Errorf("opening archived file %s: %w", f.Name, openErr)
+		}
+
+		outFile, createErr := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if createErr != nil {
+			rc.Close()
+			return fmt.Errorf("creating %s: %w", f.Name, createErr)
+		}
+
+		_, copyErr := io.Copy(outFile, rc)
+		closeErr := outFile.Close()
+		rc.Close()
+
+		if copyErr != nil {
+			return fmt.Errorf("writing %s: %w", f.Name, copyErr)
+		}
+		if closeErr != nil {
+			return fmt.Errorf("closing %s: %w", f.Name, closeErr)
+		}
 	}
 
 	return nil

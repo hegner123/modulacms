@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"testing"
 	"time"
@@ -27,9 +26,9 @@ func adminContentDataFixture() (AdminContentData, types.AdminContentID, types.Ti
 	acd := AdminContentData{
 		AdminContentDataID: contentID,
 		ParentID:           parentID,
-		FirstChildID:       sql.NullString{String: "first-child-001", Valid: true},
-		NextSiblingID:      sql.NullString{String: "next-sibling-001", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "prev-sibling-001", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("first-child-001"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("next-sibling-001"), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("prev-sibling-001"), Valid: true},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("admin-route-001"), Valid: true},
 		AdminDatatypeID:    datatypeID,
 		AuthorID:           authorID,
@@ -48,9 +47,9 @@ func adminContentDataFixtureNulls() AdminContentData {
 	return AdminContentData{
 		AdminContentDataID: contentID,
 		ParentID:           types.NullableAdminContentID{Valid: false},
-		FirstChildID:       sql.NullString{Valid: false},
-		NextSiblingID:      sql.NullString{Valid: false},
-		PrevSiblingID:      sql.NullString{Valid: false},
+		FirstChildID:       types.NullableAdminContentID{},
+		NextSiblingID:      types.NullableAdminContentID{},
+		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("route-null-test"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           types.NullableUserID{Valid: false},
@@ -146,7 +145,7 @@ func TestMapAdminContentDataJSON_ZeroValue(t *testing.T) {
 	if got.ParentID != "null" {
 		t.Errorf("ParentID = %q, want %q", got.ParentID, "null")
 	}
-	// sql.NullString zero value has Valid=false, so FirstChildID should be ""
+	// NullableAdminContentID zero value has Valid=false, so FirstChildID should be ""
 	if got.FirstChildID != "" {
 		t.Errorf("FirstChildID = %q, want empty string", got.FirstChildID)
 	}
@@ -266,9 +265,9 @@ func TestDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	input := mdb.AdminContentData{
 		AdminContentDataID: contentID,
 		ParentID:           parentID,
-		FirstChildID:       sql.NullString{String: "child-1", Valid: true},
-		NextSiblingID:      sql.NullString{String: "next-1", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "prev-1", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("child-1"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("next-1"), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("prev-1"), Valid: true},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("route-1"), Valid: true},
 		AdminDatatypeID:    datatypeID,
 		AuthorID:           authorID,
@@ -342,9 +341,9 @@ func TestDatabase_MapCreateAdminContentDataParams_GeneratesNewID(t *testing.T) {
 
 	input := CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{Valid: false},
-		FirstChildID:    sql.NullString{Valid: false},
-		NextSiblingID:   sql.NullString{Valid: false},
-		PrevSiblingID:   sql.NullString{Valid: false},
+		FirstChildID:    types.NullableAdminContentID{},
+		NextSiblingID:   types.NullableAdminContentID{},
+		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{ID: types.AdminRouteID("new-route"), Valid: true},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:        types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -391,9 +390,9 @@ func TestDatabase_MapCreateAdminContentDataParams_PreservesNullableFields(t *tes
 	t.Parallel()
 	d := Database{}
 	parentID := types.NullableAdminContentID{ID: types.AdminContentID("parent-123"), Valid: true}
-	firstChild := sql.NullString{String: "child-abc", Valid: true}
-	nextSibling := sql.NullString{String: "next-def", Valid: true}
-	prevSibling := sql.NullString{String: "prev-ghi", Valid: true}
+	firstChild := types.NullableAdminContentID{ID: types.AdminContentID("child-abc"), Valid: true}
+	nextSibling := types.NullableAdminContentID{ID: types.AdminContentID("next-def"), Valid: true}
+	prevSibling := types.NullableAdminContentID{ID: types.AdminContentID("prev-ghi"), Valid: true}
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("dt-456"), Valid: true}
 
 	input := CreateAdminContentDataParams{
@@ -435,9 +434,9 @@ func TestDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateAdminContentDataParams{
 		ParentID:           parentID,
-		FirstChildID:       sql.NullString{String: "updated-child", Valid: true},
-		NextSiblingID:      sql.NullString{String: "updated-next", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "updated-prev", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("updated-child"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("updated-next"), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("updated-prev"), Valid: true},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           authorID,
@@ -455,8 +454,8 @@ func TestDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.ParentID != parentID {
 		t.Errorf("ParentID = %v, want %v", got.ParentID, parentID)
 	}
-	if got.FirstChildID.String != "updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "updated-child")
+	if got.FirstChildID.ID != types.AdminContentID("updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.AdminContentID("updated-child"))
 	}
 	if got.AdminRouteID.String() != "updated-route" {
 		t.Errorf("AdminRouteID = %q, want %q", got.AdminRouteID.String(), "updated-route")
@@ -489,9 +488,9 @@ func TestMysqlDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	input := mdbm.AdminContentData{
 		AdminContentDataID: contentID,
 		ParentID:           parentID,
-		FirstChildID:       sql.NullString{String: "mysql-child", Valid: true},
-		NextSiblingID:      sql.NullString{String: "mysql-next", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "mysql-prev", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("mysql-child"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("mysql-next"), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("mysql-prev"), Valid: true},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("mysql-route"), Valid: true},
 		AdminDatatypeID:    datatypeID,
 		AuthorID:           authorID,
@@ -584,9 +583,9 @@ func TestMysqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateAdminContentDataParams{
 		ParentID:           types.NullableAdminContentID{Valid: false},
-		FirstChildID:       sql.NullString{String: "mysql-updated-child", Valid: true},
-		NextSiblingID:      sql.NullString{Valid: false},
-		PrevSiblingID:      sql.NullString{Valid: false},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("mysql-updated-child"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{},
+		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("mysql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           types.NullableUserID{Valid: false},
@@ -607,8 +606,8 @@ func TestMysqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.Status != types.ContentStatus("archived") {
 		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
 	}
-	if got.FirstChildID.String != "mysql-updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "mysql-updated-child")
+	if got.FirstChildID.ID != types.AdminContentID("mysql-updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.AdminContentID("mysql-updated-child"))
 	}
 }
 
@@ -626,9 +625,9 @@ func TestPsqlDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	input := mdbp.AdminContentData{
 		AdminContentDataID: contentID,
 		ParentID:           parentID,
-		FirstChildID:       sql.NullString{String: "psql-child", Valid: true},
-		NextSiblingID:      sql.NullString{String: "psql-next", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "psql-prev", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("psql-child"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("psql-next"), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID("psql-prev"), Valid: true},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("psql-route"), Valid: true},
 		AdminDatatypeID:    datatypeID,
 		AuthorID:           authorID,
@@ -721,9 +720,9 @@ func TestPsqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 
 	input := UpdateAdminContentDataParams{
 		ParentID:           types.NullableAdminContentID{Valid: false},
-		FirstChildID:       sql.NullString{String: "psql-updated-child", Valid: true},
-		NextSiblingID:      sql.NullString{Valid: false},
-		PrevSiblingID:      sql.NullString{Valid: false},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID("psql-updated-child"), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{},
+		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("psql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           types.NullableUserID{Valid: false},
@@ -744,8 +743,8 @@ func TestPsqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.Status != types.ContentStatus("pending") {
 		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("pending"))
 	}
-	if got.FirstChildID.String != "psql-updated-child" {
-		t.Errorf("FirstChildID.String = %q, want %q", got.FirstChildID.String, "psql-updated-child")
+	if got.FirstChildID.ID != types.AdminContentID("psql-updated-child") {
+		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.AdminContentID("psql-updated-child"))
 	}
 }
 
@@ -759,9 +758,9 @@ func TestCrossDatabaseMapAdminContentData_Consistency(t *testing.T) {
 	parentID := types.NullableAdminContentID{ID: types.AdminContentID("parent-cross"), Valid: true}
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("dt-cross"), Valid: true}
-	firstChild := sql.NullString{String: "cross-child", Valid: true}
-	nextSibling := sql.NullString{String: "cross-next", Valid: true}
-	prevSibling := sql.NullString{String: "cross-prev", Valid: true}
+	firstChild := types.NullableAdminContentID{ID: types.AdminContentID("cross-child"), Valid: true}
+	nextSibling := types.NullableAdminContentID{ID: types.AdminContentID("cross-next"), Valid: true}
+	prevSibling := types.NullableAdminContentID{ID: types.AdminContentID("cross-prev"), Valid: true}
 
 	sqliteInput := mdb.AdminContentData{
 		AdminContentDataID: contentID, ParentID: parentID,
@@ -1538,18 +1537,18 @@ func TestUpdateAdminContentDataParams_JSONTags(t *testing.T) {
 	}
 }
 
-// --- MapAdminContentDataJSON: NullString edge cases ---
-// Verifies that sql.NullString with Valid=true but empty String is handled correctly.
+// --- MapAdminContentDataJSON: NullableAdminContentID edge cases ---
+// Verifies that NullableAdminContentID with Valid=true but empty ID is handled correctly.
 
-func TestMapAdminContentDataJSON_ValidButEmptyNullString(t *testing.T) {
+func TestMapAdminContentDataJSON_ValidButEmptyNullableID(t *testing.T) {
 	t.Parallel()
-	// sql.NullString{String: "", Valid: true} means the column is NOT NULL
-	// but contains an empty string. MapAdminContentDataJSON should produce "".
+	// NullableAdminContentID{ID: "", Valid: true} means the column is NOT NULL
+	// but contains an empty ID. MapAdminContentDataJSON should produce "".
 	acd := AdminContentData{
 		AdminContentDataID: types.NewAdminContentID(),
-		FirstChildID:       sql.NullString{String: "", Valid: true},
-		NextSiblingID:      sql.NullString{String: "", Valid: true},
-		PrevSiblingID:      sql.NullString{String: "", Valid: true},
+		FirstChildID:       types.NullableAdminContentID{ID: types.AdminContentID(""), Valid: true},
+		NextSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID(""), Valid: true},
+		PrevSiblingID:      types.NullableAdminContentID{ID: types.AdminContentID(""), Valid: true},
 		Status:             types.ContentStatus("draft"),
 	}
 

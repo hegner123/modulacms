@@ -1,14 +1,16 @@
 package router
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/plugin"
 	"golang.org/x/time/rate"
 )
 
-func NewModulacmsMux(c config.Config) *http.ServeMux {
+func NewModulacmsMux(c config.Config, bridge *plugin.HTTPBridge) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Create rate limiter for auth endpoints: 10 requests per minute per IP
@@ -120,6 +122,12 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 	mux.HandleFunc("/api/v1/media", func(w http.ResponseWriter, r *http.Request) {
 		MediasHandler(w, r, c)
 	})
+	mux.HandleFunc("GET /api/v1/media/health", func(w http.ResponseWriter, r *http.Request) {
+		MediaHealthHandler(w, r, c)
+	})
+	mux.HandleFunc("DELETE /api/v1/media/cleanup", func(w http.ResponseWriter, r *http.Request) {
+		MediaCleanupHandler(w, r, c)
+	})
 	mux.HandleFunc("/api/v1/media/", func(w http.ResponseWriter, r *http.Request) {
 		MediaHandler(w, r, c)
 	})
@@ -205,9 +213,156 @@ func NewModulacmsMux(c config.Config) *http.ServeMux {
 
 	//mux.HandleFunc("/auth/google/login", oauthGoogleLogin)
 	//mux.HandleFunc("/auth/google/callback", oauthGoogleCallback)
+
+	// Plugin HTTP bridge routes and admin endpoints
+	if bridge != nil {
+		bridge.MountOn(mux)
+
+		// Admin route management endpoints
+		authChain := middleware.AuthenticatedChain(&c)
+		mux.Handle("GET /api/v1/admin/plugins/routes", authChain(pluginRoutesListHandler(bridge)))
+		mux.Handle("POST /api/v1/admin/plugins/routes/approve", authChain(adminOnly(pluginRoutesApproveHandler(bridge))))
+		mux.Handle("POST /api/v1/admin/plugins/routes/revoke", authChain(adminOnly(pluginRoutesRevokeHandler(bridge))))
+
+		// Phase 4: Mount plugin management admin endpoints via bridge.
+		// The adminOnly wrapper is passed as a parameter since it is defined
+		// here (router-layer concern, not plugin-layer concern).
+		bridge.MountAdminEndpoints(mux, authChain, adminOnly)
+	}
+
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		SlugHandler(w, r, c)
 	})
 	return mux
 
+}
+
+// adminOnly is a middleware wrapper that requires the authenticated user to
+// have the "admin" role. Returns 403 Forbidden if the user does not have
+// admin privileges. Must be used after AuthenticatedChain which ensures a
+// user exists in the context.
+func adminOnly(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil || user.Role != "admin" {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+// pluginRoutesListHandler returns all registered plugin routes with approval status.
+func pluginRoutesListHandler(bridge *plugin.HTTPBridge) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		routes := bridge.ListRoutes()
+
+		type routeJSON struct {
+			Plugin   string `json:"plugin"`
+			Method   string `json:"method"`
+			Path     string `json:"path"`
+			Public   bool   `json:"public"`
+			Approved bool   `json:"approved"`
+		}
+
+		result := make([]routeJSON, 0, len(routes))
+		for _, route := range routes {
+			result = append(result, routeJSON{
+				Plugin:   route.PluginName,
+				Method:   route.Method,
+				Path:     route.Path,
+				Public:   route.Public,
+				Approved: route.Approved,
+			})
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		// Encode error is non-recoverable (client disconnected or similar);
+		// the response is already partially written so no recovery is possible.
+		json.NewEncoder(w).Encode(map[string]any{"routes": result})
+	})
+}
+
+// pluginRoutesApproveHandler approves one or more plugin routes.
+func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Routes []struct {
+				Plugin string `json:"plugin"`
+				Method string `json:"method"`
+				Path   string `json:"path"`
+			} `json:"routes"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		approvedBy := ""
+		if user != nil {
+			approvedBy = user.Username
+		}
+
+		var errs []string
+		for _, route := range req.Routes {
+			if err := bridge.ApproveRoute(r.Context(), route.Plugin, route.Method, route.Path, approvedBy); err != nil {
+				errs = append(errs, err.Error())
+			}
+		}
+
+		if len(errs) > 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			// Encode error is non-recoverable (client disconnected or similar);
+			// the response is already partially written so no recovery is possible.
+			json.NewEncoder(w).Encode(map[string]any{"errors": errs})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		// Encode error is non-recoverable (client disconnected or similar);
+		// the response is already partially written so no recovery is possible.
+		json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
+}
+
+// pluginRoutesRevokeHandler revokes approval for one or more plugin routes.
+func pluginRoutesRevokeHandler(bridge *plugin.HTTPBridge) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var req struct {
+			Routes []struct {
+				Plugin string `json:"plugin"`
+				Method string `json:"method"`
+				Path   string `json:"path"`
+			} `json:"routes"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+
+		var errs []string
+		for _, route := range req.Routes {
+			if err := bridge.RevokeRoute(r.Context(), route.Plugin, route.Method, route.Path); err != nil {
+				errs = append(errs, err.Error())
+			}
+		}
+
+		if len(errs) > 0 {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusBadRequest)
+			// Encode error is non-recoverable (client disconnected or similar);
+			// the response is already partially written so no recovery is possible.
+			json.NewEncoder(w).Encode(map[string]any{"errors": errs})
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		// Encode error is non-recoverable (client disconnected or similar);
+		// the response is already partially written so no recovery is possible.
+		json.NewEncoder(w).Encode(map[string]any{"ok": true})
+	})
 }

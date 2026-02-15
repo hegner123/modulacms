@@ -20,9 +20,9 @@ import (
 type ContentData struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -35,9 +35,9 @@ type ContentData struct {
 type CreateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -49,9 +49,9 @@ type CreateContentDataParams struct {
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -82,26 +82,24 @@ type ContentDataJSON struct {
 	DateModified  string `json:"date_modified"`
 }
 
+// nullableContentIDStringEmpty returns "" when the nullable ID is invalid,
+// and the ID string when valid. Used for sibling pointer fields that the
+// tree builder checks with == "".
+func nullableContentIDStringEmpty(n types.NullableContentID) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.ID.String()
+}
+
 // MapContentDataJSON converts ContentData to ContentDataJSON for JSON serialization
 func MapContentDataJSON(a ContentData) ContentDataJSON {
-	firstChildID := ""
-	if a.FirstChildID.Valid {
-		firstChildID = a.FirstChildID.String
-	}
-	nextSiblingID := ""
-	if a.NextSiblingID.Valid {
-		nextSiblingID = a.NextSiblingID.String
-	}
-	prevSiblingID := ""
-	if a.PrevSiblingID.Valid {
-		prevSiblingID = a.PrevSiblingID.String
-	}
 	return ContentDataJSON{
 		ContentDataID: a.ContentDataID.String(),
 		ParentID:      a.ParentID.String(),
-		FirstChildID:  firstChildID,
-		NextSiblingID: nextSiblingID,
-		PrevSiblingID: prevSiblingID,
+		FirstChildID:  nullableContentIDStringEmpty(a.FirstChildID),
+		NextSiblingID: nullableContentIDStringEmpty(a.NextSiblingID),
+		PrevSiblingID: nullableContentIDStringEmpty(a.PrevSiblingID),
 		RouteID:       a.RouteID.String(),
 		DatatypeID:    a.DatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
@@ -113,25 +111,13 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 
 // MapStringContentData converts ContentData to StringContentData for table display
 func MapStringContentData(a ContentData) StringContentData {
-	firstChildID := ""
-	if a.FirstChildID.Valid {
-		firstChildID = a.FirstChildID.String
-	}
-	nextSiblingID := ""
-	if a.NextSiblingID.Valid {
-		nextSiblingID = a.NextSiblingID.String
-	}
-	prevSiblingID := ""
-	if a.PrevSiblingID.Valid {
-		prevSiblingID = a.PrevSiblingID.String
-	}
 	return StringContentData{
 		ContentDataID: a.ContentDataID.String(),
 		RouteID:       a.RouteID.String(),
 		ParentID:      a.ParentID.String(),
-		FirstChildID:  firstChildID,
-		NextSiblingID: nextSiblingID,
-		PrevSiblingID: prevSiblingID,
+		FirstChildID:  nullableContentIDStringEmpty(a.FirstChildID),
+		NextSiblingID: nullableContentIDStringEmpty(a.NextSiblingID),
+		PrevSiblingID: nullableContentIDStringEmpty(a.PrevSiblingID),
 		DatatypeID:    a.DatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),
 		Status:        string(a.Status),

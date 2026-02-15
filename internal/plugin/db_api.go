@@ -20,8 +20,8 @@ var ErrOpLimitExceeded = errors.New("operation limit exceeded")
 //
 // INVARIANT: each DatabaseAPI instance is bound to exactly one LState.
 // Never share across VMs. The 1:1 binding means no concurrent access to
-// currentExec, inTx, or opCount. If Phase 4 hot reload or recovery ever
-// reuses a DatabaseAPI across VMs, a data race will occur.
+// currentExec, inTx, opCount, or inBeforeHook. If Phase 4 hot reload or
+// recovery ever reuses a DatabaseAPI across VMs, a data race will occur.
 type DatabaseAPI struct {
 	conn          *sql.DB
 	currentExec   db.Executor // normally conn; swapped to *sql.Tx inside transaction callbacks
@@ -32,6 +32,12 @@ type DatabaseAPI struct {
 	inTx          bool // prevents nested db.transaction() calls
 	opCount       int  // incremented on every db.* call, reset on VMPool.Get()
 	maxOpsPerExec int  // default 1000, configurable via ManagerConfig
+
+	// inBeforeHook is set to true by HookEngine.executeBefore before invoking the
+	// Lua handler, and cleared on defer. When true, all db.* calls are blocked
+	// (M1: SQLite deadlock prevention -- before-hooks run inside a transaction on
+	// the main pool, and plugin db.* uses a separate pool that would deadlock).
+	inBeforeHook bool
 }
 
 // NewDatabaseAPI creates a new DatabaseAPI bound to the given connection and plugin.
@@ -57,13 +63,27 @@ func NewDatabaseAPI(conn *sql.DB, pluginName string, dialect db.Dialect, maxOpsP
 
 // ResetOpCount resets the per-checkout operation counter to 0.
 // Called by the Manager after VMPool.Get() returns, before plugin code executes.
-func (api *DatabaseAPI) ResetOpCount() {
+//
+// If limitOverride is provided (one int), the max ops per execution is set to
+// that value for this checkout. This is used by after-hook execution (M10) to
+// apply a reduced budget. Zero args uses the original maxOpsPerExec.
+func (api *DatabaseAPI) ResetOpCount(limitOverride ...int) {
 	api.opCount = 0
+	if len(limitOverride) > 0 && limitOverride[0] > 0 {
+		api.maxOpsPerExec = limitOverride[0]
+	}
 }
 
 // checkOpLimit increments the operation counter and returns an error if the
 // per-checkout budget is exceeded. Called at the start of every db.* operation.
+//
+// M1: When inBeforeHook is true, all db.* calls are blocked. Before-hooks run
+// inside a transaction on the main pool; the plugin's separate DB pool would
+// deadlock on SQLite's file-level lock.
 func (api *DatabaseAPI) checkOpLimit() error {
+	if api.inBeforeHook {
+		return fmt.Errorf("plugin %q: db.* calls are not allowed inside before-hooks", api.pluginName)
+	}
 	api.opCount++
 	if api.opCount > api.maxOpsPerExec {
 		return fmt.Errorf("plugin %q exceeded maximum operations per execution (%d): %w",

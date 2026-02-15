@@ -775,9 +775,9 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullString{},
-		NextSiblingID: sql.NullString{},
-		PrevSiblingID: sql.NullString{},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:        types.ContentStatusDraft,
@@ -794,9 +794,9 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
-		FirstChildID:    sql.NullString{},
-		NextSiblingID:   sql.NullString{},
-		PrevSiblingID:   sql.NullString{},
+		FirstChildID:    types.NullableAdminContentID{},
+		NextSiblingID:   types.NullableAdminContentID{},
+		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1485,9 +1485,9 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullString{},
-		NextSiblingID: sql.NullString{},
-		PrevSiblingID: sql.NullString{},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:        types.ContentStatusDraft,
@@ -1504,9 +1504,9 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
-		FirstChildID:    sql.NullString{},
-		NextSiblingID:   sql.NullString{},
-		PrevSiblingID:   sql.NullString{},
+		FirstChildID:    types.NullableAdminContentID{},
+		NextSiblingID:   types.NullableAdminContentID{},
+		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2168,9 +2168,9 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	contentData, err := d.CreateContentData(ctx, ac, CreateContentDataParams{
 		RouteID:       types.NullableRouteID{Valid: true, ID: homeRoute.RouteID},
 		ParentID:      types.NullableContentID{},
-		FirstChildID:  sql.NullString{},
-		NextSiblingID: sql.NullString{},
-		PrevSiblingID: sql.NullString{},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
 		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		Status:        types.ContentStatusDraft,
@@ -2187,9 +2187,9 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 12. Create default admin_content_data record (admin_content_data_id = 1)
 	adminContentData, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{
 		ParentID:        types.NullableAdminContentID{},
-		FirstChildID:    sql.NullString{},
-		NextSiblingID:   sql.NullString{},
-		PrevSiblingID:   sql.NullString{},
+		FirstChildID:    types.NullableAdminContentID{},
+		NextSiblingID:   types.NullableAdminContentID{},
+		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
 		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},

@@ -31,7 +31,7 @@ import { createHttpClient } from './http.js'
 import { createResource } from './resource.js'
 import { createAuthResource } from './resources/auth.js'
 import { createAdminTreeResource } from './resources/admin-tree.js'
-import { createMediaUploadResource } from './resources/media-upload.js'
+import { createMediaUploadResource, isDuplicateMedia, isInvalidMediaType, isFileTooLarge } from './resources/media-upload.js'
 import { createSessionsResource } from './resources/sessions.js'
 import { createSshKeysResource } from './resources/ssh-keys.js'
 import { createImportResource } from './resources/import.js'
@@ -43,6 +43,7 @@ import type { CrudResource } from './resource.js'
 // Re-export all public types
 export type { CrudResource } from './resource.js'
 export { isApiError } from './types/common.js'
+export { isDuplicateMedia, isInvalidMediaType, isFileTooLarge } from './resources/media-upload.js'
 export type {
   Brand,
   UserID,

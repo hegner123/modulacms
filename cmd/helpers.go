@@ -175,16 +175,58 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *p
 	// db.DialectFromString; unrecognized values default to DialectSQLite.
 	dialect := db.DialectFromString(string(cfg.Db_Driver))
 
+	// Phase 4: Parse circuit breaker reset interval.
+	maxFailures := cfg.Plugin_Max_Failures
+	if maxFailures <= 0 {
+		maxFailures = 5
+	}
+	resetInterval := 60 * time.Second
+	if cfg.Plugin_Reset_Interval != "" {
+		parsed, parseErr := time.ParseDuration(cfg.Plugin_Reset_Interval)
+		if parseErr != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("invalid plugin_reset_interval %q, using default 60s: %s",
+					cfg.Plugin_Reset_Interval, parseErr.Error()),
+				nil,
+			)
+		} else {
+			resetInterval = parsed
+		}
+	}
+
 	mgr := plugin.NewManager(plugin.ManagerConfig{
 		Enabled:         cfg.Plugin_Enabled,
 		Directory:       dir,
 		MaxVMsPerPlugin: cfg.Plugin_Max_VMs,
 		ExecTimeoutSec:  cfg.Plugin_Timeout,
 		MaxOpsPerExec:   cfg.Plugin_Max_Ops,
+
+		// Phase 3: Hook engine configuration.
+		HookReserveVMs:          cfg.Plugin_Hook_Reserve_VMs,
+		HookMaxConsecutiveAborts: cfg.Plugin_Hook_Max_Consecutive_Aborts,
+		HookMaxOps:              cfg.Plugin_Hook_Max_Ops,
+		HookMaxConcurrentAfter:  cfg.Plugin_Hook_Max_Concurrent_After,
+		HookTimeoutMs:           cfg.Plugin_Hook_Timeout_Ms,
+		HookEventTimeoutMs:      cfg.Plugin_Hook_Event_Timeout_Ms,
+
+		// Phase 4: Production hardening.
+		HotReload:     cfg.Plugin_Hot_Reload,
+		MaxFailures:   maxFailures,
+		ResetInterval: resetInterval,
 	}, pool, dialect)
+
+	// Create HTTP bridge and wire it before LoadAll so that LoadAll can
+	// register plugin routes and manage the plugin_routes table.
+	bridge := plugin.NewHTTPBridge(mgr, pool, dialect)
+	mgr.SetBridge(bridge)
 
 	if err := mgr.LoadAll(ctx); err != nil {
 		utility.DefaultLogger.Error("plugin system load error", err)
+	}
+
+	// Phase 4: Start hot reload watcher if enabled.
+	if cfg.Plugin_Hot_Reload {
+		mgr.StartWatcher(ctx)
 	}
 
 	return mgr

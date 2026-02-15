@@ -21,6 +21,8 @@ type mockStore struct {
 	getByNameErr    error
 	createResult    *db.Media
 	createErr       error
+	deleteErr       error
+	deleteCalled    bool
 }
 
 func (m *mockStore) GetMediaByName(name string) (*db.Media, error) {
@@ -29,6 +31,11 @@ func (m *mockStore) GetMediaByName(name string) (*db.Media, error) {
 
 func (m *mockStore) CreateMedia(ctx context.Context, ac audited.AuditContext, params db.CreateMediaParams) (*db.Media, error) {
 	return m.createResult, m.createErr
+}
+
+func (m *mockStore) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	m.deleteCalled = true
+	return m.deleteErr
 }
 
 // pngHeader returns minimal valid PNG bytes (8-byte signature + IHDR chunk)
@@ -68,6 +75,12 @@ func noopPipeline(srcFile string, dstPath string) error {
 	return nil
 }
 
+func noopUploadOriginal(filePath string) (string, string, error) {
+	return "http://test/original.png", "media/original.png", nil
+}
+
+func noopRollbackS3(s3Key string) {}
+
 func testAuditCtx() audited.AuditContext {
 	return audited.Ctx(types.NodeID("test-node"), types.UserID("test-user"), "req-1", "127.0.0.1")
 }
@@ -82,13 +95,14 @@ func TestProcessMediaUpload(t *testing.T) {
 	}
 
 	tests := []struct {
-		name        string
-		fileData    []byte
-		header      *multipart.FileHeader
-		store       *mockStore
-		pipeline    UploadPipelineFunc
-		wantErr     bool
-		wantErrType any
+		name           string
+		fileData       []byte
+		header         *multipart.FileHeader
+		store          *mockStore
+		uploadOriginal UploadOriginalFunc
+		pipeline       UploadPipelineFunc
+		wantErr        bool
+		wantErrType    any
 	}{
 		{
 			name:     "valid image upload",
@@ -98,8 +112,9 @@ func TestProcessMediaUpload(t *testing.T) {
 				getByNameErr: errors.New("not found"),
 				createResult: defaultMedia,
 			},
-			pipeline: noopPipeline,
-			wantErr:  false,
+			uploadOriginal: noopUploadOriginal,
+			pipeline:       noopPipeline,
+			wantErr:        false,
 		},
 		{
 			name:     "duplicate filename",
@@ -109,9 +124,10 @@ func TestProcessMediaUpload(t *testing.T) {
 				getByNameResult: defaultMedia,
 				getByNameErr:    nil,
 			},
-			pipeline:    noopPipeline,
-			wantErr:     true,
-			wantErrType: DuplicateMediaError{},
+			uploadOriginal: noopUploadOriginal,
+			pipeline:       noopPipeline,
+			wantErr:        true,
+			wantErrType:    DuplicateMediaError{},
 		},
 		{
 			name:     "invalid MIME type",
@@ -120,9 +136,10 @@ func TestProcessMediaUpload(t *testing.T) {
 			store: &mockStore{
 				getByNameErr: errors.New("not found"),
 			},
-			pipeline:    noopPipeline,
-			wantErr:     true,
-			wantErrType: InvalidMediaTypeError{},
+			uploadOriginal: noopUploadOriginal,
+			pipeline:       noopPipeline,
+			wantErr:        true,
+			wantErrType:    InvalidMediaTypeError{},
 		},
 		{
 			name:     "file too large",
@@ -131,31 +148,47 @@ func TestProcessMediaUpload(t *testing.T) {
 			store: &mockStore{
 				getByNameErr: errors.New("not found"),
 			},
-			pipeline:    noopPipeline,
-			wantErr:     true,
-			wantErrType: FileTooLargeError{},
+			uploadOriginal: noopUploadOriginal,
+			pipeline:       noopPipeline,
+			wantErr:        true,
+			wantErrType:    FileTooLargeError{},
 		},
 		{
-			name:     "DB create failure",
+			name:     "S3 original upload failure",
+			fileData: validPNG,
+			header:   newTestHeader("test.png", int64(len(validPNG))),
+			store: &mockStore{
+				getByNameErr: errors.New("not found"),
+			},
+			uploadOriginal: func(filePath string) (string, string, error) {
+				return "", "", errors.New("S3 connection refused")
+			},
+			pipeline: noopPipeline,
+			wantErr:  true,
+		},
+		{
+			name:     "DB create failure rolls back S3",
 			fileData: validPNG,
 			header:   newTestHeader("test.png", int64(len(validPNG))),
 			store: &mockStore{
 				getByNameErr: errors.New("not found"),
 				createErr:    errors.New("db connection lost"),
 			},
-			pipeline: noopPipeline,
-			wantErr:  true,
+			uploadOriginal: noopUploadOriginal,
+			pipeline:       noopPipeline,
+			wantErr:        true,
 		},
 		{
-			name:     "pipeline failure",
+			name:     "pipeline failure rolls back S3 and DB",
 			fileData: validPNG,
 			header:   newTestHeader("test.png", int64(len(validPNG))),
 			store: &mockStore{
 				getByNameErr: errors.New("not found"),
 				createResult: defaultMedia,
 			},
+			uploadOriginal: noopUploadOriginal,
 			pipeline: func(srcFile string, dstPath string) error {
-				return errors.New("S3 upload failed")
+				return errors.New("optimization failed")
 			},
 			wantErr: true,
 		},
@@ -167,7 +200,7 @@ func TestProcessMediaUpload(t *testing.T) {
 			ctx := context.Background()
 			ac := testAuditCtx()
 
-			result, err := ProcessMediaUpload(ctx, ac, file, tt.header, tt.store, tt.pipeline)
+			result, err := ProcessMediaUpload(ctx, ac, file, tt.header, tt.store, tt.uploadOriginal, noopRollbackS3, tt.pipeline)
 
 			if tt.wantErr {
 				if err == nil {
@@ -230,7 +263,7 @@ func TestProcessMediaUpload_AuditContextUserID(t *testing.T) {
 	file := newTestFile(validPNG)
 	header := newTestHeader("test.png", int64(len(validPNG)))
 
-	_, err := ProcessMediaUpload(context.Background(), ac, file, header, capturingStore, noopPipeline)
+	_, err := ProcessMediaUpload(context.Background(), ac, file, header, capturingStore, noopUploadOriginal, noopRollbackS3, noopPipeline)
 	// Pipeline writes to temp which is fine; we only care about the params check
 	if err != nil {
 		// The result may error from the pipeline in a temp dir, but we can still verify params were captured
@@ -265,6 +298,10 @@ func (c *capturingMockStore) CreateMedia(ctx context.Context, ac audited.AuditCo
 		DateModified: params.DateModified,
 	}
 	return result, nil
+}
+
+func (c *capturingMockStore) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	return nil
 }
 
 // Verify multipart.File interface satisfaction at compile time.
@@ -338,7 +375,7 @@ func TestProcessMediaUpload_AcceptsAllValidMIMETypes(t *testing.T) {
 			header := newTestHeader(tt.filename, int64(len(tt.fileData)))
 
 			result, err := ProcessMediaUpload(
-				context.Background(), testAuditCtx(), file, header, store, noopPipeline,
+				context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline,
 			)
 			if err != nil {
 				t.Fatalf("expected no error for %s, got: %v", tt.name, err)
@@ -389,7 +426,7 @@ func TestProcessMediaUpload_ReadError(t *testing.T) {
 	store := &mockStore{getByNameErr: errors.New("not found")}
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopPipeline,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline,
 	)
 	if err == nil {
 		t.Fatal("expected error from Read failure, got nil")
@@ -423,7 +460,7 @@ func TestProcessMediaUpload_SeekError(t *testing.T) {
 	store := &mockStore{getByNameErr: errors.New("not found")}
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopPipeline,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline,
 	)
 	if err == nil {
 		t.Fatal("expected error from Seek failure, got nil")
@@ -453,7 +490,7 @@ func TestProcessMediaUpload_EmptyUserID(t *testing.T) {
 	header := newTestHeader("test.png", int64(len(validPNG)))
 
 	// We don't care about the pipeline result here, just the captured params
-	_, _ = ProcessMediaUpload(context.Background(), ac, file, header, store, noopPipeline)
+	_, _ = ProcessMediaUpload(context.Background(), ac, file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline)
 
 	if capturedParams.AuthorID.Valid {
 		t.Errorf("expected AuthorID.Valid=false for empty UserID, got true (ID=%s)", capturedParams.AuthorID.ID)
@@ -488,7 +525,7 @@ func TestProcessMediaUpload_FilenamePassedToStore(t *testing.T) {
 	file := newTestFile(validPNG)
 	header := newTestHeader(expectedFilename, int64(len(validPNG)))
 
-	_, _ = ProcessMediaUpload(context.Background(), testAuditCtx(), file, header, store, noopPipeline)
+	_, _ = ProcessMediaUpload(context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline)
 
 	if getByNameArg != expectedFilename {
 		t.Errorf("GetMediaByName called with %q, want %q", getByNameArg, expectedFilename)
@@ -498,10 +535,11 @@ func TestProcessMediaUpload_FilenamePassedToStore(t *testing.T) {
 	}
 }
 
-// recordingMockStore provides full callback control over both MediaStore methods.
+// recordingMockStore provides full callback control over all MediaStore methods.
 type recordingMockStore struct {
 	onGetByName func(name string) (*db.Media, error)
 	onCreate    func(ctx context.Context, ac audited.AuditContext, params db.CreateMediaParams) (*db.Media, error)
+	onDelete    func(ctx context.Context, ac audited.AuditContext, id types.MediaID) error
 }
 
 func (r *recordingMockStore) GetMediaByName(name string) (*db.Media, error) {
@@ -510,6 +548,13 @@ func (r *recordingMockStore) GetMediaByName(name string) (*db.Media, error) {
 
 func (r *recordingMockStore) CreateMedia(ctx context.Context, ac audited.AuditContext, params db.CreateMediaParams) (*db.Media, error) {
 	return r.onCreate(ctx, ac, params)
+}
+
+func (r *recordingMockStore) DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error {
+	if r.onDelete != nil {
+		return r.onDelete(ctx, ac, id)
+	}
+	return nil
 }
 
 // TestProcessMediaUpload_ExactSizeBoundary verifies that a file whose size is
@@ -532,7 +577,7 @@ func TestProcessMediaUpload_ExactSizeBoundary(t *testing.T) {
 	header := newTestHeader("boundary.png", MaxUploadSize)
 
 	result, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, noopPipeline,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, noopPipeline,
 	)
 	if err != nil {
 		t.Fatalf("file at exact MaxUploadSize should be accepted, got error: %v", err)
@@ -569,7 +614,7 @@ func TestProcessMediaUpload_PipelineReceivesCorrectPaths(t *testing.T) {
 	header := newTestHeader("pipeline-test.png", int64(len(validPNG)))
 
 	_, err := ProcessMediaUpload(
-		context.Background(), testAuditCtx(), file, header, store, pipeline,
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, noopRollbackS3, pipeline,
 	)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -582,5 +627,76 @@ func TestProcessMediaUpload_PipelineReceivesCorrectPaths(t *testing.T) {
 	// The dstPath should be a parent directory of srcFile
 	if !strings.HasPrefix(capturedSrcFile, capturedDstPath) {
 		t.Errorf("srcFile %q should be inside dstPath %q", capturedSrcFile, capturedDstPath)
+	}
+}
+
+// TestProcessMediaUpload_DBCreateFailureRollsBackS3 verifies that when DB create
+// fails after the original is uploaded to S3, the S3 upload is rolled back.
+func TestProcessMediaUpload_DBCreateFailureRollsBackS3(t *testing.T) {
+	t.Parallel()
+	validPNG := pngHeader()
+
+	store := &mockStore{
+		getByNameErr: errors.New("not found"),
+		createErr:    errors.New("db connection lost"),
+	}
+
+	var rolledBackKey string
+	rollback := func(s3Key string) {
+		rolledBackKey = s3Key
+	}
+
+	file := newTestFile(validPNG)
+	header := newTestHeader("test.png", int64(len(validPNG)))
+
+	_, err := ProcessMediaUpload(
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, rollback, noopPipeline,
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if rolledBackKey != "media/original.png" {
+		t.Errorf("expected rollback key %q, got %q", "media/original.png", rolledBackKey)
+	}
+}
+
+// TestProcessMediaUpload_PipelineFailureRollsBackS3AndDB verifies that when
+// the pipeline fails, both the S3 original and DB record are rolled back.
+func TestProcessMediaUpload_PipelineFailureRollsBackS3AndDB(t *testing.T) {
+	t.Parallel()
+	validPNG := pngHeader()
+	defaultMedia := &db.Media{
+		MediaID:     types.NewMediaID(),
+		Name:        sql.NullString{String: "test.png", Valid: true},
+		DateCreated: types.TimestampNow(),
+	}
+
+	store := &mockStore{
+		getByNameErr: errors.New("not found"),
+		createResult: defaultMedia,
+	}
+
+	var rolledBackKey string
+	rollback := func(s3Key string) {
+		rolledBackKey = s3Key
+	}
+
+	file := newTestFile(validPNG)
+	header := newTestHeader("test.png", int64(len(validPNG)))
+
+	_, err := ProcessMediaUpload(
+		context.Background(), testAuditCtx(), file, header, store, noopUploadOriginal, rollback,
+		func(srcFile string, dstPath string) error {
+			return errors.New("optimization failed")
+		},
+	)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if rolledBackKey != "media/original.png" {
+		t.Errorf("expected rollback key %q, got %q", "media/original.png", rolledBackKey)
+	}
+	if !store.deleteCalled {
+		t.Error("expected DeleteMedia to be called for DB rollback")
 	}
 }

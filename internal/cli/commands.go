@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -289,9 +288,9 @@ func (m Model) CreateContentWithFields(
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      types.NullableContentID{}, // NULL - no parent initially
-			FirstChildID:  sql.NullString{},          // NULL - no children initially
-			NextSiblingID: sql.NullString{},          // NULL - no siblings initially
-			PrevSiblingID: sql.NullString{},          // NULL - no siblings initially
+			FirstChildID:  types.NullableContentID{},          // NULL - no children initially
+			NextSiblingID: types.NullableContentID{},          // NULL - no siblings initially
+			PrevSiblingID: types.NullableContentID{},          // NULL - no siblings initially
 		})
 		if err != nil {
 			return DbErrMsg{
@@ -380,9 +379,9 @@ func (m Model) HandleCreateContentFromDialog(
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      msg.ParentID,
-			FirstChildID:  sql.NullString{}, // NULL - no children initially
-			NextSiblingID: sql.NullString{}, // NULL - no siblings initially
-			PrevSiblingID: sql.NullString{}, // NULL - no siblings initially
+			FirstChildID:  types.NullableContentID{}, // NULL - no children initially
+			NextSiblingID: types.NullableContentID{}, // NULL - no siblings initially
+			PrevSiblingID: types.NullableContentID{}, // NULL - no siblings initially
 		})
 		if err != nil {
 			return DbErrMsg{
@@ -651,7 +650,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		}
 
 		// Check if it has children (should have been prevented by UI, but double-check)
-		if content.FirstChildID.Valid && content.FirstChildID.String != "" {
+		if content.FirstChildID.Valid && content.FirstChildID.ID != "" {
 			return ActionResultMsg{
 				Title:   "Cannot Delete",
 				Message: "This content has children. Delete child nodes first.",
@@ -660,8 +659,8 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 
 		// Update sibling pointers before deletion
 		// If this node has a previous sibling, point its next to our next
-		if content.PrevSiblingID.Valid && content.PrevSiblingID.String != "" {
-			prevSiblingID := types.ContentID(content.PrevSiblingID.String)
+		if content.PrevSiblingID.Valid && content.PrevSiblingID.ID != "" {
+			prevSiblingID := content.PrevSiblingID.ID
 			prevSibling, err := d.GetContentData(prevSiblingID)
 			if err == nil && prevSibling != nil {
 				updateParams := db.UpdateContentDataParams{
@@ -684,8 +683,8 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		}
 
 		// If this node has a next sibling, point its prev to our prev
-		if content.NextSiblingID.Valid && content.NextSiblingID.String != "" {
-			nextSiblingID := types.ContentID(content.NextSiblingID.String)
+		if content.NextSiblingID.Valid && content.NextSiblingID.ID != "" {
+			nextSiblingID := content.NextSiblingID.ID
 			nextSibling, err := d.GetContentData(nextSiblingID)
 			if err == nil && nextSibling != nil {
 				updateParams := db.UpdateContentDataParams{
@@ -711,7 +710,7 @@ func (m Model) HandleDeleteContent(msg DeleteContentRequestMsg) tea.Cmd {
 		if content.ParentID.Valid {
 			parent, err := d.GetContentData(content.ParentID.ID)
 			if err == nil && parent != nil {
-				if parent.FirstChildID.Valid && parent.FirstChildID.String == string(contentID) {
+				if parent.FirstChildID.Valid && parent.FirstChildID.ID == contentID {
 					updateParams := db.UpdateContentDataParams{
 						ContentDataID: parent.ContentDataID,
 						RouteID:       parent.RouteID,
@@ -796,8 +795,8 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 		// === STEP 1: Detach source from old position ===
 
 		// If source has a previous sibling, update its NextSiblingID to source's NextSiblingID
-		if source.PrevSiblingID.Valid && source.PrevSiblingID.String != "" {
-			prevID := types.ContentID(source.PrevSiblingID.String)
+		if source.PrevSiblingID.Valid && source.PrevSiblingID.ID != "" {
+			prevID := source.PrevSiblingID.ID
 			prev, prevErr := d.GetContentData(prevID)
 			if prevErr == nil && prev != nil {
 				params := db.UpdateContentDataParams{
@@ -820,8 +819,8 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 		}
 
 		// If source has a next sibling, update its PrevSiblingID to source's PrevSiblingID
-		if source.NextSiblingID.Valid && source.NextSiblingID.String != "" {
-			nextID := types.ContentID(source.NextSiblingID.String)
+		if source.NextSiblingID.Valid && source.NextSiblingID.ID != "" {
+			nextID := source.NextSiblingID.ID
 			next, nextErr := d.GetContentData(nextID)
 			if nextErr == nil && next != nil {
 				params := db.UpdateContentDataParams{
@@ -847,7 +846,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 		if source.ParentID.Valid {
 			oldParent, parentErr := d.GetContentData(source.ParentID.ID)
 			if parentErr == nil && oldParent != nil {
-				if oldParent.FirstChildID.Valid && oldParent.FirstChildID.String == string(source.ContentDataID) {
+				if oldParent.FirstChildID.Valid && oldParent.FirstChildID.ID == source.ContentDataID {
 					params := db.UpdateContentDataParams{
 						ContentDataID: oldParent.ContentDataID,
 						RouteID:       oldParent.RouteID,
@@ -879,15 +878,15 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			}
 		}
 
-		newPrevSiblingID := sql.NullString{} // default: no prev sibling
+		newPrevSiblingID := types.NullableContentID{} // default: no prev sibling
 
-		if !target.FirstChildID.Valid || target.FirstChildID.String == "" {
+		if !target.FirstChildID.Valid || target.FirstChildID.ID == "" {
 			// Target has no children - source becomes first child
 			targetParams := db.UpdateContentDataParams{
 				ContentDataID: target.ContentDataID,
 				RouteID:       target.RouteID,
 				ParentID:      target.ParentID,
-				FirstChildID:  sql.NullString{String: string(source.ContentDataID), Valid: true},
+				FirstChildID:  types.NullableContentID{ID: source.ContentDataID, Valid: true},
 				NextSiblingID: target.NextSiblingID,
 				PrevSiblingID: target.PrevSiblingID,
 				DatatypeID:    target.DatatypeID,
@@ -905,20 +904,20 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			}
 		} else {
 			// Target has children - walk to last sibling and append source
-			currentID := types.ContentID(target.FirstChildID.String)
+			currentID := target.FirstChildID.ID
 			for {
 				current, walkErr := d.GetContentData(currentID)
 				if walkErr != nil || current == nil {
 					break
 				}
-				if !current.NextSiblingID.Valid || current.NextSiblingID.String == "" {
+				if !current.NextSiblingID.Valid || current.NextSiblingID.ID == "" {
 					// Found last sibling - update its NextSiblingID to source
 					lastParams := db.UpdateContentDataParams{
 						ContentDataID: current.ContentDataID,
 						RouteID:       current.RouteID,
 						ParentID:      current.ParentID,
 						FirstChildID:  current.FirstChildID,
-						NextSiblingID: sql.NullString{String: string(source.ContentDataID), Valid: true},
+						NextSiblingID: types.NullableContentID{ID: source.ContentDataID, Valid: true},
 						PrevSiblingID: current.PrevSiblingID,
 						DatatypeID:    current.DatatypeID,
 						AuthorID:      current.AuthorID,
@@ -929,10 +928,10 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 					if _, updateErr := d.UpdateContentData(ctx, ac, lastParams); updateErr != nil {
 						logger.Ferror("Failed to update last sibling next pointer", updateErr)
 					}
-					newPrevSiblingID = sql.NullString{String: string(current.ContentDataID), Valid: true}
+					newPrevSiblingID = types.NullableContentID{ID: current.ContentDataID, Valid: true}
 					break
 				}
-				currentID = types.ContentID(current.NextSiblingID.String)
+				currentID = current.NextSiblingID.ID
 			}
 		}
 
@@ -942,7 +941,7 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			RouteID:       source.RouteID,
 			ParentID:      types.NullableContentID{ID: msg.TargetContentID, Valid: true},
 			FirstChildID:  source.FirstChildID, // preserve children
-			NextSiblingID: sql.NullString{},     // last child, no next
+			NextSiblingID: types.NullableContentID{},     // last child, no next
 			PrevSiblingID: newPrevSiblingID,
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      source.AuthorID,
@@ -1646,10 +1645,10 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 
 		if msg.Direction == "up" {
 			// Move up: swap A with its prev sibling B
-			if !a.PrevSiblingID.Valid || a.PrevSiblingID.String == "" {
+			if !a.PrevSiblingID.Valid || a.PrevSiblingID.ID == "" {
 				return ActionResultMsg{Title: "Info", Message: "Already at top"}
 			}
-			bID := types.ContentID(a.PrevSiblingID.String)
+			bID := a.PrevSiblingID.ID
 			b, bErr := d.GetContentData(bID)
 			if bErr != nil || b == nil {
 				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Previous sibling not found: %v", bErr)}
@@ -1659,8 +1658,8 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			// After:  [C?] <-> A <-> B <-> [D?]
 
 			// If B has a prev (C), update C.NextSiblingID -> A
-			if b.PrevSiblingID.Valid && b.PrevSiblingID.String != "" {
-				cID := types.ContentID(b.PrevSiblingID.String)
+			if b.PrevSiblingID.Valid && b.PrevSiblingID.ID != "" {
+				cID := b.PrevSiblingID.ID
 				c, cErr := d.GetContentData(cID)
 				if cErr == nil && c != nil {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -1668,7 +1667,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 						RouteID:       c.RouteID,
 						ParentID:      c.ParentID,
 						FirstChildID:  c.FirstChildID,
-						NextSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+						NextSiblingID: types.NullableContentID{ID: a.ContentDataID, Valid: true},
 						PrevSiblingID: c.PrevSiblingID,
 						DatatypeID:    c.DatatypeID,
 						AuthorID:      c.AuthorID,
@@ -1683,8 +1682,8 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// If A has a next (D), update D.PrevSiblingID -> B
-			if a.NextSiblingID.Valid && a.NextSiblingID.String != "" {
-				dID := types.ContentID(a.NextSiblingID.String)
+			if a.NextSiblingID.Valid && a.NextSiblingID.ID != "" {
+				dID := a.NextSiblingID.ID
 				dNode, dErr := d.GetContentData(dID)
 				if dErr == nil && dNode != nil {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -1693,7 +1692,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 						ParentID:      dNode.ParentID,
 						FirstChildID:  dNode.FirstChildID,
 						NextSiblingID: dNode.NextSiblingID,
-						PrevSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+						PrevSiblingID: types.NullableContentID{ID: b.ContentDataID, Valid: true},
 						DatatypeID:    dNode.DatatypeID,
 						AuthorID:      dNode.AuthorID,
 						Status:        dNode.Status,
@@ -1709,12 +1708,12 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			// If parent.FirstChildID == B, update to A
 			if a.ParentID.Valid {
 				parent, pErr := d.GetContentData(a.ParentID.ID)
-				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(b.ContentDataID) {
+				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.ID == b.ContentDataID {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: parent.ContentDataID,
 						RouteID:       parent.RouteID,
 						ParentID:      parent.ParentID,
-						FirstChildID:  sql.NullString{String: string(a.ContentDataID), Valid: true},
+						FirstChildID:  types.NullableContentID{ID: a.ContentDataID, Valid: true},
 						NextSiblingID: parent.NextSiblingID,
 						PrevSiblingID: parent.PrevSiblingID,
 						DatatypeID:    parent.DatatypeID,
@@ -1735,7 +1734,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				RouteID:       a.RouteID,
 				ParentID:      a.ParentID,
 				FirstChildID:  a.FirstChildID,
-				NextSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+				NextSiblingID: types.NullableContentID{ID: b.ContentDataID, Valid: true},
 				PrevSiblingID: b.PrevSiblingID,
 				DatatypeID:    a.DatatypeID,
 				AuthorID:      a.AuthorID,
@@ -1754,7 +1753,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				ParentID:      b.ParentID,
 				FirstChildID:  b.FirstChildID,
 				NextSiblingID: a.NextSiblingID,
-				PrevSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+				PrevSiblingID: types.NullableContentID{ID: a.ContentDataID, Valid: true},
 				DatatypeID:    b.DatatypeID,
 				AuthorID:      b.AuthorID,
 				Status:        b.Status,
@@ -1767,10 +1766,10 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 
 		} else {
 			// Move down: swap A with its next sibling B
-			if !a.NextSiblingID.Valid || a.NextSiblingID.String == "" {
+			if !a.NextSiblingID.Valid || a.NextSiblingID.ID == "" {
 				return ActionResultMsg{Title: "Info", Message: "Already at bottom"}
 			}
-			bID := types.ContentID(a.NextSiblingID.String)
+			bID := a.NextSiblingID.ID
 			b, bErr := d.GetContentData(bID)
 			if bErr != nil || b == nil {
 				return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Next sibling not found: %v", bErr)}
@@ -1780,8 +1779,8 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			// After:  [C?] <-> B <-> A <-> [D?]
 
 			// If A has a prev (C), update C.NextSiblingID -> B
-			if a.PrevSiblingID.Valid && a.PrevSiblingID.String != "" {
-				cID := types.ContentID(a.PrevSiblingID.String)
+			if a.PrevSiblingID.Valid && a.PrevSiblingID.ID != "" {
+				cID := a.PrevSiblingID.ID
 				c, cErr := d.GetContentData(cID)
 				if cErr == nil && c != nil {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -1789,7 +1788,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 						RouteID:       c.RouteID,
 						ParentID:      c.ParentID,
 						FirstChildID:  c.FirstChildID,
-						NextSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+						NextSiblingID: types.NullableContentID{ID: b.ContentDataID, Valid: true},
 						PrevSiblingID: c.PrevSiblingID,
 						DatatypeID:    c.DatatypeID,
 						AuthorID:      c.AuthorID,
@@ -1804,8 +1803,8 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			}
 
 			// If B has a next (D), update D.PrevSiblingID -> A
-			if b.NextSiblingID.Valid && b.NextSiblingID.String != "" {
-				dID := types.ContentID(b.NextSiblingID.String)
+			if b.NextSiblingID.Valid && b.NextSiblingID.ID != "" {
+				dID := b.NextSiblingID.ID
 				dNode, dErr := d.GetContentData(dID)
 				if dErr == nil && dNode != nil {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -1814,7 +1813,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 						ParentID:      dNode.ParentID,
 						FirstChildID:  dNode.FirstChildID,
 						NextSiblingID: dNode.NextSiblingID,
-						PrevSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+						PrevSiblingID: types.NullableContentID{ID: a.ContentDataID, Valid: true},
 						DatatypeID:    dNode.DatatypeID,
 						AuthorID:      dNode.AuthorID,
 						Status:        dNode.Status,
@@ -1830,12 +1829,12 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 			// If parent.FirstChildID == A, update to B
 			if a.ParentID.Valid {
 				parent, pErr := d.GetContentData(a.ParentID.ID)
-				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.String == string(a.ContentDataID) {
+				if pErr == nil && parent != nil && parent.FirstChildID.Valid && parent.FirstChildID.ID == a.ContentDataID {
 					_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 						ContentDataID: parent.ContentDataID,
 						RouteID:       parent.RouteID,
 						ParentID:      parent.ParentID,
-						FirstChildID:  sql.NullString{String: string(b.ContentDataID), Valid: true},
+						FirstChildID:  types.NullableContentID{ID: b.ContentDataID, Valid: true},
 						NextSiblingID: parent.NextSiblingID,
 						PrevSiblingID: parent.PrevSiblingID,
 						DatatypeID:    parent.DatatypeID,
@@ -1856,7 +1855,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				RouteID:       b.RouteID,
 				ParentID:      b.ParentID,
 				FirstChildID:  b.FirstChildID,
-				NextSiblingID: sql.NullString{String: string(a.ContentDataID), Valid: true},
+				NextSiblingID: types.NullableContentID{ID: a.ContentDataID, Valid: true},
 				PrevSiblingID: a.PrevSiblingID,
 				DatatypeID:    b.DatatypeID,
 				AuthorID:      b.AuthorID,
@@ -1875,7 +1874,7 @@ func (m Model) HandleReorderSibling(msg ReorderSiblingRequestMsg) tea.Cmd {
 				ParentID:      a.ParentID,
 				FirstChildID:  a.FirstChildID,
 				NextSiblingID: b.NextSiblingID,
-				PrevSiblingID: sql.NullString{String: string(b.ContentDataID), Valid: true},
+				PrevSiblingID: types.NullableContentID{ID: b.ContentDataID, Valid: true},
 				DatatypeID:    a.DatatypeID,
 				AuthorID:      a.AuthorID,
 				Status:        a.Status,
@@ -1939,9 +1938,9 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		newContent, createErr := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			RouteID:       source.RouteID,
 			ParentID:      source.ParentID,
-			FirstChildID:  sql.NullString{},                                                // no children (flat copy)
+			FirstChildID:  types.NullableContentID{},                                                // no children (flat copy)
 			NextSiblingID: source.NextSiblingID,                                             // take source's next
-			PrevSiblingID: sql.NullString{String: string(source.ContentDataID), Valid: true}, // prev = source
+			PrevSiblingID: types.NullableContentID{ID: source.ContentDataID, Valid: true}, // prev = source
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
 			Status:        types.ContentStatusDraft,
@@ -1962,7 +1961,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 			RouteID:       source.RouteID,
 			ParentID:      source.ParentID,
 			FirstChildID:  source.FirstChildID,
-			NextSiblingID: sql.NullString{String: string(newContent.ContentDataID), Valid: true},
+			NextSiblingID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
 			PrevSiblingID: source.PrevSiblingID,
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      source.AuthorID,
@@ -1975,8 +1974,8 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		}
 
 		// If source had a next sibling (D), update D.PrevSiblingID -> new node
-		if source.NextSiblingID.Valid && source.NextSiblingID.String != "" {
-			dID := types.ContentID(source.NextSiblingID.String)
+		if source.NextSiblingID.Valid && source.NextSiblingID.ID != "" {
+			dID := source.NextSiblingID.ID
 			dNode, dErr := d.GetContentData(dID)
 			if dErr == nil && dNode != nil {
 				_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
@@ -1985,7 +1984,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 					ParentID:      dNode.ParentID,
 					FirstChildID:  dNode.FirstChildID,
 					NextSiblingID: dNode.NextSiblingID,
-					PrevSiblingID: sql.NullString{String: string(newContent.ContentDataID), Valid: true},
+					PrevSiblingID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
 					DatatypeID:    dNode.DatatypeID,
 					AuthorID:      dNode.AuthorID,
 					Status:        dNode.Status,

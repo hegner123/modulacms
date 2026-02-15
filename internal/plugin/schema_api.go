@@ -1,10 +1,13 @@
 package plugin
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 	"strings"
 
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/utility"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -142,6 +145,45 @@ func luaDefineTable(L *lua.LState, pluginName string, exec db.Executor, dialect 
 		if err := db.DDLCreateTable(ctx, exec, dialect, params); err != nil {
 			L.RaiseError("define_table %q: %s", tableName, err.Error())
 			return 0
+		}
+
+		// Phase 4: Schema drift detection (Known Gap #9).
+		// After successful DDL, introspect actual columns and compare with
+		// the expected definition. Drift is advisory only (logs at slog.Warn,
+		// does not error). Drift results are stored on the PluginInstance
+		// for surface in the admin PluginInfoHandler (S7).
+		expectedCols := make([]string, 0, len(columns))
+		for _, col := range columns {
+			expectedCols = append(expectedCols, col.Name)
+		}
+		actualCols, introErr := introspectTableColumns(ctx, exec, dialect, fullName)
+		if introErr != nil {
+			// Non-fatal: log and continue.
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("plugin %q: schema introspection failed for table %q: %s",
+					pluginName, fullName, introErr.Error()),
+				nil,
+			)
+		} else {
+			drifts := checkSchemaDrift(pluginName, fullName, expectedCols, actualCols)
+			if len(drifts) > 0 {
+				// Store drift entries on the registry for the PluginInfoHandler.
+				// The registry key "__schema_drift" holds a Lua table of drift
+				// descriptions. Since drift is read by Go code (not Lua), we
+				// store it via a Go-side mechanism: the pluginName is used to
+				// look up the PluginInstance from the Manager, but we do not have
+				// a reference to the instance here. Instead, we store the drift
+				// entries in a Lua global that the manager reads after loading.
+				driftTbl := L.NewTable()
+				for i, d := range drifts {
+					entry := L.NewTable()
+					L.SetField(entry, "table", lua.LString(d.Table))
+					L.SetField(entry, "kind", lua.LString(d.Kind))
+					L.SetField(entry, "column", lua.LString(d.Column))
+					driftTbl.RawSetInt(i+1, entry)
+				}
+				L.SetGlobal("__schema_drift", driftTbl)
+			}
 		}
 
 		return 0
@@ -395,4 +437,149 @@ func luaStringOrNumberField(L *lua.LState, tbl *lua.LTable, field string) string
 	default:
 		return ""
 	}
+}
+
+// DriftEntry represents a single schema drift finding for a plugin table.
+// Stored on PluginInstance.SchemaDrift and surfaced via the admin API (S7).
+type DriftEntry struct {
+	Table  string `json:"table"`  // full prefixed table name
+	Kind   string `json:"kind"`   // "missing" or "extra"
+	Column string `json:"column"` // the column name that differs
+}
+
+// introspectTableColumns queries the database for actual column names of the
+// given table. Returns the column names in the order reported by the database.
+func introspectTableColumns(ctx context.Context, exec db.Executor, dialect db.Dialect, tableName string) ([]string, error) {
+	var query string
+	var args []any
+
+	switch dialect {
+	case db.DialectSQLite:
+		// PRAGMA table_info cannot be parameterized. tableName is already validated
+		// via db.ValidTableName before reaching here, so identifier injection is
+		// not possible. We construct the query with the validated name directly.
+		query = "PRAGMA table_info(" + tableName + ")"
+	case db.DialectMySQL:
+		query = "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION"
+		args = []any{tableName}
+	case db.DialectPostgres:
+		query = "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1 ORDER BY ordinal_position"
+		args = []any{tableName}
+	default:
+		return nil, fmt.Errorf("unsupported dialect for introspection: %d", dialect)
+	}
+
+	// Use the underlying *sql.DB or *sql.Tx via the Executor interface.
+	// Executor only defines ExecContext and QueryContext, but we need QueryContext.
+	type queryContexter interface {
+		QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+	}
+	qc, ok := exec.(queryContexter)
+	if !ok {
+		return nil, fmt.Errorf("executor does not support QueryContext")
+	}
+
+	rows, err := qc.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("introspecting table %q: %w", tableName, err)
+	}
+	defer func() {
+		if cerr := rows.Close(); cerr != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("schema introspection rows.Close error: %s", cerr.Error()),
+				nil,
+			)
+		}
+	}()
+
+	var columns []string
+
+	if dialect == db.DialectSQLite {
+		// PRAGMA table_info returns: cid, name, type, notnull, dflt_value, pk
+		for rows.Next() {
+			var cid int
+			var name, colType string
+			var notNull, pk int
+			var dfltValue sql.NullString
+			if scanErr := rows.Scan(&cid, &name, &colType, &notNull, &dfltValue, &pk); scanErr != nil {
+				return nil, fmt.Errorf("scanning PRAGMA table_info: %w", scanErr)
+			}
+			columns = append(columns, name)
+		}
+	} else {
+		// MySQL and PostgreSQL: single column result (column_name).
+		for rows.Next() {
+			var name string
+			if scanErr := rows.Scan(&name); scanErr != nil {
+				return nil, fmt.Errorf("scanning column name: %w", scanErr)
+			}
+			columns = append(columns, name)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterating column names: %w", err)
+	}
+
+	return columns, nil
+}
+
+// checkSchemaDrift compares expected column names (from the plugin definition)
+// with actual column names (from the database) and returns any drift entries.
+//
+// S7: Drift warnings use slog.Warn (not Info/Debug).
+func checkSchemaDrift(pluginName, fullName string, expected, actual []string) []DriftEntry {
+	expectedSet := make(map[string]bool, len(expected))
+	for _, col := range expected {
+		expectedSet[col] = true
+	}
+	actualSet := make(map[string]bool, len(actual))
+	for _, col := range actual {
+		actualSet[col] = true
+	}
+
+	var drifts []DriftEntry
+
+	// Check for columns expected but missing from actual.
+	for _, col := range expected {
+		if !actualSet[col] {
+			drifts = append(drifts, DriftEntry{
+				Table:  fullName,
+				Kind:   "missing",
+				Column: col,
+			})
+		}
+	}
+
+	// Check for columns in actual that are not expected.
+	for _, col := range actual {
+		if !expectedSet[col] {
+			drifts = append(drifts, DriftEntry{
+				Table:  fullName,
+				Kind:   "extra",
+				Column: col,
+			})
+		}
+	}
+
+	if len(drifts) > 0 {
+		// Build column lists for log message.
+		var missingCols, extraCols []string
+		for _, d := range drifts {
+			if d.Kind == "missing" {
+				missingCols = append(missingCols, d.Column)
+			} else {
+				extraCols = append(extraCols, d.Column)
+			}
+		}
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("plugin %q table %q has schema drift -- add migration logic in on_init() or recreate the table",
+				pluginName, fullName),
+			nil,
+			"missing_columns", strings.Join(missingCols, ", "),
+			"extra_columns", strings.Join(extraCols, ", "),
+		)
+	}
+
+	return drifts
 }

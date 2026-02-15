@@ -285,11 +285,11 @@ func (page *Root) reorderByPointers() {
 		if node.FirstChild == nil {
 			continue
 		}
-		if !node.Instance.FirstChildID.Valid || node.Instance.FirstChildID.String == "" {
+		if !node.Instance.FirstChildID.Valid || node.Instance.FirstChildID.ID == "" {
 			continue
 		}
 
-		firstChildID := types.ContentID(node.Instance.FirstChildID.String)
+		firstChildID := node.Instance.FirstChildID.ID
 		ordered := page.buildSiblingChain(firstChildID)
 		if ordered == nil {
 			continue // chain broken, keep existing order
@@ -322,11 +322,11 @@ func (page *Root) buildSiblingChain(firstChildID types.ContentID) []*Node {
 		visited[current.Instance.ContentDataID] = true
 		chain = append(chain, current)
 
-		if !current.Instance.NextSiblingID.Valid || current.Instance.NextSiblingID.String == "" {
+		if !current.Instance.NextSiblingID.Valid || current.Instance.NextSiblingID.ID == "" {
 			break
 		}
 
-		nextID := types.ContentID(current.Instance.NextSiblingID.String)
+		nextID := current.Instance.NextSiblingID.ID
 		current = page.NodeIndex[nextID]
 		// If next node is missing from index, the chain is broken.
 		// We still return what we have so far — partial order is better than random.
@@ -387,7 +387,7 @@ func (page *Root) reorderRootSiblings() {
 	// Find the true first root (PrevSiblingID is null/empty)
 	var firstRoot *Node
 	for _, n := range page.rootNodes {
-		if !n.Instance.PrevSiblingID.Valid || n.Instance.PrevSiblingID.String == "" {
+		if !n.Instance.PrevSiblingID.Valid || n.Instance.PrevSiblingID.ID == "" {
 			firstRoot = n
 			break
 		}

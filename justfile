@@ -149,6 +149,18 @@ sdk-go-test:
 sdk-go-vet:
     cd sdks/go && go vet ./...
 
+# [SDK] Build Swift SDK
+sdk-swift-build:
+    cd sdks/swift && swift build
+
+# [SDK] Run Swift SDK tests
+sdk-swift-test:
+    cd sdks/swift && swift test
+
+# [SDK] Clean Swift SDK build artifacts
+sdk-swift-clean:
+    cd sdks/swift && swift package clean
+
 # [Lint] Run all available linters
 lint: lint-go lint-dockerfile lint-yaml
 
@@ -239,8 +251,12 @@ docker-sqlite-down:
 docker-sqlite-reset:
     docker compose -f {{compose_sqlite}} down -v
 
-# [Docker:SQLite] Wipe volumes and rebuild SQLite stack
-docker-sqlite-dev: docker-sqlite-reset docker-sqlite-up
+# [Docker:SQLite] Rebuild and restart CMS only (keeps database intact)
+docker-sqlite-dev:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_sqlite}} up -d --build modulacms
+
+# [Docker:SQLite] Wipe volumes and rebuild SQLite stack from scratch
+docker-sqlite-fresh: docker-sqlite-reset docker-sqlite-up
 
 # [Docker:SQLite] Tail SQLite stack CMS logs
 docker-sqlite-logs:
@@ -258,8 +274,12 @@ docker-mysql-down:
 docker-mysql-reset:
     docker compose -f {{compose_mysql}} down -v
 
-# [Docker:MySQL] Wipe volumes and rebuild MySQL stack
-docker-mysql-dev: docker-mysql-reset docker-mysql-up
+# [Docker:MySQL] Rebuild and restart CMS only (keeps database intact)
+docker-mysql-dev:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_mysql}} up -d --build modulacms
+
+# [Docker:MySQL] Wipe volumes and rebuild MySQL stack from scratch
+docker-mysql-fresh: docker-mysql-reset docker-mysql-up
 
 # [Docker:MySQL] Tail MySQL stack CMS logs
 docker-mysql-logs:
@@ -277,8 +297,12 @@ docker-postgres-down:
 docker-postgres-reset:
     docker compose -f {{compose_postgres}} down -v
 
-# [Docker:Postgres] Wipe volumes and rebuild PostgreSQL stack
-docker-postgres-dev: docker-postgres-reset docker-postgres-up
+# [Docker:Postgres] Rebuild and restart CMS only (keeps database intact)
+docker-postgres-dev:
+    DOCKER_BUILDKIT=1 docker compose -f {{compose_postgres}} up -d --build modulacms
+
+# [Docker:Postgres] Wipe volumes and rebuild PostgreSQL stack from scratch
+docker-postgres-fresh: docker-postgres-reset docker-postgres-up
 
 # [Docker:Postgres] Tail PostgreSQL stack CMS logs
 docker-postgres-logs:

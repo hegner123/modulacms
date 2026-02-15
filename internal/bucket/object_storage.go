@@ -37,6 +37,26 @@ func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 	return s3.New(sess), nil
 }
 
+// EnsureBucket creates the named bucket if it does not already exist.
+func EnsureBucket(svc *s3.S3, bucketName string) error {
+	_, err := svc.HeadBucket(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err == nil {
+		return nil
+	}
+
+	_, err = svc.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		return fmt.Errorf("create bucket %q: %w", bucketName, err)
+	}
+
+	utility.DefaultLogger.Info("Created bucket: %s", bucketName)
+	return nil
+}
+
 // UploadPrep prepares an S3 PutObjectInput for file upload with the specified path, bucket, file data, and ACL.
 func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string) (*s3.PutObjectInput, error) {
 	upload := &s3.PutObjectInput{

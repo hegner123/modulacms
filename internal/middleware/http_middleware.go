@@ -93,6 +93,13 @@ var PublicEndpoints = []string{
 func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Plugin routes handle their own auth -- the bridge enforces per-route
+			// approval checks and authenticated/public route distinctions.
+			if strings.HasPrefix(r.URL.Path, "/api/v1/plugins/") {
+				next.ServeHTTP(w, r)
+				return
+			}
+
 			// Allow public endpoints (exact match or with trailing slash)
 			for _, endpoint := range PublicEndpoints {
 				if r.URL.Path == endpoint || r.URL.Path == endpoint+"/" {
@@ -128,6 +135,16 @@ func AuthenticatedUser(ctx context.Context) *db.Users {
 	var key authcontext = "authenticated"
 	user, _ := ctx.Value(key).(*db.Users)
 	return user
+}
+
+// SetAuthenticatedUser returns a new context with the given user set as the
+// authenticated user. This uses the same unexported context key as the auth
+// middleware, so AuthenticatedUser will find it. Intended for use by the
+// plugin bridge tests and any other test that needs to simulate an authenticated
+// request without running the full middleware chain.
+func SetAuthenticatedUser(ctx context.Context, user *db.Users) context.Context {
+	var key authcontext = "authenticated"
+	return context.WithValue(ctx, key, user)
 }
 
 // Chain applies multiple middleware in sequence (left to right)

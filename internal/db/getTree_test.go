@@ -22,9 +22,9 @@ func routeTreeFixture() (GetRouteTreeByRouteIDRow, types.ContentID) {
 	return GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "fc-tree-001", Valid: true},
-		NextSiblingID: sql.NullString{String: "ns-tree-001", Valid: true},
-		PrevSiblingID: sql.NullString{String: "ps-tree-001", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("fc-tree-001"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("ns-tree-001"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("ps-tree-001"), Valid: true},
 		DatatypeLabel: "Article",
 		DatatypeType:  "content",
 		FieldLabel:    "title",
@@ -41,9 +41,9 @@ func contentTreeFixture() (GetContentTreeByRouteRow, types.ContentID, types.Time
 	return GetContentTreeByRouteRow{
 		ContentDataID: contentID,
 		ParentID:      types.NullableContentID{ID: types.NewContentID(), Valid: true},
-		FirstChildID:  sql.NullString{String: "fc-ct-001", Valid: true},
-		NextSiblingID: sql.NullString{String: "ns-ct-001", Valid: true},
-		PrevSiblingID: sql.NullString{String: "ps-ct-001", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("fc-ct-001"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("ns-ct-001"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("ps-ct-001"), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		AuthorID:      types.NullableUserID{ID: types.NewUserID(), Valid: true},
@@ -66,9 +66,9 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 	input := mdb.GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "child-1", Valid: true},
-		NextSiblingID: sql.NullString{String: "next-1", Valid: true},
-		PrevSiblingID: sql.NullString{String: "prev-1", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("child-1"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("next-1"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("prev-1"), Valid: true},
 		DatatypeLabel: "Blog Post",
 		DatatypeType:  "dynamic",
 		FieldLabel:    "body",
@@ -183,9 +183,9 @@ func TestDatabase_MapGetContentTreeByRouteRow_AllFields(t *testing.T) {
 	input := mdb.GetContentTreeByRouteRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "child-ct", Valid: true},
-		NextSiblingID: sql.NullString{String: "next-ct", Valid: true},
-		PrevSiblingID: sql.NullString{String: "prev-ct", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("child-ct"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("next-ct"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("prev-ct"), Valid: true},
 		DatatypeID:    datatypeID,
 		RouteID:       routeID,
 		AuthorID:      authorID,
@@ -421,9 +421,9 @@ func TestMysqlDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 	input := mdbm.GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "mysql-fc", Valid: true},
-		NextSiblingID: sql.NullString{String: "mysql-ns", Valid: true},
-		PrevSiblingID: sql.NullString{String: "mysql-ps", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("mysql-fc"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("mysql-ns"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("mysql-ps"), Valid: true},
 		DatatypeLabel: "Product",
 		DatatypeType:  "commerce",
 		FieldLabel:    "price",
@@ -497,9 +497,9 @@ func TestMysqlDatabase_MapGetContentTreeByRouteRow_AllFields(t *testing.T) {
 	input := mdbm.GetContentTreeByRouteRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "mysql-child", Valid: true},
-		NextSiblingID: sql.NullString{String: "mysql-next", Valid: true},
-		PrevSiblingID: sql.NullString{String: "mysql-prev", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("mysql-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("mysql-next"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("mysql-prev"), Valid: true},
 		DatatypeID:    datatypeID,
 		RouteID:       routeID,
 		AuthorID:      authorID,
@@ -666,9 +666,9 @@ func TestPsqlDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 	input := mdbp.GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "psql-fc", Valid: true},
-		NextSiblingID: sql.NullString{String: "psql-ns", Valid: true},
-		PrevSiblingID: sql.NullString{String: "psql-ps", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("psql-fc"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("psql-ns"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("psql-ps"), Valid: true},
 		DatatypeLabel: "Category",
 		DatatypeType:  "taxonomy",
 		FieldLabel:    "slug",
@@ -742,9 +742,9 @@ func TestPsqlDatabase_MapGetContentTreeByRouteRow_AllFields(t *testing.T) {
 	input := mdbp.GetContentTreeByRouteRow{
 		ContentDataID: contentID,
 		ParentID:      parentID,
-		FirstChildID:  sql.NullString{String: "psql-child", Valid: true},
-		NextSiblingID: sql.NullString{String: "psql-next", Valid: true},
-		PrevSiblingID: sql.NullString{String: "psql-prev", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID("psql-child"), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID("psql-next"), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID("psql-prev"), Valid: true},
 		DatatypeID:    datatypeID,
 		RouteID:       routeID,
 		AuthorID:      authorID,
@@ -907,9 +907,9 @@ func TestCrossDatabase_MapGetRouteTreeByRouteIDRow_Consistency(t *testing.T) {
 	t.Parallel()
 	contentID := types.NewContentID()
 	parentID := types.NullableContentID{ID: types.ContentID("parent-cross"), Valid: true}
-	firstChild := sql.NullString{String: "cross-fc", Valid: true}
-	nextSibling := sql.NullString{String: "cross-ns", Valid: true}
-	prevSibling := sql.NullString{String: "cross-ps", Valid: true}
+	firstChild := types.NullableContentID{ID: types.ContentID("cross-fc"), Valid: true}
+	nextSibling := types.NullableContentID{ID: types.ContentID("cross-ns"), Valid: true}
+	prevSibling := types.NullableContentID{ID: types.ContentID("cross-ps"), Valid: true}
 	fieldValue := sql.NullString{String: "cross-val", Valid: true}
 
 	sqliteInput := mdb.GetRouteTreeByRouteIDRow{
@@ -951,9 +951,9 @@ func TestCrossDatabase_MapGetContentTreeByRouteRow_Consistency(t *testing.T) {
 	datatypeID := types.NullableDatatypeID{ID: types.DatatypeID("dt-cross"), Valid: true}
 	routeID := types.NullableRouteID{ID: types.RouteID("route-cross"), Valid: true}
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
-	firstChild := sql.NullString{String: "cross-child", Valid: true}
-	nextSibling := sql.NullString{String: "cross-next", Valid: true}
-	prevSibling := sql.NullString{String: "cross-prev", Valid: true}
+	firstChild := types.NullableContentID{ID: types.ContentID("cross-child"), Valid: true}
+	nextSibling := types.NullableContentID{ID: types.ContentID("cross-next"), Valid: true}
+	prevSibling := types.NullableContentID{ID: types.ContentID("cross-prev"), Valid: true}
 
 	sqliteInput := mdb.GetContentTreeByRouteRow{
 		ContentDataID: contentID, ParentID: parentID,
@@ -1169,8 +1169,8 @@ func TestGetFieldDefinitionsByRouteRow_JSONTags(t *testing.T) {
 	}
 }
 
-// --- Edge case: NullString sibling fields in route tree ---
-// Tests mixed Valid/Invalid NullString states across all tree pointer fields.
+// --- Edge case: nullable sibling fields in route tree ---
+// Tests mixed Valid/Invalid NullableContentID states across all tree pointer fields.
 
 func TestDatabase_MapGetRouteTreeByRouteIDRow_MixedNullStrings(t *testing.T) {
 	t.Parallel()
@@ -1178,9 +1178,9 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_MixedNullStrings(t *testing.T) {
 
 	tests := []struct {
 		name          string
-		firstChild    sql.NullString
-		nextSibling   sql.NullString
-		prevSibling   sql.NullString
+		firstChild    types.NullableContentID
+		nextSibling   types.NullableContentID
+		prevSibling   types.NullableContentID
 		fieldValue    sql.NullString
 		wantFCValid   bool
 		wantNSValid   bool
@@ -1189,33 +1189,33 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_MixedNullStrings(t *testing.T) {
 	}{
 		{
 			name:        "all valid",
-			firstChild:  sql.NullString{String: "fc", Valid: true},
-			nextSibling: sql.NullString{String: "ns", Valid: true},
-			prevSibling: sql.NullString{String: "ps", Valid: true},
+			firstChild:  types.NullableContentID{ID: types.ContentID("fc"), Valid: true},
+			nextSibling: types.NullableContentID{ID: types.ContentID("ns"), Valid: true},
+			prevSibling: types.NullableContentID{ID: types.ContentID("ps"), Valid: true},
 			fieldValue:  sql.NullString{String: "fv", Valid: true},
 			wantFCValid: true, wantNSValid: true, wantPSValid: true, wantFVValid: true,
 		},
 		{
 			name:        "all null",
-			firstChild:  sql.NullString{Valid: false},
-			nextSibling: sql.NullString{Valid: false},
-			prevSibling: sql.NullString{Valid: false},
+			firstChild:  types.NullableContentID{},
+			nextSibling: types.NullableContentID{},
+			prevSibling: types.NullableContentID{},
 			fieldValue:  sql.NullString{Valid: false},
 			wantFCValid: false, wantNSValid: false, wantPSValid: false, wantFVValid: false,
 		},
 		{
 			name:        "first child valid only",
-			firstChild:  sql.NullString{String: "only-fc", Valid: true},
-			nextSibling: sql.NullString{Valid: false},
-			prevSibling: sql.NullString{Valid: false},
+			firstChild:  types.NullableContentID{ID: types.ContentID("only-fc"), Valid: true},
+			nextSibling: types.NullableContentID{},
+			prevSibling: types.NullableContentID{},
 			fieldValue:  sql.NullString{Valid: false},
 			wantFCValid: true, wantNSValid: false, wantPSValid: false, wantFVValid: false,
 		},
 		{
 			name:        "field value valid only",
-			firstChild:  sql.NullString{Valid: false},
-			nextSibling: sql.NullString{Valid: false},
-			prevSibling: sql.NullString{Valid: false},
+			firstChild:  types.NullableContentID{},
+			nextSibling: types.NullableContentID{},
+			prevSibling: types.NullableContentID{},
 			fieldValue:  sql.NullString{String: "only-fv", Valid: true},
 			wantFCValid: false, wantNSValid: false, wantPSValid: false, wantFVValid: true,
 		},
@@ -1260,9 +1260,9 @@ func TestDatabase_MapGetContentTreeByRouteRow_AllNullableIDsInvalid(t *testing.T
 	input := mdb.GetContentTreeByRouteRow{
 		ContentDataID: types.NewContentID(),
 		ParentID:      types.NullableContentID{Valid: false},
-		FirstChildID:  sql.NullString{Valid: false},
-		NextSiblingID: sql.NullString{Valid: false},
-		PrevSiblingID: sql.NullString{Valid: false},
+		FirstChildID:  types.NullableContentID{},
+		NextSiblingID: types.NullableContentID{},
+		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		RouteID:       types.NullableRouteID{Valid: false},
 		AuthorID:      types.NullableUserID{Valid: false},
@@ -1392,8 +1392,8 @@ func TestDatabase_MapGetContentFieldsByRouteRow_EmptyStringValue(t *testing.T) {
 	}
 }
 
-// --- Edge case: ValidButEmpty NullString in route tree ---
-// sql.NullString{String: "", Valid: true} is a valid non-null empty string.
+// --- Edge case: ValidButEmpty nullable IDs in route tree ---
+// NullableContentID{ID: "", Valid: true} is a valid non-null empty ID.
 
 func TestDatabase_MapGetRouteTreeByRouteIDRow_ValidEmptyNullStrings(t *testing.T) {
 	t.Parallel()
@@ -1401,9 +1401,9 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_ValidEmptyNullStrings(t *testing.T
 
 	input := mdb.GetRouteTreeByRouteIDRow{
 		ContentDataID: types.NewContentID(),
-		FirstChildID:  sql.NullString{String: "", Valid: true},
-		NextSiblingID: sql.NullString{String: "", Valid: true},
-		PrevSiblingID: sql.NullString{String: "", Valid: true},
+		FirstChildID:  types.NullableContentID{ID: types.ContentID(""), Valid: true},
+		NextSiblingID: types.NullableContentID{ID: types.ContentID(""), Valid: true},
+		PrevSiblingID: types.NullableContentID{ID: types.ContentID(""), Valid: true},
 		FieldValue:    sql.NullString{String: "", Valid: true},
 	}
 
@@ -1413,8 +1413,8 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_ValidEmptyNullStrings(t *testing.T
 	if !got.FirstChildID.Valid {
 		t.Errorf("FirstChildID.Valid = false, want true for Valid=true empty string")
 	}
-	if got.FirstChildID.String != "" {
-		t.Errorf("FirstChildID.String = %q, want empty string", got.FirstChildID.String)
+	if got.FirstChildID.ID != "" {
+		t.Errorf("FirstChildID.ID = %q, want empty string", got.FirstChildID.ID)
 	}
 	if !got.NextSiblingID.Valid {
 		t.Errorf("NextSiblingID.Valid = false, want true for Valid=true empty string")

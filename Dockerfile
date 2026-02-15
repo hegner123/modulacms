@@ -27,6 +27,8 @@ ARG BUILD_DATE=unknown
 
 WORKDIR /build
 
+ENV TERM=xterm-256color
+
 # Build dependencies: C libraries required by CGO packages (sqlite3, webp)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libwebp-dev \
@@ -59,6 +61,8 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # Stage 2: Runtime
 # -----------------------------------------------------------------------------
 FROM debian:bookworm-slim
+
+ENV TERM=xterm-256color
 
 LABEL org.opencontainers.image.title="ModulaCMS"
 LABEL org.opencontainers.image.description="Headless CMS with HTTP, HTTPS, and SSH servers"
@@ -99,4 +103,4 @@ VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups"]
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["/app/modulacms", "--version"]
 
-ENTRYPOINT ["/app/modulacms", "serve"]
+ENTRYPOINT ["/bin/sh", "-c", "/app/modulacms cert generate && /app/modulacms serve"]

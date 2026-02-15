@@ -20,9 +20,9 @@ import (
 type AdminContentData struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       sql.NullString                `json:"first_child_id"`
-	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
@@ -34,9 +34,9 @@ type AdminContentData struct {
 // CreateAdminContentDataParams contains the fields required to create a new AdminContentData record.
 type CreateAdminContentDataParams struct {
 	ParentID        types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID    sql.NullString                `json:"first_child_id"`
-	NextSiblingID   sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID   sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID    types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID   types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID   types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID    types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID        types.NullableUserID          `json:"author_id"`
@@ -48,9 +48,9 @@ type CreateAdminContentDataParams struct {
 // UpdateAdminContentDataParams contains the fields required to update an existing AdminContentData record.
 type UpdateAdminContentDataParams struct {
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       sql.NullString                `json:"first_child_id"`
-	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
@@ -72,27 +72,25 @@ type ListAdminContentDataByRoutePaginatedParams struct {
 // GENERIC section removed - FormParams and JSON variants deprecated
 // Use types package for direct type conversion
 
+// nullableAdminContentIDStringEmpty returns "" when the nullable ID is invalid,
+// and the ID string when valid. Used for sibling pointer fields that the
+// tree builder checks with == "".
+func nullableAdminContentIDStringEmpty(n types.NullableAdminContentID) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.ID.String()
+}
+
 // MapAdminContentDataJSON converts AdminContentData to ContentDataJSON for tree building.
 // Maps admin IDs into the public ContentDataJSON shape so BuildNodes works unchanged.
 func MapAdminContentDataJSON(a AdminContentData) ContentDataJSON {
-	firstChildID := ""
-	if a.FirstChildID.Valid {
-		firstChildID = a.FirstChildID.String
-	}
-	nextSiblingID := ""
-	if a.NextSiblingID.Valid {
-		nextSiblingID = a.NextSiblingID.String
-	}
-	prevSiblingID := ""
-	if a.PrevSiblingID.Valid {
-		prevSiblingID = a.PrevSiblingID.String
-	}
 	return ContentDataJSON{
 		ContentDataID: a.AdminContentDataID.String(),
 		ParentID:      a.ParentID.String(),
-		FirstChildID:  firstChildID,
-		NextSiblingID: nextSiblingID,
-		PrevSiblingID: prevSiblingID,
+		FirstChildID:  nullableAdminContentIDStringEmpty(a.FirstChildID),
+		NextSiblingID: nullableAdminContentIDStringEmpty(a.NextSiblingID),
+		PrevSiblingID: nullableAdminContentIDStringEmpty(a.PrevSiblingID),
 		RouteID:       a.AdminRouteID.String(),
 		DatatypeID:    a.AdminDatatypeID.String(),
 		AuthorID:      a.AuthorID.String(),

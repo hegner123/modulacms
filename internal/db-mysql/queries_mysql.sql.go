@@ -496,9 +496,9 @@ INSERT INTO admin_content_data (
 type CreateAdminContentDataParams struct {
 	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       sql.NullString                `json:"first_child_id"`
-	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
@@ -1130,9 +1130,9 @@ type CreateContentDataParams struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
@@ -3664,9 +3664,9 @@ type GetContentTreeByRouteParams struct {
 type GetContentTreeByRouteRow struct {
 	ContentDataID types.ContentID          `json:"content_data_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
@@ -4218,9 +4218,9 @@ type GetRouteTreeByRouteIDParams struct {
 type GetRouteTreeByRouteIDRow struct {
 	ContentDataID types.ContentID         `json:"content_data_id"`
 	ParentID      types.NullableContentID `json:"parent_id"`
-	FirstChildID  sql.NullString          `json:"first_child_id"`
-	NextSiblingID sql.NullString          `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString          `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID `json:"first_child_id"`
+	NextSiblingID types.NullableContentID `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID `json:"prev_sibling_id"`
 	DatatypeLabel string                  `json:"datatype_label"`
 	DatatypeType  string                  `json:"datatype_type"`
 	FieldLabel    string                  `json:"field_label"`
@@ -8289,9 +8289,9 @@ WHERE admin_content_data_id = ?
 
 type UpdateAdminContentDataParams struct {
 	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       sql.NullString                `json:"first_child_id"`
-	NextSiblingID      sql.NullString                `json:"next_sibling_id"`
-	PrevSiblingID      sql.NullString                `json:"prev_sibling_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           types.NullableUserID          `json:"author_id"`
@@ -8595,9 +8595,9 @@ WHERE content_data_id = ?
 type UpdateContentDataParams struct {
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  sql.NullString           `json:"first_child_id"`
-	NextSiblingID sql.NullString           `json:"next_sibling_id"`
-	PrevSiblingID sql.NullString           `json:"prev_sibling_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	AuthorID      types.NullableUserID     `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`

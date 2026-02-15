@@ -119,6 +119,26 @@ type Config struct {
 	Plugin_DB_MaxIdleConns    int    `json:"plugin_db_max_idle_conns"`
 	Plugin_DB_ConnMaxLifetime string `json:"plugin_db_conn_max_lifetime"`
 
+	// Plugin HTTP integration configuration
+	Plugin_Max_Request_Body  int64    `json:"plugin_max_request_body"`  // bytes, default 1MB
+	Plugin_Max_Response_Body int64    `json:"plugin_max_response_body"` // bytes, default 5MB
+	Plugin_Rate_Limit        int      `json:"plugin_rate_limit"`        // req/sec per IP, default 100
+	Plugin_Max_Routes        int      `json:"plugin_max_routes"`        // per plugin, default 50
+	Plugin_Trusted_Proxies   []string `json:"plugin_trusted_proxies"`   // CIDR list, empty = use RemoteAddr only
+
+	// Plugin content hook configuration (Phase 3)
+	Plugin_Hook_Reserve_VMs          int `json:"plugin_hook_reserve_vms"`           // VMs reserved for hooks per plugin, default 1
+	Plugin_Hook_Max_Consecutive_Aborts int `json:"plugin_hook_max_consecutive_aborts"` // circuit breaker threshold, default 10
+	Plugin_Hook_Max_Ops              int `json:"plugin_hook_max_ops"`               // reduced op budget for after-hooks, default 100
+	Plugin_Hook_Max_Concurrent_After int `json:"plugin_hook_max_concurrent_after"`  // max concurrent after-hook goroutines, default 10
+	Plugin_Hook_Timeout_Ms           int `json:"plugin_hook_timeout_ms"`            // per-hook timeout in before-hooks (ms), default 2000
+	Plugin_Hook_Event_Timeout_Ms     int `json:"plugin_hook_event_timeout_ms"`      // per-event total timeout for before-hook chain (ms), default 5000
+
+	// Plugin production hardening (Phase 4)
+	Plugin_Hot_Reload     bool   `json:"plugin_hot_reload"`      // default false (zero value) -- production opt-in only (S10)
+	Plugin_Max_Failures   int    `json:"plugin_max_failures"`    // circuit breaker threshold, default 5
+	Plugin_Reset_Interval string `json:"plugin_reset_interval"`  // circuit breaker reset interval, default "60s"
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 

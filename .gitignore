@@ -89,3 +89,21 @@ trash/
 # TypeScript SDKs
 sdks/**/dist/
 sdks/**/*.tgz
+
+# Xcode / iOS
+**/*.xcuserstate
+**/xcuserdata/
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+*.hmap
+*.moved-aside
+*.xccheckout
+*.xcscmblueprint
+*.swp
+
+# Swift Package Manager
+.build/
+.swiftpm/

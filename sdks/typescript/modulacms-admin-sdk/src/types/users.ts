@@ -173,8 +173,8 @@ export type CreateUserParams = {
   name: string
   /** Email address. */
   email: Email
-  /** Password hash. */
-  hash: string
+  /** Plaintext password. Hashed server-side. */
+  password: string
   /** Role label to assign. */
   role: string
   /** ISO 8601 creation timestamp. */
@@ -255,8 +255,8 @@ export type UpdateUserParams = {
   name: string
   /** Updated email. */
   email: Email
-  /** Updated password hash. */
-  hash: string
+  /** Plaintext password. Hashed server-side. Omit or leave empty to keep existing password. */
+  password?: string
   /** Updated role label. */
   role: string
   /** ISO 8601 creation timestamp. */

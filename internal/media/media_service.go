@@ -24,11 +24,19 @@ import (
 type MediaStore interface {
 	GetMediaByName(name string) (*db.Media, error)
 	CreateMedia(ctx context.Context, ac audited.AuditContext, params db.CreateMediaParams) (*db.Media, error)
+	DeleteMedia(ctx context.Context, ac audited.AuditContext, id types.MediaID) error
 }
 
 // UploadPipelineFunc processes a source file into optimized variants and uploads to S3.
 // The caller closes over config when constructing this function.
 type UploadPipelineFunc func(srcFile string, dstPath string) error
+
+// UploadOriginalFunc uploads the original file to S3 and returns the URL and S3 key.
+// The S3 key is returned for rollback purposes if subsequent steps fail.
+type UploadOriginalFunc func(filePath string) (url string, s3Key string, err error)
+
+// RollbackS3Func deletes an S3 object by key. Used to roll back the original upload on failure.
+type RollbackS3Func func(s3Key string)
 
 // DuplicateMediaError indicates a media record with the same name already exists.
 type DuplicateMediaError struct {
@@ -68,22 +76,35 @@ var validMIMETypes = map[string]bool{
 	"image/webp": true,
 }
 
-// ProcessMediaUpload validates, persists, and pipelines a media upload.
-// Returns the created Media record or a typed error for the caller to map to HTTP status codes.
+// ProcessMediaUpload validates, uploads the original to S3, persists to DB, and
+// runs the optimization pipeline.
+//
+// Flow:
+//  1. Validate size and MIME type
+//  2. Check for duplicate filename
+//  3. Write uploaded file to temp directory
+//  4. Upload original to S3 via uploadOriginal callback
+//  5. Create DB record (with URL from step 4)
+//  6. Run optimization/upload pipeline
+//
+// Rollback: S3 original is deleted if DB create or pipeline fails.
+// DB record is deleted if pipeline fails after DB create succeeds.
 func ProcessMediaUpload(
 	ctx context.Context,
 	ac audited.AuditContext,
 	file multipart.File,
 	header *multipart.FileHeader,
 	store MediaStore,
+	uploadOriginal UploadOriginalFunc,
+	rollbackS3 RollbackS3Func,
 	pipeline UploadPipelineFunc,
 ) (*db.Media, error) {
-	// Validate size
+	// Step 1: Validate size
 	if header.Size > MaxUploadSize {
 		return nil, FileTooLargeError{Size: header.Size, MaxSize: MaxUploadSize}
 	}
 
-	// Detect MIME type from first 512 bytes
+	// Step 1: Detect MIME type from first 512 bytes
 	buffer := make([]byte, 512)
 	_, err := file.Read(buffer)
 	if err != nil && err != io.EOF {
@@ -104,26 +125,13 @@ func ProcessMediaUpload(
 		utility.DefaultLogger.Info("WebP upload detected - WebP encoding not supported, may fail during optimization")
 	}
 
-	// Check for duplicate
+	// Step 2: Check for duplicate
 	_, err = store.GetMediaByName(header.Filename)
 	if err == nil {
 		return nil, DuplicateMediaError{Name: header.Filename}
 	}
 
-	// Create DB record
-	params := db.CreateMediaParams{
-		Name:         sql.NullString{String: header.Filename, Valid: true},
-		AuthorID:     types.NullableUserID{ID: ac.UserID, Valid: ac.UserID != ""},
-		DateCreated:  types.TimestampNow(),
-		DateModified: types.TimestampNow(),
-	}
-
-	row, err := store.CreateMedia(ctx, ac, params)
-	if err != nil {
-		return nil, fmt.Errorf("create media record: %w", err)
-	}
-
-	// Write uploaded file to temp directory
+	// Step 3: Write uploaded file to temp directory
 	tmp, err := os.MkdirTemp("", TempDirPrefix)
 	if err != nil {
 		return nil, fmt.Errorf("create temp dir: %w", err)
@@ -141,8 +149,35 @@ func ProcessMediaUpload(
 		return nil, fmt.Errorf("copy file: %w", err)
 	}
 
-	// Run optimization/upload pipeline
+	// Step 4: Upload original to S3
+	originalURL, originalKey, err := uploadOriginal(dstPath)
+	if err != nil {
+		return nil, fmt.Errorf("upload original to S3: %w", err)
+	}
+
+	// Step 5: Create DB record with URL and mimetype
+	params := db.CreateMediaParams{
+		Name:         sql.NullString{String: header.Filename, Valid: true},
+		Mimetype:     sql.NullString{String: contentType, Valid: true},
+		URL:          types.URL(originalURL),
+		AuthorID:     types.NullableUserID{ID: ac.UserID, Valid: ac.UserID != ""},
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	}
+
+	row, err := store.CreateMedia(ctx, ac, params)
+	if err != nil {
+		rollbackS3(originalKey)
+		return nil, fmt.Errorf("create media record: %w", err)
+	}
+
+	// Step 6: Run optimization/upload pipeline
 	if err := pipeline(dstPath, tmp); err != nil {
+		rollbackS3(originalKey)
+		deleteErr := store.DeleteMedia(ctx, ac, row.MediaID)
+		if deleteErr != nil {
+			utility.DefaultLogger.Error("failed to rollback media record", deleteErr)
+		}
 		return nil, fmt.Errorf("media pipeline: %w", err)
 	}
 
