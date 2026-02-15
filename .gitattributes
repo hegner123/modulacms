@@ -1,0 +1,40 @@
+# GitHub language classification
+sql/**/*_psql.sql linguist-language=SQL
+sql/**/*_mysql.sql linguist-language=SQL
+
+# Generated code (collapsed in PR diffs, excluded from language stats)
+internal/db-sqlite/** linguist-generated=true
+internal/db-mysql/** linguist-generated=true
+internal/db-psql/** linguist-generated=true
+
+# Vendored dependencies
+vendor/** linguist-vendored=true
+
+# Line ending normalization
+*.go text eol=lf
+*.sql text eol=lf
+*.sh text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.lua text eol=lf
+justfile text eol=lf
+Dockerfile text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.db binary
+
+# Merge strategy
+go.sum merge=union
+
+# Export ignore (excluded from git archive)
+testdb/** export-ignore
+ai/** export-ignore
+.github/** export-ignore
