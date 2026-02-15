@@ -52,6 +52,7 @@ references/
 #development
 public/media/
 plugins/
+!internal/plugin/testdata/plugins/
 tests/
 backups/
 legacydb/
