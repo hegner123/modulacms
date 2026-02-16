@@ -73,7 +73,7 @@ func loadTestBookmarksManager(t *testing.T, cfg ManagerConfig) (*Manager, *sql.D
 		cfg.MaxOpsPerExec = 1000
 	}
 
-	mgr := NewManager(cfg, conn, db.DialectSQLite)
+	mgr := NewManager(cfg, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -219,7 +219,7 @@ func TestIntegration_FullLifecycle(t *testing.T) {
 			MaxVMsPerPlugin: 2,
 			ExecTimeoutSec:  2,
 			MaxOpsPerExec:   1000,
-		}, shutdownConn, db.DialectSQLite)
+		}, shutdownConn, db.DialectSQLite, nil)
 
 		err := shutdownMgr.LoadAll(context.Background())
 		if err != nil {
@@ -579,7 +579,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   5, // Very low budget: 5 operations max
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -885,7 +885,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -964,7 +964,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1157,7 +1157,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {

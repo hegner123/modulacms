@@ -318,9 +318,9 @@ Handles multipart file upload with maximum size limit from media package. Parses
 
 Pipeline function calls media.HandleMediaUpload to process uploaded file. Returns created Media record with 201 Created on success.
 
-Returns 400 Bad Request if form invalid or file too large. Returns 409 Conflict if duplicate media by hash. Returns 400 Bad Request if invalid MIME type. Returns 500 Internal Server Error for other errors.
+Returns 400 Bad Request if form invalid or file too large. Returns 409 Conflict if duplicate media by name. Returns 500 Internal Server Error for other errors.
 
-Uses typed errors from media package: DuplicateMediaError, InvalidMediaTypeError, FileTooLargeError.
+Uses typed errors from media package: DuplicateMediaError, FileTooLargeError.
 
 ### apiListMediaPaginated
 
@@ -459,6 +459,20 @@ Sets first_child_id on parent and links children with prev_sibling_id and next_s
 For children array c0, c1, c2: parent.FirstChildID equals c0.ID, c0.PrevSiblingID null and c0.NextSiblingID equals c1.ID, c1.PrevSiblingID equals c0.ID and c1.NextSiblingID equals c2.ID, c2.PrevSiblingID equals c1.ID and c2.NextSiblingID null.
 
 Fetches full child row before update to preserve other fields. Updates content_data with sibling pointers. Appends errors to result.Errors on fetch or update failure.
+
+## Plugin Route Handlers
+
+### pluginRoutesListHandler
+
+Handles GET /api/v1/admin/plugins/routes. Returns all registered plugin routes with approval status. Requires authentication (any authenticated user). Response includes plugin name, method, path, public flag, approval status, approved_at, approved_by, and plugin_version.
+
+### pluginRoutesApproveHandler
+
+Handles POST /api/v1/admin/plugins/routes/approve. Admin-only. Approves one or more plugin routes for serving. Request body: JSON with routes array, each containing plugin, method, and path fields. Enforces 1 MB body size limit via http.MaxBytesReader before JSON decoding. Idempotent: approving an already-approved route is a no-op.
+
+### pluginRoutesRevokeHandler
+
+Handles POST /api/v1/admin/plugins/routes/revoke. Admin-only. Revokes approval for one or more plugin routes. Same request body format and body size limit as approve handler. Idempotent: revoking an already-revoked route is a no-op.
 
 ## Utilities
 

@@ -38,13 +38,18 @@ type DatabaseAPI struct {
 	// (M1: SQLite deadlock prevention -- before-hooks run inside a transaction on
 	// the main pool, and plugin db.* uses a separate pool that would deadlock).
 	inBeforeHook bool
+
+	// tableReg registers plugin-defined tables in the CMS tables registry.
+	// May be nil; when nil, tables are not registered in the registry.
+	tableReg TableRegistrar
 }
 
 // NewDatabaseAPI creates a new DatabaseAPI bound to the given connection and plugin.
+// tableReg may be nil; when nil, plugin-defined tables are not registered in the CMS registry.
 //
 // INVARIANT: each DatabaseAPI instance is bound to exactly one LState.
 // Never share across VMs. See struct comment for details.
-func NewDatabaseAPI(conn *sql.DB, pluginName string, dialect db.Dialect, maxOpsPerExec int) *DatabaseAPI {
+func NewDatabaseAPI(conn *sql.DB, pluginName string, dialect db.Dialect, maxOpsPerExec int, tableReg TableRegistrar) *DatabaseAPI {
 	if maxOpsPerExec <= 0 {
 		maxOpsPerExec = 1000
 	}
@@ -58,6 +63,7 @@ func NewDatabaseAPI(conn *sql.DB, pluginName string, dialect db.Dialect, maxOpsP
 		inTx:          false,
 		opCount:       0,
 		maxOpsPerExec: maxOpsPerExec,
+		tableReg:      tableReg,
 	}
 }
 
@@ -123,7 +129,7 @@ func RegisterDBAPI(L *lua.LState, api *DatabaseAPI) {
 	dbTable.RawSetString("ulid", L.NewFunction(luaULID))
 	dbTable.RawSetString("timestamp", L.NewFunction(luaTimestamp))
 	dbTable.RawSetString("define_table", L.NewFunction(
-		luaDefineTable(L, api.pluginName, api.conn, api.dialect),
+		luaDefineTable(L, api.pluginName, api.conn, api.dialect, api.tableReg),
 	))
 
 	L.SetGlobal("db", dbTable)

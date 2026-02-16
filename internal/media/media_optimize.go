@@ -86,13 +86,8 @@ func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, foca
 		return nil, fmt.Errorf("image size %d pixels exceeds maximum %d", pixels, MaxImagePixels)
 	}
 
-	// Copy the original file to dstPath
+	// Only collect resized variants — the original is uploaded separately.
 	files := []string{}
-	originalDst := filepath.Join(dstPath, filepath.Base(srcFile))
-	if err := copyFile(srcFile, originalDst); err != nil {
-		return nil, fmt.Errorf("failed to copy original file: %w", err)
-	}
-	files = append(files, originalDst)
 
 	// Initialize scaler.
 	var scaler draw.Scaler = draw.BiLinear

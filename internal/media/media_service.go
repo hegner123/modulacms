@@ -12,6 +12,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
@@ -48,16 +50,6 @@ func (e DuplicateMediaError) Error() string {
 	return fmt.Sprintf("duplicate entry found for %s", e.Name)
 }
 
-// InvalidMediaTypeError indicates the uploaded file has an unsupported MIME type.
-type InvalidMediaTypeError struct {
-	ContentType string
-}
-
-// Error returns a formatted error message for invalid media types.
-func (e InvalidMediaTypeError) Error() string {
-	return fmt.Sprintf("invalid file type: %s. Only images allowed.", e.ContentType)
-}
-
 // FileTooLargeError indicates the uploaded file exceeds the size limit.
 type FileTooLargeError struct {
 	Size    int64
@@ -69,23 +61,29 @@ func (e FileTooLargeError) Error() string {
 	return fmt.Sprintf("file size %d exceeds maximum %d", e.Size, e.MaxSize)
 }
 
-var validMIMETypes = map[string]bool{
+var imageMIMETypes = map[string]bool{
 	"image/png":  true,
 	"image/jpeg": true,
 	"image/gif":  true,
 	"image/webp": true,
 }
 
+// IsImageMIME reports whether the given content type is an image MIME type
+// supported by the optimization pipeline.
+func IsImageMIME(contentType string) bool {
+	return imageMIMETypes[contentType]
+}
+
 // ProcessMediaUpload validates, uploads the original to S3, persists to DB, and
-// runs the optimization pipeline.
+// conditionally runs the image optimization pipeline for supported image types.
 //
 // Flow:
-//  1. Validate size and MIME type
+//  1. Validate size and detect MIME type
 //  2. Check for duplicate filename
 //  3. Write uploaded file to temp directory
 //  4. Upload original to S3 via uploadOriginal callback
 //  5. Create DB record (with URL from step 4)
-//  6. Run optimization/upload pipeline
+//  6. Run optimization/upload pipeline (images only)
 //
 // Rollback: S3 original is deleted if DB create or pipeline fails.
 // DB record is deleted if pipeline fails after DB create succeeds.
@@ -98,10 +96,11 @@ func ProcessMediaUpload(
 	uploadOriginal UploadOriginalFunc,
 	rollbackS3 RollbackS3Func,
 	pipeline UploadPipelineFunc,
+	maxUploadSize int64,
 ) (*db.Media, error) {
 	// Step 1: Validate size
-	if header.Size > MaxUploadSize {
-		return nil, FileTooLargeError{Size: header.Size, MaxSize: MaxUploadSize}
+	if header.Size > maxUploadSize {
+		return nil, FileTooLargeError{Size: header.Size, MaxSize: maxUploadSize}
 	}
 
 	// Step 1: Detect MIME type from first 512 bytes
@@ -117,9 +116,6 @@ func ProcessMediaUpload(
 	}
 
 	contentType := http.DetectContentType(buffer)
-	if !validMIMETypes[contentType] {
-		return nil, InvalidMediaTypeError{ContentType: contentType}
-	}
 
 	if contentType == "image/webp" {
 		utility.DefaultLogger.Info("WebP upload detected - WebP encoding not supported, may fail during optimization")
@@ -143,11 +139,18 @@ func ProcessMediaUpload(
 	if err != nil {
 		return nil, fmt.Errorf("create destination file: %w", err)
 	}
-	defer dst.Close()
 
-	if _, err := io.Copy(dst, file); err != nil {
-		return nil, fmt.Errorf("copy file: %w", err)
+	written, copyErr := io.Copy(dst, file)
+	if copyErr != nil {
+		dst.Close()
+		return nil, fmt.Errorf("copy file: %w", copyErr)
 	}
+
+	if err := dst.Close(); err != nil {
+		return nil, fmt.Errorf("flush temp file: %w", err)
+	}
+
+	utility.DefaultLogger.Info("temp file written", "path", dstPath, "bytes", written)
 
 	// Step 4: Upload original to S3
 	originalURL, originalKey, err := uploadOriginal(dstPath)
@@ -171,15 +174,57 @@ func ProcessMediaUpload(
 		return nil, fmt.Errorf("create media record: %w", err)
 	}
 
-	// Step 6: Run optimization/upload pipeline
-	if err := pipeline(dstPath, tmp); err != nil {
-		rollbackS3(originalKey)
-		deleteErr := store.DeleteMedia(ctx, ac, row.MediaID)
-		if deleteErr != nil {
-			utility.DefaultLogger.Error("failed to rollback media record", deleteErr)
+	// Step 6: Run optimization/upload pipeline (images only)
+	if IsImageMIME(contentType) {
+		if err := pipeline(dstPath, tmp); err != nil {
+			rollbackS3(originalKey)
+			deleteErr := store.DeleteMedia(ctx, ac, row.MediaID)
+			if deleteErr != nil {
+				utility.DefaultLogger.Error("failed to rollback media record", deleteErr)
+			}
+			return nil, fmt.Errorf("media pipeline: %w", err)
 		}
-		return nil, fmt.Errorf("media pipeline: %w", err)
 	}
 
 	return row, nil
+}
+
+// SanitizeMediaPath validates and normalizes a user-provided S3 key path prefix.
+// It strips leading/trailing slashes and rejects path traversal or invalid characters.
+// An empty input returns the default date-based path (YYYY/M).
+func SanitizeMediaPath(raw string) (string, error) {
+	trimmed := strings.Trim(raw, "/")
+	if trimmed == "" {
+		now := time.Now()
+		return fmt.Sprintf("%d/%d", now.Year(), now.Month()), nil
+	}
+
+	if strings.Contains(trimmed, "..") {
+		return "", fmt.Errorf("path traversal not allowed")
+	}
+
+	for _, ch := range trimmed {
+		switch {
+		case ch >= 'a' && ch <= 'z':
+		case ch >= 'A' && ch <= 'Z':
+		case ch >= '0' && ch <= '9':
+		case ch == '/' || ch == '-' || ch == '_' || ch == '.':
+		default:
+			return "", fmt.Errorf("invalid character in path: %c", ch)
+		}
+	}
+
+	return trimmed, nil
+}
+
+// MediaPathFromURL extracts the directory portion of an S3 key from a full media URL.
+// Given URL "https://cdn.example.com/media/products/shoes/image.jpg" and
+// prefix "https://cdn.example.com/media/", it returns "products/shoes".
+func MediaPathFromURL(fullURL string, endpointPrefix string) string {
+	key := strings.TrimPrefix(fullURL, endpointPrefix)
+	dir := filepath.Dir(key)
+	if dir == "." {
+		return ""
+	}
+	return dir
 }

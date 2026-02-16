@@ -9,25 +9,44 @@ import (
 
 // DefaultMiddlewareChain returns the standard middleware chain for the application.
 // This includes: logging, CORS, authentication, and public endpoint protection.
-func DefaultMiddlewareChain(c *config.Config) func(http.Handler) http.Handler {
+// Accepts *config.Manager for hot-reloadable config access.
+func DefaultMiddlewareChain(mgr *config.Manager) func(http.Handler) http.Handler {
+	cfg, err := mgr.Config()
+	if err != nil {
+		// Fallback: return a chain that rejects all requests.
+		return func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+			})
+		}
+	}
 	return Chain(
 		RequestIDMiddleware(),                    // 1. Request ID generation
 		HTTPLoggingMiddleware(),                  // 2. Request/response logging
-		CorsMiddleware(c),                        // 3. CORS headers
-		HTTPAuthenticationMiddleware(c),          // 4. Session authentication
-		HTTPPublicEndpointMiddleware(c),          // 5. Public endpoint protection
+		CorsMiddleware(cfg),                      // 3. CORS headers
+		HTTPAuthenticationMiddleware(cfg),        // 4. Session authentication
+		HTTPPublicEndpointMiddleware(cfg),        // 5. Public endpoint protection
 	)
 }
 
 // AuthenticatedChain returns middleware for authenticated-only endpoints.
 // Use this for endpoints that absolutely require authentication.
-func AuthenticatedChain(c *config.Config) func(http.Handler) http.Handler {
+// Accepts *config.Manager for hot-reloadable config access.
+func AuthenticatedChain(mgr *config.Manager) func(http.Handler) http.Handler {
+	cfg, err := mgr.Config()
+	if err != nil {
+		return func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Error(w, "configuration unavailable", http.StatusInternalServerError)
+			})
+		}
+	}
 	return Chain(
 		RequestIDMiddleware(),                    // 1. Request ID generation
 		HTTPLoggingMiddleware(),                  // 2. Request/response logging
-		CorsMiddleware(c),                        // 3. CORS headers
-		HTTPAuthenticationMiddleware(c),          // 4. Session authentication
-		HTTPAuthorizationMiddleware(c),           // 5. Require authentication
+		CorsMiddleware(cfg),                      // 3. CORS headers
+		HTTPAuthenticationMiddleware(cfg),        // 4. Session authentication
+		HTTPAuthorizationMiddleware(cfg),         // 5. Require authentication
 	)
 }
 

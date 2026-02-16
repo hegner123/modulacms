@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE:
 		return true
 	default:
 		return false
@@ -121,6 +121,8 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Admin Datatypes", "Fields", "Actions"
 	case ADMINCONTENT:
 		return "Admin Content", "Details", "Info"
+	case PLUGINSPAGE:
+		return "Plugins", "Details", "Info"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -183,6 +185,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = renderAdminContentList(m)
 		center = renderAdminContentDetail(m)
 		right = ""
+
+	case PLUGINSPAGE:
+		left = renderPluginsList(m)
+		center = renderPluginDetail(m)
+		right = renderPluginInfo(m)
 
 	default:
 		left = ""
@@ -367,6 +374,9 @@ func getContextControls(m Model) string {
 
 	case ADMINCONTENT:
 		return nav + " │ " + km.HintString(config.ActionDelete) + ":delete │ " + common
+
+	case PLUGINSPAGE:
+		return nav + " │ enter:view │ " + common
 
 	default:
 		return common
@@ -761,6 +771,83 @@ func renderUserPermissions(m Model) string {
 		fmt.Sprintf("  Role: %s", user.Role),
 		"",
 		fmt.Sprintf("  Users: %d", len(m.UsersList)),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderPluginsList renders the plugin list for the left panel on the PLUGINSPAGE.
+func renderPluginsList(m Model) string {
+	if len(m.PluginsList) == 0 {
+		return "(no plugins)"
+	}
+
+	lines := make([]string, 0, len(m.PluginsList))
+	for i, p := range m.PluginsList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		stateIndicator := p.State
+		if p.CBState == "open" {
+			stateIndicator = "tripped"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, p.Name, stateIndicator))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderPluginDetail renders the selected plugin details for the center panel.
+func renderPluginDetail(m Model) string {
+	if len(m.PluginsList) == 0 || m.Cursor >= len(m.PluginsList) {
+		return "No plugin selected"
+	}
+
+	p := m.PluginsList[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Name:        %s", p.Name),
+		fmt.Sprintf("Version:     %s", p.Version),
+		fmt.Sprintf("State:       %s", p.State),
+		fmt.Sprintf("Circuit:     %s", p.CBState),
+		"",
+	}
+	if p.Description != "" {
+		lines = append(lines, fmt.Sprintf("Description: %s", p.Description))
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderPluginInfo renders the plugin info summary for the right panel.
+func renderPluginInfo(m Model) string {
+	lines := []string{
+		"Plugin Manager",
+		"",
+		fmt.Sprintf("  Total: %d", len(m.PluginsList)),
+	}
+
+	// Count by state
+	running := 0
+	failed := 0
+	stopped := 0
+	for _, p := range m.PluginsList {
+		switch p.State {
+		case "running":
+			running++
+		case "failed":
+			failed++
+		case "stopped":
+			stopped++
+		}
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("  Running: %d", running))
+	if failed > 0 {
+		lines = append(lines, fmt.Sprintf("  Failed:  %d", failed))
+	}
+	if stopped > 0 {
+		lines = append(lines, fmt.Sprintf("  Stopped: %d", stopped))
 	}
 
 	return strings.Join(lines, "\n")

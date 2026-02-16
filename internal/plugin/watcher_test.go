@@ -214,7 +214,7 @@ func TestWatcher_RunCancelledByContext(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, pool, db.DialectSQLite)
+	}, pool, db.DialectSQLite, nil)
 
 	w := NewWatcher(mgr, 50*time.Millisecond)
 

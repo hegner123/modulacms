@@ -98,9 +98,9 @@ plugin_info = {
 }
 `)
 
-	info, err := extractManifest(filepath.Join(dir, "my_plugin", "init.lua"))
+	info, err := ExtractManifest(filepath.Join(dir, "my_plugin", "init.lua"))
 	if err != nil {
-		t.Fatalf("extractManifest: %s", err)
+		t.Fatalf("ExtractManifest: %s", err)
 	}
 
 	if info.Name != "my_plugin" {
@@ -127,7 +127,7 @@ func TestExtractManifest_MissingPluginInfo(t *testing.T) {
 	dir := t.TempDir()
 	writePluginFile(t, dir, "no_manifest", `local x = 1`)
 
-	_, err := extractManifest(filepath.Join(dir, "no_manifest", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "no_manifest", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for missing plugin_info, got nil")
 	}
@@ -146,7 +146,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "bad_name", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "bad_name", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for name with spaces, got nil")
 	}
@@ -165,7 +165,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "upper", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "upper", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for uppercase name, got nil")
 	}
@@ -184,7 +184,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "trailing", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "trailing", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for trailing underscore, got nil")
 	}
@@ -204,7 +204,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "toolong", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "toolong", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for name >32 chars, got nil")
 	}
@@ -222,7 +222,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "no_ver", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "no_ver", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for missing version, got nil")
 	}
@@ -240,7 +240,7 @@ plugin_info = {
 }
 `)
 
-	_, err := extractManifest(filepath.Join(dir, "no_desc", "init.lua"))
+	_, err := ExtractManifest(filepath.Join(dir, "no_desc", "init.lua"))
 	if err == nil {
 		t.Fatal("expected error for missing description, got nil")
 	}
@@ -257,7 +257,7 @@ func TestValidateManifest_ValidNameWithNumbers(t *testing.T) {
 		Version:     "1.0.0",
 		Description: "Valid name with numbers",
 	}
-	if err := validateManifest(info); err != nil {
+	if err := ValidateManifest(info); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 }
@@ -268,7 +268,7 @@ func TestValidateManifest_SingleChar(t *testing.T) {
 		Version:     "1.0.0",
 		Description: "Single char name",
 	}
-	if err := validateManifest(info); err != nil {
+	if err := ValidateManifest(info); err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 }
@@ -279,7 +279,7 @@ func TestValidateManifest_Max32Chars(t *testing.T) {
 		Version:     "1.0.0",
 		Description: "Exactly 32 chars",
 	}
-	if err := validateManifest(info); err != nil {
+	if err := ValidateManifest(info); err != nil {
 		t.Errorf("unexpected error for 32-char name: %s", err)
 	}
 }
@@ -402,7 +402,7 @@ func TestNewManager_Defaults(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{}, conn, db.DialectSQLite)
+	mgr := NewManager(ManagerConfig{}, conn, db.DialectSQLite, nil)
 
 	if mgr.cfg.MaxVMsPerPlugin != 4 {
 		t.Errorf("MaxVMsPerPlugin = %d, want 4", mgr.cfg.MaxVMsPerPlugin)
@@ -423,7 +423,7 @@ func TestNewManager_CustomConfig(t *testing.T) {
 		MaxVMsPerPlugin: 8,
 		ExecTimeoutSec:  10,
 		MaxOpsPerExec:   500,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	if mgr.cfg.MaxVMsPerPlugin != 8 {
 		t.Errorf("MaxVMsPerPlugin = %d, want 8", mgr.cfg.MaxVMsPerPlugin)
@@ -449,7 +449,7 @@ func TestLoadAll_EmptyDirectory(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -466,7 +466,7 @@ func TestLoadAll_DirectoryNotConfigured(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{}, conn, db.DialectSQLite)
+	mgr := NewManager(ManagerConfig{}, conn, db.DialectSQLite, nil)
 	err := mgr.LoadAll(context.Background())
 	if err == nil {
 		t.Fatal("expected error for empty directory config, got nil")
@@ -500,7 +500,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -539,7 +539,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -591,7 +591,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -640,7 +640,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -687,7 +687,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -731,7 +731,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -768,7 +768,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	// Topological sort should fail because "nonexistent" is not discovered.
 	err := mgr.LoadAll(context.Background())
@@ -808,7 +808,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err == nil {
@@ -858,7 +858,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -910,7 +910,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -967,7 +967,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1005,7 +1005,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1051,7 +1051,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1100,7 +1100,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	if err := mgr.LoadAll(context.Background()); err != nil {
 		t.Fatalf("LoadAll: %s", err)
@@ -1122,7 +1122,7 @@ func TestGetPlugin_NotFound(t *testing.T) {
 	mgr := NewManager(ManagerConfig{
 		Enabled:   true,
 		Directory: t.TempDir(),
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	if err := mgr.LoadAll(context.Background()); err != nil {
 		t.Fatalf("LoadAll: %s", err)
@@ -1162,7 +1162,7 @@ plugin_info = {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	if err := mgr.LoadAll(context.Background()); err != nil {
 		t.Fatalf("LoadAll: %s", err)
@@ -1210,7 +1210,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  1, // 1 second timeout for faster test
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	start := time.Now()
 	err := mgr.LoadAll(context.Background())
@@ -1273,7 +1273,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	// Load.
 	err := mgr.LoadAll(context.Background())
@@ -1338,7 +1338,7 @@ end
 		MaxVMsPerPlugin: 1,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {

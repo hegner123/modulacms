@@ -41,6 +41,9 @@ const (
 	ADMINROUTES
 	ADMINDATATYPES
 	ADMINCONTENT
+	PLUGINSPAGE
+	PLUGINDETAILPAGE
+	CONFIGCATEGORYPAGE
 )
 
 // NewDatatypePage creates a new datatype page with the specified label.
@@ -103,6 +106,9 @@ func InitPages() *map[PageIndex]Page {
 	adminRoutesPage := NewPage(ADMINROUTES, "Admin Routes")
 	adminDatatypesPage := NewPage(ADMINDATATYPES, "Admin Datatypes")
 	adminContentPage := NewPage(ADMINCONTENT, "Admin Content")
+	pluginsPage := NewPage(PLUGINSPAGE, "Plugins")
+	pluginDetailPage := NewPage(PLUGINDETAILPAGE, "Plugin Detail")
+	configCategoryPage := NewPage(CONFIGCATEGORYPAGE, "Config Category")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -134,5 +140,8 @@ func InitPages() *map[PageIndex]Page {
 	p[ADMINROUTES] = adminRoutesPage
 	p[ADMINDATATYPES] = adminDatatypesPage
 	p[ADMINCONTENT] = adminContentPage
+	p[PLUGINSPAGE] = pluginsPage
+	p[PLUGINDETAILPAGE] = pluginDetailPage
+	p[CONFIGCATEGORYPAGE] = configCategoryPage
 	return &p
 }

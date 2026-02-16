@@ -45,7 +45,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -126,7 +126,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -187,7 +187,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -267,7 +267,7 @@ end
 		MaxVMsPerPlugin: 4,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -345,7 +345,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -398,7 +398,7 @@ end
 		ExecTimeoutSec:           5,
 		MaxOpsPerExec:            100,
 		HookMaxConsecutiveAborts: threshold,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -474,7 +474,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -554,7 +554,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -646,7 +646,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -728,7 +728,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	// First load: both plugins register hooks.
 	err := mgr.LoadAll(context.Background())
@@ -793,7 +793,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn2, db.DialectSQLite)
+	}, conn2, db.DialectSQLite, nil)
 
 	err = mgr2.LoadAll(context.Background())
 	if err != nil {
@@ -844,7 +844,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -897,7 +897,7 @@ end
 		MaxVMsPerPlugin: 4,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -962,7 +962,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1039,7 +1039,7 @@ end
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {
@@ -1092,7 +1092,7 @@ func TestHookIntegration_HookEngineWithTestdataFixtures(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	err := mgr.LoadAll(context.Background())
 	if err != nil {

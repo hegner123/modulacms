@@ -22,7 +22,7 @@ func newTestHookEngine(t *testing.T) (*HookEngine, *Manager, *sql.DB) {
 		MaxVMsPerPlugin: 4,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	engine := mgr.HookEngine()
 	return engine, mgr, conn

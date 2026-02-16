@@ -1002,6 +1002,13 @@ func (b *HTTPBridge) MountAdminEndpoints(
 	mux.Handle("POST /api/v1/admin/plugins/cleanup",
 		authChain(adminOnlyFn(PluginCleanupDropHandler(mgr))))
 
+	mux.Handle("GET /api/v1/admin/plugins/hooks",
+		authChain(PluginHooksListHandler(mgr)))
+	mux.Handle("POST /api/v1/admin/plugins/hooks/approve",
+		authChain(adminOnlyFn(PluginHooksApproveHandler(mgr))))
+	mux.Handle("POST /api/v1/admin/plugins/hooks/revoke",
+		authChain(adminOnlyFn(PluginHooksRevokeHandler(mgr))))
+
 	// 2. Register wildcard {name} endpoints:
 	mux.Handle("GET /api/v1/admin/plugins/{name}",
 		authChain(PluginInfoHandler(mgr)))

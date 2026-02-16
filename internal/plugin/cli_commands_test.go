@@ -34,7 +34,7 @@ func newTestManager(t *testing.T) (*Manager, func()) {
 		MaxOpsPerExec:   100,
 		MaxFailures:     3,
 		ResetInterval:   60 * time.Second,
-	}, pool, db.DialectSQLite)
+	}, pool, db.DialectSQLite, nil)
 
 	cleanup := func() {
 		mgr.Shutdown(context.Background())
@@ -366,7 +366,7 @@ func TestPluginCleanupDrop_DropsOrphanedTable(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, pool, db.DialectSQLite)
+	}, pool, db.DialectSQLite, nil)
 	defer mgr.Shutdown(context.Background())
 
 	// Create an orphaned table (no plugin claims it).

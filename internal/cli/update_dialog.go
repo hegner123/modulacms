@@ -313,6 +313,54 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowConfigFieldEditMsg:
+		// Create a simple form dialog for editing a config field value
+		labelInput := textinput.New()
+		labelInput.Placeholder = "Value"
+		labelInput.CharLimit = 512
+		labelInput.Width = 50
+		labelInput.SetValue(msg.CurrentValue)
+		labelInput.Focus()
+
+		dialog := FormDialogModel{
+			dialogStyles: newDialogStyles(),
+			Title:        fmt.Sprintf("Edit: %s", msg.Field.Label),
+			Width:        60,
+			Action:       FORMDIALOGCONFIGEDIT,
+			EntityID:     msg.Field.JSONKey,
+			LabelInput:   labelInput,
+			TypeInput:    textinput.New(),
+			focusIndex:   FormDialogFieldLabel,
+		}
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowApproveAllRoutesDialogMsg:
+		// Show confirmation dialog listing pending routes before approving
+		routeList := strings.Join(msg.PendingRoutes, "\n  ")
+		dialogMsg := fmt.Sprintf("Approve %d routes for plugin '%s'?\n\n  %s", len(msg.PendingRoutes), msg.PluginName, routeList)
+		dialog := NewDialog("Approve Plugin Routes", dialogMsg, true, DIALOGAPPROVEPLUGINROUTES)
+		dialog.SetButtons("Approve", "Cancel")
+		approvePluginRoutesContext = &ApprovePluginContext{PluginName: msg.PluginName}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowApproveAllHooksDialogMsg:
+		// Show confirmation dialog listing pending hooks before approving
+		hookList := strings.Join(msg.PendingHooks, "\n  ")
+		dialogMsg := fmt.Sprintf("Approve %d hooks for plugin '%s'?\n\n  %s", len(msg.PendingHooks), msg.PluginName, hookList)
+		dialog := NewDialog("Approve Plugin Hooks", dialogMsg, true, DIALOGAPPROVEPLUGINSHOOKS)
+		dialog.SetButtons("Approve", "Cancel")
+		approvePluginHooksContext = &ApprovePluginContext{PluginName: msg.PluginName}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case ShowDeleteAdminRouteDialogMsg:
 		dialog := NewDialog("Delete Admin Route", fmt.Sprintf("Delete admin route '%s'?\nThis cannot be undone.", msg.Title), true, DIALOGDELETEADMINROUTE)
 		dialog.SetButtons("Delete", "Cancel")
@@ -614,6 +662,40 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 							}
 						}
 						return BackupRestoreCompleteMsg{Path: backupPath}
+					},
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGAPPROVEPLUGINROUTES:
+			if approvePluginRoutesContext != nil {
+				pluginName := approvePluginRoutesContext.PluginName
+				approvePluginRoutesContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return PluginApproveAllRoutesRequestMsg{Name: pluginName}
+					},
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGAPPROVEPLUGINSHOOKS:
+			if approvePluginHooksContext != nil {
+				pluginName := approvePluginHooksContext.PluginName
+				approvePluginHooksContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return PluginApproveAllHooksRequestMsg{Name: pluginName}
 					},
 				)
 			}
@@ -981,6 +1063,18 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				LoadingStartCmd(),
 				UpdateAdminFieldFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
 			)
+		case FORMDIALOGCONFIGEDIT:
+			// EntityID holds the JSON key, Label holds the new value
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				func() tea.Msg {
+					return ConfigFieldUpdateMsg{
+						Key:   msg.EntityID,
+						Value: msg.Label,
+					}
+				},
+			)
 		default:
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
@@ -1303,6 +1397,62 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			StatusSetCmd(OK),
 		)
 
+	case ConfigFieldUpdateMsg:
+		// Apply config field update via the config manager
+		if m.ConfigManager == nil {
+			dialog := NewDialog("Error", "Config manager is not available.", false, DIALOGGENERIC)
+			return m, tea.Batch(
+				DialogSetCmd(&dialog),
+				DialogActiveSetCmd(true),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		key := msg.Key
+		value := msg.Value
+		return m, func() tea.Msg {
+			updates := map[string]any{key: value}
+			result, err := m.ConfigManager.Update(updates)
+			if err != nil {
+				return ConfigUpdateResultMsg{Err: err}
+			}
+			if !result.Valid {
+				return ConfigUpdateResultMsg{
+					Err: fmt.Errorf("validation failed: %s", strings.Join(result.Errors, "; ")),
+				}
+			}
+			return ConfigUpdateResultMsg{RestartRequired: result.RestartRequired}
+		}
+	case ConfigUpdateResultMsg:
+		// Refresh the config snapshot on the model
+		if m.ConfigManager != nil {
+			snapshot, snapErr := m.ConfigManager.Snapshot()
+			if snapErr == nil {
+				m.Config = &snapshot
+			}
+		}
+		if msg.Err != nil {
+			dialog := NewDialog("Config Update Failed", msg.Err.Error(), false, DIALOGGENERIC)
+			return m, tea.Batch(
+				DialogSetCmd(&dialog),
+				DialogActiveSetCmd(true),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		if len(msg.RestartRequired) > 0 {
+			fields := strings.Join(msg.RestartRequired, ", ")
+			dialog := NewDialog("Config Updated", fmt.Sprintf("Config saved. The following fields require a restart to take effect:\n\n%s", fields), false, DIALOGGENERIC)
+			return m, tea.Batch(
+				DialogSetCmd(&dialog),
+				DialogActiveSetCmd(true),
+				FocusSetCmd(DIALOGFOCUS),
+			)
+		}
+		dialog := NewDialog("Config Updated", "Config saved successfully.", false, DIALOGGENERIC)
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	default:
 		return m, nil
 	}
@@ -2165,6 +2315,19 @@ var restoreRequiresQuit bool
 
 // Global variable to store delete context for content deletion.
 var deleteContentContext *DeleteContentContext
+
+// =============================================================================
+// APPROVE PLUGIN ROUTES / HOOKS
+// =============================================================================
+
+// ApprovePluginContext stores context for a plugin approval confirmation dialog.
+type ApprovePluginContext struct {
+	PluginName string
+}
+
+// Global variables to store context for plugin approval dialogs.
+var approvePluginRoutesContext *ApprovePluginContext
+var approvePluginHooksContext *ApprovePluginContext
 
 // Global variable to store delete content field context.
 var deleteContentFieldContext *DeleteContentFieldContext

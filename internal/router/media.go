@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -97,7 +96,7 @@ func apiListMedia(w http.ResponseWriter, c config.Config) error {
 // Accepts multipart form with a "file" field. Delegates validation, S3 upload,
 // DB creation, and optimization pipeline to media.ProcessMediaUpload.
 func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) {
-	err := r.ParseMultipartForm(media.MaxUploadSize)
+	err := r.ParseMultipartForm(c.MaxUploadSize())
 	if err != nil {
 		utility.DefaultLogger.Error("parse form", err)
 		http.Error(w, "File too large or invalid multipart form", http.StatusBadRequest)
@@ -131,12 +130,19 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return
 	}
 
+	// Read optional path parameter for S3 key organization
+	mediaPath, pathErr := media.SanitizeMediaPath(r.PostFormValue("path"))
+	if pathErr != nil {
+		utility.DefaultLogger.Error("invalid media path", pathErr)
+		http.Error(w, pathErr.Error(), http.StatusBadRequest)
+		return
+	}
+
 	acl := c.Bucket_Default_ACL
 	if acl == "" {
 		acl = "public-read"
 	}
 
-	now := time.Now()
 	bucketDir := c.Bucket_Media
 
 	uploadOriginal := func(filePath string) (string, string, error) {
@@ -147,8 +153,8 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) {
 		defer f.Close()
 
 		filename := filepath.Base(filePath)
-		s3Key := fmt.Sprintf("%s/%d/%d/%s", bucketDir, now.Year(), now.Month(), filename)
-		uploadURL := fmt.Sprintf("%s/%s", c.BucketEndpointURL(), s3Key)
+		s3Key := fmt.Sprintf("%s/%s", mediaPath, filename)
+		uploadURL := fmt.Sprintf("%s/%s/%s", c.BucketPublicURL(), bucketDir, s3Key)
 
 		prep, err := bucket.UploadPrep(s3Key, c.Bucket_Media, f, acl)
 		if err != nil {
@@ -179,19 +185,15 @@ func apiCreateMedia(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return media.HandleMediaUpload(srcFile, dstPath, c)
 	}
 
-	row, err := media.ProcessMediaUpload(r.Context(), ac, file, header, d, uploadOriginal, rollbackS3, pipeline)
+	row, err := media.ProcessMediaUpload(r.Context(), ac, file, header, d, uploadOriginal, rollbackS3, pipeline, c.MaxUploadSize())
 	if err != nil {
 		var dupErr media.DuplicateMediaError
-		var mimeErr media.InvalidMediaTypeError
 		var sizeErr media.FileTooLargeError
 
 		switch {
 		case errors.As(err, &dupErr):
 			utility.DefaultLogger.Error("duplicate media", err)
 			http.Error(w, err.Error(), http.StatusConflict)
-		case errors.As(err, &mimeErr):
-			utility.DefaultLogger.Error("invalid content type", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
 		case errors.As(err, &sizeErr):
 			utility.DefaultLogger.Error("file too large", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -255,7 +257,9 @@ func apiDeleteMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 	}
 
 	// Collect all S3 keys: original URL + srcset variants
-	endpointPrefix := c.BucketEndpointURL() + "/"
+	// URL format: {BucketPublicURL}/{Bucket_Media}/{year}/{month}/{file}
+	// S3 key format: {year}/{month}/{file} (bucket name is separate)
+	endpointPrefix := c.BucketPublicURL() + "/" + c.Bucket_Media + "/"
 	var s3Keys []string
 
 	if string(record.URL) != "" {
@@ -330,7 +334,7 @@ func findOrphanedMediaKeys(d db.DbDriver, s3Session *s3.S3, c config.Config) (*m
 		return nil, fmt.Errorf("list media: %w", err)
 	}
 
-	endpointPrefix := c.BucketEndpointURL() + "/"
+	endpointPrefix := c.BucketPublicURL() + "/" + c.Bucket_Media + "/"
 	knownKeys := make(map[string]bool)
 
 	for _, m := range *mediaList {

@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeAll, afterAll, beforeEach, afterEach } from "vitest";
 import http from "node:http";
 import type { AddressInfo } from "node:net";
-import { createMediaUploadResource } from "./media-upload.js";
+import { createMediaUploadResource, isInvalidMediaPath } from "./media-upload.js";
 import type { MediaUploadResource } from "./media-upload.js";
 import { createHttpClient } from "../http.js";
 import type { HttpClient } from "../http.js";
@@ -34,9 +34,10 @@ const fakeMedia: Media = {
 // Multipart body parser -- extracts filename and file size from raw body
 // ---------------------------------------------------------------------------
 
-function parseMultipartInfo(raw: Buffer): { fileName: string | null; fileSize: number | null } {
+function parseMultipartInfo(raw: Buffer): { fileName: string | null; fileSize: number | null; pathValue: string | null } {
   const text = raw.toString("utf-8");
   let fileName: string | null = null;
+  let pathValue: string | null = null;
   const fnMarker = 'filename="';
   const fnIdx = text.indexOf(fnMarker);
   if (fnIdx !== -1) {
@@ -44,6 +45,21 @@ function parseMultipartInfo(raw: Buffer): { fileName: string | null; fileSize: n
     const end = text.indexOf('"', start);
     if (end !== -1) {
       fileName = text.substring(start, end);
+    }
+  }
+
+  // Extract "path" form field value
+  const pathMarker = 'name="path"';
+  const pathIdx = text.indexOf(pathMarker);
+  if (pathIdx !== -1) {
+    const headerEnd = text.indexOf("\r\n\r\n", pathIdx);
+    if (headerEnd !== -1) {
+      const contentStart = headerEnd + 4;
+      const boundaryLine = text.substring(0, text.indexOf("\r\n"));
+      const nextBoundary = text.indexOf(boundaryLine, contentStart);
+      if (nextBoundary !== -1) {
+        pathValue = text.substring(contentStart, nextBoundary - 2);
+      }
     }
   }
 
@@ -59,11 +75,11 @@ function parseMultipartInfo(raw: Buffer): { fileName: string | null; fileSize: n
       if (nextBoundary !== -1) {
         // Content is between headerEnd+4 and nextBoundary, minus trailing \r\n
         const content = text.substring(contentStart, nextBoundary - 2);
-        return { fileName, fileSize: Buffer.byteLength(content, "utf-8") };
+        return { fileName, fileSize: Buffer.byteLength(content, "utf-8"), pathValue };
       }
     }
   }
-  return { fileName, fileSize: null };
+  return { fileName, fileSize: null, pathValue };
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +96,7 @@ let lastRequest: {
   headers: Record<string, string>;
   formFileName: string | null;
   formFileSize: number | null;
+  formPathValue: string | null;
   contentType: string | null;
 } | null = null;
 
@@ -101,10 +118,12 @@ beforeAll(async () => {
     // Parse multipart form data to capture file info
     let formFileName: string | null = null;
     let formFileSize: number | null = null;
+    let formPathValue: string | null = null;
     if (req.method === "POST" && rawBody.length > 0) {
       const parsed = parseMultipartInfo(rawBody);
       formFileName = parsed.fileName;
       formFileSize = parsed.fileSize;
+      formPathValue = parsed.pathValue;
     }
 
     lastRequest = {
@@ -113,11 +132,12 @@ beforeAll(async () => {
       headers,
       formFileName,
       formFileSize,
+      formPathValue,
       contentType: req.headers["content-type"] ?? null,
     };
 
-    // -- Upload success: POST /api/v1/mediaupload/ --
-    if (path === "/api/v1/mediaupload/" && req.method === "POST") {
+    // -- Upload success: POST /api/v1/media --
+    if (path === "/api/v1/media" && req.method === "POST") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(fakeMedia));
       return;
@@ -259,13 +279,13 @@ describe("createMediaUploadResource", () => {
       expect(result).toEqual(fakeMedia);
     });
 
-    test("sends POST method to /mediaupload/", async () => {
+    test("sends POST method to /media", async () => {
       const resource = makeUploadResource();
       const file = createTestFile("doc.pdf", "pdf-data", "application/pdf");
       await resource.upload(file);
       expect(lastRequest).not.toBeNull();
       expect(lastRequest!.method).toBe("POST");
-      expect(lastRequest!.path).toBe("/api/v1/mediaupload/");
+      expect(lastRequest!.path).toBe("/api/v1/media");
     });
 
     test("sends file as multipart form data with field name 'file'", async () => {
@@ -338,7 +358,7 @@ describe("createMediaUploadResource", () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(413, "Payload Too Large", { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "payload_too_large", detail: "file exceeds 10MB limit" }));
           return;
@@ -372,11 +392,11 @@ describe("createMediaUploadResource", () => {
       }
     });
 
-    test("throws ApiError with undefined body on non-ok non-JSON response", async () => {
+    test("throws ApiError with text body on non-ok non-JSON response", async () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(500, "Internal Server Error", { "Content-Type": "text/plain" });
           res.end("Internal Server Error");
           return;
@@ -403,7 +423,7 @@ describe("createMediaUploadResource", () => {
           expect(apiErr._tag).toBe("ApiError");
           expect(apiErr.status).toBe(500);
           expect(apiErr.message).toBe("Internal Server Error");
-          expect(apiErr.body).toBeUndefined();
+          expect(apiErr.body).toBe("Internal Server Error");
         }
       } finally {
         await closeServer(errorServer);
@@ -414,7 +434,7 @@ describe("createMediaUploadResource", () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(401, "Unauthorized", { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "unauthorized", detail: "invalid api key" }));
           return;
@@ -448,11 +468,11 @@ describe("createMediaUploadResource", () => {
       }
     });
 
-    test("throws ApiError with undefined body when content-type is null (no header)", async () => {
+    test("throws ApiError with text body when content-type is null (no header)", async () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           // No content-type header explicitly set
           res.writeHead(400, "Bad Request");
           res.end("bad");
@@ -479,9 +499,9 @@ describe("createMediaUploadResource", () => {
           const apiErr = err as ApiError;
           expect(apiErr._tag).toBe("ApiError");
           expect(apiErr.status).toBe(400);
-          expect(apiErr.message).toBe("Bad Request");
-          // content-type is not application/json, so body should be undefined
-          expect(apiErr.body).toBeUndefined();
+          // text body replaces statusText as message
+          expect(apiErr.message).toBe("bad");
+          expect(apiErr.body).toBe("bad");
         }
       } finally {
         await closeServer(errorServer);
@@ -505,7 +525,7 @@ describe("createMediaUploadResource", () => {
       const { server: slowServer, port: slowPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           setTimeout(() => {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify(fakeMedia));
@@ -584,7 +604,7 @@ describe("createMediaUploadResource", () => {
       const { server: slowServer, port: slowPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           const timer = setTimeout(() => {
             if (!res.destroyed) {
               res.writeHead(200, { "Content-Type": "application/json" });
@@ -639,7 +659,7 @@ describe("createMediaUploadResource", () => {
       const { server: slowServer, port: slowPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           const timer = setTimeout(() => {
             if (!res.destroyed) {
               res.writeHead(200, { "Content-Type": "application/json" });
@@ -684,7 +704,7 @@ describe("createMediaUploadResource", () => {
       const { server: slowServer, port: slowPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           const timer = setTimeout(() => {
             if (!res.destroyed) {
               res.writeHead(200, { "Content-Type": "application/json" });
@@ -822,6 +842,102 @@ describe("createMediaUploadResource", () => {
   });
 
   // -------------------------------------------------------------------------
+  // Path parameter
+  // -------------------------------------------------------------------------
+
+  describe("path parameter", () => {
+    test("sends path form field when opts.path is provided", async () => {
+      const resource = makeUploadResource();
+      const file = createTestFile("shoe.png", "png-data", "image/png");
+      await resource.upload(file, { path: "products/shoes" });
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBe("products/shoes");
+    });
+
+    test("does not send path form field when opts.path is omitted", async () => {
+      const resource = makeUploadResource();
+      const file = createTestFile("test.png", "data", "image/png");
+      await resource.upload(file);
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBeNull();
+    });
+
+    test("does not send path form field when opts is undefined", async () => {
+      const resource = makeUploadResource();
+      const file = createTestFile("test.png", "data", "image/png");
+      await resource.upload(file, undefined);
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBeNull();
+    });
+
+    test("sends empty string path when opts.path is empty string", async () => {
+      const resource = makeUploadResource();
+      const file = createTestFile("test.png", "data", "image/png");
+      await resource.upload(file, { path: "" });
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBe("");
+    });
+
+    test("sends nested path with multiple segments", async () => {
+      const resource = makeUploadResource();
+      const file = createTestFile("hero.jpg", "jpeg-data", "image/jpeg");
+      await resource.upload(file, { path: "blog/2026/headers" });
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBe("blog/2026/headers");
+    });
+
+    test("path and signal can be used together", async () => {
+      const resource = makeUploadResource();
+      const controller = new AbortController();
+      const file = createTestFile("test.png", "data", "image/png");
+      const result = await resource.upload(file, { path: "assets", signal: controller.signal });
+      expect(result).toEqual(fakeMedia);
+      expect(lastRequest).not.toBeNull();
+      expect(lastRequest!.formPathValue).toBe("assets");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // isInvalidMediaPath error helper
+  // -------------------------------------------------------------------------
+
+  describe("isInvalidMediaPath", () => {
+    test("returns true for path traversal error", () => {
+      const err: ApiError = {
+        _tag: "ApiError" as const,
+        status: 400,
+        message: "path traversal not allowed",
+        body: "path traversal not allowed",
+      };
+      expect(isInvalidMediaPath(err)).toBe(true);
+    });
+
+    test("returns true for invalid character error", () => {
+      const err: ApiError = {
+        _tag: "ApiError" as const,
+        status: 400,
+        message: "invalid character in path: @",
+        body: "invalid character in path: @",
+      };
+      expect(isInvalidMediaPath(err)).toBe(true);
+    });
+
+    test("returns false for unrelated 400 error", () => {
+      const err: ApiError = {
+        _tag: "ApiError" as const,
+        status: 400,
+        message: "file too large",
+        body: undefined,
+      };
+      expect(isInvalidMediaPath(err)).toBe(false);
+    });
+
+    test("returns false for non-ApiError", () => {
+      expect(isInvalidMediaPath(new Error("random"))).toBe(false);
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // ApiError shape validation
   // -------------------------------------------------------------------------
 
@@ -830,7 +946,7 @@ describe("createMediaUploadResource", () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(422, "Unprocessable Entity", { "Content-Type": "application/json" });
           res.end(JSON.stringify({ code: "VALIDATION_ERROR" }));
           return;
@@ -910,7 +1026,7 @@ describe("createMediaUploadResource", () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(400, "Bad Request", { "Content-Type": "application/json; charset=utf-8" });
           res.end(JSON.stringify({ detail: "charset variant" }));
           return;
@@ -944,11 +1060,11 @@ describe("createMediaUploadResource", () => {
       }
     });
 
-    test("treats text/html content-type as non-JSON (body is undefined)", async () => {
+    test("treats text/html content-type as non-JSON (text body captured)", async () => {
       const { server: errorServer, port: errorPort } = await createInlineServer(async (req, res) => {
         const chunks: Buffer[] = [];
         for await (const chunk of req) chunks.push(Buffer.from(chunk));
-        if (req.url === "/api/v1/mediaupload/" && req.method === "POST") {
+        if (req.url === "/api/v1/media" && req.method === "POST") {
           res.writeHead(502, "Bad Gateway", { "Content-Type": "text/html" });
           res.end("<html>error</html>");
           return;
@@ -974,8 +1090,9 @@ describe("createMediaUploadResource", () => {
           const apiErr = err as ApiError;
           expect(apiErr._tag).toBe("ApiError");
           expect(apiErr.status).toBe(502);
-          expect(apiErr.message).toBe("Bad Gateway");
-          expect(apiErr.body).toBeUndefined();
+          // text body replaces statusText as message
+          expect(apiErr.message).toBe("<html>error</html>");
+          expect(apiErr.body).toBe("<html>error</html>");
         }
       } finally {
         await closeServer(errorServer);

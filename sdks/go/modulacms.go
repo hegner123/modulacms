@@ -56,6 +56,14 @@ type Client struct {
 	Sessions     *SessionsResource
 	Import       *ImportResource
 	ContentBatch *ContentBatchResource
+
+	// Plugin resources
+	Plugins      *PluginsResource
+	PluginRoutes *PluginRoutesResource
+	PluginHooks  *PluginHooksResource
+
+	// Config resource
+	Config *ConfigResource
 }
 
 // NewClient creates a new ModulaCMS API client.
@@ -111,6 +119,14 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Sessions:     &SessionsResource{http: h},
 		Import:       &ImportResource{http: h},
 		ContentBatch: &ContentBatchResource{http: h},
+
+		// Plugin
+		Plugins:      &PluginsResource{http: h},
+		PluginRoutes: &PluginRoutesResource{http: h},
+		PluginHooks:  &PluginHooksResource{http: h},
+
+		// Config
+		Config: &ConfigResource{http: h},
 	}, nil
 }
 

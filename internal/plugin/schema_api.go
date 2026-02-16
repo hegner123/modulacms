@@ -40,8 +40,11 @@ func tablePrefix(pluginName string) string {
 // id/created_at/updated_at columns, validates FK namespace isolation, and executes
 // DDLCreateTable with IfNotExists: true.
 //
+// tableReg may be nil; when non-nil, the table is registered in the CMS tables registry
+// after successful DDL. Registration failure is logged but does not fail the define_table call.
+//
 // The context for DDL calls comes from L.Context() so that execution timeouts apply.
-func luaDefineTable(L *lua.LState, pluginName string, exec db.Executor, dialect db.Dialect) lua.LGFunction {
+func luaDefineTable(L *lua.LState, pluginName string, exec db.Executor, dialect db.Dialect, tableReg TableRegistrar) lua.LGFunction {
 	prefix := tablePrefix(pluginName)
 
 	return func(L *lua.LState) int {
@@ -145,6 +148,18 @@ func luaDefineTable(L *lua.LState, pluginName string, exec db.Executor, dialect 
 		if err := db.DDLCreateTable(ctx, exec, dialect, params); err != nil {
 			L.RaiseError("define_table %q: %s", tableName, err.Error())
 			return 0
+		}
+
+		// Register the plugin-defined table in the CMS tables registry.
+		// Failure is advisory — the DDL succeeded, so the table exists.
+		if tableReg != nil {
+			if regErr := tableReg.RegisterTable(ctx, fullName); regErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("plugin %q: failed to register table %q in tables registry: %s",
+						pluginName, fullName, regErr.Error()),
+					nil,
+				)
+			}
 		}
 
 		// Phase 4: Schema drift detection (Known Gap #9).

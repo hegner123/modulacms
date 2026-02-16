@@ -248,13 +248,13 @@ func TestOptimizeUpload_PNG_SingleDimension(t *testing.T) {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
 
-	// original + 1 variant
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d: %v", len(*files), *files)
+	// 1 variant (original uploaded separately)
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d: %v", len(*files), *files)
 	}
 
 	// Check variant filename contains dimension
-	variant := (*files)[1]
+	variant := (*files)[0]
 	if !strings.Contains(filepath.Base(variant), "100x100") {
 		t.Errorf("variant filename %q should contain '100x100'", filepath.Base(variant))
 	}
@@ -290,12 +290,12 @@ func TestOptimizeUpload_JPEG(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 
 	// Verify variant is a valid JPEG
-	f, err := os.Open((*files)[1])
+	f, err := os.Open((*files)[0])
 	if err != nil {
 		t.Fatalf("open variant: %v", err)
 	}
@@ -321,8 +321,8 @@ func TestOptimizeUpload_GIF(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 }
 
@@ -345,9 +345,9 @@ func TestOptimizeUpload_MultipleDimensions(t *testing.T) {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
 
-	// original + 3 variants
-	if len(*files) != 4 {
-		t.Fatalf("expected 4 files, got %d: %v", len(*files), *files)
+	// 3 variants (original uploaded separately)
+	if len(*files) != 3 {
+		t.Fatalf("expected 3 files, got %d: %v", len(*files), *files)
 	}
 }
 
@@ -371,12 +371,12 @@ func TestOptimizeUpload_SkipsUpscaling(t *testing.T) {
 	}
 
 	// original + 1 variant (the 100x100 should be skipped)
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files (skipping upscale), got %d: %v", len(*files), *files)
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file (skipping upscale), got %d: %v", len(*files), *files)
 	}
 
-	if !strings.Contains(filepath.Base((*files)[1]), "25x25") {
-		t.Errorf("expected 25x25 variant, got %q", filepath.Base((*files)[1]))
+	if !strings.Contains(filepath.Base((*files)[0]), "25x25") {
+		t.Errorf("expected 25x25 variant, got %q", filepath.Base((*files)[0]))
 	}
 }
 
@@ -395,9 +395,9 @@ func TestOptimizeUpload_NoDimensions(t *testing.T) {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
 
-	// Only the original copy
-	if len(*files) != 1 {
-		t.Fatalf("expected 1 file (original only), got %d", len(*files))
+	// No variants when no dimensions configured
+	if len(*files) != 0 {
+		t.Fatalf("expected 0 files (no dimensions), got %d", len(*files))
 	}
 }
 
@@ -422,9 +422,9 @@ func TestOptimizeUpload_SkipsInvalidDimensions(t *testing.T) {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
 
-	// original + 1 valid variant
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files (skipping invalid dims), got %d: %v", len(*files), *files)
+	// 1 valid variant (original uploaded separately)
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file (skipping invalid dims), got %d: %v", len(*files), *files)
 	}
 }
 
@@ -501,7 +501,7 @@ func TestOptimizeUpload_NilDimensions(t *testing.T) {
 	}
 }
 
-func TestOptimizeUpload_OriginalCopied(t *testing.T) {
+func TestOptimizeUpload_OriginalNotIncluded(t *testing.T) {
 	t.Parallel()
 
 	srcDir := t.TempDir()
@@ -516,18 +516,9 @@ func TestOptimizeUpload_OriginalCopied(t *testing.T) {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
 
-	// The original should be copied into dstDir
-	originalDst := filepath.Join(dstDir, "original.png")
-	if (*files)[0] != originalDst {
-		t.Errorf("first file = %q, want %q", (*files)[0], originalDst)
-	}
-
-	info, err := os.Stat(originalDst)
-	if err != nil {
-		t.Fatalf("stat original copy: %v", err)
-	}
-	if info.Size() == 0 {
-		t.Error("original copy has zero size")
+	// Original is uploaded separately — OptimizeUpload only returns variants
+	if len(*files) != 0 {
+		t.Errorf("expected 0 files (no dimensions), got %d: %v", len(*files), *files)
 	}
 }
 
@@ -618,12 +609,12 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 			if err != nil {
 				t.Fatalf("OptimizeUpload: %v", err)
 			}
-			if len(*files) != 2 {
-				t.Fatalf("expected 2 files, got %d", len(*files))
+			if len(*files) != 1 {
+				t.Fatalf("expected 1 file, got %d", len(*files))
 			}
 
 			// Decode the cropped variant
-			vf, err := os.Open((*files)[1])
+			vf, err := os.Open((*files)[0])
 			if err != nil {
 				t.Fatalf("open variant: %v", err)
 			}
@@ -703,11 +694,11 @@ func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 
-	vf, err := os.Open((*files)[1])
+	vf, err := os.Open((*files)[0])
 	if err != nil {
 		t.Fatalf("open variant: %v", err)
 	}
@@ -897,11 +888,11 @@ func TestOptimizeUpload_FocalPointTopLeft(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 
-	vf, err := os.Open((*files)[1])
+	vf, err := os.Open((*files)[0])
 	if err != nil {
 		t.Fatalf("open variant: %v", err)
 	}
@@ -940,11 +931,11 @@ func TestOptimizeUpload_FocalPointBottomRight(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 
-	vf, err := os.Open((*files)[1])
+	vf, err := os.Open((*files)[0])
 	if err != nil {
 		t.Fatalf("open variant: %v", err)
 	}
@@ -982,12 +973,12 @@ func TestOptimizeUpload_FocalPointEdgeClamping(t *testing.T) {
 	if err != nil {
 		t.Fatalf("OptimizeUpload: %v", err)
 	}
-	if len(*files) != 2 {
-		t.Fatalf("expected 2 files, got %d", len(*files))
+	if len(*files) != 1 {
+		t.Fatalf("expected 1 file, got %d", len(*files))
 	}
 
 	// Verify the output is the correct size (proves the crop window wasn't shrunk)
-	vf, err := os.Open((*files)[1])
+	vf, err := os.Open((*files)[0])
 	if err != nil {
 		t.Fatalf("open variant: %v", err)
 	}
@@ -1036,13 +1027,13 @@ func TestOptimizeUpload_FocalPointNil(t *testing.T) {
 	}
 
 	// Compare the variant images pixel-by-pixel
-	vfNil, err := os.Open((*filesNil)[1])
+	vfNil, err := os.Open((*filesNil)[0])
 	if err != nil {
 		t.Fatalf("open nil variant: %v", err)
 	}
 	defer vfNil.Close()
 
-	vfCenter, err := os.Open((*filesCenter)[1])
+	vfCenter, err := os.Open((*filesCenter)[0])
 	if err != nil {
 		t.Fatalf("open center variant: %v", err)
 	}

@@ -31,19 +31,25 @@ import { createHttpClient } from './http.js'
 import { createResource } from './resource.js'
 import { createAuthResource } from './resources/auth.js'
 import { createAdminTreeResource } from './resources/admin-tree.js'
-import { createMediaUploadResource, isDuplicateMedia, isInvalidMediaType, isFileTooLarge } from './resources/media-upload.js'
+import { createMediaUploadResource, isDuplicateMedia, isFileTooLarge, isInvalidMediaPath } from './resources/media-upload.js'
 import { createSessionsResource } from './resources/sessions.js'
 import { createSshKeysResource } from './resources/ssh-keys.js'
 import { createImportResource } from './resources/import.js'
+import { createPluginsResource } from './resources/plugins.js'
+import { createPluginRoutesResource } from './resources/plugin-routes.js'
+import { createPluginHooksResource } from './resources/plugin-hooks.js'
+import { createConfigResource } from './resources/config.js'
 
 import type { RequestOptions, AdminRouteID, Slug } from './types/common.js'
+import type { MediaUploadOptions } from './resources/media-upload.js'
 import type { AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams } from './types/admin.js'
 import type { CrudResource } from './resource.js'
 
 // Re-export all public types
 export type { CrudResource } from './resource.js'
 export { isApiError } from './types/common.js'
-export { isDuplicateMedia, isInvalidMediaType, isFileTooLarge } from './resources/media-upload.js'
+export { isDuplicateMedia, isFileTooLarge, isInvalidMediaPath } from './resources/media-upload.js'
+export type { MediaUploadOptions } from './resources/media-upload.js'
 export type {
   Brand,
   UserID,
@@ -151,6 +157,30 @@ export type {
   AdminTreeResponse,
   TreeFormat,
 } from './types/tree.js'
+export type {
+  PluginListItem,
+  PluginInfo,
+  DriftEntry,
+  PluginActionResponse,
+  PluginStateResponse,
+  CleanupDryRunResponse,
+  CleanupDropParams,
+  CleanupDropResponse,
+  PluginRoute,
+  RouteApprovalItem,
+  PluginHook,
+  HookApprovalItem,
+} from './types/plugins.js'
+export type { PluginsResource } from './resources/plugins.js'
+export type { PluginRoutesResource } from './resources/plugin-routes.js'
+export type { PluginHooksResource } from './resources/plugin-hooks.js'
+export type {
+  ConfigFieldMeta,
+  ConfigGetResponse,
+  ConfigUpdateResponse,
+  ConfigMetaResponse,
+} from './types/config.js'
+export type { ConfigResource } from './resources/config.js'
 
 // ---------------------------------------------------------------------------
 // Imports for client type (type-only, for the ModulaCMSAdminClient shape)
@@ -236,6 +266,10 @@ import type { Session, UpdateSessionParams, SshKey, SshKeyListItem, CreateSshKey
 import type { SessionID } from './types/common.js'
 import type { AdminTreeResponse, TreeFormat } from './types/tree.js'
 import type { ImportFormat, ImportResponse } from './types/import.js'
+import type { PluginsResource } from './resources/plugins.js'
+import type { PluginRoutesResource } from './resources/plugin-routes.js'
+import type { PluginHooksResource } from './resources/plugin-hooks.js'
+import type { ConfigResource } from './resources/config.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -386,7 +420,7 @@ export type ModulaCMSAdminClient = {
   /** File upload to the media library via multipart/form-data. */
   mediaUpload: {
     /** Upload a file and receive the created media entity. */
-    upload: (file: File | Blob, opts?: RequestOptions) => Promise<Media>
+    upload: (file: File | Blob, opts?: MediaUploadOptions) => Promise<Media>
   }
   /** Session management (update and remove only; sessions are created via login). */
   sessions: {
@@ -404,6 +438,15 @@ export type ModulaCMSAdminClient = {
     /** Remove an SSH key by ID. */
     remove: (id: string, opts?: RequestOptions) => Promise<void>
   }
+  /** Plugin management (list, info, reload, enable, disable, cleanup). */
+  plugins: PluginsResource
+  /** Plugin route approval management (list, approve, revoke). */
+  pluginRoutes: PluginRoutesResource
+  /** Plugin hook approval management (list, approve, revoke). */
+  pluginHooks: PluginHooksResource
+  /** Configuration management (get, update, meta). */
+  config: ConfigResource
+
   /** Bulk content import from external CMS platforms. */
   import: {
     /** Import from Contentful export format. */
@@ -529,6 +572,10 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     mediaUpload: createMediaUploadResource(http, defaultTimeout, credentials, config.apiKey),
     sessions: createSessionsResource(http),
     sshKeys: createSshKeysResource(http),
+    plugins: createPluginsResource(http),
+    pluginRoutes: createPluginRoutesResource(http),
+    pluginHooks: createPluginHooksResource(http),
+    config: createConfigResource(http),
     import: createImportResource(http),
   }
 }

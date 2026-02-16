@@ -56,6 +56,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.DefineDatatypeControls(msg)
 	case CONFIGPAGE:
 		return m.ConfigControls(msg)
+	case CONFIGCATEGORYPAGE:
+		return m.ConfigCategoryControls(msg)
 	case ACTIONSPAGE:
 		return m.ActionsControls(msg)
 	case ROUTES:
@@ -72,6 +74,10 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.AdminDatatypesControls(msg)
 	case ADMINCONTENT:
 		return m.AdminContentBrowserControls(msg)
+	case PLUGINSPAGE:
+		return m.PluginsControls(msg)
+	case PLUGINDETAILPAGE:
+		return m.PluginDetailControls(msg)
 
 	}
 	return m, nil
@@ -1453,28 +1459,265 @@ func (m Model) ActionsControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-// ConfigControls handles viewport scrolling for the configuration display page.
+// ConfigControls handles the config category menu navigation.
 func (m Model) ConfigControls(msg tea.Msg) (Model, tea.Cmd) {
-	newModel := m
+	menuItems := ConfigCategoryMenuInit()
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		km := newModel.Config.KeyBindings
+		km := m.Config.KeyBindings
 		key := msg.String()
 
 		if km.Matches(key, config.ActionQuit) {
-			return newModel, tea.Quit
+			return m, tea.Quit
 		}
 		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
-			if len(newModel.History) > 0 {
-				return newModel, HistoryPopCmd()
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
 			}
-			return newModel, tea.Quit
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(menuItems)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			categories := config.AllCategories()
+			if m.Cursor < len(categories) {
+				// Select a category
+				cat := categories[m.Cursor]
+				m.ConfigCategory = cat
+				m.ConfigCategoryFields = config.FieldsByCategory(cat)
+				m.ConfigFieldCursor = 0
+				return m, NavigateToPageCmd(m.PageMap[CONFIGCATEGORYPAGE])
+			}
+			// Last item: "View Raw JSON"
+			if m.Cursor == len(menuItems)-1 {
+				content, err := formatJSON(m.Config)
+				if err == nil {
+					m.Viewport.SetContent(content)
+				}
+				// Set viewport content and switch to a viewport scroll mode
+				// by navigating to CONFIGCATEGORYPAGE with a special category
+				m.ConfigCategory = "raw_json"
+				m.ConfigCategoryFields = nil
+				m.ConfigFieldCursor = 0
+				return m, NavigateToPageCmd(m.PageMap[CONFIGCATEGORYPAGE])
+			}
 		}
 	}
-
-	// Forward all other events to the viewport for scrolling
-	var cmd tea.Cmd
-	newModel.Viewport, cmd = newModel.Viewport.Update(msg)
-	return newModel, cmd
+	return m, nil
 }
+
+// ConfigCategoryControls handles keyboard navigation for the config category detail view.
+func (m Model) ConfigCategoryControls(msg tea.Msg) (Model, tea.Cmd) {
+	// Raw JSON mode: use viewport scrolling
+	if m.ConfigCategory == "raw_json" {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			km := m.Config.KeyBindings
+			key := msg.String()
+
+			if km.Matches(key, config.ActionQuit) {
+				return m, tea.Quit
+			}
+			if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+				if len(m.History) > 0 {
+					return m, HistoryPopCmd()
+				}
+				return m, tea.Quit
+			}
+		}
+		var cmd tea.Cmd
+		m.Viewport, cmd = m.Viewport.Update(msg)
+		return m, cmd
+	}
+
+	// Category field list mode
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.ConfigFieldCursor > 0 {
+				m.ConfigFieldCursor--
+			}
+			return m, nil
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.ConfigFieldCursor < len(m.ConfigCategoryFields)-1 {
+				m.ConfigFieldCursor++
+			}
+			return m, nil
+		}
+		if km.Matches(key, config.ActionEdit) || km.Matches(key, config.ActionSelect) {
+			if len(m.ConfigCategoryFields) > 0 && m.ConfigFieldCursor < len(m.ConfigCategoryFields) {
+				field := m.ConfigCategoryFields[m.ConfigFieldCursor]
+				currentValue := config.ConfigFieldString(*m.Config, field.JSONKey)
+				if field.Sensitive {
+					currentValue = ""
+				}
+				return m, ShowConfigFieldEditDialogCmd(field, currentValue)
+			}
+		}
+	}
+	return m, nil
+}
+
+// ShowConfigFieldEditDialogCmd returns a command that shows the config field edit dialog.
+func ShowConfigFieldEditDialogCmd(field config.FieldMeta, currentValue string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowConfigFieldEditMsg{
+			Field:        field,
+			CurrentValue: currentValue,
+		}
+	}
+}
+
+// ShowConfigFieldEditMsg triggers the config field edit dialog.
+type ShowConfigFieldEditMsg struct {
+	Field        config.FieldMeta
+	CurrentValue string
+}
+
+// PluginsControls handles keyboard navigation for the plugins list page (3-panel layout).
+func (m Model) PluginsControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.PluginsList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			// Select plugin: store selected name and navigate to detail page
+			if len(m.PluginsList) > 0 && m.Cursor < len(m.PluginsList) {
+				m.SelectedPlugin = m.PluginsList[m.Cursor].Name
+				return m, NavigateToPageCmd(m.PageMap[PLUGINDETAILPAGE])
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// PluginDetailControls handles keyboard navigation for the plugin detail page.
+// Actions menu: enable, disable, reload, approve routes, approve hooks.
+func (m Model) PluginDetailControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			// 5 action items: Enable, Disable, Reload, Approve Routes, Approve Hooks
+			if m.Cursor < 4 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			name := m.SelectedPlugin
+			if name == "" {
+				return m, nil
+			}
+			switch m.Cursor {
+			case 0:
+				// Enable
+				return m, func() tea.Msg {
+					return PluginEnableRequestMsg{Name: name}
+				}
+			case 1:
+				// Disable
+				return m, func() tea.Msg {
+					return PluginDisableRequestMsg{Name: name}
+				}
+			case 2:
+				// Reload
+				return m, func() tea.Msg {
+					return PluginReloadRequestMsg{Name: name}
+				}
+			case 3:
+				// Approve All Routes -- fetch pending routes and show confirmation dialog
+				return m, m.FetchPendingRoutesForApprovalCmd(name)
+			case 4:
+				// Approve All Hooks -- fetch pending hooks and show confirmation dialog
+				return m, m.FetchPendingHooksForApprovalCmd(name)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+

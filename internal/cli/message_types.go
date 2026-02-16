@@ -663,3 +663,105 @@ type BackupRestoreCompleteMsg struct{ Path string }
 type BuildTreeFromRouteMsg struct {
 	RouteID int64
 }
+
+// PluginsFetchMsg requests fetching plugin list from the manager.
+type PluginsFetchMsg struct{}
+
+// PluginsFetchResultsMsg returns the fetched plugin display list.
+type PluginsFetchResultsMsg struct {
+	Data []PluginDisplay
+}
+
+// PluginsListSet sets the plugin display list on the model.
+type PluginsListSet struct {
+	PluginsList []PluginDisplay
+}
+
+// PluginActionResultMsg signals the result of a plugin action (enable/disable/reload/approve).
+type PluginActionResultMsg struct {
+	Title   string
+	Message string
+}
+
+// PluginEnableRequestMsg requests enabling a plugin.
+type PluginEnableRequestMsg struct {
+	Name string
+}
+
+// PluginDisableRequestMsg requests disabling a plugin.
+type PluginDisableRequestMsg struct {
+	Name string
+}
+
+// PluginReloadRequestMsg requests reloading a plugin.
+type PluginReloadRequestMsg struct {
+	Name string
+}
+
+// PluginApproveAllRoutesRequestMsg requests approving all unapproved routes for a plugin.
+type PluginApproveAllRoutesRequestMsg struct {
+	Name string
+}
+
+// PluginApproveAllHooksRequestMsg requests approving all unapproved hooks for a plugin.
+type PluginApproveAllHooksRequestMsg struct {
+	Name string
+}
+
+// PluginEnabledMsg signals that a plugin was successfully enabled.
+type PluginEnabledMsg struct {
+	Name string
+}
+
+// PluginDisabledMsg signals that a plugin was successfully disabled.
+type PluginDisabledMsg struct {
+	Name string
+}
+
+// PluginReloadedMsg signals that a plugin was successfully reloaded.
+type PluginReloadedMsg struct {
+	Name string
+}
+
+// PluginRoutesApprovedMsg signals that all plugin routes were approved.
+type PluginRoutesApprovedMsg struct {
+	Name  string
+	Count int
+}
+
+// PluginHooksApprovedMsg signals that all plugin hooks were approved.
+type PluginHooksApprovedMsg struct {
+	Name  string
+	Count int
+}
+
+// ShowApproveAllRoutesDialogMsg triggers the route approval confirmation dialog.
+type ShowApproveAllRoutesDialogMsg struct {
+	PluginName    string
+	PendingRoutes []string // human-readable list for display
+}
+
+// ShowApproveAllHooksDialogMsg triggers the hook approval confirmation dialog.
+type ShowApproveAllHooksDialogMsg struct {
+	PluginName   string
+	PendingHooks []string // human-readable list for display
+}
+
+// ConfigCategorySelectMsg navigates to a config category detail view.
+type ConfigCategorySelectMsg struct {
+	Category string
+}
+
+// ConfigFieldUpdateMsg requests updating a config field value.
+type ConfigFieldUpdateMsg struct {
+	Key   string
+	Value string
+}
+
+// ConfigUpdateResultMsg carries the result of a config update.
+type ConfigUpdateResultMsg struct {
+	RestartRequired []string
+	Err             error
+}
+
+// ShowDialogMsg is defined in dialog.go

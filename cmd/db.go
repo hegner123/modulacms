@@ -26,7 +26,7 @@ var dbInitCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, err := loadConfig()
+		cfg, err := loadConfigPtr()
 		if err != nil {
 			return fmt.Errorf("loading configuration: %w", err)
 		}
@@ -78,7 +78,7 @@ var dbWipeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -87,6 +87,11 @@ var dbWipeCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			return fmt.Errorf("reading configuration: %w", err)
+		}
 
 		wipeConfirm := false
 		confirm := huh.NewConfirm().
@@ -121,7 +126,7 @@ var dbWipeRedeployCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -130,6 +135,11 @@ var dbWipeRedeployCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			return fmt.Errorf("reading configuration: %w", err)
+		}
 
 		wipeConfirm := false
 		confirm := huh.NewConfirm().
@@ -205,7 +215,7 @@ var dbResetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, err := loadConfig()
+		cfg, err := loadConfigPtr()
 		if err != nil {
 			return fmt.Errorf("loading configuration: %w", err)
 		}
@@ -227,7 +237,7 @@ var dbExportCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -236,6 +246,11 @@ var dbExportCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			return fmt.Errorf("reading configuration: %w", err)
+		}
 
 		driver := db.ConfigDB(*cfg)
 		if err := driver.DumpSql(*cfg); err != nil {

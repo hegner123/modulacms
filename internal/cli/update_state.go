@@ -197,6 +197,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.PageMenu = msg.PageMenu
 		return newModel, NewStateUpdate()
+	case PluginsListSet:
+		newModel := m
+		newModel.PluginsList = msg.PluginsList
+		return newModel, NewStateUpdate()
 	case UpdatePagination:
 		p, cmd := m.Paginator.Update(msg)
 		newModel := m

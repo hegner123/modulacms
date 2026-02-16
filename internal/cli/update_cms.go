@@ -339,6 +339,75 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		return m, LoadContentFieldsCmd(m.Config, msg.ContentID, msg.DatatypeID)
 
+	// Plugin management messages
+	case PluginEnableRequestMsg:
+		return m, m.HandlePluginEnable(msg)
+	case PluginDisableRequestMsg:
+		return m, m.HandlePluginDisable(msg)
+	case PluginReloadRequestMsg:
+		return m, m.HandlePluginReload(msg)
+	case PluginApproveAllRoutesRequestMsg:
+		return m, m.HandlePluginApproveAllRoutes(msg)
+	case PluginApproveAllHooksRequestMsg:
+		return m, m.HandlePluginApproveAllHooks(msg)
+	case PluginEnabledMsg:
+		return m, tea.Batch(
+			PluginsFetchCmd(),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Plugin Enabled",
+					Message: fmt.Sprintf("Plugin '%s' has been enabled.", msg.Name),
+				}
+			},
+		)
+	case PluginDisabledMsg:
+		return m, tea.Batch(
+			PluginsFetchCmd(),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Plugin Disabled",
+					Message: fmt.Sprintf("Plugin '%s' has been disabled.", msg.Name),
+				}
+			},
+		)
+	case PluginReloadedMsg:
+		return m, tea.Batch(
+			PluginsFetchCmd(),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Plugin Reloaded",
+					Message: fmt.Sprintf("Plugin '%s' has been reloaded.", msg.Name),
+				}
+			},
+		)
+	case PluginRoutesApprovedMsg:
+		return m, tea.Batch(
+			PluginsFetchCmd(),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Routes Approved",
+					Message: fmt.Sprintf("Approved %d routes for plugin '%s'.", msg.Count, msg.Name),
+				}
+			},
+		)
+	case PluginHooksApprovedMsg:
+		return m, tea.Batch(
+			PluginsFetchCmd(),
+			func() tea.Msg {
+				return ActionResultMsg{
+					Title:   "Hooks Approved",
+					Message: fmt.Sprintf("Approved %d hooks for plugin '%s'.", msg.Count, msg.Name),
+				}
+			},
+		)
+	case PluginActionResultMsg:
+		return m, func() tea.Msg {
+			return ActionResultMsg{
+				Title:   msg.Title,
+				Message: msg.Message,
+			}
+		}
+
 	default:
 		return m, nil
 	}

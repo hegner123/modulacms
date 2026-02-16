@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
@@ -17,6 +18,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[OAUTHPAGE],
 		m.PageMap[CONFIGPAGE],
 		m.PageMap[ACTIONSPAGE],
+		m.PageMap[PLUGINSPAGE],
 	}
 
 	return HomepageMenu
@@ -73,6 +75,17 @@ func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []Page {
 		}
 	}
 	return out
+}
+
+// ConfigCategoryMenuInit returns the category labels used on the CONFIGPAGE.
+func ConfigCategoryMenuInit() []string {
+	categories := config.AllCategories()
+	items := make([]string, 0, len(categories)+1)
+	for _, cat := range categories {
+		items = append(items, config.CategoryLabel(cat))
+	}
+	items = append(items, "View Raw JSON")
+	return items
 }
 
 // BuildContentDataMenu builds a menu of content data pages that are children of the specified root.

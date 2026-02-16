@@ -39,7 +39,7 @@ func newSchemaTestState(t *testing.T, conn *sql.DB, pluginName string) (*lua.LSt
 	// Register db.define_table as a global.
 	dbTable := L.NewTable()
 	dbTable.RawSetString("define_table", L.NewFunction(
-		luaDefineTable(L, pluginName, conn, db.DialectSQLite),
+		luaDefineTable(L, pluginName, conn, db.DialectSQLite, nil),
 	))
 	L.SetGlobal("db", dbTable)
 

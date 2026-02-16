@@ -21,6 +21,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -153,12 +154,33 @@ type Model struct {
 	// Cursor tracking across tree reloads (e.g., after sibling reorder)
 	PendingCursorContentID types.ContentID
 
+	// Plugin management
+	PluginManager  *plugin.Manager
+	PluginsList    []PluginDisplay
+	SelectedPlugin string
+	AdminUsername  string
+
+	// Config management
+	ConfigManager       *config.Manager
+	ConfigCategory      config.FieldCategory
+	ConfigCategoryFields []config.FieldMeta
+	ConfigFieldCursor   int
+
 	// SSH User Provisioning
 	NeedsProvisioning bool
 	SSHFingerprint    string
 	SSHKeyType        string
 	SSHPublicKey      string
 	UserID            types.UserID
+}
+
+// PluginDisplay holds the display-ready fields for a plugin in the TUI list.
+type PluginDisplay struct {
+	Name        string
+	Version     string
+	State       string
+	CBState     string
+	Description string
 }
 
 // ContentFieldDisplay represents a content field for right panel display.
@@ -185,8 +207,8 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 	}
 }
 
-// InitialModel creates and initializes a new Model with the provided configuration, database driver, and logger.
-func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) (Model, tea.Cmd) {
+// InitialModel creates and initializes a new Model with the provided configuration, database driver, logger, and optional plugin manager.
+func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager) (Model, tea.Cmd) {
 	// Use provided logger or fall back to utility.DefaultLogger
 	if logger == nil {
 		logger = utility.DefaultLogger
@@ -217,10 +239,12 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) 
 
 	// Find system user for CLI mode (non-SSH sessions)
 	var systemAdminID types.UserID
+	var systemAdminUsername string
 	if users, err := driver.ListUsers(); err == nil && users != nil {
 		for _, u := range *users {
 			if strings.EqualFold(u.Username, "system") {
 				systemAdminID = u.UserID
+				systemAdminUsername = u.Username
 				logger.Finfo(fmt.Sprintf("CLI mode: using system user %s (%s)", u.Username, u.UserID))
 				break
 			}
@@ -250,8 +274,11 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger) 
 		PanelFocus:  tui.TreePanel,
 		History:     []PageHistory{},
 		Verbose:     verbose,
-		PageRouteId: types.RouteID(""), // TODO: Implement route selection UI
-		UserID:      systemAdminID,     // Set system admin for CLI mode
+		PageRouteId:   types.RouteID(""), // TODO: Implement route selection UI
+		UserID:        systemAdminID,     // Set system admin for CLI mode
+		AdminUsername: systemAdminUsername,
+		PluginManager: pluginMgr,
+		ConfigManager: mgr,
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

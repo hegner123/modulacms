@@ -43,6 +43,7 @@ const (
 	FORMDIALOGEDITADMINFIELD         FormDialogAction = "edit_admin_field"
 	FORMDIALOGDBINSERT               FormDialogAction = "db_insert"
 	FORMDIALOGDBUPDATE               FormDialogAction = "db_update"
+	FORMDIALOGCONFIGEDIT             FormDialogAction = "config_edit"
 )
 
 // FormDialogField constants define focus indices for dialog fields.

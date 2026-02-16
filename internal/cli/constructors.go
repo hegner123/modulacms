@@ -671,3 +671,11 @@ func BuildTreeFromRouteCMD(id int64) tea.Cmd {
 		}
 	}
 }
+
+// PluginsFetchCmd creates a command to fetch the plugin list.
+func PluginsFetchCmd() tea.Cmd { return func() tea.Msg { return PluginsFetchMsg{} } }
+
+// PluginsListSetCmd creates a command to set the plugin display list on the model.
+func PluginsListSetCmd(plugins []PluginDisplay) tea.Cmd {
+	return func() tea.Msg { return PluginsListSet{PluginsList: plugins} }
+}

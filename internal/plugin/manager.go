@@ -55,6 +55,10 @@ type PluginInfo struct {
 	License       string
 	MinCMSVersion string
 	Dependencies  []string
+
+	// HasOnInit indicates whether the plugin defines an on_init() function.
+	// Set during ExtractManifest() by checking the global before the VM is closed.
+	HasOnInit bool
 }
 
 // PluginInstance represents a loaded plugin with its state and resources.
@@ -107,6 +111,13 @@ type ManagerConfig struct {
 	ResetInterval time.Duration // circuit breaker reset interval; default 60s
 }
 
+// TableRegistrar registers table names in the CMS tables registry.
+// Implementations must be idempotent — registering an already-registered
+// table is a no-op (no error).
+type TableRegistrar interface {
+	RegisterTable(ctx context.Context, label string) error
+}
+
 // Manager is the central coordinator for plugin discovery, loading, lifecycle, and shutdown.
 //
 // Context handling: Manager does not store a context.Context field. Stored contexts on
@@ -114,11 +125,12 @@ type ManagerConfig struct {
 // Instead, all Manager methods that perform I/O accept ctx context.Context as their
 // first parameter. The caller (cmd/serve.go) passes the application lifecycle context.
 type Manager struct {
-	cfg     ManagerConfig
-	db      *sql.DB // separate plugin pool via db.OpenPool()
-	dialect db.Dialect
-	plugins map[string]*PluginInstance
-	mu      sync.RWMutex
+	cfg      ManagerConfig
+	db       *sql.DB // separate plugin pool via db.OpenPool()
+	dialect  db.Dialect
+	tableReg TableRegistrar // registers plugin tables in the CMS tables registry; may be nil
+	plugins  map[string]*PluginInstance
+	mu       sync.RWMutex
 
 	// loadOrder preserves the topologically sorted order of successfully loaded plugins.
 	// Used for reverse-order shutdown.
@@ -145,7 +157,8 @@ type Manager struct {
 // NewManager creates a new plugin Manager with the given configuration.
 // Zero-value config fields are replaced with defaults.
 // The db pool must be a separate *sql.DB opened via db.OpenPool() for isolation.
-func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect) *Manager {
+// tableReg may be nil; when nil, plugin tables are not registered in the CMS tables registry.
+func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, tableReg TableRegistrar) *Manager {
 	if cfg.MaxVMsPerPlugin <= 0 {
 		cfg.MaxVMsPerPlugin = 4
 	}
@@ -166,10 +179,11 @@ func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect) *Manager {
 	}
 
 	mgr := &Manager{
-		cfg:     cfg,
-		db:      pool,
-		dialect: dialect,
-		plugins: make(map[string]*PluginInstance),
+		cfg:      cfg,
+		db:       pool,
+		dialect:  dialect,
+		tableReg: tableReg,
+		plugins:  make(map[string]*PluginInstance),
 	}
 
 	// Create hook engine unconditionally. The engine is inert when no hooks
@@ -240,7 +254,7 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 		}
 
 		// Step 2: Extract and validate manifest from temp VM.
-		info, extractErr := extractManifest(initPath)
+		info, extractErr := ExtractManifest(initPath)
 		if extractErr != nil {
 			utility.DefaultLogger.Warn(
 				fmt.Sprintf("plugin %q: manifest extraction failed: %s", entry.Name(), extractErr.Error()),
@@ -282,6 +296,15 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 			return fmt.Errorf("creating plugin_routes table: %w", tblErr)
 		}
 
+		if m.tableReg != nil {
+			if regErr := m.tableReg.RegisterTable(ctx, "plugin_routes"); regErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("failed to register plugin_routes in tables registry: %s", regErr.Error()),
+					nil,
+				)
+			}
+		}
+
 		discoveredNames := make([]string, 0, len(discovered))
 		for name := range discovered {
 			discoveredNames = append(discoveredNames, name)
@@ -295,6 +318,15 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 	if m.hookEngine != nil {
 		if tblErr := m.hookEngine.CreatePluginHooksTable(ctx); tblErr != nil {
 			return fmt.Errorf("creating plugin_hooks table: %w", tblErr)
+		}
+
+		if m.tableReg != nil {
+			if regErr := m.tableReg.RegisterTable(ctx, "plugin_hooks"); regErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("failed to register plugin_hooks in tables registry: %s", regErr.Error()),
+					nil,
+				)
+			}
 		}
 
 		discoveredNames := make([]string, 0, len(discovered))
@@ -362,7 +394,7 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		ApplySandbox(L, SandboxConfig{AllowCoroutine: true, ExecTimeout: timeout})
 		RegisterPluginRequire(L, inst.Dir)
 
-		dbAPI := NewDatabaseAPI(m.db, pluginName, m.dialect, m.cfg.MaxOpsPerExec)
+		dbAPI := NewDatabaseAPI(m.db, pluginName, m.dialect, m.cfg.MaxOpsPerExec, m.tableReg)
 		RegisterDBAPI(L, dbAPI)
 		RegisterLogAPI(L, pluginName)
 		RegisterHTTPAPI(L, pluginName)
@@ -662,10 +694,10 @@ func (m *Manager) ListPlugins() []*PluginInstance {
 	return result
 }
 
-// extractManifest creates a temporary sandboxed VM (no db/log APIs), executes
+// ExtractManifest creates a temporary sandboxed VM (no db/log APIs), executes
 // init.lua, reads the plugin_info global, and validates the manifest fields.
 // The temp VM is discarded after extraction.
-func extractManifest(initPath string) (*PluginInfo, error) {
+func ExtractManifest(initPath string) (*PluginInfo, error) {
 	L := lua.NewState(lua.Options{
 		SkipOpenLibs:  true,
 		CallStackSize: 256,
@@ -723,16 +755,21 @@ func extractManifest(initPath string) (*PluginInfo, error) {
 		})
 	}
 
+	// Check whether on_init() is defined before the deferred L.Close() runs.
+	if L.GetGlobal("on_init").Type() == lua.LTFunction {
+		info.HasOnInit = true
+	}
+
 	// Validate manifest.
-	if err := validateManifest(info); err != nil {
+	if err := ValidateManifest(info); err != nil {
 		return nil, fmt.Errorf("invalid manifest: %w", err)
 	}
 
 	return info, nil
 }
 
-// validateManifest checks that all required fields are present and valid.
-func validateManifest(info *PluginInfo) error {
+// ValidateManifest checks that all required fields are present and valid.
+func ValidateManifest(info *PluginInfo) error {
 	if info.Name == "" {
 		return fmt.Errorf("name is required")
 	}
@@ -846,7 +883,7 @@ func topologicalSort(plugins map[string]*PluginInstance) ([]*PluginInstance, err
 // registerManifestStubs sets up no-op global tables for db, log, http, and hooks
 // in a temporary VM used only for manifest extraction. These stubs absorb
 // module-scope API calls (hooks.on, http.handle, db.define_table, etc.) without
-// side effects, allowing extractManifest to read plugin_info even when the
+// side effects, allowing ExtractManifest to read plugin_info even when the
 // plugin's init.lua calls API functions at file scope.
 //
 // The approach uses a metatable with __index returning a no-op function for any
@@ -922,7 +959,7 @@ func (m *Manager) ReloadPlugin(ctx context.Context, name string) error {
 	}
 
 	// Re-extract manifest (version may have changed).
-	newInfo, extractErr := extractManifest(oldInst.InitPath)
+	newInfo, extractErr := ExtractManifest(oldInst.InitPath)
 	if extractErr != nil {
 		return fmt.Errorf("re-extracting manifest for %q: %w", name, extractErr)
 	}

@@ -69,8 +69,10 @@ type Config struct {
 	Bucket_Endpoint     string              `json:"bucket_endpoint"`
 	Bucket_Access_Key   string              `json:"bucket_access_key"`
 	Bucket_Secret_Key   string              `json:"bucket_secret_key"`
+	Bucket_Public_URL        string `json:"bucket_public_url"`
 	Bucket_Default_ACL       string `json:"bucket_default_acl"`
 	Bucket_Force_Path_Style  bool   `json:"bucket_force_path_style"`
+	Max_Upload_Size          int64  `json:"max_upload_size"` // bytes, default 10MB (10485760)
 	Backup_Option       string              `json:"backup_option"`
 	Backup_Paths        []string            `json:"backup_paths"`
 	Oauth_Client_Id        string              `json:"oauth_client_id"`
@@ -144,6 +146,7 @@ type Config struct {
 
 // BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme
 // determined by Environment. Non-TLS environments get http, all others https.
+// This is used for S3 API calls (internal/Docker hostname is fine).
 func (c Config) BucketEndpointURL() string {
 	if c.Bucket_Endpoint == "" {
 		return ""
@@ -153,6 +156,30 @@ func (c Config) BucketEndpointURL() string {
 		scheme = "http"
 	}
 	return scheme + "://" + c.Bucket_Endpoint
+}
+
+// BucketPublicURL returns the public-facing base URL for constructing
+// browser-accessible media URLs. Falls back to BucketEndpointURL if
+// Bucket_Public_URL is not configured.
+//
+// In Docker environments, Bucket_Endpoint is typically a container hostname
+// (e.g. minio:9000) which browsers cannot resolve. Set Bucket_Public_URL
+// to the externally reachable address (e.g. http://localhost:9000).
+func (c Config) BucketPublicURL() string {
+	if c.Bucket_Public_URL != "" {
+		return c.Bucket_Public_URL
+	}
+	return c.BucketEndpointURL()
+}
+
+// MaxUploadSize returns the configured maximum upload size in bytes.
+// Falls back to 10 MB if no positive value is configured, ensuring
+// backward compatibility with config files that omit this field.
+func (c Config) MaxUploadSize() int64 {
+	if c.Max_Upload_Size <= 0 {
+		return 10 << 20 // 10 MB fallback
+	}
+	return c.Max_Upload_Size
 }
 
 // IsValidOutputFormat checks if the given format string is valid

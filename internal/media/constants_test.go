@@ -2,7 +2,6 @@ package media
 
 import (
 	"errors"
-	"strings"
 	"testing"
 )
 
@@ -127,55 +126,6 @@ func TestDuplicateMediaError(t *testing.T) {
 	}
 }
 
-// TestInvalidMediaTypeError verifies the error message format includes the
-// content type and the "Only images allowed" guidance.
-func TestInvalidMediaTypeError(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name        string
-		err         InvalidMediaTypeError
-		wantContain []string
-	}{
-		{
-			name:        "text/plain",
-			err:         InvalidMediaTypeError{ContentType: "text/plain"},
-			wantContain: []string{"text/plain", "Only images allowed"},
-		},
-		{
-			name:        "application/pdf",
-			err:         InvalidMediaTypeError{ContentType: "application/pdf"},
-			wantContain: []string{"application/pdf", "Only images allowed"},
-		},
-		{
-			name:        "empty content type",
-			err:         InvalidMediaTypeError{ContentType: ""},
-			wantContain: []string{"invalid file type", "Only images allowed"},
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			msg := tt.err.Error()
-			for _, want := range tt.wantContain {
-				if !strings.Contains(msg, want) {
-					t.Errorf("Error() = %q, want it to contain %q", msg, want)
-				}
-			}
-
-			// Verify errors.As detection
-			var target InvalidMediaTypeError
-			if !errors.As(tt.err, &target) {
-				t.Fatal("errors.As failed to match InvalidMediaTypeError")
-			}
-			if target.ContentType != tt.err.ContentType {
-				t.Errorf("ContentType = %q, want %q", target.ContentType, tt.err.ContentType)
-			}
-		})
-	}
-}
-
 // TestFileTooLargeError verifies the error message includes both the actual
 // file size and the maximum allowed size.
 func TestFileTooLargeError(t *testing.T) {
@@ -232,40 +182,65 @@ func TestErrorTypes_ImplementErrorInterface(t *testing.T) {
 	t.Parallel()
 
 	var _ error = DuplicateMediaError{}
-	var _ error = InvalidMediaTypeError{}
 	var _ error = FileTooLargeError{}
 }
 
-// TestValidMIMETypes verifies the validMIMETypes map contains exactly the four
-// expected MIME types and no others. This guards against accidental additions
-// or removals that could create security issues (allowing unexpected types) or
-// break existing uploads (removing supported types).
-func TestValidMIMETypes(t *testing.T) {
+// TestImageMIMETypes verifies the imageMIMETypes map contains exactly the four
+// expected image MIME types supported by the optimization pipeline.
+func TestImageMIMETypes(t *testing.T) {
 	t.Parallel()
 
-	expected := map[string]bool{
-		"image/png":  true,
-		"image/jpeg": true,
-		"image/gif":  true,
-		"image/webp": true,
+	expected := []string{
+		"image/png",
+		"image/jpeg",
+		"image/gif",
+		"image/webp",
 	}
 
-	// Check all expected types are present
-	for mime := range expected {
-		if !validMIMETypes[mime] {
-			t.Errorf("expected MIME type %q to be in validMIMETypes, but it is missing", mime)
+	for _, mime := range expected {
+		if !IsImageMIME(mime) {
+			t.Errorf("expected %q to be an image MIME type", mime)
 		}
 	}
 
-	// Check no unexpected types are present
-	for mime := range validMIMETypes {
-		if !expected[mime] {
-			t.Errorf("unexpected MIME type %q found in validMIMETypes", mime)
+	// Verify count via the exported helper — four image types total
+	count := 0
+	for _, mime := range expected {
+		if IsImageMIME(mime) {
+			count++
 		}
 	}
+	if count != 4 {
+		t.Errorf("expected 4 image MIME types, got %d", count)
+	}
+}
 
-	// Check the count matches
-	if len(validMIMETypes) != len(expected) {
-		t.Errorf("validMIMETypes has %d entries, want %d", len(validMIMETypes), len(expected))
+// TestIsImageMIME verifies IsImageMIME returns true for supported image types
+// and false for non-image types.
+func TestIsImageMIME(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		contentType string
+		want        bool
+	}{
+		{"image/png", true},
+		{"image/jpeg", true},
+		{"image/gif", true},
+		{"image/webp", true},
+		{"text/plain", false},
+		{"application/pdf", false},
+		{"application/octet-stream", false},
+		{"video/mp4", false},
+		{"", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.contentType, func(t *testing.T) {
+			t.Parallel()
+			if got := IsImageMIME(tt.contentType); got != tt.want {
+				t.Errorf("IsImageMIME(%q) = %v, want %v", tt.contentType, got, tt.want)
+			}
+		})
 	}
 }

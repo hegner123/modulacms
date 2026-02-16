@@ -161,6 +161,34 @@ sdk-swift-test:
 sdk-swift-clean:
     cd sdks/swift && swift package clean
 
+# [Plugin] List installed plugins
+plugin-list:
+    ./{{x86_binary_name}} plugin list
+
+# [Plugin] Create a new plugin scaffold
+plugin-init name:
+    ./{{x86_binary_name}} plugin init {{name}}
+
+# [Plugin] Validate a plugin
+plugin-validate path:
+    ./{{x86_binary_name}} plugin validate {{path}}
+
+# [Plugin] Show plugin details (requires running server)
+plugin-info name:
+    ./{{x86_binary_name}} plugin info {{name}}
+
+# [Plugin] Reload a plugin (requires running server)
+plugin-reload name:
+    ./{{x86_binary_name}} plugin reload {{name}}
+
+# [Plugin] Enable a plugin (requires running server)
+plugin-enable name:
+    ./{{x86_binary_name}} plugin enable {{name}}
+
+# [Plugin] Disable a plugin (requires running server)
+plugin-disable name:
+    ./{{x86_binary_name}} plugin disable {{name}}
+
 # [Lint] Run all available linters
 lint: lint-go lint-dockerfile lint-yaml
 
@@ -303,6 +331,11 @@ docker-postgres-dev:
 
 # [Docker:Postgres] Wipe volumes and rebuild PostgreSQL stack from scratch
 docker-postgres-fresh: docker-postgres-reset docker-postgres-up
+
+# [Docker:Postgres] Reset MinIO container and volumes only
+docker-postgres-minio-reset:
+    docker compose -f {{compose_postgres}} down minio
+    docker compose -f {{compose_postgres}} up -d minio
 
 # [Docker:Postgres] Tail PostgreSQL stack CMS logs
 docker-postgres-logs:

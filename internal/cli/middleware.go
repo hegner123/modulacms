@@ -13,6 +13,7 @@ import (
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/muesli/termenv"
 )
 
@@ -20,7 +21,7 @@ import (
 type timeMsg time.Time
 
 // CliMiddleware returns a Wish middleware that launches the CLI TUI application for SSH sessions.
-func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger) wish.Middleware {
+func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager) wish.Middleware {
 	newProg := func(m tea.Model, opts ...tea.ProgramOption) *tea.Program {
 		p := tea.NewProgram(m, opts...)
 		go func() {
@@ -37,7 +38,7 @@ func CliMiddleware(v *bool, c *config.Config, driver db.DbDriver, logger Logger)
 			wish.Fatalln(s, "no active terminal, skipping")
 			return nil
 		}
-		m, _ := InitialModel(v, c, driver, logger)
+		m, _ := InitialModel(v, c, driver, logger, pluginMgr, mgr)
 		m.Term = pty.Term
 		m.Width = pty.Window.Width
 		m.Height = pty.Window.Height

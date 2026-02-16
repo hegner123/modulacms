@@ -28,7 +28,7 @@ func newDBTestState(t *testing.T, conn *sql.DB, pluginName string) (*lua.LState,
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	L.SetContext(ctx)
 
-	api := NewDatabaseAPI(conn, pluginName, db.DialectSQLite, 1000)
+	api := NewDatabaseAPI(conn, pluginName, db.DialectSQLite, 1000, nil)
 	RegisterDBAPI(L, api)
 	RegisterLogAPI(L, pluginName)
 	FreezeModule(L, "db")
@@ -1120,7 +1120,7 @@ func TestDBAPI_OpBudget_ExceededRaisesError(t *testing.T) {
 }
 
 func TestDBAPI_OpBudget_SentinelError(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 2)
+	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 2, nil)
 	// Exhaust the budget.
 	api.opCount = 3
 
@@ -1244,7 +1244,7 @@ func TestDBAPI_ErrorConvention_ConstraintViolation(t *testing.T) {
 // -- Tests: NewDatabaseAPI defaults --
 
 func TestNewDatabaseAPI_Defaults(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test_plugin", db.DialectSQLite, 0)
+	api := NewDatabaseAPI(nil, "test_plugin", db.DialectSQLite, 0, nil)
 
 	if api.maxRows != 100 {
 		t.Errorf("expected maxRows=100, got %d", api.maxRows)
@@ -1264,7 +1264,7 @@ func TestNewDatabaseAPI_Defaults(t *testing.T) {
 }
 
 func TestNewDatabaseAPI_CustomMaxOps(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test_plugin", db.DialectSQLite, 500)
+	api := NewDatabaseAPI(nil, "test_plugin", db.DialectSQLite, 500, nil)
 	if api.maxOpsPerExec != 500 {
 		t.Errorf("expected maxOpsPerExec=500, got %d", api.maxOpsPerExec)
 	}
@@ -1405,7 +1405,7 @@ func TestDBAPI_Transaction_QueryInsideWorks(t *testing.T) {
 // -- Tests: ResetOpCount --
 
 func TestDBAPI_ResetOpCount(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 1000)
+	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 1000, nil)
 	api.opCount = 500
 	api.ResetOpCount()
 	if api.opCount != 0 {
@@ -1416,7 +1416,7 @@ func TestDBAPI_ResetOpCount(t *testing.T) {
 // -- Tests: checkOpLimit --
 
 func TestDBAPI_CheckOpLimit_IncrementsCounter(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 1000)
+	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 1000, nil)
 
 	for range 5 {
 		err := api.checkOpLimit()
@@ -1430,7 +1430,7 @@ func TestDBAPI_CheckOpLimit_IncrementsCounter(t *testing.T) {
 }
 
 func TestDBAPI_CheckOpLimit_ExceedsBudget(t *testing.T) {
-	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 3)
+	api := NewDatabaseAPI(nil, "test", db.DialectSQLite, 3, nil)
 
 	for range 3 {
 		if err := api.checkOpLimit(); err != nil {

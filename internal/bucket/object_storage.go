@@ -3,8 +3,11 @@
 package bucket
 
 import (
+	"encoding/json"
 	"fmt"
+	"mime"
 	"os"
+	"path/filepath"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -57,14 +60,79 @@ func EnsureBucket(svc *s3.S3, bucketName string) error {
 	return nil
 }
 
-// UploadPrep prepares an S3 PutObjectInput for file upload with the specified path, bucket, file data, and ACL.
-func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string) (*s3.PutObjectInput, error) {
-	upload := &s3.PutObjectInput{
-		Bucket: aws.String(bucketName),
-		Key:    aws.String(uploadPath),
-		Body:   data,
-		ACL:    aws.String(acl),
+// bucketPolicyStatement represents a single statement in an S3 bucket policy.
+type bucketPolicyStatement struct {
+	Sid       string   `json:"Sid"`
+	Effect    string   `json:"Effect"`
+	Principal string   `json:"Principal"`
+	Action    []string `json:"Action"`
+	Resource  []string `json:"Resource"`
+}
+
+// bucketPolicy represents an S3 bucket policy document.
+type bucketPolicy struct {
+	Version   string                   `json:"Version"`
+	Statement []bucketPolicyStatement  `json:"Statement"`
+}
+
+// SetPublicReadPolicy configures the bucket to allow anonymous read access.
+// This is appropriate for media buckets where assets need to be publicly accessible.
+func SetPublicReadPolicy(svc *s3.S3, bucketName string) error {
+	policy := bucketPolicy{
+		Version: "2012-10-17",
+		Statement: []bucketPolicyStatement{
+			{
+				Sid:       "PublicRead",
+				Effect:    "Allow",
+				Principal: "*",
+				Action:    []string{"s3:GetObject"},
+				Resource:  []string{"arn:aws:s3:::" + bucketName + "/*"},
+			},
+		},
 	}
+
+	policyBytes, err := json.Marshal(policy)
+	if err != nil {
+		return fmt.Errorf("marshal public-read policy for %q: %w", bucketName, err)
+	}
+
+	policyStr := string(policyBytes)
+	_, err = svc.PutBucketPolicy(&s3.PutBucketPolicyInput{
+		Bucket: aws.String(bucketName),
+		Policy: aws.String(policyStr),
+	})
+	if err != nil {
+		return fmt.Errorf("set public-read policy on %q: %w", bucketName, err)
+	}
+
+	utility.DefaultLogger.Info("Set public-read policy on bucket: %s", bucketName)
+	return nil
+}
+
+// UploadPrep prepares an S3 PutObjectInput for file upload with the specified path, bucket, file data, and ACL.
+// ContentType is inferred from the file extension in uploadPath.
+// ContentLength is set explicitly from the file size.
+func UploadPrep(uploadPath string, bucketName string, data *os.File, acl string) (*s3.PutObjectInput, error) {
+	info, err := data.Stat()
+	if err != nil {
+		return nil, fmt.Errorf("stat upload file %q: %w", data.Name(), err)
+	}
+
+	size := info.Size()
+	utility.DefaultLogger.Info("UploadPrep", "key", uploadPath, "file", data.Name(), "size", size)
+
+	upload := &s3.PutObjectInput{
+		Bucket:        aws.String(bucketName),
+		Key:           aws.String(uploadPath),
+		Body:          data,
+		ACL:           aws.String(acl),
+		ContentLength: aws.Int64(size),
+	}
+
+	if ct := mime.TypeByExtension(filepath.Ext(uploadPath)); ct != "" {
+		upload.ContentType = aws.String(ct)
+	}
+
 	return upload, nil
 }
 

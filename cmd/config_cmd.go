@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
 )
@@ -19,7 +20,7 @@ var configShowCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, err := loadConfig()
+		cfg, err := loadConfigPtr()
 		if err != nil {
 			return fmt.Errorf("loading configuration: %w", err)
 		}
@@ -40,7 +41,7 @@ var configValidateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, err := loadConfig()
+		cfg, err := loadConfigPtr()
 		if err != nil {
 			return fmt.Errorf("configuration is invalid: %w", err)
 		}
@@ -70,7 +71,48 @@ var configValidateCmd = &cobra.Command{
 	},
 }
 
+var configSetCmd = &cobra.Command{
+	Use:   "set <key> <value>",
+	Short: "Update a configuration field and save to disk",
+	Args:  cobra.ExactArgs(2),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		configureLogger()
+
+		key := args[0]
+		value := args[1]
+
+		// Validate the key exists in the field registry
+		if _, ok := config.FieldByKey(key); !ok {
+			return fmt.Errorf("unknown config key %q; run 'config show' to see available keys", key)
+		}
+
+		mgr, err := loadConfig()
+		if err != nil {
+			return fmt.Errorf("loading configuration: %w", err)
+		}
+
+		updates := map[string]any{key: value}
+		result, err := mgr.Update(updates)
+		if err != nil {
+			return fmt.Errorf("updating config: %w", err)
+		}
+
+		if !result.Valid {
+			return fmt.Errorf("validation failed:\n  %s", strings.Join(result.Errors, "\n  "))
+		}
+
+		fmt.Fprintf(cmd.OutOrStdout(), "Updated %s = %q\n", key, value)
+
+		if len(result.RestartRequired) > 0 {
+			fmt.Fprintf(cmd.OutOrStderr(), "Note: the following fields require a server restart to take effect:\n  %s\n", strings.Join(result.RestartRequired, "\n  "))
+		}
+
+		return nil
+	},
+}
+
 func init() {
 	configParentCmd.AddCommand(configShowCmd)
 	configParentCmd.AddCommand(configValidateCmd)
+	configParentCmd.AddCommand(configSetCmd)
 }

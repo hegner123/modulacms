@@ -15,8 +15,18 @@ type MediaUploadResource struct {
 	http *httpClient
 }
 
+// MediaUploadOptions configures optional parameters for media uploads.
+type MediaUploadOptions struct {
+	// Path sets the S3 key path prefix for organizing media files.
+	// Segments are separated by "/". Leading and trailing slashes are stripped server-side.
+	// Examples: "products/shoes", "blog/headers".
+	// When empty, the server defaults to date-based organization (YYYY/M).
+	Path string
+}
+
 // Upload uploads a file and returns the created media entity.
-func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename string) (*Media, error) {
+// An optional MediaUploadOptions can control the storage path.
+func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename string, opts *MediaUploadOptions) (*Media, error) {
 	var buf bytes.Buffer
 	writer := multipart.NewWriter(&buf)
 
@@ -27,6 +37,16 @@ func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename 
 
 	if _, err := io.Copy(part, r); err != nil {
 		return nil, fmt.Errorf("modulacms: copy file data: %w", err)
+	}
+
+	if opts != nil && opts.Path != "" {
+		pathField, err := writer.CreateFormField("path")
+		if err != nil {
+			return nil, fmt.Errorf("modulacms: create path field: %w", err)
+		}
+		if _, err := pathField.Write([]byte(opts.Path)); err != nil {
+			return nil, fmt.Errorf("modulacms: write path field: %w", err)
+		}
 	}
 
 	if err := writer.Close(); err != nil {

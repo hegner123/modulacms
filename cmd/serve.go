@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"crypto/tls"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"net"
@@ -10,6 +12,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -83,7 +86,7 @@ var serveCmd = &cobra.Command{
 			}
 		}
 
-		cfg, driver, err := loadConfigAndDB()
+		mgr, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -93,13 +96,18 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
+		cfg, err := mgr.Config()
+		if err != nil {
+			return err
+		}
+
 		// Initialize isolated plugin database pool
 		pluginPool, pluginPoolCleanup, err := initPluginPool(cfg)
 		if err != nil {
 			return fmt.Errorf("plugin pool init failed: %w", err)
 		}
 		defer pluginPoolCleanup()
-		pluginManager := initPluginManager(rootCtx, cfg, pluginPool)
+		pluginManager := initPluginManager(rootCtx, cfg, pluginPool, driver)
 
 		if cfg.Node_ID == "" {
 			cfg.Node_ID = string(types.NewNodeID())
@@ -143,12 +151,18 @@ var serveCmd = &cobra.Command{
 			if s3Err != nil {
 				utility.DefaultLogger.Warn("S3 connection failed, media uploads will be unavailable", s3Err)
 			} else {
-				for _, name := range []string{cfg.Bucket_Media, cfg.Bucket_Backup} {
-					if name == "" {
-						continue
+				// Media bucket: public read access for serving assets
+				if cfg.Bucket_Media != "" {
+					if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Media); bErr != nil {
+						utility.DefaultLogger.Warn("Failed to ensure media bucket", bErr, "bucket", cfg.Bucket_Media)
+					} else if pErr := bucket.SetPublicReadPolicy(s3Session, cfg.Bucket_Media); pErr != nil {
+						utility.DefaultLogger.Warn("Failed to set public-read policy on media bucket", pErr, "bucket", cfg.Bucket_Media)
 					}
-					if bErr := bucket.EnsureBucket(s3Session, name); bErr != nil {
-						utility.DefaultLogger.Warn("Failed to ensure bucket", bErr, "bucket", name)
+				}
+				// Backup bucket: private, accessible only with configured credentials
+				if cfg.Bucket_Backup != "" {
+					if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Backup); bErr != nil {
+						utility.DefaultLogger.Warn("Failed to ensure backup bucket", bErr, "bucket", cfg.Bucket_Backup)
 					}
 				}
 			}
@@ -163,7 +177,7 @@ var serveCmd = &cobra.Command{
 				middleware.SSHSessionLoggingMiddleware(cfg),
 				middleware.SSHAuthenticationMiddleware(cfg),
 				middleware.SSHAuthorizationMiddleware(cfg),
-				cli.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger),
+				cli.CliMiddleware(&verbose, cfg, driver, utility.DefaultLogger, pluginManager, mgr),
 				logging.Middleware(),
 			),
 		)
@@ -176,7 +190,7 @@ var serveCmd = &cobra.Command{
 		if pluginManager != nil {
 			bridge = pluginManager.Bridge()
 		}
-		mux := router.NewModulacmsMux(*cfg, bridge)
+		mux := router.NewModulacmsMux(mgr, bridge)
 
 		// Phase 3: Inject HookRunner into request context so that audited
 		// operations can dispatch content lifecycle hooks. The HookRunnerMiddleware
@@ -188,7 +202,7 @@ var serveCmd = &cobra.Command{
 		}
 		middlewareHandler := middleware.Chain(
 			middleware.HookRunnerMiddleware(hookRunner),
-		)(middleware.DefaultMiddlewareChain(cfg)(mux))
+		)(middleware.DefaultMiddlewareChain(mgr)(mux))
 
 		manager := autocert.Manager{
 			Prompt: autocert.AcceptTOS,
@@ -258,6 +272,24 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
+		// Generate admin API token for CLI plugin commands.
+		// The token is inserted into the tokens table tied to the system user
+		// and written to a file so that CLI online commands can authenticate
+		// against the running server's admin API via the existing APIKeyAuth
+		// middleware. On graceful shutdown, the token row and file are removed.
+		var pluginAPITokenID string
+		var pluginAPITokenPath string
+		if cfg.Plugin_Enabled {
+			tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver)
+			if tokenErr != nil {
+				utility.DefaultLogger.Error("failed to generate plugin API token", tokenErr)
+			} else {
+				pluginAPITokenID = tokenID
+				pluginAPITokenPath = tokenPath
+				utility.DefaultLogger.Info("plugin API token created", "path", tokenPath)
+			}
+		}
+
 		// Wait for shutdown signal
 		<-done
 		utility.DefaultLogger.Info("Shutting down servers...")
@@ -281,6 +313,13 @@ var serveCmd = &cobra.Command{
 			return err
 		}
 
+		// Clean up the plugin API token before shutting down the plugin
+		// subsystems. The DB is still open at this point, so the token row
+		// can be deleted cleanly.
+		if pluginAPITokenID != "" {
+			cleanupPluginAPIToken(shutdownCtx, driver, pluginAPITokenID, pluginAPITokenPath)
+		}
+
 		// Shut down plugin subsystems after HTTP servers are drained so
 		// in-flight plugin requests can complete.
 		// S11 shutdown order: StopWatcher (stop file polling) -> bridge
@@ -302,4 +341,105 @@ var serveCmd = &cobra.Command{
 		utility.DefaultLogger.Info("Servers gracefully stopped.")
 		return nil
 	},
+}
+
+// generatePluginAPIToken creates a short-lived API token for CLI plugin commands.
+// It looks up the system user, cleans up any stale tokens from previous runs,
+// generates a new token, inserts it into the database, and writes it to a file.
+// Returns the token row ID and file path on success.
+func generatePluginAPIToken(ctx context.Context, driver db.DbDriver) (string, string, error) {
+	// Look up the system user (same pattern as internal/cli/model.go:218-224).
+	users, err := driver.ListUsers()
+	if err != nil {
+		return "", "", fmt.Errorf("list users for plugin API token: %w", err)
+	}
+	if users == nil {
+		return "", "", fmt.Errorf("no users found for plugin API token")
+	}
+
+	var systemUserID types.UserID
+	var found bool
+	for _, u := range *users {
+		if strings.EqualFold(u.Username, "system") {
+			systemUserID = u.UserID
+			found = true
+			break
+		}
+	}
+	if !found {
+		return "", "", fmt.Errorf("system user not found for plugin API token")
+	}
+
+	auditCtx := audited.Ctx(types.NodeID(""), systemUserID, "plugin-api-token-init", "127.0.0.1")
+	systemNullableID := types.NullableUserID{ID: systemUserID, Valid: true}
+
+	// Clean up stale api_key tokens from previous ungraceful shutdowns.
+	existingTokens, err := driver.GetTokenByUserId(systemNullableID)
+	if err != nil {
+		utility.DefaultLogger.Warn("failed to query existing tokens for stale cleanup", err)
+	} else if existingTokens != nil {
+		for _, tok := range *existingTokens {
+			if tok.TokenType != "api_key" {
+				continue
+			}
+			if delErr := driver.DeleteToken(ctx, auditCtx, tok.ID); delErr != nil {
+				utility.DefaultLogger.Warn("failed to delete stale plugin API token", delErr, "token_id", tok.ID)
+			} else {
+				utility.DefaultLogger.Info("deleted stale plugin API token", "token_id", tok.ID)
+			}
+		}
+	}
+
+	// Generate a new 32-byte random token, hex-encoded to 64 characters.
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return "", "", fmt.Errorf("generate random token: %w", err)
+	}
+	tokenValue := hex.EncodeToString(tokenBytes)
+
+	// Insert the token into the database.
+	created, err := driver.CreateToken(ctx, auditCtx, db.CreateTokenParams{
+		UserID:    systemNullableID,
+		TokenType: "api_key",
+		Token:     tokenValue,
+		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
+		ExpiresAt: types.Timestamp{Valid: false},
+		Revoked:   false,
+	})
+	if err != nil {
+		return "", "", fmt.Errorf("insert plugin API token: %w", err)
+	}
+	if created == nil {
+		return "", "", fmt.Errorf("insert plugin API token returned nil")
+	}
+
+	// Write the token value to <config_dir>/.plugin-api-token (mode 0600).
+	configDir := filepath.Dir(cfgPath)
+	tokenPath := filepath.Join(configDir, ".plugin-api-token")
+	if err := os.WriteFile(tokenPath, []byte(tokenValue), 0600); err != nil {
+		// Token is in the DB but file write failed. Attempt cleanup of the
+		// DB row to avoid an orphaned token, then return the error.
+		if delErr := driver.DeleteToken(ctx, auditCtx, created.ID); delErr != nil {
+			utility.DefaultLogger.Warn("failed to clean up token after file write failure", delErr)
+		}
+		return "", "", fmt.Errorf("write plugin API token file: %w", err)
+	}
+
+	return created.ID, tokenPath, nil
+}
+
+// cleanupPluginAPIToken deletes the token row from the database and removes the
+// token file. Called during graceful shutdown while the DB is still open.
+func cleanupPluginAPIToken(ctx context.Context, driver db.DbDriver, tokenID, tokenPath string) {
+	auditCtx := audited.Ctx(types.NodeID(""), types.UserID(""), "plugin-api-token-shutdown", "127.0.0.1")
+
+	if err := driver.DeleteToken(ctx, auditCtx, tokenID); err != nil {
+		utility.DefaultLogger.Warn("failed to delete plugin API token on shutdown", err, "token_id", tokenID)
+	} else {
+		utility.DefaultLogger.Info("deleted plugin API token on shutdown", "token_id", tokenID)
+	}
+
+	if err := os.Remove(tokenPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		utility.DefaultLogger.Warn("failed to remove plugin API token file on shutdown", err, "path", tokenPath)
+	}
 }

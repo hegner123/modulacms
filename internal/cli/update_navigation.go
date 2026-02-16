@@ -163,15 +163,12 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 
 			return m, tea.Batch(cmds...)
 		case CONFIGPAGE:
-			content, err := formatJSON(m.Config)
-			if err == nil {
-				cmds = append(cmds, SetViewportContentCmd(content))
-			} else {
-				cmds = append(cmds, SetViewportContentCmd(m.Content))
-			}
 			cmds = append(cmds, ReadyTrueCmd())
 			cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGPAGE]))
-
+			return m, tea.Batch(cmds...)
+		case CONFIGCATEGORYPAGE:
+			cmds = append(cmds, ReadyTrueCmd())
+			cmds = append(cmds, PageSetCmd(m.PageMap[CONFIGCATEGORYPAGE]))
 			return m, tea.Batch(cmds...)
 		case ROUTES:
 			page := m.PageMap[ROUTES]
@@ -211,6 +208,23 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case PLUGINSPAGE:
+			page := m.PageMap[PLUGINSPAGE]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, PluginsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case PLUGINDETAILPAGE:
+			page := m.PageMap[PLUGINDETAILPAGE]
+			cmds = append(cmds, PluginsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, CursorResetCmd())
 
 			return m, tea.Batch(cmds...)
 		}

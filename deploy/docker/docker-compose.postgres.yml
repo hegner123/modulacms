@@ -39,6 +39,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-modula}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modula}
       POSTGRES_DB: ${POSTGRES_DB:-modula_db}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres_db_data:/var/lib/postgresql/data
     healthcheck:

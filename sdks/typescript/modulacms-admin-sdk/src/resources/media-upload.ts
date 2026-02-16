@@ -16,6 +16,24 @@ import { isApiError } from '../types/common.js'
 import type { Media } from '../types/media.js'
 
 /**
+ * Options for media upload operations.
+ */
+type MediaUploadOptions = RequestOptions & {
+  /**
+   * Optional S3 key path prefix for organizing media files.
+   *
+   * Controls the directory structure in object storage. Segments are
+   * separated by `/`. Leading and trailing slashes are stripped server-side.
+   *
+   * @example `'products/shoes'` — stores as `products/shoes/filename.jpg`
+   * @example `'blog/headers'` — stores as `blog/headers/filename.jpg`
+   *
+   * When omitted, the server defaults to date-based organization (`YYYY/M`).
+   */
+  path?: string
+}
+
+/**
  * Media upload operations available on `client.mediaUpload`.
  */
 type MediaUploadResource = {
@@ -26,12 +44,12 @@ type MediaUploadResource = {
    * is set automatically by the browser/runtime (not `application/json`).
    *
    * @param file - The file to upload (browser `File` or `Blob`).
-   * @param opts - Optional request options (abort signal).
+   * @param opts - Optional upload options (abort signal, path).
    * @returns The created media entity. Note: `srcset` may be `null` initially.
    * @throws {@link ApiError} on non-2xx responses.
    * @throws `TypeError` on network failure.
    */
-  upload: (file: File | Blob, opts?: RequestOptions) => Promise<Media>
+  upload: (file: File | Blob, opts?: MediaUploadOptions) => Promise<Media>
 }
 
 /**
@@ -51,9 +69,12 @@ function createMediaUploadResource(
   apiKey?: string,
 ): MediaUploadResource {
   return {
-    async upload(file: File | Blob, opts?: RequestOptions): Promise<Media> {
+    async upload(file: File | Blob, opts?: MediaUploadOptions): Promise<Media> {
       const form = new FormData()
       form.append('file', file)
+      if (opts?.path !== undefined) {
+        form.append('path', opts.path)
+      }
 
       const headers: Record<string, string> = {}
       if (apiKey) {
@@ -124,14 +145,6 @@ function isDuplicateMedia(err: unknown): err is ApiError {
 }
 
 /**
- * Check if an error is an invalid media type rejection (HTTP 400).
- * Thrown when the uploaded file's MIME type is not allowed.
- */
-function isInvalidMediaType(err: unknown): err is ApiError {
-  return isApiError(err) && err.status === 400 && typeof err.message === 'string' && err.message.toLowerCase().includes('content type')
-}
-
-/**
  * Check if an error is a file-too-large rejection (HTTP 400).
  * Thrown when the uploaded file exceeds the server's size limit.
  */
@@ -139,5 +152,13 @@ function isFileTooLarge(err: unknown): err is ApiError {
   return isApiError(err) && err.status === 400 && typeof err.message === 'string' && err.message.toLowerCase().includes('too large')
 }
 
-export type { MediaUploadResource }
-export { createMediaUploadResource, isDuplicateMedia, isInvalidMediaType, isFileTooLarge }
+/**
+ * Check if an error is an invalid media path rejection (HTTP 400).
+ * Thrown when the `path` option contains invalid characters or path traversal.
+ */
+function isInvalidMediaPath(err: unknown): err is ApiError {
+  return isApiError(err) && err.status === 400 && typeof err.message === 'string' && (err.message.includes('path traversal') || err.message.includes('invalid character in path'))
+}
+
+export type { MediaUploadResource, MediaUploadOptions }
+export { createMediaUploadResource, isDuplicateMedia, isFileTooLarge, isInvalidMediaPath }

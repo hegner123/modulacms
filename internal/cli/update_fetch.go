@@ -340,6 +340,38 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 
+	case PluginsFetchMsg:
+		mgr := m.PluginManager
+		if mgr == nil {
+			return m, func() tea.Msg {
+				return PluginsFetchResultsMsg{Data: []PluginDisplay{}}
+			}
+		}
+		return m, func() tea.Msg {
+			instances := mgr.ListPlugins()
+			displays := make([]PluginDisplay, 0, len(instances))
+			for _, inst := range instances {
+				cbState := "closed"
+				if inst.CB != nil {
+					cbState = inst.CB.State().String()
+				}
+				displays = append(displays, PluginDisplay{
+					Name:        inst.Info.Name,
+					Version:     inst.Info.Version,
+					State:       inst.State.String(),
+					CBState:     cbState,
+					Description: inst.Info.Description,
+				})
+			}
+			return PluginsFetchResultsMsg{Data: displays}
+		}
+
+	case PluginsFetchResultsMsg:
+		return m, tea.Batch(
+			PluginsListSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
+
 	case FetchErrMsg:
 		// Handle an error from data fetching - show dialog to user
 		return m, tea.Batch(

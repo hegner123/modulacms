@@ -10,7 +10,6 @@ import (
 	_ "image/png"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -28,9 +27,6 @@ import (
 func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	d := db.ConfigDB(c)
 	bucketDir := c.Bucket_Media
-	now := time.Now()
-	year := now.Year()
-	month := now.Month()
 
 	filename := filepath.Base(srcFile)
 
@@ -82,6 +78,10 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	srcset := []string{}
 	uploadedKeys := []string{} // Track for rollback
 
+	// Derive the S3 path prefix from the original upload URL
+	endpointPrefix := c.BucketPublicURL() + "/" + bucketDir + "/"
+	mediaPath := MediaPathFromURL(string(row.URL), endpointPrefix)
+
 	// Get ACL from config or use default
 	acl := c.Bucket_Default_ACL
 	if acl == "" {
@@ -96,8 +96,8 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 		}
 
 		filename := filepath.Base(fullPath)
-		s3Key := fmt.Sprintf("%s/%d/%d/%s", bucketDir, year, month, filename)
-		uploadPath := fmt.Sprintf("%s/%s", c.BucketEndpointURL(), s3Key)
+		s3Key := fmt.Sprintf("%s/%s", mediaPath, filename)
+		uploadPath := fmt.Sprintf("%s/%s/%s", c.BucketPublicURL(), bucketDir, s3Key)
 
 		prep, err := bucket.UploadPrep(s3Key, c.Bucket_Media, file, acl)
 		if err != nil {

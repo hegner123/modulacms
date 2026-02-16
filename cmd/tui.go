@@ -26,7 +26,7 @@ var tuiDefaultCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -36,6 +36,10 @@ var tuiDefaultCmd = &cobra.Command{
 			}
 		}()
 
+		cfg, err := mgr.Config()
+		if err != nil {
+			return err
+		}
 		model, _ := tui.InitialModel(&verbose, cfg)
 		if _, ok := tui.Run(&model); !ok {
 			process, err := os.FindProcess(os.Getpid())
@@ -60,7 +64,7 @@ var tuiV1Cmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, driver, err := loadConfigAndDB()
+		mgr, driver, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -70,7 +74,11 @@ var tuiV1Cmd = &cobra.Command{
 			}
 		}()
 
-		model, _ := cli.InitialModel(&verbose, cfg, driver, utility.DefaultLogger)
+		cfg, err := mgr.Config()
+		if err != nil {
+			return err
+		}
+		model, _ := cli.InitialModel(&verbose, cfg, driver, utility.DefaultLogger, nil, mgr)
 		if _, ok := cli.CliRun(&model); !ok {
 			process, err := os.FindProcess(os.Getpid())
 			if err != nil {

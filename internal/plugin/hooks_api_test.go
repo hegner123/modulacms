@@ -11,7 +11,7 @@ func newHooksTestVM() *lua.LState {
 	L := lua.NewState(lua.Options{SkipOpenLibs: true})
 	ApplySandbox(L, SandboxConfig{AllowCoroutine: true})
 	RegisterLogAPI(L, "test_hooks")
-	RegisterDBAPI(L, NewDatabaseAPI(nil, "test_hooks", 0, 1000))
+	RegisterDBAPI(L, NewDatabaseAPI(nil, "test_hooks", 0, 1000, nil))
 	RegisterHTTPAPI(L, "test_hooks")
 	RegisterHooksAPI(L, "test_hooks")
 	FreezeModule(L, "db")

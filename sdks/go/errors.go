@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 )
 
 // ApiError represents an error response from the ModulaCMS API.
@@ -34,6 +35,25 @@ func IsUnauthorized(err error) bool {
 	var apiErr *ApiError
 	if errors.As(err, &apiErr) {
 		return apiErr.StatusCode == http.StatusUnauthorized
+	}
+	return false
+}
+
+// IsDuplicateMedia reports whether the error is a 409 Conflict for a duplicate media upload.
+func IsDuplicateMedia(err error) bool {
+	var apiErr *ApiError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusConflict
+	}
+	return false
+}
+
+// IsInvalidMediaPath reports whether the error is a 400 Bad Request for an invalid media path.
+func IsInvalidMediaPath(err error) bool {
+	var apiErr *ApiError
+	if errors.As(err, &apiErr) {
+		return apiErr.StatusCode == http.StatusBadRequest &&
+			(strings.Contains(apiErr.Body, "path traversal") || strings.Contains(apiErr.Body, "invalid character in path"))
 	}
 	return false
 }

@@ -26,7 +26,7 @@ var backupCreateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -35,6 +35,11 @@ var backupCreateCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			return fmt.Errorf("reading configuration: %w", err)
+		}
 
 		driver := db.ConfigDB(*cfg)
 		backupID := types.NewBackupID()
@@ -104,7 +109,7 @@ var backupRestoreCmd = &cobra.Command{
 		configureLogger()
 		backupPath := args[0]
 
-		cfg, err := loadConfig()
+		cfg, err := loadConfigPtr()
 		if err != nil {
 			return fmt.Errorf("loading configuration: %w", err)
 		}
@@ -158,7 +163,7 @@ var backupListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		configureLogger()
 
-		cfg, _, err := loadConfigAndDB()
+		mgr, _, err := loadConfigAndDB()
 		if err != nil {
 			return err
 		}
@@ -167,6 +172,11 @@ var backupListCmd = &cobra.Command{
 				utility.DefaultLogger.Error("Database pool close error", cerr)
 			}
 		}()
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			return fmt.Errorf("reading configuration: %w", err)
+		}
 
 		driver := db.ConfigDB(*cfg)
 		backups, err := driver.ListBackups(db.ListBackupsParams{Limit: 50, Offset: 0})

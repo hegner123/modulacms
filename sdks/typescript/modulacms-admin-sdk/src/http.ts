@@ -73,6 +73,18 @@ type HttpClient = {
   put: <T>(path: string, body?: Record<string, unknown>, opts?: RequestOptions) => Promise<T>
 
   /**
+   * Perform a PATCH request with a JSON body and parse the response.
+   * @typeParam T - Expected response body type.
+   * @param path - API path.
+   * @param body - JSON-serializable request body.
+   * @param opts - Per-request options.
+   * @returns Parsed JSON response body.
+   * @throws {@link ApiError} on non-2xx or non-JSON responses.
+   * @throws `TypeError` on network failure.
+   */
+  patch: <T>(path: string, body?: Record<string, unknown>, opts?: RequestOptions) => Promise<T>
+
+  /**
    * Perform a DELETE request. Returns void on success.
    * @param path - API path.
    * @param params - Optional query parameters.
@@ -264,6 +276,18 @@ function createHttpClient(config: HttpClientConfig): HttpClient {
       const url = buildUrl(baseUrl, path)
       const response = await fetch(url, {
         method: 'PUT',
+        headers: headers(),
+        credentials,
+        signal: mergeSignals(defaultTimeout, opts),
+        ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
+      })
+      return handleResponse<T>(response)
+    },
+
+    async patch<T>(path: string, body?: Record<string, unknown>, opts?: RequestOptions): Promise<T> {
+      const url = buildUrl(baseUrl, path)
+      const response = await fetch(url, {
+        method: 'PATCH',
         headers: headers(),
         credentials,
         signal: mergeSignals(defaultTimeout, opts),

@@ -134,6 +134,11 @@ func TestNewClient_AllResourcesInitialized(t *testing.T) {
 		{"Sessions", client.Sessions == nil},
 		{"Import", client.Import == nil},
 		{"ContentBatch", client.ContentBatch == nil},
+
+		// Plugin resources
+		{"Plugins", client.Plugins == nil},
+		{"PluginRoutes", client.PluginRoutes == nil},
+		{"PluginHooks", client.PluginHooks == nil},
 	}
 
 	for _, tt := range tests {

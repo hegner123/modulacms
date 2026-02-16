@@ -4,10 +4,13 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -21,8 +24,8 @@ func configureLogger() {
 	}
 }
 
-// loadConfig loads the configuration from cfgPath.
-func loadConfig() (*config.Config, error) {
+// loadConfig loads the configuration from cfgPath and returns the Manager.
+func loadConfig() (*config.Manager, error) {
 	configProvider := config.NewFileProvider(cfgPath)
 	configManager := config.NewManager(configProvider)
 
@@ -30,13 +33,28 @@ func loadConfig() (*config.Config, error) {
 		return nil, err
 	}
 
-	return configManager.Config()
+	return configManager, nil
+}
+
+// loadConfigPtr loads the configuration and returns a plain *config.Config pointer.
+// Used by commands that don't need the Manager (show, validate, etc.).
+func loadConfigPtr() (*config.Config, error) {
+	mgr, err := loadConfig()
+	if err != nil {
+		return nil, err
+	}
+	return mgr.Config()
 }
 
 // loadConfigAndDB loads the configuration and initializes the singleton database pool.
 // The caller is responsible for calling db.CloseDB() when done.
-func loadConfigAndDB() (*config.Config, db.DbDriver, error) {
-	cfg, err := loadConfig()
+func loadConfigAndDB() (*config.Manager, db.DbDriver, error) {
+	mgr, err := loadConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	cfg, err := mgr.Config()
 	if err != nil {
 		return nil, nil, err
 	}
@@ -46,7 +64,7 @@ func loadConfigAndDB() (*config.Config, db.DbDriver, error) {
 		return nil, nil, err
 	}
 
-	return cfg, driver, nil
+	return mgr, driver, nil
 }
 
 // initObservability starts the observability client if enabled.
@@ -150,6 +168,32 @@ func logConfigSummary(cfg *config.Config) {
 	utility.DefaultLogger.Info("CORS", "origins", cfg.Cors_Origins, "credentials", cfg.Cors_Credentials)
 }
 
+// pluginTableRegistrar adapts DbDriver to the plugin.TableRegistrar interface.
+type pluginTableRegistrar struct {
+	driver db.DbDriver
+}
+
+func (r *pluginTableRegistrar) RegisterTable(ctx context.Context, label string) error {
+	tables, err := r.driver.ListTables()
+	if err != nil {
+		return fmt.Errorf("listing tables: %w", err)
+	}
+	if tables != nil {
+		for _, t := range *tables {
+			if t.Label == label {
+				return nil // already registered, idempotent no-op
+			}
+		}
+	}
+
+	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "plugin-table-register", "127.0.0.1")
+	_, err = r.driver.CreateTable(ctx, ac, db.CreateTableParams{Label: label})
+	if err != nil {
+		return fmt.Errorf("registering table %q: %w", label, err)
+	}
+	return nil
+}
+
 // initPluginManager creates and starts the plugin Manager if plugin_enabled is true.
 // Returns nil when plugins are disabled. The caller must defer Manager.Shutdown()
 // when the returned manager is non-nil.
@@ -159,7 +203,7 @@ func logConfigSummary(cfg *config.Config) {
 // the same pool afterward, the second close is a benign no-op that logs an error.
 // This is intentional — keeping both defers avoids a nil-pool panic if
 // initPluginManager returns nil but the pool was already created.
-func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *plugin.Manager {
+func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, driver db.DbDriver) *plugin.Manager {
 	if !cfg.Plugin_Enabled {
 		utility.DefaultLogger.Info("plugin system disabled")
 		return nil
@@ -168,6 +212,15 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *p
 	dir := cfg.Plugin_Directory
 	if dir == "" {
 		dir = "./plugins/"
+	}
+
+	// Auto-create the plugins directory if it does not exist.
+	if _, statErr := os.Stat(dir); os.IsNotExist(statErr) {
+		if mkErr := os.MkdirAll(dir, 0750); mkErr != nil {
+			utility.DefaultLogger.Error("failed to create plugin directory", mkErr, "path", dir)
+		} else {
+			utility.DefaultLogger.Info("created plugin directory", "path", dir)
+		}
 	}
 
 	// Map config driver name to query builder dialect.
@@ -194,6 +247,11 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *p
 		}
 	}
 
+	var tableReg plugin.TableRegistrar
+	if driver != nil {
+		tableReg = &pluginTableRegistrar{driver: driver}
+	}
+
 	mgr := plugin.NewManager(plugin.ManagerConfig{
 		Enabled:         cfg.Plugin_Enabled,
 		Directory:       dir,
@@ -213,7 +271,7 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB) *p
 		HotReload:     cfg.Plugin_Hot_Reload,
 		MaxFailures:   maxFailures,
 		ResetInterval: resetInterval,
-	}, pool, dialect)
+	}, pool, dialect, tableReg)
 
 	// Create HTTP bridge and wire it before LoadAll so that LoadAll can
 	// register plugin routes and manage the plugin_routes table.

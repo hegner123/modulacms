@@ -904,6 +904,54 @@ func (e *HookEngine) UnregisterPlugin(pluginName string) {
 	e.mu.Unlock()
 }
 
+// HookRegistration represents a single registered hook with its metadata
+// and approval status. Used by ListHooks() for the admin API response.
+type HookRegistration struct {
+	PluginName string `json:"plugin_name"`
+	Event      string `json:"event"`
+	Table      string `json:"table"`
+	Priority   int    `json:"priority"`
+	Approved   bool   `json:"approved"`
+	IsWildcard bool   `json:"is_wildcard"`
+}
+
+// ListHooks returns all registered hooks with their approval status.
+// Thread-safe: reads hookIndex (immutable after LoadAll) and approval map
+// (protected by mu). Used by the admin hooks list endpoint.
+func (e *HookEngine) ListHooks() []HookRegistration {
+	e.mu.RLock()
+	defer e.mu.RUnlock()
+
+	var result []HookRegistration
+	for _, entries := range e.hookIndex {
+		for _, entry := range entries {
+			approvalKey := approvalKeyFor(entry.pluginName, string(entry.event), entry.table)
+			reg := HookRegistration{
+				PluginName: entry.pluginName,
+				Event:      string(entry.event),
+				Table:      entry.table,
+				Priority:   entry.priority,
+				Approved:   e.approved[approvalKey],
+				IsWildcard: entry.isWildcard,
+			}
+			result = append(result, reg)
+		}
+	}
+
+	// Sort for deterministic output: plugin name, event, table.
+	sort.Slice(result, func(i, j int) bool {
+		if result[i].PluginName != result[j].PluginName {
+			return result[i].PluginName < result[j].PluginName
+		}
+		if result[i].Event != result[j].Event {
+			return result[i].Event < result[j].Event
+		}
+		return result[i].Table < result[j].Table
+	})
+
+	return result
+}
+
 // approvalKeyFor builds the map key for approval and circuit breaker lookups.
 func approvalKeyFor(plugin, event, table string) string {
 	return plugin + ":" + event + ":" + table

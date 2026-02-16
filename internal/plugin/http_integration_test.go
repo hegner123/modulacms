@@ -62,7 +62,7 @@ func setupFixtureBridge(t *testing.T) (*HTTPBridge, *Manager, func()) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 
@@ -352,7 +352,7 @@ func TestIntegration_TimeoutHandler(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  1,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite)
+	}, conn, db.DialectSQLite, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())

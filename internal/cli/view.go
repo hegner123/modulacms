@@ -85,23 +85,14 @@ func (m Model) View() string {
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
 	case CONFIGPAGE:
-		docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
-		body := lipgloss.JoinVertical(
-			lipgloss.Left,
-			RenderTitle(m.Titles[m.TitleFont]),
-			m.headerView(),
-			m.Viewport.View(),
-			m.footerView(),
-		)
-		controls := RenderFooter("↑↓/pgup/pgdn:Scroll │ h/backspace:Back │ q:Quit")
-		h := m.RenderSpace(docStyle.Render(body) + controls)
-		ui = lipgloss.JoinVertical(
-			lipgloss.Left,
-			docStyle.Render(body),
-			h,
-			controls,
-			m.RenderStatusBar(),
-		)
+		menu := ConfigCategoryMenuInit()
+		p := NewMenuPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddMenu(menu)
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
+	case CONFIGCATEGORYPAGE:
+		ui = m.renderConfigCategoryPage()
 	case TABLEPAGE:
 		menu := make([]string, 0, len(m.PageMenu))
 		for _, v := range m.PageMenu {
@@ -214,6 +205,24 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
+	case PLUGINDETAILPAGE:
+		menu := []string{
+			"Enable Plugin",
+			"Disable Plugin",
+			"Reload Plugin",
+			"Approve Routes",
+			"Approve Hooks",
+		}
+		header := "Plugin Detail"
+		if m.SelectedPlugin != "" {
+			header = fmt.Sprintf("Plugin: %s", m.SelectedPlugin)
+		}
+		p := NewMenuPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader(header)
+		p.AddMenu(menu)
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
 	default:
 		ui = m.RenderUI()
 	}
@@ -279,4 +288,78 @@ func formatJSON(b *config.Config) (string, error) {
 		return "", err
 	}
 	return string(formatted), nil
+}
+
+// renderConfigCategoryPage renders the config category detail page or raw JSON view.
+func (m Model) renderConfigCategoryPage() string {
+	docStyle := lipgloss.NewStyle().Padding(1, 2, 1, 2)
+
+	if m.ConfigCategory == "raw_json" {
+		body := lipgloss.JoinVertical(
+			lipgloss.Left,
+			RenderTitle(m.Titles[m.TitleFont]),
+			m.headerView(),
+			m.Viewport.View(),
+			m.footerView(),
+		)
+		controls := RenderFooter("↑↓/pgup/pgdn:Scroll │ h/backspace:Back │ q:Quit")
+		h := m.RenderSpace(docStyle.Render(body) + controls)
+		return lipgloss.JoinVertical(
+			lipgloss.Left,
+			docStyle.Render(body),
+			h,
+			controls,
+			m.RenderStatusBar(),
+		)
+	}
+
+	// Category field list view
+	title := config.CategoryLabel(m.ConfigCategory)
+	var rows []string
+
+	labelStyle := lipgloss.NewStyle().Width(25).Bold(true)
+	valueStyle := lipgloss.NewStyle().Width(40)
+	cursorStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+	restartMark := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Render(" [restart]")
+
+	for i, field := range m.ConfigCategoryFields {
+		value := config.ConfigFieldString(*m.Config, field.JSONKey)
+		if field.Sensitive && value != "" {
+			value = "********"
+		}
+
+		label := labelStyle.Render(field.Label)
+		val := valueStyle.Render(value)
+
+		suffix := ""
+		if !field.HotReloadable {
+			suffix = restartMark
+		}
+
+		row := fmt.Sprintf("  %s  %s%s", label, val, suffix)
+		if i == m.ConfigFieldCursor {
+			row = cursorStyle.Render("> ") + lipgloss.NewStyle().Bold(true).Render(
+				fmt.Sprintf("%s  %s%s", label, val, suffix),
+			)
+		}
+		rows = append(rows, row)
+	}
+
+	body := lipgloss.JoinVertical(
+		lipgloss.Left,
+		RenderTitle(m.Titles[m.TitleFont]),
+		"  "+lipgloss.NewStyle().Bold(true).Underline(true).Render(title),
+		"",
+		strings.Join(rows, "\n"),
+	)
+
+	controls := RenderFooter("↑↓:Navigate │ enter/e:Edit │ h/backspace:Back │ q:Quit")
+	h := m.RenderSpace(docStyle.Render(body) + controls)
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		docStyle.Render(body),
+		h,
+		controls,
+		m.RenderStatusBar(),
+	)
 }

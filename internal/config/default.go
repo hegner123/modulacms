@@ -47,6 +47,7 @@ func DefaultConfig() Config {
 	c.Backup_Paths = []string{""}
 	c.Bucket_Force_Path_Style = true
 	c.Bucket_Region = "us-east-1"
+	c.Max_Upload_Size = 10 << 20 // 10 MB
 
 	// Default CORS settings
 	c.Cors_Origins = []string{"http://localhost:3000"}

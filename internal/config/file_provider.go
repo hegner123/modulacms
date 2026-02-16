@@ -5,9 +5,15 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/hegner123/modulacms/internal/utility"
 )
+
+// Saver defines an interface for persisting configuration to storage.
+type Saver interface {
+	Save(c *Config) error
+}
 
 // FileProvider loads configuration from a JSON file
 type FileProvider struct {
@@ -45,4 +51,44 @@ func (fp *FileProvider) Get() (*Config, error) {
 	}
 
 	return &config, nil
+}
+
+// Save persists the configuration to the file atomically.
+// It writes to a temporary file first, then renames to avoid partial writes.
+func (fp *FileProvider) Save(c *Config) error {
+	data, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshaling config: %w", err)
+	}
+	data = append(data, '\n')
+
+	dir := filepath.Dir(fp.path)
+	tmp, err := os.CreateTemp(dir, "config-*.json.tmp")
+	if err != nil {
+		return fmt.Errorf("creating temp config file: %w", err)
+	}
+	tmpPath := tmp.Name()
+
+	if _, err := tmp.Write(data); err != nil {
+		// Write failed — attempt cleanup of the temp file.
+		tmp.Close() // Close error is secondary to the write failure.
+		os.Remove(tmpPath)
+		return fmt.Errorf("writing temp config file: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("closing temp config file: %w", err)
+	}
+
+	if err := os.Rename(tmpPath, fp.path); err != nil {
+		os.Remove(tmpPath)
+		return fmt.Errorf("renaming temp config to %s: %w", fp.path, err)
+	}
+
+	return nil
+}
+
+// Path returns the file path this provider reads from and writes to.
+func (fp *FileProvider) Path() string {
+	return fp.path
 }
