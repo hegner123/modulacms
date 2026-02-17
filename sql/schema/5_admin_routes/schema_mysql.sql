@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
     slug VARCHAR(255) NOT NULL,
     title VARCHAR(255) NOT NULL,
     status INT NOT NULL,
-    author_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
         UNIQUE (slug),
     CONSTRAINT fk_admin_routes_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_admin_routes_author ON admin_routes(author_id);

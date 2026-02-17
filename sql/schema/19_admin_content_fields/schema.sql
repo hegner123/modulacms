@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL,
+    author_id TEXT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 

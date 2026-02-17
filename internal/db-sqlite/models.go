@@ -237,16 +237,21 @@ type MediaDimensions struct {
 }
 
 type Permissions struct {
-	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      string             `json:"table_id"`
-	Mode         int64              `json:"mode"`
-	Label        string             `json:"label"`
+	PermissionID    types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected int64              `json:"system_protected"`
+}
+
+type RolePermissions struct {
+	ID           types.RolePermissionID `json:"id"`
+	RoleID       types.RoleID           `json:"role_id"`
+	PermissionID types.PermissionID     `json:"permission_id"`
 }
 
 type Roles struct {
-	RoleID      types.RoleID `json:"role_id"`
-	Label       string       `json:"label"`
-	Permissions string       `json:"permissions"`
+	RoleID          types.RoleID `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected int64        `json:"system_protected"`
 }
 
 type Routes struct {

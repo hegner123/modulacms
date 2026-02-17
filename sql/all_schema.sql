@@ -86,19 +86,16 @@ CREATE INDEX IF NOT EXISTS idx_events_user ON change_events(user_id);
 
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id TEXT PRIMARY KEY NOT NULL CHECK (length(permission_id) = 26),
-    table_id TEXT NOT NULL,
-    mode INTEGER NOT NULL,
-    label TEXT NOT NULL
+    label TEXT NOT NULL,
+    system_protected INTEGER NOT NULL DEFAULT 0
 );
 
 -- ===== 2_roles =====
 
 CREATE TABLE IF NOT EXISTS roles (
     role_id TEXT PRIMARY KEY NOT NULL CHECK (length(role_id) = 26),
-    label TEXT NOT NULL
-        UNIQUE,
-    permissions TEXT NOT NULL
-        UNIQUE
+    label TEXT NOT NULL UNIQUE,
+    system_protected INTEGER NOT NULL DEFAULT 0
 );
 
 -- ===== 3_media_dimension =====

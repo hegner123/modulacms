@@ -8,7 +8,6 @@ package mdbm
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"strings"
 	"time"
 
@@ -366,6 +365,17 @@ FROM roles
 
 func (q *Queries) CountRole(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countRole)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countRolePermission = `-- name: CountRolePermission :one
+SELECT COUNT(*) FROM role_permissions
+`
+
+func (q *Queries) CountRolePermission(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countRolePermission)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -1694,11 +1704,9 @@ func (q *Queries) CreateMediaTable(ctx context.Context) error {
 const createPermission = `-- name: CreatePermission :exec
 INSERT INTO permissions(
     permission_id,
-    table_id,
-    mode,
-    label
+    label,
+    system_protected
 ) VALUES (
-    ?,
     ?,
     ?,
     ?
@@ -1706,28 +1714,22 @@ INSERT INTO permissions(
 `
 
 type CreatePermissionParams struct {
-	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      string             `json:"table_id"`
-	Mode         int32              `json:"mode"`
-	Label        string             `json:"label"`
+	PermissionID    types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected bool               `json:"system_protected"`
 }
 
 func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) error {
-	_, err := q.db.ExecContext(ctx, createPermission,
-		arg.PermissionID,
-		arg.TableID,
-		arg.Mode,
-		arg.Label,
-	)
+	_, err := q.db.ExecContext(ctx, createPermission, arg.PermissionID, arg.Label, arg.SystemProtected)
 	return err
 }
 
 const createPermissionTable = `-- name: CreatePermissionTable :exec
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id VARCHAR(26) PRIMARY KEY NOT NULL,
-    table_id VARCHAR(26) NOT NULL,
-    mode INT NOT NULL,
-    label VARCHAR(255) NOT NULL
+    label VARCHAR(255) NOT NULL,
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE,
+    CONSTRAINT perm_label_unique UNIQUE (label)
 )
 `
 
@@ -1737,17 +1739,49 @@ func (q *Queries) CreatePermissionTable(ctx context.Context) error {
 }
 
 const createRole = `-- name: CreateRole :exec
-INSERT INTO roles (role_id, label, permissions) VALUES (?,?,?)
+INSERT INTO roles (role_id, label, system_protected) VALUES (?,?,?)
 `
 
 type CreateRoleParams struct {
-	RoleID      types.RoleID    `json:"role_id"`
-	Label       string          `json:"label"`
-	Permissions json.RawMessage `json:"permissions"`
+	RoleID          types.RoleID `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected bool         `json:"system_protected"`
 }
 
 func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) error {
-	_, err := q.db.ExecContext(ctx, createRole, arg.RoleID, arg.Label, arg.Permissions)
+	_, err := q.db.ExecContext(ctx, createRole, arg.RoleID, arg.Label, arg.SystemProtected)
+	return err
+}
+
+const createRolePermission = `-- name: CreateRolePermission :exec
+INSERT INTO role_permissions (id, role_id, permission_id) VALUES (?, ?, ?)
+`
+
+type CreateRolePermissionParams struct {
+	ID           types.RolePermissionID `json:"id"`
+	RoleID       types.RoleID           `json:"role_id"`
+	PermissionID types.PermissionID     `json:"permission_id"`
+}
+
+func (q *Queries) CreateRolePermission(ctx context.Context, arg CreateRolePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, createRolePermission, arg.ID, arg.RoleID, arg.PermissionID)
+	return err
+}
+
+const createRolePermissionsTable = `-- name: CreateRolePermissionsTable :exec
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id VARCHAR(26) NOT NULL,
+    role_id VARCHAR(26) NOT NULL,
+    permission_id VARCHAR(26) NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_rp_role FOREIGN KEY (role_id) REFERENCES roles(role_id) ON DELETE CASCADE,
+    CONSTRAINT fk_rp_permission FOREIGN KEY (permission_id) REFERENCES permissions(permission_id) ON DELETE CASCADE,
+    CONSTRAINT uq_role_permission UNIQUE (role_id, permission_id)
+)
+`
+
+func (q *Queries) CreateRolePermissionsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createRolePermissionsTable)
 	return err
 }
 
@@ -1755,7 +1789,7 @@ const createRoleTable = `-- name: CreateRoleTable :exec
 CREATE TABLE IF NOT EXISTS roles (
     role_id VARCHAR(26) PRIMARY KEY NOT NULL,
     label VARCHAR(255) NOT NULL,
-    permissions JSON NULL,
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE,
     CONSTRAINT label
         UNIQUE (label)
 )
@@ -2518,7 +2552,7 @@ func (q *Queries) DeleteOldBackups(ctx context.Context, arg DeleteOldBackupsPara
 }
 
 const deletePermission = `-- name: DeletePermission :exec
-DELETE FROM permissions 
+DELETE FROM permissions
 WHERE permission_id = ?
 `
 
@@ -2542,6 +2576,32 @@ type DeleteRoleParams struct {
 
 func (q *Queries) DeleteRole(ctx context.Context, arg DeleteRoleParams) error {
 	_, err := q.db.ExecContext(ctx, deleteRole, arg.RoleID)
+	return err
+}
+
+const deleteRolePermission = `-- name: DeleteRolePermission :exec
+DELETE FROM role_permissions WHERE id = ?
+`
+
+type DeleteRolePermissionParams struct {
+	ID types.RolePermissionID `json:"id"`
+}
+
+func (q *Queries) DeleteRolePermission(ctx context.Context, arg DeleteRolePermissionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRolePermission, arg.ID)
+	return err
+}
+
+const deleteRolePermissionByRoleID = `-- name: DeleteRolePermissionByRoleID :exec
+DELETE FROM role_permissions WHERE role_id = ?
+`
+
+type DeleteRolePermissionByRoleIDParams struct {
+	RoleID types.RoleID `json:"role_id"`
+}
+
+func (q *Queries) DeleteRolePermissionByRoleID(ctx context.Context, arg DeleteRolePermissionByRoleIDParams) error {
+	_, err := q.db.ExecContext(ctx, deleteRolePermissionByRoleID, arg.RoleID)
 	return err
 }
 
@@ -2854,6 +2914,15 @@ DROP TABLE permissions
 
 func (q *Queries) DropPermissionTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropPermissionTable)
+	return err
+}
+
+const dropRolePermissionsTable = `-- name: DropRolePermissionsTable :exec
+DROP TABLE IF EXISTS role_permissions
+`
+
+func (q *Queries) DropRolePermissionsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropRolePermissionsTable)
 	return err
 }
 
@@ -4110,7 +4179,7 @@ func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSet, error)
 }
 
 const getPermission = `-- name: GetPermission :one
-SELECT permission_id, table_id, mode, label FROM permissions 
+SELECT permission_id, label, system_protected FROM permissions
 WHERE permission_id = ? LIMIT 1
 `
 
@@ -4121,17 +4190,27 @@ type GetPermissionParams struct {
 func (q *Queries) GetPermission(ctx context.Context, arg GetPermissionParams) (Permissions, error) {
 	row := q.db.QueryRowContext(ctx, getPermission, arg.PermissionID)
 	var i Permissions
-	err := row.Scan(
-		&i.PermissionID,
-		&i.TableID,
-		&i.Mode,
-		&i.Label,
-	)
+	err := row.Scan(&i.PermissionID, &i.Label, &i.SystemProtected)
+	return i, err
+}
+
+const getPermissionByLabel = `-- name: GetPermissionByLabel :one
+SELECT permission_id, label, system_protected FROM permissions WHERE label = ? LIMIT 1
+`
+
+type GetPermissionByLabelParams struct {
+	Label string `json:"label"`
+}
+
+func (q *Queries) GetPermissionByLabel(ctx context.Context, arg GetPermissionByLabelParams) (Permissions, error) {
+	row := q.db.QueryRowContext(ctx, getPermissionByLabel, arg.Label)
+	var i Permissions
+	err := row.Scan(&i.PermissionID, &i.Label, &i.SystemProtected)
 	return i, err
 }
 
 const getRole = `-- name: GetRole :one
-SELECT role_id, label, permissions FROM roles
+SELECT role_id, label, system_protected FROM roles
 WHERE role_id = ? LIMIT 1
 `
 
@@ -4142,7 +4221,37 @@ type GetRoleParams struct {
 func (q *Queries) GetRole(ctx context.Context, arg GetRoleParams) (Roles, error) {
 	row := q.db.QueryRowContext(ctx, getRole, arg.RoleID)
 	var i Roles
-	err := row.Scan(&i.RoleID, &i.Label, &i.Permissions)
+	err := row.Scan(&i.RoleID, &i.Label, &i.SystemProtected)
+	return i, err
+}
+
+const getRoleByLabel = `-- name: GetRoleByLabel :one
+SELECT role_id, label, system_protected FROM roles WHERE label = ? LIMIT 1
+`
+
+type GetRoleByLabelParams struct {
+	Label string `json:"label"`
+}
+
+func (q *Queries) GetRoleByLabel(ctx context.Context, arg GetRoleByLabelParams) (Roles, error) {
+	row := q.db.QueryRowContext(ctx, getRoleByLabel, arg.Label)
+	var i Roles
+	err := row.Scan(&i.RoleID, &i.Label, &i.SystemProtected)
+	return i, err
+}
+
+const getRolePermission = `-- name: GetRolePermission :one
+SELECT id, role_id, permission_id FROM role_permissions WHERE id = ? LIMIT 1
+`
+
+type GetRolePermissionParams struct {
+	ID types.RolePermissionID `json:"id"`
+}
+
+func (q *Queries) GetRolePermission(ctx context.Context, arg GetRolePermissionParams) (RolePermissions, error) {
+	row := q.db.QueryRowContext(ctx, getRolePermission, arg.ID)
+	var i RolePermissions
+	err := row.Scan(&i.ID, &i.RoleID, &i.PermissionID)
 	return i, err
 }
 
@@ -4312,6 +4421,76 @@ func (q *Queries) GetSessionByUserId(ctx context.Context, arg GetSessionByUserId
 		&i.SessionData,
 	)
 	return i, err
+}
+
+const getShallowTreeByRouteId = `-- name: GetShallowTreeByRouteId :many
+    SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, dt.label as datatype_label, dt.type as datatype_type
+    FROM content_data cd
+    JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+    WHERE cd.route_id = ?
+    AND (cd.parent_id IS NULL OR cd.parent_id IN (
+        SELECT content_data_id FROM content_data
+        WHERE cd.parent_id IS NULL AND cd.route_id = ?
+    ))
+    ORDER BY cd.parent_id IS NULL DESC, cd.parent_id, cd.content_data_id
+`
+
+type GetShallowTreeByRouteIdParams struct {
+	RouteID   types.NullableRouteID `json:"route_id"`
+	RouteID_2 types.NullableRouteID `json:"route_id_2"`
+}
+
+type GetShallowTreeByRouteIdRow struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.NullableUserID     `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	DatatypeLabel string                   `json:"datatype_label"`
+	DatatypeType  string                   `json:"datatype_type"`
+}
+
+func (q *Queries) GetShallowTreeByRouteId(ctx context.Context, arg GetShallowTreeByRouteIdParams) ([]GetShallowTreeByRouteIdRow, error) {
+	rows, err := q.db.QueryContext(ctx, getShallowTreeByRouteId, arg.RouteID, arg.RouteID_2)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetShallowTreeByRouteIdRow{}
+	for rows.Next() {
+		var i GetShallowTreeByRouteIdRow
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.DatatypeLabel,
+			&i.DatatypeType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getTable = `-- name: GetTable :one
@@ -5129,6 +5308,92 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 	return items, nil
 }
 
+const listAdminContentDataWithDatatypeByRoute = `-- name: ListAdminContentDataWithDatatypeByRoute :many
+SELECT
+    acd.admin_content_data_id, acd.parent_id, acd.first_child_id,
+    acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id,
+    acd.admin_datatype_id, acd.author_id, acd.status,
+    acd.date_created, acd.date_modified,
+    adt.admin_datatype_id AS dt_admin_datatype_id,
+    adt.parent_id AS dt_parent_id,
+    adt.label AS dt_label,
+    adt.type AS dt_type,
+    adt.author_id AS dt_author_id,
+    adt.date_created AS dt_date_created,
+    adt.date_modified AS dt_date_modified
+FROM admin_content_data acd
+JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
+WHERE acd.admin_route_id = ?
+ORDER BY acd.parent_id IS NULL DESC, acd.parent_id, acd.admin_content_data_id
+`
+
+type ListAdminContentDataWithDatatypeByRouteParams struct {
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
+}
+
+type ListAdminContentDataWithDatatypeByRouteRow struct {
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.NullableUserID          `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
+	DtAdminDatatypeId  types.AdminDatatypeID         `json:"dt_admin_datatype_id"`
+	DtParentId         types.NullableAdminDatatypeID `json:"dt_parent_id"`
+	DtLabel            string                        `json:"dt_label"`
+	DtType             string                        `json:"dt_type"`
+	DtAuthorId         types.NullableUserID          `json:"dt_author_id"`
+	DtDateCreated      types.Timestamp               `json:"dt_date_created"`
+	DtDateModified     types.Timestamp               `json:"dt_date_modified"`
+}
+
+func (q *Queries) ListAdminContentDataWithDatatypeByRoute(ctx context.Context, arg ListAdminContentDataWithDatatypeByRouteParams) ([]ListAdminContentDataWithDatatypeByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataWithDatatypeByRoute, arg.AdminRouteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminContentDataWithDatatypeByRouteRow{}
+	for rows.Next() {
+		var i ListAdminContentDataWithDatatypeByRouteRow
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.DtAdminDatatypeId,
+			&i.DtParentId,
+			&i.DtLabel,
+			&i.DtType,
+			&i.DtAuthorId,
+			&i.DtDateCreated,
+			&i.DtDateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminContentFields = `-- name: ListAdminContentFields :many
 SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
 ORDER BY admin_content_field_id
@@ -5282,6 +5547,95 @@ func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListA
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsWithFieldByRoute = `-- name: ListAdminContentFieldsWithFieldByRoute :many
+SELECT
+    acf.admin_content_field_id, acf.admin_route_id,
+    acf.admin_content_data_id, acf.admin_field_id,
+    acf.admin_field_value, acf.author_id,
+    acf.date_created, acf.date_modified,
+    af.admin_field_id AS f_admin_field_id,
+    af.parent_id AS f_parent_id,
+    af.label AS f_label,
+    af.data AS f_data,
+    af.validation AS f_validation,
+    af.ui_config AS f_ui_config,
+    af.type AS f_type,
+    af.author_id AS f_author_id,
+    af.date_created AS f_date_created,
+    af.date_modified AS f_date_modified
+FROM admin_content_fields acf
+JOIN admin_fields af ON acf.admin_field_id = af.admin_field_id
+WHERE acf.admin_route_id = ?
+ORDER BY acf.admin_content_data_id, acf.admin_field_id
+`
+
+type ListAdminContentFieldsWithFieldByRouteParams struct {
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
+}
+
+type ListAdminContentFieldsWithFieldByRouteRow struct {
+	AdminContentFieldID types.AdminContentFieldID     `json:"admin_content_field_id"`
+	AdminRouteID        types.NullableAdminRouteID    `json:"admin_route_id"`
+	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
+	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
+	AdminFieldValue     string                        `json:"admin_field_value"`
+	AuthorID            types.NullableUserID          `json:"author_id"`
+	DateCreated         types.Timestamp               `json:"date_created"`
+	DateModified        types.Timestamp               `json:"date_modified"`
+	FAdminFieldId       types.AdminFieldID            `json:"f_admin_field_id"`
+	FParentId           types.NullableAdminDatatypeID `json:"f_parent_id"`
+	FLabel              string                        `json:"f_label"`
+	FData               string                        `json:"f_data"`
+	FValidation         string                        `json:"f_validation"`
+	FUiConfig           string                        `json:"f_ui_config"`
+	FType               types.FieldType               `json:"f_type"`
+	FAuthorId           types.NullableUserID          `json:"f_author_id"`
+	FDateCreated        types.Timestamp               `json:"f_date_created"`
+	FDateModified       types.Timestamp               `json:"f_date_modified"`
+}
+
+func (q *Queries) ListAdminContentFieldsWithFieldByRoute(ctx context.Context, arg ListAdminContentFieldsWithFieldByRouteParams) ([]ListAdminContentFieldsWithFieldByRouteRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsWithFieldByRoute, arg.AdminRouteID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminContentFieldsWithFieldByRouteRow{}
+	for rows.Next() {
+		var i ListAdminContentFieldsWithFieldByRouteRow
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.FAdminFieldId,
+			&i.FParentId,
+			&i.FLabel,
+			&i.FData,
+			&i.FValidation,
+			&i.FUiConfig,
+			&i.FType,
+			&i.FAuthorId,
+			&i.FDateCreated,
+			&i.FDateModified,
 		); err != nil {
 			return nil, err
 		}
@@ -6788,6 +7142,74 @@ func (q *Queries) ListContentFieldsPaginated(ctx context.Context, arg ListConten
 	return items, nil
 }
 
+const listContentFieldsWithFieldByContentData = `-- name: ListContentFieldsWithFieldByContentData :many
+SELECT
+    cf.content_field_id, cf.route_id,
+    cf.content_data_id, cf.field_id,
+    cf.field_value, cf.author_id,
+    cf.date_created, cf.date_modified,
+    f.field_id AS f_field_id,
+    f.label AS f_label,
+    f.type AS f_type
+FROM content_fields cf
+JOIN fields f ON cf.field_id = f.field_id
+WHERE cf.content_data_id = ?
+ORDER BY cf.field_id
+`
+
+type ListContentFieldsWithFieldByContentDataParams struct {
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+}
+
+type ListContentFieldsWithFieldByContentDataRow struct {
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
+	FFieldId       types.FieldID           `json:"f_field_id"`
+	FLabel         string                  `json:"f_label"`
+	FType          types.FieldType         `json:"f_type"`
+}
+
+func (q *Queries) ListContentFieldsWithFieldByContentData(ctx context.Context, arg ListContentFieldsWithFieldByContentDataParams) ([]ListContentFieldsWithFieldByContentDataRow, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsWithFieldByContentData, arg.ContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListContentFieldsWithFieldByContentDataRow{}
+	for rows.Next() {
+		var i ListContentFieldsWithFieldByContentDataRow
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.FFieldId,
+			&i.FLabel,
+			&i.FType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentRelationsBySource = `-- name: ListContentRelationsBySource :many
 SELECT content_relation_id, source_content_id, target_content_id, field_id, sort_order, date_created FROM content_relations
 WHERE source_content_id = ?
@@ -7504,6 +7926,66 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 	return items, nil
 }
 
+const listFieldsWithSortOrderByDatatypeID = `-- name: ListFieldsWithSortOrderByDatatypeID :many
+SELECT
+    df.sort_order,
+    f.field_id,
+    f.label,
+    f.type,
+    f.data,
+    f.validation,
+    f.ui_config
+FROM datatypes_fields df
+JOIN fields f ON df.field_id = f.field_id
+WHERE df.datatype_id = ?
+ORDER BY df.sort_order, df.id
+`
+
+type ListFieldsWithSortOrderByDatatypeIDParams struct {
+	DatatypeID types.DatatypeID `json:"datatype_id"`
+}
+
+type ListFieldsWithSortOrderByDatatypeIDRow struct {
+	SortOrder  int32           `json:"sort_order"`
+	FieldID    types.FieldID   `json:"field_id"`
+	Label      string          `json:"label"`
+	Type       types.FieldType `json:"type"`
+	Data       string          `json:"data"`
+	Validation string          `json:"validation"`
+	UiConfig   string          `json:"ui_config"`
+}
+
+func (q *Queries) ListFieldsWithSortOrderByDatatypeID(ctx context.Context, arg ListFieldsWithSortOrderByDatatypeIDParams) ([]ListFieldsWithSortOrderByDatatypeIDRow, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldsWithSortOrderByDatatypeID, arg.DatatypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListFieldsWithSortOrderByDatatypeIDRow{}
+	for rows.Next() {
+		var i ListFieldsWithSortOrderByDatatypeIDRow
+		if err := rows.Scan(
+			&i.SortOrder,
+			&i.FieldID,
+			&i.Label,
+			&i.Type,
+			&i.Data,
+			&i.Validation,
+			&i.UiConfig,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listMedia = `-- name: ListMedia :many
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, date_created, date_modified FROM media
 ORDER BY name
@@ -7635,8 +8117,8 @@ func (q *Queries) ListMediaPaginated(ctx context.Context, arg ListMediaPaginated
 }
 
 const listPermission = `-- name: ListPermission :many
-SELECT permission_id, table_id, mode, label FROM permissions 
-ORDER BY table_id
+SELECT permission_id, label, system_protected FROM permissions
+ORDER BY label
 `
 
 func (q *Queries) ListPermission(ctx context.Context) ([]Permissions, error) {
@@ -7648,12 +8130,7 @@ func (q *Queries) ListPermission(ctx context.Context) ([]Permissions, error) {
 	items := []Permissions{}
 	for rows.Next() {
 		var i Permissions
-		if err := rows.Scan(
-			&i.PermissionID,
-			&i.TableID,
-			&i.Mode,
-			&i.Label,
-		); err != nil {
+		if err := rows.Scan(&i.PermissionID, &i.Label, &i.SystemProtected); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -7667,8 +8144,41 @@ func (q *Queries) ListPermission(ctx context.Context) ([]Permissions, error) {
 	return items, nil
 }
 
+const listPermissionLabelsByRoleID = `-- name: ListPermissionLabelsByRoleID :many
+SELECT p.label FROM role_permissions rp
+JOIN permissions p ON rp.permission_id = p.permission_id
+WHERE rp.role_id = ? ORDER BY p.label
+`
+
+type ListPermissionLabelsByRoleIDParams struct {
+	RoleID types.RoleID `json:"role_id"`
+}
+
+func (q *Queries) ListPermissionLabelsByRoleID(ctx context.Context, arg ListPermissionLabelsByRoleIDParams) ([]string, error) {
+	rows, err := q.db.QueryContext(ctx, listPermissionLabelsByRoleID, arg.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var label string
+		if err := rows.Scan(&label); err != nil {
+			return nil, err
+		}
+		items = append(items, label)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listRole = `-- name: ListRole :many
-SELECT role_id, label, permissions FROM roles
+SELECT role_id, label, system_protected FROM roles
 `
 
 func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
@@ -7680,7 +8190,96 @@ func (q *Queries) ListRole(ctx context.Context) ([]Roles, error) {
 	items := []Roles{}
 	for rows.Next() {
 		var i Roles
-		if err := rows.Scan(&i.RoleID, &i.Label, &i.Permissions); err != nil {
+		if err := rows.Scan(&i.RoleID, &i.Label, &i.SystemProtected); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRolePermission = `-- name: ListRolePermission :many
+SELECT id, role_id, permission_id FROM role_permissions ORDER BY id
+`
+
+func (q *Queries) ListRolePermission(ctx context.Context) ([]RolePermissions, error) {
+	rows, err := q.db.QueryContext(ctx, listRolePermission)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolePermissions{}
+	for rows.Next() {
+		var i RolePermissions
+		if err := rows.Scan(&i.ID, &i.RoleID, &i.PermissionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRolePermissionByPermissionID = `-- name: ListRolePermissionByPermissionID :many
+SELECT id, role_id, permission_id FROM role_permissions WHERE permission_id = ? ORDER BY id
+`
+
+type ListRolePermissionByPermissionIDParams struct {
+	PermissionID types.PermissionID `json:"permission_id"`
+}
+
+func (q *Queries) ListRolePermissionByPermissionID(ctx context.Context, arg ListRolePermissionByPermissionIDParams) ([]RolePermissions, error) {
+	rows, err := q.db.QueryContext(ctx, listRolePermissionByPermissionID, arg.PermissionID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolePermissions{}
+	for rows.Next() {
+		var i RolePermissions
+		if err := rows.Scan(&i.ID, &i.RoleID, &i.PermissionID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listRolePermissionByRoleID = `-- name: ListRolePermissionByRoleID :many
+SELECT id, role_id, permission_id FROM role_permissions WHERE role_id = ? ORDER BY id
+`
+
+type ListRolePermissionByRoleIDParams struct {
+	RoleID types.RoleID `json:"role_id"`
+}
+
+func (q *Queries) ListRolePermissionByRoleID(ctx context.Context, arg ListRolePermissionByRoleIDParams) ([]RolePermissions, error) {
+	rows, err := q.db.QueryContext(ctx, listRolePermissionByRoleID, arg.RoleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RolePermissions{}
+	for rows.Next() {
+		var i RolePermissions
+		if err := rows.Scan(&i.ID, &i.RoleID, &i.PermissionID); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -8078,6 +8677,64 @@ func (q *Queries) ListUserSshKeys(ctx context.Context, arg ListUserSshKeysParams
 			&i.Label,
 			&i.DateCreated,
 			&i.LastUsed,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listUsersWithRoleLabel = `-- name: ListUsersWithRoleLabel :many
+SELECT
+    u.user_id,
+    u.username,
+    u.name,
+    u.email,
+    u.role,
+    r.label AS role_label,
+    u.date_created,
+    u.date_modified
+FROM users u
+JOIN roles r ON u.role = r.role_id
+ORDER BY u.username
+`
+
+type ListUsersWithRoleLabelRow struct {
+	UserID       types.UserID    `json:"user_id"`
+	Username     string          `json:"username"`
+	Name         string          `json:"name"`
+	Email        types.Email     `json:"email"`
+	Roles        string          `json:"role"`
+	RoleLabel    string          `json:"role_label"`
+	DateCreated  types.Timestamp `json:"date_created"`
+	DateModified types.Timestamp `json:"date_modified"`
+}
+
+func (q *Queries) ListUsersWithRoleLabel(ctx context.Context) ([]ListUsersWithRoleLabelRow, error) {
+	rows, err := q.db.QueryContext(ctx, listUsersWithRoleLabel)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListUsersWithRoleLabelRow{}
+	for rows.Next() {
+		var i ListUsersWithRoleLabelRow
+		if err := rows.Scan(
+			&i.UserID,
+			&i.Username,
+			&i.Name,
+			&i.Email,
+			&i.Roles,
+			&i.RoleLabel,
+			&i.DateCreated,
+			&i.DateModified,
 		); err != nil {
 			return nil, err
 		}
@@ -8875,44 +9532,37 @@ func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimen
 
 const updatePermission = `-- name: UpdatePermission :exec
 UPDATE permissions
-set table_id=?,
-    mode=?,
-    label=?
+SET label=?,
+    system_protected=?
 WHERE permission_id = ?
 `
 
 type UpdatePermissionParams struct {
-	TableID      string             `json:"table_id"`
-	Mode         int32              `json:"mode"`
-	Label        string             `json:"label"`
-	PermissionID types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected bool               `json:"system_protected"`
+	PermissionID    types.PermissionID `json:"permission_id"`
 }
 
 func (q *Queries) UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error {
-	_, err := q.db.ExecContext(ctx, updatePermission,
-		arg.TableID,
-		arg.Mode,
-		arg.Label,
-		arg.PermissionID,
-	)
+	_, err := q.db.ExecContext(ctx, updatePermission, arg.Label, arg.SystemProtected, arg.PermissionID)
 	return err
 }
 
 const updateRole = `-- name: UpdateRole :exec
 UPDATE roles
-set label=?,
-    permissions=?
+SET label=?,
+    system_protected=?
 WHERE role_id = ?
 `
 
 type UpdateRoleParams struct {
-	Label       string          `json:"label"`
-	Permissions json.RawMessage `json:"permissions"`
-	RoleID      types.RoleID    `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected bool         `json:"system_protected"`
+	RoleID          types.RoleID `json:"role_id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
-	_, err := q.db.ExecContext(ctx, updateRole, arg.Label, arg.Permissions, arg.RoleID)
+	_, err := q.db.ExecContext(ctx, updateRole, arg.Label, arg.SystemProtected, arg.RoleID)
 	return err
 }
 

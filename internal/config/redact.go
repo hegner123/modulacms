@@ -31,6 +31,18 @@ func RedactedConfig(c Config) Config {
 	if sensitive["observability_dsn"] {
 		redacted.Observability_DSN = redactedValue
 	}
+	if sensitive["email_password"] {
+		redacted.Email_Password = redactedValue
+	}
+	if sensitive["email_api_key"] {
+		redacted.Email_API_Key = redactedValue
+	}
+	if sensitive["email_aws_access_key_id"] {
+		redacted.Email_AWS_Access_Key_ID = redactedValue
+	}
+	if sensitive["email_aws_secret_access_key"] {
+		redacted.Email_AWS_Secret_Access_Key = redactedValue
+	}
 
 	return redacted
 }

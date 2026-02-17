@@ -21,6 +21,8 @@ export type {
   FieldID,
   MediaID,
   RoleID,
+  PermissionID,
+  RolePermissionID,
   RouteID,
   SessionID,
   UserOauthID,

@@ -396,7 +396,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 	return func() tea.Msg {
 		driver := db.ConfigDB(*cfg)
 
-		// Use authenticated user if available, otherwise fall back to first system_admin
+		// Use authenticated user if available, otherwise fall back to first admin
 		ownerID := userID
 		if ownerID.IsZero() {
 			roles, err := driver.ListRoles()
@@ -409,7 +409,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			}
 			var adminRoleID string
 			for _, r := range *roles {
-				if r.Label == "system_admin" {
+				if r.Label == "admin" {
 					adminRoleID = string(r.RoleID)
 					break
 				}
@@ -417,7 +417,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if adminRoleID == "" {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: "No system_admin role found. Run DB Init first.",
+					Message: "No admin role found. Run DB Init first.",
 					IsError: true,
 				}
 			}
@@ -439,7 +439,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			if ownerID.IsZero() {
 				return ActionResultMsg{
 					Title:   "Token Generation Failed",
-					Message: "No system_admin user found. Create one first.",
+					Message: "No admin user found. Create one first.",
 					IsError: true,
 				}
 			}
@@ -603,7 +603,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		now := time.Now().UTC()
 		ts := types.NewTimestamp(now)
 
-		// Look up the system_admin role by label
+		// Look up the admin role by label
 		roles, err := driver.ListRoles()
 		if err != nil {
 			return ActionResultMsg{
@@ -615,7 +615,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 
 		var roleID string
 		for _, r := range *roles {
-			if r.Label == "system_admin" {
+			if r.Label == "admin" {
 				roleID = string(r.RoleID)
 				break
 			}
@@ -623,7 +623,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		if roleID == "" {
 			return ActionResultMsg{
 				Title:   "Registration Failed",
-				Message: "No system_admin role found. Run DB Init first.",
+				Message: "No admin role found. Run DB Init first.",
 				IsError: true,
 			}
 		}

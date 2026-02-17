@@ -22,6 +22,7 @@ services:
       - postgres_cms_ssh:/app/.ssh
       - postgres_cms_backups:/app/backups
       - ./config.postgres.json:/app/config.json:ro
+      - ../../examples/plugins:/app/plugins:ro
     env_file:
       - .env
     depends_on:

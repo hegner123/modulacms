@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type VARCHAR(20) DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
 
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
             ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_fields_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_admin_fields_parent ON admin_fields(parent_id);

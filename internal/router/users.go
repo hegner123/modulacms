@@ -39,6 +39,68 @@ func UserHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 }
 
+// UserFullHandler handles requests for a single user with all related entities.
+func UserFullHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetUserFull(w, r, c)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// apiGetUserFull handles GET requests for a user with all related data composed.
+func apiGetUserFull(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+
+	q := r.URL.Query().Get("q")
+	userID, err := types.ParseUserID(q)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	view, err := db.AssembleUserFullView(d, userID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+	return nil
+}
+
+// UsersFullHandler handles the composed users+role_label endpoint.
+func UsersFullHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	switch r.Method {
+	case http.MethodGet:
+		apiListUsersWithRoleLabel(w, r, c)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// apiListUsersWithRoleLabel handles GET requests for listing users with role labels joined.
+func apiListUsersWithRoleLabel(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+
+	users, err := d.ListUsersWithRoleLabel()
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(users)
+	return nil
+}
+
 // ApiGetUser handles GET requests for a single user
 func ApiGetUser(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
@@ -112,6 +174,27 @@ func ApiCreateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
+	// Role assignment validation: non-admins cannot set role
+	if req.Role != "" && !middleware.ContextIsAdmin(r.Context()) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":  "forbidden",
+			"detail": "only administrators can assign roles",
+		})
+		return nil
+	}
+	// Default to viewer role if role is empty
+	if req.Role == "" {
+		viewerRole, roleErr := d.GetRoleByLabel("viewer")
+		if roleErr != nil {
+			utility.DefaultLogger.Error("failed to get viewer role for default assignment", roleErr)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return roleErr
+		}
+		req.Role = string(viewerRole.RoleID)
+	}
+
 	newUser := db.CreateUserParams{
 		Username:     req.Username,
 		Name:         req.Name,
@@ -157,6 +240,25 @@ func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		return err
 	}
 
+	// Always fetch the existing user for role comparison and password fallback
+	existing, getErr := d.GetUser(req.UserID)
+	if getErr != nil {
+		utility.DefaultLogger.Error("", getErr)
+		http.Error(w, "user not found", http.StatusNotFound)
+		return getErr
+	}
+
+	// Role assignment validation: non-admins cannot change roles
+	if req.Role != "" && req.Role != existing.Role && !middleware.ContextIsAdmin(r.Context()) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{
+			"error":  "forbidden",
+			"detail": "only administrators can assign roles",
+		})
+		return nil
+	}
+
 	var hash string
 	if req.Password != "" {
 		h, hashErr := auth.HashPassword(req.Password)
@@ -167,12 +269,6 @@ func ApiUpdateUser(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		}
 		hash = h
 	} else {
-		existing, getErr := d.GetUser(req.UserID)
-		if getErr != nil {
-			utility.DefaultLogger.Error("", getErr)
-			http.Error(w, "user not found", http.StatusNotFound)
-			return getErr
-		}
 		hash = existing.Hash
 	}
 

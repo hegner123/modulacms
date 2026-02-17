@@ -529,8 +529,6 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			s := MapStringPermission(row)
 			r := []string{
 				s.PermissionID,
-				s.TableID,
-				s.Mode,
 				s.Label,
 			}
 			collection = append(collection, r)
@@ -548,7 +546,6 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				row.RoleID.String(),
 				row.Label,
-				row.Permissions,
 			}
 			collection = append(collection, r)
 		}

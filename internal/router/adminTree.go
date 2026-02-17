@@ -44,56 +44,78 @@ func apiGetAdminTreeContent(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
-	routeIDStr := route.AdminRouteID.String()
+	routeID := types.NullableAdminRouteID{ID: route.AdminRouteID, Valid: true}
 
-	contentData, err := d.ListAdminContentDataByRoute(routeIDStr)
+	// Fetch content data + datatypes in one JOIN query (replaces N+1 pattern)
+	joinedData, err := d.ListAdminContentDataWithDatatypeByRoute(routeID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	// Filter to entries with valid datatype IDs and fetch corresponding datatypes.
-	// contentData and dt must stay in 1:1 correspondence for BuildAdminTree.
+	// Split JOIN rows into parallel slices for BuildAdminTree
 	var filteredData []db.AdminContentData
 	var dt []db.AdminDatatypes
-	for _, da := range *contentData {
-		if !da.AdminDatatypeID.Valid {
-			continue
-		}
-		datatype, err := d.GetAdminDatatypeById(da.AdminDatatypeID.ID)
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-		filteredData = append(filteredData, da)
-		dt = append(dt, *datatype)
+	for _, row := range *joinedData {
+		filteredData = append(filteredData, db.AdminContentData{
+			AdminContentDataID: row.AdminContentDataID,
+			ParentID:           row.ParentID,
+			FirstChildID:       row.FirstChildID,
+			NextSiblingID:      row.NextSiblingID,
+			PrevSiblingID:      row.PrevSiblingID,
+			AdminRouteID:       row.AdminRouteID,
+			AdminDatatypeID:    row.AdminDatatypeID,
+			AuthorID:           row.AuthorID,
+			Status:             row.Status,
+			DateCreated:        row.DateCreated,
+			DateModified:       row.DateModified,
+		})
+		dt = append(dt, db.AdminDatatypes{
+			AdminDatatypeID: row.DtAdminDatatypeID,
+			ParentID:        row.DtParentID,
+			Label:           row.DtLabel,
+			Type:            row.DtType,
+			AuthorID:        row.DtAuthorID,
+			DateCreated:     row.DtDateCreated,
+			DateModified:    row.DtDateModified,
+		})
 	}
 
-	contentFields, err := d.ListAdminContentFieldsByRoute(routeIDStr)
+	// Fetch content fields + field definitions in one JOIN query (replaces N+1 pattern)
+	joinedFields, err := d.ListAdminContentFieldsWithFieldByRoute(routeID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	// Filter to entries with valid field IDs and fetch corresponding fields.
-	// filteredFields and fd must stay in 1:1 correspondence for BuildAdminTree.
+	// Split JOIN rows into parallel slices for BuildAdminTree
 	var filteredFields []db.AdminContentFields
 	var fd []db.AdminFields
-	for _, cf := range *contentFields {
-		if !cf.AdminFieldID.Valid {
-			continue
-		}
-		field, err := d.GetAdminField(cf.AdminFieldID.ID)
-		if err != nil {
-			utility.DefaultLogger.Error("", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return err
-		}
-		filteredFields = append(filteredFields, cf)
-		fd = append(fd, *field)
+	for _, row := range *joinedFields {
+		filteredFields = append(filteredFields, db.AdminContentFields{
+			AdminContentFieldID: row.AdminContentFieldID,
+			AdminRouteID:        row.AdminRouteID,
+			AdminContentDataID:  row.AdminContentDataID,
+			AdminFieldID:        row.AdminFieldID,
+			AdminFieldValue:     row.AdminFieldValue,
+			AuthorID:            row.AuthorID,
+			DateCreated:         row.DateCreated,
+			DateModified:        row.DateModified,
+		})
+		fd = append(fd, db.AdminFields{
+			AdminFieldID: row.FAdminFieldID,
+			ParentID:     row.FParentID,
+			Label:        row.FLabel,
+			Data:         row.FData,
+			Validation:   row.FValidation,
+			UIConfig:     row.FUIConfig,
+			Type:         row.FType,
+			AuthorID:     row.FAuthorID,
+			DateCreated:  row.FDateCreated,
+			DateModified: row.FDateModified,
+		})
 	}
 
 	root, err := model.BuildAdminTree(utility.DefaultLogger, filteredData, dt, filteredFields, fd)

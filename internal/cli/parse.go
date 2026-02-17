@@ -102,7 +102,6 @@ func parseRoles(rows *sql.Rows) ([]db.Roles, error) {
 		err := rows.Scan(
 			&role.RoleID,
 			&role.Label,
-			&role.Permissions,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan role: %v", err)
@@ -125,8 +124,6 @@ func parsePermissions(rows *sql.Rows) ([]db.Permissions, error) {
 		var permission db.Permissions
 		err := rows.Scan(
 			&permission.PermissionID,
-			&permission.TableID,
-			&permission.Mode,
 			&permission.Label,
 		)
 		if err != nil {

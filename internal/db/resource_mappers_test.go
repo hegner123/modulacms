@@ -134,8 +134,6 @@ func TestMapStringPermission(t *testing.T) {
 	permID := types.NewPermissionID()
 	perm := Permissions{
 		PermissionID: permID,
-		TableID:      "users",
-		Mode:         3,
 		Label:        "read_write",
 	}
 
@@ -143,12 +141,6 @@ func TestMapStringPermission(t *testing.T) {
 
 	if got.PermissionID != permID.String() {
 		t.Errorf("PermissionID = %q, want %q", got.PermissionID, permID.String())
-	}
-	if got.TableID != "users" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "users")
-	}
-	if got.Mode != "3" {
-		t.Errorf("Mode = %q, want %q", got.Mode, "3")
 	}
 	if got.Label != "read_write" {
 		t.Errorf("Label = %q, want %q", got.Label, "read_write")
@@ -514,8 +506,6 @@ func TestDatabase_MapPermission(t *testing.T) {
 
 	input := mdb.Permissions{
 		PermissionID: permID,
-		TableID:      "routes",
-		Mode:         7,
 		Label:        "full_access",
 	}
 
@@ -523,12 +513,6 @@ func TestDatabase_MapPermission(t *testing.T) {
 
 	if got.PermissionID != permID {
 		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
-	}
-	if got.TableID != "routes" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "routes")
-	}
-	if got.Mode != 7 {
-		t.Errorf("Mode = %d, want %d", got.Mode, 7)
 	}
 	if got.Label != "full_access" {
 		t.Errorf("Label = %q, want %q", got.Label, "full_access")
@@ -539,9 +523,7 @@ func TestDatabase_MapCreatePermissionParams(t *testing.T) {
 	t.Parallel()
 	d := newTestDatabase()
 	input := CreatePermissionParams{
-		TableID: "media",
-		Mode:    1,
-		Label:   "read",
+		Label: "read",
 	}
 
 	got := d.MapCreatePermissionParams(input)
@@ -549,11 +531,8 @@ func TestDatabase_MapCreatePermissionParams(t *testing.T) {
 	if got.PermissionID.IsZero() {
 		t.Fatal("expected non-zero PermissionID to be generated")
 	}
-	if got.TableID != "media" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "media")
-	}
-	if got.Mode != 1 {
-		t.Errorf("Mode = %d, want %d", got.Mode, 1)
+	if got.Label != "read" {
+		t.Errorf("Label = %q, want %q", got.Label, "read")
 	}
 }
 
@@ -565,9 +544,8 @@ func TestDatabase_MapRole(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := mdb.Roles{
-		RoleID:      roleID,
-		Label:       "admin",
-		Permissions: "read,write,delete",
+		RoleID: roleID,
+		Label:  "admin",
 	}
 
 	got := d.MapRole(input)
@@ -577,9 +555,6 @@ func TestDatabase_MapRole(t *testing.T) {
 	}
 	if got.Label != "admin" {
 		t.Errorf("Label = %q, want %q", got.Label, "admin")
-	}
-	if got.Permissions != "read,write,delete" {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, "read,write,delete")
 	}
 }
 
@@ -813,9 +788,7 @@ func TestNewPermissionCmd_Accessors(t *testing.T) {
 	ctx := context.Background()
 	ac := audited.AuditContext{}
 	params := CreatePermissionParams{
-		TableID: "routes",
-		Mode:    1,
-		Label:   "read",
+		Label: "read",
 	}
 
 	cmd := d.NewPermissionCmd(ctx, ac, params)
@@ -1028,8 +1001,7 @@ func TestDatabase_MapCreateRoleParams(t *testing.T) {
 	d := newTestDatabase()
 
 	input := CreateRoleParams{
-		Label:       "editor",
-		Permissions: "read,write",
+		Label: "editor",
 	}
 
 	got := d.MapCreateRoleParams(input)
@@ -1040,9 +1012,6 @@ func TestDatabase_MapCreateRoleParams(t *testing.T) {
 	if got.Label != "editor" {
 		t.Errorf("Label = %q, want %q", got.Label, "editor")
 	}
-	if got.Permissions != "read,write" {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, "read,write")
-	}
 }
 
 func TestDatabase_MapUpdateRoleParams(t *testing.T) {
@@ -1051,9 +1020,8 @@ func TestDatabase_MapUpdateRoleParams(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := UpdateRoleParams{
-		Label:       "super-admin",
-		Permissions: "all",
-		RoleID:      roleID,
+		Label:  "super-admin",
+		RoleID: roleID,
 	}
 
 	got := d.MapUpdateRoleParams(input)
@@ -1063,9 +1031,6 @@ func TestDatabase_MapUpdateRoleParams(t *testing.T) {
 	}
 	if got.Label != "super-admin" {
 		t.Errorf("Label = %q, want %q", got.Label, "super-admin")
-	}
-	if got.Permissions != "all" {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, "all")
 	}
 }
 

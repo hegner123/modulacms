@@ -5,12 +5,13 @@ import (
 	"net/http"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"golang.org/x/time/rate"
 )
 
-func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge) *http.ServeMux {
+func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -32,12 +33,8 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge) *http.Serve
 	mux.HandleFunc("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusAccepted)
 	})
-	/*
-		mux.HandleFunc("/api/v1/auth/login", func(w http.ResponseWriter, r *http.Request) {
-		LoginHandler(w, r, *c)
-		})
-	*/
-	// Auth endpoints with CORS and rate limiting
+
+	// Auth endpoints with CORS and rate limiting (PUBLIC - no auth/permission required)
 	mux.Handle("POST /api/v1/auth/login", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		LoginHandler(w, r, *c)
 	}))))
@@ -57,178 +54,247 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge) *http.Serve
 	// OAuth endpoints with CORS and rate limiting (PUBLIC - no auth required)
 	mux.Handle("GET /api/v1/auth/oauth/login", corsMiddleware(authLimiter.Middleware(OauthInitiateHandler(*c))))
 	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(*c))))
-	mux.HandleFunc("/api/v1/admin/tree/", func(w http.ResponseWriter, r *http.Request) {
+
+	// Admin tree
+	mux.Handle("/api/v1/admin/tree/", middleware.RequireResourcePermission("admin_tree")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminTreeHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admincontentdatas", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin content data
+	mux.Handle("/api/v1/admincontentdatas", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminContentDatasHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admincontentdatas/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/admincontentdatas/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminContentDataHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admincontentfields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin content fields
+	mux.Handle("/api/v1/admincontentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminContentFieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admincontentfields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/admincontentfields/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminContentFieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admindatatypes", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin datatypes
+	mux.Handle("/api/v1/admindatatypes", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admindatatypes/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/admindatatypes/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypeHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/adminfields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin fields
+	mux.Handle("/api/v1/adminfields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminFieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/adminfields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/adminfields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminFieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admindatatypefields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin datatype fields
+	mux.Handle("/api/v1/admindatatypefields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypeFieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/admindatatypefields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/admindatatypefields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminDatatypeFieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/adminroutes", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Admin routes
+	mux.Handle("/api/v1/adminroutes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminRoutesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/adminroutes/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/adminroutes/", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminRouteHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/contentdata", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Content data
+	mux.Handle("/api/v1/contentdata", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDatasHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/contentdata/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/contentdata/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/contentfields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Content fields
+	mux.Handle("/api/v1/contentfields", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentFieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/contentfields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/contentfields/", middleware.RequireResourcePermission("content")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentFieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("POST /api/v1/content/batch", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Content batch
+	mux.Handle("POST /api/v1/content/batch", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentBatchHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/datatype", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Datatypes
+	mux.Handle("/api/v1/datatype", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/datatype/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("GET /api/v1/datatype/full", middleware.RequirePermission("datatypes:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		DatatypeFullHandler(w, r, *c)
+	})))
+	mux.Handle("/api/v1/datatype/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/datatypefields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Datatype fields
+	mux.Handle("/api/v1/datatypefields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeFieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/datatypefields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/datatypefields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeFieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/fields", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Fields
+	mux.Handle("/api/v1/fields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FieldsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/fields/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/fields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FieldHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/media", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Media
+	mux.Handle("/api/v1/media", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediasHandler(w, r, *c)
-	})
-	mux.HandleFunc("GET /api/v1/media/health", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("GET /api/v1/media/health", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaHealthHandler(w, r, *c)
-	})
-	mux.HandleFunc("DELETE /api/v1/media/cleanup", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("DELETE /api/v1/media/cleanup", middleware.RequirePermission("media:admin")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaCleanupHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/media/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/media/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/mediadimensions", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Media dimensions
+	mux.Handle("/api/v1/mediadimensions", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaDimensionsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/mediadimensions/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/mediadimensions/", middleware.RequireResourcePermission("media")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		MediaDimensionHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/routes", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Routes
+	mux.Handle("/api/v1/routes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RoutesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/routes/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/routes/", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RouteHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/roles", func(w http.ResponseWriter, r *http.Request) {
-		RolesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/roles/", func(w http.ResponseWriter, r *http.Request) {
-		RoleHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/sessions", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Roles (handlers receive pc for cache refresh)
+	mux.Handle("/api/v1/roles", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RolesHandler(w, r, *c, pc)
+	})))
+	mux.Handle("/api/v1/roles/", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RoleHandler(w, r, *c, pc)
+	})))
+
+	// Permissions (handlers receive pc for cache refresh)
+	mux.Handle("/api/v1/permissions", middleware.RequireResourcePermission("permissions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		PermissionsHandler(w, r, *c, pc)
+	})))
+	mux.Handle("/api/v1/permissions/", middleware.RequireResourcePermission("permissions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		PermissionHandler(w, r, *c, pc)
+	})))
+
+	// Sessions
+	mux.Handle("/api/v1/sessions", middleware.RequirePermission("sessions:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		SessionsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/sessions/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/sessions/", middleware.RequireResourcePermission("sessions")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		SessionHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/tables", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Tables
+	mux.Handle("/api/v1/tables", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		TablesHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/tables/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/tables/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		TableHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/tokens", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Tokens
+	mux.Handle("/api/v1/tokens", middleware.RequireResourcePermission("tokens")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		TokensHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/tokens/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/tokens/", middleware.RequireResourcePermission("tokens")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		TokenHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/usersoauth", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Users OAuth
+	mux.Handle("/api/v1/usersoauth", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserOauthsHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/usersoauth/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/usersoauth/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserOauthHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/users", func(w http.ResponseWriter, r *http.Request) {
+	})))
+
+	// Users
+	mux.Handle("/api/v1/users", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UsersHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/users/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("GET /api/v1/users/full", middleware.RequirePermission("users:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		UsersFullHandler(w, r, *c)
+	})))
+	mux.Handle("GET /api/v1/users/full/", middleware.RequirePermission("users:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		UserFullHandler(w, r, *c)
+	})))
+	mux.Handle("/api/v1/users/", middleware.RequireResourcePermission("users")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		UserHandler(w, r, *c)
-	})
+	})))
 
-	// SSH Key management endpoints (require authentication)
-	mux.HandleFunc("POST /api/v1/ssh-keys", func(w http.ResponseWriter, r *http.Request) {
+	// SSH Key management endpoints
+	mux.Handle("POST /api/v1/ssh-keys", middleware.RequirePermission("ssh_keys:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AddSSHKeyHandler(w, r, *c)
-	})
-	mux.HandleFunc("GET /api/v1/ssh-keys", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("GET /api/v1/ssh-keys", middleware.RequirePermission("ssh_keys:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ListSSHKeysHandler(w, r, *c)
-	})
-	mux.HandleFunc("DELETE /api/v1/ssh-keys/", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("DELETE /api/v1/ssh-keys/", middleware.RequirePermission("ssh_keys:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DeleteSSHKeyHandler(w, r, *c)
-	})
+	})))
 
-	// Import endpoints - accept CMS format and transform to ModulaCMS
-	mux.HandleFunc("/api/v1/import/contentful", func(w http.ResponseWriter, r *http.Request) {
+	// Import endpoints
+	mux.Handle("/api/v1/import/contentful", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportContentfulHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/import/sanity", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/import/sanity", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportSanityHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/import/strapi", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/import/strapi", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportStrapiHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/import/wordpress", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/import/wordpress", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportWordPressHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/import/clean", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/import/clean", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportCleanHandler(w, r, *c)
-	})
-	mux.HandleFunc("/api/v1/import", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	mux.Handle("/api/v1/import", middleware.RequirePermission("import:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ImportBulkHandler(w, r, *c)
-	})
+	})))
 
-	//mux.HandleFunc("/auth/google/login", oauthGoogleLogin)
-	//mux.HandleFunc("/auth/google/callback", oauthGoogleCallback)
+	// Role-permissions junction table CRUD
+	mux.Handle("/api/v1/role-permissions", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RolePermissionsHandler(w, r, *c, pc)
+	})))
+	mux.Handle("/api/v1/role-permissions/", middleware.RequireResourcePermission("roles")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RolePermissionHandler(w, r, *c, pc)
+	})))
+	mux.Handle("GET /api/v1/role-permissions/role/", middleware.RequirePermission("roles:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RolePermissionsByRoleHandler(w, r, *c)
+	})))
 
-	// Config management endpoints (admin-only)
+	// Config management endpoints (permission-gated)
 	configAuthChain := middleware.AuthenticatedChain(mgr)
-	mux.Handle("GET /api/v1/admin/config", configAuthChain(adminOnly(ConfigGetHandler(mgr))))
-	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(adminOnly(ConfigUpdateHandler(mgr))))
-	mux.Handle("GET /api/v1/admin/config/meta", configAuthChain(adminOnly(ConfigMetaHandler())))
+	mux.Handle("GET /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:read")(ConfigGetHandler(mgr))))
+	mux.Handle("PATCH /api/v1/admin/config", configAuthChain(middleware.RequirePermission("config:update")(ConfigUpdateHandler(mgr))))
+	mux.Handle("GET /api/v1/admin/config/meta", configAuthChain(middleware.RequirePermission("config:read")(ConfigMetaHandler())))
 
 	// Plugin HTTP bridge routes and admin endpoints
 	if bridge != nil {
@@ -236,14 +302,15 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge) *http.Serve
 
 		// Admin route management endpoints
 		authChain := middleware.AuthenticatedChain(mgr)
-		mux.Handle("GET /api/v1/admin/plugins/routes", authChain(pluginRoutesListHandler(bridge)))
-		mux.Handle("POST /api/v1/admin/plugins/routes/approve", authChain(adminOnly(pluginRoutesApproveHandler(bridge))))
-		mux.Handle("POST /api/v1/admin/plugins/routes/revoke", authChain(adminOnly(pluginRoutesRevokeHandler(bridge))))
+		mux.Handle("GET /api/v1/admin/plugins/routes", authChain(middleware.RequirePermission("plugins:read")(pluginRoutesListHandler(bridge))))
+		mux.Handle("POST /api/v1/admin/plugins/routes/approve", authChain(middleware.RequirePermission("plugins:admin")(pluginRoutesApproveHandler(bridge))))
+		mux.Handle("POST /api/v1/admin/plugins/routes/revoke", authChain(middleware.RequirePermission("plugins:admin")(pluginRoutesRevokeHandler(bridge))))
 
 		// Phase 4: Mount plugin management admin endpoints via bridge.
-		// The adminOnly wrapper is passed as a parameter since it is defined
-		// here (router-layer concern, not plugin-layer concern).
-		bridge.MountAdminEndpoints(mux, authChain, adminOnly)
+		bridge.MountAdminEndpoints(mux, authChain,
+			middleware.RequirePermission("plugins:read"),
+			middleware.RequirePermission("plugins:admin"),
+		)
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -251,21 +318,6 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge) *http.Serve
 	})
 	return mux
 
-}
-
-// adminOnly is a middleware wrapper that requires the authenticated user to
-// have the "admin" role. Returns 403 Forbidden if the user does not have
-// admin privileges. Must be used after AuthenticatedChain which ensures a
-// user exists in the context.
-func adminOnly(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		user := middleware.AuthenticatedUser(r.Context())
-		if user == nil || user.Role != "admin" {
-			http.Error(w, "Forbidden", http.StatusForbidden)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
 }
 
 // pluginRoutesListHandler returns all registered plugin routes with approval status.

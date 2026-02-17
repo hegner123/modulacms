@@ -10,7 +10,6 @@ import (
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/sqlc-dev/pqtype"
 )
 
 // --- Test data helpers ---
@@ -23,9 +22,8 @@ func TestDatabase_MapRole_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := mdb.Roles{
-		RoleID:      roleID,
-		Label:       "editor",
-		Permissions: `{"read":true,"write":true}`,
+		RoleID: roleID,
+		Label:  "editor",
 	}
 
 	got := d.MapRole(input)
@@ -35,9 +33,6 @@ func TestDatabase_MapRole_AllFields(t *testing.T) {
 	}
 	if got.Label != "editor" {
 		t.Errorf("Label = %q, want %q", got.Label, "editor")
-	}
-	if got.Permissions != `{"read":true,"write":true}` {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, `{"read":true,"write":true}`)
 	}
 }
 
@@ -52,9 +47,6 @@ func TestDatabase_MapRole_ZeroValues(t *testing.T) {
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
 	}
-	if got.Permissions != "" {
-		t.Errorf("Permissions = %q, want empty string", got.Permissions)
-	}
 }
 
 // --- SQLite Database.MapCreateRoleParams tests ---
@@ -64,8 +56,7 @@ func TestDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	d := Database{}
 
 	input := CreateRoleParams{
-		Label:       "viewer",
-		Permissions: `{"read":true}`,
+		Label: "viewer",
 	}
 
 	got := d.MapCreateRoleParams(input)
@@ -76,9 +67,6 @@ func TestDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	}
 	if got.Label != "viewer" {
 		t.Errorf("Label = %q, want %q", got.Label, "viewer")
-	}
-	if got.Permissions != `{"read":true}` {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, `{"read":true}`)
 	}
 }
 
@@ -103,18 +91,14 @@ func TestDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := UpdateRoleParams{
-		Label:       "superadmin",
-		Permissions: `{"all":true}`,
-		RoleID:      roleID,
+		Label:  "superadmin",
+		RoleID: roleID,
 	}
 
 	got := d.MapUpdateRoleParams(input)
 
 	if got.Label != "superadmin" {
 		t.Errorf("Label = %q, want %q", got.Label, "superadmin")
-	}
-	if got.Permissions != `{"all":true}` {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, `{"all":true}`)
 	}
 	if got.RoleID != roleID {
 		t.Errorf("RoleID = %v, want %v", got.RoleID, roleID)
@@ -129,9 +113,8 @@ func TestMysqlDatabase_MapRole_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := mdbm.Roles{
-		RoleID:      roleID,
-		Label:       "editor",
-		Permissions: json.RawMessage(`{"read":true,"write":true}`),
+		RoleID: roleID,
+		Label:  "editor",
 	}
 
 	got := d.MapRole(input)
@@ -141,9 +124,6 @@ func TestMysqlDatabase_MapRole_AllFields(t *testing.T) {
 	}
 	if got.Label != "editor" {
 		t.Errorf("Label = %q, want %q", got.Label, "editor")
-	}
-	if got.Permissions != `{"read":true,"write":true}` {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, `{"read":true,"write":true}`)
 	}
 }
 
@@ -158,29 +138,6 @@ func TestMysqlDatabase_MapRole_ZeroValues(t *testing.T) {
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
 	}
-	// NullString with Valid=false: String field is "" so Permissions should be ""
-	if got.Permissions != "" {
-		t.Errorf("Permissions = %q, want empty string", got.Permissions)
-	}
-}
-
-func TestMysqlDatabase_MapRole_NullPermissions(t *testing.T) {
-	t.Parallel()
-	d := MysqlDatabase{}
-
-	// When Permissions is NULL in MySQL, NullString.Valid is false and String is ""
-	input := mdbm.Roles{
-		RoleID:      types.NewRoleID(),
-		Label:       "viewer",
-		Permissions: nil,
-	}
-
-	got := d.MapRole(input)
-
-	// The mapper uses .String which returns "" when Valid is false
-	if got.Permissions != "" {
-		t.Errorf("Permissions = %q, want empty string for NULL permissions", got.Permissions)
-	}
 }
 
 // --- MySQL MysqlDatabase.MapCreateRoleParams tests ---
@@ -190,8 +147,7 @@ func TestMysqlDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	d := MysqlDatabase{}
 
 	input := CreateRoleParams{
-		Label:       "mysqlrole",
-		Permissions: `{"read":true}`,
+		Label: "mysqlrole",
 	}
 
 	got := d.MapCreateRoleParams(input)
@@ -201,47 +157,6 @@ func TestMysqlDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	}
 	if got.Label != "mysqlrole" {
 		t.Errorf("Label = %q, want %q", got.Label, "mysqlrole")
-	}
-	// Permissions should be wrapped in json.RawMessage
-	if len(got.Permissions) == 0 {
-		t.Fatal("Permissions is empty, want non-empty for non-empty string")
-	}
-	if string(got.Permissions) != `{"read":true}` {
-		t.Errorf("Permissions = %q, want %q", string(got.Permissions), `{"read":true}`)
-	}
-}
-
-func TestMysqlDatabase_MapCreateRoleParams_EmptyPermissions(t *testing.T) {
-	t.Parallel()
-	d := MysqlDatabase{}
-
-	// Empty string should produce empty json.RawMessage
-	input := CreateRoleParams{
-		Label:       "empty-perms",
-		Permissions: "",
-	}
-
-	got := d.MapCreateRoleParams(input)
-
-	if string(got.Permissions) != "" {
-		t.Errorf("Permissions = %q, want empty", string(got.Permissions))
-	}
-}
-
-func TestMysqlDatabase_MapCreateRoleParams_NullStringPermissions(t *testing.T) {
-	t.Parallel()
-	d := MysqlDatabase{}
-
-	// The literal string "null" should produce json.RawMessage("null")
-	input := CreateRoleParams{
-		Label:       "null-perms",
-		Permissions: "null",
-	}
-
-	got := d.MapCreateRoleParams(input)
-
-	if string(got.Permissions) != "null" {
-		t.Errorf("Permissions = %q, want %q", string(got.Permissions), "null")
 	}
 }
 
@@ -253,9 +168,8 @@ func TestMysqlDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := UpdateRoleParams{
-		Label:       "mysqlupdated",
-		Permissions: `{"updated":true}`,
-		RoleID:      roleID,
+		Label:  "mysqlupdated",
+		RoleID: roleID,
 	}
 
 	got := d.MapUpdateRoleParams(input)
@@ -265,12 +179,6 @@ func TestMysqlDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 	}
 	if got.RoleID != roleID {
 		t.Errorf("RoleID = %v, want %v", got.RoleID, roleID)
-	}
-	if len(got.Permissions) == 0 {
-		t.Fatal("Permissions is empty, want non-empty for non-empty string")
-	}
-	if string(got.Permissions) != `{"updated":true}` {
-		t.Errorf("Permissions = %q, want %q", string(got.Permissions), `{"updated":true}`)
 	}
 }
 
@@ -282,9 +190,8 @@ func TestPsqlDatabase_MapRole_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := mdbp.Roles{
-		RoleID:      roleID,
-		Label:       "admin",
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(`{"all":true}`), Valid: true},
+		RoleID: roleID,
+		Label:  "admin",
 	}
 
 	got := d.MapRole(input)
@@ -294,9 +201,6 @@ func TestPsqlDatabase_MapRole_AllFields(t *testing.T) {
 	}
 	if got.Label != "admin" {
 		t.Errorf("Label = %q, want %q", got.Label, "admin")
-	}
-	if got.Permissions != `{"all":true}` {
-		t.Errorf("Permissions = %q, want %q", got.Permissions, `{"all":true}`)
 	}
 }
 
@@ -311,29 +215,6 @@ func TestPsqlDatabase_MapRole_ZeroValues(t *testing.T) {
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
 	}
-	// NullRawMessage with nil RawMessage: string(nil) == ""
-	if got.Permissions != "" {
-		t.Errorf("Permissions = %q, want empty string", got.Permissions)
-	}
-}
-
-func TestPsqlDatabase_MapRole_NullPermissions(t *testing.T) {
-	t.Parallel()
-	d := PsqlDatabase{}
-
-	// When Permissions is NULL in PostgreSQL, NullRawMessage has nil RawMessage
-	input := mdbp.Roles{
-		RoleID:      types.NewRoleID(),
-		Label:       "viewer",
-		Permissions: pqtype.NullRawMessage{RawMessage: nil, Valid: false},
-	}
-
-	got := d.MapRole(input)
-
-	// The mapper uses string(a.Permissions.RawMessage) which is "" for nil
-	if got.Permissions != "" {
-		t.Errorf("Permissions = %q, want empty string for NULL permissions", got.Permissions)
-	}
 }
 
 // --- PostgreSQL PsqlDatabase.MapCreateRoleParams tests ---
@@ -343,8 +224,7 @@ func TestPsqlDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	d := PsqlDatabase{}
 
 	input := CreateRoleParams{
-		Label:       "psqlrole",
-		Permissions: `{"read":true}`,
+		Label: "psqlrole",
 	}
 
 	got := d.MapCreateRoleParams(input)
@@ -354,28 +234,6 @@ func TestPsqlDatabase_MapCreateRoleParams_GeneratesNewID(t *testing.T) {
 	}
 	if got.Label != "psqlrole" {
 		t.Errorf("Label = %q, want %q", got.Label, "psqlrole")
-	}
-	// Permissions should be wrapped in NullRawMessage via json.RawMessage
-	wantJSON := `{"read":true}`
-	if string(got.Permissions.RawMessage) != wantJSON {
-		t.Errorf("Permissions.RawMessage = %q, want %q", string(got.Permissions.RawMessage), wantJSON)
-	}
-}
-
-func TestPsqlDatabase_MapCreateRoleParams_EmptyPermissions(t *testing.T) {
-	t.Parallel()
-	d := PsqlDatabase{}
-
-	// Empty permissions: json.RawMessage("") is a non-nil empty RawMessage
-	input := CreateRoleParams{
-		Label:       "empty-perms",
-		Permissions: "",
-	}
-
-	got := d.MapCreateRoleParams(input)
-
-	if string(got.Permissions.RawMessage) != "" {
-		t.Errorf("Permissions.RawMessage = %q, want empty", string(got.Permissions.RawMessage))
 	}
 }
 
@@ -387,9 +245,8 @@ func TestPsqlDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 	roleID := types.NewRoleID()
 
 	input := UpdateRoleParams{
-		Label:       "psqlupdated",
-		Permissions: `{"updated":true}`,
-		RoleID:      roleID,
+		Label:  "psqlupdated",
+		RoleID: roleID,
 	}
 
 	got := d.MapUpdateRoleParams(input)
@@ -400,10 +257,6 @@ func TestPsqlDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 	if got.RoleID != roleID {
 		t.Errorf("RoleID = %v, want %v", got.RoleID, roleID)
 	}
-	wantJSON := `{"updated":true}`
-	if string(got.Permissions.RawMessage) != wantJSON {
-		t.Errorf("Permissions.RawMessage = %q, want %q", string(got.Permissions.RawMessage), wantJSON)
-	}
 }
 
 // --- Cross-database mapper consistency ---
@@ -412,18 +265,15 @@ func TestPsqlDatabase_MapUpdateRoleParams_AllFields(t *testing.T) {
 func TestCrossDatabaseMapRole_Consistency(t *testing.T) {
 	t.Parallel()
 	roleID := types.NewRoleID()
-	perms := `{"read":true,"write":false}`
 
 	sqliteInput := mdb.Roles{
-		RoleID: roleID, Label: "crossrole", Permissions: perms,
+		RoleID: roleID, Label: "crossrole",
 	}
 	mysqlInput := mdbm.Roles{
 		RoleID: roleID, Label: "crossrole",
-		Permissions: json.RawMessage(perms),
 	}
 	psqlInput := mdbp.Roles{
 		RoleID: roleID, Label: "crossrole",
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(perms), Valid: true},
 	}
 
 	sqliteResult := Database{}.MapRole(sqliteInput)
@@ -445,8 +295,7 @@ func TestCrossDatabaseMapCreateRoleParams_AutoIDGeneration(t *testing.T) {
 	t.Parallel()
 
 	input := CreateRoleParams{
-		Label:       "crosscreate",
-		Permissions: `{"cross":true}`,
+		Label: "crosscreate",
 	}
 
 	sqliteResult := Database{}.MapCreateRoleParams(input)
@@ -472,77 +321,6 @@ func TestCrossDatabaseMapCreateRoleParams_AutoIDGeneration(t *testing.T) {
 	}
 }
 
-// --- Permissions field mapping edge cases ---
-// The three drivers store permissions differently: plain string (SQLite),
-// json.RawMessage (MySQL), pqtype.NullRawMessage (PostgreSQL).
-// This test verifies correct round-trip behavior for various input shapes.
-
-func TestPermissionsFieldMapping_AllDatabases(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name  string
-		perms string
-	}{
-		{"valid JSON object", `{"read":true,"write":false}`},
-		{"empty string", ""},
-		{"JSON array", `["read","write","delete"]`},
-		{"nested JSON", `{"admin":{"read":true,"write":true},"viewer":{"read":true}}`},
-		// Unicode in permissions values
-		{"unicode permissions", `{"label":"edici\u00f3n","active":true}`},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-
-			// SQLite: plain string round-trip
-			sqliteResult := Database{}.MapRole(mdb.Roles{Permissions: tt.perms})
-			if sqliteResult.Permissions != tt.perms {
-				t.Errorf("SQLite MapRole: Permissions = %q, want %q", sqliteResult.Permissions, tt.perms)
-			}
-
-			// MySQL: NullString.String always returns the String field
-			mysqlInput := mdbm.Roles{
-				Permissions: json.RawMessage(tt.perms),
-			}
-			mysqlResult := MysqlDatabase{}.MapRole(mysqlInput)
-			if mysqlResult.Permissions != tt.perms {
-				t.Errorf("MySQL MapRole: Permissions = %q, want %q", mysqlResult.Permissions, tt.perms)
-			}
-
-			// PostgreSQL: json.RawMessage conversion
-			psqlInput := mdbp.Roles{
-				Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(tt.perms), Valid: tt.perms != ""},
-			}
-			psqlResult := PsqlDatabase{}.MapRole(psqlInput)
-			if psqlResult.Permissions != tt.perms {
-				t.Errorf("PostgreSQL MapRole: Permissions = %q, want %q", psqlResult.Permissions, tt.perms)
-			}
-
-			// Reverse: wrapper -> driver via MapCreateRoleParams
-			createInput := CreateRoleParams{Permissions: tt.perms}
-			sqliteCreate := Database{}.MapCreateRoleParams(createInput)
-			if sqliteCreate.Permissions != tt.perms {
-				t.Errorf("SQLite MapCreateRoleParams: Permissions = %q, want %q", sqliteCreate.Permissions, tt.perms)
-			}
-
-			// MySQL: wraps in json.RawMessage directly
-			mysqlCreate := MysqlDatabase{}.MapCreateRoleParams(createInput)
-			if string(mysqlCreate.Permissions) != tt.perms {
-				t.Errorf("MySQL MapCreateRoleParams: Permissions = %q, want %q", string(mysqlCreate.Permissions), tt.perms)
-			}
-
-			// PostgreSQL: wraps in json.RawMessage
-			psqlCreate := PsqlDatabase{}.MapCreateRoleParams(createInput)
-			if string(psqlCreate.Permissions.RawMessage) != tt.perms {
-				t.Errorf("PostgreSQL MapCreateRoleParams: Permissions.RawMessage = %q, want %q",
-					string(psqlCreate.Permissions.RawMessage), tt.perms)
-			}
-		})
-	}
-}
-
 // --- SQLite Audited Command Accessor tests ---
 
 func TestNewRoleCmd_AllAccessors(t *testing.T) {
@@ -556,8 +334,7 @@ func TestNewRoleCmd_AllAccessors(t *testing.T) {
 		IP:        "10.0.0.1",
 	}
 	params := CreateRoleParams{
-		Label:       "cmdrole",
-		Permissions: `{"cmd":true}`,
+		Label: "cmdrole",
 	}
 
 	cmd := Database{}.NewRoleCmd(ctx, ac, params)
@@ -577,9 +354,6 @@ func TestNewRoleCmd_AllAccessors(t *testing.T) {
 	}
 	if p.Label != "cmdrole" {
 		t.Errorf("Params().Label = %q, want %q", p.Label, "cmdrole")
-	}
-	if p.Permissions != `{"cmd":true}` {
-		t.Errorf("Params().Permissions = %q, want %q", p.Permissions, `{"cmd":true}`)
 	}
 	// Connection is nil because we used an empty Database{}
 	if cmd.Connection() != nil {
@@ -619,9 +393,8 @@ func TestUpdateRoleCmd_AllAccessors(t *testing.T) {
 	roleID := types.NewRoleID()
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	params := UpdateRoleParams{
-		Label:       "updated",
-		Permissions: `{"updated":true}`,
-		RoleID:      roleID,
+		Label:  "updated",
+		RoleID: roleID,
 	}
 
 	cmd := Database{}.UpdateRoleCmd(ctx, ac, params)
@@ -690,8 +463,7 @@ func TestNewRoleCmdMysql_AllAccessors(t *testing.T) {
 		IP:        "192.168.1.1",
 	}
 	params := CreateRoleParams{
-		Label:       "mysqlcmdrole",
-		Permissions: `{"mysql":true}`,
+		Label: "mysqlcmdrole",
 	}
 
 	cmd := MysqlDatabase{}.NewRoleCmd(ctx, ac, params)
@@ -738,9 +510,8 @@ func TestUpdateRoleCmdMysql_AllAccessors(t *testing.T) {
 	roleID := types.NewRoleID()
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	params := UpdateRoleParams{
-		Label:       "mysqlupdated",
-		Permissions: `{"mysqlupdated":true}`,
-		RoleID:      roleID,
+		Label:  "mysqlupdated",
+		RoleID: roleID,
 	}
 
 	cmd := MysqlDatabase{}.UpdateRoleCmd(ctx, ac, params)
@@ -809,8 +580,7 @@ func TestNewRoleCmdPsql_AllAccessors(t *testing.T) {
 		IP:        "172.16.0.1",
 	}
 	params := CreateRoleParams{
-		Label:       "psqlcmdrole",
-		Permissions: `{"psql":true}`,
+		Label: "psqlcmdrole",
 	}
 
 	cmd := PsqlDatabase{}.NewRoleCmd(ctx, ac, params)
@@ -857,9 +627,8 @@ func TestUpdateRoleCmdPsql_AllAccessors(t *testing.T) {
 	roleID := types.NewRoleID()
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	params := UpdateRoleParams{
-		Label:       "psqlupdated",
-		Permissions: `{"psqlupdated":true}`,
-		RoleID:      roleID,
+		Label:  "psqlupdated",
+		RoleID: roleID,
 	}
 
 	cmd := PsqlDatabase{}.UpdateRoleCmd(ctx, ac, params)
@@ -1135,9 +904,9 @@ func TestRolesStruct_JSONTags(t *testing.T) {
 	// Verify that creating a Roles struct and marshaling it preserves field names
 	roleID := types.NewRoleID()
 	r := Roles{
-		RoleID:      roleID,
-		Label:       "test-role",
-		Permissions: `{"key":"value"}`,
+		RoleID:          roleID,
+		Label:           "test-role",
+		SystemProtected: true,
 	}
 
 	data, err := json.Marshal(r)
@@ -1151,7 +920,7 @@ func TestRolesStruct_JSONTags(t *testing.T) {
 	}
 
 	// Verify JSON field names match the struct tags
-	expectedFields := []string{"role_id", "label", "permissions"}
+	expectedFields := []string{"role_id", "label", "system_protected"}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
 			t.Errorf("JSON output missing expected field %q", field)
@@ -1167,8 +936,8 @@ func TestRolesStruct_JSONTags(t *testing.T) {
 func TestCreateRoleParams_JSONTags(t *testing.T) {
 	t.Parallel()
 	p := CreateRoleParams{
-		Label:       "new",
-		Permissions: `{"p":1}`,
+		Label:           "new",
+		SystemProtected: false,
 	}
 
 	data, err := json.Marshal(p)
@@ -1181,7 +950,7 @@ func TestCreateRoleParams_JSONTags(t *testing.T) {
 		t.Fatalf("json.Unmarshal failed: %v", err)
 	}
 
-	expectedFields := []string{"label", "permissions"}
+	expectedFields := []string{"label", "system_protected"}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
 			t.Errorf("JSON output missing expected field %q", field)
@@ -1196,9 +965,9 @@ func TestUpdateRoleParams_JSONTags(t *testing.T) {
 	t.Parallel()
 	roleID := types.NewRoleID()
 	p := UpdateRoleParams{
-		Label:       "updated",
-		Permissions: `{"p":2}`,
-		RoleID:      roleID,
+		Label:           "updated",
+		RoleID:          roleID,
+		SystemProtected: false,
 	}
 
 	data, err := json.Marshal(p)
@@ -1211,7 +980,7 @@ func TestUpdateRoleParams_JSONTags(t *testing.T) {
 		t.Fatalf("json.Unmarshal failed: %v", err)
 	}
 
-	expectedFields := []string{"label", "permissions", "role_id"}
+	expectedFields := []string{"label", "role_id", "system_protected"}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
 			t.Errorf("JSON output missing expected field %q", field)

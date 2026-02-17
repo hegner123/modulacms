@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS routes (
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
     REFERENCES users
     ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,

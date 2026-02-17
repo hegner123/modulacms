@@ -357,24 +357,21 @@ type ResetPasswordParams struct {
 // Role
 // ---------------------------------------------------------------------------
 
-// Role represents a role entity with permissions.
+// Role represents a role entity.
 type Role struct {
-	RoleID      RoleID `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	RoleID RoleID `json:"role_id"`
+	Label  string `json:"label"`
 }
 
 // CreateRoleParams contains parameters for creating a role.
 type CreateRoleParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	Label string `json:"label"`
 }
 
 // UpdateRoleParams contains parameters for updating a role.
 type UpdateRoleParams struct {
-	RoleID      RoleID `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	RoleID RoleID `json:"role_id"`
+	Label  string `json:"label"`
 }
 
 // ---------------------------------------------------------------------------
@@ -384,9 +381,35 @@ type UpdateRoleParams struct {
 // Permission represents a permission entity with access control information.
 type Permission struct {
 	PermissionID PermissionID `json:"permission_id"`
-	TableID      string       `json:"table_id"`
-	Mode         int64        `json:"mode"`
 	Label        string       `json:"label"`
+}
+
+// CreatePermissionParams contains parameters for creating a permission.
+type CreatePermissionParams struct {
+	Label string `json:"label"`
+}
+
+// UpdatePermissionParams contains parameters for updating a permission.
+type UpdatePermissionParams struct {
+	PermissionID PermissionID `json:"permission_id"`
+	Label        string       `json:"label"`
+}
+
+// ---------------------------------------------------------------------------
+// RolePermission
+// ---------------------------------------------------------------------------
+
+// RolePermission represents a junction between a role and a permission.
+type RolePermission struct {
+	ID           RolePermissionID `json:"id"`
+	RoleID       RoleID           `json:"role_id"`
+	PermissionID PermissionID     `json:"permission_id"`
+}
+
+// CreateRolePermissionParams contains parameters for creating a role-permission association.
+type CreateRolePermissionParams struct {
+	RoleID       RoleID       `json:"role_id"`
+	PermissionID PermissionID `json:"permission_id"`
 }
 
 // ---------------------------------------------------------------------------

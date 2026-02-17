@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
             ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         CONSTRAINT fk_users_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,

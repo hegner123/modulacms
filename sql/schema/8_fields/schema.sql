@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS fields(
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,

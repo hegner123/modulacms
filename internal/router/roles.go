@@ -12,26 +12,26 @@ import (
 )
 
 // RolesHandler handles CRUD operations that do not require a specific role ID.
-func RolesHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func RolesHandler(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) {
 	switch r.Method {
 	case http.MethodGet:
 		apiListRoles(w, c)
 	case http.MethodPost:
-		apiCreateRole(w, r, c)
+		apiCreateRole(w, r, c, pc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
 }
 
 // RoleHandler handles CRUD operations for specific role items.
-func RoleHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func RoleHandler(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) {
 	switch r.Method {
 	case http.MethodGet:
 		apiGetRole(w, r, c)
 	case http.MethodPut:
-		apiUpdateRole(w, r, c)
+		apiUpdateRole(w, r, c, pc)
 	case http.MethodDelete:
-		apiDeleteRole(w, r, c)
+		apiDeleteRole(w, r, c, pc)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -79,7 +79,7 @@ func apiListRoles(w http.ResponseWriter, c config.Config) error {
 }
 
 // apiCreateRole handles POST requests to create a new role
-func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
+func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
 	d := db.ConfigDB(c)
 
 	var newRole db.CreateRoleParams
@@ -101,11 +101,18 @@ func apiCreateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdRole)
+
+	go func() {
+		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
+			utility.DefaultLogger.Error("permission cache refresh failed after role create", loadErr)
+		}
+	}()
+
 	return nil
 }
 
 // apiUpdateRole handles PUT requests to update an existing role
-func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
+func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
 	d := db.ConfigDB(c)
 
 	var updateRole db.UpdateRoleParams
@@ -114,6 +121,20 @@ func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	// System-protected label mutation guard
+	existing, err := d.GetRole(updateRole.RoleID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	if existing.SystemProtected && updateRole.Label != existing.Label {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "forbidden", "detail": "cannot rename system-protected record"})
+		return nil
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
@@ -127,11 +148,18 @@ func apiUpdateRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedRole)
+
+	go func() {
+		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
+			utility.DefaultLogger.Error("permission cache refresh failed after role update", loadErr)
+		}
+	}()
+
 	return nil
 }
 
 // apiDeleteRole handles DELETE requests for roles
-func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) error {
+func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config, pc *middleware.PermissionCache) error {
 	d := db.ConfigDB(c)
 
 	q := r.URL.Query().Get("q")
@@ -141,8 +169,23 @@ func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
+
+	// System-protected guard
+	existing, err := d.GetRole(rID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	if existing.SystemProtected {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusForbidden)
+		json.NewEncoder(w).Encode(map[string]string{"error": "forbidden", "detail": "cannot delete system-protected record"})
+		return nil
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteRole(r.Context(), ac, rID)
+	err = d.DeleteRole(r.Context(), ac, rID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -151,5 +194,12 @@ func apiDeleteRole(w http.ResponseWriter, r *http.Request, c config.Config) erro
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+
+	go func() {
+		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {
+			utility.DefaultLogger.Error("permission cache refresh failed after role delete", loadErr)
+		}
+	}()
+
 	return nil
 }

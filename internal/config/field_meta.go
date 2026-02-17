@@ -11,6 +11,7 @@ const (
 	CategoryCookie        FieldCategory = "cookie"
 	CategoryOAuth         FieldCategory = "oauth"
 	CategoryObservability FieldCategory = "observability"
+	CategoryEmail         FieldCategory = "email"
 	CategoryPlugin        FieldCategory = "plugin"
 	CategoryUpdate        FieldCategory = "update"
 	CategoryMisc          FieldCategory = "misc"
@@ -26,6 +27,7 @@ func AllCategories() []FieldCategory {
 		CategoryCookie,
 		CategoryOAuth,
 		CategoryObservability,
+		CategoryEmail,
 		CategoryPlugin,
 		CategoryUpdate,
 		CategoryMisc,
@@ -49,6 +51,8 @@ func CategoryLabel(c FieldCategory) string {
 		return "OAuth Settings"
 	case CategoryObservability:
 		return "Observability Settings"
+	case CategoryEmail:
+		return "Email Settings"
 	case CategoryPlugin:
 		return "Plugin Settings"
 	case CategoryUpdate:
@@ -143,6 +147,22 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "observability_debug", Label: "Debug", Category: CategoryObservability, HotReloadable: true, Description: "Enable observability debug logging"},
 	{JSONKey: "observability_server_name", Label: "Server Name", Category: CategoryObservability, HotReloadable: true, Description: "Server/instance name"},
 	{JSONKey: "observability_flush_interval", Label: "Flush Interval", Category: CategoryObservability, HotReloadable: true, Description: "Metrics flush interval (e.g. 30s)"},
+
+	// Email
+	{JSONKey: "email_enabled", Label: "Email Enabled", Category: CategoryEmail, HotReloadable: true, Description: "Enable email sending"},
+	{JSONKey: "email_provider", Label: "Email Provider", Category: CategoryEmail, HotReloadable: true, Description: "Email provider (smtp, sendgrid, ses, postmark)"},
+	{JSONKey: "email_from_address", Label: "From Address", Category: CategoryEmail, HotReloadable: true, Description: "Sender email address"},
+	{JSONKey: "email_from_name", Label: "From Name", Category: CategoryEmail, HotReloadable: true, Description: "Sender display name"},
+	{JSONKey: "email_host", Label: "SMTP Host", Category: CategoryEmail, HotReloadable: true, Description: "SMTP server hostname"},
+	{JSONKey: "email_port", Label: "SMTP Port", Category: CategoryEmail, HotReloadable: true, Description: "SMTP server port"},
+	{JSONKey: "email_username", Label: "SMTP Username", Category: CategoryEmail, HotReloadable: true, Description: "SMTP authentication username"},
+	{JSONKey: "email_password", Label: "SMTP Password", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "SMTP authentication password"},
+	{JSONKey: "email_tls", Label: "Require TLS", Category: CategoryEmail, HotReloadable: true, Description: "Require TLS for SMTP connections"},
+	{JSONKey: "email_api_key", Label: "API Key", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "API key for HTTP email providers"},
+	{JSONKey: "email_api_endpoint", Label: "API Endpoint", Category: CategoryEmail, HotReloadable: true, Description: "Custom API endpoint URL"},
+	{JSONKey: "email_reply_to", Label: "Reply-To", Category: CategoryEmail, HotReloadable: true, Description: "Default reply-to address"},
+	{JSONKey: "email_aws_access_key_id", Label: "AWS Access Key ID", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "AWS access key ID for SES"},
+	{JSONKey: "email_aws_secret_access_key", Label: "AWS Secret Access Key", Category: CategoryEmail, HotReloadable: true, Sensitive: true, Description: "AWS secret access key for SES"},
 
 	// Plugin
 	{JSONKey: "plugin_enabled", Label: "Plugin Enabled", Category: CategoryPlugin, HotReloadable: false, Description: "Enable plugin system"},

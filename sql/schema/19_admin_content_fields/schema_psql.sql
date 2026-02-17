@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
             REFERENCES admin_fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     admin_field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,

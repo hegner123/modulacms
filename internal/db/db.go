@@ -98,6 +98,7 @@ type DbDriver interface {
 	ListAdminContentDataByRoute(string) (*[]AdminContentData, error)
 	ListAdminContentDataPaginated(PaginationParams) (*[]AdminContentData, error)
 	ListAdminContentDataByRoutePaginated(ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error)
+	ListAdminContentDataWithDatatypeByRoute(types.NullableAdminRouteID) (*[]AdminContentDataWithDatatypeRow, error)
 	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
 
 	// AdminContentFields
@@ -110,6 +111,7 @@ type DbDriver interface {
 	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
 	ListAdminContentFieldsPaginated(PaginationParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoutePaginated(ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error)
+	ListAdminContentFieldsWithFieldByRoute(types.NullableAdminRouteID) (*[]AdminContentFieldsWithFieldRow, error)
 	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminContentRelations
@@ -232,6 +234,7 @@ type DbDriver interface {
 	ListContentFieldsPaginated(PaginationParams) (*[]ContentFields, error)
 	ListContentFieldsByRoutePaginated(ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error)
 	ListContentFieldsByContentDataPaginated(ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error)
+	ListContentFieldsWithFieldByContentData(types.NullableContentID) (*[]ContentFieldWithFieldRow, error)
 	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 
 	// ContentRelations
@@ -273,6 +276,7 @@ type DbDriver interface {
 	ListDatatypeFieldByFieldIDPaginated(ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error)
 	UpdateDatatypeField(context.Context, audited.AuditContext, UpdateDatatypeFieldParams) (*string, error)
 	UpdateDatatypeFieldSortOrder(context.Context, audited.AuditContext, string, int64) error
+	ListFieldsWithSortOrderByDatatypeID(types.DatatypeID) (*[]FieldWithSortOrderRow, error)
 
 	// Fields
 	CountFields() (*int64, error)
@@ -313,6 +317,7 @@ type DbDriver interface {
 	CreatePermissionTable() error
 	DeletePermission(context.Context, audited.AuditContext, types.PermissionID) error
 	GetPermission(types.PermissionID) (*Permissions, error)
+	GetPermissionByLabel(string) (*Permissions, error)
 	ListPermissions() (*[]Permissions, error)
 	UpdatePermission(context.Context, audited.AuditContext, UpdatePermissionParams) (*string, error)
 
@@ -322,8 +327,21 @@ type DbDriver interface {
 	CreateRoleTable() error
 	DeleteRole(context.Context, audited.AuditContext, types.RoleID) error
 	GetRole(types.RoleID) (*Roles, error)
+	GetRoleByLabel(string) (*Roles, error)
 	ListRoles() (*[]Roles, error)
 	UpdateRole(context.Context, audited.AuditContext, UpdateRoleParams) (*string, error)
+
+	// RolePermissions
+	CountRolePermissions() (*int64, error)
+	CreateRolePermission(context.Context, audited.AuditContext, CreateRolePermissionParams) (*RolePermissions, error)
+	CreateRolePermissionsTable() error
+	DeleteRolePermission(context.Context, audited.AuditContext, types.RolePermissionID) error
+	DeleteRolePermissionsByRoleID(context.Context, audited.AuditContext, types.RoleID) error
+	GetRolePermission(types.RolePermissionID) (*RolePermissions, error)
+	ListRolePermissions() (*[]RolePermissions, error)
+	ListRolePermissionsByRoleID(types.RoleID) (*[]RolePermissions, error)
+	ListRolePermissionsByPermissionID(types.PermissionID) (*[]RolePermissions, error)
+	ListPermissionLabelsByRoleID(types.RoleID) (*[]string, error)
 
 	// Routes
 	CountRoutes() (*int64, error)
@@ -378,6 +396,7 @@ type DbDriver interface {
 	GetUserByEmail(types.Email) (*Users, error)
 	GetUserBySSHFingerprint(string) (*Users, error)
 	ListUsers() (*[]Users, error)
+	ListUsersWithRoleLabel() (*[]UserWithRoleLabelRow, error)
 	UpdateUser(context.Context, audited.AuditContext, UpdateUserParams) (*string, error)
 
 	// UserOauths
@@ -604,6 +623,11 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateRolePermissionsTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -617,9 +641,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 
 	// 1. Create system admin permission (permission_id = 1)
 	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-		TableID: "",
-		Mode:    7,
-		Label:   "system_admin",
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin permission: %w", err)
@@ -628,10 +651,37 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
+	// 1b. Create RBAC system permissions
+	rbacPermissionLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
+		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
+		"media:read", "media:create", "media:update", "media:delete", "media:admin",
+		"routes:read", "routes:create", "routes:update", "routes:delete", "routes:admin",
+		"users:read", "users:create", "users:update", "users:delete", "users:admin",
+		"roles:read", "roles:create", "roles:update", "roles:delete", "roles:admin",
+		"permissions:read", "permissions:create", "permissions:update", "permissions:delete", "permissions:admin",
+		"sessions:read", "sessions:delete", "sessions:admin",
+		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
+		"config:read", "config:update", "config:admin",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+	}
+	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
+	for _, label := range rbacPermissionLabels {
+		p, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
+			Label:           label,
+			SystemProtected: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create RBAC permission %q: %w", label, err)
+		}
+		rbacPermissions[label] = p.PermissionID
+	}
+
 	// 2. Create system admin role (role_id = 1)
 	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "system_admin",
-		Permissions: `{"system_admin": true}`,
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin role: %w", err)
@@ -640,16 +690,87 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
+	// 2b. Create editor role
+	editorRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
+		Label:           "editor",
+		SystemProtected: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create editor role: %w", err)
+	}
+	if editorRole.RoleID.IsZero() {
+		return fmt.Errorf("failed to create editor role")
+	}
+
 	// 3. Create viewer role (role_id = 4)
 	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "viewer",
-		Permissions: `{"read": true}`,
+		Label:           "viewer",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create viewer role: %w", err)
 	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 3b. Create role_permissions junction rows
+	// Admin gets all permissions
+	for _, permID := range rbacPermissions {
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       adminRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create admin role_permission: %w", err)
+		}
+	}
+
+	// Editor permissions: CRUD on content, datatypes, fields, media, routes, admin_tree; read-only on users, sessions, ssh_keys
+	editorPermLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
+		"fields:read", "fields:create", "fields:update", "fields:delete",
+		"media:read", "media:create", "media:update", "media:delete",
+		"routes:read", "routes:create", "routes:update", "routes:delete",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"users:read",
+		"sessions:read",
+		"ssh_keys:read",
+		"config:read",
+	}
+	for _, label := range editorPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for editor role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       editorRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create editor role_permission for %q: %w", label, err)
+		}
+	}
+
+	// Viewer permissions: read-only on content, media, routes
+	viewerPermLabels := []string{
+		"content:read",
+		"media:read",
+		"routes:read",
+	}
+	for _, label := range viewerPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for viewer role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       viewerRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create viewer role_permission for %q: %w", label, err)
+		}
 	}
 
 	// 4. Create system admin user (user_id = 1)
@@ -1029,7 +1150,7 @@ func (d Database) ValidateBootstrapData() error {
 		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
 	}
 
-	// Validate roles table (should have at least 2 records: system_admin + viewer)
+	// Validate roles table (should have at least 2 records: admin + viewer)
 	roleCount, err := d.CountRoles()
 	if err != nil || roleCount == nil || *roleCount < 2 {
 		errors = append(errors, "roles table: expected ≥2 records, validation failed")
@@ -1314,6 +1435,11 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateRolePermissionsTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1327,9 +1453,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 1. Create system admin permission (permission_id = 1)
 	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-		TableID: "",
-		Mode:    7,
-		Label:   "system_admin",
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin permission: %w", err)
@@ -1338,10 +1463,37 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
+	// 1b. Create RBAC system permissions
+	rbacPermissionLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
+		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
+		"media:read", "media:create", "media:update", "media:delete", "media:admin",
+		"routes:read", "routes:create", "routes:update", "routes:delete", "routes:admin",
+		"users:read", "users:create", "users:update", "users:delete", "users:admin",
+		"roles:read", "roles:create", "roles:update", "roles:delete", "roles:admin",
+		"permissions:read", "permissions:create", "permissions:update", "permissions:delete", "permissions:admin",
+		"sessions:read", "sessions:delete", "sessions:admin",
+		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
+		"config:read", "config:update", "config:admin",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+	}
+	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
+	for _, label := range rbacPermissionLabels {
+		p, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
+			Label:           label,
+			SystemProtected: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create RBAC permission %q: %w", label, err)
+		}
+		rbacPermissions[label] = p.PermissionID
+	}
+
 	// 2. Create system admin role (role_id = 1)
 	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "system_admin",
-		Permissions: `{"system_admin": true}`,
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin role: %w", err)
@@ -1350,16 +1502,84 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
+	// 2b. Create editor role
+	editorRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
+		Label:           "editor",
+		SystemProtected: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create editor role: %w", err)
+	}
+	if editorRole.RoleID.IsZero() {
+		return fmt.Errorf("failed to create editor role")
+	}
+
 	// 3. Create viewer role (role_id = 4)
 	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "viewer",
-		Permissions: `{"read": true}`,
+		Label:           "viewer",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create viewer role: %w", err)
 	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 3b. Create role_permissions junction rows
+	for _, permID := range rbacPermissions {
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       adminRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create admin role_permission: %w", err)
+		}
+	}
+
+	editorPermLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
+		"fields:read", "fields:create", "fields:update", "fields:delete",
+		"media:read", "media:create", "media:update", "media:delete",
+		"routes:read", "routes:create", "routes:update", "routes:delete",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"users:read",
+		"sessions:read",
+		"ssh_keys:read",
+		"config:read",
+	}
+	for _, label := range editorPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for editor role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       editorRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create editor role_permission for %q: %w", label, err)
+		}
+	}
+
+	viewerPermLabels := []string{
+		"content:read",
+		"media:read",
+		"routes:read",
+	}
+	for _, label := range viewerPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for viewer role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       viewerRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create viewer role_permission for %q: %w", label, err)
+		}
 	}
 
 	// 4. Create system admin user (user_id = 1)
@@ -1997,6 +2217,11 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateRolePermissionsTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -2010,9 +2235,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 1. Create system admin permission (permission_id = 1)
 	permission, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-		TableID: "",
-		Mode:    7,
-		Label:   "system_admin",
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin permission: %w", err)
@@ -2021,10 +2245,37 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin permission")
 	}
 
+	// 1b. Create RBAC system permissions
+	rbacPermissionLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
+		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
+		"media:read", "media:create", "media:update", "media:delete", "media:admin",
+		"routes:read", "routes:create", "routes:update", "routes:delete", "routes:admin",
+		"users:read", "users:create", "users:update", "users:delete", "users:admin",
+		"roles:read", "roles:create", "roles:update", "roles:delete", "roles:admin",
+		"permissions:read", "permissions:create", "permissions:update", "permissions:delete", "permissions:admin",
+		"sessions:read", "sessions:delete", "sessions:admin",
+		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
+		"config:read", "config:update", "config:admin",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+	}
+	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
+	for _, label := range rbacPermissionLabels {
+		p, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
+			Label:           label,
+			SystemProtected: true,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create RBAC permission %q: %w", label, err)
+		}
+		rbacPermissions[label] = p.PermissionID
+	}
+
 	// 2. Create system admin role (role_id = 1)
 	adminRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "system_admin",
-		Permissions: `{"system_admin": true}`,
+		Label:           "admin",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create system admin role: %w", err)
@@ -2033,16 +2284,84 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create system admin role")
 	}
 
+	// 2b. Create editor role
+	editorRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
+		Label:           "editor",
+		SystemProtected: true,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create editor role: %w", err)
+	}
+	if editorRole.RoleID.IsZero() {
+		return fmt.Errorf("failed to create editor role")
+	}
+
 	// 3. Create viewer role (role_id = 4)
 	viewerRole, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "viewer",
-		Permissions: `{"read": true}`,
+		Label:           "viewer",
+		SystemProtected: true,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create viewer role: %w", err)
 	}
 	if viewerRole.RoleID.IsZero() {
 		return fmt.Errorf("failed to create viewer role")
+	}
+
+	// 3b. Create role_permissions junction rows
+	for _, permID := range rbacPermissions {
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       adminRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create admin role_permission: %w", err)
+		}
+	}
+
+	editorPermLabels := []string{
+		"content:read", "content:create", "content:update", "content:delete",
+		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
+		"fields:read", "fields:create", "fields:update", "fields:delete",
+		"media:read", "media:create", "media:update", "media:delete",
+		"routes:read", "routes:create", "routes:update", "routes:delete",
+		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"users:read",
+		"sessions:read",
+		"ssh_keys:read",
+		"config:read",
+	}
+	for _, label := range editorPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for editor role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       editorRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create editor role_permission for %q: %w", label, err)
+		}
+	}
+
+	viewerPermLabels := []string{
+		"content:read",
+		"media:read",
+		"routes:read",
+	}
+	for _, label := range viewerPermLabels {
+		permID, ok := rbacPermissions[label]
+		if !ok {
+			return fmt.Errorf("missing RBAC permission %q for viewer role", label)
+		}
+		_, err := d.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+			RoleID:       viewerRole.RoleID,
+			PermissionID: permID,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to create viewer role_permission for %q: %w", label, err)
+		}
 	}
 
 	// 4. Create system admin user (user_id = 1)

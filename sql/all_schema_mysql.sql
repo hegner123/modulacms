@@ -1,8 +1,7 @@
 CREATE TABLE IF NOT EXISTS permissions (
-    permission_id INT PRIMARY KEY,
-    table_id INT NOT NULL,
-    mode INT NOT NULL,
-    label VARCHAR(255) NOT NULL
+    permission_id VARCHAR(26) NOT NULL PRIMARY KEY,
+    label VARCHAR(255) NOT NULL,
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS media_dimensions (
@@ -14,9 +13,9 @@ CREATE TABLE IF NOT EXISTS media_dimensions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS roles (
-    role_id INT AUTO_INCREMENT PRIMARY KEY,
+    role_id VARCHAR(26) NOT NULL PRIMARY KEY,
     label VARCHAR(255) NOT NULL UNIQUE,
-    permissions JSON 
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS users (

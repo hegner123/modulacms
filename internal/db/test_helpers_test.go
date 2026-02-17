@@ -84,17 +84,14 @@ func testSeededDB(t *testing.T) (Database, SeedData) {
 
 	// Tier 0: no FKs
 	perm, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-		TableID: "test_table",
-		Mode:    1,
-		Label:   "test-permission",
+		Label: "test-permission",
 	})
 	if err != nil {
 		t.Fatalf("seed CreatePermission: %v", err)
 	}
 
 	role, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "test-role",
-		Permissions: "[]",
+		Label: "test-role",
 	})
 	if err != nil {
 		t.Fatalf("seed CreateRole: %v", err)
@@ -311,9 +308,7 @@ func TestTestIntegrationDB_Parallel_Isolation(t *testing.T) {
 			ac := testAuditCtx(d)
 
 			_, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-				TableID: "isolation_table",
-				Mode:    1,
-				Label:   label,
+				Label: label,
 			})
 			if err != nil {
 				t.Fatalf("CreatePermission(%s): %v", label, err)

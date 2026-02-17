@@ -25,8 +25,7 @@ func TestDatabase_CRUD_Role(t *testing.T) {
 
 	// --- Create ---
 	created, err := d.CreateRole(ctx, ac, CreateRoleParams{
-		Label:       "admin",
-		Permissions: `{"read":true,"write":true,"delete":true}`,
+		Label: "admin",
 	})
 	if err != nil {
 		t.Fatalf("CreateRole: %v", err)
@@ -39,9 +38,6 @@ func TestDatabase_CRUD_Role(t *testing.T) {
 	}
 	if created.Label != "admin" {
 		t.Errorf("Label = %q, want %q", created.Label, "admin")
-	}
-	if created.Permissions != `{"read":true,"write":true,"delete":true}` {
-		t.Errorf("Permissions = %q, want %q", created.Permissions, `{"read":true,"write":true,"delete":true}`)
 	}
 
 	// --- Get ---
@@ -57,9 +53,6 @@ func TestDatabase_CRUD_Role(t *testing.T) {
 	}
 	if got.Label != created.Label {
 		t.Errorf("GetRole Label = %q, want %q", got.Label, created.Label)
-	}
-	if got.Permissions != created.Permissions {
-		t.Errorf("GetRole Permissions = %q, want %q", got.Permissions, created.Permissions)
 	}
 
 	// --- List ---
@@ -88,9 +81,8 @@ func TestDatabase_CRUD_Role(t *testing.T) {
 
 	// --- Update ---
 	_, err = d.UpdateRole(ctx, ac, UpdateRoleParams{
-		Label:       "editor",
-		Permissions: `{"read":true,"write":true}`,
-		RoleID:      created.RoleID,
+		Label:  "editor",
+		RoleID: created.RoleID,
 	})
 	if err != nil {
 		t.Fatalf("UpdateRole: %v", err)
@@ -103,9 +95,6 @@ func TestDatabase_CRUD_Role(t *testing.T) {
 	}
 	if updated.Label != "editor" {
 		t.Errorf("updated Label = %q, want %q", updated.Label, "editor")
-	}
-	if updated.Permissions != `{"read":true,"write":true}` {
-		t.Errorf("updated Permissions = %q, want %q", updated.Permissions, `{"read":true,"write":true}`)
 	}
 
 	// --- Delete ---
@@ -139,13 +128,11 @@ func TestDatabase_CRUD_Role_MultipleRecords(t *testing.T) {
 	ac := testAuditCtx(d)
 
 	labels := []string{"role_alpha", "role_beta", "role_gamma"}
-	perms := []string{`["read"]`, `["write"]`, `["delete"]`}
 	ids := make([]types.RoleID, len(labels))
 
 	for i, label := range labels {
 		r, err := d.CreateRole(ctx, ac, CreateRoleParams{
-			Label:       label,
-			Permissions: perms[i],
+			Label: label,
 		})
 		if err != nil {
 			t.Fatalf("CreateRole(%s): %v", label, err)

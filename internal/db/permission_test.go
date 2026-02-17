@@ -12,8 +12,6 @@ package db
 
 import (
 	"context"
-	"fmt"
-	"math"
 	"testing"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -26,25 +24,21 @@ import (
 // --- Test data helpers ---
 
 // permTestFixture returns a fully populated Permissions and its individual parts.
-func permTestFixture() (Permissions, types.PermissionID, string, int64, string) {
+func permTestFixture() (Permissions, types.PermissionID, string) {
 	permID := types.NewPermissionID()
-	tableID := "content_data"
-	mode := int64(7)
 	label := "full_access"
 	p := Permissions{
 		PermissionID: permID,
-		TableID:      tableID,
-		Mode:         mode,
 		Label:        label,
 	}
-	return p, permID, tableID, mode, label
+	return p, permID, label
 }
 
 // --- MapStringPermission tests ---
 
 func TestMapStringPermission_AllFields(t *testing.T) {
 	t.Parallel()
-	perm, permID, tableID, _, label := permTestFixture()
+	perm, permID, label := permTestFixture()
 
 	got := MapStringPermission(perm)
 
@@ -54,8 +48,6 @@ func TestMapStringPermission_AllFields(t *testing.T) {
 		want string
 	}{
 		{"PermissionID", got.PermissionID, permID.String()},
-		{"TableID", got.TableID, tableID},
-		{"Mode", got.Mode, "7"},
 		{"Label", got.Label, label},
 	}
 
@@ -76,33 +68,8 @@ func TestMapStringPermission_ZeroValue(t *testing.T) {
 	if got.PermissionID != "" {
 		t.Errorf("PermissionID = %q, want empty string", got.PermissionID)
 	}
-	if got.TableID != "" {
-		t.Errorf("TableID = %q, want empty string", got.TableID)
-	}
-	if got.Mode != "0" {
-		t.Errorf("Mode = %q, want %q", got.Mode, "0")
-	}
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
-	}
-}
-
-func TestMapStringPermission_NegativeMode(t *testing.T) {
-	t.Parallel()
-	perm := Permissions{Mode: -1}
-	got := MapStringPermission(perm)
-	if got.Mode != "-1" {
-		t.Errorf("Mode = %q, want %q", got.Mode, "-1")
-	}
-}
-
-func TestMapStringPermission_LargeMode(t *testing.T) {
-	t.Parallel()
-	perm := Permissions{Mode: math.MaxInt64}
-	got := MapStringPermission(perm)
-	want := fmt.Sprintf("%d", int64(math.MaxInt64))
-	if got.Mode != want {
-		t.Errorf("Mode = %q, want %q", got.Mode, want)
 	}
 }
 
@@ -115,8 +82,6 @@ func TestDatabase_MapPermission_AllFields(t *testing.T) {
 
 	input := mdb.Permissions{
 		PermissionID: permID,
-		TableID:      "users",
-		Mode:         5,
 		Label:        "read_write",
 	}
 
@@ -124,12 +89,6 @@ func TestDatabase_MapPermission_AllFields(t *testing.T) {
 
 	if got.PermissionID != permID {
 		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
-	}
-	if got.TableID != "users" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "users")
-	}
-	if got.Mode != 5 {
-		t.Errorf("Mode = %d, want %d", got.Mode, 5)
 	}
 	if got.Label != "read_write" {
 		t.Errorf("Label = %q, want %q", got.Label, "read_write")
@@ -144,12 +103,6 @@ func TestDatabase_MapPermission_ZeroValues(t *testing.T) {
 	if got.PermissionID != "" {
 		t.Errorf("PermissionID = %v, want zero value", got.PermissionID)
 	}
-	if got.TableID != "" {
-		t.Errorf("TableID = %q, want empty string", got.TableID)
-	}
-	if got.Mode != 0 {
-		t.Errorf("Mode = %d, want 0", got.Mode)
-	}
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
 	}
@@ -162,21 +115,13 @@ func TestDatabase_MapCreatePermissionParams_GeneratesNewID(t *testing.T) {
 	d := Database{}
 
 	input := CreatePermissionParams{
-		TableID: "roles",
-		Mode:    3,
-		Label:   "read_only",
+		Label: "read_only",
 	}
 
 	got := d.MapCreatePermissionParams(input)
 
 	if got.PermissionID.IsZero() {
 		t.Fatal("expected non-zero PermissionID to be generated")
-	}
-	if got.TableID != "roles" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "roles")
-	}
-	if got.Mode != 3 {
-		t.Errorf("Mode = %d, want %d", got.Mode, 3)
 	}
 	if got.Label != "read_only" {
 		t.Errorf("Label = %q, want %q", got.Label, "read_only")
@@ -204,12 +149,6 @@ func TestDatabase_MapCreatePermissionParams_ZeroInput(t *testing.T) {
 	if got.PermissionID.IsZero() {
 		t.Fatal("expected non-zero PermissionID even with zero input")
 	}
-	if got.TableID != "" {
-		t.Errorf("TableID = %q, want empty string", got.TableID)
-	}
-	if got.Mode != 0 {
-		t.Errorf("Mode = %d, want 0", got.Mode)
-	}
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
 	}
@@ -223,20 +162,12 @@ func TestDatabase_MapUpdatePermissionParams_AllFields(t *testing.T) {
 	permID := types.NewPermissionID()
 
 	input := UpdatePermissionParams{
-		TableID:      "media",
-		Mode:         4,
 		Label:        "media_access",
 		PermissionID: permID,
 	}
 
 	got := d.MapUpdatePermissionParams(input)
 
-	if got.TableID != "media" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "media")
-	}
-	if got.Mode != 4 {
-		t.Errorf("Mode = %d, want %d", got.Mode, 4)
-	}
 	if got.Label != "media_access" {
 		t.Errorf("Label = %q, want %q", got.Label, "media_access")
 	}
@@ -253,55 +184,27 @@ func TestDatabase_MapUpdatePermissionParams_ZeroValues(t *testing.T) {
 	if got.PermissionID != "" {
 		t.Errorf("PermissionID = %v, want zero value", got.PermissionID)
 	}
-	if got.Mode != 0 {
-		t.Errorf("Mode = %d, want 0", got.Mode)
-	}
 }
 
 // --- MySQL MysqlDatabase.MapPermission tests ---
 
-func TestMysqlDatabase_MapPermission_Int32ToInt64Conversion(t *testing.T) {
+func TestMysqlDatabase_MapPermission_AllFields(t *testing.T) {
 	t.Parallel()
 	d := MysqlDatabase{}
 	permID := types.NewPermissionID()
 
-	tests := []struct {
-		name       string
-		inputMode  int32
-		wantMode64 int64
-	}{
-		{"positive mode", 7, 7},
-		{"zero mode", 0, 0},
-		{"negative mode", -1, -1},
-		{"max int32", math.MaxInt32, int64(math.MaxInt32)},
-		{"min int32", math.MinInt32, int64(math.MinInt32)},
+	input := mdbm.Permissions{
+		PermissionID: permID,
+		Label:        "test_label",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := mdbm.Permissions{
-				PermissionID: permID,
-				TableID:      "content",
-				Mode:         tt.inputMode,
-				Label:        "test_label",
-			}
+	got := d.MapPermission(input)
 
-			got := d.MapPermission(input)
-
-			if got.Mode != tt.wantMode64 {
-				t.Errorf("Mode = %d, want %d", got.Mode, tt.wantMode64)
-			}
-			if got.PermissionID != permID {
-				t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
-			}
-			if got.TableID != "content" {
-				t.Errorf("TableID = %q, want %q", got.TableID, "content")
-			}
-			if got.Label != "test_label" {
-				t.Errorf("Label = %q, want %q", got.Label, "test_label")
-			}
-		})
+	if got.PermissionID != permID {
+		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
+	}
+	if got.Label != "test_label" {
+		t.Errorf("Label = %q, want %q", got.Label, "test_label")
 	}
 }
 
@@ -310,9 +213,6 @@ func TestMysqlDatabase_MapPermission_ZeroValues(t *testing.T) {
 	d := MysqlDatabase{}
 	got := d.MapPermission(mdbm.Permissions{})
 
-	if got.Mode != 0 {
-		t.Errorf("Mode = %d, want 0", got.Mode)
-	}
 	if got.PermissionID != "" {
 		t.Errorf("PermissionID = %v, want zero value", got.PermissionID)
 	}
@@ -325,22 +225,13 @@ func TestMysqlDatabase_MapCreatePermissionParams(t *testing.T) {
 	d := MysqlDatabase{}
 
 	input := CreatePermissionParams{
-		TableID: "routes",
-		Mode:    6,
-		Label:   "route_admin",
+		Label: "route_admin",
 	}
 
 	got := d.MapCreatePermissionParams(input)
 
 	if got.PermissionID.IsZero() {
 		t.Fatal("expected non-zero PermissionID to be generated")
-	}
-	if got.TableID != "routes" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "routes")
-	}
-	// MySQL uses int32 for Mode
-	if got.Mode != int32(6) {
-		t.Errorf("Mode = %d, want %d", got.Mode, int32(6))
 	}
 	if got.Label != "route_admin" {
 		t.Errorf("Label = %q, want %q", got.Label, "route_admin")
@@ -367,8 +258,6 @@ func TestMysqlDatabase_MapUpdatePermissionParams(t *testing.T) {
 	permID := types.NewPermissionID()
 
 	input := UpdatePermissionParams{
-		TableID:      "media",
-		Mode:         4,
 		Label:        "media_read",
 		PermissionID: permID,
 	}
@@ -378,13 +267,6 @@ func TestMysqlDatabase_MapUpdatePermissionParams(t *testing.T) {
 	if got.PermissionID != permID {
 		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
 	}
-	if got.TableID != "media" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "media")
-	}
-	// MySQL uses int32
-	if got.Mode != int32(4) {
-		t.Errorf("Mode = %d, want %d", got.Mode, int32(4))
-	}
 	if got.Label != "media_read" {
 		t.Errorf("Label = %q, want %q", got.Label, "media_read")
 	}
@@ -392,48 +274,23 @@ func TestMysqlDatabase_MapUpdatePermissionParams(t *testing.T) {
 
 // --- PostgreSQL PsqlDatabase.MapPermission tests ---
 
-func TestPsqlDatabase_MapPermission_Int32ToInt64Conversion(t *testing.T) {
+func TestPsqlDatabase_MapPermission_AllFields(t *testing.T) {
 	t.Parallel()
 	d := PsqlDatabase{}
 	permID := types.NewPermissionID()
 
-	tests := []struct {
-		name       string
-		inputMode  int32
-		wantMode64 int64
-	}{
-		{"positive mode", 3, 3},
-		{"zero mode", 0, 0},
-		{"negative mode", -10, -10},
-		{"max int32", math.MaxInt32, int64(math.MaxInt32)},
-		{"min int32", math.MinInt32, int64(math.MinInt32)},
+	input := mdbp.Permissions{
+		PermissionID: permID,
+		Label:        "psql_label",
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := mdbp.Permissions{
-				PermissionID: permID,
-				TableID:      "datatypes",
-				Mode:         tt.inputMode,
-				Label:        "psql_label",
-			}
+	got := d.MapPermission(input)
 
-			got := d.MapPermission(input)
-
-			if got.Mode != tt.wantMode64 {
-				t.Errorf("Mode = %d, want %d", got.Mode, tt.wantMode64)
-			}
-			if got.PermissionID != permID {
-				t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
-			}
-			if got.TableID != "datatypes" {
-				t.Errorf("TableID = %q, want %q", got.TableID, "datatypes")
-			}
-			if got.Label != "psql_label" {
-				t.Errorf("Label = %q, want %q", got.Label, "psql_label")
-			}
-		})
+	if got.PermissionID != permID {
+		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
+	}
+	if got.Label != "psql_label" {
+		t.Errorf("Label = %q, want %q", got.Label, "psql_label")
 	}
 }
 
@@ -442,9 +299,6 @@ func TestPsqlDatabase_MapPermission_ZeroValues(t *testing.T) {
 	d := PsqlDatabase{}
 	got := d.MapPermission(mdbp.Permissions{})
 
-	if got.Mode != 0 {
-		t.Errorf("Mode = %d, want 0", got.Mode)
-	}
 	if got.PermissionID != "" {
 		t.Errorf("PermissionID = %v, want zero value", got.PermissionID)
 	}
@@ -457,22 +311,13 @@ func TestPsqlDatabase_MapCreatePermissionParams(t *testing.T) {
 	d := PsqlDatabase{}
 
 	input := CreatePermissionParams{
-		TableID: "fields",
-		Mode:    2,
-		Label:   "field_write",
+		Label: "field_write",
 	}
 
 	got := d.MapCreatePermissionParams(input)
 
 	if got.PermissionID.IsZero() {
 		t.Fatal("expected non-zero PermissionID to be generated")
-	}
-	if got.TableID != "fields" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "fields")
-	}
-	// PostgreSQL uses int32 for Mode
-	if got.Mode != int32(2) {
-		t.Errorf("Mode = %d, want %d", got.Mode, int32(2))
 	}
 	if got.Label != "field_write" {
 		t.Errorf("Label = %q, want %q", got.Label, "field_write")
@@ -499,8 +344,6 @@ func TestPsqlDatabase_MapUpdatePermissionParams(t *testing.T) {
 	permID := types.NewPermissionID()
 
 	input := UpdatePermissionParams{
-		TableID:      "sessions",
-		Mode:         1,
 		Label:        "session_read",
 		PermissionID: permID,
 	}
@@ -509,13 +352,6 @@ func TestPsqlDatabase_MapUpdatePermissionParams(t *testing.T) {
 
 	if got.PermissionID != permID {
 		t.Errorf("PermissionID = %v, want %v", got.PermissionID, permID)
-	}
-	if got.TableID != "sessions" {
-		t.Errorf("TableID = %q, want %q", got.TableID, "sessions")
-	}
-	// PostgreSQL uses int32
-	if got.Mode != int32(1) {
-		t.Errorf("Mode = %d, want %d", got.Mode, int32(1))
 	}
 	if got.Label != "session_read" {
 		t.Errorf("Label = %q, want %q", got.Label, "session_read")
@@ -530,20 +366,14 @@ func TestCrossDatabaseMapPermission_Consistency(t *testing.T) {
 
 	sqliteInput := mdb.Permissions{
 		PermissionID: permID,
-		TableID:      "content_data",
-		Mode:         7,
 		Label:        "full_access",
 	}
 	mysqlInput := mdbm.Permissions{
 		PermissionID: permID,
-		TableID:      "content_data",
-		Mode:         7,
 		Label:        "full_access",
 	}
 	psqlInput := mdbp.Permissions{
 		PermissionID: permID,
-		TableID:      "content_data",
-		Mode:         7,
 		Label:        "full_access",
 	}
 
@@ -565,9 +395,7 @@ func TestCrossDatabaseMapCreatePermissionParams_AutoIDGeneration(t *testing.T) {
 	t.Parallel()
 
 	input := CreatePermissionParams{
-		TableID: "routes",
-		Mode:    5,
-		Label:   "route_manage",
+		Label: "route_manage",
 	}
 
 	sqliteResult := Database{}.MapCreatePermissionParams(input)
@@ -593,83 +421,6 @@ func TestCrossDatabaseMapCreatePermissionParams_AutoIDGeneration(t *testing.T) {
 	}
 }
 
-// --- Cross-database Mode conversion consistency ---
-
-func TestCrossDatabaseMapCreatePermissionParams_ModeConversion(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name      string
-		inputMode int64
-	}{
-		{"zero", 0},
-		{"positive", 7},
-		{"negative", -1},
-		{"max int32 range", int64(math.MaxInt32)},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := CreatePermissionParams{Mode: tt.inputMode}
-
-			sqliteGot := Database{}.MapCreatePermissionParams(input)
-			mysqlGot := MysqlDatabase{}.MapCreatePermissionParams(input)
-			psqlGot := PsqlDatabase{}.MapCreatePermissionParams(input)
-
-			// SQLite keeps int64
-			if sqliteGot.Mode != tt.inputMode {
-				t.Errorf("SQLite Mode = %d, want %d", sqliteGot.Mode, tt.inputMode)
-			}
-			// MySQL and PostgreSQL convert to int32
-			if mysqlGot.Mode != int32(tt.inputMode) {
-				t.Errorf("MySQL Mode = %d, want %d", mysqlGot.Mode, int32(tt.inputMode))
-			}
-			if psqlGot.Mode != int32(tt.inputMode) {
-				t.Errorf("PostgreSQL Mode = %d, want %d", psqlGot.Mode, int32(tt.inputMode))
-			}
-		})
-	}
-}
-
-func TestCrossDatabaseMapUpdatePermissionParams_ModeConversion(t *testing.T) {
-	t.Parallel()
-	permID := types.NewPermissionID()
-
-	tests := []struct {
-		name      string
-		inputMode int64
-	}{
-		{"zero", 0},
-		{"positive", 5},
-		{"negative", -3},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			input := UpdatePermissionParams{
-				Mode:         tt.inputMode,
-				PermissionID: permID,
-			}
-
-			sqliteGot := Database{}.MapUpdatePermissionParams(input)
-			mysqlGot := MysqlDatabase{}.MapUpdatePermissionParams(input)
-			psqlGot := PsqlDatabase{}.MapUpdatePermissionParams(input)
-
-			if sqliteGot.Mode != tt.inputMode {
-				t.Errorf("SQLite Mode = %d, want %d", sqliteGot.Mode, tt.inputMode)
-			}
-			if mysqlGot.Mode != int32(tt.inputMode) {
-				t.Errorf("MySQL Mode = %d, want %d", mysqlGot.Mode, int32(tt.inputMode))
-			}
-			if psqlGot.Mode != int32(tt.inputMode) {
-				t.Errorf("PostgreSQL Mode = %d, want %d", psqlGot.Mode, int32(tt.inputMode))
-			}
-		})
-	}
-}
-
 // --- SQLite Audited Command Accessor tests ---
 
 func TestNewPermissionCmd_AllAccessors(t *testing.T) {
@@ -683,9 +434,7 @@ func TestNewPermissionCmd_AllAccessors(t *testing.T) {
 		IP:        "10.0.0.1",
 	}
 	params := CreatePermissionParams{
-		TableID: "users",
-		Mode:    7,
-		Label:   "user_admin",
+		Label: "user_admin",
 	}
 
 	cmd := Database{}.NewPermissionCmd(ctx, ac, params)
@@ -702,12 +451,6 @@ func TestNewPermissionCmd_AllAccessors(t *testing.T) {
 	p, ok := cmd.Params().(CreatePermissionParams)
 	if !ok {
 		t.Fatalf("Params() returned %T, want CreatePermissionParams", cmd.Params())
-	}
-	if p.TableID != "users" {
-		t.Errorf("Params().TableID = %q, want %q", p.TableID, "users")
-	}
-	if p.Mode != 7 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 7)
 	}
 	if p.Label != "user_admin" {
 		t.Errorf("Params().Label = %q, want %q", p.Label, "user_admin")
@@ -749,8 +492,6 @@ func TestUpdatePermissionCmd_AllAccessors(t *testing.T) {
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	permID := types.NewPermissionID()
 	params := UpdatePermissionParams{
-		TableID:      "roles",
-		Mode:         3,
 		Label:        "role_read",
 		PermissionID: permID,
 	}
@@ -772,9 +513,6 @@ func TestUpdatePermissionCmd_AllAccessors(t *testing.T) {
 	p, ok := cmd.Params().(UpdatePermissionParams)
 	if !ok {
 		t.Fatalf("Params() returned %T, want UpdatePermissionParams", cmd.Params())
-	}
-	if p.Mode != 3 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 3)
 	}
 	if p.Label != "role_read" {
 		t.Errorf("Params().Label = %q, want %q", p.Label, "role_read")
@@ -827,9 +565,7 @@ func TestNewPermissionCmdMysql_AllAccessors(t *testing.T) {
 		IP:        "192.168.1.1",
 	}
 	params := CreatePermissionParams{
-		TableID: "content",
-		Mode:    5,
-		Label:   "content_manage",
+		Label: "content_manage",
 	}
 
 	cmd := MysqlDatabase{}.NewPermissionCmd(ctx, ac, params)
@@ -847,8 +583,8 @@ func TestNewPermissionCmdMysql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want CreatePermissionParams", cmd.Params())
 	}
-	if p.Mode != 5 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 5)
+	if p.Label != "content_manage" {
+		t.Errorf("Params().Label = %q, want %q", p.Label, "content_manage")
 	}
 	if cmd.Connection() != nil {
 		t.Error("Connection() should be nil for empty MysqlDatabase")
@@ -876,8 +612,6 @@ func TestUpdatePermissionCmdMysql_AllAccessors(t *testing.T) {
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	permID := types.NewPermissionID()
 	params := UpdatePermissionParams{
-		TableID:      "media",
-		Mode:         2,
 		Label:        "media_write",
 		PermissionID: permID,
 	}
@@ -900,8 +634,8 @@ func TestUpdatePermissionCmdMysql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want UpdatePermissionParams", cmd.Params())
 	}
-	if p.Mode != 2 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 2)
+	if p.Label != "media_write" {
+		t.Errorf("Params().Label = %q, want %q", p.Label, "media_write")
 	}
 	if cmd.Recorder() == nil {
 		t.Fatal("Recorder() returned nil")
@@ -948,9 +682,7 @@ func TestNewPermissionCmdPsql_AllAccessors(t *testing.T) {
 		IP:        "172.16.0.1",
 	}
 	params := CreatePermissionParams{
-		TableID: "datatypes",
-		Mode:    6,
-		Label:   "datatype_admin",
+		Label: "datatype_admin",
 	}
 
 	cmd := PsqlDatabase{}.NewPermissionCmd(ctx, ac, params)
@@ -968,8 +700,8 @@ func TestNewPermissionCmdPsql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want CreatePermissionParams", cmd.Params())
 	}
-	if p.Mode != 6 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 6)
+	if p.Label != "datatype_admin" {
+		t.Errorf("Params().Label = %q, want %q", p.Label, "datatype_admin")
 	}
 	if cmd.Connection() != nil {
 		t.Error("Connection() should be nil for empty PsqlDatabase")
@@ -997,8 +729,6 @@ func TestUpdatePermissionCmdPsql_AllAccessors(t *testing.T) {
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	permID := types.NewPermissionID()
 	params := UpdatePermissionParams{
-		TableID:      "fields",
-		Mode:         1,
 		Label:        "field_read",
 		PermissionID: permID,
 	}
@@ -1021,8 +751,8 @@ func TestUpdatePermissionCmdPsql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want UpdatePermissionParams", cmd.Params())
 	}
-	if p.Mode != 1 {
-		t.Errorf("Params().Mode = %d, want %d", p.Mode, 1)
+	if p.Label != "field_read" {
+		t.Errorf("Params().Label = %q, want %q", p.Label, "field_read")
 	}
 	if cmd.Recorder() == nil {
 		t.Fatal("Recorder() returned nil")
@@ -1131,7 +861,6 @@ func TestAuditedPermissionCommands_GetID_CrossDatabase(t *testing.T) {
 		t.Parallel()
 		params := UpdatePermissionParams{
 			PermissionID: permID,
-			Mode:         1,
 		}
 
 		sqliteCmd := Database{}.UpdatePermissionCmd(ctx, ac, params)

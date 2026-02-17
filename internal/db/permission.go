@@ -18,25 +18,22 @@ import (
 
 // Permissions represents a permission entity with access control information.
 type Permissions struct {
-	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      string             `json:"table_id"`
-	Mode         int64              `json:"mode"`
-	Label        string             `json:"label"`
+	PermissionID    types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected bool               `json:"system_protected"`
 }
 
 // CreatePermissionParams contains fields for creating a new permission.
 type CreatePermissionParams struct {
-	TableID string `json:"table_id"`
-	Mode    int64  `json:"mode"`
-	Label   string `json:"label"`
+	Label           string `json:"label"`
+	SystemProtected bool   `json:"system_protected"`
 }
 
 // UpdatePermissionParams contains fields for updating an existing permission.
 type UpdatePermissionParams struct {
-	TableID      string             `json:"table_id"`
-	Mode         int64              `json:"mode"`
-	Label        string             `json:"label"`
-	PermissionID types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected bool               `json:"system_protected"`
+	PermissionID    types.PermissionID `json:"permission_id"`
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -48,8 +45,6 @@ type UpdatePermissionParams struct {
 func MapStringPermission(a Permissions) StringPermissions {
 	return StringPermissions{
 		PermissionID: a.PermissionID.String(),
-		TableID:      a.TableID,
-		Mode:         fmt.Sprintf("%d", a.Mode),
 		Label:        a.Label,
 	}
 }
@@ -63,30 +58,35 @@ func MapStringPermission(a Permissions) StringPermissions {
 // MapPermission converts a sqlc-generated SQLite Permissions type to the wrapper type.
 func (d Database) MapPermission(a mdb.Permissions) Permissions {
 	return Permissions{
-		PermissionID: a.PermissionID,
-		TableID:      a.TableID,
-		Mode:         a.Mode,
-		Label:        a.Label,
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected != 0,
 	}
 }
 
 // MapCreatePermissionParams converts a wrapper CreatePermissionParams to sqlc-generated SQLite params.
 func (d Database) MapCreatePermissionParams(a CreatePermissionParams) mdb.CreatePermissionParams {
+	sp := int64(0)
+	if a.SystemProtected {
+		sp = 1
+	}
 	return mdb.CreatePermissionParams{
-		PermissionID: types.NewPermissionID(),
-		TableID:      a.TableID,
-		Mode:         a.Mode,
-		Label:        a.Label,
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: sp,
 	}
 }
 
 // MapUpdatePermissionParams converts a wrapper UpdatePermissionParams to sqlc-generated SQLite params.
 func (d Database) MapUpdatePermissionParams(a UpdatePermissionParams) mdb.UpdatePermissionParams {
+	sp := int64(0)
+	if a.SystemProtected {
+		sp = 1
+	}
 	return mdb.UpdatePermissionParams{
-		TableID:      a.TableID,
-		Mode:         a.Mode,
-		Label:        a.Label,
-		PermissionID: a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: sp,
+		PermissionID:    a.PermissionID,
 	}
 }
 
@@ -171,30 +171,27 @@ func (d Database) UpdatePermission(ctx context.Context, ac audited.AuditContext,
 // MapPermission converts a sqlc-generated MySQL Permissions type to the wrapper type.
 func (d MysqlDatabase) MapPermission(a mdbm.Permissions) Permissions {
 	return Permissions{
-		PermissionID: a.PermissionID,
-		TableID:      a.TableID,
-		Mode:         int64(a.Mode),
-		Label:        a.Label,
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapCreatePermissionParams converts a wrapper CreatePermissionParams to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbm.CreatePermissionParams {
 	return mdbm.CreatePermissionParams{
-		PermissionID: types.NewPermissionID(),
-		TableID:      a.TableID,
-		Mode:         int32(a.Mode),
-		Label:        a.Label,
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapUpdatePermissionParams converts a wrapper UpdatePermissionParams to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbm.UpdatePermissionParams {
 	return mdbm.UpdatePermissionParams{
-		TableID:      a.TableID,
-		Mode:         int32(a.Mode),
-		Label:        a.Label,
-		PermissionID: a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
+		PermissionID:    a.PermissionID,
 	}
 }
 
@@ -279,30 +276,27 @@ func (d MysqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditCon
 // MapPermission converts a sqlc-generated PostgreSQL Permissions type to the wrapper type.
 func (d PsqlDatabase) MapPermission(a mdbp.Permissions) Permissions {
 	return Permissions{
-		PermissionID: a.PermissionID,
-		TableID:      a.TableID,
-		Mode:         int64(a.Mode),
-		Label:        a.Label,
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapCreatePermissionParams converts a wrapper CreatePermissionParams to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbp.CreatePermissionParams {
 	return mdbp.CreatePermissionParams{
-		PermissionID: types.NewPermissionID(),
-		TableID:      a.TableID,
-		Mode:         int32(a.Mode),
-		Label:        a.Label,
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapUpdatePermissionParams converts a wrapper UpdatePermissionParams to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbp.UpdatePermissionParams {
 	return mdbp.UpdatePermissionParams{
-		TableID:      a.TableID,
-		Mode:         int32(a.Mode),
-		Label:        a.Label,
-		PermissionID: a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
+		PermissionID:    a.PermissionID,
 	}
 }
 
@@ -412,12 +406,15 @@ func (c NewPermissionCmd) GetID(x mdb.Permissions) string {
 
 // Execute performs the create operation for this command.
 func (c NewPermissionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Permissions, error) {
+	sp := int64(0)
+	if c.params.SystemProtected {
+		sp = 1
+	}
 	queries := mdb.New(tx)
 	return queries.CreatePermission(ctx, mdb.CreatePermissionParams{
-		PermissionID: types.NewPermissionID(),
-		TableID:      c.params.TableID,
-		Mode:         c.params.Mode,
-		Label:        c.params.Label,
+		PermissionID:    types.NewPermissionID(),
+		Label:           c.params.Label,
+		SystemProtected: sp,
 	})
 }
 
@@ -463,12 +460,15 @@ func (c UpdatePermissionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (md
 
 // Execute performs the update operation for this command.
 func (c UpdatePermissionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	sp := int64(0)
+	if c.params.SystemProtected {
+		sp = 1
+	}
 	queries := mdb.New(tx)
 	return queries.UpdatePermission(ctx, mdb.UpdatePermissionParams{
-		TableID:      c.params.TableID,
-		Mode:         c.params.Mode,
-		Label:        c.params.Label,
-		PermissionID: c.params.PermissionID,
+		Label:           c.params.Label,
+		SystemProtected: sp,
+		PermissionID:    c.params.PermissionID,
 	})
 }
 
@@ -558,10 +558,9 @@ func (c NewPermissionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 	id := types.NewPermissionID()
 	queries := mdbm.New(tx)
 	err := queries.CreatePermission(ctx, mdbm.CreatePermissionParams{
-		PermissionID: id,
-		TableID:      c.params.TableID,
-		Mode:         int32(c.params.Mode),
-		Label:        c.params.Label,
+		PermissionID:    id,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
 	})
 	if err != nil {
 		return mdbm.Permissions{}, fmt.Errorf("Failed to CreatePermission: %w", err)
@@ -613,10 +612,9 @@ func (c UpdatePermissionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX
 func (c UpdatePermissionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdatePermission(ctx, mdbm.UpdatePermissionParams{
-		TableID:      c.params.TableID,
-		Mode:         int32(c.params.Mode),
-		Label:        c.params.Label,
-		PermissionID: c.params.PermissionID,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
+		PermissionID:    c.params.PermissionID,
 	})
 }
 
@@ -705,10 +703,9 @@ func (c NewPermissionCmdPsql) GetID(x mdbp.Permissions) string {
 func (c NewPermissionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Permissions, error) {
 	queries := mdbp.New(tx)
 	return queries.CreatePermission(ctx, mdbp.CreatePermissionParams{
-		PermissionID: types.NewPermissionID(),
-		TableID:      c.params.TableID,
-		Mode:         int32(c.params.Mode),
-		Label:        c.params.Label,
+		PermissionID:    types.NewPermissionID(),
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
 	})
 }
 
@@ -756,10 +753,9 @@ func (c UpdatePermissionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX)
 func (c UpdatePermissionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdatePermission(ctx, mdbp.UpdatePermissionParams{
-		TableID:      c.params.TableID,
-		Mode:         int32(c.params.Mode),
-		Label:        c.params.Label,
-		PermissionID: c.params.PermissionID,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
+		PermissionID:    c.params.PermissionID,
 	})
 }
 

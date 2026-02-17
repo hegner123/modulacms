@@ -25,9 +25,7 @@ func TestDatabase_CRUD_Permission(t *testing.T) {
 
 	// --- Create ---
 	created, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-		TableID: "test_table",
-		Mode:    7,
-		Label:   "full_access",
+		Label: "full_access",
 	})
 	if err != nil {
 		t.Fatalf("CreatePermission: %v", err)
@@ -37,12 +35,6 @@ func TestDatabase_CRUD_Permission(t *testing.T) {
 	}
 	if created.PermissionID.IsZero() {
 		t.Fatal("CreatePermission returned zero PermissionID")
-	}
-	if created.TableID != "test_table" {
-		t.Errorf("TableID = %q, want %q", created.TableID, "test_table")
-	}
-	if created.Mode != 7 {
-		t.Errorf("Mode = %d, want %d", created.Mode, 7)
 	}
 	if created.Label != "full_access" {
 		t.Errorf("Label = %q, want %q", created.Label, "full_access")
@@ -58,12 +50,6 @@ func TestDatabase_CRUD_Permission(t *testing.T) {
 	}
 	if got.PermissionID != created.PermissionID {
 		t.Errorf("GetPermission ID = %v, want %v", got.PermissionID, created.PermissionID)
-	}
-	if got.TableID != created.TableID {
-		t.Errorf("GetPermission TableID = %q, want %q", got.TableID, created.TableID)
-	}
-	if got.Mode != created.Mode {
-		t.Errorf("GetPermission Mode = %d, want %d", got.Mode, created.Mode)
 	}
 	if got.Label != created.Label {
 		t.Errorf("GetPermission Label = %q, want %q", got.Label, created.Label)
@@ -95,8 +81,6 @@ func TestDatabase_CRUD_Permission(t *testing.T) {
 
 	// --- Update ---
 	_, err = d.UpdatePermission(ctx, ac, UpdatePermissionParams{
-		TableID:      "updated_table",
-		Mode:         3,
 		Label:        "read_only",
 		PermissionID: created.PermissionID,
 	})
@@ -108,12 +92,6 @@ func TestDatabase_CRUD_Permission(t *testing.T) {
 	updated, err := d.GetPermission(created.PermissionID)
 	if err != nil {
 		t.Fatalf("GetPermission after update: %v", err)
-	}
-	if updated.TableID != "updated_table" {
-		t.Errorf("updated TableID = %q, want %q", updated.TableID, "updated_table")
-	}
-	if updated.Mode != 3 {
-		t.Errorf("updated Mode = %d, want %d", updated.Mode, 3)
 	}
 	if updated.Label != "read_only" {
 		t.Errorf("updated Label = %q, want %q", updated.Label, "read_only")
@@ -154,9 +132,7 @@ func TestDatabase_CRUD_Permission_MultipleRecords(t *testing.T) {
 
 	for i, label := range labels {
 		p, err := d.CreatePermission(ctx, ac, CreatePermissionParams{
-			TableID: "multi_table",
-			Mode:    int64(i + 1),
-			Label:   label,
+			Label: label,
 		})
 		if err != nil {
 			t.Fatalf("CreatePermission(%s): %v", label, err)

@@ -43,6 +43,41 @@ func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 }
 
+// DatatypeFullHandler handles requests for the composed datatype+fields view.
+func DatatypeFullHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	switch r.Method {
+	case http.MethodGet:
+		apiGetDatatypeFull(w, r, c)
+	default:
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+	}
+}
+
+// apiGetDatatypeFull handles GET requests for a datatype with all field definitions.
+func apiGetDatatypeFull(w http.ResponseWriter, r *http.Request, c config.Config) error {
+	d := db.ConfigDB(c)
+
+	q := r.URL.Query().Get("q")
+	dtID, err := types.ParseDatatypeID(q)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
+	view, err := db.AssembleDatatypeFullView(d, dtID)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(view)
+	return nil
+}
+
 // apiGetDatatype handles GET requests for a single datatype
 func apiGetDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)

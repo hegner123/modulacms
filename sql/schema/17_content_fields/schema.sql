@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,

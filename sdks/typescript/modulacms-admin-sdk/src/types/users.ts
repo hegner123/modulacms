@@ -9,7 +9,7 @@
  * @module types/users
  */
 
-import type { Email, RoleID, SessionID, UserID, UserOauthID } from './common.js'
+import type { Email, PermissionID, RoleID, RolePermissionID, SessionID, UserID, UserOauthID } from './common.js'
 
 // ---------------------------------------------------------------------------
 // Entity types
@@ -45,8 +45,28 @@ export type Role = {
   role_id: RoleID
   /** Human-readable role name. */
   label: string
-  /** JSON-encoded permissions map. */
-  permissions: string
+}
+
+/**
+ * A permission entity with access control information.
+ */
+export type Permission = {
+  /** Unique identifier for this permission. */
+  permission_id: PermissionID
+  /** Human-readable permission name. */
+  label: string
+}
+
+/**
+ * A junction between a role and a permission.
+ */
+export type RolePermission = {
+  /** Unique identifier for this role-permission association. */
+  id: RolePermissionID
+  /** The role in this association. */
+  role_id: RoleID
+  /** The permission in this association. */
+  permission_id: PermissionID
 }
 
 /**
@@ -187,8 +207,20 @@ export type CreateUserParams = {
 export type CreateRoleParams = {
   /** Human-readable role name. */
   label: string
-  /** JSON-encoded permissions map. */
-  permissions: string
+}
+
+/** Parameters for creating a new permission via `POST /permissions`. */
+export type CreatePermissionParams = {
+  /** Human-readable permission name. */
+  label: string
+}
+
+/** Parameters for creating a new role-permission association via `POST /role-permissions`. */
+export type CreateRolePermissionParams = {
+  /** The role to associate. */
+  role_id: RoleID
+  /** The permission to associate. */
+  permission_id: PermissionID
 }
 
 /**
@@ -271,8 +303,14 @@ export type UpdateRoleParams = {
   role_id: RoleID
   /** Updated label. */
   label: string
-  /** Updated permissions (JSON-encoded). */
-  permissions: string
+}
+
+/** Parameters for updating a permission via `PUT /permissions/`. */
+export type UpdatePermissionParams = {
+  /** ID of the permission to update. */
+  permission_id: PermissionID
+  /** Updated label. */
+  label: string
 }
 
 /**

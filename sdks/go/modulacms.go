@@ -34,6 +34,7 @@ type Client struct {
 	MediaDimensions *Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]
 	Routes          *Resource[Route, CreateRouteParams, UpdateRouteParams, RouteID]
 	Roles           *Resource[Role, CreateRoleParams, UpdateRoleParams, RoleID]
+	Permissions     *Resource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID]
 	Users           *Resource[User, CreateUserParams, UpdateUserParams, UserID]
 	Tokens          *Resource[Token, CreateTokenParams, UpdateTokenParams, TokenID]
 	UsersOauth      *Resource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID]
@@ -56,6 +57,9 @@ type Client struct {
 	Sessions     *SessionsResource
 	Import       *ImportResource
 	ContentBatch *ContentBatchResource
+
+	// RBAC resources
+	RolePermissions *RolePermissionsResource
 
 	// Plugin resources
 	Plugins      *PluginsResource
@@ -97,6 +101,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		MediaDimensions:  newResource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID](h, "/api/v1/mediadimensions"),
 		Routes:           newResource[Route, CreateRouteParams, UpdateRouteParams, RouteID](h, "/api/v1/routes"),
 		Roles:            newResource[Role, CreateRoleParams, UpdateRoleParams, RoleID](h, "/api/v1/roles"),
+		Permissions:      newResource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID](h, "/api/v1/permissions"),
 		Users:            newResource[User, CreateUserParams, UpdateUserParams, UserID](h, "/api/v1/users"),
 		Tokens:           newResource[Token, CreateTokenParams, UpdateTokenParams, TokenID](h, "/api/v1/tokens"),
 		UsersOauth:       newResource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID](h, "/api/v1/usersoauth"),
@@ -119,6 +124,9 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Sessions:     &SessionsResource{http: h},
 		Import:       &ImportResource{http: h},
 		ContentBatch: &ContentBatchResource{http: h},
+
+		// RBAC
+		RolePermissions: &RolePermissionsResource{http: h},
 
 		// Plugin
 		Plugins:      &PluginsResource{http: h},

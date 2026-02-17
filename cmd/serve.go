@@ -22,6 +22,7 @@ import (
 	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/bucket"
 	"github.com/hegner123/modulacms/internal/cli"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -120,6 +121,18 @@ var serveCmd = &cobra.Command{
 		obsCleanup := initObservability(rootCtx, cfg)
 		defer obsCleanup()
 
+		// Start email service
+		emailSvc, err := initEmailService(cfg)
+		if err != nil {
+			return fmt.Errorf("email: %w", err)
+		}
+		defer emailSvc.Close()
+		mgr.OnChange(func(newCfg config.Config) {
+			if err := emailSvc.Reload(newCfg); err != nil {
+				utility.DefaultLogger.Error("email service hot-reload failed", err)
+			}
+		})
+
 		// Run install check — if DB isn't connected, attempt table creation and bootstrap
 		initStatus, err := install.CheckInstall(cfg, &verbose)
 		if err != nil {
@@ -137,6 +150,13 @@ var serveCmd = &cobra.Command{
 				return fmt.Errorf("database setup failed: %w", setupErr)
 			}
 		}
+
+		// Initialize permission cache after install check (bootstrap data must exist)
+		pc := middleware.NewPermissionCache()
+		if pcErr := pc.Load(driver); pcErr != nil {
+			return fmt.Errorf("initial permission cache load failed: %w", pcErr)
+		}
+		pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 
 		// Ensure S3 buckets exist (media + backup)
 		if cfg.BucketEndpointURL() != "" {
@@ -190,7 +210,7 @@ var serveCmd = &cobra.Command{
 		if pluginManager != nil {
 			bridge = pluginManager.Bridge()
 		}
-		mux := router.NewModulacmsMux(mgr, bridge)
+		mux := router.NewModulacmsMux(mgr, bridge, driver, pc)
 
 		// Phase 3: Inject HookRunner into request context so that audited
 		// operations can dispatch content lifecycle hooks. The HookRunnerMiddleware
@@ -202,7 +222,7 @@ var serveCmd = &cobra.Command{
 		}
 		middlewareHandler := middleware.Chain(
 			middleware.HookRunnerMiddleware(hookRunner),
-		)(middleware.DefaultMiddlewareChain(mgr)(mux))
+		)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
 
 		manager := autocert.Manager{
 			Prompt: autocert.AcceptTOS,
@@ -280,7 +300,7 @@ var serveCmd = &cobra.Command{
 		var pluginAPITokenID string
 		var pluginAPITokenPath string
 		if cfg.Plugin_Enabled {
-			tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver)
+			tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)
 			if tokenErr != nil {
 				utility.DefaultLogger.Error("failed to generate plugin API token", tokenErr)
 			} else {
@@ -317,7 +337,7 @@ var serveCmd = &cobra.Command{
 		// subsystems. The DB is still open at this point, so the token row
 		// can be deleted cleanly.
 		if pluginAPITokenID != "" {
-			cleanupPluginAPIToken(shutdownCtx, driver, pluginAPITokenID, pluginAPITokenPath)
+			cleanupPluginAPIToken(shutdownCtx, driver, pluginAPITokenID, pluginAPITokenPath, cfg.Node_ID)
 		}
 
 		// Shut down plugin subsystems after HTTP servers are drained so
@@ -347,7 +367,7 @@ var serveCmd = &cobra.Command{
 // It looks up the system user, cleans up any stale tokens from previous runs,
 // generates a new token, inserts it into the database, and writes it to a file.
 // Returns the token row ID and file path on success.
-func generatePluginAPIToken(ctx context.Context, driver db.DbDriver) (string, string, error) {
+func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID string) (string, string, error) {
 	// Look up the system user (same pattern as internal/cli/model.go:218-224).
 	users, err := driver.ListUsers()
 	if err != nil {
@@ -370,7 +390,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver) (string, st
 		return "", "", fmt.Errorf("system user not found for plugin API token")
 	}
 
-	auditCtx := audited.Ctx(types.NodeID(""), systemUserID, "plugin-api-token-init", "127.0.0.1")
+	auditCtx := audited.Ctx(types.NodeID(nodeID), systemUserID, "plugin-api-token-init", "127.0.0.1")
 	systemNullableID := types.NullableUserID{ID: systemUserID, Valid: true}
 
 	// Clean up stale api_key tokens from previous ungraceful shutdowns.
@@ -403,7 +423,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver) (string, st
 		TokenType: "api_key",
 		Token:     tokenValue,
 		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
-		ExpiresAt: types.Timestamp{Valid: false},
+		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(24 * time.Hour)),
 		Revoked:   false,
 	})
 	if err != nil {
@@ -430,8 +450,8 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver) (string, st
 
 // cleanupPluginAPIToken deletes the token row from the database and removes the
 // token file. Called during graceful shutdown while the DB is still open.
-func cleanupPluginAPIToken(ctx context.Context, driver db.DbDriver, tokenID, tokenPath string) {
-	auditCtx := audited.Ctx(types.NodeID(""), types.UserID(""), "plugin-api-token-shutdown", "127.0.0.1")
+func cleanupPluginAPIToken(ctx context.Context, driver db.DbDriver, tokenID, tokenPath, nodeID string) {
+	auditCtx := audited.Ctx(types.NodeID(nodeID), types.UserID(""), "plugin-api-token-shutdown", "127.0.0.1")
 
 	if err := driver.DeleteToken(ctx, auditCtx, tokenID); err != nil {
 		utility.DefaultLogger.Warn("failed to delete plugin API token on shutdown", err, "token_id", tokenID)

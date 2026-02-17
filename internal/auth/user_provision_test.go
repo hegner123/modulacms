@@ -165,8 +165,8 @@ func (d *provisionDbDriver) ListRoles() (*[]db.Roles, error) {
 		return d.listRolesFn()
 	}
 	roles := []db.Roles{
-		{RoleID: types.RoleID("role-viewer"), Label: "viewer", Permissions: "read"},
-		{RoleID: types.RoleID("role-admin"), Label: "admin", Permissions: "all"},
+		{RoleID: types.RoleID("role-viewer"), Label: "viewer"},
+		{RoleID: types.RoleID("role-admin"), Label: "admin"},
 	}
 	return &roles, nil
 }

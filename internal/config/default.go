@@ -88,6 +88,22 @@ func DefaultConfig() Config {
 	c.Observability_Flush_Interval = "30s"
 	c.Observability_Tags = map[string]string{}
 
+	// Default email settings
+	c.Email_Enabled = false
+	c.Email_Provider = ""
+	c.Email_From_Address = ""
+	c.Email_From_Name = ""
+	c.Email_Host = ""
+	c.Email_Port = 587
+	c.Email_Username = ""
+	c.Email_Password = ""
+	c.Email_TLS = true
+	c.Email_API_Key = ""
+	c.Email_API_Endpoint = ""
+	c.Email_Reply_To = ""
+	c.Email_AWS_Access_Key_ID = ""
+	c.Email_AWS_Secret_Access_Key = ""
+
 	c.Node_ID = string(types.NewNodeID())
 
 	c.KeyBindings = DefaultKeyMap()

@@ -83,6 +83,7 @@ sql:
           media_dimension: MediaDimensions
           permission: Permissions
           role: Roles
+          role_permission: RolePermissions
           route: Routes
           session: Sessions
           table: Tables
@@ -135,6 +136,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # ROLE PERMISSIONS
+          - column: "role_permissions.id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
           # CONTENT RELATIONS — PRIMARY IDs
           - column: "content_relations.content_relation_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
@@ -162,6 +166,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "role_permissions.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "role_permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -187,6 +195,9 @@ sql:
           - column: "*.role_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.permission_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           - column: "*.content_data_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -480,6 +491,7 @@ sql:
           media_dimension: MediaDimensions
           permission: Permissions
           role: Roles
+          role_permission: RolePermissions
           route: Routes
           session: Sessions
           table: Tables
@@ -532,6 +544,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # ROLE PERMISSIONS
+          - column: "role_permissions.id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
           # CONTENT RELATIONS — PRIMARY IDs
           - column: "content_relations.content_relation_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
@@ -559,6 +574,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "role_permissions.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "role_permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -584,6 +603,9 @@ sql:
           - column: "*.role_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.permission_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           - column: "*.content_data_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}
@@ -877,6 +899,7 @@ sql:
           media_dimension: MediaDimensions
           permission: Permissions
           role: Roles
+          role_permission: RolePermissions
           route: Routes
           session: Sessions
           table: Tables
@@ -929,6 +952,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # ROLE PERMISSIONS
+          - column: "role_permissions.id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
           # CONTENT RELATIONS — PRIMARY IDs
           - column: "content_relations.content_relation_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentRelationID"}
@@ -956,6 +982,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
+          - column: "role_permissions.role_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "role_permissions.permission_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -981,6 +1011,9 @@ sql:
           - column: "*.role_id"
             nullable: false
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
+          - column: "*.permission_id"
+            nullable: false
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
           - column: "*.content_data_id"
             nullable: true
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableContentID"}

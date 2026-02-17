@@ -124,16 +124,13 @@ type StringSessions struct {
 
 // StringRoles represents role data as strings for TUI display.
 type StringRoles struct {
-	RoleID      string `json:"role_id"`
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	RoleID string `json:"role_id"`
+	Label  string `json:"label"`
 }
 
 // StringPermissions represents permission data as strings for TUI display.
 type StringPermissions struct {
 	PermissionID string `json:"permission_id"`
-	TableID      string `json:"table_id"`
-	Mode         string `json:"mode"`
 	Label        string `json:"label"`
 }
 

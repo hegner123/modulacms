@@ -6,14 +6,14 @@ CREATE TABLE IF NOT EXISTS roles (
     role_id TEXT PRIMARY KEY NOT NULL,
     label TEXT NOT NULL
         UNIQUE,
-    permissions jsonb
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- name: CreateIDIndex :exec
 CREATE INDEX IF NOT EXISTS idx_role_id ON roles(role_id);
 
 -- name: GetRole :one
-SELECT * 
+SELECT *
 FROM roles
 WHERE role_id = $1;
 
@@ -22,15 +22,15 @@ SELECT COUNT(*)
 FROM roles;
 
 -- name: ListRole :many
-SELECT * 
-FROM roles 
+SELECT *
+FROM roles
 ORDER BY role_id;
 
 -- name: CreateRole :one
 INSERT INTO roles (
     role_id,
     label,
-    permissions
+    system_protected
 ) VALUES (
     $1,
     $2,
@@ -41,7 +41,7 @@ RETURNING *;
 -- name: UpdateRole :exec
 UPDATE roles
 SET label = $1,
-    permissions = $2
+    system_protected = $2
 WHERE role_id = $3;
 
 -- name: DeleteRole :exec

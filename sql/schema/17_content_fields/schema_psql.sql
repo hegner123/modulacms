@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
             REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,

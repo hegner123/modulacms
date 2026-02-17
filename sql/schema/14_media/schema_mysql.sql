@@ -12,14 +12,14 @@ CREATE TABLE IF NOT EXISTS media (
     srcset TEXT NULL,
     focal_x FLOAT NULL,
     focal_y FLOAT NULL,
-    author_id VARCHAR(26) NOT NULL,
+    author_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT url
         UNIQUE (url),
     CONSTRAINT fk_media_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_media_author ON media(author_id);

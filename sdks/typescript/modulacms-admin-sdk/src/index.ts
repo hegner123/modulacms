@@ -66,6 +66,8 @@ export type {
   FieldID,
   MediaID,
   RoleID,
+  PermissionID,
+  RolePermissionID,
   RouteID,
   SessionID,
   UserOauthID,
@@ -132,6 +134,8 @@ export type {
 export type {
   User,
   Role,
+  Permission,
+  RolePermission,
   Token,
   UserOauth,
   Session,
@@ -139,11 +143,14 @@ export type {
   SshKeyListItem,
   CreateUserParams,
   CreateRoleParams,
+  CreatePermissionParams,
+  CreateRolePermissionParams,
   CreateTokenParams,
   CreateUserOauthParams,
   CreateSshKeyRequest,
   UpdateUserParams,
   UpdateRoleParams,
+  UpdatePermissionParams,
   UpdateTokenParams,
   UpdateUserOauthParams,
   UpdateSessionParams,
@@ -233,14 +240,19 @@ import type {
 import type {
   User,
   Role,
+  Permission,
+  RolePermission,
   Token,
   UserOauth,
   CreateUserParams,
   CreateRoleParams,
+  CreatePermissionParams,
+  CreateRolePermissionParams,
   CreateTokenParams,
   CreateUserOauthParams,
   UpdateUserParams,
   UpdateRoleParams,
+  UpdatePermissionParams,
   UpdateTokenParams,
   UpdateUserOauthParams,
 } from './types/users.js'
@@ -257,6 +269,8 @@ import type {
   FieldID,
   MediaID,
   RoleID,
+  PermissionID,
+  RolePermissionID,
   RouteID,
   UserID,
   UserOauthID,
@@ -401,6 +415,21 @@ export type ModulaCMSAdminClient = {
   users: CrudResource<User, CreateUserParams, UpdateUserParams, UserID>
   /** Permission roles. */
   roles: CrudResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>
+  /** Access control permissions. */
+  permissions: CrudResource<Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID>
+  /** Role-permission junction (list, get, create, remove, listByRole). */
+  rolePermissions: {
+    /** List all role-permission associations. */
+    list: (opts?: RequestOptions) => Promise<RolePermission[]>
+    /** Get a role-permission association by ID. */
+    get: (id: RolePermissionID, opts?: RequestOptions) => Promise<RolePermission>
+    /** Create a new role-permission association. */
+    create: (params: CreateRolePermissionParams, opts?: RequestOptions) => Promise<RolePermission>
+    /** Remove a role-permission association by ID. */
+    remove: (id: RolePermissionID, opts?: RequestOptions) => Promise<void>
+    /** List all role-permission associations for a given role. */
+    listByRole: (roleId: RoleID, opts?: RequestOptions) => Promise<RolePermission[]>
+  }
   /** API tokens. SENSITIVE - contains bearer credentials. */
   tokens: CrudResource<Token, CreateTokenParams, UpdateTokenParams>
   /** OAuth connections. SENSITIVE - contains OAuth tokens. */
@@ -563,6 +592,24 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     mediaDimensions: createResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>(http, 'mediadimensions'),
     users: createResource<User, CreateUserParams, UpdateUserParams, UserID>(http, 'users'),
     roles: createResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>(http, 'roles'),
+    permissions: createResource<Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID>(http, 'permissions'),
+    rolePermissions: {
+      list(opts?: RequestOptions): Promise<RolePermission[]> {
+        return http.get<RolePermission[]>('/role-permissions', undefined, opts)
+      },
+      get(id: RolePermissionID, opts?: RequestOptions): Promise<RolePermission> {
+        return http.get<RolePermission>('/role-permissions/', { q: String(id) }, opts)
+      },
+      create(params: CreateRolePermissionParams, opts?: RequestOptions): Promise<RolePermission> {
+        return http.post<RolePermission>('/role-permissions', params as unknown as Record<string, unknown>, opts)
+      },
+      remove(id: RolePermissionID, opts?: RequestOptions): Promise<void> {
+        return http.del('/role-permissions/', { q: String(id) }, opts)
+      },
+      listByRole(roleId: RoleID, opts?: RequestOptions): Promise<RolePermission[]> {
+        return http.get<RolePermission[]>('/role-permissions/role/', { q: String(roleId) }, opts)
+      },
+    },
     tokens: createResource<Token, CreateTokenParams, UpdateTokenParams>(http, 'tokens'),
     usersOauth: createResource<UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID>(http, 'usersoauth'),
     datatypeFields: createResource<DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams>(http, 'datatypefields'),

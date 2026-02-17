@@ -1,26 +1,12 @@
 CREATE TABLE IF NOT EXISTS content_data (
     content_data_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_data_id) = 26),
-    parent_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    first_child_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    next_sibling_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    prev_sibling_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    route_id TEXT NOT NULL
-        REFERENCES routes
-            ON DELETE CASCADE,
-    datatype_id TEXT NOT NULL
-        REFERENCES datatypes
-            ON DELETE SET NULL,
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
+    parent_id TEXT,
+    first_child_id TEXT,
+    next_sibling_id TEXT,
+    prev_sibling_id TEXT,
+    route_id TEXT NOT NULL,
+    datatype_id TEXT NOT NULL,
+    author_id TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,

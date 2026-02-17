@@ -3,7 +3,6 @@ package db
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -11,7 +10,6 @@ import (
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/sqlc-dev/pqtype"
 )
 
 ///////////////////////////////
@@ -20,22 +18,22 @@ import (
 
 // Roles represents a role entity with permissions.
 type Roles struct {
-	RoleID      types.RoleID `json:"role_id"`
-	Label       string       `json:"label"`
-	Permissions string       `json:"permissions"`
+	RoleID          types.RoleID `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected bool         `json:"system_protected"`
 }
 
 // CreateRoleParams contains parameters for creating a role.
 type CreateRoleParams struct {
-	Label       string `json:"label"`
-	Permissions string `json:"permissions"`
+	Label           string `json:"label"`
+	SystemProtected bool   `json:"system_protected"`
 }
 
 // UpdateRoleParams contains parameters for updating a role.
 type UpdateRoleParams struct {
-	Label       string       `json:"label"`
-	Permissions string       `json:"permissions"`
-	RoleID      types.RoleID `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected bool         `json:"system_protected"`
+	RoleID          types.RoleID `json:"role_id"`
 }
 
 // FormParams and JSON variants removed - use typed params directly
@@ -52,27 +50,35 @@ type UpdateRoleParams struct {
 // MapRole converts a sqlc-generated type to the wrapper type.
 func (d Database) MapRole(a mdb.Roles) Roles {
 	return Roles{
-		RoleID:      a.RoleID,
-		Label:       a.Label,
-		Permissions: a.Permissions,
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected != 0,
 	}
 }
 
 // MapCreateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d Database) MapCreateRoleParams(a CreateRoleParams) mdb.CreateRoleParams {
+	sp := int64(0)
+	if a.SystemProtected {
+		sp = 1
+	}
 	return mdb.CreateRoleParams{
-		RoleID:      types.NewRoleID(),
-		Label:       a.Label,
-		Permissions: a.Permissions,
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: sp,
 	}
 }
 
 // MapUpdateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d Database) MapUpdateRoleParams(a UpdateRoleParams) mdb.UpdateRoleParams {
+	sp := int64(0)
+	if a.SystemProtected {
+		sp = 1
+	}
 	return mdb.UpdateRoleParams{
-		Label:       a.Label,
-		Permissions: a.Permissions,
-		RoleID:      a.RoleID,
+		Label:           a.Label,
+		SystemProtected: sp,
+		RoleID:          a.RoleID,
 	}
 }
 
@@ -157,27 +163,27 @@ func (d Database) UpdateRole(ctx context.Context, ac audited.AuditContext, s Upd
 // MapRole converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
 	return Roles{
-		RoleID:      a.RoleID,
-		Label:       a.Label,
-		Permissions: string(a.Permissions),
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapCreateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
 	return mdbm.CreateRoleParams{
-		RoleID:      types.NewRoleID(),
-		Label:       a.Label,
-		Permissions: json.RawMessage(a.Permissions),
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapUpdateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
 	return mdbm.UpdateRoleParams{
-		Label:       a.Label,
-		Permissions: json.RawMessage(a.Permissions),
-		RoleID:      a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
+		RoleID:          a.RoleID,
 	}
 }
 
@@ -262,27 +268,27 @@ func (d MysqlDatabase) UpdateRole(ctx context.Context, ac audited.AuditContext, 
 // MapRole converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapRole(a mdbp.Roles) Roles {
 	return Roles{
-		RoleID:      a.RoleID,
-		Label:       a.Label,
-		Permissions: string(a.Permissions.RawMessage),
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapCreateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbp.CreateRoleParams {
 	return mdbp.CreateRoleParams{
-		RoleID:      types.NewRoleID(),
-		Label:       a.Label,
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(a.Permissions)},
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
 	}
 }
 
 // MapUpdateRoleParams converts a sqlc-generated type to the wrapper type.
 func (d PsqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbp.UpdateRoleParams {
 	return mdbp.UpdateRoleParams{
-		Label:       a.Label,
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(a.Permissions)},
-		RoleID:      a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected,
+		RoleID:          a.RoleID,
 	}
 }
 
@@ -397,11 +403,15 @@ func (c NewRoleCmd) GetID(x mdb.Roles) string {
 
 // Execute creates a role in the database.
 func (c NewRoleCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Roles, error) {
+	sp := int64(0)
+	if c.params.SystemProtected {
+		sp = 1
+	}
 	queries := mdb.New(tx)
 	return queries.CreateRole(ctx, mdb.CreateRoleParams{
-		RoleID:      types.NewRoleID(),
-		Label:       c.params.Label,
-		Permissions: c.params.Permissions,
+		RoleID:          types.NewRoleID(),
+		Label:           c.params.Label,
+		SystemProtected: sp,
 	})
 }
 
@@ -447,11 +457,15 @@ func (c UpdateRoleCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Role
 
 // Execute updates a role in the database.
 func (c UpdateRoleCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	sp := int64(0)
+	if c.params.SystemProtected {
+		sp = 1
+	}
 	queries := mdb.New(tx)
 	return queries.UpdateRole(ctx, mdb.UpdateRoleParams{
-		Label:       c.params.Label,
-		Permissions: c.params.Permissions,
-		RoleID:      c.params.RoleID,
+		Label:           c.params.Label,
+		SystemProtected: sp,
+		RoleID:          c.params.RoleID,
 	})
 }
 
@@ -541,9 +555,9 @@ func (c NewRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Rol
 	id := types.NewRoleID()
 	queries := mdbm.New(tx)
 	err := queries.CreateRole(ctx, mdbm.CreateRoleParams{
-		RoleID:      id,
-		Label:       c.params.Label,
-		Permissions: json.RawMessage(c.params.Permissions),
+		RoleID:          id,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
 	})
 	if err != nil {
 		return mdbm.Roles{}, fmt.Errorf("Failed to CreateRole: %w", err)
@@ -595,9 +609,9 @@ func (c UpdateRoleCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdb
 func (c UpdateRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateRole(ctx, mdbm.UpdateRoleParams{
-		Label:       c.params.Label,
-		Permissions: json.RawMessage(c.params.Permissions),
-		RoleID:      c.params.RoleID,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
+		RoleID:          c.params.RoleID,
 	})
 }
 
@@ -686,9 +700,9 @@ func (c NewRoleCmdPsql) GetID(x mdbp.Roles) string {
 func (c NewRoleCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Roles, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateRole(ctx, mdbp.CreateRoleParams{
-		RoleID:      types.NewRoleID(),
-		Label:       c.params.Label,
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(c.params.Permissions)},
+		RoleID:          types.NewRoleID(),
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
 	})
 }
 
@@ -736,9 +750,9 @@ func (c UpdateRoleCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp
 func (c UpdateRoleCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateRole(ctx, mdbp.UpdateRoleParams{
-		Label:       c.params.Label,
-		Permissions: pqtype.NullRawMessage{RawMessage: json.RawMessage(c.params.Permissions)},
-		RoleID:      c.params.RoleID,
+		Label:           c.params.Label,
+		SystemProtected: c.params.SystemProtected,
+		RoleID:          c.params.RoleID,
 	})
 }
 

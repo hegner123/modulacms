@@ -20,12 +20,60 @@ import (
 )
 
 func RegisterHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
-	err := ApiCreateUser(w, r, c)
+	d := db.ConfigDB(c)
+
+	var req struct {
+		Username string      `json:"username"`
+		Name     string      `json:"name"`
+		Email    types.Email `json:"email"`
+		Password string      `json:"password"`
+	}
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if req.Password == "" {
+		http.Error(w, "password is required", http.StatusBadRequest)
+		return
+	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		utility.DefaultLogger.Error("", err)
+		http.Error(w, "failed to hash password", http.StatusInternalServerError)
+		return
+	}
+
+	// Always assign viewer role for self-registration (ignore any role in request body)
+	viewerRole, roleErr := d.GetRoleByLabel("viewer")
+	if roleErr != nil {
+		utility.DefaultLogger.Error("failed to get viewer role for registration", roleErr)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	newUser := db.CreateUserParams{
+		Username: req.Username,
+		Name:     req.Name,
+		Email:    req.Email,
+		Hash:     hash,
+		Role:     string(viewerRole.RoleID),
+	}
+
+	ac := middleware.AuditContextFromRequest(r, c)
+	createdUser, createErr := d.CreateUser(r.Context(), ac, newUser)
+	if createErr != nil {
+		utility.DefaultLogger.Error("", createErr)
+		http.Error(w, createErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdUser)
 }
 
 func ResetPasswordHandler(w http.ResponseWriter, r *http.Request, c config.Config) {

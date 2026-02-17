@@ -2,13 +2,13 @@ package middleware
 
 import (
 	"context"
-	"fmt"
+	"encoding/json"
 	"net/http"
 	"strings"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
-	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -84,7 +84,6 @@ var PublicEndpoints = []string{
 	"/api/v1/auth/me",
 	"/api/v1/auth/oauth/login",
 	"/api/v1/auth/oauth/callback",
-	"/api/v1/users",
 	"/favicon.ico",
 }
 
@@ -120,7 +119,11 @@ func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Hand
 
 			if user == nil {
 				utility.DefaultLogger.Fwarn("Unauthorized API access", nil, r.URL.Path)
-				http.Error(w, fmt.Sprintf("Unauthorized request to %s", r.URL.Path), http.StatusUnauthorized)
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusUnauthorized)
+				// Encode error is non-recoverable (client disconnected or similar);
+				// the response is already partially written so no recovery is possible.
+				json.NewEncoder(w).Encode(map[string]string{"error": "unauthorized"})
 				return
 			}
 

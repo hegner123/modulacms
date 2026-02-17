@@ -138,6 +138,7 @@ var strictDropTables = []string{
 // Tables that use "DROP TABLE IF EXISTS" (tolerant -- no error if missing).
 // Pre-dropping these won't cause DropAllTables to fail.
 var ifExistsDropTables = []string{
+	"role_permissions",
 	"admin_content_relations",
 	"content_relations",
 	"backup_sets",
@@ -183,6 +184,7 @@ func TestDatabase_DropAllTables_SpecificTablesGone(t *testing.T) {
 	createdTables := []string{
 		"admin_datatypes_fields",
 		"datatypes_fields",
+		"role_permissions",
 		"admin_content_relations",
 		"content_relations",
 		"admin_content_fields",
@@ -325,6 +327,7 @@ func TestDatabase_DropAllTables_IfExistsTables_NoError(t *testing.T) {
 	// Note: backup_sets and backup_verifications are never created by
 	// CreateAllTables, so they don't need pre-dropping -- they never existed.
 	ifExistsCreated := []string{
+		"role_permissions",
 		"admin_content_relations",
 		"content_relations",
 		"backups",
@@ -716,10 +719,10 @@ func TestDatabase_DropAllTables_TableCount(t *testing.T) {
 	d := newWipeTestDB(t)
 
 	before := countAppTables(t, d.Connection)
-	// CreateAllTables creates ~26 tables (not backup_sets or backup_verifications).
+	// CreateAllTables creates ~27 tables (not backup_sets or backup_verifications).
 	// We check a reasonable lower bound.
-	if before < 24 {
-		t.Errorf("expected at least 24 tables after CreateAllTables, got %d", before)
+	if before < 25 {
+		t.Errorf("expected at least 25 tables after CreateAllTables, got %d", before)
 	}
 
 	if err := d.DropAllTables(); err != nil {
@@ -1106,54 +1109,56 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (28 tables total):
+	// Drop order (29 tables total):
 	//  0: admin_datatypes_fields
 	//  1: datatypes_fields
-	//  2: admin_content_relations
-	//  3: content_relations
-	//  4: admin_content_fields
-	//  5: content_fields
-	//  6: admin_content_data
-	//  7: content_data
-	//  8: admin_fields
-	//  9: fields
-	// 10: admin_datatypes
-	// 11: datatypes
-	// 12: routes
-	// 13: admin_routes
-	// 14: media
-	// 15: tables
-	// 16: sessions
-	// 17: user_ssh_keys
-	// 18: user_oauth
-	// 19: tokens
-	// 20: users
-	// 21: media_dimensions
-	// 22: roles
-	// 23: permissions
-	// 24: backup_sets
-	// 25: backup_verifications
-	// 26: backups
-	// 27: change_events
+	//  2: role_permissions
+	//  3: admin_content_relations
+	//  4: content_relations
+	//  5: admin_content_fields
+	//  6: content_fields
+	//  7: admin_content_data
+	//  8: content_data
+	//  9: admin_fields
+	// 10: fields
+	// 11: admin_datatypes
+	// 12: datatypes
+	// 13: routes
+	// 14: admin_routes
+	// 15: media
+	// 16: tables
+	// 17: sessions
+	// 18: user_ssh_keys
+	// 19: user_oauth
+	// 20: tokens
+	// 21: users
+	// 22: media_dimensions
+	// 23: roles
+	// 24: permissions
+	// 25: backup_sets
+	// 26: backup_verifications
+	// 27: backups
+	// 28: change_events
 
-	// CreateAllTables creates 26 tables. DropAllTables tries to drop 28
+	// CreateAllTables creates 27 tables. DropAllTables tries to drop 29
 	// (4 infrastructure tables use DROP TABLE IF EXISTS, so they never error).
-	// The 26 created tables minus the pre-dropped one minus the ones
+	// The 27 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
 	//
-	// Drop order positions (0-based) for the 24 non-IF-EXISTS tables:
-	//  0: admin_datatypes_fields   12: routes
-	//  1: datatypes_fields         13: admin_routes
-	//  2: admin_content_relations  14: media
-	//  3: content_relations        15: tables
-	//  4: admin_content_fields     16: sessions
-	//  5: content_fields           17: user_ssh_keys
-	//  6: admin_content_data       18: user_oauth
-	//  7: content_data             19: tokens
-	//  8: admin_fields             20: users
-	//  9: fields                   21: media_dimensions
-	// 10: admin_datatypes          22: roles
-	// 11: datatypes                23: permissions
+	// Drop order positions (0-based) for the 25 non-IF-EXISTS tables:
+	//  0: admin_datatypes_fields   13: routes
+	//  1: datatypes_fields         14: admin_routes
+	//  2: role_permissions         15: media
+	//  3: admin_content_relations  16: tables
+	//  4: content_relations        17: sessions
+	//  5: admin_content_fields     18: user_ssh_keys
+	//  6: content_fields           19: user_oauth
+	//  7: admin_content_data       20: tokens
+	//  8: content_data             21: users
+	//  9: admin_fields             22: media_dimensions
+	// 10: fields                   23: roles
+	// 11: admin_datatypes          24: permissions
+	// 12: datatypes
 	// Then 4 IF EXISTS drops: backup_sets, backup_verifications, backups, change_events
 
 	tests := []struct {
@@ -1164,26 +1169,26 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	}{
 		{
 			// Pre-drop first table. Error fires immediately. No tables dropped.
-			// Remaining = 26 created - 1 pre-dropped = 25
+			// Remaining = 27 created - 1 pre-dropped = 26
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_datatypes_fields",
 			dropIndex:     0,
-			wantRemaining: 25,
+			wantRemaining: 26,
 		},
 		{
-			// Pre-drop users (position 20). Tables 0-19 dropped successfully (20 tables).
-			// Remaining = 26 created - 1 pre-dropped - 20 dropped = 5
+			// Pre-drop users (position 21). Tables 0-20 dropped successfully (21 tables).
+			// Remaining = 27 created - 1 pre-dropped - 21 dropped = 5
 			name:          "fail_at_users",
 			preDropTable:  "users",
-			dropIndex:     20,
+			dropIndex:     21,
 			wantRemaining: 5,
 		},
 		{
 			// Pre-drop change_events. But it uses DROP TABLE IF EXISTS, so no error.
-			// All 26 tables get dropped successfully. Remaining = 0
+			// All 27 tables get dropped successfully. Remaining = 0
 			name:          "fail_at_last_table",
 			preDropTable:  "change_events",
-			dropIndex:     27,
+			dropIndex:     28,
 			wantRemaining: 0,
 		},
 	}

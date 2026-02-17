@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     prev_sibling_id TEXT,
     admin_route_id TEXT NOT NULL,
     admin_datatype_id TEXT NOT NULL,
-    author_id TEXT NOT NULL,
+    author_id TEXT,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,

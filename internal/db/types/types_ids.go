@@ -1624,3 +1624,76 @@ func (id *AdminContentRelationID) UnmarshalJSON(data []byte) error {
 	*id = AdminContentRelationID(s)
 	return id.Validate()
 }
+
+// RolePermissionID uniquely identifies a role-permission junction row.
+type RolePermissionID string
+
+// NewRolePermissionID generates a new ULID-based RolePermissionID.
+func NewRolePermissionID() RolePermissionID { return RolePermissionID(NewULID().String()) }
+
+// String returns the string representation of the RolePermissionID.
+func (id RolePermissionID) String() string { return string(id) }
+
+// IsZero returns true if the RolePermissionID is empty.
+func (id RolePermissionID) IsZero() bool { return id == "" }
+
+// Validate checks if the RolePermissionID is a valid ULID.
+func (id RolePermissionID) Validate() error { return validateULID(string(id), "RolePermissionID") }
+
+// ULID parses the RolePermissionID as a ulid.ULID.
+func (id RolePermissionID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the RolePermissionID.
+func (id RolePermissionID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseRolePermissionID parses and validates a string as a RolePermissionID.
+func ParseRolePermissionID(s string) (RolePermissionID, error) {
+	id := RolePermissionID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id RolePermissionID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("RolePermissionID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *RolePermissionID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("RolePermissionID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = RolePermissionID(v)
+	case []byte:
+		*id = RolePermissionID(string(v))
+	default:
+		return fmt.Errorf("RolePermissionID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id RolePermissionID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *RolePermissionID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("RolePermissionID: %w", err)
+	}
+	*id = RolePermissionID(s)
+	return id.Validate()
+}

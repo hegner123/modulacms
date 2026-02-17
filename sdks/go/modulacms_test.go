@@ -135,6 +135,9 @@ func TestNewClient_AllResourcesInitialized(t *testing.T) {
 		{"Import", client.Import == nil},
 		{"ContentBatch", client.ContentBatch == nil},
 
+		// RBAC resources
+		{"RolePermissions", client.RolePermissions == nil},
+
 		// Plugin resources
 		{"Plugins", client.Plugins == nil},
 		{"PluginRoutes", client.PluginRoutes == nil},

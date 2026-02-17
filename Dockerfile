@@ -87,7 +87,7 @@ RUN groupadd --gid 1000 modulacms \
 WORKDIR /app
 
 # Persistent data directories
-RUN mkdir -p /app/data /app/certs /app/.ssh /app/backups \
+RUN mkdir -p /app/data /app/certs /app/.ssh /app/backups /app/plugins \
     && chown -R modulacms:modulacms /app
 
 # Copy binary from builder
@@ -98,7 +98,7 @@ USER modulacms
 # HTTP, HTTPS, SSH
 EXPOSE 8080 4000 2233
 
-VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups"]
+VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups", "/app/plugins"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["/app/modulacms", "--version"]

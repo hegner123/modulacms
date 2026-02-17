@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
         UNIQUE,
     title TEXT NOT NULL,
     status INTEGER NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

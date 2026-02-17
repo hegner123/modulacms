@@ -8,9 +8,11 @@ import (
 )
 
 // DefaultMiddlewareChain returns the standard middleware chain for the application.
-// This includes: logging, CORS, authentication, and public endpoint protection.
+// This includes: logging, CORS, authentication, public endpoint protection, and
+// permission injection. PermissionInjector is added here (not in AuthenticatedChain)
+// to avoid double injection since DefaultMiddlewareChain wraps the entire mux.
 // Accepts *config.Manager for hot-reloadable config access.
-func DefaultMiddlewareChain(mgr *config.Manager) func(http.Handler) http.Handler {
+func DefaultMiddlewareChain(mgr *config.Manager, pc *PermissionCache) func(http.Handler) http.Handler {
 	cfg, err := mgr.Config()
 	if err != nil {
 		// Fallback: return a chain that rejects all requests.
@@ -26,6 +28,7 @@ func DefaultMiddlewareChain(mgr *config.Manager) func(http.Handler) http.Handler
 		CorsMiddleware(cfg),                      // 3. CORS headers
 		HTTPAuthenticationMiddleware(cfg),        // 4. Session authentication
 		HTTPPublicEndpointMiddleware(cfg),        // 5. Public endpoint protection
+		PermissionInjector(pc),                   // 6. Permission set injection
 	)
 }
 

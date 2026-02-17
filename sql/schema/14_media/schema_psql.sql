@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS media (
     srcset TEXT,
     focal_x REAL,
     focal_y REAL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         CONSTRAINT fk_users_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,

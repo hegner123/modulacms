@@ -41,6 +41,24 @@ func Validate(c Config) ValidationResult {
 		result.Errors = append(result.Errors, fmt.Sprintf("output_format %q is not valid", c.Output_Format))
 	}
 
+	if c.Email_Enabled {
+		if !IsValidEmailProvider(string(c.Email_Provider)) {
+			result.Errors = append(result.Errors, fmt.Sprintf("email_provider %q is not valid (smtp, sendgrid, ses, postmark)", c.Email_Provider))
+		}
+		if c.Email_From_Address == "" {
+			result.Errors = append(result.Errors, "email_from_address is required when email is enabled")
+		}
+		if c.Email_Provider == EmailSmtp && c.Email_Host == "" {
+			result.Warnings = append(result.Warnings, "email_host is empty for smtp provider")
+		}
+		if (c.Email_Provider == EmailSendGrid || c.Email_Provider == EmailPostmark) && c.Email_API_Key == "" {
+			result.Warnings = append(result.Warnings, "email_api_key is empty for HTTP API provider")
+		}
+		if c.Email_Provider == EmailSES && c.Email_AWS_Access_Key_ID == "" && c.Email_AWS_Secret_Access_Key == "" {
+			result.Warnings = append(result.Warnings, "email_aws_access_key_id and email_aws_secret_access_key are empty; SES will use the default AWS credential chain (environment variables, IAM role, etc.) — this is expected on EC2/ECS/Lambda")
+		}
+	}
+
 	if c.Observability_Sample_Rate < 0 || c.Observability_Sample_Rate > 1 {
 		result.Warnings = append(result.Warnings, "observability_sample_rate should be between 0.0 and 1.0")
 	}
@@ -184,6 +202,34 @@ func configFieldString(c Config, key string) string {
 		return c.Observability_Server_Name
 	case "observability_flush_interval":
 		return c.Observability_Flush_Interval
+	case "email_enabled":
+		return fmt.Sprintf("%t", c.Email_Enabled)
+	case "email_provider":
+		return string(c.Email_Provider)
+	case "email_from_address":
+		return c.Email_From_Address
+	case "email_from_name":
+		return c.Email_From_Name
+	case "email_host":
+		return c.Email_Host
+	case "email_port":
+		return fmt.Sprintf("%d", c.Email_Port)
+	case "email_username":
+		return c.Email_Username
+	case "email_password":
+		return c.Email_Password
+	case "email_tls":
+		return fmt.Sprintf("%t", c.Email_TLS)
+	case "email_api_key":
+		return c.Email_API_Key
+	case "email_api_endpoint":
+		return c.Email_API_Endpoint
+	case "email_reply_to":
+		return c.Email_Reply_To
+	case "email_aws_access_key_id":
+		return c.Email_AWS_Access_Key_ID
+	case "email_aws_secret_access_key":
+		return c.Email_AWS_Secret_Access_Key
 	case "plugin_enabled":
 		return fmt.Sprintf("%t", c.Plugin_Enabled)
 	case "plugin_directory":

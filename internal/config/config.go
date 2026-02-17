@@ -12,6 +12,9 @@ type DbDriver string
 // OutputFormat defines the API response structure for content endpoints.
 type OutputFormat string
 
+// EmailProvider specifies which email sending backend to use.
+type EmailProvider string
+
 // OAuth endpoint keys used in the Oauth_Endpoint configuration map.
 const (
 	OauthAuthURL     Endpoint = "oauth_auth_url"
@@ -24,6 +27,15 @@ const (
 	Sqlite DbDriver = "sqlite"
 	Mysql  DbDriver = "mysql"
 	Psql   DbDriver = "postgres"
+)
+
+// Supported email providers for transactional email.
+const (
+	EmailDisabled EmailProvider = ""         // Disabled (default, zero value)
+	EmailSmtp     EmailProvider = "smtp"     // Standard SMTP relay
+	EmailSendGrid EmailProvider = "sendgrid" // SendGrid HTTP API
+	EmailSES      EmailProvider = "ses"      // AWS SES HTTP API
+	EmailPostmark EmailProvider = "postmark" // Postmark HTTP API
 )
 
 // Output formats for content API responses mimicking popular CMS structures.
@@ -108,6 +120,22 @@ type Config struct {
 	Observability_Server_Name    string  `json:"observability_server_name"`     // Server/instance name
 	Observability_Flush_Interval string  `json:"observability_flush_interval"`  // How often to flush metrics (e.g., "30s", "1m")
 	Observability_Tags           map[string]string `json:"observability_tags"` // Global tags for all metrics/events
+
+	// Email provider configuration
+	Email_Enabled      bool          `json:"email_enabled"`
+	Email_Provider     EmailProvider `json:"email_provider"`
+	Email_From_Address string        `json:"email_from_address"`
+	Email_From_Name    string        `json:"email_from_name"`
+	Email_Host         string        `json:"email_host"`
+	Email_Port         int           `json:"email_port"`
+	Email_Username     string        `json:"email_username"`
+	Email_Password     string        `json:"email_password"`
+	Email_TLS          bool          `json:"email_tls"`
+	Email_API_Key              string        `json:"email_api_key"`
+	Email_API_Endpoint         string        `json:"email_api_endpoint"`
+	Email_Reply_To             string        `json:"email_reply_to"`
+	Email_AWS_Access_Key_ID    string        `json:"email_aws_access_key_id"`
+	Email_AWS_Secret_Access_Key string       `json:"email_aws_secret_access_key"`
 
 	// Plugin runtime configuration
 	Plugin_Enabled   bool   `json:"plugin_enabled"`
@@ -201,5 +229,25 @@ func GetValidOutputFormats() []string {
 		string(FormatWordPress),
 		string(FormatClean),
 		string(FormatRaw),
+	}
+}
+
+// IsValidEmailProvider checks if the given provider string is valid.
+func IsValidEmailProvider(provider string) bool {
+	switch EmailProvider(provider) {
+	case EmailDisabled, EmailSmtp, EmailSendGrid, EmailSES, EmailPostmark:
+		return true
+	default:
+		return false
+	}
+}
+
+// GetValidEmailProviders returns a slice of all valid email provider values.
+func GetValidEmailProviders() []string {
+	return []string{
+		string(EmailSmtp),
+		string(EmailSendGrid),
+		string(EmailSES),
+		string(EmailPostmark),
 	}
 }

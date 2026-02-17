@@ -140,6 +140,12 @@ type PermissionID string
 func (id PermissionID) String() string { return string(id) }
 func (id PermissionID) IsZero() bool   { return id == "" }
 
+// RolePermissionID identifies a role-permission junction row.
+type RolePermissionID string
+
+func (id RolePermissionID) String() string { return string(id) }
+func (id RolePermissionID) IsZero() bool   { return id == "" }
+
 // Routing IDs
 
 // RouteID identifies a route.

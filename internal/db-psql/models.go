@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/sqlc-dev/pqtype"
 )
 
 type AdminContentData struct {
@@ -239,16 +238,21 @@ type MediaDimensions struct {
 }
 
 type Permissions struct {
-	PermissionID types.PermissionID `json:"permission_id"`
-	TableID      string             `json:"table_id"`
-	Mode         int32              `json:"mode"`
-	Label        string             `json:"label"`
+	PermissionID    types.PermissionID `json:"permission_id"`
+	Label           string             `json:"label"`
+	SystemProtected bool               `json:"system_protected"`
+}
+
+type RolePermissions struct {
+	ID           types.RolePermissionID `json:"id"`
+	RoleID       types.RoleID           `json:"role_id"`
+	PermissionID types.PermissionID     `json:"permission_id"`
 }
 
 type Roles struct {
-	RoleID      types.RoleID          `json:"role_id"`
-	Label       string                `json:"label"`
-	Permissions pqtype.NullRawMessage `json:"permissions"`
+	RoleID          types.RoleID `json:"role_id"`
+	Label           string       `json:"label"`
+	SystemProtected bool         `json:"system_protected"`
 }
 
 type Routes struct {

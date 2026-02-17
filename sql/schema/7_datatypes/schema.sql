@@ -5,7 +5,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
             ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,

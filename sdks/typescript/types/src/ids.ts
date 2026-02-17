@@ -48,6 +48,12 @@ export type MediaID = Brand<string, 'MediaID'>
 /** Unique identifier for a user role. */
 export type RoleID = Brand<string, 'RoleID'>
 
+/** Unique identifier for a permission. */
+export type PermissionID = Brand<string, 'PermissionID'>
+
+/** Unique identifier for a role-permission junction row. */
+export type RolePermissionID = Brand<string, 'RolePermissionID'>
+
 /** Unique identifier for a public route. */
 export type RouteID = Brand<string, 'RouteID'>
 

@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
         CONSTRAINT fk_admin_datatypes
             REFERENCES admin_datatypes
             ON UPDATE CASCADE,
-    author_id TEXT NOT NULL
+    author_id TEXT
         CONSTRAINT fk_author_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,

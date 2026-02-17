@@ -11,6 +11,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -171,6 +172,7 @@ func logConfigSummary(cfg *config.Config) {
 // pluginTableRegistrar adapts DbDriver to the plugin.TableRegistrar interface.
 type pluginTableRegistrar struct {
 	driver db.DbDriver
+	nodeID string
 }
 
 func (r *pluginTableRegistrar) RegisterTable(ctx context.Context, label string) error {
@@ -186,7 +188,7 @@ func (r *pluginTableRegistrar) RegisterTable(ctx context.Context, label string) 
 		}
 	}
 
-	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "plugin-table-register", "127.0.0.1")
+	ac := audited.Ctx(types.NodeID(r.nodeID), types.UserID(""), "plugin-table-register", "127.0.0.1")
 	_, err = r.driver.CreateTable(ctx, ac, db.CreateTableParams{Label: label})
 	if err != nil {
 		return fmt.Errorf("registering table %q: %w", label, err)
@@ -249,7 +251,7 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 
 	var tableReg plugin.TableRegistrar
 	if driver != nil {
-		tableReg = &pluginTableRegistrar{driver: driver}
+		tableReg = &pluginTableRegistrar{driver: driver, nodeID: cfg.Node_ID}
 	}
 
 	mgr := plugin.NewManager(plugin.ManagerConfig{
@@ -288,4 +290,25 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 	}
 
 	return mgr
+}
+
+// initEmailService creates the email service. If email is explicitly enabled
+// but config is invalid, returns an error so the operator notices immediately
+// rather than discovering silent failures later (e.g., password resets that
+// never arrive). When email is disabled or config is merely incomplete, returns
+// a disabled service.
+func initEmailService(cfg *config.Config) (*email.Service, error) {
+	svc, err := email.NewService(*cfg)
+	if err != nil {
+		if cfg.Email_Enabled {
+			return nil, fmt.Errorf("email service init failed (email_enabled=true): %w", err)
+		}
+		utility.DefaultLogger.Warn("email service init failed, sending disabled", err)
+		disabled := config.Config{Email_Enabled: false}
+		svc, _ = email.NewService(disabled)
+	}
+	if svc.Enabled() {
+		utility.DefaultLogger.Info("Email service started", "provider", string(cfg.Email_Provider))
+	}
+	return svc, nil
 }

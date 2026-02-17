@@ -989,33 +989,34 @@ func (b *HTTPBridge) UnregisterPlugin(pluginName string) {
 func (b *HTTPBridge) MountAdminEndpoints(
 	mux *http.ServeMux,
 	authChain func(http.Handler) http.Handler,
-	adminOnlyFn func(http.Handler) http.Handler,
+	readPerm func(http.Handler) http.Handler,
+	adminPerm func(http.Handler) http.Handler,
 ) {
 	mgr := b.manager
 
 	// 1. Register literal-path endpoints first (these beat {name} wildcard):
 	mux.Handle("GET /api/v1/admin/plugins",
-		authChain(PluginListHandler(mgr)))
+		authChain(readPerm(PluginListHandler(mgr))))
 
 	mux.Handle("GET /api/v1/admin/plugins/cleanup",
-		authChain(adminOnlyFn(PluginCleanupListHandler(mgr))))
+		authChain(adminPerm(PluginCleanupListHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/cleanup",
-		authChain(adminOnlyFn(PluginCleanupDropHandler(mgr))))
+		authChain(adminPerm(PluginCleanupDropHandler(mgr))))
 
 	mux.Handle("GET /api/v1/admin/plugins/hooks",
-		authChain(PluginHooksListHandler(mgr)))
+		authChain(readPerm(PluginHooksListHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/hooks/approve",
-		authChain(adminOnlyFn(PluginHooksApproveHandler(mgr))))
+		authChain(adminPerm(PluginHooksApproveHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/hooks/revoke",
-		authChain(adminOnlyFn(PluginHooksRevokeHandler(mgr))))
+		authChain(adminPerm(PluginHooksRevokeHandler(mgr))))
 
 	// 2. Register wildcard {name} endpoints:
 	mux.Handle("GET /api/v1/admin/plugins/{name}",
-		authChain(PluginInfoHandler(mgr)))
+		authChain(readPerm(PluginInfoHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/{name}/reload",
-		authChain(adminOnlyFn(PluginReloadHandler(mgr))))
+		authChain(adminPerm(PluginReloadHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/{name}/enable",
-		authChain(adminOnlyFn(PluginEnableHandler(mgr))))
+		authChain(adminPerm(PluginEnableHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/{name}/disable",
-		authChain(adminOnlyFn(PluginDisableHandler(mgr))))
+		authChain(adminPerm(PluginDisableHandler(mgr))))
 }

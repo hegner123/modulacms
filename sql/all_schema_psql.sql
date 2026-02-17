@@ -1,9 +1,8 @@
 
 CREATE TABLE IF NOT EXISTS permissions (
-    permission_id SERIAL PRIMARY KEY,
-    table_id INT NOT NULL,
-    mode INT NOT NULL,
-    label TEXT NOT NULL
+    permission_id TEXT NOT NULL PRIMARY KEY CHECK (length(permission_id) = 26),
+    label TEXT NOT NULL,
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE
 );
 CREATE TABLE IF NOT EXISTS media_dimensions (
     md_id SERIAL PRIMARY KEY,
@@ -13,9 +12,9 @@ CREATE TABLE IF NOT EXISTS media_dimensions (
     aspect_ratio TEXT
 );
 CREATE TABLE IF NOT EXISTS roles (
-    role_id SERIAL PRIMARY KEY,
+    role_id TEXT NOT NULL PRIMARY KEY CHECK (length(role_id) = 26),
     label TEXT NOT NULL UNIQUE,
-    permissions JSONB NOT NULL DEFAULT '{}'::jsonb
+    system_protected BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS users (

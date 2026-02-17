@@ -14,7 +14,7 @@ CREATE TABLE IF NOT EXISTS media (
     srcset TEXT,
     focal_x REAL,
     focal_y REAL,
-    author_id TEXT NOT NULL
+    author_id TEXT
     REFERENCES users
     ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
