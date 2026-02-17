@@ -298,9 +298,51 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 // never arrive). When email is disabled or config is merely incomplete, returns
 // a disabled service.
 func initEmailService(cfg *config.Config) (*email.Service, error) {
+	utility.DefaultLogger.Info("Email init",
+		"enabled", cfg.Email_Enabled,
+		"provider", string(cfg.Email_Provider),
+		"from_address", cfg.Email_From_Address,
+		"from_name", cfg.Email_From_Name,
+		"reply_to", cfg.Email_Reply_To,
+	)
+
+	if cfg.Email_Enabled && cfg.Email_Provider != config.EmailDisabled {
+		switch cfg.Email_Provider {
+		case config.EmailSmtp:
+			utility.DefaultLogger.Info("Email SMTP check",
+				"host", cfg.Email_Host,
+				"port", cfg.Email_Port,
+				"tls", cfg.Email_TLS,
+				"has_username", cfg.Email_Username != "",
+				"has_password", cfg.Email_Password != "",
+			)
+		case config.EmailSendGrid:
+			utility.DefaultLogger.Info("Email SendGrid check",
+				"has_api_key", cfg.Email_API_Key != "",
+				"endpoint", cfg.Email_API_Endpoint,
+			)
+		case config.EmailPostmark:
+			utility.DefaultLogger.Info("Email Postmark check",
+				"has_api_key", cfg.Email_API_Key != "",
+				"endpoint", cfg.Email_API_Endpoint,
+			)
+		case config.EmailSES:
+			utility.DefaultLogger.Info("Email SES check",
+				"has_access_key", cfg.Email_AWS_Access_Key_ID != "",
+				"has_secret_key", cfg.Email_AWS_Secret_Access_Key != "",
+				"endpoint", cfg.Email_API_Endpoint,
+			)
+		default:
+			utility.DefaultLogger.Warn("Email unknown provider", nil, "provider", string(cfg.Email_Provider))
+		}
+	}
+
 	svc, err := email.NewService(*cfg)
 	if err != nil {
 		if cfg.Email_Enabled {
+			utility.DefaultLogger.Error("Email service init failed with email_enabled=true", err,
+				"provider", string(cfg.Email_Provider),
+			)
 			return nil, fmt.Errorf("email service init failed (email_enabled=true): %w", err)
 		}
 		utility.DefaultLogger.Warn("email service init failed, sending disabled", err)
@@ -309,6 +351,8 @@ func initEmailService(cfg *config.Config) (*email.Service, error) {
 	}
 	if svc.Enabled() {
 		utility.DefaultLogger.Info("Email service started", "provider", string(cfg.Email_Provider))
+	} else {
+		utility.DefaultLogger.Info("Email service disabled")
 	}
 	return svc, nil
 }

@@ -107,3 +107,6 @@ build/
 # Swift Package Manager
 .build/
 .swiftpm/
+
+# Test Dbs
+testdb/

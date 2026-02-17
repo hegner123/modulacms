@@ -151,44 +151,8 @@ var serveCmd = &cobra.Command{
 			}
 		}
 
-		// Initialize permission cache after install check (bootstrap data must exist)
-		pc := middleware.NewPermissionCache()
-		if pcErr := pc.Load(driver); pcErr != nil {
-			return fmt.Errorf("initial permission cache load failed: %w", pcErr)
-		}
-		pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
-
-		// Ensure S3 buckets exist (media + backup)
-		if cfg.BucketEndpointURL() != "" {
-			s3Creds := bucket.S3Credentials{
-				AccessKey:      cfg.Bucket_Access_Key,
-				SecretKey:      cfg.Bucket_Secret_Key,
-				URL:            cfg.BucketEndpointURL(),
-				Region:         cfg.Bucket_Region,
-				ForcePathStyle: cfg.Bucket_Force_Path_Style,
-			}
-			s3Session, s3Err := s3Creds.GetBucket()
-			if s3Err != nil {
-				utility.DefaultLogger.Warn("S3 connection failed, media uploads will be unavailable", s3Err)
-			} else {
-				// Media bucket: public read access for serving assets
-				if cfg.Bucket_Media != "" {
-					if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Media); bErr != nil {
-						utility.DefaultLogger.Warn("Failed to ensure media bucket", bErr, "bucket", cfg.Bucket_Media)
-					} else if pErr := bucket.SetPublicReadPolicy(s3Session, cfg.Bucket_Media); pErr != nil {
-						utility.DefaultLogger.Warn("Failed to set public-read policy on media bucket", pErr, "bucket", cfg.Bucket_Media)
-					}
-				}
-				// Backup bucket: private, accessible only with configured credentials
-				if cfg.Bucket_Backup != "" {
-					if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Backup); bErr != nil {
-						utility.DefaultLogger.Warn("Failed to ensure backup bucket", bErr, "bucket", cfg.Bucket_Backup)
-					}
-				}
-			}
-		}
-
-		// SSH server
+		// SSH server — started before permission cache so it remains available
+		// even when the HTTP stack cannot initialize (e.g. missing bootstrap data).
 		sshServer, err := wish.NewServer(
 			wish.WithAddress(net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port)),
 			wish.WithHostKeyPath(".ssh/id_ed25519"),
@@ -205,58 +169,6 @@ var serveCmd = &cobra.Command{
 			return err
 		}
 
-		// HTTP router and middleware
-		var bridge *plugin.HTTPBridge
-		if pluginManager != nil {
-			bridge = pluginManager.Bridge()
-		}
-		mux := router.NewModulacmsMux(mgr, bridge, driver, pc)
-
-		// Phase 3: Inject HookRunner into request context so that audited
-		// operations can dispatch content lifecycle hooks. The HookRunnerMiddleware
-		// is applied before the default chain so the runner is available to all
-		// downstream middleware and handlers.
-		var hookRunner audited.HookRunner
-		if pluginManager != nil {
-			hookRunner = pluginManager.HookEngine()
-		}
-		middlewareHandler := middleware.Chain(
-			middleware.HookRunnerMiddleware(hookRunner),
-		)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
-
-		manager := autocert.Manager{
-			Prompt: autocert.AcceptTOS,
-			HostPolicy: autocert.HostWhitelist(
-				cfg.Environment_Hosts[cfg.Environment],
-				cfg.Client_Site,
-				cfg.Admin_Site,
-			),
-		}
-
-		// Determine HTTP host based on environment
-		httpHost := cfg.Client_Site
-		switch cfg.Environment {
-		case "local":
-			httpHost = "localhost"
-		case "docker":
-			httpHost = "0.0.0.0"
-		}
-
-		// TLS config: use autocert for production, nil for local/docker (self-signed)
-		var tlsConfig *tls.Config
-		if cfg.Environment != "local" && cfg.Environment != "docker" {
-			tlsConfig = manager.TLSConfig()
-		}
-
-		httpServer := newHTTPServer(httpHost+cfg.Port, middlewareHandler, nil)
-		httpsServer := newHTTPServer(httpHost+cfg.SSL_Port, middlewareHandler, tlsConfig)
-
-		certDir, err := sanitizeCertDir(cfg.Cert_Dir)
-		if err != nil {
-			return err
-		}
-
-		// Start SSH server
 		go func() {
 			utility.DefaultLogger.Info("Starting SSH server",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port))
@@ -267,46 +179,146 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
-		// Start HTTPS server if configured
-		if !initStatus.UseSSL && cfg.Environment != "http-only" {
+		// Initialize permission cache after install check (bootstrap data must exist).
+		// On failure the SSH server keeps running so operators can diagnose via TUI;
+		// HTTP/HTTPS are skipped since they require the permission cache.
+		sshOnly := false
+		utility.DefaultLogger.Info("Loading permission cache...")
+		pc := middleware.NewPermissionCache()
+		if pcErr := pc.Load(driver); pcErr != nil {
+			utility.DefaultLogger.Error("Permission cache load failed — HTTP/HTTPS disabled, SSH-only mode", pcErr)
+			sshOnly = true
+		} else {
+			utility.DefaultLogger.Info("Permission cache loaded")
+			pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
+		}
+
+		var httpServer *http.Server
+		var httpsServer *http.Server
+		var bridge *plugin.HTTPBridge
+		var pluginAPITokenID string
+		var pluginAPITokenPath string
+
+		if !sshOnly {
+			// Ensure S3 buckets exist (media + backup)
+			if cfg.BucketEndpointURL() != "" {
+				s3Creds := bucket.S3Credentials{
+					AccessKey:      cfg.Bucket_Access_Key,
+					SecretKey:      cfg.Bucket_Secret_Key,
+					URL:            cfg.BucketEndpointURL(),
+					Region:         cfg.Bucket_Region,
+					ForcePathStyle: cfg.Bucket_Force_Path_Style,
+				}
+				s3Session, s3Err := s3Creds.GetBucket()
+				if s3Err != nil {
+					utility.DefaultLogger.Warn("S3 connection failed, media uploads will be unavailable", s3Err)
+				} else {
+					// Media bucket: public read access for serving assets
+					if cfg.Bucket_Media != "" {
+						if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Media); bErr != nil {
+							utility.DefaultLogger.Warn("Failed to ensure media bucket", bErr, "bucket", cfg.Bucket_Media)
+						} else if pErr := bucket.SetPublicReadPolicy(s3Session, cfg.Bucket_Media); pErr != nil {
+							utility.DefaultLogger.Warn("Failed to set public-read policy on media bucket", pErr, "bucket", cfg.Bucket_Media)
+						}
+					}
+					// Backup bucket: private, accessible only with configured credentials
+					if cfg.Bucket_Backup != "" {
+						if bErr := bucket.EnsureBucket(s3Session, cfg.Bucket_Backup); bErr != nil {
+							utility.DefaultLogger.Warn("Failed to ensure backup bucket", bErr, "bucket", cfg.Bucket_Backup)
+						}
+					}
+				}
+			}
+
+			// HTTP router and middleware
+			if pluginManager != nil {
+				bridge = pluginManager.Bridge()
+			}
+			mux := router.NewModulacmsMux(mgr, bridge, driver, pc)
+
+			// Phase 3: Inject HookRunner into request context so that audited
+			// operations can dispatch content lifecycle hooks. The HookRunnerMiddleware
+			// is applied before the default chain so the runner is available to all
+			// downstream middleware and handlers.
+			var hookRunner audited.HookRunner
+			if pluginManager != nil {
+				hookRunner = pluginManager.HookEngine()
+			}
+			middlewareHandler := middleware.Chain(
+				middleware.HookRunnerMiddleware(hookRunner),
+			)(middleware.DefaultMiddlewareChain(mgr, pc)(mux))
+
+			manager := autocert.Manager{
+				Prompt: autocert.AcceptTOS,
+				HostPolicy: autocert.HostWhitelist(
+					cfg.Environment_Hosts[cfg.Environment],
+					cfg.Client_Site,
+					cfg.Admin_Site,
+				),
+			}
+
+			// Determine HTTP host based on environment
+			httpHost := cfg.Client_Site
+			switch cfg.Environment {
+			case "local":
+				httpHost = "localhost"
+			case "docker":
+				httpHost = "0.0.0.0"
+			}
+
+			// TLS config: use autocert for production, nil for local/docker (self-signed)
+			var tlsConfig *tls.Config
+			if cfg.Environment != "local" && cfg.Environment != "docker" {
+				tlsConfig = manager.TLSConfig()
+			}
+
+			httpServer = newHTTPServer(httpHost+cfg.Port, middlewareHandler, nil)
+			httpsServer = newHTTPServer(httpHost+cfg.SSL_Port, middlewareHandler, tlsConfig)
+
+			certDir, certErr := sanitizeCertDir(cfg.Cert_Dir)
+			if certErr != nil {
+				return certErr
+			}
+
+			// Start HTTPS server if configured
+			if !initStatus.UseSSL && cfg.Environment != "http-only" {
+				go func() {
+					utility.DefaultLogger.Info("Starting HTTPS server", "address", httpsServer.Addr)
+					httpsErr := httpsServer.ListenAndServeTLS(
+						filepath.Join(certDir, "localhost.crt"),
+						filepath.Join(certDir, "localhost.key"),
+					)
+					if httpsErr != nil && !errors.Is(httpsErr, http.ErrServerClosed) {
+						utility.DefaultLogger.Error("HTTPS server error", httpsErr)
+						done <- syscall.SIGTERM
+					}
+				}()
+			}
+
+			// Start HTTP server
 			go func() {
-				utility.DefaultLogger.Info("Starting HTTPS server", "address", httpsServer.Addr)
-				httpsErr := httpsServer.ListenAndServeTLS(
-					filepath.Join(certDir, "localhost.crt"),
-					filepath.Join(certDir, "localhost.key"),
-				)
-				if httpsErr != nil && !errors.Is(httpsErr, http.ErrServerClosed) {
-					utility.DefaultLogger.Error("HTTPS server error", httpsErr)
+				utility.DefaultLogger.Info("Starting HTTP server", "address", httpServer.Addr)
+				httpErr := httpServer.ListenAndServe()
+				if httpErr != nil && !errors.Is(httpErr, http.ErrServerClosed) {
+					utility.DefaultLogger.Error("HTTP server error", httpErr)
 					done <- syscall.SIGTERM
 				}
 			}()
-		}
 
-		// Start HTTP server
-		go func() {
-			utility.DefaultLogger.Info("Starting HTTP server", "address", httpServer.Addr)
-			httpErr := httpServer.ListenAndServe()
-			if httpErr != nil && !errors.Is(httpErr, http.ErrServerClosed) {
-				utility.DefaultLogger.Error("HTTP server error", httpErr)
-				done <- syscall.SIGTERM
-			}
-		}()
-
-		// Generate admin API token for CLI plugin commands.
-		// The token is inserted into the tokens table tied to the system user
-		// and written to a file so that CLI online commands can authenticate
-		// against the running server's admin API via the existing APIKeyAuth
-		// middleware. On graceful shutdown, the token row and file are removed.
-		var pluginAPITokenID string
-		var pluginAPITokenPath string
-		if cfg.Plugin_Enabled {
-			tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)
-			if tokenErr != nil {
-				utility.DefaultLogger.Error("failed to generate plugin API token", tokenErr)
-			} else {
-				pluginAPITokenID = tokenID
-				pluginAPITokenPath = tokenPath
-				utility.DefaultLogger.Info("plugin API token created", "path", tokenPath)
+			// Generate admin API token for CLI plugin commands.
+			// The token is inserted into the tokens table tied to the system user
+			// and written to a file so that CLI online commands can authenticate
+			// against the running server's admin API via the existing APIKeyAuth
+			// middleware. On graceful shutdown, the token row and file are removed.
+			if cfg.Plugin_Enabled {
+				tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)
+				if tokenErr != nil {
+					utility.DefaultLogger.Error("failed to generate plugin API token", tokenErr)
+				} else {
+					pluginAPITokenID = tokenID
+					pluginAPITokenPath = tokenPath
+					utility.DefaultLogger.Info("plugin API token created", "path", tokenPath)
+				}
 			}
 		}
 
@@ -320,12 +332,16 @@ var serveCmd = &cobra.Command{
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 30*time.Second)
 		defer shutdownCancel()
 
-		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			utility.DefaultLogger.Error("HTTP server shutdown error:", err)
+		if httpServer != nil {
+			if err := httpServer.Shutdown(shutdownCtx); err != nil {
+				utility.DefaultLogger.Error("HTTP server shutdown error:", err)
+			}
 		}
 
-		if err := httpsServer.Shutdown(shutdownCtx); err != nil {
-			utility.DefaultLogger.Error("HTTPS server shutdown error:", err)
+		if httpsServer != nil {
+			if err := httpsServer.Shutdown(shutdownCtx); err != nil {
+				utility.DefaultLogger.Error("HTTPS server shutdown error:", err)
+			}
 		}
 
 		if err := sshServer.Shutdown(shutdownCtx); err != nil && !errors.Is(err, ssh.ErrServerClosed) {

@@ -23,6 +23,7 @@ services:
       - postgres_cms_backups:/app/backups
       - ./config.postgres.json:/app/config.json:ro
       - ../../examples/plugins:/app/plugins:ro
+    entrypoint: ["/bin/sh", "-c", "/app/modulacms cert generate && /app/modulacms serve -v"]
     env_file:
       - .env
     depends_on:
