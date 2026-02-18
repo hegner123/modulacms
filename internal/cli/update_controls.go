@@ -390,11 +390,39 @@ func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 		if km.Matches(key, config.ActionDelete) {
 			return m.datatypesControlsDelete()
 		}
+		if key == "u" {
+			return m.datatypesControlsUIConfig()
+		}
 		if key == "enter" {
 			return m.datatypesControlsSelect()
 		}
 	}
 	return m, nil
+}
+
+// datatypesControlsUIConfig handles the 'u' key to open the UIConfig dialog for a field.
+func (m Model) datatypesControlsUIConfig() (Model, tea.Cmd) {
+	if m.PanelFocus != tui.ContentPanel {
+		return m, nil
+	}
+	if len(m.SelectedDatatypeFields) == 0 || m.FieldCursor >= len(m.SelectedDatatypeFields) {
+		return m, nil
+	}
+
+	field := m.SelectedDatatypeFields[m.FieldCursor]
+	fieldID := string(field.FieldID)
+
+	uc, err := types.ParseUIConfig(field.UIConfig)
+	if err != nil {
+		return m, LogMessageCmd(fmt.Sprintf("Failed to parse UIConfig: %v", err))
+	}
+
+	// If all zero, show blank form; otherwise show pre-populated
+	isZero := uc.Widget == "" && uc.Placeholder == "" && uc.HelpText == "" && !uc.Hidden
+	if isZero {
+		return m, ShowUIConfigFormDialogCmd("UI Config: "+field.Label, fieldID)
+	}
+	return m, ShowEditUIConfigFormDialogCmd("UI Config: "+field.Label, fieldID, uc)
 }
 
 // datatypesControlsUp handles upward cursor movement based on active panel.
@@ -679,18 +707,27 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 					)
 				}
 				return m, ShowDialog("Error", "Please select a content node first", false)
+			} else {
+				// Root content list edit
+				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
+					content := m.RootContentSummary[m.Cursor]
+					if content.RouteID.Valid && content.DatatypeID.Valid {
+						return m, FetchContentForEditCmd(
+							content.ContentDataID,
+							content.DatatypeID.ID,
+							content.RouteID.ID,
+							fmt.Sprintf("Edit: %s", content.RouteTitle),
+						)
+					}
+				}
 			}
 		}
 		if km.Matches(key, config.ActionNew) {
 			if m.PageRouteId.IsZero() {
-				if len(m.RootContentSummary) > 0 && m.Cursor < len(m.RootContentSummary) {
-					content := m.RootContentSummary[m.Cursor]
-					if content.DatatypeID.Valid {
-						return m, ShowCreateRouteWithContentDialogCmd(string(content.DatatypeID.ID))
-					}
-				} else if len(m.RootDatatypes) > 0 {
-					return m, ShowCreateRouteWithContentDialogCmd(string(m.RootDatatypes[0].DatatypeID))
+				if len(m.RootDatatypes) == 0 {
+					return m, ShowDialog("Info", "No root datatypes available", false)
 				}
+				return m, ShowCreateRouteWithContentDialogCmd(m.RootDatatypes)
 			} else {
 				if m.PanelFocus == tui.RoutePanel {
 					return m.contentFieldAdd()
@@ -1082,11 +1119,11 @@ func (m Model) UsersAdminControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 		if km.Matches(key, config.ActionNew) {
-			return m, ShowCreateUserDialogCmd()
+			return m, ShowCreateUserDialogCmd(m.RolesList)
 		}
 		if km.Matches(key, config.ActionEdit) {
 			if len(m.UsersList) > 0 && m.Cursor < len(m.UsersList) {
-				return m, ShowEditUserDialogCmd(m.UsersList[m.Cursor])
+				return m, ShowEditUserDialogCmd(m.UsersList[m.Cursor], m.RolesList)
 			}
 		}
 		if km.Matches(key, config.ActionDelete) {

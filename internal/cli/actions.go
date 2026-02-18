@@ -66,10 +66,11 @@ func ActionsMenuLabels() []string {
 
 // ActionResultMsg is returned by action commands with the result to display.
 type ActionResultMsg struct {
-	Title   string
-	Message string
-	IsError bool
-	Width   int // optional dialog width override (0 = default)
+	Title              string
+	Message            string
+	IsError            bool
+	Width              int  // optional dialog width override (0 = default)
+	ReloadPermissions  bool // signal serve to reload permission cache and start HTTP
 }
 
 // ActionConfirmMsg is sent when a destructive action needs confirmation.
@@ -154,8 +155,9 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 			}
 		}
 		return ActionResultMsg{
-			Title:   "DB Init Complete",
-			Message: fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Title:             "DB Init Complete",
+			Message:           fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			ReloadPermissions: true,
 		}
 	}
 }
@@ -229,8 +231,9 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 			}
 		}
 		return ActionResultMsg{
-			Title:   "DB Wipe & Redeploy Complete",
-			Message: fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Title:             "DB Wipe & Redeploy Complete",
+			Message:           fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			ReloadPermissions: true,
 		}
 	}
 }

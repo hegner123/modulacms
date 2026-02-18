@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"fmt"
+
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -45,6 +47,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m, cmd := m.UpdateAdminCms(msg); cmd != nil {
 		return m, cmd
 	}
+	// Handle editor finished: update the content form dialog field with edited content.
+	if editorMsg, ok := msg.(EditorFinishedMsg); ok {
+		if m.Logger != nil {
+			m.Logger.Finfo(fmt.Sprintf("[editor] EditorFinishedMsg received: fieldIndex=%d, err=%v, contentLen=%d", editorMsg.FieldIndex, editorMsg.Err, len(editorMsg.Content)))
+		}
+		if m.ContentFormDialogActive && m.ContentFormDialog != nil {
+			if editorMsg.Err != nil {
+				if m.Logger != nil {
+					m.Logger.Ferror(fmt.Sprintf("[editor] editor returned error for field %d", editorMsg.FieldIndex), editorMsg.Err)
+				}
+				return m, nil
+			}
+			if editorMsg.FieldIndex < len(m.ContentFormDialog.Fields) {
+				field := m.ContentFormDialog.Fields[editorMsg.FieldIndex]
+				if m.Logger != nil {
+					m.Logger.Finfo(fmt.Sprintf("[editor] applying editor content (%d bytes) to field %d (%s)", len(editorMsg.Content), editorMsg.FieldIndex, field.Label))
+				}
+				m.ContentFormDialog.Fields[editorMsg.FieldIndex].Bubble.SetValue(editorMsg.Content)
+			} else {
+				if m.Logger != nil {
+					m.Logger.Finfo(fmt.Sprintf("[editor] fieldIndex %d out of range (dialog has %d fields), ignoring", editorMsg.FieldIndex, len(m.ContentFormDialog.Fields)))
+				}
+			}
+			return m, nil
+		}
+		if m.Logger != nil {
+			m.Logger.Finfo("[editor] EditorFinishedMsg received but no active content form dialog, ignoring")
+		}
+	}
+
 	// When file picker is active, route all input to it.
 	if m.FilePickerActive {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -119,6 +151,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
 			dbFormDialog, cmd := m.DatabaseFormDialog.Update(keyMsg)
 			m.DatabaseFormDialog = &dbFormDialog
+			return m, cmd
+		}
+	}
+
+	// When UIConfig form dialog is active, route all key input to the UIConfig form dialog and stop.
+	if m.UIConfigFormDialogActive && m.UIConfigFormDialog != nil {
+		if keyMsg, ok := msg.(tea.KeyMsg); ok {
+			uiConfigDialog, cmd := m.UIConfigFormDialog.Update(keyMsg)
+			m.UIConfigFormDialog = &uiConfigDialog
 			return m, cmd
 		}
 	}

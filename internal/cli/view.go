@@ -64,26 +64,6 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
-	case BUCKETPAGE:
-		menu := make([]string, 0, len(m.PageMenu))
-		for _, v := range m.PageMenu {
-			menu = append(menu, v.Label)
-		}
-		p := NewMenuPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddMenu(menu)
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
-	case OAUTHPAGE:
-		menu := make([]string, 0, len(m.PageMenu))
-		for _, v := range m.PageMenu {
-			menu = append(menu, v.Label)
-		}
-		p := NewMenuPage()
-		p.AddTitle(m.Titles[m.TitleFont])
-		p.AddMenu(menu)
-		p.AddStatus(m.RenderStatusBar())
-		ui = p.Render(m)
 	case CONFIGPAGE:
 		menu := ConfigCategoryMenuInit()
 		p := NewMenuPage()
@@ -249,6 +229,10 @@ func (m Model) View() string {
 
 	if m.DatabaseFormDialogActive && m.DatabaseFormDialog != nil {
 		return DatabaseFormDialogOverlay(ui, *m.DatabaseFormDialog, m.Width, m.Height)
+	}
+
+	if m.UIConfigFormDialogActive && m.UIConfigFormDialog != nil {
+		return UIConfigFormDialogOverlay(ui, *m.UIConfigFormDialog, m.Width, m.Height)
 	}
 
 	return ui

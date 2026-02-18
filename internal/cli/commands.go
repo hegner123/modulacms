@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/hegner123/modulacms/internal/auth"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -498,10 +499,17 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 				if err != nil || field == nil {
 					continue
 				}
+				// Parse UIConfig for widget override
+				var widget string
+				if uc, ucErr := types.ParseUIConfig(field.UIConfig); ucErr == nil {
+					widget = uc.Widget
+				}
+
 				ef := ExistingContentField{
 					FieldID: field.FieldID,
 					Label:   field.Label,
 					Type:    string(field.Type),
+					Widget:  widget,
 					Value:   "",
 				}
 				// Check if there's an existing value for this field
@@ -992,11 +1000,26 @@ func (m Model) HandleCreateUserFromDialog(msg CreateUserFromDialogRequestMsg) te
 			}
 		}
 
+		if msg.Password == "" {
+			return ActionResultMsg{
+				Title:   "Password Required",
+				Message: "Password must not be empty",
+			}
+		}
+
+		hash, err := auth.HashPassword(msg.Password)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Password Error",
+				Message: fmt.Sprintf("Could not hash password: %v", err),
+			}
+		}
+
 		user, err := d.CreateUser(ctx, ac, db.CreateUserParams{
 			Username:     msg.Username,
 			Name:         msg.Name,
 			Email:        email,
-			Hash:         "", // No password set via TUI
+			Hash:         hash,
 			Role:         msg.Role,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),

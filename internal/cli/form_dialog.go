@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
@@ -65,6 +69,12 @@ type ParentOption struct {
 type TypeOption struct {
 	Label string
 	Value string // Registry key (e.g., "text")
+}
+
+// RoleOption represents a selectable role for user forms.
+type RoleOption struct {
+	Label string
+	Value string // RoleID ULID
 }
 
 // TypeOptionsFromRegistry builds TypeOption slice from the field input registry.
@@ -249,6 +259,11 @@ func (d *FormDialogModel) HasTypeSelector() bool {
 	return len(d.TypeOptions) > 0
 }
 
+// HasSecondField returns true if the dialog should render the second (Type/Slug) field.
+func (d *FormDialogModel) HasSecondField() bool {
+	return d.Action != FORMDIALOGCONFIGEDIT
+}
+
 // Update handles input for the form dialog
 func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -384,6 +399,10 @@ func (d *FormDialogModel) updateChildDatatypeSelection(msg tea.KeyMsg) (FormDial
 // focusNext advances focus to the next focusable element, wrapping at the end.
 func (d *FormDialogModel) focusNext() {
 	d.focusIndex++
+	// Skip type field if not applicable
+	if d.focusIndex == FormDialogFieldType && !d.HasSecondField() {
+		d.focusIndex = FormDialogButtonCancel
+	}
 	// Skip parent field if no parent options
 	if d.focusIndex == FormDialogFieldParent && !d.HasParentSelector() {
 		d.focusIndex = FormDialogButtonCancel
@@ -400,6 +419,10 @@ func (d *FormDialogModel) focusPrev() {
 	// Skip parent field if no parent options
 	if d.focusIndex == FormDialogFieldParent && !d.HasParentSelector() {
 		d.focusIndex = FormDialogFieldType
+	}
+	// Skip type field if not applicable
+	if d.focusIndex == FormDialogFieldType && !d.HasSecondField() {
+		d.focusIndex = FormDialogFieldLabel
 	}
 	if d.focusIndex < FormDialogFieldLabel {
 		d.focusIndex = FormDialogButtonConfirm
@@ -427,6 +450,8 @@ func (d *FormDialogModel) updateFocus() {
 // Render renders the form dialog
 func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	var content strings.Builder
+	// Inner width available for fields (dialog width minus border and padding)
+	innerW := d.Width - 6
 
 	// Title
 	content.WriteString(d.titleStyle.Render(d.Title))
@@ -441,54 +466,64 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	firstFieldLabel := "Label"
 	secondFieldLabel := "Type"
 	if d.Action == FORMDIALOGCREATEROUTE || d.Action == FORMDIALOGEDITROUTE ||
-		d.Action == FORMDIALOGCREATEADMINROUTE || d.Action == FORMDIALOGEDITADMINROUTE {
+		d.Action == FORMDIALOGCREATEADMINROUTE || d.Action == FORMDIALOGEDITADMINROUTE ||
+		d.Action == FORMDIALOGCREATEROUTEWITHCONTENT {
 		firstFieldLabel = "Title"
 		secondFieldLabel = "Slug"
 	}
+	if d.Action == FORMDIALOGCONFIGEDIT {
+		firstFieldLabel = "Value"
+	}
 
-	// First field (Label or Title)
+	// First field (Label, Title, or Value)
 	labelLabel := d.labelStyle.Render(firstFieldLabel)
 	content.WriteString(labelLabel)
 	content.WriteString("\n")
 	if d.focusIndex == FormDialogFieldLabel {
-		content.WriteString(d.focusedInputStyle.Render(d.LabelInput.View()))
+		content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.LabelInput.View()))
 	} else {
-		content.WriteString(d.inputStyle.Render(d.LabelInput.View()))
+		content.WriteString(d.inputStyle.Width(innerW).Render(d.LabelInput.View()))
 	}
 	content.WriteString("\n")
 
-	// Second field (Type or Slug)
-	typeLabel := d.labelStyle.Render(secondFieldLabel)
-	content.WriteString(typeLabel)
-	content.WriteString("\n")
-	if d.HasTypeSelector() {
-		optLabel := d.TypeOptions[d.TypeIndex].Label
-		if d.focusIndex == FormDialogFieldType {
-			selector := lipgloss.NewStyle().
-				Foreground(config.DefaultStyle.Primary).
-				Background(config.DefaultStyle.Accent).
-				Padding(0, 1).
-				Render("◀ " + optLabel + " ▶")
-			content.WriteString(selector)
+	// Second field (Type or Slug) — skip for single-field dialogs
+	if d.HasSecondField() {
+		typeLabel := d.labelStyle.Render(secondFieldLabel)
+		content.WriteString(typeLabel)
+		content.WriteString("\n")
+		if d.HasTypeSelector() {
+			optLabel := d.TypeOptions[d.TypeIndex].Label
+			if d.focusIndex == FormDialogFieldType {
+				selector := lipgloss.NewStyle().
+					Foreground(config.DefaultStyle.Primary).
+					Background(config.DefaultStyle.Accent).
+					Padding(0, 1).
+					Render("◀ " + optLabel + " ▶")
+				content.WriteString(selector)
+			} else {
+				selector := lipgloss.NewStyle().
+					Foreground(config.DefaultStyle.Secondary).
+					Padding(0, 1).
+					Render("  " + optLabel + "  ")
+				content.WriteString(selector)
+			}
 		} else {
-			selector := lipgloss.NewStyle().
-				Foreground(config.DefaultStyle.Secondary).
-				Padding(0, 1).
-				Render("  " + optLabel + "  ")
-			content.WriteString(selector)
+			if d.focusIndex == FormDialogFieldType {
+				content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.TypeInput.View()))
+			} else {
+				content.WriteString(d.inputStyle.Width(innerW).Render(d.TypeInput.View()))
+			}
 		}
-	} else {
-		if d.focusIndex == FormDialogFieldType {
-			content.WriteString(d.focusedInputStyle.Render(d.TypeInput.View()))
-		} else {
-			content.WriteString(d.inputStyle.Render(d.TypeInput.View()))
-		}
+		content.WriteString("\n")
 	}
-	content.WriteString("\n")
 
 	// Parent selector (only for dialogs with parent options)
 	if d.HasParentSelector() {
-		parentLabel := d.labelStyle.Render("Parent")
+		parentLabelText := "Parent"
+		if d.Action == FORMDIALOGCREATEROUTEWITHCONTENT {
+			parentLabelText = "Datatype"
+		}
+		parentLabel := d.labelStyle.Render(parentLabelText)
 		content.WriteString(parentLabel)
 		content.WriteString("\n")
 		parentValue := d.ParentOptions[d.ParentIndex].Label
@@ -844,7 +879,7 @@ func ShowEditRouteDialogCmd(route db.Routes) tea.Cmd {
 }
 
 // NewRouteWithContentDialog creates a form dialog for creating a new route with initial content
-func NewRouteWithContentDialog(title string, action FormDialogAction, datatypeID string) FormDialogModel {
+func NewRouteWithContentDialog(title string, action FormDialogAction, rootDatatypes []db.Datatypes) FormDialogModel {
 	// Create title input (uses LabelInput field)
 	titleInput := textinput.New()
 	titleInput.Placeholder = "Page title"
@@ -858,28 +893,38 @@ func NewRouteWithContentDialog(title string, action FormDialogAction, datatypeID
 	slugInput.CharLimit = 128
 	slugInput.Width = 40
 
+	// Build datatype options using ParentOptions carousel
+	parentOptions := make([]ParentOption, len(rootDatatypes))
+	for i, dt := range rootDatatypes {
+		parentOptions[i] = ParentOption{
+			Label: dt.Label,
+			Value: string(dt.DatatypeID),
+		}
+	}
+
 	return FormDialogModel{
-		dialogStyles: newDialogStyles(),
-		Title:        title,
-		Width:        60,
-		Action:       action,
-		EntityID:     datatypeID, // Store datatypeID in EntityID for route+content creation
-		LabelInput:   titleInput,
-		TypeInput:    slugInput,
-		focusIndex:   FormDialogFieldLabel,
+		dialogStyles:  newDialogStyles(),
+		Title:         title,
+		Width:         60,
+		Action:        action,
+		LabelInput:    titleInput,
+		TypeInput:     slugInput,
+		ParentOptions: parentOptions,
+		ParentIndex:   0,
+		focusIndex:    FormDialogFieldLabel,
 	}
 }
 
 // ShowCreateRouteWithContentDialogMsg is the message for showing a create route with content dialog
 type ShowCreateRouteWithContentDialogMsg struct {
-	DatatypeID string
+	RootDatatypes []db.Datatypes
 }
 
 // ShowCreateRouteWithContentDialogCmd shows a dialog to create a new route with initial content
-func ShowCreateRouteWithContentDialogCmd(datatypeID string) tea.Cmd {
+func ShowCreateRouteWithContentDialogCmd(rootDatatypes []db.Datatypes) tea.Cmd {
 	return func() tea.Msg {
 		return ShowCreateRouteWithContentDialogMsg{
-			DatatypeID: datatypeID,
+			RootDatatypes: rootDatatypes,
 		}
 	}
 }
@@ -1050,7 +1095,8 @@ type ContentFieldInput struct {
 	FieldID types.FieldID
 	Label   string
 	Type    string // field type (text, textarea, number, etc.)
-	Input   textinput.Model
+	Widget  string // UI widget override from UIConfig (e.g. "markdown", "code-editor")
+	Bubble  FieldBubble
 }
 
 // ContentFormDialogModel represents a form dialog with dynamic content fields.
@@ -1068,6 +1114,9 @@ type ContentFormDialogModel struct {
 	// Dynamic field inputs
 	Fields []ContentFieldInput
 
+	// Logger for editor and dialog operations (nil-safe; callers should set after construction)
+	Logger Logger
+
 	// Focus management: 0 to len(Fields)-1 for fields, then Cancel, then Confirm
 	focusIndex int
 }
@@ -1076,20 +1125,32 @@ type ContentFormDialogModel struct {
 func NewContentFormDialog(title string, action FormDialogAction, datatypeID types.DatatypeID, routeID types.RouteID, fields []db.Fields) ContentFormDialogModel {
 	contentFields := make([]ContentFieldInput, 0, len(fields))
 	for _, f := range fields {
-		input := textinput.New()
-		input.Placeholder = f.Label
-		input.CharLimit = 256
-		input.Width = 50
+		bubble := FieldBubbleForType(string(f.Type))
+
+		// For select fields, parse options from the Data JSON column
+		if string(f.Type) == "select" {
+			if sb, ok := bubble.(*SelectBubble); ok {
+				sb.ParseOptionsFromData(f.Data)
+			}
+		}
+
+		// Parse UIConfig to extract widget override
+		var widget string
+		if uc, err := types.ParseUIConfig(f.UIConfig); err == nil {
+			widget = uc.Widget
+		}
+
 		contentFields = append(contentFields, ContentFieldInput{
 			FieldID: f.FieldID,
 			Label:   f.Label,
 			Type:    string(f.Type),
-			Input:   input,
+			Widget:  widget,
+			Bubble:  bubble,
 		})
 	}
 	// Focus first field after all inputs are created
 	if len(contentFields) > 0 {
-		contentFields[0].Input.Focus()
+		contentFields[0].Bubble.Focus()
 	}
 
 	return ContentFormDialogModel{
@@ -1150,7 +1211,7 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 				// Collect all field values
 				fieldValues := make(map[types.FieldID]string)
 				for _, f := range d.Fields {
-					fieldValues[f.FieldID] = f.Input.Value()
+					fieldValues[f.FieldID] = f.Bubble.Value()
 				}
 				return *d, func() tea.Msg {
 					return ContentFormDialogAcceptMsg{
@@ -1168,12 +1229,45 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 			return *d, nil
 		case "esc":
 			return *d, func() tea.Msg { return ContentFormDialogCancelMsg{} }
+		case "ctrl+e":
+			// Launch $EDITOR for fields with editor-capable widgets
+			if d.focusIndex < len(d.Fields) {
+				f := d.Fields[d.focusIndex]
+				if d.Logger != nil {
+					d.Logger.Finfo(fmt.Sprintf("[editor] ctrl+e pressed on field %d (%s), widget=%q, type=%q", d.focusIndex, f.Label, f.Widget, f.Type))
+				}
+				if isEditorWidget(f.Widget) {
+					fieldIdx := d.focusIndex
+					currentValue := f.Bubble.Value()
+					if d.Logger != nil {
+						d.Logger.Finfo(fmt.Sprintf("[editor] widget %q is editor-capable, preparing editor cmd for field %d, value length=%d", f.Widget, fieldIdx, len(currentValue)))
+					}
+					cmd := prepareEditorCmd(fieldIdx, currentValue, f.Widget, d.Logger)
+					if cmd != nil {
+						if d.Logger != nil {
+							d.Logger.Finfo(fmt.Sprintf("[editor] editor cmd prepared successfully for field %d", fieldIdx))
+						}
+						return *d, cmd
+					}
+					if d.Logger != nil {
+						d.Logger.Finfo(fmt.Sprintf("[editor] prepareEditorCmd returned nil for field %d — temp file creation likely failed", fieldIdx))
+					}
+				} else {
+					if d.Logger != nil {
+						d.Logger.Finfo(fmt.Sprintf("[editor] widget %q is not editor-capable, ignoring ctrl+e", f.Widget))
+					}
+				}
+			} else {
+				if d.Logger != nil {
+					d.Logger.Finfo(fmt.Sprintf("[editor] ctrl+e pressed but focusIndex %d is out of field range (%d fields)", d.focusIndex, len(d.Fields)))
+				}
+			}
 		}
 
-		// Update the focused text input
+		// Update the focused field bubble
 		if d.focusIndex < len(d.Fields) {
 			var cmd tea.Cmd
-			d.Fields[d.focusIndex].Input, cmd = d.Fields[d.focusIndex].Input.Update(msg)
+			d.Fields[d.focusIndex].Bubble, cmd = d.Fields[d.focusIndex].Bubble.Update(msg)
 			return *d, cmd
 		}
 	}
@@ -1203,32 +1297,41 @@ func (d *ContentFormDialogModel) focusPrev() {
 func (d *ContentFormDialogModel) updateFocus() {
 	// Blur all fields
 	for i := range d.Fields {
-		d.Fields[i].Input.Blur()
+		d.Fields[i].Bubble.Blur()
 	}
-	// Focus the current field if it's a text input
+	// Focus the current field
 	if d.focusIndex < len(d.Fields) {
-		d.Fields[d.focusIndex].Input.Focus()
+		d.Fields[d.focusIndex].Bubble.Focus()
 	}
 }
 
 // Render renders the content form dialog
 func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 	var content strings.Builder
+	// Inner width available for fields (dialog width minus border and padding)
+	innerW := d.Width - 6
 
 	// Title
 	content.WriteString(d.titleStyle.Render(d.Title))
 	content.WriteString("\n\n")
 
 	// Render each field
+	editorHintStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Tertiary).
+		Italic(true)
 	for i, f := range d.Fields {
+		f.Bubble.SetWidth(innerW)
 		label := d.labelStyle.Render(f.Label)
+		if isEditorWidget(f.Widget) {
+			label += " " + editorHintStyle.Render("ctrl+e: $EDITOR")
+		}
 		content.WriteString(label)
 		content.WriteString("\n")
 
 		if d.focusIndex == i {
-			content.WriteString(d.focusedInputStyle.Render(f.Input.View()))
+			content.WriteString(d.focusedInputStyle.Width(innerW).Render(f.Bubble.View()))
 		} else {
-			content.WriteString(d.inputStyle.Render(f.Input.View()))
+			content.WriteString(d.inputStyle.Width(innerW).Render(f.Bubble.View()))
 		}
 		content.WriteString("\n")
 	}
@@ -1414,6 +1517,7 @@ type ExistingContentField struct {
 	FieldID        types.FieldID
 	Label          string
 	Type           string
+	Widget         string // UI widget override from UIConfig
 	Value          string
 }
 
@@ -1421,21 +1525,19 @@ type ExistingContentField struct {
 func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeID types.DatatypeID, routeID types.RouteID, existingFields []ExistingContentField) ContentFormDialogModel {
 	contentFields := make([]ContentFieldInput, 0, len(existingFields))
 	for _, f := range existingFields {
-		input := textinput.New()
-		input.Placeholder = f.Label
-		input.CharLimit = 256
-		input.Width = 50
-		input.SetValue(f.Value) // Pre-populate with existing value
+		bubble := FieldBubbleForType(f.Type)
+		bubble.SetValue(f.Value)
 		contentFields = append(contentFields, ContentFieldInput{
 			FieldID: f.FieldID,
 			Label:   f.Label,
 			Type:    f.Type,
-			Input:   input,
+			Widget:  f.Widget,
+			Bubble:  bubble,
 		})
 	}
 	// Focus first field after all inputs are created
 	if len(contentFields) > 0 {
-		contentFields[0].Input.Focus()
+		contentFields[0].Bubble.Focus()
 	}
 
 	return ContentFormDialogModel{
@@ -1445,7 +1547,7 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 		Action:       FORMDIALOGEDITCONTENT,
 		DatatypeID:   datatypeID,
 		RouteID:      routeID,
-		ContentID:    contentID, // Set the content ID for edit mode
+		ContentID:    contentID,
 		Fields:       contentFields,
 		focusIndex:   0,
 	}
@@ -1537,14 +1639,56 @@ type UserFormDialogModel struct {
 	UsernameInput textinput.Model
 	NameInput     textinput.Model
 	EmailInput    textinput.Model
-	RoleInput     textinput.Model
+	PasswordInput textinput.Model
 
-	// Focus: 0=username, 1=name, 2=email, 3=role, 4=cancel, 5=confirm
+	// Role selection carousel
+	RoleOptions []RoleOption
+	RoleIndex   int
+
+	// Create mode focus: 0=username, 1=name, 2=email, 3=password, 4=role, 5=cancel, 6=confirm
+	// Edit mode focus:   0=username, 1=name, 2=email, 3=role, 4=cancel, 5=confirm
 	focusIndex int
 }
 
+// isCreateMode returns true if the dialog is for creating a new user.
+func (d *UserFormDialogModel) isCreateMode() bool {
+	return d.Action == FORMDIALOGCREATEUSER
+}
+
+// maxFocusIndex returns the maximum valid focus index.
+func (d *UserFormDialogModel) maxFocusIndex() int {
+	if d.isCreateMode() {
+		return 6
+	}
+	return 5
+}
+
+// roleFocusIndex returns the focus index for the role carousel.
+func (d *UserFormDialogModel) roleFocusIndex() int {
+	if d.isCreateMode() {
+		return 4
+	}
+	return 3
+}
+
+// cancelFocusIndex returns the focus index for the cancel button.
+func (d *UserFormDialogModel) cancelFocusIndex() int {
+	if d.isCreateMode() {
+		return 5
+	}
+	return 4
+}
+
+// confirmFocusIndex returns the focus index for the confirm button.
+func (d *UserFormDialogModel) confirmFocusIndex() int {
+	if d.isCreateMode() {
+		return 6
+	}
+	return 5
+}
+
 // NewUserFormDialog creates a user form dialog for creating a new user
-func NewUserFormDialog(title string) UserFormDialogModel {
+func NewUserFormDialog(title string, roles []db.Roles) UserFormDialogModel {
 	username := textinput.New()
 	username.Placeholder = "username"
 	username.CharLimit = 64
@@ -1561,10 +1705,19 @@ func NewUserFormDialog(title string) UserFormDialogModel {
 	email.CharLimit = 128
 	email.Width = 40
 
-	role := textinput.New()
-	role.Placeholder = "admin"
-	role.CharLimit = 32
-	role.Width = 40
+	password := textinput.New()
+	password.Placeholder = "password"
+	password.CharLimit = 72
+	password.Width = 40
+	password.EchoMode = textinput.EchoPassword
+
+	roleOptions := make([]RoleOption, 0, len(roles))
+	for _, r := range roles {
+		roleOptions = append(roleOptions, RoleOption{
+			Label: r.Label,
+			Value: string(r.RoleID),
+		})
+	}
 
 	return UserFormDialogModel{
 		dialogStyles:  newDialogStyles(),
@@ -1574,13 +1727,15 @@ func NewUserFormDialog(title string) UserFormDialogModel {
 		UsernameInput: username,
 		NameInput:     name,
 		EmailInput:    email,
-		RoleInput:     role,
+		PasswordInput: password,
+		RoleOptions:   roleOptions,
+		RoleIndex:     0,
 		focusIndex:    0,
 	}
 }
 
 // NewEditUserFormDialog creates a user form dialog pre-populated for editing
-func NewEditUserFormDialog(title string, user db.Users) UserFormDialogModel {
+func NewEditUserFormDialog(title string, user db.UserWithRoleLabelRow, roles []db.Roles) UserFormDialogModel {
 	username := textinput.New()
 	username.Placeholder = "username"
 	username.CharLimit = 64
@@ -1600,11 +1755,24 @@ func NewEditUserFormDialog(title string, user db.Users) UserFormDialogModel {
 	email.Width = 40
 	email.SetValue(user.Email.String())
 
-	role := textinput.New()
-	role.Placeholder = "admin"
-	role.CharLimit = 32
-	role.Width = 40
-	role.SetValue(user.Role)
+	// Password input exists but is not shown in edit mode
+	password := textinput.New()
+	password.Placeholder = ""
+	password.CharLimit = 72
+	password.Width = 40
+	password.EchoMode = textinput.EchoPassword
+
+	roleOptions := make([]RoleOption, 0, len(roles))
+	selectedRoleIndex := 0
+	for i, r := range roles {
+		roleOptions = append(roleOptions, RoleOption{
+			Label: r.Label,
+			Value: string(r.RoleID),
+		})
+		if string(r.RoleID) == user.Role {
+			selectedRoleIndex = i
+		}
+	}
 
 	return UserFormDialogModel{
 		dialogStyles:  newDialogStyles(),
@@ -1615,7 +1783,9 @@ func NewEditUserFormDialog(title string, user db.Users) UserFormDialogModel {
 		UsernameInput: username,
 		NameInput:     name,
 		EmailInput:    email,
-		RoleInput:     role,
+		PasswordInput: password,
+		RoleOptions:   roleOptions,
+		RoleIndex:     selectedRoleIndex,
 		focusIndex:    0,
 	}
 }
@@ -1631,9 +1801,38 @@ func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd)
 		case "shift+tab", "up":
 			d.userFormFocusPrev()
 			return *d, nil
+		case "left":
+			if d.focusIndex == d.roleFocusIndex() && len(d.RoleOptions) > 0 {
+				if d.RoleIndex > 0 {
+					d.RoleIndex--
+				}
+				return *d, nil
+			}
+			if d.focusIndex == d.confirmFocusIndex() {
+				d.focusIndex = d.cancelFocusIndex()
+				return *d, nil
+			}
+		case "right":
+			if d.focusIndex == d.roleFocusIndex() && len(d.RoleOptions) > 0 {
+				if d.RoleIndex < len(d.RoleOptions)-1 {
+					d.RoleIndex++
+				}
+				return *d, nil
+			}
+			if d.focusIndex == d.cancelFocusIndex() {
+				d.focusIndex = d.confirmFocusIndex()
+				return *d, nil
+			}
 		case "enter":
-			if d.focusIndex == 5 {
-				// Confirm button
+			if d.focusIndex == d.confirmFocusIndex() {
+				roleValue := ""
+				if len(d.RoleOptions) > 0 && d.RoleIndex < len(d.RoleOptions) {
+					roleValue = d.RoleOptions[d.RoleIndex].Value
+				}
+				password := ""
+				if d.isCreateMode() {
+					password = d.PasswordInput.Value()
+				}
 				return *d, func() tea.Msg {
 					return UserFormDialogAcceptMsg{
 						Action:   d.Action,
@@ -1641,12 +1840,12 @@ func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd)
 						Username: d.UsernameInput.Value(),
 						Name:     d.NameInput.Value(),
 						Email:    d.EmailInput.Value(),
-						Role:     d.RoleInput.Value(),
+						Password: password,
+						Role:     roleValue,
 					}
 				}
 			}
-			if d.focusIndex == 4 {
-				// Cancel button
+			if d.focusIndex == d.cancelFocusIndex() {
 				return *d, func() tea.Msg { return UserFormDialogCancelMsg{} }
 			}
 			// On text fields, move to next
@@ -1666,21 +1865,25 @@ func (d *UserFormDialogModel) Update(msg tea.Msg) (UserFormDialogModel, tea.Cmd)
 		d.NameInput, cmd = d.NameInput.Update(msg)
 	case 2:
 		d.EmailInput, cmd = d.EmailInput.Update(msg)
-	case 3:
-		d.RoleInput, cmd = d.RoleInput.Update(msg)
+	default:
+		if d.isCreateMode() && d.focusIndex == 3 {
+			d.PasswordInput, cmd = d.PasswordInput.Update(msg)
+		}
 	}
 	return *d, cmd
 }
 
 // userFormFocusNext advances focus to the next focusable element in the user form, wrapping at the end.
 func (d *UserFormDialogModel) userFormFocusNext() {
-	d.focusIndex = (d.focusIndex + 1) % 6
+	max := d.maxFocusIndex()
+	d.focusIndex = (d.focusIndex + 1) % (max + 1)
 	d.userFormUpdateFocus()
 }
 
 // userFormFocusPrev moves focus to the previous focusable element in the user form, wrapping at the start.
 func (d *UserFormDialogModel) userFormFocusPrev() {
-	d.focusIndex = (d.focusIndex + 5) % 6
+	max := d.maxFocusIndex()
+	d.focusIndex = (d.focusIndex + max) % (max + 1)
 	d.userFormUpdateFocus()
 }
 
@@ -1689,7 +1892,7 @@ func (d *UserFormDialogModel) userFormUpdateFocus() {
 	d.UsernameInput.Blur()
 	d.NameInput.Blur()
 	d.EmailInput.Blur()
-	d.RoleInput.Blur()
+	d.PasswordInput.Blur()
 	switch d.focusIndex {
 	case 0:
 		d.UsernameInput.Focus()
@@ -1697,59 +1900,103 @@ func (d *UserFormDialogModel) userFormUpdateFocus() {
 		d.NameInput.Focus()
 	case 2:
 		d.EmailInput.Focus()
-	case 3:
-		d.RoleInput.Focus()
+	default:
+		if d.isCreateMode() && d.focusIndex == 3 {
+			d.PasswordInput.Focus()
+		}
 	}
 }
 
 // Render renders the user form dialog
 func (d UserFormDialogModel) Render(windowWidth, windowHeight int) string {
 	contentWidth := d.Width
+	innerW := contentWidth - 6
 
-	titleText := d.titleStyle.Render(d.Title)
+	var content strings.Builder
+	content.WriteString(d.titleStyle.Render(d.Title))
+	content.WriteString("\n\n")
 
-	// Render each field
-	fields := []struct {
-		label string
-		input textinput.Model
-		idx   int
-	}{
-		{"Username", d.UsernameInput, 0},
-		{"Name", d.NameInput, 1},
-		{"Email", d.EmailInput, 2},
-		{"Role", d.RoleInput, 3},
+	// Username field
+	content.WriteString(d.labelStyle.Render("Username"))
+	content.WriteString("\n")
+	if d.focusIndex == 0 {
+		content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.UsernameInput.View()))
+	} else {
+		content.WriteString(d.inputStyle.Width(innerW).Render(d.UsernameInput.View()))
 	}
+	content.WriteString("\n")
 
-	var fieldRows []string
-	for _, f := range fields {
-		label := d.labelStyle.Render(f.label)
-		style := d.inputStyle
-		if d.focusIndex == f.idx {
-			style = d.focusedInputStyle
+	// Name field
+	content.WriteString(d.labelStyle.Render("Name"))
+	content.WriteString("\n")
+	if d.focusIndex == 1 {
+		content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.NameInput.View()))
+	} else {
+		content.WriteString(d.inputStyle.Width(innerW).Render(d.NameInput.View()))
+	}
+	content.WriteString("\n")
+
+	// Email field
+	content.WriteString(d.labelStyle.Render("Email"))
+	content.WriteString("\n")
+	if d.focusIndex == 2 {
+		content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.EmailInput.View()))
+	} else {
+		content.WriteString(d.inputStyle.Width(innerW).Render(d.EmailInput.View()))
+	}
+	content.WriteString("\n")
+
+	// Password field (create mode only)
+	if d.isCreateMode() {
+		content.WriteString(d.labelStyle.Render("Password"))
+		content.WriteString("\n")
+		if d.focusIndex == 3 {
+			content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.PasswordInput.View()))
+		} else {
+			content.WriteString(d.inputStyle.Width(innerW).Render(d.PasswordInput.View()))
 		}
-		input := style.Width(contentWidth - 6).Render(f.input.View())
-		fieldRows = append(fieldRows, label+"\n"+input)
+		content.WriteString("\n")
 	}
+
+	// Role carousel
+	content.WriteString(d.labelStyle.Render("Role"))
+	content.WriteString("\n")
+	if len(d.RoleOptions) > 0 {
+		optLabel := d.RoleOptions[d.RoleIndex].Label
+		if d.focusIndex == d.roleFocusIndex() {
+			selector := lipgloss.NewStyle().
+				Foreground(config.DefaultStyle.Primary).
+				Background(config.DefaultStyle.Accent).
+				Padding(0, 1).
+				Render("◀ " + optLabel + " ▶")
+			content.WriteString(selector)
+		} else {
+			selector := lipgloss.NewStyle().
+				Foreground(config.DefaultStyle.Secondary).
+				Padding(0, 1).
+				Render("  " + optLabel + "  ")
+			content.WriteString(selector)
+		}
+	} else {
+		content.WriteString(d.inputStyle.Width(innerW).Render("No roles available"))
+	}
+	content.WriteString("\n\n")
 
 	// Buttons
 	cancelStyle := d.cancelButtonStyle
 	confirmStyle := d.confirmButtonStyle
-	if d.focusIndex == 4 {
+	if d.focusIndex == d.cancelFocusIndex() {
 		cancelStyle = cancelStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
 	}
-	if d.focusIndex == 5 {
+	if d.focusIndex == d.confirmFocusIndex() {
 		confirmStyle = confirmStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
 	}
 	cancelBtn := cancelStyle.Render("Cancel")
 	confirmBtn := confirmStyle.Render("Save")
 	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, "  ", confirmBtn)
+	content.WriteString(buttonBar)
 
-	// Assemble
-	content := titleText + "\n\n"
-	content += strings.Join(fieldRows, "\n")
-	content += "\n\n" + buttonBar
-
-	return d.borderStyle.Width(contentWidth).Render(content)
+	return d.borderStyle.Width(contentWidth).Render(content.String())
 }
 
 // UserFormDialogAcceptMsg is sent when the user form dialog is confirmed.
@@ -1759,6 +2006,7 @@ type UserFormDialogAcceptMsg struct {
 	Username string
 	Name     string
 	Email    string
+	Password string
 	Role     string
 }
 
@@ -1768,11 +2016,13 @@ type UserFormDialogCancelMsg struct{}
 // ShowUserFormDialogMsg triggers showing a user form dialog.
 type ShowUserFormDialogMsg struct {
 	Title string
+	Roles []db.Roles
 }
 
 // ShowEditUserDialogMsg triggers showing an edit user dialog.
 type ShowEditUserDialogMsg struct {
-	User db.Users
+	User  db.UserWithRoleLabelRow
+	Roles []db.Roles
 }
 
 // UserFormDialogSetCmd creates a command to set the user form dialog model.
@@ -1907,4 +2157,146 @@ func ShowDeleteContentFieldDialogCmd(cf ContentFieldDisplay, contentID types.Con
 			DatatypeID: datatypeID,
 		}
 	}
+}
+
+// =============================================================================
+// EXTERNAL EDITOR SUPPORT
+// =============================================================================
+
+// EditorFinishedMsg is sent after $EDITOR exits with the edited content.
+type EditorFinishedMsg struct {
+	FieldIndex int
+	Content    string
+	Err        error
+}
+
+// editorFileExtension returns a file extension hint for the given widget type.
+func editorFileExtension(widget string) string {
+	switch widget {
+	case "markdown":
+		return ".md"
+	case "json-editor":
+		return ".json"
+	case "code-editor":
+		return ".txt"
+	case "rich-text":
+		return ".html"
+	default:
+		return ".txt"
+	}
+}
+
+// sshExecCommand wraps an exec.Cmd for use with tea.Exec, routing stderr to
+// the same writer as stdout. This is necessary for SSH sessions where
+// Bubbletea's default exec hardcodes stderr to os.Stderr (the server's
+// stderr), which disconnects interactive editors like nvim from the SSH
+// client's terminal.
+type sshExecCommand struct {
+	*exec.Cmd
+}
+
+func (c *sshExecCommand) SetStdin(r io.Reader) {
+	if c.Stdin == nil {
+		c.Stdin = r
+	}
+}
+
+func (c *sshExecCommand) SetStdout(w io.Writer) {
+	if c.Stdout == nil {
+		c.Stdout = w
+	}
+	// Also route stderr to the SSH session writer so the editor's
+	// full TUI output reaches the client.
+	if c.Stderr == nil {
+		c.Stderr = w
+	}
+}
+
+func (c *sshExecCommand) SetStderr(w io.Writer) {
+	// No-op: stderr was already wired to the SSH session in SetStdout.
+	// This prevents Bubbletea's default of os.Stderr from overriding it.
+}
+
+// prepareEditorCmd synchronously creates a temp file with the current value,
+// then returns a tea.Exec cmd that launches $EDITOR with stdin, stdout, and
+// stderr all routed through the SSH session's PTY. When the editor exits,
+// the callback reads the file and returns an EditorFinishedMsg.
+// Returns nil if temp file creation fails. Logger may be nil.
+func prepareEditorCmd(fieldIndex int, currentValue string, widget string, logger Logger) tea.Cmd {
+	ext := editorFileExtension(widget)
+	if logger != nil {
+		logger.Finfo(fmt.Sprintf("[editor] file extension for widget %q: %s", widget, ext))
+	}
+
+	tmpFile, err := os.CreateTemp("", "modulacms-*"+ext)
+	if err != nil {
+		if logger != nil {
+			logger.Ferror(fmt.Sprintf("[editor] failed to create temp file with extension %s", ext), err)
+		}
+		return nil
+	}
+	tmpPath := tmpFile.Name()
+	if logger != nil {
+		logger.Finfo(fmt.Sprintf("[editor] created temp file: %s", tmpPath))
+	}
+
+	if _, writeErr := tmpFile.WriteString(currentValue); writeErr != nil {
+		if logger != nil {
+			logger.Ferror(fmt.Sprintf("[editor] failed to write current value (%d bytes) to temp file %s", len(currentValue), tmpPath), writeErr)
+		}
+		tmpFile.Close()
+		os.Remove(tmpPath)
+		return nil
+	}
+	if logger != nil {
+		logger.Finfo(fmt.Sprintf("[editor] wrote %d bytes to temp file %s", len(currentValue), tmpPath))
+	}
+
+	if closeErr := tmpFile.Close(); closeErr != nil {
+		if logger != nil {
+			logger.Ferror(fmt.Sprintf("[editor] failed to close temp file %s", tmpPath), closeErr)
+		}
+		os.Remove(tmpPath)
+		return nil
+	}
+
+	editor := editorCommand()
+	editorParts := strings.Fields(editor)
+	if len(editorParts) == 0 {
+		if logger != nil {
+			logger.Ferror("[editor] resolved editor command is empty after splitting", fmt.Errorf("empty editor command: %q", editor))
+		}
+		os.Remove(tmpPath)
+		return nil
+	}
+	editorArgs := append(editorParts[1:], tmpPath)
+	if logger != nil {
+		logger.Finfo(fmt.Sprintf("[editor] resolved editor command: %q (binary: %q, args: %v)", editor, editorParts[0], editorArgs))
+		logger.Finfo(fmt.Sprintf("[editor] launching (via sshExecCommand): %s %s", editorParts[0], strings.Join(editorArgs, " ")))
+	}
+	c := exec.Command(editorParts[0], editorArgs...)
+
+	return tea.Exec(&sshExecCommand{Cmd: c}, func(procErr error) tea.Msg {
+		defer os.Remove(tmpPath)
+		if procErr != nil {
+			if logger != nil {
+				logger.Ferror(fmt.Sprintf("[editor] editor process exited with error for field %d, temp file %s", fieldIndex, tmpPath), procErr)
+			}
+			return EditorFinishedMsg{FieldIndex: fieldIndex, Err: procErr}
+		}
+		if logger != nil {
+			logger.Finfo(fmt.Sprintf("[editor] editor process exited successfully for field %d, reading back temp file %s", fieldIndex, tmpPath))
+		}
+		data, readErr := os.ReadFile(tmpPath)
+		if readErr != nil {
+			if logger != nil {
+				logger.Ferror(fmt.Sprintf("[editor] failed to read temp file %s after editor exit", tmpPath), readErr)
+			}
+			return EditorFinishedMsg{FieldIndex: fieldIndex, Err: readErr}
+		}
+		if logger != nil {
+			logger.Finfo(fmt.Sprintf("[editor] read %d bytes from temp file %s, returning EditorFinishedMsg for field %d", len(data), tmpPath, fieldIndex))
+		}
+		return EditorFinishedMsg{FieldIndex: fieldIndex, Content: string(data)}
+	})
 }

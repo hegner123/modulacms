@@ -70,15 +70,19 @@ LABEL org.opencontainers.image.source="https://github.com/hegner123/modulacms"
 LABEL org.opencontainers.image.licenses="AGPL-3.0"
 
 # Runtime dependencies: TLS certs, timezone data, shared libraries for CGO,
-# and database client tools for backup/restore (pg_dump, mysqldump)
+# database client tools for backup/restore (pg_dump, mysqldump),
+# and neovim for $EDITOR support in the SSH TUI
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     tzdata \
     libwebp7 \
     postgresql-client \
     default-mysql-client \
+    neovim \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
+
+ENV EDITOR=nvim
 
 # Non-root user
 RUN groupadd --gid 1000 modulacms \

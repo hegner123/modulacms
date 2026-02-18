@@ -137,11 +137,14 @@ type Model struct {
 	FilePickerActive       bool
 	FilePickerPurpose      FilePickerPurpose
 	RootContentSummary     []db.RootContentSummary
-	UsersList              []db.Users
+	UsersList              []db.UserWithRoleLabelRow
+	RolesList              []db.Roles
 	UserFormDialog             *UserFormDialogModel
 	UserFormDialogActive       bool
 	DatabaseFormDialog         *DatabaseFormDialogModel
 	DatabaseFormDialogActive   bool
+	UIConfigFormDialog         *UIConfigFormDialogModel
+	UIConfigFormDialogActive   bool
 
 	// Admin CMS state
 	AdminRoutes                 []db.AdminRoutes
@@ -172,6 +175,10 @@ type Model struct {
 	SSHKeyType        string
 	SSHPublicKey      string
 	UserID            types.UserID
+
+	// DBReadyCh is signalled after DB init/redeploy so serve can reload
+	// the permission cache and start HTTP/HTTPS servers.
+	DBReadyCh chan struct{}
 }
 
 // PluginDisplay holds the display-ready fields for a plugin in the TUI list.
@@ -208,7 +215,8 @@ func ShowDialog(title, message string, showCancel bool) tea.Cmd {
 }
 
 // InitialModel creates and initializes a new Model with the provided configuration, database driver, logger, and optional plugin manager.
-func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager) (Model, tea.Cmd) {
+// dbReadyCh is an optional channel signalled after DB init so the serve command can start HTTP.
+func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, pluginMgr *plugin.Manager, mgr *config.Manager, dbReadyCh chan struct{}) (Model, tea.Cmd) {
 	// Use provided logger or fall back to utility.DefaultLogger
 	if logger == nil {
 		logger = utility.DefaultLogger
@@ -279,6 +287,7 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 		AdminUsername: systemAdminUsername,
 		PluginManager: pluginMgr,
 		ConfigManager: mgr,
+		DBReadyCh:     dbReadyCh,
 	}
 	m.PageMenu = m.HomepageMenuInit()
 	return m, tea.Batch(

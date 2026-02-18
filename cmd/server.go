@@ -7,8 +7,30 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 )
+
+// handlerSwap allows hot-swapping the HTTP handler at runtime.
+// Used to swap from a placeholder (DB not initialized) to the real handler
+// after TUI DB init without restarting the HTTP server.
+type handlerSwap struct {
+	mu sync.RWMutex
+	h  http.Handler
+}
+
+func (s *handlerSwap) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.mu.RLock()
+	h := s.h
+	s.mu.RUnlock()
+	h.ServeHTTP(w, r)
+}
+
+func (s *handlerSwap) set(h http.Handler) {
+	s.mu.Lock()
+	s.h = h
+	s.mu.Unlock()
+}
 
 func newHTTPServer(addr string, handler http.Handler, tlsConfig *tls.Config) *http.Server {
 	return &http.Server{

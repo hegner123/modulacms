@@ -24,4 +24,7 @@ type FieldBubble interface {
 
 	// Focused returns whether the bubble currently has focus.
 	Focused() bool
+
+	// SetWidth sets the input width for layout within the dialog.
+	SetWidth(w int)
 }

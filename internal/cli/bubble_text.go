@@ -52,3 +52,6 @@ func (b *TextBubble) Blur()            { b.input.Blur() }
 
 // Focused returns whether the text input is currently focused.
 func (b *TextBubble) Focused() bool    { return b.input.Focused() }
+
+// SetWidth sets the text input width for layout.
+func (b *TextBubble) SetWidth(w int)   { b.input.Width = w }

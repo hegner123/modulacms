@@ -39,6 +39,8 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, m.HandleUpdateDatatypeFromDialog(msg)
 	case UpdateFieldFromDialogRequestMsg:
 		return m, m.HandleUpdateFieldFromDialog(msg)
+	case UpdateFieldUIConfigRequestMsg:
+		return m, m.HandleUpdateFieldUIConfig(msg)
 	case UpdateRouteFromDialogRequestMsg:
 		return m, m.HandleUpdateRouteFromDialog(msg)
 	case CreateRouteWithContentRequestMsg:

@@ -153,6 +153,30 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.ContentFormDialogActive = msg.Active
 		return newModel, NewStateUpdate()
+	case UserFormDialogSetMsg:
+		newModel := m
+		newModel.UserFormDialog = msg.Dialog
+		return newModel, NewStateUpdate()
+	case UserFormDialogActiveSetMsg:
+		newModel := m
+		newModel.UserFormDialogActive = msg.Active
+		return newModel, NewStateUpdate()
+	case DatabaseFormDialogSetMsg:
+		newModel := m
+		newModel.DatabaseFormDialog = msg.Dialog
+		return newModel, NewStateUpdate()
+	case DatabaseFormDialogActiveSetMsg:
+		newModel := m
+		newModel.DatabaseFormDialogActive = msg.Active
+		return newModel, NewStateUpdate()
+	case UIConfigFormDialogSetMsg:
+		newModel := m
+		newModel.UIConfigFormDialog = msg.Dialog
+		return newModel, NewStateUpdate()
+	case UIConfigFormDialogActiveSetMsg:
+		newModel := m
+		newModel.UIConfigFormDialogActive = msg.Active
+		return newModel, NewStateUpdate()
 	case DatatypeMenuSet:
 		newModel := m
 		newModel.DatatypeMenu = msg.DatatypeMenu
@@ -168,6 +192,10 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 	case UsersListSet:
 		newModel := m
 		newModel.UsersList = msg.UsersList
+		return newModel, NewStateUpdate()
+	case RolesListSet:
+		newModel := m
+		newModel.RolesList = msg.RolesList
 		return newModel, NewStateUpdate()
 	case RootContentSummarySet:
 		newModel := m

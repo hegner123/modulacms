@@ -98,6 +98,13 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case ActionResultMsg:
+		// Signal serve to reload permission cache and start HTTP servers
+		if msg.ReloadPermissions && !msg.IsError && m.DBReadyCh != nil {
+			select {
+			case m.DBReadyCh <- struct{}{}:
+			default:
+			}
+		}
 		// Show result dialog after an action completes
 		dialog := NewDialog(msg.Title, msg.Message, false, DIALOGGENERIC)
 		if msg.Width > 0 {
@@ -219,14 +226,14 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case ShowUserFormDialogMsg:
-		dialog := NewUserFormDialog(msg.Title)
+		dialog := NewUserFormDialog(msg.Title, msg.Roles)
 		return m, tea.Batch(
 			UserFormDialogSetCmd(&dialog),
 			UserFormDialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
 	case ShowEditUserDialogMsg:
-		dialog := NewEditUserFormDialog("Edit User", msg.User)
+		dialog := NewEditUserFormDialog("Edit User", msg.User, msg.Roles)
 		return m, tea.Batch(
 			UserFormDialogSetCmd(&dialog),
 			UserFormDialogActiveSetCmd(true),
@@ -257,6 +264,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			existingFields,
 		)
 		dialog.Action = FORMDIALOGEDIITSINGLEFIELD
+		dialog.Logger = m.Logger
 		return m, tea.Batch(
 			ContentFormDialogSetCmd(&dialog),
 			ContentFormDialogActiveSetCmd(true),
@@ -406,12 +414,6 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
-	case UserFormDialogSetMsg:
-		m.UserFormDialog = msg.Dialog
-		return m, nil
-	case UserFormDialogActiveSetMsg:
-		m.UserFormDialogActive = msg.Active
-		return m, nil
 	case UserFormDialogAcceptMsg:
 		switch msg.Action {
 		case FORMDIALOGCREATEUSER:
@@ -419,7 +421,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				UserFormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				CreateUserFromDialogCmd(msg.Username, msg.Name, msg.Email, msg.Role),
+				CreateUserFromDialogCmd(msg.Username, msg.Name, msg.Email, msg.Password, msg.Role),
 			)
 		case FORMDIALOGEDITUSER:
 			return m, tea.Batch(
@@ -857,7 +859,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case ShowCreateRouteWithContentDialogMsg:
 		// Create route with initial content dialog
-		dialog := NewRouteWithContentDialog("New Route with Content", FORMDIALOGCREATEROUTEWITHCONTENT, msg.DatatypeID)
+		dialog := NewRouteWithContentDialog("New Content", FORMDIALOGCREATEROUTEWITHCONTENT, msg.RootDatatypes)
 		return m, tea.Batch(
 			FormDialogSetCmd(&dialog),
 			FormDialogActiveSetCmd(true),
@@ -953,12 +955,12 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				UpdateRouteFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
 			)
 		case FORMDIALOGCREATEROUTEWITHCONTENT:
-			// Create a new route with initial content (EntityID=DatatypeID, Label=Title, Type=Slug)
+			// Create a new route with initial content (ParentID=DatatypeID from carousel, Label=Title, Type=Slug)
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				CreateRouteWithContentCmd(msg.Label, msg.Type, msg.EntityID),
+				CreateRouteWithContentCmd(msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCHILDDATATYPE:
 			// User selected a child datatype from the dialog
@@ -1100,6 +1102,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		} else {
 			dialog = NewContentFormDialog(msg.Title, msg.Action, msg.DatatypeID, msg.RouteID, msg.Fields)
 		}
+		dialog.Logger = logger
 		logger.Finfo(fmt.Sprintf("ContentFormDialogModel created with %d fields", len(dialog.Fields)))
 		return m, tea.Batch(
 			ContentFormDialogSetCmd(&dialog),
@@ -1164,6 +1167,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		logger.Finfo(fmt.Sprintf("ShowEditContentFormDialogMsg received: ContentID=%s, %d fields", msg.ContentID, len(msg.ExistingFields)))
 		dialog := NewEditContentFormDialog(msg.Title, msg.ContentID, msg.DatatypeID, msg.RouteID, msg.ExistingFields)
+		dialog.Logger = logger
 		logger.Finfo(fmt.Sprintf("EditContentFormDialogModel created with %d fields", len(dialog.Fields)))
 		return m, tea.Batch(
 			ContentFormDialogSetCmd(&dialog),
@@ -1292,12 +1296,42 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	// =========================================================================
 	// DATABASE FORM DIALOG
 	// =========================================================================
-	case DatabaseFormDialogSetMsg:
-		m.DatabaseFormDialog = msg.Dialog
-		return m, nil
-	case DatabaseFormDialogActiveSetMsg:
-		m.DatabaseFormDialogActive = msg.Active
-		return m, nil
+	// =========================================================================
+	// UICONFIG FORM DIALOG
+	// =========================================================================
+	case ShowUIConfigFormDialogMsg:
+		dialog := NewUIConfigFormDialog(msg.Title, msg.FieldID)
+		m.UIConfigFormDialog = &dialog
+		m.UIConfigFormDialogActive = true
+		return m, FocusSetCmd(DIALOGFOCUS)
+	case ShowEditUIConfigFormDialogMsg:
+		dialog := NewEditUIConfigFormDialog(msg.Title, msg.FieldID, msg.Existing)
+		m.UIConfigFormDialog = &dialog
+		m.UIConfigFormDialogActive = true
+		return m, FocusSetCmd(DIALOGFOCUS)
+	case UIConfigFormDialogCancelMsg:
+		m.UIConfigFormDialogActive = false
+		m.UIConfigFormDialog = nil
+		return m, FocusSetCmd(PAGEFOCUS)
+	case UIConfigFormDialogAcceptMsg:
+		m.UIConfigFormDialogActive = false
+		m.UIConfigFormDialog = nil
+		uiJSON := marshalUIConfig(msg.Widget, msg.Placeholder, msg.HelpText, msg.Hidden)
+		return m, tea.Batch(
+			FocusSetCmd(PAGEFOCUS),
+			LoadingStartCmd(),
+			UpdateFieldUIConfigCmd(msg.FieldID, uiJSON),
+		)
+	case FieldUIConfigUpdatedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("UIConfig updated for field %s", msg.FieldID)),
+			DatatypeFieldsFetchCmd(msg.DatatypeID),
+		)
+
+	// =========================================================================
+	// DATABASE FORM DIALOG
+	// =========================================================================
 	case ShowDatabaseFormDialogMsg:
 		// Determine columns: prefer Columns, fall back to Headers
 		var columns []string
@@ -2010,6 +2044,70 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 }
 
 // =============================================================================
+// UPDATE FIELD UICONFIG
+// =============================================================================
+
+// HandleUpdateFieldUIConfig processes a field UIConfig update request.
+func (m Model) HandleUpdateFieldUIConfig(msg UpdateFieldUIConfigRequestMsg) tea.Cmd {
+	cfg := m.Config
+	var datatypeID types.DatatypeID
+	if len(m.AllDatatypes) > 0 && m.Cursor < len(m.AllDatatypes) {
+		datatypeID = m.AllDatatypes[m.Cursor].DatatypeID
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot update field UIConfig: configuration not loaded",
+			}
+		}
+	}
+
+	userID := m.UserID
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
+
+		fieldID := types.FieldID(msg.FieldID)
+		existing, err := d.GetField(fieldID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get field for UIConfig update: %v", err),
+			}
+		}
+
+		params := db.UpdateFieldParams{
+			FieldID:      fieldID,
+			ParentID:     existing.ParentID,
+			Label:        existing.Label,
+			Data:         existing.Data,
+			Validation:   existing.Validation,
+			UIConfig:     msg.UIConfigJSON,
+			Type:         existing.Type,
+			AuthorID:     existing.AuthorID,
+			DateCreated:  existing.DateCreated,
+			DateModified: types.TimestampNow(),
+		}
+
+		_, err = d.UpdateField(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to update field UIConfig: %v", err),
+			}
+		}
+
+		return FieldUIConfigUpdatedMsg{
+			FieldID:    fieldID,
+			DatatypeID: datatypeID,
+		}
+	}
+}
+
+// =============================================================================
 // UPDATE ROUTE FROM DIALOG
 // =============================================================================
 
@@ -2593,6 +2691,7 @@ type CreateUserFromDialogRequestMsg struct {
 	Username string
 	Name     string
 	Email    string
+	Password string
 	Role     string
 }
 
@@ -2618,26 +2717,27 @@ type UserUpdatedFromDialogMsg struct {
 }
 
 // ShowCreateUserDialogCmd creates a command to show a user creation dialog.
-func ShowCreateUserDialogCmd() tea.Cmd {
+func ShowCreateUserDialogCmd(roles []db.Roles) tea.Cmd {
 	return func() tea.Msg {
-		return ShowUserFormDialogMsg{Title: "New User"}
+		return ShowUserFormDialogMsg{Title: "New User", Roles: roles}
 	}
 }
 
 // ShowEditUserDialogCmd creates a command to show a user edit dialog.
-func ShowEditUserDialogCmd(user db.Users) tea.Cmd {
+func ShowEditUserDialogCmd(user db.UserWithRoleLabelRow, roles []db.Roles) tea.Cmd {
 	return func() tea.Msg {
-		return ShowEditUserDialogMsg{User: user}
+		return ShowEditUserDialogMsg{User: user, Roles: roles}
 	}
 }
 
 // CreateUserFromDialogCmd creates a command to trigger user creation from dialog.
-func CreateUserFromDialogCmd(username, name, email, role string) tea.Cmd {
+func CreateUserFromDialogCmd(username, name, email, password, role string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateUserFromDialogRequestMsg{
 			Username: username,
 			Name:     name,
 			Email:    email,
+			Password: password,
 			Role:     role,
 		}
 	}

@@ -15,8 +15,6 @@ const (
 	CMSPAGE
 	ADMINCMSPAGE
 	DATABASEPAGE
-	BUCKETPAGE
-	OAUTHPAGE
 	CONFIGPAGE
 	TABLEPAGE
 	CREATEPAGE
@@ -81,8 +79,6 @@ func InitPages() *map[PageIndex]Page {
 	cmsPage := NewPage(CMSPAGE, "CMS")
 	adminCmsPage := NewPage(ADMINCMSPAGE, "Admin CMS")
 	databasePage := NewPage(DATABASEPAGE, "Database")
-	bucketPage := NewPage(BUCKETPAGE, "Bucket Settings")
-	oauthPage := NewPage(OAUTHPAGE, "Oauth Settings")
 	configPage := NewPage(CONFIGPAGE, "Config")
 	tableActionsPage := NewPage(TABLEPAGE, "Table Actions")
 	createPage := NewPage(CREATEPAGE, "Create")
@@ -115,8 +111,6 @@ func InitPages() *map[PageIndex]Page {
 	p[CMSPAGE] = cmsPage
 	p[ADMINCMSPAGE] = adminCmsPage
 	p[DATABASEPAGE] = databasePage
-	p[BUCKETPAGE] = bucketPage
-	p[OAUTHPAGE] = oauthPage
 	p[CONFIGPAGE] = configPage
 	p[TABLEPAGE] = tableActionsPage
 	p[CREATEPAGE] = createPage

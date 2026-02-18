@@ -240,22 +240,3 @@ func RenderBorderBlock(s string) string {
 
 }
 
-// RenderButton renders an unselected button.
-func RenderButton(s string) string {
-	style := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Secondary).
-		Background(config.DefaultStyle.SecondaryBG).
-		Padding(1, 1).
-		Margin(0, 1)
-	return style.Render(s)
-}
-
-// RenderActiveButton renders a selected/active button.
-func RenderActiveButton(s string) string {
-	style := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Tertiary).
-		Background(config.DefaultStyle.TertiaryBG).
-		Padding(1, 1).
-		Margin(0, 1)
-	return style.Render(s)
-}

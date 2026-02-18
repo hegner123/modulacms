@@ -642,12 +642,25 @@ type UsersFetchMsg struct{}
 
 // UsersFetchResultsMsg returns fetched users.
 type UsersFetchResultsMsg struct {
-	Data []db.Users
+	Data []db.UserWithRoleLabelRow
 }
 
 // UsersListSet sets the users list.
 type UsersListSet struct {
-	UsersList []db.Users
+	UsersList []db.UserWithRoleLabelRow
+}
+
+// RolesFetchMsg requests fetching all roles.
+type RolesFetchMsg struct{}
+
+// RolesFetchResultsMsg returns fetched roles.
+type RolesFetchResultsMsg struct {
+	Data []db.Roles
+}
+
+// RolesListSet sets the roles list.
+type RolesListSet struct {
+	RolesList []db.Roles
 }
 
 // OpenFilePickerForRestoreMsg requests opening the file picker for backup restoration.

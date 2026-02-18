@@ -35,3 +35,14 @@ func FieldInputTypeIndex(key string) int {
 	}
 	return 0
 }
+
+// FieldBubbleForType looks up the registry by key and returns a new bubble instance.
+// Falls back to a TextBubble if the key is not registered.
+func FieldBubbleForType(key string) FieldBubble {
+	for _, e := range fieldInputRegistry {
+		if e.Key == key {
+			return e.NewBubble()
+		}
+	}
+	return NewTextBubble()
+}

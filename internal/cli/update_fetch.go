@@ -227,12 +227,12 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 	case UsersFetchMsg:
 		d := m.DB
 		return m, func() tea.Msg {
-			users, err := d.ListUsers()
+			users, err := d.ListUsersWithRoleLabel()
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
 			if users == nil {
-				return UsersFetchResultsMsg{Data: []db.Users{}}
+				return UsersFetchResultsMsg{Data: []db.UserWithRoleLabelRow{}}
 			}
 			return UsersFetchResultsMsg{Data: *users}
 		}
@@ -242,6 +242,22 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			UsersListSetCmd(msg.Data),
 			LoadingStopCmd(),
 		)
+
+	case RolesFetchMsg:
+		d := m.DB
+		return m, func() tea.Msg {
+			roles, err := d.ListRoles()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if roles == nil {
+				return RolesFetchResultsMsg{Data: []db.Roles{}}
+			}
+			return RolesFetchResultsMsg{Data: *roles}
+		}
+
+	case RolesFetchResultsMsg:
+		return m, RolesListSetCmd(msg.Data)
 
 	case RootContentSummaryFetchMsg:
 		d := m.DB

@@ -96,6 +96,10 @@ func renderCMSPanelLayout(m Model) string {
 		return DatabaseFormDialogOverlay(ui, *m.DatabaseFormDialog, m.Width, m.Height)
 	}
 
+	if m.UIConfigFormDialogActive && m.UIConfigFormDialog != nil {
+		return UIConfigFormDialogOverlay(ui, *m.UIConfigFormDialog, m.Width, m.Height)
+	}
+
 	return ui
 }
 
@@ -216,23 +220,13 @@ func renderCMSMenuContent(m Model) string {
 	return strings.Join(lines, "\n")
 }
 
-// renderCMSHeader renders the top bar with the app title and action buttons.
+// renderCMSHeader renders the top bar with the app title.
 func renderCMSHeader(m Model) string {
 	titleStyle := lipgloss.NewStyle().
 		Bold(true).
-		Foreground(config.DefaultStyle.Accent).
-		PaddingRight(2)
-
-	actions := []string{"New", "Save", "Copy", "Duplicate", "Export"}
-	buttons := make([]string, len(actions))
-	for i, a := range actions {
-		buttons[i] = RenderButton(a)
-	}
+		Foreground(config.DefaultStyle.Accent)
 
 	title := titleStyle.Render(RenderTitle(m.Titles[m.TitleFont]))
-	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, buttons...)
-
-	row := lipgloss.JoinHorizontal(lipgloss.Center, title, buttonBar)
 
 	container := lipgloss.NewStyle().
 		Width(m.Width).
@@ -240,7 +234,7 @@ func renderCMSHeader(m Model) string {
 		BorderStyle(lipgloss.NormalBorder()).
 		BorderForeground(config.DefaultStyle.Tertiary).
 		Padding(0, 1).
-		Render(row)
+		Render(title)
 
 	return container
 }
@@ -303,7 +297,8 @@ func getContextControls(m Model) string {
 	switch m.Page.Index {
 	case CONTENT:
 		if m.PageRouteId.IsZero() {
-			return nav + " │ enter:view │ " + km.HintString(config.ActionNew) + ":new │ " + common
+			return nav + " │ enter:view │ " + km.HintString(config.ActionNew) + ":new │ " +
+				km.HintString(config.ActionEdit) + ":edit │ " + common
 		}
 		if m.PanelFocus == tui.RoutePanel {
 			return nav + " │ " +
@@ -336,7 +331,8 @@ func getContextControls(m Model) string {
 		case tui.ContentPanel:
 			return nav + " │ " + km.HintString(config.ActionNew) + ":new field │ " +
 				km.HintString(config.ActionEdit) + ":edit │ " +
-				km.HintString(config.ActionDelete) + ":delete │ " + common
+				km.HintString(config.ActionDelete) + ":delete │ " +
+				"u:ui config │ " + common
 		default:
 			return nav + " │ " + common
 		}
@@ -629,6 +625,7 @@ func renderDatatypeActions(m Model) string {
 			"  n: New field",
 			"  e: Edit field",
 			"  d: Delete field",
+			"  u: UI Config",
 			"",
 			"  esc/h: Back to datatypes",
 			"  tab: Switch panel",
@@ -725,7 +722,7 @@ func renderUsersList(m Model) string {
 			prefix = "> "
 			style = selectedStyle
 		}
-		lines = append(lines, style.Render(fmt.Sprintf("%s%s (%s)", prefix, user.Username, user.Role)))
+		lines = append(lines, style.Render(fmt.Sprintf("%s%s (%s)", prefix, user.Username, user.RoleLabel)))
 	}
 
 	return strings.Join(lines, "\n")
@@ -748,7 +745,7 @@ func renderUserDetail(m Model) string {
 		fmt.Sprintf("  Username:  %s", user.Username),
 		fmt.Sprintf("  Name:      %s", user.Name),
 		fmt.Sprintf("  Email:     %s", user.Email),
-		fmt.Sprintf("  Role:      %s", user.Role),
+		fmt.Sprintf("  Role:      %s", user.RoleLabel),
 		"",
 		fmt.Sprintf("  ID:        %s", user.UserID),
 		fmt.Sprintf("  Created:   %s", user.DateCreated),
@@ -768,7 +765,7 @@ func renderUserPermissions(m Model) string {
 	lines := []string{
 		"Permissions",
 		"",
-		fmt.Sprintf("  Role: %s", user.Role),
+		fmt.Sprintf("  Role: %s", user.RoleLabel),
 		"",
 		fmt.Sprintf("  Users: %d", len(m.UsersList)),
 	}

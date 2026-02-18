@@ -564,8 +564,16 @@ func MediaUploadCmd(filePath string) tea.Cmd {
 func UsersFetchCmd() tea.Cmd { return func() tea.Msg { return UsersFetchMsg{} } }
 
 // UsersListSetCmd creates a command to set the users list.
-func UsersListSetCmd(users []db.Users) tea.Cmd {
+func UsersListSetCmd(users []db.UserWithRoleLabelRow) tea.Cmd {
 	return func() tea.Msg { return UsersListSet{UsersList: users} }
+}
+
+// RolesFetchCmd creates a command to fetch all roles.
+func RolesFetchCmd() tea.Cmd { return func() tea.Msg { return RolesFetchMsg{} } }
+
+// RolesListSetCmd creates a command to set the roles list.
+func RolesListSetCmd(roles []db.Roles) tea.Cmd {
+	return func() tea.Msg { return RolesListSet{RolesList: roles} }
 }
 
 // RootContentSummaryFetchCmd creates a command to fetch root content summary.
