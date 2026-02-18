@@ -38,6 +38,8 @@ func DatatypeHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		apiGetDatatype(w, r, c)
 	case http.MethodPut:
 		apiUpdateDatatype(w, r, c)
+	case http.MethodDelete:
+		apiDeleteDatatype(w, r, c)
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
@@ -191,7 +193,7 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	q := r.URL.Query().Get("id")
+	q := r.URL.Query().Get("q")
 	dtID, err := types.ParseDatatypeID(q)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)

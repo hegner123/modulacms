@@ -34,8 +34,14 @@ func BuildTree(log Logger, cd []db.ContentData, dt []db.Datatypes, cf []db.Conte
 	}
 
 	// Map each content-field/field-definition pair into a model Field.
+	// Override ParentID from the field definition's datatype reference to the
+	// content data instance ID, so BuildNodes phase 3 can match fields to the
+	// correct node by ContentDataID. This mirrors what BuildAdminTree does
+	// for admin fields.
 	for i, v := range cf {
-		f[i].Info = db.MapFieldJSON(df[i])
+		info := db.MapFieldJSON(df[i])
+		info.ParentID = v.ContentDataID.String()
+		f[i].Info = info
 		f[i].Content = db.MapContentFieldJSON(v)
 	}
 

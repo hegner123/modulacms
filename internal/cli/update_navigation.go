@@ -184,6 +184,10 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PageSetCmd(m.PageMap[ACTIONSPAGE]))
 
 			return m, tea.Batch(cmds...)
+		case QUICKSTARTPAGE:
+			cmds = append(cmds, PageSetCmd(m.PageMap[QUICKSTARTPAGE]))
+
+			return m, tea.Batch(cmds...)
 		case ADMINROUTES:
 			page := m.PageMap[ADMINROUTES]
 			cmds = append(cmds, LoadingStartCmd())

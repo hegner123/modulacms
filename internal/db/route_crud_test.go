@@ -33,7 +33,6 @@ func TestDatabase_CRUD_Route(t *testing.T) {
 
 	// --- Create ---
 	created, err := d.CreateRoute(ctx, ac, CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("crud-test-route"),
 		Title:        "CRUD Test Route",
 		Status:       1,

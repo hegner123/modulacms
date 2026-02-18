@@ -38,8 +38,9 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 	dataSlice := *contentData
+
+	// Fetch datatype definitions for each content data node.
 	dt := []db.Datatypes{}
-	fd := []db.Fields{}
 	for _, da := range dataSlice {
 		if !da.DatatypeID.Valid {
 			continue
@@ -50,15 +51,21 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-
 		dt = append(dt, *datatype)
 	}
+
+	// Fetch existing content field values for this route.
 	contentFields, err := d.ListContentFieldsByRoute(nullableRoute)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
+
+	// Build parallel slices of content fields and field definitions,
+	// starting with fields that already have content values.
+	var allCF []db.ContentFields
+	var allFD []db.Fields
 	for _, cf := range *contentFields {
 		if !cf.FieldID.Valid {
 			continue
@@ -69,10 +76,51 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return err
 		}
-
-		fd = append(fd, *field)
+		allCF = append(allCF, cf)
+		allFD = append(allFD, *field)
 	}
-	root, err := model.BuildTree(utility.DefaultLogger, *contentData, dt, *contentFields, fd)
+
+	// Track which (content_data_id, field_id) pairs already have values.
+	type fieldKey struct{ contentDataID, fieldID string }
+	existing := make(map[fieldKey]bool)
+	for _, cf := range allCF {
+		if cf.ContentDataID.Valid && cf.FieldID.Valid {
+			existing[fieldKey{cf.ContentDataID.ID.String(), cf.FieldID.ID.String()}] = true
+		}
+	}
+
+	// For each content data node, look up all schema-defined fields for its
+	// datatype and add empty stubs for any that don't have content values.
+	for _, da := range dataSlice {
+		if !da.DatatypeID.Valid {
+			continue
+		}
+		dtID := types.NullableDatatypeID{ID: da.DatatypeID.ID, Valid: true}
+		schemaFields, err := d.ListFieldsByDatatypeID(dtID)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+		if schemaFields == nil {
+			continue
+		}
+		for _, sf := range *schemaFields {
+			key := fieldKey{da.ContentDataID.String(), sf.FieldID.String()}
+			if existing[key] {
+				continue
+			}
+			stub := db.ContentFields{
+				ContentDataID: types.NullableContentID{ID: da.ContentDataID, Valid: true},
+				FieldID:       types.NullableFieldID{ID: sf.FieldID, Valid: true},
+				RouteID:       da.RouteID,
+			}
+			allCF = append(allCF, stub)
+			allFD = append(allFD, sf)
+		}
+	}
+
+	root, err := model.BuildTree(utility.DefaultLogger, dataSlice, dt, allCF, allFD)
 	if err != nil {
 		utility.DefaultLogger.Error("BuildTree error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

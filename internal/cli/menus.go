@@ -14,6 +14,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[CMSPAGE],
 		m.PageMap[ADMINCMSPAGE],
 		m.PageMap[DATABASEPAGE],
+		m.PageMap[QUICKSTARTPAGE],
 		m.PageMap[CONFIGPAGE],
 		m.PageMap[ACTIONSPAGE],
 		m.PageMap[PLUGINSPAGE],

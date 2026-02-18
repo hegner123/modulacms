@@ -979,7 +979,6 @@ Parameters for creating a public route via POST to routes.
 
 ```typescript
 type CreateRouteParams = {
-  route_id: RouteID
   slug: Slug
   title: string
   status: number
@@ -989,7 +988,7 @@ type CreateRouteParams = {
 }
 ```
 
-route_id is client-generated.
+route_id is server-generated and not included in create params.
 
 ### interface UpdateRouteParams
 

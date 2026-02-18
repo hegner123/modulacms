@@ -102,6 +102,10 @@ func (s *StrapiTransformer) transformField(field model.Field) any {
 	fieldType := field.Info.Type
 	value := field.Content.FieldValue
 
+	if value == "" {
+		return nil
+	}
+
 	// Handle media fields
 	if fieldType == "image" || fieldType == "asset" {
 		filename := extractFilename(value)
@@ -123,6 +127,9 @@ func (s *StrapiTransformer) transformField(field model.Field) any {
 }
 
 func (s *StrapiTransformer) parseFieldValue(value string, fieldType string) any {
+	if value == "" {
+		return nil
+	}
 	switch fieldType {
 	case "boolean":
 		return value == "true"

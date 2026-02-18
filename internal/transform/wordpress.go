@@ -154,6 +154,9 @@ func (w *WordPressTransformer) extractACF(fields map[string]any) map[string]any 
 }
 
 func (w *WordPressTransformer) parseFieldValue(value string, fieldType string) any {
+	if value == "" {
+		return nil
+	}
 	switch fieldType {
 	case "boolean":
 		return value == "true"

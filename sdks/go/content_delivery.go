@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/url"
+	"strings"
 )
 
 // ContentDeliveryResource provides public content delivery via slug-based routing.
@@ -19,7 +20,7 @@ func (c *ContentDeliveryResource) GetPage(ctx context.Context, slug string, form
 	if format != "" {
 		params.Set("format", format)
 	}
-	path := "/" + slug
+	path := "/" + strings.TrimLeft(slug, "/")
 	var result json.RawMessage
 	if err := c.http.get(ctx, path, params, &result); err != nil {
 		return nil, err

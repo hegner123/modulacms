@@ -296,10 +296,9 @@ type Route struct {
 
 // CreateRouteParams contains parameters for creating a new route.
 type CreateRouteParams struct {
-	RouteID *RouteID `json:"route_id,omitempty"`
-	Slug    Slug     `json:"slug"`
-	Title   string   `json:"title"`
-	Status  int64    `json:"status"`
+	Slug     Slug    `json:"slug"`
+	Title    string  `json:"title"`
+	Status   int64   `json:"status"`
 	AuthorID *UserID `json:"author_id"`
 }
 

@@ -92,6 +92,9 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 }
 
 func (c *CleanTransformer) parseFieldValue(value string, fieldType string) any {
+	if value == "" {
+		return nil
+	}
 	switch fieldType {
 	case "boolean":
 		return value == "true"

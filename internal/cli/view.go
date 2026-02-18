@@ -185,6 +185,14 @@ func (m Model) View() string {
 		p.AddMenu(menu)
 		p.AddStatus(m.RenderStatusBar())
 		ui = p.Render(m)
+	case QUICKSTARTPAGE:
+		menu := QuickstartMenuLabels()
+		p := NewMenuPage()
+		p.AddTitle(m.Titles[m.TitleFont])
+		p.AddHeader("Quickstart")
+		p.AddMenu(menu)
+		p.AddStatus(m.RenderStatusBar())
+		ui = p.Render(m)
 	case PLUGINDETAILPAGE:
 		menu := []string{
 			"Enable Plugin",

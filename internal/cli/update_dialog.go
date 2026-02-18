@@ -97,6 +97,26 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case QuickstartConfirmMsg:
+		// Show confirmation dialog for quickstart schema install
+		labels := QuickstartMenuLabels()
+		label := "this schema"
+		if msg.SchemaIndex < len(labels) {
+			label = labels[msg.SchemaIndex]
+		}
+		dialog := NewDialog(
+			"Install Schema",
+			fmt.Sprintf("Install %s?\nThis will create datatypes and fields in the database.", label),
+			true,
+			DIALOGQUICKSTART,
+		)
+		dialog.SetButtons("Install", "Cancel")
+		dialog.ActionIndex = msg.SchemaIndex
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case ActionResultMsg:
 		// Signal serve to reload permission cache and start HTTP servers
 		if msg.ReloadPermissions && !msg.IsError && m.DBReadyCh != nil {
@@ -718,6 +738,17 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(
 				DialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGQUICKSTART:
+			schemaIndex := 0
+			if m.Dialog != nil {
+				schemaIndex = m.Dialog.ActionIndex
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				RunQuickstartInstallCmd(m.Config, m.UserID, schemaIndex),
 			)
 		default:
 			return m, tea.Batch(
@@ -1804,10 +1835,9 @@ func (m Model) HandleCreateRouteFromDialog(msg CreateRouteFromDialogRequestMsg) 
 
 		// Create the route
 		params := db.CreateRouteParams{
-			RouteID: types.NewRouteID(),
-			Slug:    validSlug,
-			Title:   msg.Title,
-			Status:  1, // Active by default
+			Slug:   validSlug,
+			Title:  msg.Title,
+			Status: 1, // Active by default
 			AuthorID: types.NullableUserID{
 				ID:    authorID,
 				Valid: true,
@@ -2313,10 +2343,9 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 
 		// Create the route
 		routeParams := db.CreateRouteParams{
-			RouteID: types.NewRouteID(),
-			Slug:    validSlug,
-			Title:   msg.Title,
-			Status:  1, // Active by default
+			Slug:   validSlug,
+			Title:  msg.Title,
+			Status: 1, // Active by default
 			AuthorID: types.NullableUserID{
 				ID:    authorID,
 				Valid: true,

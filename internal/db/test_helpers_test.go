@@ -117,7 +117,6 @@ func testSeededDB(t *testing.T) (Database, SeedData) {
 
 	// Tier 2: entities referencing user
 	route, err := d.CreateRoute(ctx, acUser, CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("test-route"),
 		Title:        "Test Route",
 		Status:       1,

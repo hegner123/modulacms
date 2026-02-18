@@ -1,6 +1,7 @@
 package definitions
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
@@ -22,7 +23,7 @@ type InstallResult struct {
 	JunctionLinks  int
 }
 
-// Install creates all fields, datatypes, and junction records from a SchemaDefinition.
+// Install creates all datatypes, fields, and junction records from a SchemaDefinition.
 func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (InstallResult, error) {
 	if authorID.IsZero() {
 		return InstallResult{}, fmt.Errorf("definitions: authorID cannot be empty")
@@ -38,37 +39,17 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 	now := types.TimestampNow()
 	author := types.NullableUserID{ID: authorID, Valid: true}
 
-	// Phase 1: Create all fields (no dependencies)
-	fieldIDMap := make(map[string]types.FieldID, len(def.Fields))
-	for key, fieldDef := range def.Fields {
-		created := driver.CreateField(db.CreateFieldParams{
-			FieldID:      types.NewFieldID(),
-			Label:        fieldDef.Label,
-			Data:         fieldDef.Data,
-			Validation:   types.EmptyJSON,
-			UIConfig:     types.EmptyJSON,
-			Type:         fieldDef.Type,
-			AuthorID:     author,
-			DateCreated:  now,
-			DateModified: now,
-		})
-		if created.FieldID.IsZero() {
-			return InstallResult{}, fmt.Errorf("definitions: field %q created with zero ID", key)
-		}
-		fieldIDMap[key] = created.FieldID
-		result.Fields++
-	}
-
-	// Phase 2: Create datatypes — roots first, then children iteratively
+	// Phase 1: Create root datatypes (no ParentRef)
 	datatypeIDMap := make(map[string]types.DatatypeID, len(def.Datatypes))
 
-	// Create root datatypes (no parent)
-	for _, key := range def.RootKeys {
-		dt := def.Datatypes[key]
+	for key, dt := range def.Datatypes {
+		if dt.ParentRef != "" {
+			continue
+		}
 		created := driver.CreateDatatype(db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
 			Label:        dt.Label,
-			Type:         dt.Type,
+			Type:         dt.Type.String,
 			AuthorID:     author,
 			DateCreated:  now,
 			DateModified: now,
@@ -80,47 +61,29 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		result.Datatypes++
 	}
 
-	// Iteratively resolve children until all datatypes are created.
-	// Each pass creates datatypes whose parent is already in datatypeIDMap.
-	// Guard against circular dependencies with a max-iterations check.
+	// Phase 2: Create child datatypes iteratively until all are resolved.
+	// Each pass creates datatypes whose ParentRef is already in datatypeIDMap.
 	maxPasses := len(def.Datatypes)
-	for pass := range maxPasses {
+	for range maxPasses {
 		progress := false
 		for key, dt := range def.Datatypes {
 			if _, done := datatypeIDMap[key]; done {
 				continue
 			}
 
-			// Find if this datatype is a child of any already-created datatype
-			parentKey := ""
-			for candidateKey, candidateDT := range def.Datatypes {
-				if _, parentDone := datatypeIDMap[candidateKey]; !parentDone {
-					continue
-				}
-				for _, childRef := range candidateDT.ChildRefs {
-					if childRef == key {
-						parentKey = candidateKey
-						break
-					}
-				}
-				if parentKey != "" {
-					break
-				}
-			}
-
-			if parentKey == "" {
+			parentID, parentResolved := datatypeIDMap[dt.ParentRef]
+			if !parentResolved {
 				continue
 			}
 
-			parentDatatypeID := datatypeIDMap[parentKey]
 			created := driver.CreateDatatype(db.CreateDatatypeParams{
 				DatatypeID: types.NewDatatypeID(),
 				ParentID: types.NullableDatatypeID{
-					ID:    types.DatatypeID(parentDatatypeID),
+					ID:    parentID,
 					Valid: true,
 				},
 				Label:        dt.Label,
-				Type:         dt.Type,
+				Type:         dt.Type.String,
 				AuthorID:     author,
 				DateCreated:  now,
 				DateModified: now,
@@ -136,7 +99,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		if len(datatypeIDMap) == len(def.Datatypes) {
 			break
 		}
-		if !progress && pass > 0 {
+		if !progress {
 			return InstallResult{}, fmt.Errorf("definitions: circular dependency detected, %d datatypes unresolved", len(def.Datatypes)-len(datatypeIDMap))
 		}
 	}
@@ -145,22 +108,66 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		return InstallResult{}, fmt.Errorf("definitions: %d datatypes could not be resolved", len(def.Datatypes)-len(datatypeIDMap))
 	}
 
-	// Phase 3: Create junction records (datatype <-> field links)
+	// Phase 3: Create fields and junction records for each datatype
 	for key, dt := range def.Datatypes {
 		datatypeID := datatypeIDMap[key]
-		for _, fieldRef := range dt.FieldRefs {
-			fieldID := fieldIDMap[fieldRef]
-			created := driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
+		for i, fieldDef := range dt.FieldRefs {
+			data := types.EmptyJSON
+			if fieldDef.Data.Valid {
+				data = fieldDef.Data.String
+			}
+
+			validation, err := marshalConfig(fieldDef.Validation)
+			if err != nil {
+				return InstallResult{}, fmt.Errorf("definitions: datatype %q field %q validation: %w", key, fieldDef.Label, err)
+			}
+
+			uiConfig, err := marshalConfig(fieldDef.UiConfig)
+			if err != nil {
+				return InstallResult{}, fmt.Errorf("definitions: datatype %q field %q ui_config: %w", key, fieldDef.Label, err)
+			}
+
+			created := driver.CreateField(db.CreateFieldParams{
+				FieldID:      types.NewFieldID(),
+				Label:        fieldDef.Label,
+				Data:         data,
+				Validation:   validation,
+				UIConfig:     uiConfig,
+				Type:         fieldDef.Type,
+				AuthorID:     author,
+				DateCreated:  now,
+				DateModified: now,
+			})
+			if created.FieldID.IsZero() {
+				return InstallResult{}, fmt.Errorf("definitions: field %q created with zero ID", fieldDef.Label)
+			}
+			result.Fields++
+
+			junc := driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
 				ID:         string(types.NewDatatypeFieldID()),
 				DatatypeID: datatypeID,
-				FieldID:    fieldID,
+				FieldID:    created.FieldID,
+				SortOrder:  int64(i),
 			})
-			if created.ID == "" {
-				return InstallResult{}, fmt.Errorf("definitions: junction link for datatype %q field %q created with empty ID", key, fieldRef)
+			if junc.ID == "" {
+				return InstallResult{}, fmt.Errorf("definitions: junction link for datatype %q field %q created with empty ID", key, fieldDef.Label)
 			}
 			result.JunctionLinks++
 		}
 	}
 
 	return result, nil
+}
+
+// marshalConfig marshals a config struct to JSON. Returns EmptyJSON for zero-value structs.
+func marshalConfig(v any) (string, error) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	s := string(b)
+	if s == "{}" || s == "null" {
+		return types.EmptyJSON, nil
+	}
+	return s, nil
 }

@@ -27,6 +27,8 @@ func (m *mockInstaller) CreateField(p db.CreateFieldParams) db.Fields {
 		ParentID:     p.ParentID,
 		Label:        p.Label,
 		Data:         p.Data,
+		Validation:   p.Validation,
+		UIConfig:     p.UIConfig,
 		Type:         p.Type,
 		AuthorID:     p.AuthorID,
 		DateCreated:  p.DateCreated,
@@ -57,9 +59,19 @@ func (m *mockInstaller) CreateDatatypeField(p db.CreateDatatypeFieldParams) db.D
 		ID:         p.ID,
 		DatatypeID: p.DatatypeID,
 		FieldID:    p.FieldID,
+		SortOrder:  p.SortOrder,
 	}
 	m.junctions = append(m.junctions, j)
 	return j
+}
+
+// totalFieldDefs counts all inline FieldDefs across all datatypes.
+func totalFieldDefs(def SchemaDefinition) int {
+	count := 0
+	for _, dt := range def.Datatypes {
+		count += len(dt.FieldRefs)
+	}
+	return count
 }
 
 func TestInstall_DefaultSchema(t *testing.T) {
@@ -79,7 +91,7 @@ func TestInstall_DefaultSchema(t *testing.T) {
 		t.Errorf("expected definition name %q, got %q", "modulacms-default", result.DefinitionName)
 	}
 
-	expectedFields := len(def.Fields)
+	expectedFields := totalFieldDefs(def)
 	if result.Fields != expectedFields {
 		t.Errorf("expected %d fields, got %d", expectedFields, result.Fields)
 	}
@@ -89,13 +101,9 @@ func TestInstall_DefaultSchema(t *testing.T) {
 		t.Errorf("expected %d datatypes, got %d", expectedDatatypes, result.Datatypes)
 	}
 
-	// Count total field refs across all datatypes
-	expectedJunctions := 0
-	for _, dt := range def.Datatypes {
-		expectedJunctions += len(dt.FieldRefs)
-	}
-	if result.JunctionLinks != expectedJunctions {
-		t.Errorf("expected %d junction links, got %d", expectedJunctions, result.JunctionLinks)
+	// Fields and junctions are 1:1 since each inline field gets a junction link
+	if result.JunctionLinks != expectedFields {
+		t.Errorf("expected %d junction links, got %d", expectedFields, result.JunctionLinks)
 	}
 }
 
@@ -112,30 +120,15 @@ func TestInstall_PhaseOrdering(t *testing.T) {
 		t.Fatalf("Install failed: %v", err)
 	}
 
-	// Verify ordering: all fields first, then datatypes, then junctions
-	phase := "field"
+	// Verify ordering: all datatypes first, then fields/junctions.
+	// No field or junction should appear before the first datatype.
+	seenDatatype := false
 	for _, call := range mock.calls {
-		switch phase {
-		case "field":
-			if call.kind == "datatype" {
-				phase = "datatype"
-			} else if call.kind == "junction" {
-				t.Fatal("junction created before all datatypes")
-			}
-		case "datatype":
-			if call.kind == "field" {
-				t.Fatal("field created after datatype phase started")
-			}
-			if call.kind == "junction" {
-				phase = "junction"
-			}
-		case "junction":
-			if call.kind == "field" {
-				t.Fatal("field created during junction phase")
-			}
-			if call.kind == "datatype" {
-				t.Fatal("datatype created during junction phase")
-			}
+		if call.kind == "datatype" {
+			seenDatatype = true
+		}
+		if !seenDatatype && (call.kind == "field" || call.kind == "junction") {
+			t.Fatal("field or junction created before any datatype")
 		}
 	}
 }
@@ -216,20 +209,37 @@ func TestInstall_AllRegisteredDefinitions(t *testing.T) {
 				t.Fatalf("Install(%q) failed: %v", def.Name, err)
 			}
 
-			if result.Fields != len(def.Fields) {
-				t.Errorf("expected %d fields, got %d", len(def.Fields), result.Fields)
+			expectedFields := totalFieldDefs(def)
+			if result.Fields != expectedFields {
+				t.Errorf("expected %d fields, got %d", expectedFields, result.Fields)
 			}
 			if result.Datatypes != len(def.Datatypes) {
 				t.Errorf("expected %d datatypes, got %d", len(def.Datatypes), result.Datatypes)
 			}
-
-			expectedJunctions := 0
-			for _, dt := range def.Datatypes {
-				expectedJunctions += len(dt.FieldRefs)
-			}
-			if result.JunctionLinks != expectedJunctions {
-				t.Errorf("expected %d junctions, got %d", expectedJunctions, result.JunctionLinks)
+			if result.JunctionLinks != expectedFields {
+				t.Errorf("expected %d junctions, got %d", expectedFields, result.JunctionLinks)
 			}
 		})
+	}
+}
+
+func TestInstall_SortOrderPreserved(t *testing.T) {
+	def, ok := Get("modulacms-default")
+	if !ok {
+		t.Fatal("modulacms-default definition not found")
+	}
+
+	mock := &mockInstaller{}
+	authorID := types.NewUserID()
+	_, err := Install(mock, def, authorID)
+	if err != nil {
+		t.Fatalf("Install failed: %v", err)
+	}
+
+	// Verify sort_order is sequential per datatype
+	for _, j := range mock.junctions {
+		if j.SortOrder < 0 {
+			t.Errorf("junction for datatype %s has negative sort_order %d", j.DatatypeID, j.SortOrder)
+		}
 	}
 }

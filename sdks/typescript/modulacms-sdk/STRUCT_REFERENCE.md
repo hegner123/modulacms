@@ -638,7 +638,6 @@ PostgreSQL database connection. Same fields as Database.
 
 | Field | Type |
 |-------|------|
-| RouteID | types.RouteID |
 | Slug | types.Slug |
 | Title | string |
 | Status | int64 |

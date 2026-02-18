@@ -163,7 +163,7 @@ export class ModulaClient {
    * builds the full content tree, and returns it in the requested output format.
    *
    * @typeParam T - Expected shape of the page content. Defaults to `unknown`.
-   * @param slug - Route slug (e.g. "about", "blog"). Must not be empty or start with "/".
+   * @param slug - Route slug (e.g. "about", "blog", "/"). Leading slashes are accepted; use "/" for the root page.
    * @param options - Optional format override and/or runtime validator.
    * @returns The rendered content tree.
    * @throws {@link ModulaError} If the slug is invalid, the route is not found (404), or validation fails.
@@ -182,15 +182,16 @@ export class ModulaClient {
    * const page = await cms.getPage("about", { validate: isMyPage });
    */
   async getPage<T = unknown>(slug: string, options?: GetPageOptions<T>): Promise<T> {
-    if (!slug || slug.startsWith("/")) {
-      throw new ModulaError(0, { error: `Invalid slug: "${slug}". Slugs should not be empty or start with "/"` });
+    if (!slug) {
+      throw new ModulaError(0, { error: `Invalid slug: "${slug}". Slugs should not be empty.` });
     }
     const format = options?.format ?? this.defaultFormat;
     const params: Record<string, string> = {};
     if (format) {
       params.format = format;
     }
-    return this.request<T>(`/${slug}`, params, options?.validate);
+    const path = slug.startsWith("/") ? slug : `/${slug}`;
+    return this.request<T>(path, params, options?.validate);
   }
 
   /**

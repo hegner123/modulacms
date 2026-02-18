@@ -123,6 +123,10 @@ func (c *ContentfulTransformer) transformField(field model.Field) any {
 	fieldType := field.Info.Type
 	value := field.Content.FieldValue
 
+	if value == "" {
+		return nil
+	}
+
 	// Handle asset/image fields
 	if fieldType == "image" || fieldType == "asset" {
 		return ContentfulAsset{
@@ -139,6 +143,9 @@ func (c *ContentfulTransformer) transformField(field model.Field) any {
 }
 
 func (c *ContentfulTransformer) parseFieldValue(value string, fieldType string) any {
+	if value == "" {
+		return nil
+	}
 	switch fieldType {
 	case "boolean":
 		return value == "true"

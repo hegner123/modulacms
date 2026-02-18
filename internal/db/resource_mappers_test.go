@@ -336,7 +336,6 @@ func TestDatabase_MapCreateRouteParams_GeneratesID(t *testing.T) {
 	ts := newTestTimestamp()
 
 	input := CreateRouteParams{
-		RouteID:      "", // zero value, should generate
 		Slug:         types.Slug("auto-id"),
 		Title:        "Auto ID Route",
 		Status:       1,
@@ -358,14 +357,12 @@ func TestDatabase_MapCreateRouteParams_GeneratesID(t *testing.T) {
 	}
 }
 
-func TestDatabase_MapCreateRouteParams_PreservesExplicitID(t *testing.T) {
+func TestDatabase_MapCreateRouteParams_AlwaysGeneratesID(t *testing.T) {
 	t.Parallel()
 	d := newTestDatabase()
 	ts := newTestTimestamp()
-	explicitID := types.NewRouteID()
 
 	input := CreateRouteParams{
-		RouteID:      explicitID,
 		Slug:         types.Slug("explicit-id"),
 		Title:        "Explicit ID Route",
 		Status:       0,
@@ -375,8 +372,8 @@ func TestDatabase_MapCreateRouteParams_PreservesExplicitID(t *testing.T) {
 
 	got := d.MapCreateRouteParams(input)
 
-	if got.RouteID != explicitID {
-		t.Errorf("RouteID = %v, want %v (should preserve explicit ID)", got.RouteID, explicitID)
+	if got.RouteID.IsZero() {
+		t.Fatal("expected non-zero RouteID to be generated")
 	}
 }
 
@@ -669,7 +666,6 @@ func TestNewRouteCmd_Accessors(t *testing.T) {
 		UserID: types.NewUserID(),
 	}
 	params := CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("test"),
 		Title:        "Test",
 		Status:       1,

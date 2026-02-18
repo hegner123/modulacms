@@ -95,9 +95,6 @@ func apiCreateRoute(w http.ResponseWriter, r *http.Request, c config.Config) err
 		return err
 	}
 
-	if newRoute.RouteID.IsZero() {
-		newRoute.RouteID = types.NewRouteID()
-	}
 	now := types.NewTimestamp(time.Now().UTC())
 	if !newRoute.DateCreated.Valid {
 		newRoute.DateCreated = now

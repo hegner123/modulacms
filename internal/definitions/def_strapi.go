@@ -8,73 +8,37 @@ func init() {
 		Label:       "Strapi Starter",
 		Description: "Article, page, and global datatypes matching Strapi collection/single type patterns",
 		Format:      "strapi",
-		Fields: map[string]FieldDef{
-			"title": {
-				Label: "Title",
-				Type:  types.FieldTypeText,
-			},
-			"slug": {
-				Label: "Slug",
-				Type:  types.FieldTypeSlug,
-			},
-			"description": {
-				Label: "Description",
-				Type:  types.FieldTypeTextarea,
-			},
-			"content": {
-				Label: "Content",
-				Type:  types.FieldTypeRichText,
-			},
-			"cover": {
-				Label: "Cover",
-				Type:  types.FieldTypeMedia,
-			},
-			"published_at": {
-				Label: "Published At",
-				Type:  types.FieldTypeDatetime,
-			},
-			"page_title": {
-				Label: "Page Title",
-				Type:  types.FieldTypeText,
-			},
-			"page_slug": {
-				Label: "Page Slug",
-				Type:  types.FieldTypeSlug,
-			},
-			"page_content": {
-				Label: "Page Content",
-				Type:  types.FieldTypeRichText,
-			},
-			"site_name": {
-				Label: "Site Name",
-				Type:  types.FieldTypeText,
-			},
-			"site_desc": {
-				Label: "Site Description",
-				Type:  types.FieldTypeTextarea,
-			},
-			"site_logo": {
-				Label: "Site Logo",
-				Type:  types.FieldTypeMedia,
-			},
-		},
 		Datatypes: map[string]DatatypeDef{
 			"article": {
-				Label:     "Article",
-				Type:      "article",
-				FieldRefs: []string{"title", "slug", "description", "content", "cover", "published_at"},
+				Label: "Article",
+				Type:  types.NewNullableString("ROOT"),
+				FieldRefs: []FieldDef{
+					{Label: "Title", Type: types.FieldTypeText},
+					{Label: "Slug", Type: types.FieldTypeSlug},
+					{Label: "Description", Type: types.FieldTypeTextarea},
+					{Label: "Content", Type: types.FieldTypeRichText},
+					{Label: "Cover", Type: types.FieldTypeMedia},
+					{Label: "Published At", Type: types.FieldTypeDatetime},
+				},
 			},
 			"page": {
-				Label:     "Page",
-				Type:      "page",
-				FieldRefs: []string{"page_title", "page_slug", "page_content"},
+				Label: "Page",
+				Type:  types.NewNullableString("ROOT"),
+				FieldRefs: []FieldDef{
+					{Label: "Page Title", Type: types.FieldTypeText},
+					{Label: "Page Slug", Type: types.FieldTypeSlug},
+					{Label: "Page Content", Type: types.FieldTypeRichText},
+				},
 			},
 			"global": {
-				Label:     "Global",
-				Type:      "GLOBAL",
-				FieldRefs: []string{"site_name", "site_desc", "site_logo"},
+				Label: "Global",
+				Type:  types.NewNullableString("ROOT"),
+				FieldRefs: []FieldDef{
+					{Label: "Site Name", Type: types.FieldTypeText},
+					{Label: "Site Description", Type: types.FieldTypeTextarea},
+					{Label: "Site Logo", Type: types.FieldTypeMedia},
+				},
 			},
 		},
-		RootKeys: []string{"article", "page", "global"},
 	})
 }

@@ -29,7 +29,6 @@ type Routes struct {
 
 // CreateRouteParams contains parameters for creating a new route.
 type CreateRouteParams struct {
-	RouteID      types.RouteID        `json:"route_id"`
 	Slug         types.Slug           `json:"slug"`
 	Title        string               `json:"title"`
 	Status       int64                `json:"status"`
@@ -88,12 +87,8 @@ func (d Database) MapRoute(a mdb.Routes) Routes {
 
 // MapCreateRouteParams converts wrapper params to sqlc-generated SQLite params.
 func (d Database) MapCreateRouteParams(a CreateRouteParams) mdb.CreateRouteParams {
-	id := a.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	return mdb.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       a.Status,
@@ -253,12 +248,8 @@ func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
 
 // MapCreateRouteParams converts wrapper params to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRouteParams {
-	id := a.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	return mdbm.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
@@ -418,12 +409,8 @@ func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
 
 // MapCreateRouteParams converts wrapper params to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbp.CreateRouteParams {
-	id := a.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	return mdbp.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         a.Slug,
 		Title:        a.Title,
 		Status:       int32(a.Status),
@@ -586,13 +573,9 @@ func (c NewRouteCmd) Params() any                           { return c.params }
 func (c NewRouteCmd) GetID(r mdb.Routes) string             { return string(r.RouteID) }
 
 func (c NewRouteCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Routes, error) {
-	id := c.params.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	queries := mdb.New(tx)
 	return queries.CreateRoute(ctx, mdb.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         c.params.Slug,
 		Title:        c.params.Title,
 		Status:       c.params.Status,
@@ -706,13 +689,9 @@ func (c NewRouteCmdMysql) Params() any                           { return c.para
 func (c NewRouteCmdMysql) GetID(r mdbm.Routes) string            { return string(r.RouteID) }
 
 func (c NewRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Routes, error) {
-	id := c.params.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	queries := mdbm.New(tx)
 	params := mdbm.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         c.params.Slug,
 		Title:        c.params.Title,
 		Status:       int32(c.params.Status),
@@ -830,13 +809,9 @@ func (c NewRouteCmdPsql) Params() any                           { return c.param
 func (c NewRouteCmdPsql) GetID(r mdbp.Routes) string            { return string(r.RouteID) }
 
 func (c NewRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Routes, error) {
-	id := c.params.RouteID
-	if id.IsZero() {
-		id = types.NewRouteID()
-	}
 	queries := mdbp.New(tx)
 	return queries.CreateRoute(ctx, mdbp.CreateRouteParams{
-		RouteID:      id,
+		RouteID:      types.NewRouteID(),
 		Slug:         c.params.Slug,
 		Title:        c.params.Title,
 		Status:       int32(c.params.Status),

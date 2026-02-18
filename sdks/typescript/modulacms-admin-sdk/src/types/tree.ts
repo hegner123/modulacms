@@ -69,3 +69,6 @@ export type AdminTreeResponse = {
  * - `'clean'` - ModulaCMS clean export format.
  */
 export type TreeFormat = 'contentful' | 'sanity' | 'strapi' | 'wordpress' | 'clean' | 'raw'
+
+// Re-export raw content tree types from shared types package
+export type { NodeDatatype, NodeField, ContentNode, ContentTree } from '@modulacms/types'

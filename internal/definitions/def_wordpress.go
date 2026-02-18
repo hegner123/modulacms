@@ -8,69 +8,32 @@ func init() {
 		Label:       "WordPress Blog",
 		Description: "Post and page datatypes matching WordPress content structure",
 		Format:      "wordpress",
-		Fields: map[string]FieldDef{
-			"title": {
-				Label: "Title",
-				Type:  types.FieldTypeText,
-			},
-			"slug": {
-				Label: "Slug",
-				Type:  types.FieldTypeSlug,
-			},
-			"content": {
-				Label: "Content",
-				Type:  types.FieldTypeRichText,
-			},
-			"excerpt": {
-				Label: "Excerpt",
-				Type:  types.FieldTypeTextarea,
-			},
-			"featured_image": {
-				Label: "Featured Image",
-				Type:  types.FieldTypeMedia,
-			},
-			"published": {
-				Label: "Published",
-				Type:  types.FieldTypeBoolean,
-			},
-			"category": {
-				Label: "Category",
-				Type:  types.FieldTypeSelect,
-				Data:  `{"options":["uncategorized"]}`,
-			},
-			"tags": {
-				Label: "Tags",
-				Type:  types.FieldTypeText,
-			},
-			"page_title": {
-				Label: "Page Title",
-				Type:  types.FieldTypeText,
-			},
-			"page_slug": {
-				Label: "Page Slug",
-				Type:  types.FieldTypeSlug,
-			},
-			"page_content": {
-				Label: "Page Content",
-				Type:  types.FieldTypeRichText,
-			},
-			"page_featured_image": {
-				Label: "Page Featured Image",
-				Type:  types.FieldTypeMedia,
-			},
-		},
 		Datatypes: map[string]DatatypeDef{
 			"post": {
-				Label:     "Post",
-				Type:      "post",
-				FieldRefs: []string{"title", "slug", "content", "excerpt", "featured_image", "published", "category", "tags"},
+				Label: "Post",
+				Type:  types.NewNullableString("ROOT"),
+				FieldRefs: []FieldDef{
+					{Label: "Title", Type: types.FieldTypeText},
+					{Label: "Slug", Type: types.FieldTypeSlug},
+					{Label: "Content", Type: types.FieldTypeRichText},
+					{Label: "Excerpt", Type: types.FieldTypeTextarea},
+					{Label: "Featured Image", Type: types.FieldTypeMedia},
+					{Label: "Published", Type: types.FieldTypeBoolean},
+					{Label: "Category", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["uncategorized"]}`)},
+					{Label: "Tags", Type: types.FieldTypeText},
+				},
 			},
 			"page": {
-				Label:     "Page",
-				Type:      "page",
-				FieldRefs: []string{"page_title", "page_slug", "page_content", "page_featured_image", "published"},
+				Label: "Page",
+				Type:  types.NewNullableString("ROOT"),
+				FieldRefs: []FieldDef{
+					{Label: "Page Title", Type: types.FieldTypeText},
+					{Label: "Page Slug", Type: types.FieldTypeSlug},
+					{Label: "Page Content", Type: types.FieldTypeRichText},
+					{Label: "Page Featured Image", Type: types.FieldTypeMedia},
+					{Label: "Published", Type: types.FieldTypeBoolean},
+				},
 			},
 		},
-		RootKeys: []string{"post", "page"},
 	})
 }

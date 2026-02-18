@@ -78,6 +78,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.PluginsControls(msg)
 	case PLUGINDETAILPAGE:
 		return m.PluginDetailControls(msg)
+	case QUICKSTARTPAGE:
+		return m.QuickstartControls(msg)
 
 	}
 	return m, nil
@@ -1752,6 +1754,44 @@ func (m Model) PluginDetailControls(msg tea.Msg) (Model, tea.Cmd) {
 		if km.Matches(key, config.ActionTitleNext) {
 			if m.TitleFont < len(m.Titles)-1 {
 				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// QuickstartControls handles keyboard navigation for the quickstart schema list page.
+func (m Model) QuickstartControls(msg tea.Msg) (Model, tea.Cmd) {
+	labels := QuickstartMenuLabels()
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(labels)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			if m.Cursor < len(labels) {
+				return m, func() tea.Msg {
+					return QuickstartConfirmMsg{SchemaIndex: m.Cursor}
+				}
 			}
 		}
 	}

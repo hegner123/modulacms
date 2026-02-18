@@ -13,17 +13,15 @@ func validBase() SchemaDefinition {
 		Label:       "Test Schema",
 		Description: "A test schema",
 		Format:      "test",
-		Fields: map[string]FieldDef{
-			"title": {Label: "Title", Type: types.FieldTypeText},
-		},
 		Datatypes: map[string]DatatypeDef{
 			"page": {
-				Label:     "Page",
-				Type:      "page",
-				FieldRefs: []string{"title"},
+				Label: "Page",
+				Type:  types.NewNullableString("page"),
+				FieldRefs: []FieldDef{
+					{Label: "Title", Type: types.FieldTypeText},
+				},
 			},
 		},
-		RootKeys: []string{"page"},
 	}
 }
 
@@ -49,46 +47,26 @@ func TestValidate(t *testing.T) {
 			wantErr: "must have at least one datatype",
 		},
 		{
-			name:    "no root keys",
-			modify:  func(d *SchemaDefinition) { d.RootKeys = nil },
-			wantErr: "must have at least one root key",
-		},
-		{
-			name:    "root key references missing datatype",
-			modify:  func(d *SchemaDefinition) { d.RootKeys = []string{"missing"} },
-			wantErr: "root key \"missing\" not found",
-		},
-		{
-			name: "field ref references missing field",
+			name: "parent ref references missing datatype",
 			modify: func(d *SchemaDefinition) {
-				d.Datatypes["page"] = DatatypeDef{
-					Label:     "Page",
-					Type:      "page",
-					FieldRefs: []string{"nonexistent"},
+				d.Datatypes["child"] = DatatypeDef{
+					Label:     "Child",
+					Type:      types.NewNullableString("child"),
+					ParentRef: "ghost",
 				}
 			},
-			wantErr: "references unknown field \"nonexistent\"",
+			wantErr: "references unknown parent \"ghost\"",
 		},
 		{
-			name: "child ref references missing datatype",
+			name: "self-referencing parent",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
 					Label:     "Page",
-					Type:      "page",
-					FieldRefs: []string{"title"},
-					ChildRefs: []string{"ghost"},
-				}
-			},
-			wantErr: "references unknown child datatype \"ghost\"",
-		},
-		{
-			name: "self-referencing child",
-			modify: func(d *SchemaDefinition) {
-				d.Datatypes["page"] = DatatypeDef{
-					Label:     "Page",
-					Type:      "page",
-					FieldRefs: []string{"title"},
-					ChildRefs: []string{"page"},
+					Type:      types.NewNullableString("page"),
+					ParentRef: "page",
+					FieldRefs: []FieldDef{
+						{Label: "Title", Type: types.FieldTypeText},
+					},
 				}
 			},
 			wantErr: "self-reference",
@@ -96,14 +74,26 @@ func TestValidate(t *testing.T) {
 		{
 			name: "empty field label",
 			modify: func(d *SchemaDefinition) {
-				d.Fields["title"] = FieldDef{Label: "", Type: types.FieldTypeText}
+				d.Datatypes["page"] = DatatypeDef{
+					Label: "Page",
+					Type:  types.NewNullableString("page"),
+					FieldRefs: []FieldDef{
+						{Label: "", Type: types.FieldTypeText},
+					},
+				}
 			},
 			wantErr: "has empty label",
 		},
 		{
 			name: "invalid field type",
 			modify: func(d *SchemaDefinition) {
-				d.Fields["title"] = FieldDef{Label: "Title", Type: types.FieldType("invalid")}
+				d.Datatypes["page"] = DatatypeDef{
+					Label: "Page",
+					Type:  types.NewNullableString("page"),
+					FieldRefs: []FieldDef{
+						{Label: "Title", Type: types.FieldType("invalid")},
+					},
+				}
 			},
 			wantErr: "has invalid type",
 		},
@@ -111,9 +101,11 @@ func TestValidate(t *testing.T) {
 			name: "empty datatype label",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
-					Label:     "",
-					Type:      "page",
-					FieldRefs: []string{"title"},
+					Label: "",
+					Type:  types.NewNullableString("page"),
+					FieldRefs: []FieldDef{
+						{Label: "Title", Type: types.FieldTypeText},
+					},
 				}
 			},
 			wantErr: "has empty label",
@@ -122,9 +114,11 @@ func TestValidate(t *testing.T) {
 			name: "empty datatype type",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
-					Label:     "Page",
-					Type:      "",
-					FieldRefs: []string{"title"},
+					Label: "Page",
+					Type:  types.NullableString{},
+					FieldRefs: []FieldDef{
+						{Label: "Title", Type: types.FieldTypeText},
+					},
 				}
 			},
 			wantErr: "has empty type",

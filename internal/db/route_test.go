@@ -186,18 +186,14 @@ func TestDatabase_MapCreateRouteParams_Table(t *testing.T) {
 	d := Database{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
-	explicitID := types.NewRouteID()
 
 	tests := []struct {
-		name       string
-		input      CreateRouteParams
-		wantAutoID bool // true means the test expects a new ID to be generated
-		wantID     types.RouteID
+		name  string
+		input CreateRouteParams
 	}{
 		{
-			name: "generates ID when RouteID is zero",
+			name: "always generates a new RouteID",
 			input: CreateRouteParams{
-				RouteID:      "",
 				Slug:         types.Slug("auto-slug"),
 				Title:        "Auto Route",
 				Status:       1,
@@ -205,12 +201,10 @@ func TestDatabase_MapCreateRouteParams_Table(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: true,
 		},
 		{
-			name: "preserves explicit ID",
+			name: "maps all fields correctly",
 			input: CreateRouteParams{
-				RouteID:      explicitID,
 				Slug:         types.Slug("explicit-slug"),
 				Title:        "Explicit Route",
 				Status:       0,
@@ -218,8 +212,6 @@ func TestDatabase_MapCreateRouteParams_Table(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: false,
-			wantID:     explicitID,
 		},
 	}
 
@@ -228,14 +220,8 @@ func TestDatabase_MapCreateRouteParams_Table(t *testing.T) {
 			t.Parallel()
 			got := d.MapCreateRouteParams(tt.input)
 
-			if tt.wantAutoID {
-				if got.RouteID.IsZero() {
-					t.Fatal("expected non-zero RouteID to be generated")
-				}
-			} else {
-				if got.RouteID != tt.wantID {
-					t.Errorf("RouteID = %v, want %v", got.RouteID, tt.wantID)
-				}
+			if got.RouteID.IsZero() {
+				t.Fatal("expected non-zero RouteID to be generated")
 			}
 
 			if got.Slug != tt.input.Slug {
@@ -366,18 +352,14 @@ func TestMysqlDatabase_MapCreateRouteParams(t *testing.T) {
 	d := MysqlDatabase{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
-	explicitID := types.NewRouteID()
 
 	tests := []struct {
-		name       string
-		input      CreateRouteParams
-		wantAutoID bool
-		wantID     types.RouteID
+		name  string
+		input CreateRouteParams
 	}{
 		{
-			name: "generates ID when RouteID is zero",
+			name: "always generates a new RouteID",
 			input: CreateRouteParams{
-				RouteID:      "",
 				Slug:         types.Slug("mysql-auto"),
 				Title:        "MySQL Auto",
 				Status:       10,
@@ -385,12 +367,10 @@ func TestMysqlDatabase_MapCreateRouteParams(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: true,
 		},
 		{
-			name: "preserves explicit ID",
+			name: "maps all fields correctly",
 			input: CreateRouteParams{
-				RouteID:      explicitID,
 				Slug:         types.Slug("mysql-explicit"),
 				Title:        "MySQL Explicit",
 				Status:       20,
@@ -398,8 +378,6 @@ func TestMysqlDatabase_MapCreateRouteParams(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: false,
-			wantID:     explicitID,
 		},
 	}
 
@@ -408,14 +386,8 @@ func TestMysqlDatabase_MapCreateRouteParams(t *testing.T) {
 			t.Parallel()
 			got := d.MapCreateRouteParams(tt.input)
 
-			if tt.wantAutoID {
-				if got.RouteID.IsZero() {
-					t.Fatal("expected non-zero RouteID to be generated")
-				}
-			} else {
-				if got.RouteID != tt.wantID {
-					t.Errorf("RouteID = %v, want %v", got.RouteID, tt.wantID)
-				}
+			if got.RouteID.IsZero() {
+				t.Fatal("expected non-zero RouteID to be generated")
 			}
 
 			// MySQL uses int32 for Status
@@ -536,18 +508,14 @@ func TestPsqlDatabase_MapCreateRouteParams(t *testing.T) {
 	d := PsqlDatabase{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
-	explicitID := types.NewRouteID()
 
 	tests := []struct {
-		name       string
-		input      CreateRouteParams
-		wantAutoID bool
-		wantID     types.RouteID
+		name  string
+		input CreateRouteParams
 	}{
 		{
-			name: "generates ID when RouteID is zero",
+			name: "always generates a new RouteID",
 			input: CreateRouteParams{
-				RouteID:      "",
 				Slug:         types.Slug("psql-auto"),
 				Title:        "Psql Auto",
 				Status:       10,
@@ -555,12 +523,10 @@ func TestPsqlDatabase_MapCreateRouteParams(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: true,
 		},
 		{
-			name: "preserves explicit ID",
+			name: "maps all fields correctly",
 			input: CreateRouteParams{
-				RouteID:      explicitID,
 				Slug:         types.Slug("psql-explicit"),
 				Title:        "Psql Explicit",
 				Status:       20,
@@ -568,8 +534,6 @@ func TestPsqlDatabase_MapCreateRouteParams(t *testing.T) {
 				DateCreated:  ts,
 				DateModified: ts,
 			},
-			wantAutoID: false,
-			wantID:     explicitID,
 		},
 	}
 
@@ -578,14 +542,8 @@ func TestPsqlDatabase_MapCreateRouteParams(t *testing.T) {
 			t.Parallel()
 			got := d.MapCreateRouteParams(tt.input)
 
-			if tt.wantAutoID {
-				if got.RouteID.IsZero() {
-					t.Fatal("expected non-zero RouteID to be generated")
-				}
-			} else {
-				if got.RouteID != tt.wantID {
-					t.Errorf("RouteID = %v, want %v", got.RouteID, tt.wantID)
-				}
+			if got.RouteID.IsZero() {
+				t.Fatal("expected non-zero RouteID to be generated")
 			}
 
 			// PostgreSQL uses int32 for Status
@@ -688,7 +646,6 @@ func TestCrossDatabaseMapCreateRouteParams_AutoIDGeneration(t *testing.T) {
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
 
 	input := CreateRouteParams{
-		RouteID:      "", // zero
 		Slug:         types.Slug("cross-create"),
 		Title:        "Cross Create",
 		Status:       1,
@@ -734,7 +691,6 @@ func TestNewRouteCmd_AllAccessors(t *testing.T) {
 		IP:        "10.0.0.1",
 	}
 	params := CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("cmd-test"),
 		Title:        "Cmd Test",
 		Status:       1,
@@ -783,22 +739,19 @@ func TestNewRouteCmd_GetID_ExtractsFromRow(t *testing.T) {
 
 func TestNewRouteCmd_ExecuteAutoIDGeneration(t *testing.T) {
 	t.Parallel()
-	// Verify that Execute generates an ID when params.RouteID is zero.
-	// We cannot call Execute without a real DB, but we can verify the cmd's
-	// params field carries the right data through the constructor.
+	// Verify that the cmd stores params correctly through the constructor.
+	// ID generation always happens inside Execute, not in params.
 	params := CreateRouteParams{
-		RouteID: "", // zero
-		Slug:    types.Slug("exec-auto"),
+		Slug: types.Slug("exec-auto"),
 	}
 	cmd := Database{}.NewRouteCmd(context.Background(), audited.AuditContext{}, params)
 
-	// The ID generation happens inside Execute, so we verify the params are stored
 	p, ok := cmd.Params().(CreateRouteParams)
 	if !ok {
 		t.Fatalf("Params() returned %T, want CreateRouteParams", cmd.Params())
 	}
-	if !p.RouteID.IsZero() {
-		t.Error("expected params RouteID to remain zero (generation happens in Execute)")
+	if p.Slug != types.Slug("exec-auto") {
+		t.Errorf("Params().Slug = %q, want %q", p.Slug, "exec-auto")
 	}
 }
 
@@ -884,7 +837,6 @@ func TestNewRouteCmdMysql_AllAccessors(t *testing.T) {
 		IP:        "192.168.1.1",
 	}
 	params := CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("mysql-cmd"),
 		Title:        "MySQL Cmd",
 		Status:       1,
@@ -1011,7 +963,6 @@ func TestNewRouteCmdPsql_AllAccessors(t *testing.T) {
 		IP:        "172.16.0.1",
 	}
 	params := CreateRouteParams{
-		RouteID:      types.NewRouteID(),
 		Slug:         types.Slug("psql-cmd"),
 		Title:        "Psql Cmd",
 		Status:       1,

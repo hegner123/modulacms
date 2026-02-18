@@ -5,7 +5,7 @@
  * @module types/routing
  */
 
-import type { RouteID, Slug, UserID } from './common.js'
+import type { Slug, UserID } from './common.js'
 
 // Re-export shared entity type
 export type { Route } from '@modulacms/types'
@@ -16,8 +16,6 @@ export type { Route } from '@modulacms/types'
 
 /** Parameters for creating a new public route via `POST /routes`. */
 export type CreateRouteParams = {
-  /** Unique identifier to assign (client-generated). */
-  route_id: RouteID
   /** URL-safe slug. */
   slug: Slug
   /** Human-readable title. */

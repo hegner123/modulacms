@@ -163,6 +163,10 @@ export type {
   ContentTreeNode,
   AdminTreeResponse,
   TreeFormat,
+  NodeDatatype,
+  NodeField,
+  ContentNode,
+  ContentTree,
 } from './types/tree.js'
 export type {
   PluginListItem,
