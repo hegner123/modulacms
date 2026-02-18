@@ -1,300 +1,606 @@
 # ModulaCMS
 
-[![CI/CD](https://github.com/hegner123/modulacms/actions/workflows/go.yml/badge.svg)](https://github.com/hegner123/modulacms/actions/workflows/go.yml)
-
-A headless CMS written in Go that serves content over HTTP/HTTPS and provides SSH access for backend management.
-
-## Overview
-
-ModulaCMS decouples the admin panel from the CMS backend, allowing agencies to build custom admin interfaces while using a fast, flexible backend. It runs as a single binary with concurrent HTTP, HTTPS, and SSH servers.
+A headless CMS written in Go that ships as a single binary with three concurrent servers: HTTP, HTTPS (with Let's Encrypt autocert), and SSH (running a Bubbletea terminal UI). Content is managed through the SSH TUI or REST API and delivered to frontend clients over HTTP/HTTPS in multiple output formats.
 
 ## Features
 
-- **Single Binary Deployment** - HTTP, HTTPS, and SSH servers in one executable
-- **Multi-Database Support** - SQLite, MySQL, and PostgreSQL
-- **Tree-Based Content** - Sibling-pointer tree structure with O(1) operations
-- **SSH Terminal UI** - Full TUI for developer/ops management via SSH
-- **S3-Compatible Storage** - Media upload and optimization with any S3-compatible provider
-- **Let's Encrypt Integration** - Automatic SSL certificate management
-- **OAuth Authentication** - Configurable OAuth provider support
-- **Dynamic Content Schema** - Define datatypes and fields without code changes
-- **Lua Plugin System** - Extend functionality with Lua scripts
-- **CMS Migration** - Import from Contentful, Sanity, Strapi, WordPress
-- **Backup/Restore** - Built-in backup system with S3 storage option
+- **Single Binary** -- one compiled artifact runs everything: API server, admin TUI, and background services
+- **Three Servers** -- HTTP, HTTPS (autocert), and SSH run concurrently with graceful shutdown
+- **Terminal UI** -- full content management via SSH using Charmbracelet Bubbletea (Elm Architecture)
+- **Tri-Database** -- SQLite, MySQL, and PostgreSQL supported interchangeably via a single `DbDriver` interface
+- **Multi-Format Delivery** -- content responses can mimic Contentful, Sanity, Strapi, WordPress, or use a clean/raw format
+- **RBAC** -- role-based access control with 47 granular permissions, three bootstrap roles, and an in-memory permission cache
+- **Lua Plugins** -- sandboxed gopher-lua VMs with database access, content lifecycle hooks, custom HTTP routes, and hot-reload
+- **Typed IDs** -- 26-character ULIDs wrapped in distinct Go types for compile-time safety across all entities
+- **Audit Trail** -- every mutation atomically records old/new JSON values, user, IP, and timestamps in `change_events`
+- **Media Pipeline** -- S3-compatible storage with image optimization, WebP conversion, responsive dimension presets, and focal points
+- **OAuth** -- pluggable OAuth providers (Google, GitHub, Azure) alongside password authentication
+- **Import** -- bulk data import from Contentful, Sanity, Strapi, WordPress, or ModulaCMS clean format
+- **Backup/Restore** -- ZIP archives containing SQL dumps plus media, stored locally or in S3
+- **SDKs** -- official TypeScript, Go, and Swift SDKs with zero external dependencies
 
 ## Requirements
 
-- Go 1.24+
-- CGO enabled (required for SQLite driver)
-- [just](https://github.com/casey/just) command runner
-- Linux or macOS (Windows is not currently supported)
-- For production: MySQL or PostgreSQL recommended
-- For SDK development: Node.js 22+, pnpm 9+
+- Go 1.24+ with CGO enabled (for SQLite via `mattn/go-sqlite3`)
+- Linux or macOS
+- [just](https://github.com/casey/just) as the build runner
 
 ## Quick Start
 
-### Installation
-
 ```bash
-# Clone the repository
-git clone https://github.com/hegner123/modulacms.git
-cd modulacms
+# Build and run (auto-creates config.json with defaults on first run)
+just run
 
-# Build for development
+# Or build a local binary
 just dev
+./modulacms-x86 serve
 
-# Run the installation wizard
-./modulacms-x86 --install
+# Interactive setup wizard
+./modulacms serve --wizard
 ```
 
-### Running
+On first run without a `config.json`, ModulaCMS generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
+
+**Default Ports:**
+
+| Server | Port |
+|--------|------|
+| HTTP   | 8080 |
+| HTTPS  | 8443 |
+| SSH    | 2222 |
+
+Connect to the TUI: `ssh localhost -p 2222`
+
+## Build & Development
 
 ```bash
-# Start all servers (HTTP, HTTPS, SSH)
-./modulacms-x86
-
-# Start TUI in CLI mode (local, no SSH)
-./modulacms-x86 --cli
-
-# Show version
-./modulacms-x86 --version
-
-# Check for updates
-./modulacms-x86 --update
-
-# Generate self-signed SSL certificates for local development
-./modulacms-x86 --gen-certs
-
-# Use custom config file
-./modulacms-x86 --config=/path/to/config.json
+just dev              # Build local binary with version info via ldflags
+just run              # Build and run
+just build            # Production binary to out/bin/
+just check            # Compile-check without producing artifacts
+just clean            # Remove build artifacts
+just vendor           # Update vendor directory
 ```
 
-### Connecting via SSH
+## Testing
 
 ```bash
-ssh -p 2222 user@localhost
+just test             # Run all tests (creates/cleans testdb/ and backups/)
+just coverage         # Tests with coverage report
+just lint             # Run all linters (Go, Dockerfile, YAML)
+
+# Single package or test
+go test -v ./internal/db
+go test -v ./internal/db -run TestSpecificName
+
+# S3 integration tests (requires MinIO)
+just test-minio       # Start MinIO container
+just test-integration # Run integration tests
+just test-minio-down  # Stop MinIO
 ```
 
-## Configuration
+## Docker
 
-ModulaCMS uses a JSON configuration file. Create `config.json` in the project root:
-
-```json
-{
-  "port": ":8080",
-  "ssl_port": ":8443",
-  "ssh_port": "2222",
-  "ssh_host": "0.0.0.0",
-  "environment": "local",
-  "client_site": "localhost",
-  "admin_site": "admin.localhost",
-  "db_driver": "sqlite",
-  "db_url": "modula.db",
-  "cert_dir": "./certs",
-  "bucket_endpoint": "s3.amazonaws.com",
-  "bucket_media": "media-bucket",
-  "bucket_backup": "backup-bucket",
-  "bucket_access_key": "",
-  "bucket_secret_key": "",
-  "oauth_provider_name": "google",
-  "oauth_client_id": "",
-  "oauth_client_secret": "",
-  "oauth_redirect_url": "http://localhost:8080/api/v1/auth/oauth",
-  "oauth_scopes": ["profile", "email"],
-  "oauth_endpoint": {
-    "oauth_auth_url": "https://accounts.google.com/o/oauth2/auth",
-    "oauth_token_url": "https://oauth2.googleapis.com/token"
-  },
-  "cors_origins": ["http://localhost:3000"],
-  "cors_methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  "cors_headers": ["Content-Type", "Authorization"],
-  "cors_credentials": true
-}
+```bash
+just docker-up        # Full stack (CMS + all databases + MinIO)
+just docker-dev       # Rebuild and restart CMS container only
+just docker-infra     # Infrastructure only (Postgres, MySQL, MinIO)
+just docker-down      # Stop containers, keep volumes
+just docker-reset     # Stop containers and delete volumes
 ```
 
-### Database Drivers
+Per-database stacks:
 
-| Driver | `db_driver` | `db_url` Example |
-|--------|-------------|------------------|
-| SQLite | `sqlite` | `./modula.db` |
-| MySQL | `mysql` | `user:pass@tcp(localhost:3306)/dbname` |
-| PostgreSQL | `psql` | `postgres://user:pass@localhost:5432/dbname?sslmode=disable` |
+```bash
+just docker-sqlite-up   / just docker-sqlite-down   / just docker-sqlite-reset
+just docker-mysql-up    / just docker-mysql-down     / just docker-mysql-reset
+just docker-postgres-up / just docker-postgres-down  / just docker-postgres-reset
+```
+
+The Docker image exposes ports 8080 (HTTP), 4000 (HTTPS), and 2233 (SSH), with volumes for `/app/data`, `/app/certs`, `/app/.ssh`, `/app/backups`, and `/app/plugins`.
+
+## Architecture
+
+### Runtime
+
+The `serve` command starts three concurrent servers sharing a single `DbDriver` instance:
+
+```
+HTTP  (default :8080)  ─┐
+HTTPS (default :8443)  ─┤── stdlib ServeMux (Go 1.22+) ── Middleware Chain ── Handlers ── DbDriver
+SSH   (default :2222)  ─┘   Charmbracelet Wish ── Bubbletea TUI ─────────────────────────── DbDriver
+```
+
+Graceful shutdown: first SIGINT/SIGTERM triggers a 30-second shutdown; second signal forces exit. Shutdown order: HTTP servers, plugin system, database connections.
+
+### Request Flow
+
+```
+Client Request
+  -> Request ID
+  -> Logging
+  -> CORS
+  -> Authentication (cookie session or Bearer API key)
+  -> Rate Limiting (auth endpoints: 10 req/min per IP)
+  -> Permission Injection (RBAC)
+  -> Route Handler
+  -> DbDriver Interface
+  -> Database-specific wrapper (SQLite / MySQL / PostgreSQL)
+  -> sqlc-generated queries
+```
+
+### Tri-Database Pattern
+
+One codebase supports three databases through a layered abstraction:
+
+1. **SQL schemas** in `sql/schema/` define tables and queries per dialect (SQLite, MySQL, PostgreSQL)
+2. **sqlc** generates type-safe Go code into `internal/db-sqlite/`, `internal/db-mysql/`, `internal/db-psql/`
+3. **`DbDriver` interface** (~150 methods in `internal/db/db.go`) provides the contract
+4. **Wrapper structs** (`Database`, `MysqlDatabase`, `PsqlDatabase`) implement the interface, converting between sqlc types and application types
+
+Switch databases by setting `db_driver` in `config.json` to `"sqlite"`, `"mysql"`, or `"postgres"`.
+
+### Content Model
+
+Content uses a tree structure with sibling pointers for O(1) navigation and reordering:
+
+- `parent_id` -- parent node
+- `first_child_id` -- leftmost child
+- `next_sibling_id` / `prev_sibling_id` -- doubly-linked sibling list
+
+Content items have a status lifecycle: **draft** -> **pending** -> **published** -> **archived**.
+
+### Data Model
+
+27 schema directories define the full entity model:
+
+| Entity Group | Tables |
+|-------------|--------|
+| **Content** | content_data, content_fields, content_relations, admin variants |
+| **Schema** | datatypes, fields, datatype_fields, admin variants |
+| **Media** | media, media_dimensions |
+| **Routing** | routes, admin_routes |
+| **Users & Auth** | users, roles, permissions, role_permissions, tokens, user_oauth, sessions, user_ssh_keys |
+| **System** | backups, change_events, tables |
+
+All entity IDs are 26-character ULIDs wrapped in distinct Go types (`ContentID`, `UserID`, `FieldID`, etc.) that provide compile-time type safety.
+
+### RBAC Authorization
+
+Role-based access control with `resource:operation` granular permissions:
+
+| Role | Permissions | Description |
+|------|-------------|-------------|
+| **admin** | 47 (all) | Bypasses all permission checks |
+| **editor** | 28 | CRUD on content, media, routes, datatypes, fields |
+| **viewer** | 3 | Read-only: content, media, routes |
+
+The `PermissionCache` maintains an in-memory role-to-permissions map with lock-free reads and 60-second periodic refresh. System-protected roles and permissions cannot be deleted or renamed.
+
+### Audited Commands
+
+All database mutations are wrapped in transactions that atomically record `change_events` rows capturing:
+- Operation type (INSERT, UPDATE, DELETE)
+- Old and new JSON values
+- User ID, request ID, IP address
+- Hybrid Logical Clock timestamps for distributed ordering
 
 ## API
 
-ModulaCMS provides a RESTful API at `/api/v1`.
+All admin endpoints are prefixed with `/api/v1/` and follow standard REST conventions. Public content delivery uses slug-based routing.
 
 ### Authentication
 
 ```
-POST /api/v1/auth/register  - Register new user
-POST /api/v1/auth/reset     - Reset password
-GET  /api/v1/auth/oauth     - OAuth callback
+POST   /api/v1/auth/login          # Session login
+POST   /api/v1/auth/logout         # Session logout
+GET    /api/v1/auth/me             # Current user profile
+POST   /api/v1/auth/register       # Registration
+POST   /api/v1/auth/reset          # Password reset
+GET    /api/v1/auth/oauth/login    # OAuth flow initiation
+GET    /api/v1/auth/oauth/callback # OAuth callback
 ```
 
 ### Content Management
 
 ```
-GET    /api/v1/admincontentdatas     - List content
-POST   /api/v1/admincontentdatas     - Create content
-GET    /api/v1/admincontentdatas/?q= - Get content by ID
-PUT    /api/v1/admincontentdatas/?q= - Update content
-DELETE /api/v1/admincontentdatas/?q= - Delete content
+GET|POST          /api/v1/contentdata            # List / Create
+GET|PUT|DELETE    /api/v1/contentdata/{id}        # Get / Update / Delete
+POST              /api/v1/content/batch           # Batch operations
+
+GET|POST          /api/v1/contentfields           # Content field values
+GET|POST          /api/v1/contentrelations        # Content relationships
 ```
 
-### Schema Management
+Admin content mirrors exist at `/api/v1/admincontentdatas` and `/api/v1/admincontentfields` for draft management.
+
+### Schema
 
 ```
-GET/POST   /api/v1/datatypes   - Manage content types
-GET/POST   /api/v1/fields      - Manage fields
+GET|POST          /api/v1/datatype               # Datatypes
+GET|POST          /api/v1/fields                 # Field definitions
+GET|POST          /api/v1/datatypefields         # Datatype-field associations
+GET|POST          /api/v1/tables                 # Custom tables
 ```
 
 ### Media
 
 ```
-POST /api/v1/upload  - Upload media files
+GET               /api/v1/media                  # List (paginated)
+POST              /api/v1/media                  # Upload (multipart/form-data)
+DELETE            /api/v1/media/{id}             # Delete
+GET               /api/v1/media/health           # S3 connectivity check
+DELETE            /api/v1/media/cleanup          # Remove orphaned S3 objects
+GET|POST          /api/v1/mediadimensions        # Dimension presets
 ```
 
-See [API Documentation](ai/api/API_CONTRACT.md) for complete reference.
+### Routes & Content Delivery
 
-## Development
+```
+GET|POST          /api/v1/routes                 # Route management
+GET               /{slug}                        # Public content delivery (format via query param)
+GET               /api/v1/admin/tree/            # Admin content tree
+```
 
-ModulaCMS uses [just](https://github.com/casey/just) as its command runner. Run `just` to see all available recipes.
+The `format` query parameter controls response structure: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, or `raw`.
 
-### Build Commands
+### Users & Access Control
+
+```
+GET|POST          /api/v1/users                  # User management
+GET|POST          /api/v1/roles                  # Roles
+GET|POST          /api/v1/permissions            # Permissions
+GET|POST          /api/v1/role-permissions       # Role-permission mappings
+GET|POST|DELETE   /api/v1/ssh-keys               # SSH key management
+GET|POST|DELETE   /api/v1/sessions               # Session management
+GET|POST|DELETE   /api/v1/tokens                 # API token management
+```
+
+### Import
+
+```
+POST   /api/v1/import/contentful   # Import from Contentful
+POST   /api/v1/import/sanity       # Import from Sanity
+POST   /api/v1/import/strapi       # Import from Strapi
+POST   /api/v1/import/wordpress    # Import from WordPress
+POST   /api/v1/import/clean        # Import ModulaCMS format
+POST   /api/v1/import              # Bulk import
+```
+
+### Configuration & Plugins
+
+```
+GET               /api/v1/admin/config           # Get config (redacted)
+PATCH             /api/v1/admin/config           # Update config
+GET               /api/v1/admin/config/meta      # Config field metadata
+GET               /api/v1/admin/plugins          # List plugins
+GET               /api/v1/admin/plugins/routes   # Plugin route approval
+GET               /api/v1/admin/plugins/hooks    # Plugin hook approval
+```
+
+## Terminal UI
+
+The SSH-accessible TUI is built with Charmbracelet Bubbletea following the Elm Architecture (Model-Update-View). It provides 26+ screens for managing all CMS operations:
+
+- **Content** -- browse, create, edit content with tree navigation
+- **Datatypes & Fields** -- define and manage content schemas
+- **Media** -- upload and manage media assets with file picker
+- **Users** -- user management with role assignment
+- **Routes** -- URL slug configuration
+- **Plugins** -- browse, enable, disable, reload Lua plugins
+- **Configuration** -- edit server configuration
+- **Quick Start** -- guided setup wizard
+
+The TUI uses a focus system (page, table, form, dialog) for keyboard input routing, custom form dialogs for data entry, and async commands for database operations.
+
+## Lua Plugin System
+
+Plugins extend ModulaCMS with sandboxed Lua scripts via gopher-lua.
+
+### Plugin Structure
+
+```
+plugins/my-plugin/
+  init.lua          # Entry point with plugin_info table
+```
+
+### Capabilities
+
+- **Database** -- query builder with safe identifier validation, isolated per-plugin tables
+- **Content Hooks** -- before/after hooks on create, update, delete, publish, archive
+- **HTTP Routes** -- register custom endpoints with approval workflow
+- **Logging** -- structured logging integrated with CMS slog
+- **Schema** -- define custom tables with drift detection
+
+### Safety
+
+- Operation counting per VM checkout (default 1000 ops)
+- Per-hook timeout (default 2000ms) and per-event timeout (default 5000ms)
+- Circuit breaker: max consecutive failures trips the plugin
+- Connection pool limits and request/response size limits
+- Plugins cannot access core CMS tables or other plugins' tables
+- Hot-reload with file watcher (opt-in for production)
+
+### CLI
 
 ```bash
-just dev        # Build local binary (./modulacms-x86) with version info
-just build      # Build production binary to out/bin/
-just run        # Build and run
-just check      # Compile-check without producing artifacts
-just clean      # Remove build artifacts
+./modulacms plugin list               # List plugins
+./modulacms plugin init my-plugin     # Create scaffold
+./modulacms plugin validate ./path    # Validate structure
+./modulacms plugin reload my-plugin   # Hot-reload (requires running server)
+./modulacms plugin enable my-plugin   # Enable
+./modulacms plugin disable my-plugin  # Disable
 ```
 
-### Testing
+## Configuration
+
+Configuration lives in `config.json` at the project root. Environment variables can be referenced as `${VAR}` or `${VAR:-default}`.
+
+Key configuration categories:
+
+| Category | Fields |
+|----------|--------|
+| **Database** | `db_driver`, `db_url`, `db_name`, `db_user`, `db_password` |
+| **Server** | `port`, `ssl_port`, `ssh_port`, `environment`, `cert_dir` |
+| **Auth** | `auth_salt`, `cookie_*`, `oauth_*` |
+| **S3 Storage** | `bucket_endpoint`, `bucket_media`, `bucket_backup`, `bucket_access_key`, `bucket_secret_key` |
+| **Email** | `email_enabled`, `email_provider` (smtp/sendgrid/ses/postmark), `email_from_*` |
+| **CORS** | `cors_origins`, `cors_methods`, `cors_headers`, `cors_credentials` |
+| **Output** | `output_format` (contentful/sanity/strapi/wordpress/clean/raw) |
+| **Plugins** | `plugin_enabled`, `plugin_directory`, `plugin_max_vms`, `plugin_timeout`, `plugin_hot_reload` |
+| **Observability** | `observability_enabled`, `observability_provider` (sentry/datadog/newrelic), `observability_dsn` |
+
+Runtime configuration can be updated via the REST API (`PATCH /api/v1/admin/config`) with hot-reload support for applicable fields.
+
+## SQL Code Generation
 
 ```bash
-just test              # Run all Go tests
-just coverage          # Run tests with coverage report
-just test-integration  # S3 integration tests (requires MinIO: just test-minio first)
+just sqlc    # Regenerate Go code from SQL queries
 ```
 
-### Database
+This runs `sqlc generate` against `sql/sqlc.yml`, producing type-safe Go code in three packages:
+- `internal/db-sqlite/` (package `mdb`)
+- `internal/db-mysql/` (package `mdbm`)
+- `internal/db-psql/` (package `mdbp`)
+
+Never edit files in these directories by hand -- they are overwritten by sqlc. After modifying schema or queries, run `just sqlc`, then update the `DbDriver` interface and implement methods on all three wrapper structs.
+
+## SDKs
+
+ModulaCMS provides official SDKs for TypeScript, Go, and Swift. All SDKs have zero external dependencies beyond their respective standard libraries.
+
+### TypeScript
+
+The `sdks/typescript/` directory is a pnpm workspace monorepo with three packages:
+
+| Package | npm | Purpose |
+|---------|-----|---------|
+| `types/` | `@modulacms/types` | Shared entity types, 30 branded IDs, enums |
+| `modulacms-sdk/` | `@modulacms/sdk` | Read-only content delivery client |
+| `modulacms-admin-sdk/` | `@modulacms/admin-sdk` | Full admin CRUD client |
+
+**Requirements:** TypeScript 5.7+, Node 18+ (Fetch API), pnpm 9+
+
+**Install:**
+```bash
+npm install @modulacms/sdk             # Content delivery
+npm install @modulacms/admin-sdk       # Admin operations
+```
+
+**Content Delivery:**
+```typescript
+import { ModulaClient } from "@modulacms/sdk"
+
+const cms = new ModulaClient({
+  baseUrl: "https://cms.example.com",
+  defaultFormat: "clean",
+})
+
+const page = await cms.getPage("blog/hello-world")
+const media = await cms.listMedia()
+```
+
+**Admin SDK:**
+```typescript
+import { createAdminClient } from "@modulacms/admin-sdk"
+
+const client = createAdminClient({
+  baseUrl: "https://cms.example.com",
+  apiKey: "your-api-key",
+})
+
+await client.auth.login({ email: "admin@example.com", password: "pass" })
+const users = await client.users.list()
+const content = await client.contentData.create({ status: "draft", ... })
+await client.mediaUpload.upload(file)
+```
+
+Both SDKs ship as dual ESM + CommonJS builds via tsup with full type declarations.
 
 ```bash
-just sqlc      # Generate Go code from SQL queries
-just dump      # Dump SQLite database to SQL file
+just sdk-install      # pnpm install (workspace root)
+just sdk-build        # Build all packages
+just sdk-test         # Run all SDK tests (Vitest)
+just sdk-typecheck    # Typecheck all packages
 ```
 
-### Code Quality
+### Go
+
+The Go SDK provides a type-safe client with a generic `Resource[Entity, CreateParams, UpdateParams, ID]` pattern for CRUD operations.
+
+**Import:** `github.com/hegner123/modulacms/sdks/go`
+
+```go
+import modulacms "github.com/hegner123/modulacms/sdks/go"
+
+client, err := modulacms.NewClient(modulacms.ClientConfig{
+    BaseURL: "https://cms.example.com",
+    APIKey:  "your-api-key",
+})
+
+// Authentication
+me, err := client.Auth.Me(ctx)
+
+// CRUD with typed IDs and pagination
+users, err := client.Users.ListPaginated(ctx, modulacms.PaginationParams{Limit: 20, Offset: 0})
+content, err := client.ContentData.Create(ctx, modulacms.CreateContentDataParams{...})
+
+// Media upload
+media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modulacms.MediaUploadOptions{
+    Path: "blog/headers",
+})
+
+// Content delivery
+page, err := client.Content.GetPage(ctx, "blog/hello-world", "clean")
+
+// Error classification
+if modulacms.IsNotFound(err) { ... }
+if modulacms.IsUnauthorized(err) { ... }
+```
+
+The SDK exposes 23+ typed resource endpoints including content, schema, media, users, roles, permissions, plugins, configuration, sessions, SSH keys, and bulk import.
 
 ```bash
-just lint      # Run all linters (go, dockerfile, yaml)
-just lint-go   # Lint Go code via Docker
-just vendor    # Update vendor directory
+just sdk-go-test      # Run Go SDK tests
+just sdk-go-vet       # Vet Go SDK
 ```
 
-### TypeScript SDKs
+### Swift
 
-The `sdks/typescript/` directory contains a pnpm workspace with three packages:
+The Swift SDK is a zero-dependency Swift Package Manager package supporting Apple platforms.
 
-| Package | Description |
-|---------|-------------|
-| `@modulacms/types` | Shared entity types, branded IDs, enums |
-| `@modulacms/sdk` | Read-only content delivery SDK |
-| `@modulacms/admin-sdk` | Full admin CRUD SDK |
+**Platforms:** iOS 16+, macOS 13+, tvOS 16+, watchOS 9+
+**Swift:** 5.9+
+
+```swift
+import ModulaCMS
+
+let client = try ModulaCMSClient(config: ClientConfig(
+    baseURL: "https://cms.example.com",
+    apiKey: "your-api-key"
+))
+
+// Authentication
+let login = try await client.auth.login(params: LoginParams(
+    email: "admin@example.com",
+    password: "pass"
+))
+
+// CRUD with branded IDs
+let users = try await client.users.listPaginated(params: PaginationParams(limit: 20, offset: 0))
+let content = try await client.contentData.create(params: CreateContentDataParams(...))
+
+// Media upload
+let media = try await client.mediaUpload.upload(
+    data: imageData,
+    filename: "photo.jpg",
+    options: MediaUploadResource.UploadOptions(path: "photos")
+)
+
+// Content delivery
+let page = try await client.content.getPage(slug: "blog/hello-world", format: "clean")
+
+// Error handling
+do {
+    let user = try await client.users.get(id: userID)
+} catch let error as APIError where isNotFound(error) {
+    print("User not found")
+}
+```
+
+The SDK uses async/await throughout, marks all types as `Sendable` for actor isolation, and provides 30 branded ID types via a `ResourceID` protocol. It covers 26 CRUD resources plus 13 specialized endpoints (auth, media upload, admin tree, plugins, config, etc.).
 
 ```bash
-just sdk-install    # Install dependencies (pnpm)
-just sdk-build      # Build all packages
-just sdk-test       # Run all SDK tests (Vitest)
-just sdk-typecheck  # Typecheck all packages
-just sdk-clean      # Clean build artifacts
+just sdk-swift-build  # Build Swift SDK
+just sdk-swift-test   # Run Swift SDK tests
+just sdk-swift-clean  # Clean build artifacts
 ```
 
-## Architecture
+## Backup & Restore
+
+```bash
+./modulacms backup create              # Create full backup (ZIP with SQL dump + metadata)
+./modulacms backup restore backup.zip  # Restore from backup
+./modulacms backup list                # List backup history
+./modulacms backup delete {id}         # Delete backup record
+```
+
+Backups are ZIP archives containing a database-specific SQL dump and a JSON manifest with driver, timestamp, version, and node ID. Storage is local (`backups/` directory) or S3.
+
+## CLI Commands
 
 ```
-cmd/                     - Cobra CLI commands (serve, install, tui, etc.)
+modulacms [--config=path] [--verbose] <command>
+
+  serve              Start HTTP/HTTPS/SSH servers
+  serve --wizard     Interactive setup before starting
+  install            Interactive installation wizard
+  install --yes      Non-interactive with defaults
+  tui                Launch terminal UI standalone
+  db init            Initialize database and bootstrap data
+  db wipe            Drop all tables
+  backup create      Create full backup
+  backup restore     Restore from backup
+  backup list        List backup history
+  config show        Print config as JSON
+  config validate    Validate config.json
+  config set         Update config field
+  cert generate      Generate self-signed certificates
+  cert check         Verify certificate validity
+  update check       Check for updates
+  update install     Install new version
+  plugin list        List plugins
+  plugin init        Create plugin scaffold
+  plugin validate    Validate plugin structure
+  plugin reload      Hot-reload plugin
+  plugin enable      Enable plugin
+  plugin disable     Disable plugin
+  version            Show version info
+```
+
+## CI/CD
+
+Two GitHub Actions workflows:
+
+- **Go** (`.github/workflows/go.yml`) -- runs on Go source changes (excludes `sdks/**`), tests with libwebp-dev on Ubuntu
+- **SDKs** (`.github/workflows/sdks.yml`) -- runs on SDK changes, tests TypeScript (pnpm + Vitest), Go SDK, and Swift SDK (SPM build + test)
+
+## Project Structure
+
+```
+cmd/                          Cobra CLI commands (serve, install, tui, db, backup, config, cert, plugin, version)
 internal/
-├── cli/                 - TUI implementation (Bubbletea)
-├── router/              - REST API handlers (stdlib ServeMux)
-├── db/                  - Database interface (DbDriver, wrapper structs)
-├── db/types/            - ULID-based typed IDs, enums, field configs
-├── db/audited/          - Audited command pattern for change events
-├── db-sqlite/           - SQLite driver (sqlc-generated, do not edit)
-├── db-mysql/            - MySQL driver (sqlc-generated, do not edit)
-├── db-psql/             - PostgreSQL driver (sqlc-generated, do not edit)
-├── model/               - Domain structs (Root, Node, Datatype, Field)
-├── auth/                - OAuth authentication (Google/GitHub/Azure)
-├── backup/              - Backup/restore (SQL dump + media, local or S3)
-├── bucket/              - S3 storage integration
-├── config/              - Configuration management
-├── media/               - Image optimization, preset dimensions, S3 upload
-├── middleware/           - CORS, rate limiting, sessions, audit logging
-├── plugin/              - Lua plugin system (gopher-lua)
-└── utility/             - Logging (slog), version info, helpers
+  auth/                       Authentication (bcrypt, OAuth, sessions)
+  backup/                     Backup/restore (SQL dump + ZIP)
+  cli/                        Bubbletea TUI (40+ files, Elm Architecture)
+  config/                     Configuration loading, validation, hot-reload
+  db/                         DbDriver interface, wrapper structs, application types
+  db/types/                   ULID-based typed IDs, enums, nullable wrappers
+  db/audited/                 Audited command pattern for change events
+  db-sqlite/, db-mysql/, db-psql/  sqlc-generated code (do not edit)
+  definitions/                CMS format definitions (Contentful, Sanity, Strapi, WordPress)
+  install/                    Setup wizard and bootstrap
+  media/                      Image optimization, S3 upload
+  middleware/                  CORS, rate limiting, sessions, RBAC authorization
+  model/                      Domain structs (Node, Datatype, Field)
+  plugin/                     Lua plugin system (gopher-lua)
+  router/                     HTTP route registration, slug handling, pagination
+  transform/                  Content format transformers
+  utility/                    Logging (slog), version info, helpers
 sql/
-└── schema/              - Numbered schema directories (DDL + sqlc queries)
+  schema/                     27 numbered schema directories (DDL + queries per dialect)
+  sqlc.yml                    sqlc configuration
 sdks/
-└── typescript/          - pnpm workspace (Node 22+, pnpm 9+)
-    ├── types/           - @modulacms/types (shared entity types, branded IDs)
-    ├── modulacms-sdk/   - @modulacms/sdk (read-only content delivery)
-    └── modulacms-admin-sdk/ - @modulacms/admin-sdk (full admin CRUD)
+  typescript/
+    types/                    @modulacms/types (shared types, branded IDs, enums)
+    modulacms-sdk/            @modulacms/sdk (read-only content delivery)
+    modulacms-admin-sdk/      @modulacms/admin-sdk (full admin CRUD)
+  go/                         Go SDK (generic Resource[E,C,U,ID] pattern)
+  swift/                      Swift SDK (SPM, zero dependencies, async/await)
+deploy/
+  docker/                     Docker Compose files per database
 ```
-
-### Key Technologies
-
-- **Build Runner**: [just](https://github.com/casey/just)
-- **TUI Framework**: [Charmbracelet Bubbletea](https://github.com/charmbracelet/bubbletea) (Elm Architecture)
-- **SSH Server**: [Charmbracelet Wish](https://github.com/charmbracelet/wish)
-- **Forms**: [Charmbracelet Huh](https://github.com/charmbracelet/huh)
-- **Styling**: [Charmbracelet Lipgloss](https://github.com/charmbracelet/lipgloss)
-- **Database**: [sqlc](https://sqlc.dev/) for type-safe SQL
-- **Plugins**: [gopher-lua](https://github.com/yuin/gopher-lua)
-- **SDK Build**: [tsup](https://tsup.egoist.dev/) (dual ESM+CJS), [Vitest](https://vitest.dev/) for tests
-- **SDK Workspace**: [pnpm](https://pnpm.io/) workspace monorepo
-
-## Documentation
-
-Additional documentation is available in the `ai/` directory:
-
-- [Architecture](ai/architecture/) - System design and patterns
-- [API Contract](ai/api/API_CONTRACT.md) - Complete REST API reference
-- [Workflows](ai/workflows/) - Development guides
-- [Packages](ai/packages/) - Internal package documentation
-- [Reference](ai/reference/) - Quick start, patterns, troubleshooting
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/name`)
-3. Make your changes
-4. Run linters (`just lint`)
-5. Commit your changes
-6. Push to the branch
-7. Open a Pull Request
-
-### Code Style
-
-- Use `go fmt` for formatting
-- Use tabs for indentation
-- Follow existing naming conventions
-- Run `just lint` before committing
 
 ## License
 
-ModulaCMS is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
-
-This means:
-- You can use, modify, and distribute this software freely
-- If you modify ModulaCMS and run it on a server, you **must** make your modified source code available
-- Any derivative works must also be licensed under AGPL-3.0
-- Copyright and license notices must be preserved
-
-See [LICENSE](LICENSE) for the full license text.
-
-## Links
-
-- [Repository](https://github.com/hegner123/modulacms)
-- [Issue Tracker](https://github.com/hegner123/modulacms/issues)
+See [LICENSE](LICENSE) for details.
