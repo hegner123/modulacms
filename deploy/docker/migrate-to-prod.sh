@@ -22,13 +22,15 @@ NEW_COMPOSE="deploy/docker/docker-compose.prod.yml"
 
 # Old volume name -> New volume name
 # Docker compose prepends the project name to volume names.
-# Old project: modula-postgres, New project: modula
+# Old project: modulacms-postgres, New project: modula
 declare -A VOLUME_MAP=(
-    ["modula-postgres_postgres_cms_data"]="modula_prod_cms_data"
-    ["modula-postgres_postgres_cms_ssh"]="modula_prod_cms_ssh"
-    ["modula-postgres_postgres_cms_backups"]="modula_prod_cms_backups"
-    ["modula-postgres_postgres_db_data"]="modula_prod_db_data"
-    ["modula-postgres_postgres_minio_data"]="modula_prod_minio_data"
+    ["modulacms-postgres_caddy_data"]="modula_prod_caddy_data"
+    ["modulacms-postgres_caddy_config"]="modula_prod_caddy_config"
+    ["modulacms-postgres_postgres_cms_data"]="modula_prod_cms_data"
+    ["modulacms-postgres_postgres_cms_ssh"]="modula_prod_cms_ssh"
+    ["modulacms-postgres_postgres_cms_backups"]="modula_prod_cms_backups"
+    ["modulacms-postgres_postgres_db_data"]="modula_prod_db_data"
+    ["modulacms-postgres_postgres_minio_data"]="modula_prod_minio_data"
 )
 
 log() { echo >&2 "[migrate] $*"; }
