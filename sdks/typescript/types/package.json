@@ -1,6 +1,6 @@
 {
   "name": "@modulacms/types",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shared TypeScript types for ModulaCMS SDKs",
   "type": "module",
   "main": "./dist/index.cjs",
