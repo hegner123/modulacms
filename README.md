@@ -33,10 +33,10 @@ just run
 
 # Or build a local binary
 just dev
-./modulacms-x86 serve
+./modula-x86 serve
 
 # Interactive setup wizard
-./modulacms serve --wizard
+./modula serve --wizard
 ```
 
 On first run without a `config.json`, ModulaCMS generates one with defaults, creates the database schema, bootstraps RBAC roles (admin, editor, viewer), and logs a random admin password. The SSH server starts immediately; HTTP/HTTPS start once the database is ready.
@@ -187,7 +187,7 @@ All database mutations are wrapped in transactions that atomically record `chang
 
 ## API
 
-All admin endpoints are prefixed with `/api/v1/` and follow standard REST conventions. Public content delivery uses slug-based routing.
+All endpoints are prefixed with `/api/v1/` and follow standard REST conventions. Content delivery uses slug-based routing at `/api/v1/content/{slug}` and requires API key authentication.
 
 ### Authentication
 
@@ -238,7 +238,7 @@ GET|POST          /api/v1/mediadimensions        # Dimension presets
 
 ```
 GET|POST          /api/v1/routes                 # Route management
-GET               /{slug}                        # Public content delivery (format via query param)
+GET               /api/v1/content/{slug}          # Content delivery (requires API key, format via query param)
 GET               /api/v1/admin/tree/            # Admin content tree
 ```
 
@@ -324,12 +324,12 @@ plugins/my-plugin/
 ### CLI
 
 ```bash
-./modulacms plugin list               # List plugins
-./modulacms plugin init my-plugin     # Create scaffold
-./modulacms plugin validate ./path    # Validate structure
-./modulacms plugin reload my-plugin   # Hot-reload (requires running server)
-./modulacms plugin enable my-plugin   # Enable
-./modulacms plugin disable my-plugin  # Disable
+./modula plugin list               # List plugins
+./modula plugin init my-plugin     # Create scaffold
+./modula plugin validate ./path    # Validate structure
+./modula plugin reload my-plugin   # Hot-reload (requires running server)
+./modula plugin enable my-plugin   # Enable
+./modula plugin disable my-plugin  # Disable
 ```
 
 ## Configuration
@@ -431,9 +431,9 @@ The Go SDK provides a type-safe client with a generic `Resource[Entity, CreatePa
 **Import:** `github.com/hegner123/modulacms/sdks/go`
 
 ```go
-import modulacms "github.com/hegner123/modulacms/sdks/go"
+import modula "github.com/hegner123/modulacms/sdks/go"
 
-client, err := modulacms.NewClient(modulacms.ClientConfig{
+client, err := modula.NewClient(modula.ClientConfig{
     BaseURL: "https://cms.example.com",
     APIKey:  "your-api-key",
 })
@@ -442,11 +442,11 @@ client, err := modulacms.NewClient(modulacms.ClientConfig{
 me, err := client.Auth.Me(ctx)
 
 // CRUD with typed IDs and pagination
-users, err := client.Users.ListPaginated(ctx, modulacms.PaginationParams{Limit: 20, Offset: 0})
-content, err := client.ContentData.Create(ctx, modulacms.CreateContentDataParams{...})
+users, err := client.Users.ListPaginated(ctx, modula.PaginationParams{Limit: 20, Offset: 0})
+content, err := client.ContentData.Create(ctx, modula.CreateContentDataParams{...})
 
 // Media upload
-media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modulacms.MediaUploadOptions{
+media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modula.MediaUploadOptions{
     Path: "blog/headers",
 })
 
@@ -454,8 +454,8 @@ media, err := client.MediaUpload.Upload(ctx, file, "photo.jpg", &modulacms.Media
 page, err := client.Content.GetPage(ctx, "blog/hello-world", "clean")
 
 // Error classification
-if modulacms.IsNotFound(err) { ... }
-if modulacms.IsUnauthorized(err) { ... }
+if modula.IsNotFound(err) { ... }
+if modula.IsUnauthorized(err) { ... }
 ```
 
 The SDK exposes 23+ typed resource endpoints including content, schema, media, users, roles, permissions, plugins, configuration, sessions, SSH keys, and bulk import.
@@ -473,9 +473,9 @@ The Swift SDK is a zero-dependency Swift Package Manager package supporting Appl
 **Swift:** 5.9+
 
 ```swift
-import ModulaCMS
+import Modula
 
-let client = try ModulaCMSClient(config: ClientConfig(
+let client = try ModulaClient(config: ClientConfig(
     baseURL: "https://cms.example.com",
     apiKey: "your-api-key"
 ))
@@ -519,10 +519,10 @@ just sdk-swift-clean  # Clean build artifacts
 ## Backup & Restore
 
 ```bash
-./modulacms backup create              # Create full backup (ZIP with SQL dump + metadata)
-./modulacms backup restore backup.zip  # Restore from backup
-./modulacms backup list                # List backup history
-./modulacms backup delete {id}         # Delete backup record
+./modula backup create              # Create full backup (ZIP with SQL dump + metadata)
+./modula backup restore backup.zip  # Restore from backup
+./modula backup list                # List backup history
+./modula backup delete {id}         # Delete backup record
 ```
 
 Backups are ZIP archives containing a database-specific SQL dump and a JSON manifest with driver, timestamp, version, and node ID. Storage is local (`backups/` directory) or S3.
@@ -530,7 +530,7 @@ Backups are ZIP archives containing a database-specific SQL dump and a JSON mani
 ## CLI Commands
 
 ```
-modulacms [--config=path] [--verbose] <command>
+modula [--config=path] [--verbose] <command>
 
   serve              Start HTTP/HTTPS/SSH servers
   serve --wizard     Interactive setup before starting
