@@ -58,6 +58,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	mux.Handle("GET /api/v1/auth/oauth/login", corsMiddleware(authLimiter.Middleware(OauthInitiateHandler(*c))))
 	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(*c))))
 
+	// Health check (PUBLIC - no auth required)
+	mux.Handle("GET /api/v1/health", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		HealthHandler(w, r, *c)
+	})))
+
 	// Admin tree
 	mux.Handle("/api/v1/admin/tree/", middleware.RequireResourcePermission("admin_tree")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminTreeHandler(w, r, *c)

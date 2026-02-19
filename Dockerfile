@@ -39,6 +39,7 @@ COPY vendor/ vendor/
 COPY go.mod go.sum ./
 
 # Layer 2: source (small, changes frequently)
+COPY admin/ admin/
 COPY cmd/ cmd/
 COPY internal/ internal/
 COPY sql/ sql/

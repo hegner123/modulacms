@@ -15,8 +15,8 @@ compose_mysql := "deploy/docker/docker-compose.mysql.yml"
 compose_postgres := "deploy/docker/docker-compose.postgres.yml"
 dealer_compose := "docker compose -p modula-dealer"
 prod_host := "deploy@api.modulacms.com"
-prod_compose := "deploy/docker/docker-compose.postgres.yml"
-prod_image := "modula-postgres-modula"
+prod_compose := "deploy/docker/docker-compose.prod.yml"
+prod_image := "modula-modula"
 
 # Show available recipes
 default:
@@ -433,6 +433,29 @@ docker-postgres-minio-reset:
 # [Docker:Postgres] Tail PostgreSQL stack CMS logs
 docker-postgres-logs:
     docker compose -f {{compose_postgres}} logs -f modula
+
+# [Docker:Prod] Start production stack (CMS + Caddy + PostgreSQL + MinIO)
+docker-prod-up:
+    DOCKER_BUILDKIT=1 docker compose -f {{prod_compose}} up -d --build
+
+# [Docker:Prod] Stop production stack, keep volumes
+docker-prod-down:
+    docker compose -f {{prod_compose}} down
+
+# [Docker:Prod] Stop production stack and delete volumes
+docker-prod-reset:
+    docker compose -f {{prod_compose}} down -v
+
+# [Docker:Prod] Rebuild and restart CMS only (keeps database intact)
+docker-prod-dev:
+    DOCKER_BUILDKIT=1 docker compose -f {{prod_compose}} up -d --build modula
+
+# [Docker:Prod] Wipe volumes and rebuild production stack from scratch
+docker-prod-fresh: docker-prod-reset docker-prod-up
+
+# [Docker:Prod] Tail production stack CMS logs
+docker-prod-logs:
+    docker compose -f {{prod_compose}} logs -f modula
 
 # [Dealer] Start dealer CMS container
 dealer-up:

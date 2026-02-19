@@ -1,5 +1,5 @@
 api.modulacms.com {
-	reverse_proxy modulacms:8080
+	reverse_proxy modula:8080
 }
 
 media.modulacms.com {

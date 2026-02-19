@@ -1,6 +1,21 @@
-name: modula-postgres
+name: modula
 
 services:
+  caddy:
+    image: caddy:2
+    container_name: modula_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - prod_caddy_data:/data
+      - prod_caddy_config:/config
+    depends_on:
+      - modula
+      - minio
+
   modula:
     build:
       context: ../..
@@ -9,20 +24,19 @@ services:
         VERSION: ${VERSION:-dev}
         COMMIT: ${COMMIT:-unknown}
         BUILD_DATE: ${BUILD_DATE:-unknown}
-    container_name: modula_cms_postgres
+    container_name: modula_cms
     restart: unless-stopped
     environment:
       - TERM=xterm-256color
       - CLICOLOR_FORCE=1
     ports:
-      - "8080:8080"
-      - "4000:4000"
       - "2233:2233"
     volumes:
-      - postgres_cms_data:/app/data
-      - postgres_cms_ssh:/app/.ssh
-      - postgres_cms_backups:/app/backups
-      - ./config.postgres.json:/app/config.json:ro
+      - prod_cms_data:/app/data
+      - prod_cms_ssh:/app/.ssh
+      - prod_cms_backups:/app/backups
+      - ./config.prod.json:/app/config.json:ro
+    entrypoint: ["/bin/sh", "-c", "/app/modula serve -v"]
     env_file:
       - .env
     depends_on:
@@ -32,19 +46,15 @@ services:
         condition: service_healthy
 
   postgres:
-    build:
-      context: .
-      dockerfile: postgres.Dockerfile
-    container_name: modula_postgres_postgres
+    image: postgres:17
+    container_name: modula_postgres
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-modula}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-modula}
       POSTGRES_DB: ${POSTGRES_DB:-modula_db}
-    ports:
-      - "5432:5432"
     volumes:
-      - postgres_db_data:/var/lib/postgresql/data
+      - prod_db_data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-modula}"]
       interval: 10s
@@ -53,17 +63,14 @@ services:
 
   minio:
     image: minio/minio:latest
-    container_name: modula_minio_postgres
+    container_name: modula_minio
     restart: unless-stopped
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-modula}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-modula_secret}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
     volumes:
-      - postgres_minio_data:/data
+      - prod_minio_data:/data
     healthcheck:
       test: ["CMD", "mc", "ready", "local"]
       interval: 10s
@@ -71,8 +78,10 @@ services:
       retries: 5
 
 volumes:
-  postgres_cms_data:
-  postgres_cms_ssh:
-  postgres_cms_backups:
-  postgres_db_data:
-  postgres_minio_data:
+  prod_caddy_data:
+  prod_caddy_config:
+  prod_cms_data:
+  prod_cms_ssh:
+  prod_cms_backups:
+  prod_db_data:
+  prod_minio_data:
