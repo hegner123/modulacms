@@ -84,6 +84,7 @@ var PublicEndpoints = []string{
 	"/api/v1/auth/me",
 	"/api/v1/auth/oauth/login",
 	"/api/v1/auth/oauth/callback",
+	"/api/v1/health",
 	"/favicon.ico",
 }
 
