@@ -1,0 +1,31 @@
+{
+  "id": "01KHSF0CX421P6BRG1BZEY922W",
+  "date": "2026-02-18T22:47:50Z",
+  "date_gmt": "2026-02-18T22:47:50Z",
+  "modified": "2026-02-18T22:47:50Z",
+  "modified_gmt": "2026-02-18T22:47:50Z",
+  "slug": "/",
+  "status": "publish",
+  "type": "page",
+  "link": "0.0.0.0/page//",
+  "title": {
+    "rendered": "ModulaCMS"
+  },
+  "content": {
+    "rendered": "",
+    "protected": false
+  },
+  "excerpt": {
+    "rendered": "",
+    "protected": false
+  },
+  "author": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+  "featured_media": 0,
+  "comment_status": "open",
+  "ping_status": "open",
+  "meta": {},
+  "acf": {
+    "metaDescription": "A headless CMS written in Go that runs as a single binary with HTTP, HTTPS, and SSH servers. Manage content via a terminal TUI or REST API.",
+    "metaTitle": "ModulaCMS - Modern Headless CMS"
+  }
+}

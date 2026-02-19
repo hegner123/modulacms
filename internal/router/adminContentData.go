@@ -149,21 +149,23 @@ func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedAdminContentData, err := d.UpdateAdminContentData(r.Context(), ac, updateAdminContentData)
+	_, err = d.UpdateAdminContentData(r.Context(), ac, updateAdminContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	err = json.NewEncoder(w).Encode(updatedAdminContentData)
+	updated, err := d.GetAdminContentData(updateAdminContentData.AdminContentDataID)
 	if err != nil {
-		utility.DefaultLogger.Error("", err)
+		utility.DefaultLogger.Error("failed to fetch updated admin content data", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 
@@ -222,4 +224,139 @@ func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, c 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 	return nil
+}
+
+// ReorderAdminContentDataRequest is the JSON body for POST /api/v1/admincontentdatas/reorder.
+type ReorderAdminContentDataRequest struct {
+	ParentID   types.NullableAdminContentID `json:"parent_id"`
+	OrderedIDs []types.AdminContentID       `json:"ordered_ids"`
+}
+
+// ReorderAdminContentDataResponse is the JSON response for POST /api/v1/admincontentdatas/reorder.
+type ReorderAdminContentDataResponse struct {
+	Updated  int                          `json:"updated"`
+	ParentID types.NullableAdminContentID `json:"parent_id"`
+}
+
+// AdminContentDataReorderHandler handles POST requests to reorder admin content data siblings.
+func AdminContentDataReorderHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	apiReorderAdminContentData(w, r, c)
+}
+
+// apiReorderAdminContentData atomically reorders sibling admin content data nodes under a parent.
+func apiReorderAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
+	var req ReorderAdminContentDataRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if len(req.OrderedIDs) == 0 {
+		http.Error(w, "ordered_ids must not be empty", http.StatusBadRequest)
+		return
+	}
+
+	// Validate each ID and reject duplicates
+	seen := make(map[string]struct{}, len(req.OrderedIDs))
+	for _, id := range req.OrderedIDs {
+		if err := id.Validate(); err != nil {
+			http.Error(w, fmt.Sprintf("invalid admin_content_data_id %s: %v", id, err), http.StatusBadRequest)
+			return
+		}
+		s := string(id)
+		if _, exists := seen[s]; exists {
+			http.Error(w, fmt.Sprintf("duplicate id: %s", id), http.StatusBadRequest)
+			return
+		}
+		seen[s] = struct{}{}
+	}
+
+	d := db.ConfigDB(c)
+
+	// Fetch all nodes and verify parent ownership
+	nodes := make([]db.AdminContentData, 0, len(req.OrderedIDs))
+	for _, id := range req.OrderedIDs {
+		node, err := d.GetAdminContentData(id)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("node not found: %s", id), http.StatusBadRequest)
+			return
+		}
+		if node.ParentID != req.ParentID {
+			http.Error(w, fmt.Sprintf("node %s does not belong to parent %s", id, req.ParentID), http.StatusBadRequest)
+			return
+		}
+		nodes = append(nodes, *node)
+	}
+
+	ctx := r.Context()
+	ac := middleware.AuditContextFromRequest(r, c)
+	now := types.TimestampNow()
+
+	// Update parent's first_child_id if parent is non-null
+	if req.ParentID.Valid {
+		parent, err := d.GetAdminContentData(types.AdminContentID(req.ParentID.ID))
+		if err != nil {
+			utility.DefaultLogger.Error("reorder: failed to fetch parent", err)
+			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", err), http.StatusInternalServerError)
+			return
+		}
+		_, err = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: parent.AdminContentDataID,
+			ParentID:           parent.ParentID,
+			FirstChildID:       types.NullableAdminContentID{ID: req.OrderedIDs[0], Valid: true},
+			NextSiblingID:      parent.NextSiblingID,
+			PrevSiblingID:      parent.PrevSiblingID,
+			AdminRouteID:       parent.AdminRouteID,
+			AdminDatatypeID:    parent.AdminDatatypeID,
+			AuthorID:           parent.AuthorID,
+			Status:             parent.Status,
+			DateCreated:        parent.DateCreated,
+			DateModified:       now,
+		})
+		if err != nil {
+			utility.DefaultLogger.Error("reorder: failed to update parent first_child_id", err)
+			http.Error(w, fmt.Sprintf("failed to update parent: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Update sibling pointers for each node
+	lastIdx := len(req.OrderedIDs) - 1
+	for i, node := range nodes {
+		var prevSibling types.NullableAdminContentID
+		var nextSibling types.NullableAdminContentID
+
+		if i > 0 {
+			prevSibling = types.NullableAdminContentID{ID: req.OrderedIDs[i-1], Valid: true}
+		}
+		if i < lastIdx {
+			nextSibling = types.NullableAdminContentID{ID: req.OrderedIDs[i+1], Valid: true}
+		}
+
+		_, err := d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: node.AdminContentDataID,
+			ParentID:           node.ParentID,
+			FirstChildID:       node.FirstChildID,
+			NextSiblingID:      nextSibling,
+			PrevSiblingID:      prevSibling,
+			AdminRouteID:       node.AdminRouteID,
+			AdminDatatypeID:    node.AdminDatatypeID,
+			AuthorID:           node.AuthorID,
+			Status:             node.Status,
+			DateCreated:        node.DateCreated,
+			DateModified:       now,
+		})
+		if err != nil {
+			utility.DefaultLogger.Error(fmt.Sprintf("reorder: failed to update node %s", node.AdminContentDataID), err)
+			http.Error(w, fmt.Sprintf("failed to update node %s: %v", node.AdminContentDataID, err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	writeJSON(w, ReorderAdminContentDataResponse{
+		Updated:  len(req.OrderedIDs),
+		ParentID: req.ParentID,
+	})
 }

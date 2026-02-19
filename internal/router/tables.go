@@ -124,16 +124,23 @@ func apiUpdateTables(w http.ResponseWriter, r *http.Request, c config.Config) er
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedTable, err := d.UpdateTable(r.Context(), ac, updateTable)
+	_, err = d.UpdateTable(r.Context(), ac, updateTable)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetTable(updateTable.ID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated table", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedTable)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

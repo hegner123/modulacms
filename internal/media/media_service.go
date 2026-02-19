@@ -117,10 +117,6 @@ func ProcessMediaUpload(
 
 	contentType := http.DetectContentType(buffer)
 
-	if contentType == "image/webp" {
-		utility.DefaultLogger.Info("WebP upload detected - WebP encoding not supported, may fail during optimization")
-	}
-
 	// Step 2: Check for duplicate
 	_, err = store.GetMediaByName(header.Filename)
 	if err == nil {

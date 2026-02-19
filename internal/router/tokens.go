@@ -99,16 +99,23 @@ func apiUpdateToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedToken, err := d.UpdateToken(r.Context(), ac, updateToken)
+	_, err = d.UpdateToken(r.Context(), ac, updateToken)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetToken(updateToken.ID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated token", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedToken)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

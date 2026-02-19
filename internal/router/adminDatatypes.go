@@ -124,16 +124,23 @@ func apiUpdateAdminDatatype(w http.ResponseWriter, r *http.Request, c config.Con
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedAdminDatatype, err := d.UpdateAdminDatatype(r.Context(), ac, updateAdminDatatype)
+	_, err = d.UpdateAdminDatatype(r.Context(), ac, updateAdminDatatype)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetAdminDatatypeById(updateAdminDatatype.AdminDatatypeID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated admin datatype", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedAdminDatatype)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

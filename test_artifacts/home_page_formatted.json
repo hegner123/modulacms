@@ -1,0 +1,869 @@
+{
+  "root": {
+    "datatype": {
+      "info": {
+        "datatype_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+        "parent_id": "null",
+        "label": "Page",
+        "type": "ROOT",
+        "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+        "date_created": "2026-02-18T22:47:02Z",
+        "date_modified": "2026-02-18T22:47:02Z"
+      },
+      "content": {
+        "content_data_id": "01KHSF0CX421P6BRG1BZEY922W",
+        "parent_id": "null",
+        "first_child_id": "",
+        "next_sibling_id": "",
+        "prev_sibling_id": "",
+        "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+        "datatype_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+        "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+        "status": "draft",
+        "date_created": "2026-02-18T22:47:50Z",
+        "date_modified": "2026-02-18T22:47:50Z"
+      }
+    },
+    "fields": [
+      {
+        "info": {
+          "field_id": "01KHSEYXTTE3B5P6WD10BJ8058",
+          "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+          "label": "Slug",
+          "data": "{}",
+          "validation": "{}",
+          "ui_config": "{}",
+          "type": "text",
+          "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+          "date_created": "2026-02-18T22:47:02Z",
+          "date_modified": "2026-02-18T23:40:21Z"
+        },
+        "content": {
+          "content_field_id": 0,
+          "route_id": 0,
+          "content_data_id": 0,
+          "field_id": 0,
+          "field_value": "/",
+          "author_id": 0,
+          "date_created": "2026-02-18T23:48:43Z",
+          "date_modified": "2026-02-18T23:48:43Z"
+        }
+      },
+      {
+        "info": {
+          "field_id": "01KHSEYXTY6W3W327MDGA1Z84B",
+          "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+          "label": "Meta Title",
+          "data": "{}",
+          "validation": "{}",
+          "ui_config": "{}",
+          "type": "text",
+          "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+          "date_created": "2026-02-18T22:47:02Z",
+          "date_modified": "2026-02-18T22:47:02Z"
+        },
+        "content": {
+          "content_field_id": 0,
+          "route_id": 0,
+          "content_data_id": 0,
+          "field_id": 0,
+          "field_value": "ModulaCMS - Modern Headless CMS",
+          "author_id": 0,
+          "date_created": "2026-02-18T23:48:43Z",
+          "date_modified": "2026-02-19T01:31:12Z"
+        }
+      },
+      {
+        "info": {
+          "field_id": "01KHSEYXV56JTG8T3VK2PF09ZT",
+          "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+          "label": "Published",
+          "data": "{}",
+          "validation": "{}",
+          "ui_config": "{}",
+          "type": "boolean",
+          "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+          "date_created": "2026-02-18T22:47:02Z",
+          "date_modified": "2026-02-18T22:47:02Z"
+        },
+        "content": {
+          "content_field_id": 0,
+          "route_id": 0,
+          "content_data_id": 0,
+          "field_id": 0,
+          "field_value": "true",
+          "author_id": 0,
+          "date_created": "2026-02-18T23:48:43Z",
+          "date_modified": "2026-02-19T01:31:12Z"
+        }
+      },
+      {
+        "info": {
+          "field_id": "01KHSEYXTQGTEF2CZZYK80ENMH",
+          "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+          "label": "Title",
+          "data": "{}",
+          "validation": "{}",
+          "ui_config": "{}",
+          "type": "text",
+          "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+          "date_created": "2026-02-18T22:47:02Z",
+          "date_modified": "2026-02-18T22:47:02Z"
+        },
+        "content": {
+          "content_field_id": 0,
+          "route_id": 0,
+          "content_data_id": 0,
+          "field_id": 0,
+          "field_value": "ModulaCMS",
+          "author_id": 0,
+          "date_created": "2026-02-18T23:48:43Z",
+          "date_modified": "2026-02-18T23:48:43Z"
+        }
+      },
+      {
+        "info": {
+          "field_id": "01KHSEYXV2W4A39XPSWCB4VP13",
+          "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+          "label": "Meta Description",
+          "data": "{}",
+          "validation": "{}",
+          "ui_config": "{}",
+          "type": "textarea",
+          "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+          "date_created": "2026-02-18T22:47:02Z",
+          "date_modified": "2026-02-18T22:47:02Z"
+        },
+        "content": {
+          "content_field_id": 0,
+          "route_id": 0,
+          "content_data_id": 0,
+          "field_id": 0,
+          "field_value": "A headless CMS written in Go that runs as a single binary with HTTP, HTTPS, and SSH servers. Manage content via a terminal TUI or REST API.",
+          "author_id": 0,
+          "date_created": "2026-02-19T01:31:12Z",
+          "date_modified": "2026-02-19T01:31:12Z"
+        }
+      }
+    ],
+    "nodes": [
+      {
+        "datatype": {
+          "info": {
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+            "label": "Row",
+            "type": "layout",
+            "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+            "date_created": "2026-02-18T22:47:02Z",
+            "date_modified": "2026-02-18T22:47:02Z"
+          },
+          "content": {
+            "content_data_id": "01KHSF2K7Y11YH7509BQC7F26S",
+            "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+            "first_child_id": "",
+            "next_sibling_id": "",
+            "prev_sibling_id": "",
+            "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+            "status": "draft",
+            "date_created": "2026-02-18T22:49:02Z",
+            "date_modified": "2026-02-18T22:49:02Z"
+          }
+        },
+        "fields": [],
+        "nodes": [
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+                "label": "Column",
+                "type": "layout",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRBK9VCR9E2G9KVAXAVQFH",
+                "parent_id": "01KHSF2K7Y11YH7509BQC7F26S",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [],
+            "nodes": [
+              {
+                "datatype": {
+                  "info": {
+                    "datatype_id": "01KHSEYXRVC87NQMCPA79H95JJ",
+                    "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                    "label": "CTA",
+                    "type": "content",
+                    "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                    "date_created": "2026-02-18T22:47:02Z",
+                    "date_modified": "2026-02-18T22:47:02Z"
+                  },
+                  "content": {
+                    "content_data_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+                    "parent_id": "01KHSRBK9VCR9E2G9KVAXAVQFH",
+                    "first_child_id": "",
+                    "next_sibling_id": "",
+                    "prev_sibling_id": "",
+                    "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                    "datatype_id": "01KHSEYXRVC87NQMCPA79H95JJ",
+                    "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                    "status": "published",
+                    "date_created": "null",
+                    "date_modified": "null"
+                  }
+                },
+                "fields": [
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY138C050HDBAEKKASRE",
+                      "parent_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+                      "label": "Heading",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "text",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "ModulaCMS",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:31:35Z",
+                      "date_modified": "2026-02-19T01:31:35Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY17R6SZ63W9S7SKQD24",
+                      "parent_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+                      "label": "Subheading",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "textarea",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "A modern headless CMS built in Go. One binary, three servers — HTTP, HTTPS, and SSH. Manage your content from the terminal or the API.",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:31:35Z",
+                      "date_modified": "2026-02-19T01:31:35Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY1AXVF79Q41BZSM0GGY",
+                      "parent_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+                      "label": "Button Text",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "text",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "Get Started",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:31:35Z",
+                      "date_modified": "2026-02-19T01:31:35Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY1EDNV4J5Y6Y47D4PDS",
+                      "parent_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+                      "label": "Button URL",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "url",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "https://github.com/hegner123/modulacms",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:31:35Z",
+                      "date_modified": "2026-02-19T01:31:35Z"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "datatype": {
+          "info": {
+            "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+            "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "label": "Column",
+            "type": "layout",
+            "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+            "date_created": "2026-02-18T22:47:02Z",
+            "date_modified": "2026-02-18T22:47:02Z"
+          },
+          "content": {
+            "content_data_id": "01KHSJGGJ4KKN4FBGPXWRSG9DY",
+            "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+            "first_child_id": "",
+            "next_sibling_id": "",
+            "prev_sibling_id": "",
+            "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+            "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+            "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+            "status": "draft",
+            "date_created": "2026-02-18T23:49:04Z",
+            "date_modified": "2026-02-18T23:49:04Z"
+          }
+        },
+        "fields": [],
+        "nodes": [
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXSEKSWRSTJ9JRNKVTWV",
+                "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                "label": "Rich Text",
+                "type": "content",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRBVECHMWWFFW8RQSKVNSY",
+                "parent_id": "01KHSJGGJ4KKN4FBGPXWRSG9DY",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXSEKSWRSTJ9JRNKVTWV",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [
+              {
+                "info": {
+                  "field_id": "01KHSEYXWC8C994RFGXMK44M5T",
+                  "parent_id": "01KHSRBVECHMWWFFW8RQSKVNSY",
+                  "label": "Content",
+                  "data": "{}",
+                  "validation": "{}",
+                  "ui_config": "{}",
+                  "type": "richtext",
+                  "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                  "date_created": "2026-02-18T22:47:02Z",
+                  "date_modified": "2026-02-18T22:47:02Z"
+                },
+                "content": {
+                  "content_field_id": 0,
+                  "route_id": 0,
+                  "content_data_id": 0,
+                  "field_id": 0,
+                  "field_value": "<h2>Why ModulaCMS?</h2><p>Most headless CMS platforms are bloated SaaS products or sprawling Node.js applications. ModulaCMS takes a different approach: a single Go binary that compiles with zero runtime dependencies. Deploy it anywhere Linux or macOS runs.</p><p>Content is structured as a composable tree — pages contain rows, rows contain columns, columns contain components like text, rich text, images, CTAs, and cards. Every piece of content is a node in a doubly-linked sibling list, enabling O(1) reordering without renumbering.</p><p>The built-in SSH server runs a full terminal UI powered by Bubbletea. SSH in, manage your content, create routes, configure datatypes — all without leaving your terminal. For programmatic access, the REST API covers everything the TUI can do and more.</p>",
+                  "author_id": 0,
+                  "date_created": "2026-02-19T01:31:41Z",
+                  "date_modified": "2026-02-19T01:31:41Z"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "datatype": {
+          "info": {
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+            "label": "Row",
+            "type": "layout",
+            "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+            "date_created": "2026-02-18T22:47:02Z",
+            "date_modified": "2026-02-18T22:47:02Z"
+          },
+          "content": {
+            "content_data_id": "01KHSRBX53MD4QPMTXFSKTJBKE",
+            "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+            "first_child_id": "",
+            "next_sibling_id": "",
+            "prev_sibling_id": "",
+            "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+            "status": "published",
+            "date_created": "null",
+            "date_modified": "null"
+          }
+        },
+        "fields": [],
+        "nodes": [
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+                "label": "Column",
+                "type": "layout",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRCEHE90QXPC3Y82K897D8",
+                "parent_id": "01KHSRBX53MD4QPMTXFSKTJBKE",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [],
+            "nodes": [
+              {
+                "datatype": {
+                  "info": {
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                    "label": "Card",
+                    "type": "content",
+                    "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                    "date_created": "2026-02-18T22:47:02Z",
+                    "date_modified": "2026-02-18T22:47:02Z"
+                  },
+                  "content": {
+                    "content_data_id": "01KHSRCP5E7TX8H01YD0EWEAGV",
+                    "parent_id": "01KHSRCEHE90QXPC3Y82K897D8",
+                    "first_child_id": "",
+                    "next_sibling_id": "",
+                    "prev_sibling_id": "",
+                    "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                    "status": "published",
+                    "date_created": "null",
+                    "date_modified": "null"
+                  }
+                },
+                "fields": [
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY40YV9FW1JP45A50D17",
+                      "parent_id": "01KHSRCP5E7TX8H01YD0EWEAGV",
+                      "label": "Title",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "text",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "Tri-Database Support",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:08Z",
+                      "date_modified": "2026-02-19T01:32:08Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY435BS197M6SZM1QDJ1",
+                      "parent_id": "01KHSRCP5E7TX8H01YD0EWEAGV",
+                      "label": "Description",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "textarea",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "Run on SQLite for local development, PostgreSQL for production, or MySQL if that is what you have. One codebase, three database backends, zero config changes beyond a single field in config.json.",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:08Z",
+                      "date_modified": "2026-02-19T01:32:08Z"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+                "label": "Column",
+                "type": "layout",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRCFVR2PHM2N66XK31QGCA",
+                "parent_id": "01KHSRBX53MD4QPMTXFSKTJBKE",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [],
+            "nodes": [
+              {
+                "datatype": {
+                  "info": {
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                    "label": "Card",
+                    "type": "content",
+                    "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                    "date_created": "2026-02-18T22:47:02Z",
+                    "date_modified": "2026-02-18T22:47:02Z"
+                  },
+                  "content": {
+                    "content_data_id": "01KHSRCQHVDGCP1X6Y9ZXFCQNP",
+                    "parent_id": "01KHSRCFVR2PHM2N66XK31QGCA",
+                    "first_child_id": "",
+                    "next_sibling_id": "",
+                    "prev_sibling_id": "",
+                    "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                    "status": "published",
+                    "date_created": "null",
+                    "date_modified": "null"
+                  }
+                },
+                "fields": [
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY40YV9FW1JP45A50D17",
+                      "parent_id": "01KHSRCQHVDGCP1X6Y9ZXFCQNP",
+                      "label": "Title",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "text",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "Terminal-First Management",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:10Z",
+                      "date_modified": "2026-02-19T01:32:10Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY435BS197M6SZM1QDJ1",
+                      "parent_id": "01KHSRCQHVDGCP1X6Y9ZXFCQNP",
+                      "label": "Description",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "textarea",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "SSH into your CMS and manage everything from a rich terminal UI built with Bubbletea. Create content, configure datatypes, manage users and roles — all without opening a browser.",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:10Z",
+                      "date_modified": "2026-02-19T01:32:10Z"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+                "label": "Column",
+                "type": "layout",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRCH2JR0598XHZJPC34T6Z",
+                "parent_id": "01KHSRBX53MD4QPMTXFSKTJBKE",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [],
+            "nodes": [
+              {
+                "datatype": {
+                  "info": {
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                    "label": "Card",
+                    "type": "content",
+                    "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                    "date_created": "2026-02-18T22:47:02Z",
+                    "date_modified": "2026-02-18T22:47:02Z"
+                  },
+                  "content": {
+                    "content_data_id": "01KHSRCS2VD2C5BFGYM7D4VBD5",
+                    "parent_id": "01KHSRCH2JR0598XHZJPC34T6Z",
+                    "first_child_id": "",
+                    "next_sibling_id": "",
+                    "prev_sibling_id": "",
+                    "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                    "datatype_id": "01KHSEYXS3XMATZPVT03PJGFDV",
+                    "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                    "status": "published",
+                    "date_created": "null",
+                    "date_modified": "null"
+                  }
+                },
+                "fields": [
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY40YV9FW1JP45A50D17",
+                      "parent_id": "01KHSRCS2VD2C5BFGYM7D4VBD5",
+                      "label": "Title",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "text",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "Headless REST API",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:12Z",
+                      "date_modified": "2026-02-19T01:32:12Z"
+                    }
+                  },
+                  {
+                    "info": {
+                      "field_id": "01KHSEYY435BS197M6SZM1QDJ1",
+                      "parent_id": "01KHSRCS2VD2C5BFGYM7D4VBD5",
+                      "label": "Description",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "textarea",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "A complete REST API with role-based access control, audited mutations, and multi-format response output. Deliver content in Contentful, Sanity, Strapi, WordPress, or clean JSON formats.",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:12Z",
+                      "date_modified": "2026-02-19T01:32:12Z"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "datatype": {
+          "info": {
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+            "label": "Row",
+            "type": "layout",
+            "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+            "date_created": "2026-02-18T22:47:02Z",
+            "date_modified": "2026-02-18T22:47:02Z"
+          },
+          "content": {
+            "content_data_id": "01KHSRCTE8FRGZH4SQ8JRYCZNK",
+            "parent_id": "01KHSF0CX421P6BRG1BZEY922W",
+            "first_child_id": "",
+            "next_sibling_id": "",
+            "prev_sibling_id": "",
+            "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+            "datatype_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+            "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+            "status": "published",
+            "date_created": "null",
+            "date_modified": "null"
+          }
+        },
+        "fields": [],
+        "nodes": [
+          {
+            "datatype": {
+              "info": {
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "parent_id": "01KHSEYXRQV4MGC4295XNQJR5V",
+                "label": "Column",
+                "type": "layout",
+                "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                "date_created": "2026-02-18T22:47:02Z",
+                "date_modified": "2026-02-18T22:47:02Z"
+              },
+              "content": {
+                "content_data_id": "01KHSRDD1NNJ284RGP2CCZQ91Z",
+                "parent_id": "01KHSRCTE8FRGZH4SQ8JRYCZNK",
+                "first_child_id": "",
+                "next_sibling_id": "",
+                "prev_sibling_id": "",
+                "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                "datatype_id": "01KHSEYXRSP22WKVPCKTGVND42",
+                "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                "status": "published",
+                "date_created": "null",
+                "date_modified": "null"
+              }
+            },
+            "fields": [],
+            "nodes": [
+              {
+                "datatype": {
+                  "info": {
+                    "datatype_id": "01KHSEYXSEKSWRSTJ9JRNKVTWV",
+                    "parent_id": "01KHSEYXR9K5CY3ZW6D9VBC9SQ",
+                    "label": "Rich Text",
+                    "type": "content",
+                    "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                    "date_created": "2026-02-18T22:47:02Z",
+                    "date_modified": "2026-02-18T22:47:02Z"
+                  },
+                  "content": {
+                    "content_data_id": "01KHSRDHMZ554838WWG54E0JGY",
+                    "parent_id": "01KHSRDD1NNJ284RGP2CCZQ91Z",
+                    "first_child_id": "",
+                    "next_sibling_id": "",
+                    "prev_sibling_id": "",
+                    "route_id": "01KHSF0CWTBNASKQM27WHNBRGK",
+                    "datatype_id": "01KHSEYXSEKSWRSTJ9JRNKVTWV",
+                    "author_id": "01KHQDNFE0HWJR0P8PD7RZWV0C",
+                    "status": "published",
+                    "date_created": "null",
+                    "date_modified": "null"
+                  }
+                },
+                "fields": [
+                  {
+                    "info": {
+                      "field_id": "01KHSEYXWC8C994RFGXMK44M5T",
+                      "parent_id": "01KHSRDHMZ554838WWG54E0JGY",
+                      "label": "Content",
+                      "data": "{}",
+                      "validation": "{}",
+                      "ui_config": "{}",
+                      "type": "richtext",
+                      "author_id": "01KHNT5ZW3RZ3TMZY516N2A71Y",
+                      "date_created": "2026-02-18T22:47:02Z",
+                      "date_modified": "2026-02-18T22:47:02Z"
+                    },
+                    "content": {
+                      "content_field_id": 0,
+                      "route_id": 0,
+                      "content_data_id": 0,
+                      "field_id": 0,
+                      "field_value": "<h2>Architecture</h2><p>ModulaCMS is built around a few core principles: simplicity of deployment, flexibility of storage, and composability of content.</p><h3>Single Binary, Three Servers</h3><p>The <code>serve</code> command starts HTTP, HTTPS (with automatic Let's Encrypt certificates), and SSH servers concurrently. Graceful shutdown handles the first signal cleanly; a second signal forces immediate exit.</p><h3>Content as a Tree</h3><p>Every piece of content is a node in a tree structure. Pages sit at the root. Rows, columns, and components nest beneath them. Sibling ordering uses a doubly-linked list for O(1) insertions and moves. Datatypes define the schema for each node type, and fields define the individual data points within each datatype.</p><h3>Audited Mutations</h3><p>Every write operation is recorded as a change event with the operation type, old and new values, request metadata, and timestamps. This provides a complete audit trail and lays the groundwork for replication.</p><h3>RBAC Authorization</h3><p>Three bootstrap roles — admin, editor, and viewer — provide granular resource:operation permissions. The permission cache uses build-then-swap for lock-free reads. Every admin endpoint is wrapped with permission middleware. The system is fail-closed: missing permissions always result in a 403.</p><h3>SDKs</h3><p>Official SDKs are available for TypeScript (read-only and admin), Go, and Swift. All SDKs mirror the API surface with typed IDs, branded types, and full CRUD support.</p>",
+                      "author_id": 0,
+                      "date_created": "2026-02-19T01:32:31Z",
+                      "date_modified": "2026-02-19T01:32:31Z"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,172 @@
+{
+  "_createdAt": "2026-02-18T22:47:50Z",
+  "_id": "01KHSF0CX421P6BRG1BZEY922W",
+  "_rev": "v1",
+  "_type": "page",
+  "_updatedAt": "2026-02-18T22:47:50Z",
+  "children": [
+    {
+      "_createdAt": "2026-02-18T22:49:02Z",
+      "_id": "01KHSF2K7Y11YH7509BQC7F26S",
+      "_rev": "v1",
+      "_type": "row",
+      "_updatedAt": "2026-02-18T22:49:02Z",
+      "columns": [
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRBK9VCR9E2G9KVAXAVQFH",
+          "_rev": "v1",
+          "_type": "column",
+          "_updatedAt": "null",
+          "ctas": [
+            {
+              "_createdAt": "null",
+              "_id": "01KHSRBSQ2BA2MDEMQD98CZH4N",
+              "_rev": "v1",
+              "_type": "cta",
+              "_updatedAt": "null",
+              "buttonText": "Get Started",
+              "buttonUrl": "https://github.com/hegner123/modulacms",
+              "heading": "ModulaCMS",
+              "subheading": "A modern headless CMS built in Go. One binary, three servers — HTTP, HTTPS, and SSH. Manage your content from the terminal or the API."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_createdAt": "2026-02-18T23:49:04Z",
+      "_id": "01KHSJGGJ4KKN4FBGPXWRSG9DY",
+      "_rev": "v1",
+      "_type": "column",
+      "_updatedAt": "2026-02-18T23:49:04Z",
+      "rich texts": [
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRBVECHMWWFFW8RQSKVNSY",
+          "_rev": "v1",
+          "_type": "richtext",
+          "_updatedAt": "null",
+          "content": [
+            {
+              "_type": "block",
+              "children": [
+                {
+                  "_type": "span",
+                  "text": "<h2>Why ModulaCMS?</h2><p>Most headless CMS platforms are bloated SaaS products or sprawling Node.js applications. ModulaCMS takes a different approach: a single Go binary that compiles with zero runtime dependencies. Deploy it anywhere Linux or macOS runs.</p><p>Content is structured as a composable tree â pages contain rows, rows contain columns, columns contain components like text, rich text, images, CTAs, and cards. Every piece of content is a node in a doubly-linked sibling list, enabling O(1) reordering without renumbering.</p><p>The built-in SSH server runs a full terminal UI powered by Bubbletea. SSH in, manage your content, create routes, configure datatypes â all without leaving your terminal. For programmatic access, the REST API covers everything the TUI can do and more.</p>"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_createdAt": "null",
+      "_id": "01KHSRBX53MD4QPMTXFSKTJBKE",
+      "_rev": "v1",
+      "_type": "row",
+      "_updatedAt": "null",
+      "columns": [
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRCEHE90QXPC3Y82K897D8",
+          "_rev": "v1",
+          "_type": "column",
+          "_updatedAt": "null",
+          "cards": [
+            {
+              "_createdAt": "null",
+              "_id": "01KHSRCP5E7TX8H01YD0EWEAGV",
+              "_rev": "v1",
+              "_type": "card",
+              "_updatedAt": "null",
+              "description": "Run on SQLite for local development, PostgreSQL for production, or MySQL if that is what you have. One codebase, three database backends, zero config changes beyond a single field in config.json.",
+              "title": "Tri-Database Support"
+            }
+          ]
+        },
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRCFVR2PHM2N66XK31QGCA",
+          "_rev": "v1",
+          "_type": "column",
+          "_updatedAt": "null",
+          "cards": [
+            {
+              "_createdAt": "null",
+              "_id": "01KHSRCQHVDGCP1X6Y9ZXFCQNP",
+              "_rev": "v1",
+              "_type": "card",
+              "_updatedAt": "null",
+              "description": "SSH into your CMS and manage everything from a rich terminal UI built with Bubbletea. Create content, configure datatypes, manage users and roles — all without opening a browser.",
+              "title": "Terminal-First Management"
+            }
+          ]
+        },
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRCH2JR0598XHZJPC34T6Z",
+          "_rev": "v1",
+          "_type": "column",
+          "_updatedAt": "null",
+          "cards": [
+            {
+              "_createdAt": "null",
+              "_id": "01KHSRCS2VD2C5BFGYM7D4VBD5",
+              "_rev": "v1",
+              "_type": "card",
+              "_updatedAt": "null",
+              "description": "A complete REST API with role-based access control, audited mutations, and multi-format response output. Deliver content in Contentful, Sanity, Strapi, WordPress, or clean JSON formats.",
+              "title": "Headless REST API"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "_createdAt": "null",
+      "_id": "01KHSRCTE8FRGZH4SQ8JRYCZNK",
+      "_rev": "v1",
+      "_type": "row",
+      "_updatedAt": "null",
+      "columns": [
+        {
+          "_createdAt": "null",
+          "_id": "01KHSRDD1NNJ284RGP2CCZQ91Z",
+          "_rev": "v1",
+          "_type": "column",
+          "_updatedAt": "null",
+          "rich texts": [
+            {
+              "_createdAt": "null",
+              "_id": "01KHSRDHMZ554838WWG54E0JGY",
+              "_rev": "v1",
+              "_type": "richtext",
+              "_updatedAt": "null",
+              "content": [
+                {
+                  "_type": "block",
+                  "children": [
+                    {
+                      "_type": "span",
+                      "text": "<h2>Architecture</h2><p>ModulaCMS is built around a few core principles: simplicity of deployment, flexibility of storage, and composability of content.</p><h3>Single Binary, Three Servers</h3><p>The <code>serve</code> command starts HTTP, HTTPS (with automatic Let's Encrypt certificates), and SSH servers concurrently. Graceful shutdown handles the first signal cleanly; a second signal forces immediate exit.</p><h3>Content as a Tree</h3><p>Every piece of content is a node in a tree structure. Pages sit at the root. Rows, columns, and components nest beneath them. Sibling ordering uses a doubly-linked list for O(1) insertions and moves. Datatypes define the schema for each node type, and fields define the individual data points within each datatype.</p><h3>Audited Mutations</h3><p>Every write operation is recorded as a change event with the operation type, old and new values, request metadata, and timestamps. This provides a complete audit trail and lays the groundwork for replication.</p><h3>RBAC Authorization</h3><p>Three bootstrap roles â admin, editor, and viewer â provide granular resource:operation permissions. The permission cache uses build-then-swap for lock-free reads. Every admin endpoint is wrapped with permission middleware. The system is fail-closed: missing permissions always result in a 403.</p><h3>SDKs</h3><p>Official SDKs are available for TypeScript (read-only and admin), Go, and Swift. All SDKs mirror the API surface with typed IDs, branded types, and full CRUD support.</p>"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "metaDescription": "A headless CMS written in Go that runs as a single binary with HTTP, HTTPS, and SSH servers. Manage content via a terminal TUI or REST API.",
+  "metaTitle": "ModulaCMS - Modern Headless CMS",
+  "published": true,
+  "slug": {
+    "current": "/",
+    "_type": "slug"
+  },
+  "title": "ModulaCMS"
+}

@@ -141,16 +141,23 @@ func apiUpdateAdminField(w http.ResponseWriter, r *http.Request, c config.Config
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedAdminField, err := d.UpdateAdminField(r.Context(), ac, updateAdminField)
+	_, err = d.UpdateAdminField(r.Context(), ac, updateAdminField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetAdminField(updateAdminField.AdminFieldID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated admin field", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedAdminField)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

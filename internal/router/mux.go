@@ -129,6 +129,16 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		ContentBatchHandler(w, r, *c)
 	})))
 
+	// Content data reorder
+	mux.Handle("POST /api/v1/contentdata/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentDataReorderHandler(w, r, *c)
+	})))
+
+	// Admin content data reorder
+	mux.Handle("POST /api/v1/admincontentdatas/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminContentDataReorderHandler(w, r, *c)
+	})))
+
 	// Datatypes
 	mux.Handle("/api/v1/datatype", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypesHandler(w, r, *c)

@@ -1,3 +1,11 @@
 {
-        "mcpServers": {}
+        "mcpServers": {
+                "modulacms": {
+                        "command": "./mcp/modulacms-mcp",
+                        "env": {
+                                "MODULACMS_URL": "http://localhost:8080",
+                                "MODULACMS_API_KEY": "6aeccaf27f8927def5ae43278a2ba32493723ca69f711b121f79813945ea698a"
+                        }
+                }
+        }
 }

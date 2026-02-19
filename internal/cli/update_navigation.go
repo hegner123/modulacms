@@ -117,6 +117,7 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, LoadingStartCmd())
 			cmds = append(cmds, RootContentSummaryFetchCmd())
 			cmds = append(cmds, RootDatatypesFetchCmd())
+			cmds = append(cmds, UsersFetchCmd())
 			cmds = append(cmds, PageSetCmd(page))
 			cmds = append(cmds, StatusSetCmd(OK))
 			cmds = append(cmds, PanelFocusResetCmd())

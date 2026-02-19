@@ -161,6 +161,14 @@ sdk-swift-test:
 sdk-swift-clean:
     cd sdks/swift && swift package clean
 
+# [MCP] Build MCP server binary
+mcp-build:
+    cd mcp && go build -o modulacms-mcp .
+
+# [MCP] Install MCP server binary to /usr/local/bin
+mcp-install: mcp-build
+    cp mcp/modulacms-mcp /usr/local/bin/modulacms-mcp
+
 # [Plugin] List installed plugins
 plugin-list:
     ./{{x86_binary_name}} plugin list

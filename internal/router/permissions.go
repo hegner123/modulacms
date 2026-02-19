@@ -154,16 +154,23 @@ func apiUpdatePermission(w http.ResponseWriter, r *http.Request, c config.Config
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedPermission, err := d.UpdatePermission(r.Context(), ac, updatePermission)
+	_, err = d.UpdatePermission(r.Context(), ac, updatePermission)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetPermission(updatePermission.PermissionID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated permission", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedPermission)
+	json.NewEncoder(w).Encode(updated)
 
 	go func() {
 		if loadErr := pc.Load(db.ConfigDB(c)); loadErr != nil {

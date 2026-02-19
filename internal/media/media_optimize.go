@@ -151,7 +151,7 @@ func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, foca
 		widthString := strconv.FormatInt(validDimensions[i].Width.Int64, 10)
 		heightString := strconv.FormatInt(validDimensions[i].Height.Int64, 10)
 		size := widthString + "x" + heightString
-		filename := fmt.Sprintf("%s-%v%s", baseName, size, ext)
+		filename := fmt.Sprintf("%s-%v.webp", baseName, size)
 		fullPath := filepath.Join(dstPath, filename)
 
 		f, err := os.Create(fullPath)
@@ -160,24 +160,14 @@ func OptimizeUpload(srcFile string, dstPath string, lister DimensionLister, foca
 			break
 		}
 
-		// Encode image
-		switch ext {
-		case ".png":
-			err = png.Encode(f, img)
-		case ".jpg", ".jpeg":
-			err = jpeg.Encode(f, img, nil)
-		case ".gif":
-			err = gif.Encode(f, img, nil)
-		case ".webp":
-			if opts, optErr := webpenc.NewLossyEncoderOptions(webpenc.PresetDefault, 80); optErr != nil {
-				err = fmt.Errorf("webp options: %w", optErr)
-			} else if enc, encErr := webpenc.NewEncoder(img, opts); encErr != nil {
-				err = fmt.Errorf("webp encoder: %w", encErr)
-			} else {
-				err = enc.Encode(f)
-			}
-		default:
-			err = fmt.Errorf("unsupported encoding for extension: %s", ext)
+		// Encode variant as WebP regardless of source format
+		opts, optErr := webpenc.NewLossyEncoderOptions(webpenc.PresetDefault, 80)
+		if optErr != nil {
+			err = fmt.Errorf("webp options: %w", optErr)
+		} else if enc, encErr := webpenc.NewEncoder(img, opts); encErr != nil {
+			err = fmt.Errorf("webp encoder: %w", encErr)
+		} else {
+			err = enc.Encode(f)
 		}
 
 		f.Close()

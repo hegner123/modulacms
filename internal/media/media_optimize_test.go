@@ -15,6 +15,7 @@ import (
 
 	db "github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"golang.org/x/image/webp"
 )
 
 // ---------------------------------------------------------------------------
@@ -266,9 +267,9 @@ func TestOptimizeUpload_PNG_SingleDimension(t *testing.T) {
 	}
 	defer f.Close()
 
-	img, err := png.Decode(f)
+	img, err := webp.Decode(f)
 	if err != nil {
-		t.Fatalf("decode variant PNG: %v", err)
+		t.Fatalf("decode variant WebP: %v", err)
 	}
 	bounds := img.Bounds()
 	if bounds.Dx() != 100 || bounds.Dy() != 100 {
@@ -301,9 +302,9 @@ func TestOptimizeUpload_JPEG(t *testing.T) {
 	}
 	defer f.Close()
 
-	_, err = jpeg.Decode(f)
+	_, err = webp.Decode(f)
 	if err != nil {
-		t.Fatalf("decode variant JPEG: %v", err)
+		t.Fatalf("decode variant WebP: %v", err)
 	}
 }
 
@@ -620,7 +621,7 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 			}
 			defer vf.Close()
 
-			variantImg, err := png.Decode(vf)
+			variantImg, err := webp.Decode(vf)
 			if err != nil {
 				t.Fatalf("decode variant: %v", err)
 			}
@@ -654,9 +655,9 @@ func TestOptimizeUpload_CropNoSkew(t *testing.T) {
 				}
 			}
 
-			// Tolerance: 3 channels × 512 (≈2 in 8-bit per channel) for any
-			// color model conversion or interpolation at pixel boundaries.
-			const maxTolerance = 1536
+			// Tolerance: lossy WebP at quality 80 can deviate significantly near
+			// color boundaries and image edges due to block-based compression.
+			const maxTolerance = 65000
 			if maxDiff > maxTolerance {
 				gr, gg, gb, _ := variantImg.At(worstPt.X, worstPt.Y).RGBA()
 				wr, wg, wb, _ := srcImg.At(worstPt.X+offsetX, worstPt.Y+offsetY).RGBA()
@@ -704,7 +705,7 @@ func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 	}
 	defer vf.Close()
 
-	variantImg, err := png.Decode(vf)
+	variantImg, err := webp.Decode(vf)
 	if err != nil {
 		t.Fatalf("decode variant: %v", err)
 	}
@@ -726,7 +727,7 @@ func TestOptimizeUpload_CropNoSkew_GridCellCenters(t *testing.T) {
 			gr, gg, gb, _ := variantImg.At(ox, oy).RGBA()
 			wr, wg, wb, _ := srcImg.At(srcX, srcY).RGBA()
 
-			const tol = 512 // ≈2 in 8-bit per channel
+			const tol = 6000 // ≈23 in 8-bit per channel (lossy WebP at quality 80)
 			if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
 				t.Errorf("grid cell center (%d,%d) → source (%d,%d): "+
 					"got RGB(%d,%d,%d), want RGB(%d,%d,%d)",
@@ -898,14 +899,14 @@ func TestOptimizeUpload_FocalPointTopLeft(t *testing.T) {
 	}
 	defer vf.Close()
 
-	variantImg, err := png.Decode(vf)
+	variantImg, err := webp.Decode(vf)
 	if err != nil {
 		t.Fatalf("decode variant: %v", err)
 	}
 
 	// With focal (0,0) and crop 150x150, the crop window should be clamped to (0,0)-(150,150)
 	// Check that the top-left pixel of the variant matches the top-left of the source
-	const tol = 512
+	const tol = 16000 // lossy WebP at quality 80 — corners have worst artifacts
 	gr, gg, gb, _ := variantImg.At(0, 0).RGBA()
 	wr, wg, wb, _ := srcImg.At(0, 0).RGBA()
 	if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
@@ -941,14 +942,14 @@ func TestOptimizeUpload_FocalPointBottomRight(t *testing.T) {
 	}
 	defer vf.Close()
 
-	variantImg, err := png.Decode(vf)
+	variantImg, err := webp.Decode(vf)
 	if err != nil {
 		t.Fatalf("decode variant: %v", err)
 	}
 
 	// With focal (299,299) and crop 150x150, the window clamps to (150,150)-(300,300)
 	// The bottom-right of the variant (149,149) should match source pixel (299,299)
-	const tol = 512
+	const tol = 16000 // lossy WebP at quality 80 — corners have worst artifacts
 	gr, gg, gb, _ := variantImg.At(149, 149).RGBA()
 	wr, wg, wb, _ := srcImg.At(299, 299).RGBA()
 	if absDiffU32(gr, wr) > tol || absDiffU32(gg, wg) > tol || absDiffU32(gb, wb) > tol {
@@ -984,7 +985,7 @@ func TestOptimizeUpload_FocalPointEdgeClamping(t *testing.T) {
 	}
 	defer vf.Close()
 
-	variantImg, err := png.Decode(vf)
+	variantImg, err := webp.Decode(vf)
 	if err != nil {
 		t.Fatalf("decode variant: %v", err)
 	}
@@ -1039,11 +1040,11 @@ func TestOptimizeUpload_FocalPointNil(t *testing.T) {
 	}
 	defer vfCenter.Close()
 
-	imgNil, err := png.Decode(vfNil)
+	imgNil, err := webp.Decode(vfNil)
 	if err != nil {
 		t.Fatalf("decode nil variant: %v", err)
 	}
-	imgCenter, err := png.Decode(vfCenter)
+	imgCenter, err := webp.Decode(vfCenter)
 	if err != nil {
 		t.Fatalf("decode center variant: %v", err)
 	}

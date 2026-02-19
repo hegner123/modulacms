@@ -121,16 +121,23 @@ func apiUpdateContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedContentField, err := d.UpdateContentField(r.Context(), ac, updateContentField)
+	_, err = d.UpdateContentField(r.Context(), ac, updateContentField)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetContentField(updateContentField.ContentFieldID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated content field", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedContentField)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

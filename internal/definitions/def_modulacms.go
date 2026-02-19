@@ -2,15 +2,6 @@ package definitions
 
 import "github.com/hegner123/modulacms/internal/db/types"
 
-// withSpacing appends Padding and Margin fields to the given field list.
-// Used by all child datatypes under page.
-func withSpacing(fields ...FieldDef) []FieldDef {
-	return append(fields,
-		FieldDef{Label: "Padding", Type: types.FieldTypeText},
-		FieldDef{Label: "Margin", Type: types.FieldTypeText},
-	)
-}
-
 func init() {
 	Register(SchemaDefinition{
 		Name:        "modulacms-default",
@@ -41,16 +32,18 @@ func init() {
 				Label:     "Row",
 				Type:      types.NewNullableString("layout"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(),
+				FieldRefs: []FieldDef{
+					{Label: "Full Width", Type: types.FieldTypeBoolean},
+				},
 			},
 
 			"column": {
 				Label:     "Column",
 				Type:      types.NewNullableString("layout"),
 				ParentRef: "row",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Span", Type: types.FieldTypeNumber},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Span", Type: types.FieldTypeNumber},
+				},
 			},
 
 			// Layout: Grid/Area
@@ -59,23 +52,35 @@ func init() {
 				Label:     "Grid",
 				Type:      types.NewNullableString("layout"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Columns", Type: types.FieldTypeText},
-					FieldDef{Label: "Rows", Type: types.FieldTypeText},
-					FieldDef{Label: "Gap", Type: types.FieldTypeText},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Columns", Type: types.FieldTypeText},
+					{Label: "Rows", Type: types.FieldTypeText},
+					{Label: "Gap", Type: types.FieldTypeText},
+				},
 			},
 
 			"area": {
 				Label:     "Area",
 				Type:      types.NewNullableString("layout"),
 				ParentRef: "grid",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Column Start", Type: types.FieldTypeNumber},
-					FieldDef{Label: "Column End", Type: types.FieldTypeNumber},
-					FieldDef{Label: "Row Start", Type: types.FieldTypeNumber},
-					FieldDef{Label: "Row End", Type: types.FieldTypeNumber},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Column Start", Type: types.FieldTypeNumber},
+					{Label: "Column End", Type: types.FieldTypeNumber},
+					{Label: "Row Start", Type: types.FieldTypeNumber},
+					{Label: "Row End", Type: types.FieldTypeNumber},
+				},
+			},
+
+			// Settings
+
+			"settings": {
+				Label:     "Settings",
+				Type:      types.NewNullableString("settings"),
+				ParentRef: "page",
+				FieldRefs: []FieldDef{
+					{Label: "Margin", Type: types.FieldTypeText},
+					{Label: "Padding", Type: types.FieldTypeText},
+				},
 			},
 
 			// Content Blocks
@@ -84,64 +89,64 @@ func init() {
 				Label:     "CTA",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Heading", Type: types.FieldTypeText},
-					FieldDef{Label: "Subheading", Type: types.FieldTypeTextarea},
-					FieldDef{Label: "Button Text", Type: types.FieldTypeText},
-					FieldDef{Label: "Button URL", Type: types.FieldTypeURL},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Heading", Type: types.FieldTypeText},
+					{Label: "Subheading", Type: types.FieldTypeTextarea},
+					{Label: "Button Text", Type: types.FieldTypeText},
+					{Label: "Button URL", Type: types.FieldTypeURL},
+				},
 			},
 
 			"image_block": {
 				Label:     "Image",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Image", Type: types.FieldTypeMedia},
-					FieldDef{Label: "Alt Text", Type: types.FieldTypeText},
-					FieldDef{Label: "Caption", Type: types.FieldTypeTextarea},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Image", Type: types.FieldTypeMedia},
+					{Label: "Alt Text", Type: types.FieldTypeText},
+					{Label: "Caption", Type: types.FieldTypeTextarea},
+				},
 			},
 
 			"rich_text_block": {
 				Label:     "Rich Text",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Content", Type: types.FieldTypeRichText},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Content", Type: types.FieldTypeRichText},
+				},
 			},
 
 			"text_block": {
 				Label:     "Text",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Content", Type: types.FieldTypeTextarea},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Content", Type: types.FieldTypeTextarea},
+				},
 			},
 
 			"button_block": {
 				Label:     "Button",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Label", Type: types.FieldTypeText},
-					FieldDef{Label: "URL", Type: types.FieldTypeURL},
-					FieldDef{Label: "Variant", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["primary","secondary","outline","ghost"]}`)},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Label", Type: types.FieldTypeText},
+					{Label: "URL", Type: types.FieldTypeURL},
+					{Label: "Variant", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["primary","secondary","outline","ghost"]}`)},
+				},
 			},
 
 			"card": {
 				Label:     "Card",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Title", Type: types.FieldTypeText},
-					FieldDef{Label: "Description", Type: types.FieldTypeTextarea},
-					FieldDef{Label: "Image", Type: types.FieldTypeMedia},
-					FieldDef{Label: "Link URL", Type: types.FieldTypeURL},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Title", Type: types.FieldTypeText},
+					{Label: "Description", Type: types.FieldTypeTextarea},
+					{Label: "Image", Type: types.FieldTypeMedia},
+					{Label: "Link URL", Type: types.FieldTypeURL},
+				},
 			},
 
 			// Animation
@@ -150,14 +155,14 @@ func init() {
 				Label:     "Animation",
 				Type:      types.NewNullableString("content"),
 				ParentRef: "page",
-				FieldRefs: withSpacing(
-					FieldDef{Label: "Type", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["fade","slide","scale","rotate"]}`)},
-					FieldDef{Label: "Duration", Type: types.FieldTypeText},
-					FieldDef{Label: "Delay", Type: types.FieldTypeText},
-					FieldDef{Label: "Easing", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["ease","ease-in","ease-out","ease-in-out","linear"]}`)},
-					FieldDef{Label: "Direction", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["normal","reverse","alternate"]}`)},
-					FieldDef{Label: "Iterations", Type: types.FieldTypeText},
-				),
+				FieldRefs: []FieldDef{
+					{Label: "Type", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["fade","slide","scale","rotate"]}`)},
+					{Label: "Duration", Type: types.FieldTypeText},
+					{Label: "Delay", Type: types.FieldTypeText},
+					{Label: "Easing", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["ease","ease-in","ease-out","ease-in-out","linear"]}`)},
+					{Label: "Direction", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["normal","reverse","alternate"]}`)},
+					{Label: "Iterations", Type: types.FieldTypeText},
+				},
 			},
 
 			// ──────────────────────────────────────

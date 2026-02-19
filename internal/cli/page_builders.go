@@ -547,14 +547,28 @@ func FieldMatchesLabel(field db.Fields) bool {
 	return slices.Contains(ValidLabelFields, field.Label)
 }
 
-// ProcessContentPreview generates a preview of the selected content node.
+// resolveAuthorName looks up the author's display name from the users list.
+// Returns the username if found, or the raw ID string as fallback.
+func resolveAuthorName(authorID types.UserID, users []db.UserWithRoleLabelRow) string {
+	for _, u := range users {
+		if u.UserID == authorID {
+			if u.Name != "" {
+				return u.Name
+			}
+			return u.Username
+		}
+	}
+	return string(authorID)
+}
+
+// ProcessContentPreview generates a preview of the selected content node,
+// showing metadata at the top and content field values below.
 func (c CMSPage) ProcessContentPreview(model Model) string {
 	node := model.Root.NodeAtIndex(model.Cursor)
 	if node == nil {
 		return "No content selected"
 	}
 
-	// Build preview content
 	preview := []string{}
 
 	// Title/Name
@@ -563,48 +577,43 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 	preview = append(preview, titleStyle.Render(title))
 	preview = append(preview, "")
 
-	// Content Type
-	preview = append(preview, fmt.Sprintf("Type: %s", node.Datatype.Label))
-
-	// Status
-	preview = append(preview, fmt.Sprintf("Status: %s", node.Instance.Status))
-
-	// Content ID
-	preview = append(preview, fmt.Sprintf("ID: %s", node.Instance.ContentDataID))
-
-	// Author
+	// Metadata line: Type | Status | Author
+	metaParts := []string{node.Datatype.Label}
+	metaParts = append(metaParts, string(node.Instance.Status))
 	if node.Instance.AuthorID.Valid {
-		preview = append(preview, fmt.Sprintf("Author ID: %s", node.Instance.AuthorID.ID))
+		metaParts = append(metaParts, resolveAuthorName(node.Instance.AuthorID.ID, model.UsersList))
 	}
-
-	// Dates
-	if node.Instance.DateCreated.Valid {
-		preview = append(preview, fmt.Sprintf("Created: %s", node.Instance.DateCreated.String()))
-	}
-	if node.Instance.DateModified.Valid {
-		preview = append(preview, fmt.Sprintf("Modified: %s", node.Instance.DateModified.String()))
-	}
-
-	// Tree structure info
+	dimStyle := lipgloss.NewStyle().Faint(true)
+	preview = append(preview, dimStyle.Render(strings.Join(metaParts, " | ")))
 	preview = append(preview, "")
-	preview = append(preview, "Structure:")
-	if node.Parent != nil {
-		preview = append(preview, fmt.Sprintf("  ├─ Parent: %s", node.Parent.Datatype.Label))
-	}
-	if node.FirstChild != nil {
-		preview = append(preview, "  ├─ Children:")
-		// List all child datatypes
-		child := node.FirstChild
-		for child != nil {
-			preview = append(preview, fmt.Sprintf("  │   • %s", child.Datatype.Label))
-			child = child.NextSibling
+
+	// Content field values preview
+	if len(model.SelectedContentFields) > 0 {
+		labelStyle := lipgloss.NewStyle().Bold(true).Foreground(config.DefaultStyle.Accent)
+		for _, cf := range model.SelectedContentFields {
+			preview = append(preview, labelStyle.Render(cf.Label))
+			if cf.Value == "" {
+				preview = append(preview, dimStyle.Render("  (empty)"))
+			} else {
+				// Wrap long values to fit the panel
+				lines := strings.Split(cf.Value, "\n")
+				for _, line := range lines {
+					preview = append(preview, fmt.Sprintf("  %s", line))
+				}
+			}
+			preview = append(preview, "")
 		}
 	}
-	if node.NextSibling != nil {
-		preview = append(preview, fmt.Sprintf("  ├─ Next: %s", node.NextSibling.Datatype.Label))
-	}
-	if node.PrevSibling != nil {
-		preview = append(preview, fmt.Sprintf("  └─ Prev: %s", node.PrevSibling.Datatype.Label))
+
+	// Children summary
+	if node.FirstChild != nil {
+		preview = append(preview, dimStyle.Render("Children:"))
+		child := node.FirstChild
+		for child != nil {
+			childName := DecideNodeName(*child)
+			preview = append(preview, dimStyle.Render(fmt.Sprintf("  %s (%s)", childName, child.Datatype.Label)))
+			child = child.NextSibling
+		}
 	}
 
 	return lipgloss.JoinVertical(lipgloss.Left, preview...)

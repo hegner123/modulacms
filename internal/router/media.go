@@ -222,16 +222,23 @@ func apiUpdateMedia(w http.ResponseWriter, r *http.Request, c config.Config) err
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedMedia, err := d.UpdateMedia(r.Context(), ac, updateMedia)
+	_, err = d.UpdateMedia(r.Context(), ac, updateMedia)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetMedia(updateMedia.MediaID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated media", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedMedia)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

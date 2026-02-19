@@ -50,16 +50,23 @@ func apiUpdateSession(w http.ResponseWriter, r *http.Request, c config.Config) e
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedSession, err := d.UpdateSession(r.Context(), ac, updateSession)
+	_, err = d.UpdateSession(r.Context(), ac, updateSession)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetSession(updateSession.SessionID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated session", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedSession)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 

@@ -116,16 +116,23 @@ func apiUpdateMediaDimension(w http.ResponseWriter, r *http.Request, c config.Co
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
-	updatedMediaDimension, err := d.UpdateMediaDimension(r.Context(), ac, updateMediaDimension)
+	_, err = d.UpdateMediaDimension(r.Context(), ac, updateMediaDimension)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
+	updated, err := d.GetMediaDimension(updateMediaDimension.MdID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to fetch updated media dimension", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(updatedMediaDimension)
+	json.NewEncoder(w).Encode(updated)
 	return nil
 }
 
