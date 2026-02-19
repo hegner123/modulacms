@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"errors"
@@ -7,9 +7,9 @@ import (
 	"time"
 )
 
-// ClientConfig configures a new ModulaCMS client.
+// ClientConfig configures a new Modula client.
 type ClientConfig struct {
-	// BaseURL is the root URL of the ModulaCMS server (e.g. "https://cms.example.com").
+	// BaseURL is the root URL of the Modula server (e.g. "https://cms.example.com").
 	// Required.
 	BaseURL string
 
@@ -21,7 +21,7 @@ type ClientConfig struct {
 	HTTPClient *http.Client
 }
 
-// Client is the ModulaCMS API client. It provides typed access to all API resources.
+// Client is the Modula API client. It provides typed access to all API resources.
 type Client struct {
 	// Standard CRUD resources
 	ContentData     *Resource[ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID]
@@ -70,10 +70,10 @@ type Client struct {
 	Config *ConfigResource
 }
 
-// NewClient creates a new ModulaCMS API client.
+// NewClient creates a new Modula API client.
 func NewClient(cfg ClientConfig) (*Client, error) {
 	if cfg.BaseURL == "" {
-		return nil, errors.New("modulacms: BaseURL is required")
+		return nil, errors.New("modula: BaseURL is required")
 	}
 
 	baseURL := strings.TrimRight(cfg.BaseURL, "/")

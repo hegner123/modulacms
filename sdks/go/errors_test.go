@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"errors"
@@ -15,22 +15,22 @@ func TestApiError_Error(t *testing.T) {
 		{
 			name: "with message",
 			err:  &ApiError{StatusCode: 400, Message: "invalid input"},
-			want: "modulacms: 400 invalid input",
+			want: "modula: 400 invalid input",
 		},
 		{
 			name: "without message uses status text",
 			err:  &ApiError{StatusCode: 404},
-			want: "modulacms: 404 Not Found",
+			want: "modula: 404 Not Found",
 		},
 		{
 			name: "500 without message",
 			err:  &ApiError{StatusCode: 500},
-			want: "modulacms: 500 Internal Server Error",
+			want: "modula: 500 Internal Server Error",
 		},
 		{
 			name: "401 with custom message",
 			err:  &ApiError{StatusCode: 401, Message: "token expired"},
-			want: "modulacms: 401 token expired",
+			want: "modula: 401 token expired",
 		},
 	}
 

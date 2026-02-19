@@ -4,15 +4,15 @@
 # Multi-stage build for minimal, secure production image
 #
 # Build:
-#   docker build -t modulacms .
-#   docker build --build-arg TARGETARCH=arm -t modulacms:arm .
+#   docker build -t modula .
+#   docker build --build-arg TARGETARCH=arm -t modula:arm .
 #
 # Run:
 #   docker run -d -p 8080:8080 -p 8443:8443 -p 2222:2222 \
-#     -v modulacms-data:/app/data \
-#     -v modulacms-certs:/app/certs \
-#     -v modulacms-ssh:/app/.ssh \
-#     modulacms
+#     -v modula-data:/app/data \
+#     -v modula-certs:/app/certs \
+#     -v modula-ssh:/app/.ssh \
+#     modula
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -65,7 +65,7 @@ RUN case "${TARGETARCH}" in \
             -X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
-        -o modulacms ./cmd
+        -o modula ./cmd
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
@@ -90,20 +90,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && update-ca-certificates
 
 # Create non-root user
-RUN groupadd --gid 1000 modulacms \
-    && useradd --uid 1000 --gid modulacms --shell /bin/false --create-home modulacms
+RUN groupadd --gid 1000 modula \
+    && useradd --uid 1000 --gid modula --shell /bin/false --create-home modula
 
 WORKDIR /app
 
 # Create directories for persistent data
 RUN mkdir -p /app/data /app/certs /app/.ssh /app/backups \
-    && chown -R modulacms:modulacms /app
+    && chown -R modula:modula /app
 
 # Copy binary from builder
-COPY --from=builder --chown=modulacms:modulacms /app/modulacms /app/modulacms
+COPY --from=builder --chown=modula:modula /app/modula /app/modula
 
 # Switch to non-root user
-USER modulacms
+USER modula
 
 # Expose ports
 # 8080  - HTTP
@@ -116,7 +116,7 @@ VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups"]
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/app/modulacms", "--version"]
+    CMD ["/app/modula", "--version"]
 
 # Run the application
-ENTRYPOINT ["/app/modulacms"]
+ENTRYPOINT ["/app/modula"]

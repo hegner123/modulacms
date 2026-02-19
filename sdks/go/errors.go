@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"errors"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-// ApiError represents an error response from the ModulaCMS API.
+// ApiError represents an error response from the Modula API.
 type ApiError struct {
 	StatusCode int
 	Message    string
@@ -16,9 +16,9 @@ type ApiError struct {
 
 func (e *ApiError) Error() string {
 	if e.Message != "" {
-		return fmt.Sprintf("modulacms: %d %s", e.StatusCode, e.Message)
+		return fmt.Sprintf("modula: %d %s", e.StatusCode, e.Message)
 	}
-	return fmt.Sprintf("modulacms: %d %s", e.StatusCode, http.StatusText(e.StatusCode))
+	return fmt.Sprintf("modula: %d %s", e.StatusCode, http.StatusText(e.StatusCode))
 }
 
 // IsNotFound reports whether the error is a 404 Not Found response.

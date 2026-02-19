@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import "time"
 

@@ -325,7 +325,7 @@ func LoadTitles(f []string) []string {
 	for _, font := range f {
 		aTitle, err := TitleFile.ReadFile("titles/title_" + font + ".txt")
 		if err != nil {
-			aTitle = []byte("ModulaCMS")
+			aTitle = []byte("Modula")
 		}
 		t := string(aTitle)
 		titles = append(titles, t)

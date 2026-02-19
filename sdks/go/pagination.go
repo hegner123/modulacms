@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 // PaginationParams specifies limit and offset for paginated requests.
 type PaginationParams struct {

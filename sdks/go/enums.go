@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 // ContentStatus represents the publication status of a content item.
 type ContentStatus string

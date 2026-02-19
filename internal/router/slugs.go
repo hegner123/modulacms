@@ -2,6 +2,7 @@ package router
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -24,7 +25,12 @@ func SlugHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	route, err := d.GetRouteID(r.URL.Path)
+	slug := strings.TrimPrefix(r.URL.Path, "/api/v1/content")
+	if slug == "" {
+		slug = "/"
+	}
+
+	route, err := d.GetRouteID(slug)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

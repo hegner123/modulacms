@@ -190,7 +190,8 @@ export class ModulaClient {
     if (format) {
       params.format = format;
     }
-    const path = slug.startsWith("/") ? slug : `/${slug}`;
+    const trimmed = slug.startsWith("/") ? slug.slice(1) : slug;
+    const path = `/api/v1/content/${trimmed}`;
     return this.request<T>(path, params, options?.validate);
   }
 

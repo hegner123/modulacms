@@ -99,6 +99,7 @@ func HTTPPublicEndpointMiddleware(c *config.Config) func(http.Handler) http.Hand
 				return
 			}
 
+
 			// Allow public endpoints (exact match or with trailing slash)
 			for _, endpoint := range PublicEndpoints {
 				if r.URL.Path == endpoint || r.URL.Path == endpoint+"/" {

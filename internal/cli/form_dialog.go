@@ -2228,7 +2228,7 @@ func prepareEditorCmd(fieldIndex int, currentValue string, widget string, logger
 		logger.Finfo(fmt.Sprintf("[editor] file extension for widget %q: %s", widget, ext))
 	}
 
-	tmpFile, err := os.CreateTemp("", "modulacms-*"+ext)
+	tmpFile, err := os.CreateTemp("", "modula-*"+ext)
 	if err != nil {
 		if logger != nil {
 			logger.Ferror(fmt.Sprintf("[editor] failed to create temp file with extension %s", ext), err)

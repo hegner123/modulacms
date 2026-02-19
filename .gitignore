@@ -41,9 +41,8 @@ ui
 *.db-wal
 
 #binary
-modulacms-amd
-modulacms-x86
-modulacms
+modula-amd
+modula-x86
 modula
 
 #references

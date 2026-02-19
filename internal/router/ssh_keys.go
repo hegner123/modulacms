@@ -76,7 +76,7 @@ func AddSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		return
 	}
 
-	utility.DefaultLogger.Info("SSH key added for user %s: %s", authUser.UserID, fingerprint)
+	utility.DefaultLogger.Info("SSH key added for user", authUser.UserID, "fingerprint:", fingerprint)
 
 	// Return created SSH key
 	w.Header().Set("Content-Type", "application/json")
@@ -188,7 +188,7 @@ func DeleteSSHKeyHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		return
 	}
 
-	utility.DefaultLogger.Info("SSH key deleted for user %s: %s", authUser.UserID, keyID)
+	utility.DefaultLogger.Info("SSH key deleted for user", authUser.UserID, "key:", keyID)
 
 	w.WriteHeader(http.StatusNoContent)
 }

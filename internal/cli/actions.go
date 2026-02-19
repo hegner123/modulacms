@@ -156,7 +156,7 @@ func runDBInit(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:             "DB Init Complete",
-			Message:           fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Message:           fmt.Sprintf("Database tables created and bootstrap data loaded.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 			ReloadPermissions: true,
 		}
 	}
@@ -232,7 +232,7 @@ func runDBWipeRedeploy(cfg *config.Config) tea.Cmd {
 		}
 		return ActionResultMsg{
 			Title:             "DB Wipe & Redeploy Complete",
-			Message:           fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modulacms.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
+			Message:           fmt.Sprintf("Database wiped and redeployed successfully.\n\nSystem admin: system@modula.local\nTemporary password: %s\n\nPlease change this password immediately.", randomPassword),
 			ReloadPermissions: true,
 		}
 	}
@@ -352,7 +352,7 @@ func runCheckForUpdates() tea.Cmd {
 
 		return ActionResultMsg{
 			Title:   "Update Complete",
-			Message: fmt.Sprintf("Updated to %s. Please restart ModulaCMS.", release.TagName),
+			Message: fmt.Sprintf("Updated to %s. Please restart Modula.", release.TagName),
 		}
 	}
 }
@@ -644,7 +644,7 @@ func runRegisterSSHKey(p ActionParams) tea.Cmd {
 		user, err := driver.CreateUser(ctx, ac, db.CreateUserParams{
 			Username:     username,
 			Name:         "SSH User",
-			Email:        types.Email(fmt.Sprintf("%s@modulacms.local", username)),
+			Email:        types.Email(fmt.Sprintf("%s@modula.local", username)),
 			Hash:         hash,
 			Role:         roleID,
 			DateCreated:  ts,

@@ -4,8 +4,8 @@
 
 # Build artifacts
 out/
-modulacms-x86
-modulacms-amd
+modula-x86
+modula-amd
 
 # Test and debug
 testdb/

@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"bytes"
@@ -32,30 +32,30 @@ func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename 
 
 	part, err := writer.CreateFormFile("file", filename)
 	if err != nil {
-		return nil, fmt.Errorf("modulacms: create form file: %w", err)
+		return nil, fmt.Errorf("modula: create form file: %w", err)
 	}
 
 	if _, err := io.Copy(part, r); err != nil {
-		return nil, fmt.Errorf("modulacms: copy file data: %w", err)
+		return nil, fmt.Errorf("modula: copy file data: %w", err)
 	}
 
 	if opts != nil && opts.Path != "" {
 		pathField, err := writer.CreateFormField("path")
 		if err != nil {
-			return nil, fmt.Errorf("modulacms: create path field: %w", err)
+			return nil, fmt.Errorf("modula: create path field: %w", err)
 		}
 		if _, err := pathField.Write([]byte(opts.Path)); err != nil {
-			return nil, fmt.Errorf("modulacms: write path field: %w", err)
+			return nil, fmt.Errorf("modula: write path field: %w", err)
 		}
 	}
 
 	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("modulacms: close multipart writer: %w", err)
+		return nil, fmt.Errorf("modula: close multipart writer: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, m.http.baseURL+"/api/v1/media", &buf)
 	if err != nil {
-		return nil, fmt.Errorf("modulacms: create upload request: %w", err)
+		return nil, fmt.Errorf("modula: create upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
@@ -78,7 +78,7 @@ func (m *MediaUploadResource) Upload(ctx context.Context, r io.Reader, filename 
 
 	var result Media
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return nil, fmt.Errorf("modulacms: decode upload response: %w", err)
+		return nil, fmt.Errorf("modula: decode upload response: %w", err)
 	}
 	return &result, nil
 }

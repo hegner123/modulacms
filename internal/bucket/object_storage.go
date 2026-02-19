@@ -33,7 +33,7 @@ func (cs S3Credentials) GetBucket() (*s3.S3, error) {
 		S3ForcePathStyle: aws.Bool(cs.ForcePathStyle),
 	})
 	if err != nil {
-		utility.DefaultLogger.Error("Failed to create session: %v", err)
+		utility.DefaultLogger.Error("Failed to create session:", err)
 		return nil, err
 	}
 
@@ -56,7 +56,7 @@ func EnsureBucket(svc *s3.S3, bucketName string) error {
 		return fmt.Errorf("create bucket %q: %w", bucketName, err)
 	}
 
-	utility.DefaultLogger.Info("Created bucket: %s", bucketName)
+	utility.DefaultLogger.Info("Created bucket:", bucketName)
 	return nil
 }
 
@@ -105,7 +105,7 @@ func SetPublicReadPolicy(svc *s3.S3, bucketName string) error {
 		return fmt.Errorf("set public-read policy on %q: %w", bucketName, err)
 	}
 
-	utility.DefaultLogger.Info("Set public-read policy on bucket: %s", bucketName)
+	utility.DefaultLogger.Info("Set public-read policy on bucket:", bucketName)
 	return nil
 }
 
@@ -146,9 +146,7 @@ func PrintBuckets(s3 *s3.S3) {
 
 	utility.DefaultLogger.Info("Buckets:")
 	for _, bucket := range result.Buckets {
-		utility.DefaultLogger.Info("%s created on %s\n",
-			aws.StringValue(bucket.Name),
-			aws.TimeValue(bucket.CreationDate))
+		utility.DefaultLogger.Info(aws.StringValue(bucket.Name), "created on", aws.TimeValue(bucket.CreationDate))
 	}
 }
 

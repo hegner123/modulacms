@@ -41,7 +41,7 @@ func (m Model) UpdateProvisioning(msg tea.Msg) (Model, tea.Cmd) {
 		// Show success message
 		return m, ShowDialog(
 			"Account Created!",
-			"Your account has been created successfully.\nYou can now access ModulaCMS.",
+			"Your account has been created successfully.\nYou can now access Modula.",
 			false,
 		)
 	}

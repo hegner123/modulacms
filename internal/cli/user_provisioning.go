@@ -33,7 +33,7 @@ func NewUserProvisioningForm(m Model) *huh.Form {
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewNote().
-				Title("Welcome to ModulaCMS!").
+				Title("Welcome to Modula!").
 				Description(fmt.Sprintf(
 					"Your SSH key is not yet registered.\n"+
 						"Fingerprint: %s\n\n"+

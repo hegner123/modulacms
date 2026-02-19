@@ -2,8 +2,11 @@ package router
 
 import (
 	"encoding/json"
+	"io/fs"
 	"net/http"
+	"strings"
 
+	"github.com/hegner123/modulacms/admin"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/middleware"
@@ -323,8 +326,38 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		)
 	}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	// Content delivery via slug
+	mux.HandleFunc("/api/v1/content/", func(w http.ResponseWriter, r *http.Request) {
 		SlugHandler(w, r, *c)
+	})
+
+	// Embedded admin panel (SPA)
+	distFS, err := fs.Sub(admin.DistFS, "dist")
+	if err == nil {
+		fileServer := http.FileServer(http.FS(distFS))
+		mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
+			// Strip the /admin prefix for filesystem lookups
+			path := strings.TrimPrefix(r.URL.Path, "/admin")
+			if path == "" || path == "/" {
+				path = "/index.html"
+			}
+			// Try to open the file; if it doesn't exist, serve index.html for SPA routing
+			f, openErr := distFS.Open(strings.TrimPrefix(path, "/"))
+			if openErr != nil {
+				r.URL.Path = "/index.html"
+				fileServer.ServeHTTP(w, r)
+				return
+			}
+			f.Close()
+			// File exists — let the file server handle it (with /admin/ stripped)
+			r.URL.Path = path
+			fileServer.ServeHTTP(w, r)
+		})
+	}
+
+	// Root redirects to admin panel
+	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/admin/", http.StatusFound)
 	})
 	return mux
 

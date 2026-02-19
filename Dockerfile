@@ -4,16 +4,16 @@
 # Multi-stage build: compile with CGO, run on minimal Debian slim
 #
 # Build:
-#   docker build -t modulacms .
-#   docker build --build-arg VERSION=1.0.0 -t modulacms:1.0.0 .
+#   docker build -t modula .
+#   docker build --build-arg VERSION=1.0.0 -t modula:1.0.0 .
 #
 # Run:
 #   docker run -d -p 8080:8080 -p 4000:4000 -p 2233:2233 \
-#     -v modulacms-data:/app/data \
-#     -v modulacms-certs:/app/certs \
-#     -v modulacms-ssh:/app/.ssh \
-#     -v modulacms-backups:/app/backups \
-#     modulacms
+#     -v modula-data:/app/data \
+#     -v modula-certs:/app/certs \
+#     -v modula-ssh:/app/.ssh \
+#     -v modula-backups:/app/backups \
+#     modula
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -55,7 +55,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
         -X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
         -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
         -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
-    -o modulacms ./cmd
+    -o modula ./cmd
 
 # -----------------------------------------------------------------------------
 # Stage 2: Runtime
@@ -85,19 +85,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ENV EDITOR=nvim
 
 # Non-root user
-RUN groupadd --gid 1000 modulacms \
-    && useradd --uid 1000 --gid modulacms --shell /bin/false --create-home modulacms
+RUN groupadd --gid 1000 modula \
+    && useradd --uid 1000 --gid modula --shell /bin/false --create-home modula
 
 WORKDIR /app
 
 # Persistent data directories
 RUN mkdir -p /app/data /app/certs /app/.ssh /app/backups /app/plugins \
-    && chown -R modulacms:modulacms /app
+    && chown -R modula:modula /app
 
 # Copy binary from builder
-COPY --from=builder --chown=modulacms:modulacms /build/modulacms /app/modulacms
+COPY --from=builder --chown=modula:modula /build/modula /app/modula
 
-USER modulacms
+USER modula
 
 # HTTP, HTTPS, SSH
 EXPOSE 8080 4000 2233
@@ -105,6 +105,6 @@ EXPOSE 8080 4000 2233
 VOLUME ["/app/data", "/app/certs", "/app/.ssh", "/app/backups", "/app/plugins"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD ["/app/modulacms", "--version"]
+    CMD ["/app/modula", "--version"]
 
-ENTRYPOINT ["/bin/sh", "-c", "/app/modulacms cert generate && /app/modulacms serve"]
+ENTRYPOINT ["/bin/sh", "-c", "/app/modula cert generate && /app/modula serve"]

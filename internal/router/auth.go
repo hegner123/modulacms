@@ -226,7 +226,7 @@ func OauthCallbackHandler(c config.Config) http.HandlerFunc {
 			redirectURL = "/"
 		}
 
-		utility.DefaultLogger.Info("OAuth login successful for user: %s (user_id: %d)", user.Email, user.UserID)
+		utility.DefaultLogger.Info("OAuth login successful for user:", user.Email, "user_id:", user.UserID)
 		http.Redirect(w, r, redirectURL, http.StatusTemporaryRedirect)
 	}
 }
@@ -272,7 +272,7 @@ func OauthInitiateHandler(c config.Config) http.HandlerFunc {
 		// Generate authorization URL with state and PKCE challenge
 		url := conf.AuthCodeURL(state, oauth2.S256ChallengeOption(verifier))
 
-		utility.DefaultLogger.Info("Redirecting to OAuth provider: %s", c.Oauth_Provider_Name)
+		utility.DefaultLogger.Info("Redirecting to OAuth provider:", c.Oauth_Provider_Name)
 
 		// Redirect to provider
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
@@ -382,7 +382,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
 
-	utility.DefaultLogger.Info("User logged in successfully: %s", user.Email)
+	utility.DefaultLogger.Info("User logged in successfully:", user.Email)
 }
 
 // LogoutHandler clears the session cookie and invalidates the session.
@@ -408,7 +408,7 @@ func LogoutHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		// Delete session from database
 		// Note: You'll need to implement DeleteSessionByUserId in the db package
 		// For now, we'll just clear the cookie
-		utility.DefaultLogger.Info("User logged out: %d", userCookie.UserId)
+		utility.DefaultLogger.Info("User logged out:", userCookie.UserId)
 	}
 
 	// Clear the cookie

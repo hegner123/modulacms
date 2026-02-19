@@ -100,14 +100,14 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modulacms-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
-          chmod +x modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
+            -o modula-${{ matrix.goos }}-${{ matrix.goarch }} ./cmd
+          chmod +x modula-${{ matrix.goos }}-${{ matrix.goarch }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: modulacms-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: modula-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: modula-${{ matrix.goos }}-${{ matrix.goarch }}
 
   release:
     needs: build
@@ -165,7 +165,7 @@ jobs:
             -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=$VERSION' \
             -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=$COMMIT' \
             -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=$BUILD_DATE'" \
-            -o modulacms-amd ./cmd
+            -o modula-amd ./cmd
 
           echo "Built version: $VERSION (commit: $COMMIT)"
 
@@ -190,19 +190,19 @@ jobs:
           echo "Deploying to $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
 
           # Stop the service (ignore errors if service doesn't exist yet)
-          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl stop modulacms || echo 'Service not running'"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl stop modula || echo 'Service not running'"
 
           # Backup current binary
-          ssh $DEPLOY_USER@$DEPLOY_HOST "cp $DEPLOY_PATH/modulacms-amd $DEPLOY_PATH/modulacms-amd.backup || echo 'No existing binary to backup'"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "cp $DEPLOY_PATH/modula-amd $DEPLOY_PATH/modula-amd.backup || echo 'No existing binary to backup'"
 
           # Upload new binary
-          scp modulacms-amd $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/modulacms-amd
+          scp modula-amd $DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/modula-amd
 
           # Set permissions
-          ssh $DEPLOY_USER@$DEPLOY_HOST "chmod +x $DEPLOY_PATH/modulacms-amd"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "chmod +x $DEPLOY_PATH/modula-amd"
 
           # Start service
-          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl start modulacms"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl start modula"
 
           echo "Deployment completed successfully"
 
@@ -216,9 +216,9 @@ jobs:
           sleep 10
 
           # Check if service is active
-          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl is-active modulacms" || {
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl is-active modula" || {
             echo "Service failed to start, attempting restart..."
-            ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl restart modulacms"
+            ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl restart modula"
             sleep 5
           }
 
@@ -237,4 +237,4 @@ jobs:
           fi
 
           # Final service status check
-          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl status modulacms --no-pager"
+          ssh $DEPLOY_USER@$DEPLOY_HOST "sudo systemctl status modula --no-pager"

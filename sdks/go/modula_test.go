@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ func TestNewClient_RequiresBaseURL(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for empty BaseURL, got nil")
 	}
-	want := "modulacms: BaseURL is required"
+	want := "modula: BaseURL is required"
 	if err.Error() != want {
 		t.Errorf("error = %q, want %q", err.Error(), want)
 	}

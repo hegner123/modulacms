@@ -1,4 +1,4 @@
-package modulacms
+package modula
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ func (h *httpClient) get(ctx context.Context, path string, params url.Values, re
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, fullURL, nil)
 	if err != nil {
-		return fmt.Errorf("modulacms: %w", err)
+		return fmt.Errorf("modula: %w", err)
 	}
 
 	return h.do(req, result)
@@ -51,7 +51,7 @@ func (h *httpClient) del(ctx context.Context, path string, params url.Values) er
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
 	if err != nil {
-		return fmt.Errorf("modulacms: %w", err)
+		return fmt.Errorf("modula: %w", err)
 	}
 
 	return h.do(req, nil)
@@ -65,7 +65,7 @@ func (h *httpClient) doRaw(ctx context.Context, req *http.Request) (*http.Respon
 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("modulacms: %w", err)
+		return nil, fmt.Errorf("modula: %w", err)
 	}
 
 	return resp, nil
@@ -75,12 +75,12 @@ func (h *httpClient) doRaw(ctx context.Context, req *http.Request) (*http.Respon
 func (h *httpClient) jsonRequest(ctx context.Context, method string, path string, body any, result any) error {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(body); err != nil {
-		return fmt.Errorf("modulacms: encoding request body: %w", err)
+		return fmt.Errorf("modula: encoding request body: %w", err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, h.baseURL+path, &buf)
 	if err != nil {
-		return fmt.Errorf("modulacms: %w", err)
+		return fmt.Errorf("modula: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 
@@ -94,7 +94,7 @@ func (h *httpClient) do(req *http.Request, result any) error {
 
 	resp, err := h.httpClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("modulacms: %w", err)
+		return fmt.Errorf("modula: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -104,7 +104,7 @@ func (h *httpClient) do(req *http.Request, result any) error {
 
 	if result != nil {
 		if err := json.NewDecoder(resp.Body).Decode(result); err != nil {
-			return fmt.Errorf("modulacms: decoding response: %w", err)
+			return fmt.Errorf("modula: decoding response: %w", err)
 		}
 	}
 

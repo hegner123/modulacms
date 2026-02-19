@@ -10,9 +10,9 @@ var (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "modulacms",
-	Short: "ModulaCMS - A headless CMS written in Go",
-	Long:  "ModulaCMS serves content over HTTP/HTTPS and provides SSH access for backend management.",
+	Use:   "modula",
+	Short: "Modula - A headless CMS written in Go",
+	Long:  "Modula serves content over HTTP/HTTPS and provides SSH access for backend management.",
 	SilenceUsage:  true,
 	SilenceErrors: true,
 }
