@@ -24,8 +24,6 @@ NEW_COMPOSE="deploy/docker/docker-compose.prod.yml"
 # Docker compose prepends the project name to volume names.
 # Old project: modula-postgres, New project: modula
 declare -A VOLUME_MAP=(
-    ["modula-postgres_caddy_data"]="modula_prod_caddy_data"
-    ["modula-postgres_caddy_config"]="modula_prod_caddy_config"
     ["modula-postgres_postgres_cms_data"]="modula_prod_cms_data"
     ["modula-postgres_postgres_cms_ssh"]="modula_prod_cms_ssh"
     ["modula-postgres_postgres_cms_backups"]="modula_prod_cms_backups"
