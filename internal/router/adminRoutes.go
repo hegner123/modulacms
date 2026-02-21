@@ -130,10 +130,10 @@ func apiListOrderedAdminRoutes(w http.ResponseWriter, r *http.Request, c config.
 	ordered := make([]orderedRoute, 0, len(*routes))
 
 	for _, route := range *routes {
-		routeIDStr := route.AdminRouteID.String()
+		nullableRouteID := types.NullableAdminRouteID{ID: route.AdminRouteID, Valid: true}
 		order := math.MaxInt32
 
-		contentData, err := d.ListAdminContentDataByRoute(routeIDStr)
+		contentData, err := d.ListAdminContentDataByRoute(nullableRouteID)
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list admin content data for route", err)
 			ordered = append(ordered, orderedRoute{Route: route, Order: order})
@@ -150,7 +150,7 @@ func apiListOrderedAdminRoutes(w http.ResponseWriter, r *http.Request, c config.
 		}
 
 		if rootContentDataID != "" {
-			contentFields, err := d.ListAdminContentFieldsByRoute(routeIDStr)
+			contentFields, err := d.ListAdminContentFieldsByRoute(nullableRouteID)
 			if err != nil {
 				utility.DefaultLogger.Error("failed to list admin content fields for route", err)
 				ordered = append(ordered, orderedRoute{Route: route, Order: order})

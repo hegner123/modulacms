@@ -174,12 +174,12 @@ func (q *Queries) CountAdminField(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countAdminroute = `-- name: CountAdminroute :one
+const countAdminRoute = `-- name: CountAdminRoute :one
 SELECT COUNT(*) FROM admin_routes
 `
 
-func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countAdminroute)
+func (q *Queries) CountAdminRoute(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminRoute)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -1217,8 +1217,12 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value,
-    author_id
+    author_id,
+    date_created,
+    date_modified
 ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -1235,6 +1239,8 @@ type CreateContentFieldParams struct {
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
 	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
 }
 
 func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentFieldParams) error {
@@ -1245,6 +1251,8 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 		arg.FieldID,
 		arg.FieldValue,
 		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 	)
 	return err
 }
@@ -1352,8 +1360,12 @@ INSERT INTO datatypes (
     parent_id,
     label,
     type,
-    author_id
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -1363,11 +1375,13 @@ INSERT INTO datatypes (
 `
 
 type CreateDatatypeParams struct {
-	DatatypeID types.DatatypeID         `json:"datatype_id"`
-	ParentID   types.NullableDatatypeID `json:"parent_id"`
-	Label      string                   `json:"label"`
-	Type       string                   `json:"type"`
-	AuthorID   types.NullableUserID     `json:"author_id"`
+	DatatypeID   types.DatatypeID         `json:"datatype_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Label        string                   `json:"label"`
+	Type         string                   `json:"type"`
+	AuthorID     types.NullableUserID     `json:"author_id"`
+	DateCreated  types.Timestamp          `json:"date_created"`
+	DateModified types.Timestamp          `json:"date_modified"`
 }
 
 func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) error {
@@ -1377,6 +1391,8 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 	)
 	return err
 }
@@ -9282,11 +9298,13 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 
 const updateContentField = `-- name: UpdateContentField :exec
 UPDATE content_fields
-set  route_id = ?,
+SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
-    field_value = ?, 
-    author_id = ?
+    field_value = ?,
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
 WHERE content_field_id = ?
 `
 
@@ -9296,6 +9314,8 @@ type UpdateContentFieldParams struct {
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
 	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 }
 
@@ -9306,6 +9326,8 @@ func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentField
 		arg.FieldID,
 		arg.FieldValue,
 		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 		arg.ContentFieldID,
 	)
 	return err
@@ -9329,20 +9351,23 @@ func (q *Queries) UpdateContentRelationSortOrder(ctx context.Context, arg Update
 
 const updateDatatype = `-- name: UpdateDatatype :exec
 UPDATE datatypes
-set 
-    parent_id = ?,
+SET parent_id = ?,
     label = ?,
     type = ?,
-    author_id = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE datatype_id = ?
 `
 
 type UpdateDatatypeParams struct {
-	ParentID   types.NullableDatatypeID `json:"parent_id"`
-	Label      string                   `json:"label"`
-	Type       string                   `json:"type"`
-	AuthorID   types.NullableUserID     `json:"author_id"`
-	DatatypeID types.DatatypeID         `json:"datatype_id"`
+	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Label        string                   `json:"label"`
+	Type         string                   `json:"type"`
+	AuthorID     types.NullableUserID     `json:"author_id"`
+	DateCreated  types.Timestamp          `json:"date_created"`
+	DateModified types.Timestamp          `json:"date_modified"`
+	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 }
 
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
@@ -9351,6 +9376,8 @@ func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) 
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
 		arg.DatatypeID,
 	)
 	return err

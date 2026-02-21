@@ -95,7 +95,7 @@ type DbDriver interface {
 	DeleteAdminContentData(context.Context, audited.AuditContext, types.AdminContentID) error
 	GetAdminContentData(types.AdminContentID) (*AdminContentData, error)
 	ListAdminContentData() (*[]AdminContentData, error)
-	ListAdminContentDataByRoute(string) (*[]AdminContentData, error)
+	ListAdminContentDataByRoute(types.NullableAdminRouteID) (*[]AdminContentData, error)
 	ListAdminContentDataPaginated(PaginationParams) (*[]AdminContentData, error)
 	ListAdminContentDataByRoutePaginated(ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error)
 	ListAdminContentDataWithDatatypeByRoute(types.NullableAdminRouteID) (*[]AdminContentDataWithDatatypeRow, error)
@@ -108,7 +108,7 @@ type DbDriver interface {
 	DeleteAdminContentField(context.Context, audited.AuditContext, types.AdminContentFieldID) error
 	GetAdminContentField(types.AdminContentFieldID) (*AdminContentFields, error)
 	ListAdminContentFields() (*[]AdminContentFields, error)
-	ListAdminContentFieldsByRoute(string) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRoute(types.NullableAdminRouteID) (*[]AdminContentFields, error)
 	ListAdminContentFieldsPaginated(PaginationParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoutePaginated(ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsWithFieldByRoute(types.NullableAdminRouteID) (*[]AdminContentFieldsWithFieldRow, error)

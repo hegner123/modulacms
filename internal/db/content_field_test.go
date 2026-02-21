@@ -750,12 +750,8 @@ func TestPsqlDatabase_MapUpdateContentFieldParams_AllFields(t *testing.T) {
 
 	got := d.MapUpdateContentFieldParams(input)
 
-	// PostgreSQL uses ContentFieldID_2 for the WHERE clause; both should match the input ID
 	if got.ContentFieldID != cfID {
 		t.Errorf("ContentFieldID = %v, want %v", got.ContentFieldID, cfID)
-	}
-	if got.ContentFieldID_2 != cfID {
-		t.Errorf("ContentFieldID_2 = %v, want %v (must match ContentFieldID for WHERE clause)", got.ContentFieldID_2, cfID)
 	}
 	if got.RouteID != routeID {
 		t.Errorf("RouteID = %v, want %v", got.RouteID, routeID)

@@ -60,5 +60,49 @@ func templateFuncMap() template.FuncMap {
 		"idFieldInGetParams": func(e Entity) string {
 			return e.IDField
 		},
+
+		// stringExpr returns the Go expression to convert a field to string based on StringConvert value.
+		"stringExpr": func(convert, expr string) string {
+			switch convert {
+			case "toString":
+				return expr + ".String()"
+			case "string":
+				return expr
+			case "sprintf":
+				return "fmt.Sprintf(\"%d\", " + expr + ")"
+			case "cast":
+				return "string(" + expr + ")"
+			case "nullToString":
+				return "utility.NullToString(" + expr + ")"
+			case "nullToEmpty":
+				return "NullStringToEmpty(" + expr + ")"
+			case "nullableIDToEmpty":
+				return "nullableIDToEmpty(" + expr + ")"
+			case "sprintfBool":
+				return "fmt.Sprintf(\"%t\", " + expr + ")"
+			case "sprintfFloat64":
+				return "fmt.Sprintf(\"%v\", " + expr + ".Float64)"
+			}
+			return expr
+		},
+
+		// wrapParam applies an optional wrapping expression to a parameter value.
+		// If wrapExpr contains %s, it is replaced with the value; otherwise value is returned as-is.
+		"wrapParam": func(wrapExpr, value string) string {
+			if wrapExpr == "" {
+				return value
+			}
+			return strings.Replace(wrapExpr, "%s", value, 1)
+		},
+
+		// sqlcExtraQueryName returns the sqlc function name for an ExtraQuery.
+		"sqlcExtraQueryName": func(e Entity, eq ExtraQuery) string {
+			return e.SqlcExtraQueryName(eq)
+		},
+
+		// sqlcPaginatedQueryName returns the sqlc function name for a PaginatedExtraQuery.
+		"sqlcPaginatedQueryName": func(e Entity, pq PaginatedExtraQuery) string {
+			return e.SqlcPaginatedQueryName(pq)
+		},
 	}
 }

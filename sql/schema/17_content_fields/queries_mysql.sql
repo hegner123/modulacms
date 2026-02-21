@@ -55,8 +55,12 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value,
-    author_id
+    author_id,
+    date_created,
+    date_modified
 ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -67,11 +71,13 @@ INSERT INTO content_fields (
 
 -- name: UpdateContentField :exec
 UPDATE content_fields
-set  route_id = ?,
+SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
-    field_value = ?, 
-    author_id = ?
+    field_value = ?,
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
 WHERE content_field_id = ?;
 
 -- name: DeleteContentField :exec

@@ -2,15 +2,24 @@
 package db
 
 import (
+{{- if not .Entity.SkipAuditedCommands}}
 	"context"
+{{- end}}
+{{- if or (not .Entity.SkipAuditedCommands) .Entity.NeedsSqlImport}}
 	"database/sql"
+{{- end}}
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+{{- if not .Entity.SkipAuditedCommands}}
 	"github.com/hegner123/modulacms/internal/db/audited"
+{{- end}}
 	"github.com/hegner123/modulacms/internal/db/types"
+{{- if .Entity.NeedsUtilityImport}}
+	"github.com/hegner123/modulacms/internal/utility"
+{{- end}}
 )
 
 ///////////////////////////////
@@ -19,7 +28,7 @@ import (
 
 // {{.Entity.Name}} represents a {{lower .Entity.Singular}} record in the database.
 type {{.Entity.Name}} struct {
-{{- range .Entity.Fields}}
+{{- range .Entity.StructFields}}
 	{{.AppName}} {{.Type}} `json:"{{.JSONTag}}"`
 {{- end}}
 }
@@ -42,6 +51,31 @@ type Update{{.Entity.Singular}}Params struct {
 {{- end}}
 {{- end}}
 }
+{{- range .Entity.ExtraParamStructs}}
+
+// {{.TypeName}} holds parameters for a filtered paginated query.
+type {{.TypeName}} struct {
+{{- range .Fields}}
+	{{.Name}} {{.Type}}
+{{- end}}
+}
+{{- end}}
+{{- if and .Entity.StringTypeName .Entity.HasStringConvertFields}}
+
+// MapString{{.Entity.Singular}} converts {{.Entity.Name}} to {{.Entity.StringTypeName}} for TUI display.
+func MapString{{.Entity.Singular}}(a {{.Entity.Name}}) {{.Entity.StringTypeName}} {
+	return {{.Entity.StringTypeName}}{
+{{- range .Entity.Fields}}
+{{- if .StringConvert}}
+		{{.AppName}}: {{stringExpr .StringConvert (printf "a.%s" .AppName)}},
+{{- end}}
+{{- end}}
+{{- range .Entity.ExtraStringFields}}
+		{{.Name}}: {{.Value}},
+{{- end}}
+	}
+}
+{{- end}}
 {{range $di, $driver := .Drivers}}
 {{$de := driverEntity $.Entity $driver}}
 ///////////////////////////////
@@ -54,7 +88,7 @@ type Update{{.Entity.Singular}}Params struct {
 // Map{{$.Entity.Singular}} converts a sqlc-generated {{driverCommentLabel $driver}} {{lower $.Entity.Singular}} to the wrapper type.
 func (d {{$driver.Struct}}) Map{{$.Entity.Singular}}(a {{$driver.Package}}.{{$.Entity.SqlcTypeName}}) {{$.Entity.Name}} {
 	return {{$.Entity.Name}}{
-{{- range $.Entity.Fields}}
+{{- range $.Entity.StructFields}}
 		{{.AppName}}: a.{{.SqlcFieldName}},
 {{- end}}
 	}
@@ -119,6 +153,8 @@ func (d {{$driver.Struct}}) Create{{$.Entity.Singular}}Table() error {
 	return err
 }
 
+{{- if not $.Entity.SkipAuditedCommands}}
+
 // Create{{$.Entity.Singular}} inserts a new {{lower $.Entity.Singular}} and records an audit event.
 func (d {{$driver.Struct}}) Create{{$.Entity.Singular}}(ctx context.Context, ac audited.AuditContext, s Create{{$.Entity.Singular}}Params) (*{{$.Entity.Name}}, error) {
 	cmd := d.New{{$.Entity.Singular}}Cmd(ctx, ac, s)
@@ -135,6 +171,7 @@ func (d {{$driver.Struct}}) Delete{{$.Entity.Singular}}(ctx context.Context, ac 
 	cmd := d.Delete{{$.Entity.Singular}}Cmd(ctx, ac, id)
 	return audited.Delete(cmd)
 }
+{{- end}}
 
 {{- if not $.Entity.SkipGet}}
 
@@ -169,7 +206,7 @@ func (d {{$driver.Struct}}) List{{$.Entity.Plural}}() (*[]{{$.Entity.Name}}, err
 // List{{$.Entity.Plural}}Paginated retrieves a paginated list of {{lower $.Entity.Plural}}.
 func (d {{$driver.Struct}}) List{{$.Entity.Plural}}Paginated(params PaginationParams) (*[]{{$.Entity.Name}}, error) {
 	queries := {{$driver.Package}}.New(d.Connection)
-	rows, err := queries.List{{$.Entity.Singular}}Paginated(d.Context, {{$driver.Package}}.List{{$.Entity.Singular}}PaginatedParams{
+	rows, err := queries.{{$.Entity.PaginatedListQueryName}}(d.Context, {{$driver.Package}}.{{$.Entity.PaginatedListQueryName}}Params{
 		Limit:  {{paginationCast $driver "params.Limit"}},
 		Offset: {{paginationCast $driver "params.Offset"}},
 	})
@@ -185,6 +222,8 @@ func (d {{$driver.Struct}}) List{{$.Entity.Plural}}Paginated(params PaginationPa
 }
 {{- end}}
 
+{{- if not $.Entity.SkipAuditedCommands}}
+
 // Update{{$.Entity.Singular}} modifies an existing {{lower $.Entity.Singular}} and records an audit event.
 func (d {{$driver.Struct}}) Update{{$.Entity.Singular}}(ctx context.Context, ac audited.AuditContext, s Update{{$.Entity.Singular}}Params) (*string, error) {
 	cmd := d.Update{{$.Entity.Singular}}Cmd(ctx, ac, s)
@@ -194,6 +233,65 @@ func (d {{$driver.Struct}}) Update{{$.Entity.Singular}}(ctx context.Context, ac 
 	msg := fmt.Sprintf("Successfully updated %v\n", {{$.Entity.UpdateSuccessField}})
 	return &msg, nil
 }
+{{- end}}
+{{- range $.Entity.ExtraQueries}}
+{{- if not .ReturnsList}}
+
+// {{.MethodName}} retrieves a {{lower $.Entity.Singular}} by {{(index .Params 0).ParamName}}.
+func (d {{$driver.Struct}}) {{.MethodName}}({{range $i, $p := .Params}}{{if $i}}, {{end}}{{$p.ParamName}} {{$p.ParamType}}{{end}}) (*{{$.Entity.Name}}, error) {
+	queries := {{$driver.Package}}.New(d.Connection)
+	row, err := queries.{{sqlcExtraQueryName $.Entity .}}(d.Context, {{$driver.Package}}.{{sqlcExtraQueryName $.Entity .}}Params{ {{- range $i, $p := .Params}}{{if $i}}, {{end}}{{$p.SqlcField}}: {{wrapParam $p.WrapExpr $p.ParamName}}{{end}}})
+	if err != nil {
+		return nil, err
+	}
+	res := d.Map{{$.Entity.Singular}}(row)
+	return &res, nil
+}
+{{- else}}
+
+// {{.MethodName}} retrieves {{lower $.Entity.Plural}} by {{(index .Params 0).ParamName}}.
+func (d {{$driver.Struct}}) {{.MethodName}}({{range $i, $p := .Params}}{{if $i}}, {{end}}{{$p.ParamName}} {{$p.ParamType}}{{end}}) (*[]{{$.Entity.Name}}, error) {
+	queries := {{$driver.Package}}.New(d.Connection)
+	rows, err := queries.{{sqlcExtraQueryName $.Entity .}}(d.Context, {{$driver.Package}}.{{sqlcExtraQueryName $.Entity .}}Params{ {{- range $i, $p := .Params}}{{if $i}}, {{end}}{{$p.SqlcField}}: {{wrapParam $p.WrapExpr $p.ParamName}}{{end}}})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get {{$.Entity.Name}} by {{(index .Params 0).ParamName}}: %v\n", err)
+	}
+	res := []{{$.Entity.Name}}{}
+	for _, v := range rows {
+		m := d.Map{{$.Entity.Singular}}(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+{{- end}}
+{{- end}}
+{{- range $.Entity.PaginatedExtraQueries}}
+
+// {{.MethodName}} retrieves a paginated list of {{lower $.Entity.Plural}} filtered by {{(index .FilterFields 0).ParamName}}.
+func (d {{$driver.Struct}}) {{.MethodName}}(params {{.AppParamsType}}) (*[]{{$.Entity.Name}}, error) {
+	queries := {{$driver.Package}}.New(d.Connection)
+	rows, err := queries.{{sqlcPaginatedQueryName $.Entity .}}(d.Context, {{$driver.Package}}.{{sqlcPaginatedQueryName $.Entity .}}Params{
+{{- range .FilterFields}}
+{{- if .WrapExpr}}
+		{{.SqlcField}}: {{wrapParam .WrapExpr .ParamName}},
+{{- else}}
+		{{.SqlcField}}: params.{{.ParamName}},
+{{- end}}
+{{- end}}
+		Limit:  {{paginationCast $driver "params.Limit"}},
+		Offset: {{paginationCast $driver "params.Offset"}},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get {{$.Entity.Name}} paginated: %v", err)
+	}
+	res := []{{$.Entity.Name}}{}
+	for _, v := range rows {
+		m := d.Map{{$.Entity.Singular}}(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+{{- end}}
 {{end}}
 {{- if not .Entity.SkipAuditedCommands}}
 // ========== AUDITED COMMAND TYPES ==========

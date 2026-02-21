@@ -94,7 +94,7 @@ func TestDatabase_CRUD_AdminContentData(t *testing.T) {
 	}
 
 	// --- ListAdminContentDataByRoute ---
-	byRoute, err := d.ListAdminContentDataByRoute(adminRouteID.String())
+	byRoute, err := d.ListAdminContentDataByRoute(adminRouteID)
 	if err != nil {
 		t.Fatalf("ListAdminContentDataByRoute: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestDatabase_CRUD_AdminContentData(t *testing.T) {
 	}
 
 	// --- ListAdminContentDataByRoute with non-matching route ---
-	noMatch, err := d.ListAdminContentDataByRoute("nonexistent-route-id")
+	noMatch, err := d.ListAdminContentDataByRoute(types.NullableAdminRouteID{ID: types.AdminRouteID("nonexistent-route-id"), Valid: true})
 	if err != nil {
 		t.Fatalf("ListAdminContentDataByRoute (no match): %v", err)
 	}

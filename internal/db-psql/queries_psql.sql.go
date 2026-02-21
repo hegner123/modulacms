@@ -175,13 +175,13 @@ func (q *Queries) CountAdminField(ctx context.Context) (int64, error) {
 	return count, err
 }
 
-const countAdminroute = `-- name: CountAdminroute :one
+const countAdminRoute = `-- name: CountAdminRoute :one
 SELECT COUNT(*)
 FROM admin_routes
 `
 
-func (q *Queries) CountAdminroute(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countAdminroute)
+func (q *Queries) CountAdminRoute(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminRoute)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -9585,32 +9585,29 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 
 const updateContentField = `-- name: UpdateContentField :exec
 UPDATE content_fields
-SET  content_field_id = $1,
-    route_id = $2,
-    content_data_id = $3,
-    field_id = $4,
-    field_value = $5,
-    author_id = $6,
-    date_created = $7,
-    date_modified = $8
-WHERE content_field_id = $9
+SET route_id = $1,
+    content_data_id = $2,
+    field_id = $3,
+    field_value = $4,
+    author_id = $5,
+    date_created = $6,
+    date_modified = $7
+WHERE content_field_id = $8
 `
 
 type UpdateContentFieldParams struct {
-	ContentFieldID   types.ContentFieldID    `json:"content_field_id"`
-	RouteID          types.NullableRouteID   `json:"route_id"`
-	ContentDataID    types.NullableContentID `json:"content_data_id"`
-	FieldID          types.NullableFieldID   `json:"field_id"`
-	FieldValue       string                  `json:"field_value"`
-	AuthorID         types.NullableUserID    `json:"author_id"`
-	DateCreated      types.Timestamp         `json:"date_created"`
-	DateModified     types.Timestamp         `json:"date_modified"`
-	ContentFieldID_2 types.ContentFieldID    `json:"content_field_id_2"`
+	RouteID        types.NullableRouteID   `json:"route_id"`
+	ContentDataID  types.NullableContentID `json:"content_data_id"`
+	FieldID        types.NullableFieldID   `json:"field_id"`
+	FieldValue     string                  `json:"field_value"`
+	AuthorID       types.NullableUserID    `json:"author_id"`
+	DateCreated    types.Timestamp         `json:"date_created"`
+	DateModified   types.Timestamp         `json:"date_modified"`
+	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
 }
 
 func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateContentField,
-		arg.ContentFieldID,
 		arg.RouteID,
 		arg.ContentDataID,
 		arg.FieldID,
@@ -9618,7 +9615,7 @@ func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentField
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
-		arg.ContentFieldID_2,
+		arg.ContentFieldID,
 	)
 	return err
 }

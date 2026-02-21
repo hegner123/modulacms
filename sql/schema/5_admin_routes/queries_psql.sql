@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS admin_routes (
 CREATE INDEX IF NOT EXISTS idx_admin_routes_slug
 ON admin_routes(slug);
 
--- name: CountAdminroute :one
+-- name: CountAdminRoute :one
 SELECT COUNT(*)
 FROM admin_routes;
 

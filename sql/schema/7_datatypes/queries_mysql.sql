@@ -53,8 +53,12 @@ INSERT INTO datatypes (
     parent_id,
     label,
     type,
-    author_id
+    author_id,
+    date_created,
+    date_modified
     ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -64,11 +68,12 @@ INSERT INTO datatypes (
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
-set 
-    parent_id = ?,
+SET parent_id = ?,
     label = ?,
     type = ?,
-    author_id = ?
+    author_id = ?,
+    date_created = ?,
+    date_modified = ?
     WHERE datatype_id = ?;
 
 -- name: DeleteDatatype :exec

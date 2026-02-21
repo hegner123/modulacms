@@ -11,6 +11,28 @@ import (
 	"github.com/sqlc-dev/pqtype"
 )
 
+// NullStringToEmpty returns the string value if valid, or "" if null.
+func NullStringToEmpty(n sql.NullString) string {
+	if n.Valid {
+		return n.String
+	}
+	return ""
+}
+
+// nullableStringer is implemented by nullable ID types that can report validity.
+type nullableStringer interface {
+	IsZero() bool
+	String() string
+}
+
+// nullableIDToEmpty returns "" if the nullable ID is zero/invalid, or the string value otherwise.
+func nullableIDToEmpty(n nullableStringer) string {
+	if n.IsZero() {
+		return ""
+	}
+	return n.String()
+}
+
 // DBTableString converts a DBTable to its string representation.
 func DBTableString(t DBTable) string {
 	return string(t)

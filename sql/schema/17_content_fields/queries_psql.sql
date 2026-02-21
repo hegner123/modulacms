@@ -71,15 +71,14 @@ INSERT INTO content_fields (
 
 -- name: UpdateContentField :exec
 UPDATE content_fields
-SET  content_field_id = $1,
-    route_id = $2,
-    content_data_id = $3,
-    field_id = $4,
-    field_value = $5,
-    author_id = $6,
-    date_created = $7,
-    date_modified = $8
-WHERE content_field_id = $9;
+SET route_id = $1,
+    content_data_id = $2,
+    field_id = $3,
+    field_value = $4,
+    author_id = $5,
+    date_created = $6,
+    date_modified = $7
+WHERE content_field_id = $8;
 
 -- name: DeleteContentField :exec
 DELETE FROM content_fields

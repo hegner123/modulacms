@@ -12,72 +12,15 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-///////////////////////////////
-// STRUCTS
-//////////////////////////////
-
-// AdminRoutes represents a CMS admin route resource.
-type AdminRoutes struct {
-	AdminRouteID types.AdminRouteID   `json:"admin_route_id"`
-	Slug         types.Slug           `json:"slug"`
-	Title        string               `json:"title"`
-	Status       int64                `json:"status"`
-	AuthorID     types.NullableUserID `json:"author_id"`
-	DateCreated  types.Timestamp      `json:"date_created"`
-	DateModified types.Timestamp      `json:"date_modified"`
-}
-
-// CreateAdminRouteParams contains parameters for creating an admin route.
-type CreateAdminRouteParams struct {
-	Slug         types.Slug           `json:"slug"`
-	Title        string               `json:"title"`
-	Status       int64                `json:"status"`
-	AuthorID     types.NullableUserID `json:"author_id"`
-	DateCreated  types.Timestamp      `json:"date_created"`
-	DateModified types.Timestamp      `json:"date_modified"`
-}
-
-// UpdateAdminRouteParams contains parameters for updating an admin route.
-type UpdateAdminRouteParams struct {
-	Slug         types.Slug           `json:"slug"`
-	Title        string               `json:"title"`
-	Status       int64                `json:"status"`
-	AuthorID     types.NullableUserID `json:"author_id"`
-	DateCreated  types.Timestamp      `json:"date_created"`
-	DateModified types.Timestamp      `json:"date_modified"`
-	Slug_2       types.Slug           `json:"slug_2"`
-}
-
 // UtilityGetAdminRoutesRow contains the result of retrieving admin routes.
 type UtilityGetAdminRoutesRow struct {
 	AdminRouteID types.AdminRouteID `json:"admin_route_id"`
 	Slug         types.Slug         `json:"slug"`
 }
 
-// FormParams and JSON variants removed - use typed params directly
-
-// GENERIC section removed - FormParams and JSON variants deprecated
-// Use types package for direct type conversion
-
-// MapStringAdminRoute converts AdminRoutes to StringAdminRoutes for table display.
-func MapStringAdminRoute(a AdminRoutes) StringAdminRoutes {
-	return StringAdminRoutes{
-		AdminRouteID: a.AdminRouteID.String(),
-		Slug:         string(a.Slug),
-		Title:        a.Title,
-		Status:       fmt.Sprintf("%d", a.Status),
-		AuthorID:     a.AuthorID.String(),
-		DateCreated:  a.DateCreated.String(),
-		DateModified: a.DateModified.String(),
-		History:      "", // History field removed
-	}
-}
-
 ///////////////////////////////
-// SQLITE
+// SQLITE MAPPERS
 //////////////////////////////
-
-// MAPS
 
 // MapAdminRoute converts a sqlc-generated SQLite type to the wrapper type.
 func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
@@ -118,17 +61,9 @@ func (d Database) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdb.Update
 	}
 }
 
-// QUERIES
-
-// CountAdminRoutes returns the total count of admin routes.
-func (d Database) CountAdminRoutes() (*int64, error) {
-	queries := mdb.New(d.Connection)
-	c, err := queries.CountAdminRoute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("%v", err)
-	}
-	return &c, nil
-}
+///////////////////////////////
+// SQLITE QUERIES
+//////////////////////////////
 
 // CreateAdminRoute inserts a new admin route record.
 func (d Database) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
@@ -139,13 +74,6 @@ func (d Database) CreateAdminRoute(ctx context.Context, ac audited.AuditContext,
 	}
 	r := d.MapAdminRoute(result)
 	return &r, nil
-}
-
-// CreateAdminRouteTable creates the admin_routes table.
-func (d Database) CreateAdminRouteTable() error {
-	queries := mdb.New(d.Connection)
-	err := queries.CreateAdminRouteTable(d.Context)
-	return err
 }
 
 // DeleteAdminRoute removes an admin route record.
@@ -162,21 +90,6 @@ func (d Database) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 		return nil, err
 	}
 	res := d.MapAdminRoute(row)
-	return &res, nil
-}
-
-// ListAdminRoutes returns all admin routes.
-func (d Database) ListAdminRoutes() (*[]AdminRoutes, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminRoute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Routes: %v\n", err)
-	}
-	res := []AdminRoutes{}
-	for _, v := range rows {
-		m := d.MapAdminRoute(v)
-		res = append(res, m)
-	}
 	return &res, nil
 }
 
@@ -209,10 +122,8 @@ func (d Database) UpdateAdminRoute(ctx context.Context, ac audited.AuditContext,
 }
 
 ///////////////////////////////
-// MYSQL
+// MYSQL MAPPERS
 //////////////////////////////
-
-// MAPS
 
 // MapAdminRoute converts a sqlc-generated MySQL type to the wrapper type.
 func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
@@ -253,17 +164,9 @@ func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.
 	}
 }
 
-// QUERIES
-
-// CountAdminRoutes returns the total count of admin routes.
-func (d MysqlDatabase) CountAdminRoutes() (*int64, error) {
-	queries := mdbm.New(d.Connection)
-	c, err := queries.CountAdminroute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("%v", err)
-	}
-	return &c, nil
-}
+///////////////////////////////
+// MYSQL QUERIES
+//////////////////////////////
 
 // CreateAdminRoute inserts a new admin route record.
 func (d MysqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
@@ -274,13 +177,6 @@ func (d MysqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditCon
 	}
 	r := d.MapAdminRoute(result)
 	return &r, nil
-}
-
-// CreateAdminRouteTable creates the admin_routes table.
-func (d MysqlDatabase) CreateAdminRouteTable() error {
-	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminRouteTable(d.Context)
-	return err
 }
 
 // DeleteAdminRoute removes an admin route record.
@@ -297,21 +193,6 @@ func (d MysqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 		return nil, err
 	}
 	res := d.MapAdminRoute(row)
-	return &res, nil
-}
-
-// ListAdminRoutes returns all admin routes.
-func (d MysqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminRoute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Routes: %v\n", err)
-	}
-	res := []AdminRoutes{}
-	for _, v := range rows {
-		m := d.MapAdminRoute(v)
-		res = append(res, m)
-	}
 	return &res, nil
 }
 
@@ -344,10 +225,8 @@ func (d MysqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditCon
 }
 
 ///////////////////////////////
-// POSTGRES
+// POSTGRES MAPPERS
 //////////////////////////////
-
-// MAPS
 
 // MapAdminRoute converts a sqlc-generated PostgreSQL type to the wrapper type.
 func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
@@ -388,17 +267,9 @@ func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.U
 	}
 }
 
-// QUERIES
-
-// CountAdminRoutes returns the total count of admin routes.
-func (d PsqlDatabase) CountAdminRoutes() (*int64, error) {
-	queries := mdbp.New(d.Connection)
-	c, err := queries.CountAdminroute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("%v", err)
-	}
-	return &c, nil
-}
+///////////////////////////////
+// POSTGRES QUERIES
+//////////////////////////////
 
 // CreateAdminRoute inserts a new admin route record.
 func (d PsqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditContext, s CreateAdminRouteParams) (*AdminRoutes, error) {
@@ -409,13 +280,6 @@ func (d PsqlDatabase) CreateAdminRoute(ctx context.Context, ac audited.AuditCont
 	}
 	r := d.MapAdminRoute(result)
 	return &r, nil
-}
-
-// CreateAdminRouteTable creates the admin_routes table.
-func (d PsqlDatabase) CreateAdminRouteTable() error {
-	queries := mdbp.New(d.Connection)
-	err := queries.CreateAdminRouteTable(d.Context)
-	return err
 }
 
 // DeleteAdminRoute removes an admin route record.
@@ -432,21 +296,6 @@ func (d PsqlDatabase) GetAdminRoute(slug types.Slug) (*AdminRoutes, error) {
 		return nil, err
 	}
 	res := d.MapAdminRoute(row)
-	return &res, nil
-}
-
-// ListAdminRoutes returns all admin routes.
-func (d PsqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminRoute(d.Context)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get Admin Routes: %v\n", err)
-	}
-	res := []AdminRoutes{}
-	for _, v := range rows {
-		m := d.MapAdminRoute(v)
-		res = append(res, m)
-	}
 	return &res, nil
 }
 
@@ -478,7 +327,9 @@ func (d PsqlDatabase) UpdateAdminRoute(ctx context.Context, ac audited.AuditCont
 	return &msg, nil
 }
 
-// ========== AUDITED COMMAND TYPES ==========
+///////////////////////////////
+// AUDITED COMMAND STRUCTS
+//////////////////////////////
 
 // ----- SQLite CREATE -----
 
@@ -491,28 +342,14 @@ type NewAdminRouteCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c NewAdminRouteCmd) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c NewAdminRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c NewAdminRouteCmd) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c NewAdminRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c NewAdminRouteCmd) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c NewAdminRouteCmd) Params() any                           { return c.params }
-
-// GetID returns the ID from the created record.
 func (c NewAdminRouteCmd) GetID(u mdb.AdminRoutes) string        { return string(u.AdminRouteID) }
 
-// Execute executes the create command within a transaction.
 func (c NewAdminRouteCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.AdminRoutes, error) {
 	queries := mdb.New(tx)
 	return queries.CreateAdminRoute(ctx, mdb.CreateAdminRouteParams{
@@ -542,34 +379,19 @@ type UpdateAdminRouteCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c UpdateAdminRouteCmd) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c UpdateAdminRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c UpdateAdminRouteCmd) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c UpdateAdminRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c UpdateAdminRouteCmd) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c UpdateAdminRouteCmd) Params() any                           { return c.params }
-
-// GetID returns the record ID to update.
 func (c UpdateAdminRouteCmd) GetID() string                         { return string(c.params.Slug_2) }
 
-// GetBefore retrieves the record before modification.
 func (c UpdateAdminRouteCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminRoutes, error) {
 	queries := mdb.New(tx)
 	return queries.GetAdminRouteBySlug(ctx, mdb.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
-// Execute executes the update command within a transaction.
 func (c UpdateAdminRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateAdminRoute(ctx, mdb.UpdateAdminRouteParams{
@@ -599,31 +421,18 @@ type DeleteAdminRouteCmd struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c DeleteAdminRouteCmd) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c DeleteAdminRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c DeleteAdminRouteCmd) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c DeleteAdminRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c DeleteAdminRouteCmd) TableName() string                     { return "admin_routes" }
-
-// GetID returns the record ID to delete.
 func (c DeleteAdminRouteCmd) GetID() string                         { return string(c.id) }
 
-// GetBefore retrieves the record before deletion.
 func (c DeleteAdminRouteCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminRoutes, error) {
 	queries := mdb.New(tx)
 	return queries.GetAdminRouteById(ctx, mdb.GetAdminRouteByIdParams{AdminRouteID: c.id})
 }
 
-// Execute executes the delete command within a transaction.
 func (c DeleteAdminRouteCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.DeleteAdminRoute(ctx, mdb.DeleteAdminRouteParams{AdminRouteID: c.id})
@@ -645,28 +454,14 @@ type NewAdminRouteCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c NewAdminRouteCmdMysql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c NewAdminRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c NewAdminRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c NewAdminRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c NewAdminRouteCmdMysql) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c NewAdminRouteCmdMysql) Params() any                           { return c.params }
+func (c NewAdminRouteCmdMysql) GetID(u mdbm.AdminRoutes) string       { return string(u.AdminRouteID) }
 
-// GetID returns the ID from the created record.
-func (c NewAdminRouteCmdMysql) GetID(u mdbm.AdminRoutes) string      { return string(u.AdminRouteID) }
-
-// Execute executes the create command within a transaction.
 func (c NewAdminRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.AdminRoutes, error) {
 	queries := mdbm.New(tx)
 	id := types.NewAdminRouteID()
@@ -701,34 +496,19 @@ type UpdateAdminRouteCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c UpdateAdminRouteCmdMysql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c UpdateAdminRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c UpdateAdminRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c UpdateAdminRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c UpdateAdminRouteCmdMysql) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c UpdateAdminRouteCmdMysql) Params() any                           { return c.params }
-
-// GetID returns the record ID to update.
 func (c UpdateAdminRouteCmdMysql) GetID() string                         { return string(c.params.Slug_2) }
 
-// GetBefore retrieves the record before modification.
 func (c UpdateAdminRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminRoutes, error) {
 	queries := mdbm.New(tx)
 	return queries.GetAdminRouteBySlug(ctx, mdbm.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
-// Execute executes the update command within a transaction.
 func (c UpdateAdminRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateAdminRoute(ctx, mdbm.UpdateAdminRouteParams{
@@ -758,31 +538,18 @@ type DeleteAdminRouteCmdMysql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c DeleteAdminRouteCmdMysql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c DeleteAdminRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c DeleteAdminRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c DeleteAdminRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c DeleteAdminRouteCmdMysql) TableName() string                     { return "admin_routes" }
-
-// GetID returns the record ID to delete.
 func (c DeleteAdminRouteCmdMysql) GetID() string                         { return string(c.id) }
 
-// GetBefore retrieves the record before deletion.
 func (c DeleteAdminRouteCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminRoutes, error) {
 	queries := mdbm.New(tx)
 	return queries.GetAdminRouteById(ctx, mdbm.GetAdminRouteByIdParams{AdminRouteID: c.id})
 }
 
-// Execute executes the delete command within a transaction.
 func (c DeleteAdminRouteCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.DeleteAdminRoute(ctx, mdbm.DeleteAdminRouteParams{AdminRouteID: c.id})
@@ -804,28 +571,14 @@ type NewAdminRouteCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c NewAdminRouteCmdPsql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c NewAdminRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c NewAdminRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c NewAdminRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c NewAdminRouteCmdPsql) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c NewAdminRouteCmdPsql) Params() any                           { return c.params }
+func (c NewAdminRouteCmdPsql) GetID(u mdbp.AdminRoutes) string       { return string(u.AdminRouteID) }
 
-// GetID returns the ID from the created record.
-func (c NewAdminRouteCmdPsql) GetID(u mdbp.AdminRoutes) string      { return string(u.AdminRouteID) }
-
-// Execute executes the create command within a transaction.
 func (c NewAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.AdminRoutes, error) {
 	queries := mdbp.New(tx)
 	return queries.CreateAdminRoute(ctx, mdbp.CreateAdminRouteParams{
@@ -855,34 +608,19 @@ type UpdateAdminRouteCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c UpdateAdminRouteCmdPsql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c UpdateAdminRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c UpdateAdminRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c UpdateAdminRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c UpdateAdminRouteCmdPsql) TableName() string                     { return "admin_routes" }
-
-// Params returns the command parameters.
 func (c UpdateAdminRouteCmdPsql) Params() any                           { return c.params }
-
-// GetID returns the record ID to update.
 func (c UpdateAdminRouteCmdPsql) GetID() string                         { return string(c.params.Slug_2) }
 
-// GetBefore retrieves the record before modification.
 func (c UpdateAdminRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminRoutes, error) {
 	queries := mdbp.New(tx)
 	return queries.GetAdminRouteBySlug(ctx, mdbp.GetAdminRouteBySlugParams{Slug: c.params.Slug_2})
 }
 
-// Execute executes the update command within a transaction.
 func (c UpdateAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateAdminRoute(ctx, mdbp.UpdateAdminRouteParams{
@@ -912,31 +650,18 @@ type DeleteAdminRouteCmdPsql struct {
 	recorder audited.ChangeEventRecorder
 }
 
-// Context returns the command context.
 func (c DeleteAdminRouteCmdPsql) Context() context.Context              { return c.ctx }
-
-// AuditContext returns the audit context.
 func (c DeleteAdminRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-
-// Connection returns the database connection.
 func (c DeleteAdminRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
-
-// Recorder returns the change event recorder.
 func (c DeleteAdminRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-
-// TableName returns the table name for audit records.
 func (c DeleteAdminRouteCmdPsql) TableName() string                     { return "admin_routes" }
-
-// GetID returns the record ID to delete.
 func (c DeleteAdminRouteCmdPsql) GetID() string                         { return string(c.id) }
 
-// GetBefore retrieves the record before deletion.
 func (c DeleteAdminRouteCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminRoutes, error) {
 	queries := mdbp.New(tx)
 	return queries.GetAdminRoute(ctx, mdbp.GetAdminRouteParams{AdminRouteID: c.id})
 }
 
-// Execute executes the delete command within a transaction.
 func (c DeleteAdminRouteCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.DeleteAdminRoute(ctx, mdbp.DeleteAdminRouteParams{AdminRouteID: c.id})
