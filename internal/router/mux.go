@@ -339,18 +339,26 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	// Embedded admin panel (SPA)
 	distFS, err := fs.Sub(admin.DistFS, "dist")
 	if err == nil {
+		// Pre-read index.html so we can serve it directly without going through
+		// http.FileServer, which 301-redirects "/index.html" → "./" causing a loop.
+		indexHTML, indexErr := fs.ReadFile(distFS, "index.html")
+		if indexErr != nil {
+			indexHTML = []byte("admin panel not built")
+		}
 		fileServer := http.FileServer(http.FS(distFS))
 		mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
 			// Strip the /admin prefix for filesystem lookups
 			path := strings.TrimPrefix(r.URL.Path, "/admin")
 			if path == "" || path == "/" {
-				path = "/index.html"
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write(indexHTML)
+				return
 			}
 			// Try to open the file; if it doesn't exist, serve index.html for SPA routing
 			f, openErr := distFS.Open(strings.TrimPrefix(path, "/"))
 			if openErr != nil {
-				r.URL.Path = "/index.html"
-				fileServer.ServeHTTP(w, r)
+				w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				w.Write(indexHTML)
 				return
 			}
 			f.Close()
