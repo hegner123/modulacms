@@ -206,6 +206,18 @@ rollback:
 sqlc:
     cd ./sql && sqlc generate && echo "generated code successfully"
 
+# [Codegen] Generate db wrapper code from entity definitions
+dbgen:
+    {{gocmd}} run ./tools/dbgen/...
+
+# [Codegen] Generate a single entity (e.g., just dbgen-entity Users)
+dbgen-entity name:
+    {{gocmd}} run ./tools/dbgen/... -entity {{name}}
+
+# [Codegen] Verify generated files are up-to-date (for CI)
+dbgen-verify:
+    {{gocmd}} run ./tools/dbgen/... -verify
+
 # [SDK] Install TypeScript SDK dependencies
 sdk-install:
     cd sdks/typescript && pnpm install

@@ -44,6 +44,7 @@ ui
 modula-amd
 modula-x86
 modula
+/dbgen
 
 #references
 references/
