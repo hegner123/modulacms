@@ -44,7 +44,7 @@ CREATE INDEX IF NOT EXISTS idx_verifications_backup ON backup_verifications(back
 
 CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    TEXT PRIMARY KEY CHECK (length(backup_set_id) = 26),
-    created_at       TEXT NOT NULL,
+    date_created       TEXT NOT NULL,
     hlc_timestamp    INTEGER NOT NULL,
     status           TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'partial')),
     backup_ids       TEXT NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS backup_sets (
     error_message    TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_backup_sets_time ON backup_sets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_sets_time ON backup_sets(date_created DESC);
 CREATE INDEX IF NOT EXISTS idx_backup_sets_hlc ON backup_sets(hlc_timestamp);
 
 -- ===== 0_change_events =====
@@ -86,188 +86,9 @@ CREATE INDEX IF NOT EXISTS idx_events_user ON change_events(user_id);
 
 CREATE TABLE IF NOT EXISTS permissions (
     permission_id TEXT PRIMARY KEY NOT NULL CHECK (length(permission_id) = 26),
-    label TEXT NOT NULL,
-    system_protected INTEGER NOT NULL DEFAULT 0
-);
-
--- ===== 2_roles =====
-
-CREATE TABLE IF NOT EXISTS roles (
-    role_id TEXT PRIMARY KEY NOT NULL CHECK (length(role_id) = 26),
     label TEXT NOT NULL UNIQUE,
     system_protected INTEGER NOT NULL DEFAULT 0
 );
-
--- ===== 3_media_dimension =====
-
-CREATE TABLE IF NOT EXISTS media_dimensions
-(
-    md_id TEXT PRIMARY KEY NOT NULL CHECK (length(md_id) = 26),
-    label TEXT
-        UNIQUE,
-    width INTEGER,
-    height INTEGER,
-    aspect_ratio TEXT
-);
-
--- ===== 4_users =====
-
-CREATE TABLE IF NOT EXISTS users (
-    user_id TEXT PRIMARY KEY NOT NULL CHECK (length(user_id) = 26),
-    username TEXT NOT NULL
-        UNIQUE,
-    name TEXT NOT NULL,
-    email TEXT NOT NULL,
-    hash TEXT NOT NULL,
-    role TEXT NOT NULL
-        REFERENCES roles
-            ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TRIGGER IF NOT EXISTS update_users_modified
-    AFTER UPDATE ON users
-    FOR EACH ROW
-    BEGIN
-        UPDATE users SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE user_id = NEW.user_id;
-    END;
-
--- ===== 5_admin_routes =====
-
-CREATE TABLE IF NOT EXISTS admin_routes (
-    admin_route_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_route_id) = 26),
-    slug TEXT NOT NULL
-        UNIQUE,
-    title TEXT NOT NULL,
-    status INTEGER NOT NULL,
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_routes_author ON admin_routes(author_id);
-
-CREATE TRIGGER IF NOT EXISTS update_admin_routes_modified
-    AFTER UPDATE ON admin_routes
-    FOR EACH ROW
-    BEGIN
-        UPDATE admin_routes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE admin_route_id = NEW.admin_route_id;
-    END;
-
--- ===== 6_routes =====
-
-CREATE TABLE IF NOT EXISTS routes (
-    route_id TEXT PRIMARY KEY NOT NULL CHECK (length(route_id) = 26),
-    slug TEXT NOT NULL
-        UNIQUE,
-    title TEXT NOT NULL,
-    status INTEGER NOT NULL,
-    author_id TEXT NOT NULL
-    REFERENCES users
-    ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_routes_author ON routes(author_id);
-
-CREATE TRIGGER IF NOT EXISTS update_routes_modified
-    AFTER UPDATE ON routes
-    FOR EACH ROW
-    BEGIN
-        UPDATE routes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE route_id = NEW.route_id;
-    END;
-
--- ===== 7_datatypes =====
-
-CREATE TABLE IF NOT EXISTS datatypes(
-    datatype_id TEXT PRIMARY KEY NOT NULL CHECK (length(datatype_id) = 26),
-    parent_id TEXT DEFAULT NULL
-        REFERENCES datatypes
-            ON DELETE SET NULL,
-    label TEXT NOT NULL,
-    type TEXT NOT NULL,
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_datatypes_parent ON datatypes(parent_id);
-CREATE INDEX IF NOT EXISTS idx_datatypes_author ON datatypes(author_id);
-
-CREATE TRIGGER IF NOT EXISTS update_datatypes_modified
-    AFTER UPDATE ON datatypes
-    FOR EACH ROW
-    BEGIN
-        UPDATE datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE datatype_id = NEW.datatype_id;
-    END;
-
--- ===== 8_fields =====
-
-CREATE TABLE IF NOT EXISTS fields(
-    field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
-    parent_id TEXT DEFAULT NULL
-        REFERENCES datatypes
-            ON DELETE SET NULL,
-    label TEXT DEFAULT 'unlabeled' NOT NULL,
-    data TEXT NOT NULL,
-    validation TEXT NOT NULL,
-    ui_config TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
-CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
-
-CREATE TRIGGER IF NOT EXISTS update_fields_modified
-    AFTER UPDATE ON fields
-    FOR EACH ROW
-    BEGIN
-        UPDATE fields SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE field_id = NEW.field_id;
-    END;
-
--- ===== 9_admin_datatypes =====
-
-CREATE TABLE admin_datatypes (
-    admin_datatype_id TEXT
-        PRIMARY KEY NOT NULL CHECK (length(admin_datatype_id) = 26),
-    parent_id TEXT DEFAULT NULL
-        REFERENCES admin_datatypes
-            ON DELETE SET NULL,
-    label TEXT NOT NULL,
-    type TEXT NOT NULL,
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_parent ON admin_datatypes(parent_id);
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_author ON admin_datatypes(author_id);
-
-CREATE TRIGGER IF NOT EXISTS update_admin_datatypes_modified
-    AFTER UPDATE ON admin_datatypes
-    FOR EACH ROW
-    BEGIN
-        UPDATE admin_datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
-        WHERE admin_datatype_id = NEW.admin_datatype_id;
-    END;
 
 -- ===== 10_admin_fields =====
 
@@ -282,7 +103,7 @@ CREATE TABLE admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -318,6 +139,7 @@ CREATE TABLE IF NOT EXISTS tokens (
 
 CREATE INDEX IF NOT EXISTS idx_tokens_user ON tokens(user_id);
 
+
 -- ===== 12_user_oauth =====
 
 CREATE TABLE IF NOT EXISTS user_oauth (
@@ -348,6 +170,7 @@ CREATE TABLE IF NOT EXISTS tables (
             ON DELETE SET NULL
 );
 
+
 -- ===== 14_media =====
 
 CREATE TABLE IF NOT EXISTS media (
@@ -364,7 +187,9 @@ CREATE TABLE IF NOT EXISTS media (
     url TEXT
         UNIQUE,
     srcset TEXT,
-    author_id TEXT NOT NULL
+    focal_x REAL,
+    focal_y REAL,
+    author_id TEXT
     REFERENCES users
     ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -389,7 +214,7 @@ CREATE TABLE sessions (
     user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     expires_at TEXT,
     last_access TEXT DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,
@@ -399,31 +224,18 @@ CREATE TABLE sessions (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 
+
 -- ===== 16_content_data =====
 
 CREATE TABLE IF NOT EXISTS content_data (
     content_data_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_data_id) = 26),
-    parent_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    first_child_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    next_sibling_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    prev_sibling_id TEXT
-        REFERENCES content_data
-            ON DELETE SET NULL,
-    route_id TEXT NOT NULL
-        REFERENCES routes
-            ON DELETE CASCADE,
-    datatype_id TEXT NOT NULL
-        REFERENCES datatypes
-            ON DELETE SET NULL,
-    author_id TEXT NOT NULL
-        REFERENCES users
-            ON DELETE SET NULL,
+    parent_id TEXT,
+    first_child_id TEXT,
+    next_sibling_id TEXT,
+    prev_sibling_id TEXT,
+    route_id TEXT NOT NULL,
+    datatype_id TEXT NOT NULL,
+    author_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -434,7 +246,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
-    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE INDEX IF NOT EXISTS idx_content_data_parent ON content_data(parent_id);
@@ -450,6 +262,7 @@ CREATE TRIGGER IF NOT EXISTS update_content_data_modified
         WHERE content_data_id = NEW.content_data_id;
     END;
 
+
 -- ===== 17_content_fields =====
 
 CREATE TABLE IF NOT EXISTS content_fields (
@@ -464,7 +277,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL
+    author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -505,7 +318,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
-    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);
@@ -529,7 +342,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id TEXT NOT NULL,
+    author_id TEXT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -555,6 +368,15 @@ CREATE TRIGGER IF NOT EXISTS update_admin_content_fields_modified
         UPDATE admin_content_fields SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE admin_content_field_id = NEW.admin_content_field_id;
     END;
+
+-- ===== 2_roles =====
+
+CREATE TABLE IF NOT EXISTS roles (
+    role_id TEXT PRIMARY KEY NOT NULL CHECK (length(role_id) = 26),
+    label TEXT NOT NULL
+        UNIQUE,
+    system_protected INTEGER NOT NULL DEFAULT 0
+);
 
 -- ===== 20_datatypes_fields =====
 
@@ -593,19 +415,23 @@ CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_field ON admin_datatypes_f
 
 -- ===== 23_user_ssh_keys =====
 
+-- user_ssh_keys table for storing SSH public keys linked to user accounts
 CREATE TABLE IF NOT EXISTS user_ssh_keys (
     ssh_key_id TEXT PRIMARY KEY NOT NULL CHECK (length(ssh_key_id) = 26),
     user_id TEXT NOT NULL,
     public_key TEXT NOT NULL,
-    key_type VARCHAR(50) NOT NULL,
+    key_type VARCHAR(50) NOT NULL, -- "ssh-rsa", "ssh-ed25519", "ecdsa-sha2-nistp256", etc.
     fingerprint VARCHAR(255) NOT NULL UNIQUE,
-    label VARCHAR(255),
+    label VARCHAR(255), -- User-friendly label: "laptop", "work desktop", etc.
     date_created TEXT NOT NULL,
     last_used TEXT,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
+-- Index for fast lookup by fingerprint during SSH auth
 CREATE INDEX IF NOT EXISTS idx_ssh_keys_fingerprint ON user_ssh_keys(fingerprint);
+
+-- Index for listing user's keys
 CREATE INDEX IF NOT EXISTS idx_ssh_keys_user_id ON user_ssh_keys(user_id);
 
 -- ===== 24_content_relations =====
@@ -626,10 +452,14 @@ CREATE TABLE IF NOT EXISTS content_relations (
     CHECK (source_content_id != target_content_id)
 );
 
+-- Unique constraint ordered to also serve ListBySourceAndField (prefix: source, field)
+-- and ListBySource (prefix: source) queries
 CREATE UNIQUE INDEX IF NOT EXISTS idx_content_relations_unique
     ON content_relations(source_content_id, field_id, target_content_id);
+-- Composite index for ListByTarget ORDER BY date_created
 CREATE INDEX IF NOT EXISTS idx_content_relations_target
     ON content_relations(target_content_id, date_created);
+-- Supports ON DELETE RESTRICT FK checks when deleting a field
 CREATE INDEX IF NOT EXISTS idx_content_relations_field
     ON content_relations(field_id);
 
@@ -637,9 +467,11 @@ CREATE INDEX IF NOT EXISTS idx_content_relations_field
 
 CREATE TABLE IF NOT EXISTS admin_content_relations (
     admin_content_relation_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_relation_id) = 26),
+    -- holds admin_content_data_id, named for code symmetry with content_relations
     source_content_id TEXT NOT NULL
         REFERENCES admin_content_data(admin_content_data_id)
             ON DELETE CASCADE,
+    -- holds admin_content_data_id, named for code symmetry with content_relations
     target_content_id TEXT NOT NULL
         REFERENCES admin_content_data(admin_content_data_id)
             ON DELETE CASCADE,
@@ -651,9 +483,197 @@ CREATE TABLE IF NOT EXISTS admin_content_relations (
     CHECK (source_content_id != target_content_id)
 );
 
+-- Unique constraint ordered to also serve ListBySourceAndField (prefix: source, field)
+-- and ListBySource (prefix: source) queries
 CREATE UNIQUE INDEX IF NOT EXISTS idx_admin_content_relations_unique
     ON admin_content_relations(source_content_id, admin_field_id, target_content_id);
+-- Composite index for ListByTarget ORDER BY date_created
 CREATE INDEX IF NOT EXISTS idx_admin_content_relations_target
     ON admin_content_relations(target_content_id, date_created);
+-- Supports ON DELETE RESTRICT FK checks when deleting a field
 CREATE INDEX IF NOT EXISTS idx_admin_content_relations_field
     ON admin_content_relations(admin_field_id);
+
+-- ===== 26_role_permissions =====
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id TEXT PRIMARY KEY NOT NULL CHECK (length(id) = 26),
+    role_id TEXT NOT NULL REFERENCES roles ON DELETE CASCADE,
+    permission_id TEXT NOT NULL REFERENCES permissions ON DELETE CASCADE,
+    UNIQUE(role_id, permission_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role_id);
+CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
+
+-- ===== 3_media_dimension =====
+
+CREATE TABLE IF NOT EXISTS media_dimensions
+(
+    md_id TEXT PRIMARY KEY NOT NULL CHECK (length(md_id) = 26),
+    label TEXT
+        UNIQUE,
+    width INTEGER,
+    height INTEGER,
+    aspect_ratio TEXT
+);
+
+-- ===== 4_users =====
+
+CREATE TABLE IF NOT EXISTS users (
+    user_id TEXT PRIMARY KEY NOT NULL CHECK (length(user_id) = 26),
+    username TEXT NOT NULL
+        UNIQUE,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    role TEXT NOT NULL
+        REFERENCES roles
+            ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TRIGGER IF NOT EXISTS update_users_modified
+    AFTER UPDATE ON users
+    FOR EACH ROW
+    BEGIN
+        UPDATE users SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE user_id = NEW.user_id;
+    END;
+
+
+-- ===== 5_admin_routes =====
+
+CREATE TABLE IF NOT EXISTS admin_routes (
+    admin_route_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_route_id) = 26),
+    slug TEXT NOT NULL
+        UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    author_id TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_routes_author ON admin_routes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_routes_modified
+    AFTER UPDATE ON admin_routes
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_routes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_route_id = NEW.admin_route_id;
+    END;
+
+-- ===== 6_routes =====
+
+CREATE TABLE IF NOT EXISTS routes (
+    route_id TEXT PRIMARY KEY NOT NULL CHECK (length(route_id) = 26),
+    slug TEXT NOT NULL
+        UNIQUE,
+    title TEXT NOT NULL,
+    status INTEGER NOT NULL,
+    author_id TEXT
+    REFERENCES users
+    ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_routes_author ON routes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_routes_modified
+    AFTER UPDATE ON routes
+    FOR EACH ROW
+    BEGIN
+        UPDATE routes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE route_id = NEW.route_id;
+    END;
+
+-- ===== 7_datatypes =====
+
+CREATE TABLE IF NOT EXISTS datatypes(
+    datatype_id TEXT PRIMARY KEY NOT NULL CHECK (length(datatype_id) = 26),
+    parent_id TEXT DEFAULT NULL
+        REFERENCES datatypes
+            ON DELETE SET NULL,
+    label TEXT NOT NULL,
+    type TEXT NOT NULL,
+    author_id TEXT NOT NULL
+        REFERENCES users
+            ON DELETE RESTRICT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_datatypes_parent ON datatypes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_datatypes_author ON datatypes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_datatypes_modified
+    AFTER UPDATE ON datatypes
+    FOR EACH ROW
+    BEGIN
+        UPDATE datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE datatype_id = NEW.datatype_id;
+    END;
+
+-- ===== 8_fields =====
+
+CREATE TABLE IF NOT EXISTS fields(
+    field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
+    parent_id TEXT DEFAULT NULL
+        REFERENCES datatypes
+            ON DELETE SET NULL,
+    label TEXT DEFAULT 'unlabeled' NOT NULL,
+    data TEXT NOT NULL,
+    validation TEXT NOT NULL,
+    ui_config TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    author_id TEXT
+        REFERENCES users
+            ON DELETE SET NULL,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_fields_parent ON fields(parent_id);
+CREATE INDEX IF NOT EXISTS idx_fields_author ON fields(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_fields_modified
+    AFTER UPDATE ON fields
+    FOR EACH ROW
+    BEGIN
+        UPDATE fields SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE field_id = NEW.field_id;
+    END;
+
+-- ===== 9_admin_datatypes =====
+
+CREATE TABLE admin_datatypes (
+    admin_datatype_id TEXT
+        PRIMARY KEY NOT NULL CHECK (length(admin_datatype_id) = 26),
+    parent_id TEXT DEFAULT NULL
+        REFERENCES admin_datatypes
+            ON DELETE SET NULL,
+    label TEXT NOT NULL,
+    type TEXT NOT NULL,
+    author_id TEXT NOT NULL
+        REFERENCES users
+            ON DELETE RESTRICT,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_parent ON admin_datatypes(parent_id);
+CREATE INDEX IF NOT EXISTS idx_admin_datatypes_author ON admin_datatypes(author_id);
+
+CREATE TRIGGER IF NOT EXISTS update_admin_datatypes_modified
+    AFTER UPDATE ON admin_datatypes
+    FOR EACH ROW
+    BEGIN
+        UPDATE admin_datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
+        WHERE admin_datatype_id = NEW.admin_datatype_id;
+    END;

@@ -4,7 +4,7 @@ CREATE TABLE sessions (
         CONSTRAINT fk_sessions_user_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,

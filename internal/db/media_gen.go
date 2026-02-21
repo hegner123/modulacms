@@ -89,7 +89,7 @@ func MapStringMedia(a Media) StringMedia {
 		Class:        utility.NullToString(a.Class),
 		Mimetype:     utility.NullToString(a.Mimetype),
 		Dimensions:   utility.NullToString(a.Dimensions),
-		Url:          a.URL.String(),
+		URL:          a.URL.String(),
 		Srcset:       utility.NullToString(a.Srcset),
 		FocalX:       fmt.Sprintf("%v", a.FocalX.Float64),
 		FocalY:       fmt.Sprintf("%v", a.FocalY.Float64),

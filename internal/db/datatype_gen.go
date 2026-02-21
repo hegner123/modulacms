@@ -23,7 +23,7 @@ type Datatypes struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 }
@@ -34,7 +34,7 @@ type CreateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 }
@@ -44,7 +44,7 @@ type UpdateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`

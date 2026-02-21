@@ -148,7 +148,7 @@ func parseSessions(rows *sql.Rows) ([]db.Sessions, error) {
 		err := rows.Scan(
 			&session.SessionID,
 			&session.UserID,
-			&session.CreatedAt,
+			&session.DateCreated,
 			&session.ExpiresAt,
 			&session.LastAccess,
 			&session.IpAddress,

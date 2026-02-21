@@ -419,7 +419,7 @@ type CreateRolePermissionParams struct {
 type Session struct {
 	SessionID   SessionID `json:"session_id"`
 	UserID      *UserID   `json:"user_id"`
-	CreatedAt   Timestamp `json:"created_at"`
+	DateCreated   Timestamp `json:"date_created"`
 	ExpiresAt   Timestamp `json:"expires_at"`
 	LastAccess  *string   `json:"last_access"`
 	IpAddress   *string   `json:"ip_address"`
@@ -798,7 +798,7 @@ type LoginResponse struct {
 	UserID    UserID    `json:"user_id"`
 	Email     Email     `json:"email"`
 	Username  string    `json:"username"`
-	CreatedAt Timestamp `json:"created_at"`
+	DateCreated Timestamp `json:"date_created"`
 }
 
 // MeResponse is the response returned by the /me endpoint.

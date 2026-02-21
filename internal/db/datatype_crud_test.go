@@ -14,7 +14,7 @@ func TestDatabase_CRUD_Datatype(t *testing.T) {
 	ctx := d.Context
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
 	now := types.TimestampNow()
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Count: starts at 1 (seed datatype) ---
 	count, err := d.CountDatatypes()
@@ -151,7 +151,7 @@ func TestDatabase_CRUD_Datatype_ListDatatypesRoot(t *testing.T) {
 	ctx := d.Context
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
 	now := types.TimestampNow()
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// Seed datatype has Type="page", so it does NOT appear in root list.
 	// ListDatatypesRoot filters by WHERE type = 'ROOT'.
@@ -199,7 +199,7 @@ func TestDatabase_CRUD_Datatype_ListDatatypeChildren(t *testing.T) {
 	ctx := d.Context
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
 	now := types.TimestampNow()
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// Create a child datatype under the seed datatype
 	child, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{

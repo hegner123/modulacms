@@ -6,10 +6,10 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
             ON UPDATE CASCADE ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id TEXT
+    author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE RESTRICT,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

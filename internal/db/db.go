@@ -811,7 +811,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -843,7 +843,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -900,7 +900,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		NextSiblingID: types.NullableContentID{},
 		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
@@ -920,7 +920,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:        systemUser.UserID,
 		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
@@ -1022,7 +1022,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 18. Create default session (session_id = 1) - Validation record
 	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		CreatedAt:   types.TimestampNow(),
+		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
 		LastAccess:  StringToNullString(utility.TimestampS()),
 		IpAddress:   StringToNullString("127.0.0.1"),
@@ -1620,7 +1620,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -1652,7 +1652,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -1709,7 +1709,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		NextSiblingID: types.NullableContentID{},
 		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
@@ -1729,7 +1729,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:        systemUser.UserID,
 		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
@@ -1831,7 +1831,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 18. Create default session (session_id = 1) - Validation record
 	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		CreatedAt:   types.TimestampNow(),
+		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
 		LastAccess:  StringToNullString(utility.TimestampS()),
 		IpAddress:   StringToNullString("127.0.0.1"),
@@ -2402,7 +2402,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -2434,7 +2434,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
 		Type:         "ROOT",
-		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
 	})
@@ -2491,7 +2491,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		NextSiblingID: types.NullableContentID{},
 		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    types.NullableDatatypeID{Valid: true, ID: pageDatatype.DatatypeID},
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		Status:        types.ContentStatusDraft,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
@@ -2511,7 +2511,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{Valid: true, ID: adminRoute.AdminRouteID},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: true, ID: adminDatatype.AdminDatatypeID},
-		AuthorID:        types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:        systemUser.UserID,
 		Status:          types.ContentStatusDraft,
 		DateCreated:     types.TimestampNow(),
 		DateModified:    types.TimestampNow(),
@@ -2613,7 +2613,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 18. Create default session (session_id = 1) - Validation record
 	session, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
-		CreatedAt:   types.TimestampNow(),
+		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
 		LastAccess:  StringToNullString(utility.TimestampS()),
 		IpAddress:   StringToNullString("127.0.0.1"),

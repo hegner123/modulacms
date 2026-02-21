@@ -17,7 +17,7 @@ func TestDatabase_CRUD_ContentData(t *testing.T) {
 
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Count: starts at zero ---
 	count, err := d.CountContentData()

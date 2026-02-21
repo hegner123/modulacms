@@ -14,7 +14,7 @@ func TestDatabase_CRUD_AdminDatatype(t *testing.T) {
 	ctx := d.Context
 	ac := testAuditCtxWithUser(d, seed.User.UserID)
 	now := types.TimestampNow()
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Count: starts at 1 (seed admin datatype) ---
 	count, err := d.CountAdminDatatypes()

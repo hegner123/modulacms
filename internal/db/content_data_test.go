@@ -22,7 +22,7 @@ func contentDataFixture() (ContentData, types.ContentID, types.Timestamp) {
 	parentID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	cd := ContentData{
 		ContentDataID: contentID,
@@ -53,7 +53,7 @@ func contentDataFixtureNulls() ContentData {
 		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{Valid: false},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
-		AuthorID:      types.NullableUserID{Valid: false},
+		AuthorID:      types.UserID(""),
 		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
@@ -132,8 +132,8 @@ func TestMapContentDataJSON_NullableIDsProduceNullString(t *testing.T) {
 	if got.DatatypeID != "null" {
 		t.Errorf("DatatypeID = %q, want %q for null NullableDatatypeID", got.DatatypeID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null NullableUserID", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -288,8 +288,8 @@ func TestMapStringContentData_NullableFieldsShowNull(t *testing.T) {
 	if got.DatatypeID != "null" {
 		t.Errorf("DatatypeID = %q, want %q for null", got.DatatypeID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -321,7 +321,7 @@ func TestDatabase_MapContentData_AllFields(t *testing.T) {
 	parentID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdb.ContentData{
 		ContentDataID: contentID,
@@ -410,7 +410,7 @@ func TestDatabase_MapCreateContentDataParams_GeneratesNewID(t *testing.T) {
 		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
-		AuthorID:      types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:      types.NewUserID(),
 		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
@@ -499,7 +499,7 @@ func TestDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	contentID := types.NewContentID()
 	parentID := types.NullableContentID{ID: types.ContentID("parent-updated"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 
 	input := UpdateContentDataParams{
@@ -554,7 +554,7 @@ func TestMysqlDatabase_MapContentData_AllFields(t *testing.T) {
 	parentID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdbm.ContentData{
 		ContentDataID: contentID,
@@ -659,7 +659,7 @@ func TestMysqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
-		AuthorID:      types.NullableUserID{Valid: false},
+		AuthorID:      types.NewUserID(),
 		Status:        types.ContentStatus("archived"),
 		DateCreated:   ts,
 		DateModified:  ts,
@@ -692,7 +692,7 @@ func TestPsqlDatabase_MapContentData_AllFields(t *testing.T) {
 	parentID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdbp.ContentData{
 		ContentDataID: contentID,
@@ -797,7 +797,7 @@ func TestPsqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 		PrevSiblingID: types.NullableContentID{},
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
-		AuthorID:      types.NullableUserID{Valid: false},
+		AuthorID:      types.NewUserID(),
 		Status:        types.ContentStatus("pending"),
 		DateCreated:   ts,
 		DateModified:  ts,
@@ -830,7 +830,7 @@ func TestCrossDatabaseMapContentData_Consistency(t *testing.T) {
 	parentID := types.NullableContentID{ID: types.ContentID("parent-cross"), Valid: true}
 	routeID := types.NullableRouteID{ID: types.RouteID("route-cross"), Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: types.DatatypeID("dt-cross"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	firstChild := types.NullableContentID{ID: types.ContentID("cross-child"), Valid: true}
 	nextSibling := types.NullableContentID{ID: types.ContentID("cross-next"), Valid: true}
 	prevSibling := types.NullableContentID{ID: types.ContentID("cross-prev"), Valid: true}
@@ -1086,7 +1086,7 @@ func TestNewContentDataCmd_AllAccessors(t *testing.T) {
 	params := CreateContentDataParams{
 		RouteID:      types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		Status:       types.ContentStatus("draft"),
-		AuthorID:     types.NullableUserID{ID: userID, Valid: true},
+		AuthorID:     userID,
 		DateCreated:  ts,
 		DateModified: ts,
 	}

@@ -166,7 +166,7 @@ type importContext struct {
 	ac            audited.AuditContext
 	driver        db.DbDriver
 	routeID       types.NullableRouteID
-	authorID      types.NullableUserID
+	authorID      types.UserID
 	datatypeCache map[string]types.DatatypeID // "label|type" -> existing DatatypeID
 	result        *ImportResult
 }
@@ -188,7 +188,7 @@ func importRootToDatabase(reqCtx context.Context, ac audited.AuditContext, drive
 		ac:            ac,
 		driver:        driver,
 		routeID:       routeID,
-		authorID:      types.NullableUserID{Valid: false},
+		authorID:      ac.UserID,
 		datatypeCache: make(map[string]types.DatatypeID),
 		result:        result,
 	}
@@ -326,7 +326,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 		Validation:   types.EmptyJSON,
 		UIConfig:     types.EmptyJSON,
 		Type:         types.FieldType(field.Info.Type),
-		AuthorID:     ctx.authorID,
+		AuthorID:     types.NullableUserID{ID: ctx.authorID, Valid: !ctx.authorID.IsZero()},
 		DateCreated:  now,
 		DateModified: now,
 	})
@@ -349,7 +349,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 			Valid: true,
 		},
 		FieldValue:   field.Content.FieldValue,
-		AuthorID:     ctx.authorID,
+		AuthorID:     types.NullableUserID{ID: ctx.authorID, Valid: !ctx.authorID.IsZero()},
 		DateCreated:  now,
 		DateModified: now,
 	})

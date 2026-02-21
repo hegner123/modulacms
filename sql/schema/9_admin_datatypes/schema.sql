@@ -6,9 +6,9 @@ CREATE TABLE admin_datatypes (
             ON DELETE SET NULL,
     label TEXT NOT NULL,
     type TEXT NOT NULL,
-    author_id TEXT
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET NULL,
+            ON DELETE RESTRICT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );

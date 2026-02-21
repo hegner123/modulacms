@@ -105,7 +105,7 @@ func TestMapStringMedia_AllFields(t *testing.T) {
 		{"Class", got.Class, "image"},
 		{"Mimetype", got.Mimetype, "image/jpeg"},
 		{"Dimensions", got.Dimensions, "1920x1080"},
-		{"Url", got.Url, "https://cdn.example.com/images/hero-banner.jpg"},
+		{"URL", got.URL, "https://cdn.example.com/images/hero-banner.jpg"},
 		{"Srcset", got.Srcset, "hero-480.jpg 480w, hero-1080.jpg 1080w"},
 		{"AuthorID", got.AuthorID, authorID.String()},
 		{"DateCreated", got.DateCreated, ts.String()},
@@ -152,8 +152,8 @@ func TestMapStringMedia_ZeroValue(t *testing.T) {
 		}
 	}
 	// URL and types that use .String() directly return their zero values
-	if got.Url != "" {
-		t.Errorf("Url = %q, want empty string", got.Url)
+	if got.URL != "" {
+		t.Errorf("URL = %q, want empty string", got.URL)
 	}
 }
 

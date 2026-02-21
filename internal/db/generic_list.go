@@ -170,7 +170,7 @@ func GenericHeaders(t DBTable) []string {
 		return []string{
 			"session_id",
 			"user_id",
-			"created_at",
+			"date_created",
 			"expires_at",
 			"last_access",
 			"ip_address",
@@ -488,7 +488,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.Class,
 				s.Mimetype,
 				s.Dimensions,
-				s.Url,
+				s.URL,
 				s.Srcset,
 				s.AuthorID,
 				s.DateCreated,
@@ -586,7 +586,7 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			r := []string{
 				s.SessionID,
 				s.UserID,
-				s.CreatedAt,
+				s.DateCreated,
 				s.ExpiresAt,
 				s.LastAccess,
 				s.IpAddress,

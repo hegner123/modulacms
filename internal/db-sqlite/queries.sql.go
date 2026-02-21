@@ -512,7 +512,7 @@ type CreateAdminContentDataParams struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -762,7 +762,7 @@ type CreateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
@@ -1081,17 +1081,17 @@ func (q *Queries) CreateBackup(ctx context.Context, arg CreateBackupParams) (Bac
 const createBackupSet = `-- name: CreateBackupSet :one
 
 INSERT INTO backup_sets (
-    backup_set_id, created_at, hlc_timestamp, status,
+    backup_set_id, date_created, hlc_timestamp, status,
     backup_ids, node_count, completed_count, error_message
 ) VALUES (
     ?, ?, ?, ?, ?, ?, ?, ?
 )
-RETURNING backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message
+RETURNING backup_set_id, date_created, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message
 `
 
 type CreateBackupSetParams struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	CreatedAt      types.Timestamp       `json:"created_at"`
+	DateCreated    types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -1104,7 +1104,7 @@ type CreateBackupSetParams struct {
 func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams) (BackupSet, error) {
 	row := q.db.QueryRowContext(ctx, createBackupSet,
 		arg.BackupSetID,
-		arg.CreatedAt,
+		arg.DateCreated,
 		arg.HlcTimestamp,
 		arg.Status,
 		arg.BackupIds,
@@ -1115,7 +1115,7 @@ func (q *Queries) CreateBackupSet(ctx context.Context, arg CreateBackupSetParams
 	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.HlcTimestamp,
 		&i.Status,
 		&i.BackupIds,
@@ -1214,7 +1214,7 @@ type CreateContentDataParams struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -1474,7 +1474,7 @@ type CreateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 }
@@ -2054,7 +2054,7 @@ const createSession = `-- name: CreateSession :one
 INSERT INTO sessions (
     session_id,
     user_id,
-    created_at,
+    date_created,
     expires_at,
     last_access,
     ip_address,
@@ -2069,13 +2069,13 @@ INSERT INTO sessions (
     ?,
     ?,
     ?
-) RETURNING session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data
+) RETURNING session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data
 `
 
 type CreateSessionParams struct {
 	SessionID   types.SessionID      `json:"session_id"`
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
@@ -2087,7 +2087,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	row := q.db.QueryRowContext(ctx, createSession,
 		arg.SessionID,
 		arg.UserID,
-		arg.CreatedAt,
+		arg.DateCreated,
 		arg.ExpiresAt,
 		arg.LastAccess,
 		arg.IpAddress,
@@ -2098,7 +2098,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) (S
 	err := row.Scan(
 		&i.SessionID,
 		&i.UserID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.ExpiresAt,
 		&i.LastAccess,
 		&i.IpAddress,
@@ -2115,7 +2115,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     expires_at TEXT,
     last_access TEXT DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,
@@ -3479,7 +3479,7 @@ func (q *Queries) GetBackup(ctx context.Context, arg GetBackupParams) (Backup, e
 }
 
 const getBackupSet = `-- name: GetBackupSet :one
-SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+SELECT backup_set_id, date_created, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
 WHERE backup_set_id = ? LIMIT 1
 `
 
@@ -3492,7 +3492,7 @@ func (q *Queries) GetBackupSet(ctx context.Context, arg GetBackupSetParams) (Bac
 	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.HlcTimestamp,
 		&i.Status,
 		&i.BackupIds,
@@ -3504,9 +3504,9 @@ func (q *Queries) GetBackupSet(ctx context.Context, arg GetBackupSetParams) (Bac
 }
 
 const getBackupSetByHLC = `-- name: GetBackupSetByHLC :one
-SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+SELECT backup_set_id, date_created, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
 WHERE hlc_timestamp = ?
-ORDER BY created_at DESC
+ORDER BY date_created DESC
 LIMIT 1
 `
 
@@ -3519,7 +3519,7 @@ func (q *Queries) GetBackupSetByHLC(ctx context.Context, arg GetBackupSetByHLCPa
 	var i BackupSet
 	err := row.Scan(
 		&i.BackupSetID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.HlcTimestamp,
 		&i.Status,
 		&i.BackupIds,
@@ -3978,7 +3978,7 @@ type GetContentTreeByRouteRow struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 	Status        types.ContentStatus      `json:"status"`
@@ -4363,9 +4363,9 @@ func (q *Queries) GetMediaDimension(ctx context.Context, arg GetMediaDimensionPa
 }
 
 const getPendingBackupSets = `-- name: GetPendingBackupSets :many
-SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+SELECT backup_set_id, date_created, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
 WHERE status = 'pending'
-ORDER BY created_at ASC
+ORDER BY date_created ASC
 `
 
 func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSet, error) {
@@ -4379,7 +4379,7 @@ func (q *Queries) GetPendingBackupSets(ctx context.Context) ([]BackupSet, error)
 		var i BackupSet
 		if err := rows.Scan(
 			&i.BackupSetID,
-			&i.CreatedAt,
+			&i.DateCreated,
 			&i.HlcTimestamp,
 			&i.Status,
 			&i.BackupIds,
@@ -4597,7 +4597,7 @@ func (q *Queries) GetRouteTreeByRouteID(ctx context.Context, arg GetRouteTreeByR
 }
 
 const getSession = `-- name: GetSession :one
-SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 WHERE session_id = ? LIMIT 1
 `
 
@@ -4611,7 +4611,7 @@ func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Session
 	err := row.Scan(
 		&i.SessionID,
 		&i.UserID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.ExpiresAt,
 		&i.LastAccess,
 		&i.IpAddress,
@@ -4622,7 +4622,7 @@ func (q *Queries) GetSession(ctx context.Context, arg GetSessionParams) (Session
 }
 
 const getSessionByUserId = `-- name: GetSessionByUserId :one
-SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 WHERE user_id = ?
 ORDER BY session_id DESC
 LIMIT 1
@@ -4638,7 +4638,7 @@ func (q *Queries) GetSessionByUserId(ctx context.Context, arg GetSessionByUserId
 	err := row.Scan(
 		&i.SessionID,
 		&i.UserID,
-		&i.CreatedAt,
+		&i.DateCreated,
 		&i.ExpiresAt,
 		&i.LastAccess,
 		&i.IpAddress,
@@ -4673,7 +4673,7 @@ type GetShallowTreeByRouteIdRow struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -5562,7 +5562,7 @@ type ListAdminContentDataWithDatatypeByRouteRow struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -5570,7 +5570,7 @@ type ListAdminContentDataWithDatatypeByRouteRow struct {
 	DtParentId         types.NullableAdminDatatypeID `json:"dt_parent_id"`
 	DtLabel            string                        `json:"dt_label"`
 	DtType             string                        `json:"dt_type"`
-	DtAuthorId         types.NullableUserID          `json:"dt_author_id"`
+	DtAuthorId         types.UserID                  `json:"dt_author_id"`
 	DtDateCreated      types.Timestamp               `json:"dt_date_created"`
 	DtDateModified     types.Timestamp               `json:"dt_date_modified"`
 }
@@ -6685,8 +6685,8 @@ func (q *Queries) ListAdminRoutePaginated(ctx context.Context, arg ListAdminRout
 }
 
 const listBackupSets = `-- name: ListBackupSets :many
-SELECT backup_set_id, created_at, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
-ORDER BY created_at DESC
+SELECT backup_set_id, date_created, hlc_timestamp, status, backup_ids, node_count, completed_count, error_message FROM backup_sets
+ORDER BY date_created DESC
 LIMIT ? OFFSET ?
 `
 
@@ -6706,7 +6706,7 @@ func (q *Queries) ListBackupSets(ctx context.Context, arg ListBackupSetsParams) 
 		var i BackupSet
 		if err := rows.Scan(
 			&i.BackupSetID,
-			&i.CreatedAt,
+			&i.DateCreated,
 			&i.HlcTimestamp,
 			&i.Status,
 			&i.BackupIds,
@@ -8707,7 +8707,7 @@ func (q *Queries) ListRoutesByDatatype(ctx context.Context, arg ListRoutesByData
 }
 
 const listSession = `-- name: ListSession :many
-SELECT session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
+SELECT session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data FROM sessions
 `
 
 func (q *Queries) ListSession(ctx context.Context) ([]Sessions, error) {
@@ -8722,7 +8722,7 @@ func (q *Queries) ListSession(ctx context.Context) ([]Sessions, error) {
 		if err := rows.Scan(
 			&i.SessionID,
 			&i.UserID,
-			&i.CreatedAt,
+			&i.DateCreated,
 			&i.ExpiresAt,
 			&i.LastAccess,
 			&i.IpAddress,
@@ -9202,7 +9202,7 @@ type UpdateAdminContentDataParams struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -9295,7 +9295,7 @@ type UpdateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
@@ -9510,7 +9510,7 @@ type UpdateContentDataParams struct {
 	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -9603,7 +9603,7 @@ type UpdateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
@@ -9870,7 +9870,7 @@ func (q *Queries) UpdateRoute(ctx context.Context, arg UpdateRouteParams) error 
 const updateSession = `-- name: UpdateSession :exec
 UPDATE sessions
     SET user_id=?,
-    created_at=?,
+    date_created=?,
     expires_at=?,
     last_access=?,
     ip_address=?,
@@ -9881,7 +9881,7 @@ WHERE session_id = ?
 
 type UpdateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
@@ -9893,7 +9893,7 @@ type UpdateSessionParams struct {
 func (q *Queries) UpdateSession(ctx context.Context, arg UpdateSessionParams) error {
 	_, err := q.db.ExecContext(ctx, updateSession,
 		arg.UserID,
-		arg.CreatedAt,
+		arg.DateCreated,
 		arg.ExpiresAt,
 		arg.LastAccess,
 		arg.IpAddress,

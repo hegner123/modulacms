@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     prev_sibling_id TEXT,
     admin_route_id TEXT NOT NULL,
     admin_datatype_id TEXT NOT NULL,
-    author_id TEXT,
+    author_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     FOREIGN KEY (prev_sibling_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (admin_route_id) REFERENCES admin_routes(admin_route_id) ON DELETE RESTRICT,
     FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes(admin_datatype_id) ON DELETE RESTRICT,
-    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
+    FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);

@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS sessions (
     user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     expires_at TEXT,
     last_access TEXT DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,
@@ -37,7 +37,7 @@ SELECT * FROM sessions;
 INSERT INTO sessions (
     session_id,
     user_id,
-    created_at,
+    date_created,
     expires_at,
     last_access,
     ip_address,
@@ -57,7 +57,7 @@ INSERT INTO sessions (
 -- name: UpdateSession :exec
 UPDATE sessions
     SET user_id=?,
-    created_at=?,
+    date_created=?,
     expires_at=?,
     last_access=?,
     ip_address=?,

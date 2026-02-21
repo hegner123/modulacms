@@ -170,6 +170,15 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          # NOT NULL author_id columns
+          - column: "content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -294,13 +303,7 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.date_modified"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.created_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.updated_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.expires_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "sessions.last_activity"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # DISTRIBUTED SYSTEM
           - column: "*.node_id"
@@ -578,6 +581,15 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          # NOT NULL author_id columns
+          - column: "content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -702,13 +714,7 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.date_modified"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.created_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.updated_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.expires_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "sessions.last_activity"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # DISTRIBUTED SYSTEM
           - column: "*.node_id"
@@ -986,6 +992,15 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          # NOT NULL author_id columns
+          - column: "content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_data.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
             nullable: true
@@ -1110,13 +1125,7 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.date_modified"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.created_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "*.updated_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "*.expires_at"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
-          - column: "sessions.last_activity"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # DISTRIBUTED SYSTEM
           - column: "*.node_id"

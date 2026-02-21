@@ -231,6 +231,7 @@ func TestAssembleContentDataView(t *testing.T) {
 
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
+	cdAuthorID := seed.User.UserID // ContentData uses types.UserID (non-nullable)
 	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
 
 	// Link the field to the datatype
@@ -251,7 +252,7 @@ func TestAssembleContentDataView(t *testing.T) {
 		NextSiblingID: types.NullableContentID{},
 		PrevSiblingID: types.NullableContentID{},
 		DatatypeID:    datatypeID,
-		AuthorID:      authorID,
+		AuthorID:      cdAuthorID,
 		Status:        types.ContentStatusDraft,
 		DateCreated:   now,
 		DateModified:  now,
@@ -397,7 +398,7 @@ func TestAssembleContentDataView_NoFields(t *testing.T) {
 
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// Create content data with no content fields
 	cd, err := d.CreateContentData(ctx, ac, CreateContentDataParams{

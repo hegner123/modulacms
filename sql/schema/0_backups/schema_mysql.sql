@@ -42,7 +42,7 @@ CREATE INDEX idx_verifications_backup ON backup_verifications(backup_id, verifie
 
 CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    CHAR(26) PRIMARY KEY,
-    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_created       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     hlc_timestamp    BIGINT NOT NULL,
     status           VARCHAR(20) NOT NULL,
     backup_ids       JSON NOT NULL,
@@ -52,5 +52,5 @@ CREATE TABLE IF NOT EXISTS backup_sets (
     CONSTRAINT chk_set_status CHECK (status IN ('pending', 'completed', 'failed'))
 );
 
-CREATE INDEX idx_backup_sets_time ON backup_sets(created_at DESC);
+CREATE INDEX idx_backup_sets_time ON backup_sets(date_created DESC);
 CREATE INDEX idx_backup_sets_hlc ON backup_sets(hlc_timestamp);

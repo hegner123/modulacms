@@ -5,6 +5,7 @@ import { routeTree } from './routeTree.gen'
 
 const router = createRouter({
   routeTree,
+  basepath: '/admin',
   defaultNotFoundComponent: () => {
     return (
       <div className="flex flex-col items-center justify-center gap-6 py-24 text-foreground">

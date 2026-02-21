@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS content_data (
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
-    author_id TEXT
+    author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP

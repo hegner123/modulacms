@@ -19,7 +19,7 @@ func TestDatabase_CRUD_AdminContentRelation(t *testing.T) {
 	adminRouteID.ID = seed.AdminRoute.AdminRouteID
 	adminRouteID.Valid = true
 	adminDatatypeID := types.NullableAdminDatatypeID{ID: seed.AdminDatatype.AdminDatatypeID, Valid: true}
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Create 2 prerequisite AdminContentData records (source and target) ---
 	source, err := d.CreateAdminContentData(ctx, ac, CreateAdminContentDataParams{

@@ -37,7 +37,6 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 	result.DefinitionName = def.Name
 
 	now := types.TimestampNow()
-	author := types.NullableUserID{ID: authorID, Valid: true}
 
 	// Phase 1: Create root datatypes (no ParentRef)
 	datatypeIDMap := make(map[string]types.DatatypeID, len(def.Datatypes))
@@ -50,7 +49,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 			DatatypeID:   types.NewDatatypeID(),
 			Label:        dt.Label,
 			Type:         dt.Type.String,
-			AuthorID:     author,
+			AuthorID:     authorID,
 			DateCreated:  now,
 			DateModified: now,
 		})
@@ -84,7 +83,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				},
 				Label:        dt.Label,
 				Type:         dt.Type.String,
-				AuthorID:     author,
+				AuthorID:     authorID,
 				DateCreated:  now,
 				DateModified: now,
 			})
@@ -134,7 +133,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				Validation:   validation,
 				UIConfig:     uiConfig,
 				Type:         fieldDef.Type,
-				AuthorID:     author,
+				AuthorID:     types.NullableUserID{ID: authorID, Valid: true},
 				DateCreated:  now,
 				DateModified: now,
 			})

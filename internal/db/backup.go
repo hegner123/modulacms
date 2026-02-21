@@ -39,7 +39,7 @@ type Backup struct {
 // BackupSet represents a collection of backups.
 type BackupSet struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	CreatedAt      types.Timestamp       `json:"created_at"`
+	DateCreated      types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -77,7 +77,7 @@ type CreateBackupParams struct {
 // CreateBackupSetParams contains fields for creating a new backup set.
 type CreateBackupSetParams struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	CreatedAt      types.Timestamp       `json:"created_at"`
+	DateCreated      types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -150,7 +150,7 @@ func (d Database) MapBackup(a mdb.Backup) Backup {
 func (d Database) MapBackupSet(a mdb.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -194,7 +194,7 @@ func (d Database) MapCreateBackupParams(a CreateBackupParams) mdb.CreateBackupPa
 func (d Database) MapCreateBackupSetParams(a CreateBackupSetParams) mdb.CreateBackupSetParams {
 	return mdb.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -440,7 +440,7 @@ func (d MysqlDatabase) MapBackup(a mdbm.Backup) Backup {
 func (d MysqlDatabase) MapBackupSet(a mdbm.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -484,7 +484,7 @@ func (d MysqlDatabase) MapCreateBackupParams(a CreateBackupParams) mdbm.CreateBa
 func (d MysqlDatabase) MapCreateBackupSetParams(a CreateBackupSetParams) mdbm.CreateBackupSetParams {
 	return mdbm.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -742,7 +742,7 @@ func (d PsqlDatabase) MapBackup(a mdbp.Backup) Backup {
 func (d PsqlDatabase) MapBackupSet(a mdbp.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -786,7 +786,7 @@ func (d PsqlDatabase) MapCreateBackupParams(a CreateBackupParams) mdbp.CreateBac
 func (d PsqlDatabase) MapCreateBackupSetParams(a CreateBackupSetParams) mdbp.CreateBackupSetParams {
 	return mdbp.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		CreatedAt:      a.CreatedAt,
+		DateCreated:      a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -1371,7 +1371,7 @@ func (c NewBackupSetCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Back
 	queries := mdb.New(tx)
 	return queries.CreateBackupSet(ctx, mdb.CreateBackupSetParams{
 		BackupSetID:    id,
-		CreatedAt:      c.params.CreatedAt,
+		DateCreated:      c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,
@@ -1477,7 +1477,7 @@ func (c NewBackupSetCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	queries := mdbm.New(tx)
 	params := mdbm.CreateBackupSetParams{
 		BackupSetID:    id,
-		CreatedAt:      c.params.CreatedAt,
+		DateCreated:      c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,
@@ -1587,7 +1587,7 @@ func (c NewBackupSetCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp
 	queries := mdbp.New(tx)
 	return queries.CreateBackupSet(ctx, mdbp.CreateBackupSetParams{
 		BackupSetID:    id,
-		CreatedAt:      c.params.CreatedAt,
+		DateCreated:      c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,

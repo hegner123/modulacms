@@ -155,7 +155,7 @@ WHERE verification_id = $1;
 
 -- name: CreateBackupSet :one
 INSERT INTO backup_sets (
-    backup_set_id, created_at, hlc_timestamp, status,
+    backup_set_id, date_created, hlc_timestamp, status,
     backup_ids, node_count, completed_count, error_message
 ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8
@@ -169,7 +169,7 @@ WHERE backup_set_id = $1 LIMIT 1;
 -- name: GetBackupSetByHLC :one
 SELECT * FROM backup_sets
 WHERE hlc_timestamp = $1
-ORDER BY created_at DESC
+ORDER BY date_created DESC
 LIMIT 1;
 
 -- name: UpdateBackupSetStatus :exec
@@ -184,13 +184,13 @@ WHERE backup_set_id = $1;
 
 -- name: ListBackupSets :many
 SELECT * FROM backup_sets
-ORDER BY created_at DESC
+ORDER BY date_created DESC
 LIMIT $1 OFFSET $2;
 
 -- name: GetPendingBackupSets :many
 SELECT * FROM backup_sets
 WHERE status = 'pending'
-ORDER BY created_at ASC;
+ORDER BY date_created ASC;
 
 -- name: CountBackupSets :one
 SELECT COUNT(*) FROM backup_sets;

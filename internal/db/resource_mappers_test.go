@@ -158,7 +158,7 @@ func TestMapStringSession(t *testing.T) {
 	session := Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2024-06-15T13:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "192.168.1.1", Valid: true},
@@ -567,7 +567,7 @@ func TestDatabase_MapSession(t *testing.T) {
 	input := mdb.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2024-06-15T12:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "10.0.0.1", Valid: true},
@@ -583,8 +583,8 @@ func TestDatabase_MapSession(t *testing.T) {
 	if got.UserID != userID {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
-	if got.CreatedAt != ts {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, ts)
+	if got.DateCreated != ts {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
 	}
 	if got.LastAccess.String != "2024-06-15T12:00:00Z" || !got.LastAccess.Valid {
 		t.Errorf("LastAccess = %v, want valid 2024-06-15T12:00:00Z", got.LastAccess)
@@ -969,7 +969,7 @@ func TestDatabase_MapCreateSessionParams(t *testing.T) {
 
 	input := CreateSessionParams{
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2024-06-15T12:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "127.0.0.1", Valid: true},

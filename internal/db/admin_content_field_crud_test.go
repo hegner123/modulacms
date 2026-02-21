@@ -17,6 +17,7 @@ func TestDatabase_CRUD_AdminContentField(t *testing.T) {
 
 	adminRouteID := types.NullableAdminRouteID{ID: seed.AdminRoute.AdminRouteID, Valid: true}
 	adminDatatypeID := types.NullableAdminDatatypeID{ID: seed.AdminDatatype.AdminDatatypeID, Valid: true}
+	acdAuthorID := seed.User.UserID // AdminContentData uses types.UserID (non-nullable)
 	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
 	adminFieldID := types.NullableAdminFieldID{ID: seed.AdminField.AdminFieldID, Valid: true}
 
@@ -28,7 +29,7 @@ func TestDatabase_CRUD_AdminContentField(t *testing.T) {
 		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    adminRouteID,
 		AdminDatatypeID: adminDatatypeID,
-		AuthorID:        authorID,
+		AuthorID:        acdAuthorID,
 		Status:          types.ContentStatusDraft,
 		DateCreated:     now,
 		DateModified:    now,

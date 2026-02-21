@@ -263,10 +263,7 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 			ParentID: parentID,
 			Label:    msg.Label,
 			Type:     dtype,
-			AuthorID: types.NullableUserID{
-				ID:    authorID,
-				Valid: true,
-			},
+			AuthorID:     authorID,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
 		}

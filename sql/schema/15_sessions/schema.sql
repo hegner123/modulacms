@@ -4,7 +4,7 @@ CREATE TABLE sessions (
     user_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
-    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     expires_at TEXT,
     last_access TEXT DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,

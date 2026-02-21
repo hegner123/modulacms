@@ -26,7 +26,7 @@ type ContentData struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -40,7 +40,7 @@ type CreateContentDataParams struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -54,7 +54,7 @@ type UpdateContentDataParams struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`

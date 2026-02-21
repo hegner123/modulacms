@@ -580,8 +580,8 @@ func (c CMSPage) ProcessContentPreview(model Model) string {
 	// Metadata line: Type | Status | Author
 	metaParts := []string{node.Datatype.Label}
 	metaParts = append(metaParts, string(node.Instance.Status))
-	if node.Instance.AuthorID.Valid {
-		metaParts = append(metaParts, resolveAuthorName(node.Instance.AuthorID.ID, model.UsersList))
+	if !node.Instance.AuthorID.IsZero() {
+		metaParts = append(metaParts, resolveAuthorName(node.Instance.AuthorID, model.UsersList))
 	}
 	dimStyle := lipgloss.NewStyle().Faint(true)
 	preview = append(preview, dimStyle.Render(strings.Join(metaParts, " | ")))

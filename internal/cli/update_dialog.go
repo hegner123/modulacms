@@ -1593,19 +1593,13 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 			}
 		}
 
-		// Set author ID (required by database NOT NULL constraint)
-		nullableAuthorID := types.NullableUserID{
-			ID:    authorID,
-			Valid: true,
-		}
-
 		// Create the datatype
 		params := db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
 			ParentID:     parentID,
 			Label:        msg.Label,
 			Type:         dtype,
-			AuthorID:     nullableAuthorID,
+			AuthorID:     authorID,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
 		}
@@ -2382,10 +2376,7 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 				ID:    datatypeID,
 				Valid: true,
 			},
-			AuthorID: types.NullableUserID{
-				ID:    authorID,
-				Valid: true,
-			},
+			AuthorID:     authorID,
 			Status:       types.ContentStatusDraft,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
@@ -2859,10 +2850,7 @@ func (m Model) HandleInitializeRouteContent(msg InitializeRouteContentRequestMsg
 				ID:    datatypeID,
 				Valid: true,
 			},
-			AuthorID: types.NullableUserID{
-				ID:    authorID,
-				Valid: !authorID.IsZero(),
-			},
+			AuthorID:     authorID,
 			Status:       types.ContentStatusDraft,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),

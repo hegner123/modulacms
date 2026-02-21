@@ -18,7 +18,7 @@ type AdminContentData struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -49,7 +49,7 @@ type AdminDatatypes struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
@@ -104,7 +104,7 @@ type Backup struct {
 
 type BackupSet struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	CreatedAt      types.Timestamp       `json:"created_at"`
+	DateCreated    types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -153,7 +153,7 @@ type ContentData struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
@@ -184,7 +184,7 @@ type Datatypes struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
-	AuthorID     types.NullableUserID     `json:"author_id"`
+	AuthorID     types.UserID             `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
 }
@@ -267,7 +267,7 @@ type Routes struct {
 type Sessions struct {
 	SessionID   types.SessionID      `json:"session_id"`
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`

@@ -37,7 +37,7 @@ type GetContentTreeByRouteRow struct {
 	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
 	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
 	RouteID       types.NullableRouteID    `json:"route_id"`
-	AuthorID      types.NullableUserID     `json:"author_id"`
+	AuthorID      types.UserID             `json:"author_id"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
 	Status        types.ContentStatus      `json:"status"`
@@ -69,7 +69,7 @@ type AdminContentDataWithDatatypeRow struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -77,7 +77,7 @@ type AdminContentDataWithDatatypeRow struct {
 	DtParentID         types.NullableAdminDatatypeID `json:"dt_parent_id"`
 	DtLabel            string                        `json:"dt_label"`
 	DtType             string                        `json:"dt_type"`
-	DtAuthorID         types.NullableUserID          `json:"dt_author_id"`
+	DtAuthorID         types.UserID                  `json:"dt_author_id"`
 	DtDateCreated      types.Timestamp               `json:"dt_date_created"`
 	DtDateModified     types.Timestamp               `json:"dt_date_modified"`
 }

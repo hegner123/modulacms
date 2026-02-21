@@ -16,7 +16,9 @@ import (
 {{- if not .Entity.SkipAuditedCommands}}
 	"github.com/hegner123/modulacms/internal/db/audited"
 {{- end}}
+{{- if .Entity.NeedsTypesImport}}
 	"github.com/hegner123/modulacms/internal/db/types"
+{{- end}}
 {{- if .Entity.NeedsUtilityImport}}
 	"github.com/hegner123/modulacms/internal/utility"
 {{- end}}

@@ -41,7 +41,7 @@ func sessionTestFixture() (Sessions, types.SessionID, types.NullableUserID, type
 	s := Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2025-08-15T10:30:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "192.168.1.100", Valid: true},
@@ -57,7 +57,7 @@ func sessionCreateParams() CreateSessionParams {
 	ts := types.NewTimestamp(time.Date(2025, 9, 1, 12, 0, 0, 0, time.UTC))
 	return CreateSessionParams{
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2025-09-01T12:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "10.0.0.1", Valid: true},
@@ -73,7 +73,7 @@ func sessionUpdateParams() UpdateSessionParams {
 	ts := types.NewTimestamp(time.Date(2025, 10, 20, 8, 45, 0, 0, time.UTC))
 	return UpdateSessionParams{
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2025-10-20T08:45:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "172.16.0.50", Valid: true},
@@ -98,7 +98,7 @@ func TestMapStringSession_AllFields(t *testing.T) {
 	}{
 		{"SessionID", got.SessionID, sessionID.String()},
 		{"UserID", got.UserID, userID.String()},
-		{"CreatedAt", got.CreatedAt, ts.String()},
+		{"DateCreated", got.DateCreated, ts.String()},
 		{"ExpiresAt", got.ExpiresAt, ts.String()},
 		{"LastAccess", got.LastAccess, "2025-08-15T10:30:00Z"},
 		{"IpAddress", got.IpAddress, "192.168.1.100"},
@@ -213,7 +213,7 @@ func TestDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdb.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2025-03-10T09:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "10.0.0.5", Valid: true},
@@ -229,8 +229,8 @@ func TestDatabase_MapSession_AllFields(t *testing.T) {
 	if got.UserID != userID {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
-	if got.CreatedAt != ts {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, ts)
+	if got.DateCreated != ts {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
 	}
 	if got.ExpiresAt != ts {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, ts)
@@ -301,8 +301,8 @@ func TestDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -372,8 +372,8 @@ func TestDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -424,7 +424,7 @@ func TestMysqlDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdbm.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  lastAccess,
 		IpAddress:   sql.NullString{String: "192.168.1.200", Valid: true},
@@ -440,8 +440,8 @@ func TestMysqlDatabase_MapSession_AllFields(t *testing.T) {
 	if got.UserID != userID {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
-	if got.CreatedAt != ts {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, ts)
+	if got.DateCreated != ts {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
 	}
 	if got.ExpiresAt != ts {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, ts)
@@ -491,8 +491,8 @@ func TestMysqlDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -541,8 +541,8 @@ func TestMysqlDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -581,7 +581,7 @@ func TestPsqlDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdbp.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		CreatedAt:   ts,
+		DateCreated:   ts,
 		ExpiresAt:   ts,
 		LastAccess:  lastAccess,
 		IpAddress:   sql.NullString{String: "172.16.0.1", Valid: true},
@@ -597,8 +597,8 @@ func TestPsqlDatabase_MapSession_AllFields(t *testing.T) {
 	if got.UserID != userID {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
 	}
-	if got.CreatedAt != ts {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, ts)
+	if got.DateCreated != ts {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
 	}
 	if got.ExpiresAt != ts {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, ts)
@@ -664,8 +664,8 @@ func TestPsqlDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -714,8 +714,8 @@ func TestPsqlDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.UserID != params.UserID {
 		t.Errorf("UserID = %v, want %v", got.UserID, params.UserID)
 	}
-	if got.CreatedAt != params.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, params.CreatedAt)
+	if got.DateCreated != params.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, params.DateCreated)
 	}
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
@@ -781,15 +781,15 @@ func TestCrossDatabaseMapSession_SharedFieldConsistency(t *testing.T) {
 	data := sql.NullString{String: `{"test":"data"}`, Valid: true}
 
 	sqliteResult := Database{}.MapSession(mdb.Sessions{
-		SessionID: sessionID, UserID: userID, CreatedAt: ts, ExpiresAt: ts,
+		SessionID: sessionID, UserID: userID, DateCreated: ts, ExpiresAt: ts,
 		IpAddress: ipAddr, UserAgent: agent, SessionData: data,
 	})
 	mysqlResult := MysqlDatabase{}.MapSession(mdbm.Sessions{
-		SessionID: sessionID, UserID: userID, CreatedAt: ts, ExpiresAt: ts,
+		SessionID: sessionID, UserID: userID, DateCreated: ts, ExpiresAt: ts,
 		IpAddress: ipAddr, UserAgent: agent, SessionData: data,
 	})
 	psqlResult := PsqlDatabase{}.MapSession(mdbp.Sessions{
-		SessionID: sessionID, UserID: userID, CreatedAt: ts, ExpiresAt: ts,
+		SessionID: sessionID, UserID: userID, DateCreated: ts, ExpiresAt: ts,
 		IpAddress: ipAddr, UserAgent: agent, SessionData: data,
 	})
 
@@ -806,11 +806,11 @@ func TestCrossDatabaseMapSession_SharedFieldConsistency(t *testing.T) {
 	if sqliteResult.UserID != psqlResult.UserID {
 		t.Errorf("SQLite vs PostgreSQL UserID mismatch: %v vs %v", sqliteResult.UserID, psqlResult.UserID)
 	}
-	if sqliteResult.CreatedAt != mysqlResult.CreatedAt {
-		t.Errorf("SQLite vs MySQL CreatedAt mismatch: %v vs %v", sqliteResult.CreatedAt, mysqlResult.CreatedAt)
+	if sqliteResult.DateCreated != mysqlResult.DateCreated {
+		t.Errorf("SQLite vs MySQL DateCreated mismatch: %v vs %v", sqliteResult.DateCreated, mysqlResult.DateCreated)
 	}
-	if sqliteResult.CreatedAt != psqlResult.CreatedAt {
-		t.Errorf("SQLite vs PostgreSQL CreatedAt mismatch: %v vs %v", sqliteResult.CreatedAt, psqlResult.CreatedAt)
+	if sqliteResult.DateCreated != psqlResult.DateCreated {
+		t.Errorf("SQLite vs PostgreSQL DateCreated mismatch: %v vs %v", sqliteResult.DateCreated, psqlResult.DateCreated)
 	}
 	if sqliteResult.IpAddress != mysqlResult.IpAddress {
 		t.Errorf("SQLite vs MySQL IpAddress mismatch: %v vs %v", sqliteResult.IpAddress, mysqlResult.IpAddress)

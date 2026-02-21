@@ -99,7 +99,7 @@ type UserSshKeyView struct {
 // SessionView is a safe subset of Sessions (excludes session_data).
 type SessionView struct {
 	SessionID  types.SessionID `json:"session_id"`
-	CreatedAt  types.Timestamp `json:"created_at"`
+	DateCreated  types.Timestamp `json:"date_created"`
 	ExpiresAt  types.Timestamp `json:"expires_at"`
 	LastAccess string          `json:"last_access"`
 	IpAddress  string          `json:"ip_address"`
@@ -158,7 +158,7 @@ func MapUserSshKeyView(k UserSshKeys) UserSshKeyView {
 func MapSessionView(s Sessions) SessionView {
 	return SessionView{
 		SessionID:  s.SessionID,
-		CreatedAt:  s.CreatedAt,
+		DateCreated:  s.DateCreated,
 		ExpiresAt:  s.ExpiresAt,
 		LastAccess: nullStringValue(s.LastAccess),
 		IpAddress:  nullStringValue(s.IpAddress),

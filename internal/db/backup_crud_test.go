@@ -17,7 +17,7 @@ import (
 // backupSetsDDL is the DDL for the backup_sets table (not included in CreateAllTables).
 const backupSetsDDL = `CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    TEXT PRIMARY KEY CHECK (length(backup_set_id) = 26),
-    created_at       TEXT NOT NULL,
+    date_created       TEXT NOT NULL,
     hlc_timestamp    INTEGER NOT NULL,
     status           TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'partial')),
     backup_ids       TEXT NOT NULL,
@@ -222,7 +222,7 @@ func TestDatabase_CRUD_BackupSet(t *testing.T) {
 	bsID := types.NewBackupSetID()
 	created, err := d.CreateBackupSet(CreateBackupSetParams{
 		BackupSetID:    bsID,
-		CreatedAt:      now,
+		DateCreated:      now,
 		HlcTimestamp:   hlc,
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{}),

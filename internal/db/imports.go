@@ -61,7 +61,7 @@ type StringMedia struct {
 	Class        string `json:"class"`
 	Mimetype     string `json:"mimetype"`
 	Dimensions   string `json:"dimensions"`
-	Url          string `json:"url"`
+	URL          string `json:"url"`
 	Srcset       string `json:"srcset"`
 	FocalX       string `json:"focal_x"`
 	FocalY       string `json:"focal_y"`
@@ -114,7 +114,7 @@ type StringDatatypeFields struct {
 type StringSessions struct {
 	SessionID   string `json:"session_id"`
 	UserID      string `json:"user_id"`
-	CreatedAt   string `json:"created_at"`
+	DateCreated   string `json:"date_created"`
 	ExpiresAt   string `json:"expires_at"`
 	LastAccess  string `json:"last_access"`
 	IpAddress   string `json:"ip_address"`

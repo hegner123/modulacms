@@ -20,7 +20,7 @@ func adminDatatypeFixture() (AdminDatatypes, types.AdminDatatypeID, types.Timest
 	datatypeID := types.NewAdminDatatypeID()
 	ts := types.NewTimestamp(time.Date(2025, 6, 15, 10, 30, 0, 0, time.UTC))
 	parentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	adt := AdminDatatypes{
 		AdminDatatypeID: datatypeID,
@@ -44,7 +44,7 @@ func adminDatatypeFixtureNulls() AdminDatatypes {
 		ParentID:        types.NullableAdminDatatypeID{Valid: false},
 		Label:           "Minimal",
 		Type:            "single",
-		AuthorID:        types.NullableUserID{Valid: false},
+		AuthorID:        types.UserID(""),
 		DateCreated:     ts,
 		DateModified:    ts,
 	}
@@ -93,8 +93,8 @@ func TestMapAdminDatatypeJSON_NullableIDsProduceNullString(t *testing.T) {
 	if got.ParentID != "null" {
 		t.Errorf("ParentID = %q, want %q for null NullableAdminDatatypeID", got.ParentID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null NullableUserID", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -110,8 +110,8 @@ func TestMapAdminDatatypeJSON_ZeroValue(t *testing.T) {
 	if got.ParentID != "null" {
 		t.Errorf("ParentID = %q, want %q", got.ParentID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 	if got.Label != "" {
 		t.Errorf("Label = %q, want empty string", got.Label)
@@ -202,8 +202,8 @@ func TestMapStringAdminDatatype_NullableFieldsShowNull(t *testing.T) {
 	if got.ParentID != "null" {
 		t.Errorf("ParentID = %q, want %q for null", got.ParentID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -215,7 +215,7 @@ func TestDatabase_MapAdminDatatype_AllFields(t *testing.T) {
 	datatypeID := types.NewAdminDatatypeID()
 	ts := types.NewTimestamp(time.Date(2025, 3, 15, 10, 30, 0, 0, time.UTC))
 	parentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdb.AdminDatatypes{
 		AdminDatatypeID: datatypeID,
@@ -269,8 +269,8 @@ func TestDatabase_MapAdminDatatype_ZeroValues(t *testing.T) {
 	if got.ParentID.Valid {
 		t.Errorf("ParentID.Valid = true, want false for zero value")
 	}
-	if got.AuthorID.Valid {
-		t.Errorf("AuthorID.Valid = true, want false for zero value")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero value", got.AuthorID)
 	}
 }
 
@@ -285,7 +285,7 @@ func TestDatabase_MapCreateAdminDatatypeParams_GeneratesNewID(t *testing.T) {
 		ParentID:     types.NullableAdminDatatypeID{Valid: false},
 		Label:        "Page",
 		Type:         "single",
-		AuthorID:     types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:     types.NewUserID(),
 		DateCreated:  ts,
 		DateModified: ts,
 	}
@@ -328,7 +328,7 @@ func TestDatabase_MapCreateAdminDatatypeParams_PreservesNullableFields(t *testin
 	t.Parallel()
 	d := Database{}
 	parentID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("parent-123"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := CreateAdminDatatypeParams{
 		ParentID: parentID,
@@ -355,7 +355,7 @@ func TestDatabase_MapUpdateAdminDatatypeParams_AllFields(t *testing.T) {
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	datatypeID := types.NewAdminDatatypeID()
 	parentID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("parent-updated"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := UpdateAdminDatatypeParams{
 		ParentID:        parentID,
@@ -400,7 +400,7 @@ func TestMysqlDatabase_MapAdminDatatype_AllFields(t *testing.T) {
 	datatypeID := types.NewAdminDatatypeID()
 	ts := types.NewTimestamp(time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC))
 	parentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdbm.AdminDatatypes{
 		AdminDatatypeID: datatypeID,
@@ -492,7 +492,7 @@ func TestMysqlDatabase_MapUpdateAdminDatatypeParams_AllFields(t *testing.T) {
 		ParentID:        types.NullableAdminDatatypeID{Valid: false},
 		Label:           "MySQL Updated",
 		Type:            "collection",
-		AuthorID:        types.NullableUserID{Valid: false},
+		AuthorID:        types.NewUserID(),
 		DateCreated:     ts,
 		DateModified:    ts,
 		AdminDatatypeID: datatypeID,
@@ -525,7 +525,7 @@ func TestPsqlDatabase_MapAdminDatatype_AllFields(t *testing.T) {
 	datatypeID := types.NewAdminDatatypeID()
 	ts := types.NewTimestamp(time.Date(2025, 2, 20, 14, 0, 0, 0, time.UTC))
 	parentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := mdbp.AdminDatatypes{
 		AdminDatatypeID: datatypeID,
@@ -617,7 +617,7 @@ func TestPsqlDatabase_MapUpdateAdminDatatypeParams_AllFields(t *testing.T) {
 		ParentID:        types.NullableAdminDatatypeID{Valid: false},
 		Label:           "Psql Updated",
 		Type:            "collection",
-		AuthorID:        types.NullableUserID{Valid: false},
+		AuthorID:        types.NewUserID(),
 		DateCreated:     ts,
 		DateModified:    ts,
 		AdminDatatypeID: datatypeID,
@@ -650,7 +650,7 @@ func TestCrossDatabaseMapAdminDatatype_Consistency(t *testing.T) {
 	datatypeID := types.NewAdminDatatypeID()
 	ts := types.NewTimestamp(time.Date(2025, 4, 10, 9, 15, 0, 0, time.UTC))
 	parentID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("parent-cross"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	sqliteInput := mdb.AdminDatatypes{
 		AdminDatatypeID: datatypeID, ParentID: parentID,
@@ -733,7 +733,7 @@ func TestNewAdminDatatypeCmd_AllAccessors(t *testing.T) {
 	params := CreateAdminDatatypeParams{
 		Label:        "Cmd Test",
 		Type:         "collection",
-		AuthorID:     types.NullableUserID{ID: userID, Valid: true},
+		AuthorID:     userID,
 		DateCreated:  ts,
 		DateModified: ts,
 	}

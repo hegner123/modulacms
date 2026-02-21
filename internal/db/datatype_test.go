@@ -33,10 +33,10 @@ var (
 // --- Test data helpers ---
 
 // datatypeTestFixture returns a fully populated Datatypes struct and its component parts.
-func datatypeTestFixture() (Datatypes, types.DatatypeID, types.NullableDatatypeID, types.NullableUserID, types.Timestamp) {
+func datatypeTestFixture() (Datatypes, types.DatatypeID, types.NullableDatatypeID, types.UserID, types.Timestamp) {
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 7, 10, 14, 30, 0, 0, time.UTC))
 
 	dt := Datatypes{
@@ -54,7 +54,7 @@ func datatypeTestFixture() (Datatypes, types.DatatypeID, types.NullableDatatypeI
 // datatypeUpdateParams returns an UpdateDatatypeParams with all fields populated.
 func datatypeUpdateParams() UpdateDatatypeParams {
 	dtID := types.NewDatatypeID()
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 7, 15, 8, 45, 0, 0, time.UTC))
 	return UpdateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true},
@@ -128,15 +128,15 @@ func TestMapDatatypeJSON_NullParentID(t *testing.T) {
 	}
 }
 
-func TestMapDatatypeJSON_NullAuthorID(t *testing.T) {
+func TestMapDatatypeJSON_ZeroAuthorID(t *testing.T) {
 	t.Parallel()
 	dt := Datatypes{
-		AuthorID: types.NullableUserID{Valid: false},
+		AuthorID: types.UserID(""),
 	}
 	got := MapDatatypeJSON(dt)
 
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -203,15 +203,15 @@ func TestMapStringDatatype_NullParentID(t *testing.T) {
 	}
 }
 
-func TestMapStringDatatype_NullAuthorID(t *testing.T) {
+func TestMapStringDatatype_ZeroAuthorID(t *testing.T) {
 	t.Parallel()
 	dt := Datatypes{
-		AuthorID: types.NullableUserID{Valid: false},
+		AuthorID: types.UserID(""),
 	}
 	got := MapStringDatatype(dt)
 
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -234,7 +234,7 @@ func TestDatabase_MapDatatype_AllFields(t *testing.T) {
 	d := Database{}
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 3, 15, 10, 30, 0, 0, time.UTC))
 
 	input := mdb.Datatypes{
@@ -298,7 +298,7 @@ func TestDatabase_MapCreateDatatypeParams_Table(t *testing.T) {
 	d := Database{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	explicitID := types.NewDatatypeID()
 
 	tests := []struct {
@@ -439,7 +439,7 @@ func TestMysqlDatabase_MapDatatype_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC))
 
 	input := mdbm.Datatypes{
@@ -496,7 +496,7 @@ func TestMysqlDatabase_MapCreateDatatypeParams_Table(t *testing.T) {
 	t.Parallel()
 	d := MysqlDatabase{}
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	explicitID := types.NewDatatypeID()
 
 	tests := []struct {
@@ -604,7 +604,7 @@ func TestMysqlDatabase_MapUpdateDatatypeParams_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := UpdateDatatypeParams{
 		ParentID:   parentID,
@@ -640,7 +640,7 @@ func TestPsqlDatabase_MapDatatype_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 2, 20, 14, 0, 0, 0, time.UTC))
 
 	input := mdbp.Datatypes{
@@ -698,7 +698,7 @@ func TestPsqlDatabase_MapCreateDatatypeParams_Table(t *testing.T) {
 	d := PsqlDatabase{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	explicitID := types.NewDatatypeID()
 
 	tests := []struct {
@@ -827,7 +827,7 @@ func TestCrossDatabaseMapDatatype_Consistency(t *testing.T) {
 	t.Parallel()
 	dtID := types.NewDatatypeID()
 	parentID := types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 4, 10, 9, 15, 0, 0, time.UTC))
 
 	sqliteInput := mdb.Datatypes{

@@ -26,7 +26,7 @@ type AdminContentData struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
@@ -40,7 +40,7 @@ type CreateAdminContentDataParams struct {
 	PrevSiblingID   types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID    types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	Status          types.ContentStatus           `json:"status"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
@@ -54,7 +54,7 @@ type UpdateAdminContentDataParams struct {
 	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
 	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.NullableUserID          `json:"author_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`

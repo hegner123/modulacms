@@ -17,7 +17,7 @@ func TestDatabase_CRUD_AdminContentData(t *testing.T) {
 
 	adminRouteID := types.NullableAdminRouteID{ID: seed.AdminRoute.AdminRouteID, Valid: true}
 	adminDatatypeID := types.NullableAdminDatatypeID{ID: seed.AdminDatatype.AdminDatatypeID, Valid: true}
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Count: starts at zero ---
 	count, err := d.CountAdminContentData()

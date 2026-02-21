@@ -20,7 +20,7 @@ func adminContentDataFixture() (AdminContentData, types.AdminContentID, types.Ti
 	contentID := types.NewAdminContentID()
 	ts := types.NewTimestamp(time.Date(2025, 6, 15, 10, 30, 0, 0, time.UTC))
 	parentID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(types.NewAdminContentID()), Valid: true}
 
 	acd := AdminContentData{
@@ -52,7 +52,7 @@ func adminContentDataFixtureNulls() AdminContentData {
 		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("route-null-test"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
-		AuthorID:           types.NullableUserID{Valid: false},
+		AuthorID:           types.UserID(""),
 		Status:             types.ContentStatus("draft"),
 		DateCreated:        ts,
 		DateModified:       ts,
@@ -128,8 +128,8 @@ func TestMapAdminContentDataJSON_NullableIDsProduceNullString(t *testing.T) {
 	if got.DatatypeID != "null" {
 		t.Errorf("DatatypeID = %q, want %q for null NullableAdminDatatypeID", got.DatatypeID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null NullableUserID", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -246,8 +246,8 @@ func TestMapStringAdminContentData_NullableFieldsShowNull(t *testing.T) {
 	if got.AdminDatatypeID != "null" {
 		t.Errorf("AdminDatatypeID = %q, want %q for null", got.AdminDatatypeID, "null")
 	}
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q for null", got.AuthorID, "null")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero UserID", got.AuthorID)
 	}
 }
 
@@ -259,7 +259,7 @@ func TestDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	contentID := types.NewAdminContentID()
 	ts := types.NewTimestamp(time.Date(2025, 3, 15, 10, 30, 0, 0, time.UTC))
 	parentID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(types.NewAdminContentID()), Valid: true}
 
 	input := mdb.AdminContentData{
@@ -346,7 +346,7 @@ func TestDatabase_MapCreateAdminContentDataParams_GeneratesNewID(t *testing.T) {
 		PrevSiblingID:   types.NullableAdminContentID{},
 		AdminRouteID:    types.NullableAdminRouteID{ID: types.AdminRouteID("new-route"), Valid: true},
 		AdminDatatypeID: types.NullableAdminDatatypeID{Valid: false},
-		AuthorID:        types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:        types.NewUserID(),
 		Status:          types.ContentStatus("draft"),
 		DateCreated:     ts,
 		DateModified:    ts,
@@ -430,7 +430,7 @@ func TestDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 	contentID := types.NewAdminContentID()
 	parentID := types.NullableAdminContentID{ID: types.AdminContentID("parent-updated"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 
 	input := UpdateAdminContentDataParams{
 		ParentID:           parentID,
@@ -482,7 +482,7 @@ func TestMysqlDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	contentID := types.NewAdminContentID()
 	ts := types.NewTimestamp(time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC))
 	parentID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(types.NewAdminContentID()), Valid: true}
 
 	input := mdbm.AdminContentData{
@@ -588,7 +588,7 @@ func TestMysqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("mysql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
-		AuthorID:           types.NullableUserID{Valid: false},
+		AuthorID:           types.NewUserID(),
 		Status:             types.ContentStatus("archived"),
 		DateCreated:        ts,
 		DateModified:       ts,
@@ -619,7 +619,7 @@ func TestPsqlDatabase_MapAdminContentData_AllFields(t *testing.T) {
 	contentID := types.NewAdminContentID()
 	ts := types.NewTimestamp(time.Date(2025, 2, 20, 14, 0, 0, 0, time.UTC))
 	parentID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID(types.NewAdminContentID()), Valid: true}
 
 	input := mdbp.AdminContentData{
@@ -725,7 +725,7 @@ func TestPsqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 		PrevSiblingID:      types.NullableAdminContentID{},
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("psql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
-		AuthorID:           types.NullableUserID{Valid: false},
+		AuthorID:           types.NewUserID(),
 		Status:             types.ContentStatus("pending"),
 		DateCreated:        ts,
 		DateModified:       ts,
@@ -756,7 +756,7 @@ func TestCrossDatabaseMapAdminContentData_Consistency(t *testing.T) {
 	contentID := types.NewAdminContentID()
 	ts := types.NewTimestamp(time.Date(2025, 4, 10, 9, 15, 0, 0, time.UTC))
 	parentID := types.NullableAdminContentID{ID: types.AdminContentID("parent-cross"), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	datatypeID := types.NullableAdminDatatypeID{ID: types.AdminDatatypeID("dt-cross"), Valid: true}
 	firstChild := types.NullableAdminContentID{ID: types.AdminContentID("cross-child"), Valid: true}
 	nextSibling := types.NullableAdminContentID{ID: types.AdminContentID("cross-next"), Valid: true}
@@ -846,7 +846,7 @@ func TestNewAdminContentDataCmd_AllAccessors(t *testing.T) {
 	params := CreateAdminContentDataParams{
 		AdminRouteID: types.NullableAdminRouteID{ID: types.AdminRouteID("cmd-route"), Valid: true},
 		Status:       types.ContentStatus("draft"),
-		AuthorID:     types.NullableUserID{ID: userID, Valid: true},
+		AuthorID:     userID,
 		DateCreated:  ts,
 		DateModified: ts,
 	}

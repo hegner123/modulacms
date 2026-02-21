@@ -62,7 +62,7 @@ func fullBackupSqlite() mdb.Backup {
 func fullBackupSetSqlite() mdb.BackupSet {
 	return mdb.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"id1", "id2"}),
@@ -232,8 +232,8 @@ func TestDatabase_MapBackupSet_AllFields(t *testing.T) {
 	if got.BackupSetID != input.BackupSetID {
 		t.Errorf("BackupSetID = %v, want %v", got.BackupSetID, input.BackupSetID)
 	}
-	if got.CreatedAt != input.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, input.CreatedAt)
+	if got.DateCreated != input.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, input.DateCreated)
 	}
 	if got.HlcTimestamp != input.HlcTimestamp {
 		t.Errorf("HlcTimestamp = %v, want %v", got.HlcTimestamp, input.HlcTimestamp)
@@ -465,7 +465,7 @@ func TestDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := Database{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"a", "b"}),
@@ -479,8 +479,8 @@ func TestDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	if got.BackupSetID != input.BackupSetID {
 		t.Errorf("BackupSetID = %v, want %v", got.BackupSetID, input.BackupSetID)
 	}
-	if got.CreatedAt != input.CreatedAt {
-		t.Errorf("CreatedAt = %v, want %v", got.CreatedAt, input.CreatedAt)
+	if got.DateCreated != input.DateCreated {
+		t.Errorf("DateCreated = %v, want %v", got.DateCreated, input.DateCreated)
 	}
 	if got.HlcTimestamp != input.HlcTimestamp {
 		t.Errorf("HlcTimestamp = %v, want %v", got.HlcTimestamp, input.HlcTimestamp)
@@ -662,7 +662,7 @@ func TestMysqlDatabase_MapBackupSet_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	input := mdbm.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusComplete,
 		BackupIds:      types.NewJSONData([]string{"x"}),
@@ -805,7 +805,7 @@ func TestMysqlDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"a"}),
@@ -966,7 +966,7 @@ func TestPsqlDatabase_MapBackupSet_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	input := mdbp.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPartial,
 		BackupIds:      types.NewJSONData([]string{"p1", "p2", "p3"}),
@@ -1100,7 +1100,7 @@ func TestPsqlDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		CreatedAt:      types.TimestampNow(),
+		DateCreated:      types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusComplete,
 		BackupIds:      types.NewJSONData([]string{"q"}),
@@ -1266,19 +1266,19 @@ func TestCrossDatabaseMapBackupSet_Consistency(t *testing.T) {
 	backupIds := types.NewJSONData([]string{"x", "y"})
 
 	sqliteInput := mdb.BackupSet{
-		BackupSetID: bsID, CreatedAt: ts, HlcTimestamp: hlc,
+		BackupSetID: bsID, DateCreated: ts, HlcTimestamp: hlc,
 		Status: types.BackupSetStatusComplete, BackupIds: backupIds,
 		NodeCount: 5, CompletedCount: types.NullableInt64{Int64: 5, Valid: true},
 		ErrorMessage: types.NullableString{Valid: false},
 	}
 	mysqlInput := mdbm.BackupSet{
-		BackupSetID: bsID, CreatedAt: ts, HlcTimestamp: hlc,
+		BackupSetID: bsID, DateCreated: ts, HlcTimestamp: hlc,
 		Status: types.BackupSetStatusComplete, BackupIds: backupIds,
 		NodeCount: 5, CompletedCount: types.NullableInt64{Int64: 5, Valid: true},
 		ErrorMessage: types.NullableString{Valid: false},
 	}
 	psqlInput := mdbp.BackupSet{
-		BackupSetID: bsID, CreatedAt: ts, HlcTimestamp: hlc,
+		BackupSetID: bsID, DateCreated: ts, HlcTimestamp: hlc,
 		Status: types.BackupSetStatusComplete, BackupIds: backupIds,
 		NodeCount: 5, CompletedCount: types.NullableInt64{Int64: 5, Valid: true},
 		ErrorMessage: types.NullableString{Valid: false},

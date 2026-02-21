@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     prev_sibling_id VARCHAR(26) NULL,
     route_id VARCHAR(26) NULL,
     datatype_id VARCHAR(26) NULL,
-    author_id VARCHAR(26) NULL,
+    author_id VARCHAR(26) NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE ON DELETE SET NULL
+            ON UPDATE CASCADE ON DELETE RESTRICT
 );
 
 CREATE INDEX idx_content_data_parent ON content_data(parent_id);

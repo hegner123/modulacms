@@ -38,7 +38,7 @@ CREATE INDEX IF NOT EXISTS idx_verifications_backup ON backup_verifications(back
 
 CREATE TABLE IF NOT EXISTS backup_sets (
     backup_set_id    TEXT PRIMARY KEY CHECK (length(backup_set_id) = 26),
-    created_at       TEXT NOT NULL,
+    date_created       TEXT NOT NULL,
     hlc_timestamp    INTEGER NOT NULL,
     status           TEXT NOT NULL CHECK (status IN ('pending', 'complete', 'partial')),
     backup_ids       TEXT NOT NULL,
@@ -47,5 +47,5 @@ CREATE TABLE IF NOT EXISTS backup_sets (
     error_message    TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_backup_sets_time ON backup_sets(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_backup_sets_time ON backup_sets(date_created DESC);
 CREATE INDEX IF NOT EXISTS idx_backup_sets_hlc ON backup_sets(hlc_timestamp);

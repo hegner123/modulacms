@@ -92,14 +92,12 @@ func AssembleDatatypeFullView(d DbDriver, datatypeID types.DatatypeID) (*Datatyp
 		Fields:       []DatatypeFieldView{},
 	}
 
-	if dt.AuthorID.Valid {
-		user, err := d.GetUser(dt.AuthorID.ID)
-		if err != nil {
-			return nil, fmt.Errorf("get author %s: %w", dt.AuthorID.ID, err)
-		}
-		av := MapAuthorView(*user)
-		view.Author = &av
+	user, err := d.GetUser(dt.AuthorID)
+	if err != nil {
+		return nil, fmt.Errorf("get author %s: %w", dt.AuthorID, err)
 	}
+	av := MapAuthorView(*user)
+	view.Author = &av
 
 	rows, err := d.ListFieldsWithSortOrderByDatatypeID(datatypeID)
 	if err != nil {
@@ -130,14 +128,12 @@ func AssembleContentDataView(d DbDriver, contentID types.ContentID) (*ContentDat
 		Fields:        []FieldView{},
 	}
 
-	if cd.AuthorID.Valid {
-		user, err := d.GetUser(cd.AuthorID.ID)
-		if err != nil {
-			return nil, fmt.Errorf("get author %s: %w", cd.AuthorID.ID, err)
-		}
-		av := MapAuthorView(*user)
-		view.Author = &av
+	user, err := d.GetUser(cd.AuthorID)
+	if err != nil {
+		return nil, fmt.Errorf("get author %s: %w", cd.AuthorID, err)
 	}
+	av := MapAuthorView(*user)
+	view.Author = &av
 
 	if cd.DatatypeID.Valid {
 		dt, err := d.GetDatatype(cd.DatatypeID.ID)

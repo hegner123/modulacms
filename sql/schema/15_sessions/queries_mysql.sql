@@ -5,7 +5,7 @@ DROP TABLE sessions;
 CREATE TABLE IF NOT EXISTS sessions (
     session_id VARCHAR(26) PRIMARY KEY NOT NULL,
     user_id VARCHAR(26) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     expires_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     ip_address VARCHAR(45) NULL,
@@ -37,7 +37,7 @@ SELECT * FROM sessions;
 INSERT INTO sessions (
     session_id,
     user_id,
-    created_at,
+    date_created,
     expires_at,
     last_access,
     ip_address,
@@ -57,7 +57,7 @@ INSERT INTO sessions (
 -- name: UpdateSession :exec
 UPDATE sessions
     SET user_id=?,
-    created_at=?,
+    date_created=?,
     expires_at=?,
     last_access=?,
     ip_address=?,

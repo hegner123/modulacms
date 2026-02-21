@@ -17,7 +17,7 @@ func TestDatabase_CRUD_ContentRelation(t *testing.T) {
 
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 
 	// --- Create 2 prerequisite ContentData records (source and target) ---
 	source, err := d.CreateContentData(ctx, ac, CreateContentDataParams{

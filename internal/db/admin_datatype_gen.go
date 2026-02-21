@@ -23,7 +23,7 @@ type AdminDatatypes struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
@@ -33,7 +33,7 @@ type CreateAdminDatatypeParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
 	Label        string                        `json:"label"`
 	Type         string                        `json:"type"`
-	AuthorID     types.NullableUserID          `json:"author_id"`
+	AuthorID     types.UserID                  `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
 }
@@ -43,7 +43,7 @@ type UpdateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
-	AuthorID        types.NullableUserID          `json:"author_id"`
+	AuthorID        types.UserID                  `json:"author_id"`
 	DateCreated     types.Timestamp               `json:"date_created"`
 	DateModified    types.Timestamp               `json:"date_modified"`
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`

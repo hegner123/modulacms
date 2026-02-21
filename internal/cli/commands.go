@@ -250,7 +250,7 @@ func (m Model) GetFullTree(c *config.Config, id types.RouteID) tea.Cmd {
 
 // GetContentInstances creates a command to fetch content instances (stub for future implementation).
 func (m Model) GetContentInstances(c *config.Config) tea.Cmd {
-	//	d := db.ConfigDB(*c)
+	//    d := db.ConfigDB(*c)
 	//TODO JOIN STATEMENTS FOR CONTENT DATA AND DATATYPES
 	//TODO JOIN STATEMENTS FOR CONTENT FIELDS AND FIELDS
 
@@ -284,7 +284,7 @@ func (m Model) CreateContentWithFields(
 		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: datatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
-			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+			AuthorID:      authorID,
 			Status:        types.ContentStatusDraft,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
@@ -375,7 +375,7 @@ func (m Model) HandleCreateContentFromDialog(
 		contentData, err := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			DatatypeID:    types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true},
 			RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
-			AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+			AuthorID:      authorID,
 			Status:        types.ContentStatusDraft,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
@@ -1965,7 +1965,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 			NextSiblingID: source.NextSiblingID,                                             // take source's next
 			PrevSiblingID: types.NullableContentID{ID: source.ContentDataID, Valid: true}, // prev = source
 			DatatypeID:    source.DatatypeID,
-			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			AuthorID:      userID,
 			Status:        types.ContentStatusDraft,
 			DateCreated:   now,
 			DateModified:  now,

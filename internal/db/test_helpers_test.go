@@ -114,6 +114,7 @@ func testSeededDB(t *testing.T) (Database, SeedData) {
 	// Switch to user-aware audit context for remaining entities
 	acUser := testAuditCtxWithUser(d, user.UserID)
 	authorID := types.NullableUserID{ID: user.UserID, Valid: true}
+	userAuthorID := user.UserID // non-nullable for Datatype/AdminDatatype
 
 	// Tier 2: entities referencing user
 	route, err := d.CreateRoute(ctx, acUser, CreateRouteParams{
@@ -145,7 +146,7 @@ func testSeededDB(t *testing.T) (Database, SeedData) {
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "test-datatype",
 		Type:         "page",
-		AuthorID:     authorID,
+		AuthorID:     userAuthorID,
 		DateCreated:  now,
 		DateModified: now,
 	})
@@ -157,7 +158,7 @@ func testSeededDB(t *testing.T) (Database, SeedData) {
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "test-admin-datatype",
 		Type:         "page",
-		AuthorID:     authorID,
+		AuthorID:     userAuthorID,
 		DateCreated:  now,
 		DateModified: now,
 	})

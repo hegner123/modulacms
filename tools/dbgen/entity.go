@@ -280,6 +280,16 @@ type DriverEntityData struct {
 	Driver DriverConfig
 }
 
+// NeedsTypesImport returns true if any field type starts with "types.".
+func (e Entity) NeedsTypesImport() bool {
+	for _, f := range e.Fields {
+		if len(f.Type) > 6 && f.Type[:6] == "types." {
+			return true
+		}
+	}
+	return false
+}
+
 // NeedsSqlImport returns true if any field type starts with "sql.".
 func (e Entity) NeedsSqlImport() bool {
 	for _, f := range e.Fields {

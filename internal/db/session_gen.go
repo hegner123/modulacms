@@ -19,7 +19,7 @@ import (
 type Sessions struct {
 	SessionID   types.SessionID      `json:"session_id"`
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
@@ -30,7 +30,7 @@ type Sessions struct {
 // CreateSessionParams contains parameters for creating a new session.
 type CreateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
@@ -41,7 +41,7 @@ type CreateSessionParams struct {
 // UpdateSessionParams contains parameters for updating an existing session.
 type UpdateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
-	CreatedAt   types.Timestamp      `json:"created_at"`
+	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
 	LastAccess  sql.NullString       `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
@@ -55,7 +55,7 @@ func MapStringSession(a Sessions) StringSessions {
 	return StringSessions{
 		SessionID:   a.SessionID.String(),
 		UserID:      a.UserID.String(),
-		CreatedAt:   a.CreatedAt.String(),
+		DateCreated: a.DateCreated.String(),
 		ExpiresAt:   a.ExpiresAt.String(),
 		LastAccess:  NullStringToEmpty(a.LastAccess),
 		IpAddress:   NullStringToEmpty(a.IpAddress),

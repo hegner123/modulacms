@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS sessions (
         CONSTRAINT fk_sessions_user_id
             REFERENCES users
             ON UPDATE CASCADE ON DELETE CASCADE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     expires_at TIMESTAMP,
     last_access TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     ip_address TEXT,
@@ -37,7 +37,7 @@ SELECT * FROM sessions;
 INSERT INTO sessions (
     session_id,
     user_id,
-    created_at,
+    date_created,
     expires_at,
     last_access,
     ip_address,
@@ -57,7 +57,7 @@ INSERT INTO sessions (
 -- name: UpdateSession :exec
 UPDATE sessions
     SET user_id=$1,
-    created_at=$2,
+    date_created=$2,
     expires_at=$3,
     last_access=$4,
     ip_address=$5,

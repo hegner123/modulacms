@@ -69,7 +69,7 @@ func TestGenericHeaders_SpecificCounts(t *testing.T) {
 		{User, 8},              // user_id, username, name, email, hash, role, date_created, date_modified
 		{Permission, 4},        // permission_id, table_id, mode, label
 		{Role, 3},              // role_id, label, permissions
-		{Session, 8},           // session_id, user_id, created_at, expires_at, last_access, ip_address, user_agent, session_data
+		{Session, 8},           // session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data
 		{MediaT, 14},           // 14 media fields
 		{Media_dimension, 5},   // md_id, label, width, height, aspect_ratio
 		{Table, 3},             // id, label, author_id
