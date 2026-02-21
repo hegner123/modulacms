@@ -1,0 +1,90 @@
+# ModulaCMS TypeScript SDK workspace
+
+set dotenv-load := false
+
+# List available recipes
+default:
+    @just --list
+
+# Build all packages (types first, then SDKs in parallel)
+build:
+    pnpm -r build
+
+# Run all tests
+test:
+    pnpm -r test
+
+# Typecheck all packages
+typecheck:
+    pnpm -r typecheck
+
+# Clean build artifacts
+clean:
+    pnpm -r clean
+
+# Bump patch version for a package: just patch types | sdk | admin-sdk | all
+patch target:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{target}}" in
+        types)      dirs="types" ;;
+        sdk)        dirs="modulacms-sdk" ;;
+        admin-sdk)  dirs="modulacms-admin-sdk" ;;
+        all)        dirs="types modulacms-sdk modulacms-admin-sdk" ;;
+        *)          echo "Unknown target: {{target}}. Use: types | sdk | admin-sdk | all" >&2; exit 1 ;;
+    esac
+    for dir in $dirs; do
+        cd "$dir"
+        old=$(node -p "require('./package.json').version")
+        npm version patch --no-git-tag-version >/dev/null
+        new=$(node -p "require('./package.json').version")
+        echo "$dir: $old -> $new"
+        cd ..
+    done
+
+# Bump minor version for a package: just minor types | sdk | admin-sdk | all
+minor target:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{target}}" in
+        types)      dirs="types" ;;
+        sdk)        dirs="modulacms-sdk" ;;
+        admin-sdk)  dirs="modulacms-admin-sdk" ;;
+        all)        dirs="types modulacms-sdk modulacms-admin-sdk" ;;
+        *)          echo "Unknown target: {{target}}. Use: types | sdk | admin-sdk | all" >&2; exit 1 ;;
+    esac
+    for dir in $dirs; do
+        cd "$dir"
+        old=$(node -p "require('./package.json').version")
+        npm version minor --no-git-tag-version >/dev/null
+        new=$(node -p "require('./package.json').version")
+        echo "$dir: $old -> $new"
+        cd ..
+    done
+
+# Publish a package: just publish types | sdk | admin-sdk | all
+publish target:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{target}}" in
+        types)      dirs="types" ;;
+        sdk)        dirs="modulacms-sdk" ;;
+        admin-sdk)  dirs="modulacms-admin-sdk" ;;
+        all)        dirs="types modulacms-sdk modulacms-admin-sdk" ;;
+        *)          echo "Unknown target: {{target}}. Use: types | sdk | admin-sdk | all" >&2; exit 1 ;;
+    esac
+    for dir in $dirs; do
+        cd "$dir"
+        name=$(node -p "require('./package.json').name")
+        ver=$(node -p "require('./package.json').version")
+        echo "Publishing $name@$ver..."
+        pnpm publish --access public --no-git-checks
+        echo "$name@$ver published"
+        cd ..
+    done
+
+# Patch + build + publish: just release types | sdk | admin-sdk | all
+release target:
+    just patch {{target}}
+    just build
+    just publish {{target}}
