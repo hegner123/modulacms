@@ -457,13 +457,14 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 	auditCtx := audited.Ctx(types.NodeID(nodeID), systemUserID, "plugin-api-token-init", "127.0.0.1")
 	systemNullableID := types.NullableUserID{ID: systemUserID, Valid: true}
 
-	// Clean up stale api_key tokens from previous ungraceful shutdowns.
+	// Clean up stale plugin_api_key tokens from previous ungraceful shutdowns.
+	// Only targets "plugin_api_key" tokens — regular "api_key" tokens are left intact.
 	existingTokens, err := driver.GetTokenByUserId(systemNullableID)
 	if err != nil {
 		utility.DefaultLogger.Warn("failed to query existing tokens for stale cleanup", err)
 	} else if existingTokens != nil {
 		for _, tok := range *existingTokens {
-			if tok.TokenType != "api_key" {
+			if tok.TokenType != "plugin_api_key" {
 				continue
 			}
 			if delErr := driver.DeleteToken(ctx, auditCtx, tok.ID); delErr != nil {
@@ -484,7 +485,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 	// Insert the token into the database.
 	created, err := driver.CreateToken(ctx, auditCtx, db.CreateTokenParams{
 		UserID:    systemNullableID,
-		TokenType: "api_key",
+		TokenType: "plugin_api_key",
 		Token:     tokenValue,
 		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(24 * time.Hour)),

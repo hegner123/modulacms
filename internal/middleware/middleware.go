@@ -68,7 +68,7 @@ func APIKeyAuth(r *http.Request, c *config.Config) (*authcontext, *db.Users) {
 		return nil, nil
 	}
 
-	if token.TokenType != "api_key" {
+	if token.TokenType != "api_key" && token.TokenType != "plugin_api_key" {
 		utility.DefaultLogger.Finfo("token is not an api_key", token.TokenType)
 		return nil, nil
 	}
