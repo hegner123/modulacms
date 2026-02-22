@@ -191,6 +191,18 @@ export type MissingFieldReport = {
   created: boolean
 }
 
+/** A duplicate content_field row that was deleted (or would be in dry-run). */
+export type DuplicateFieldReport = {
+  /** The content_field_id of the duplicate row. */
+  content_field_id: string
+  /** The content_data row the duplicate belonged to. */
+  content_data_id: string
+  /** The field_id that was duplicated. */
+  field_id: string
+  /** Whether the duplicate was actually deleted (false in dry-run). */
+  deleted: boolean
+}
+
 /** Response from the content heal endpoint (`POST /admin/content/heal`). */
 export type HealReport = {
   /** Whether the request was a dry run (no changes written). */
@@ -205,6 +217,8 @@ export type HealReport = {
   content_field_repairs: HealRepair[]
   /** Content fields that were missing and created (or would be in dry-run). */
   missing_fields: MissingFieldReport[]
+  /** Duplicate content_field rows that were deleted (or would be in dry-run). */
+  duplicate_fields: DuplicateFieldReport[]
 }
 
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */

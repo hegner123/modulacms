@@ -19,6 +19,7 @@ type HealReport struct {
 	ContentFieldScanned int                  `json:"content_field_scanned"`
 	ContentFieldRepairs []HealRepair         `json:"content_field_repairs"`
 	MissingFields       []MissingFieldReport `json:"missing_fields"`
+	DuplicateFields     []DuplicateFieldReport `json:"duplicate_fields"`
 }
 
 // HealRepair records a single ID repair made (or that would be made in dry-run).
@@ -36,6 +37,15 @@ type MissingFieldReport struct {
 	ContentDataID string `json:"content_data_id"`
 	FieldID       string `json:"field_id"`
 	Created       bool   `json:"created"`
+}
+
+// DuplicateFieldReport records a duplicate content_field row that was deleted
+// (or would be deleted in dry-run mode).
+type DuplicateFieldReport struct {
+	ContentFieldID string `json:"content_field_id"`
+	ContentDataID  string `json:"content_data_id"`
+	FieldID        string `json:"field_id"`
+	Deleted        bool   `json:"deleted"`
 }
 
 // ContentHealHandler handles POST /api/v1/admin/content/heal.
@@ -58,6 +68,7 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 		ContentDataRepairs:  []HealRepair{},
 		ContentFieldRepairs: []HealRepair{},
 		MissingFields:       []MissingFieldReport{},
+		DuplicateFields:     []DuplicateFieldReport{},
 	}
 
 	// --- Heal content_data rows ---
@@ -127,6 +138,65 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 			})
 			if updateErr != nil {
 				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to update content_field %s", healed.ContentFieldID), updateErr)
+			}
+		}
+	}
+
+	// --- Remove duplicate content_field rows ---
+	// Group content_fields by (content_data_id, field_id). When duplicates exist,
+	// keep the row with a non-empty field_value (preferring the most recently
+	// modified); delete the rest.
+	if fieldRows != nil {
+		type cfKey struct {
+			contentDataID string
+			fieldID       string
+		}
+		groups := make(map[cfKey][]db.ContentFields)
+		for _, row := range *fieldRows {
+			if !row.ContentDataID.Valid || !row.FieldID.Valid {
+				continue
+			}
+			k := cfKey{
+				contentDataID: string(row.ContentDataID.ID),
+				fieldID:       string(row.FieldID.ID),
+			}
+			groups[k] = append(groups[k], row)
+		}
+		for _, group := range groups {
+			if len(group) < 2 {
+				continue
+			}
+			// Pick the best row to keep: prefer non-empty field_value, then latest date_modified.
+			keepIdx := 0
+			for i := 1; i < len(group); i++ {
+				keepHasValue := group[keepIdx].FieldValue != ""
+				curHasValue := group[i].FieldValue != ""
+				if curHasValue && !keepHasValue {
+					keepIdx = i
+					continue
+				}
+				if curHasValue == keepHasValue && group[i].DateModified.Time.After(group[keepIdx].DateModified.Time) {
+					keepIdx = i
+				}
+			}
+			for i, row := range group {
+				if i == keepIdx {
+					continue
+				}
+				entry := DuplicateFieldReport{
+					ContentFieldID: string(row.ContentFieldID),
+					ContentDataID:  string(row.ContentDataID.ID),
+					FieldID:        string(row.FieldID.ID),
+					Deleted:        !dryRun,
+				}
+				if !dryRun {
+					delErr := d.DeleteContentField(ctx, ac, row.ContentFieldID)
+					if delErr != nil {
+						utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to delete duplicate content_field %s", row.ContentFieldID), delErr)
+						entry.Deleted = false
+					}
+				}
+				report.DuplicateFields = append(report.DuplicateFields, entry)
 			}
 		}
 	}

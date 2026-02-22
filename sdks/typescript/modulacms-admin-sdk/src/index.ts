@@ -128,6 +128,7 @@ export type {
   HealRepair,
   HealReport,
   MissingFieldReport,
+  DuplicateFieldReport,
 } from './types/content.js'
 export type {
   Datatype,

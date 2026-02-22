@@ -118,7 +118,7 @@ function DatatypesPage() {
   }
 
   const totalRepairs = healReport
-    ? healReport.content_data_repairs.length + healReport.content_field_repairs.length + healReport.missing_fields.length
+    ? healReport.content_data_repairs.length + healReport.content_field_repairs.length + healReport.missing_fields.length + healReport.duplicate_fields.length
     : 0
 
   const columns: ColumnDef<Datatype>[] = [
@@ -425,6 +425,41 @@ function DatatypesPage() {
                                 <td className="px-2 py-1">
                                   {m.created ? (
                                     <span className="text-green-500">Created</span>
+                                  ) : healReport.dry_run ? (
+                                    <span className="text-yellow-500">Pending</span>
+                                  ) : (
+                                    <span className="text-destructive">Failed</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {healReport.duplicate_fields.length > 0 && (
+                    <div>
+                      <h4 className="mb-1 text-sm font-medium">Duplicate Fields ({healReport.duplicate_fields.length})</h4>
+                      <div className="max-h-48 overflow-auto rounded border">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0 bg-muted">
+                            <tr>
+                              <th className="px-2 py-1 text-left">Content Field ID</th>
+                              <th className="px-2 py-1 text-left">Content Data ID</th>
+                              <th className="px-2 py-1 text-left">Field ID</th>
+                              <th className="px-2 py-1 text-left">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {healReport.duplicate_fields.map((d, i) => (
+                              <tr key={i} className="border-t">
+                                <td className="px-2 py-1 font-mono">{d.content_field_id}</td>
+                                <td className="px-2 py-1 font-mono">{d.content_data_id}</td>
+                                <td className="px-2 py-1 font-mono">{d.field_id}</td>
+                                <td className="px-2 py-1">
+                                  {d.deleted ? (
+                                    <span className="text-green-500">Deleted</span>
                                   ) : healReport.dry_run ? (
                                     <span className="text-yellow-500">Pending</span>
                                   ) : (
