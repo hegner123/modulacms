@@ -31,7 +31,7 @@ export function BlockInserter({ datatypes, onInsert }: BlockInserterProps) {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-48 p-1" align="center">
-          <div className="space-y-0.5">
+          <div className="max-h-64 space-y-0.5 overflow-y-auto">
             {nonRoot.map((dt) => (
               <button
                 key={dt.datatype_id}
