@@ -37,12 +37,12 @@ func init() {
 				},
 			},
 
-			"column": {
-				Label:     "Column",
+			"columns": {
+				Label:     "Columns",
 				Type:      types.NewNullableString("layout"),
 				ParentRef: "row",
 				FieldRefs: []FieldDef{
-					{Label: "Span", Type: types.FieldTypeNumber},
+					{Label: "Count", Type: types.FieldTypeNumber},
 				},
 			},
 

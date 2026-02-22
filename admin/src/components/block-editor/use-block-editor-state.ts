@@ -14,8 +14,6 @@ import type { MergedField } from './build-merged-fields'
 type LocalEdits = Record<string, Record<string, string>>
 
 type BlockEditorState = {
-  selectedBlockId: string | null
-  setSelectedBlockId: (id: string | null) => void
   saving: boolean
   getFieldValue: (contentDataId: string, fieldId: string, mergedFields: MergedField[]) => string
   setFieldValue: (contentDataId: string, fieldId: string, value: string) => void
@@ -31,7 +29,6 @@ export function useBlockEditorState(): BlockEditorState {
   const { user } = useAuthContext()
   const createContentField = useCreateContentField()
   const updateContentField = useUpdateContentField()
-  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null)
   const [localEdits, setLocalEdits] = useState<LocalEdits>({})
   const [saving, setSaving] = useState(false)
 
@@ -156,8 +153,6 @@ export function useBlockEditorState(): BlockEditorState {
   )
 
   return {
-    selectedBlockId,
-    setSelectedBlockId,
     saving,
     getFieldValue,
     setFieldValue,
