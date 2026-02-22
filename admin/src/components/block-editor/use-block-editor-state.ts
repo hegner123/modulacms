@@ -105,16 +105,21 @@ export function useBlockEditorState(): BlockEditorState {
         const currentValue = edits[field.fieldId]
         if (currentValue === undefined || currentValue === field.value) continue
 
-        if (field.contentField) {
+        // The tree response includes stub entries for schema fields without
+        // saved values. These stubs have contentField set but an empty
+        // content_field_id. Treat them the same as missing content fields.
+        const hasPersistedField = field.contentField && field.contentField.content_field_id
+
+        if (hasPersistedField) {
           promises.push(
             updateContentField.mutateAsync({
-              content_field_id: field.contentField.content_field_id as ContentFieldID,
+              content_field_id: field.contentField!.content_field_id as ContentFieldID,
               route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
               content_data_id: node.datatype.content.content_data_id as ContentID | null,
               field_id: field.fieldId as FieldID | null,
               field_value: currentValue,
               author_id: (user?.user_id ?? null) as UserID | null,
-              date_created: field.contentField.date_created,
+              date_created: field.contentField!.date_created,
               date_modified: now,
             }),
           )
