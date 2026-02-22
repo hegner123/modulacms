@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import type { DatatypeID, CreateDatatypeParams, UpdateDatatypeParams, CreateDatatypeFieldParams } from '@modulacms/admin-sdk'
+import type { DatatypeID, CreateDatatypeParams, UpdateDatatypeParams, CreateDatatypeFieldParams, HealReport } from '@modulacms/admin-sdk'
 import { sdk } from '@/lib/sdk'
 import { queryKeys } from '@/lib/query-keys'
 
@@ -82,5 +82,11 @@ export function useDeleteDatatypeField() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.datatypeFields.all })
     },
+  })
+}
+
+export function useContentHeal() {
+  return useMutation({
+    mutationFn: (dryRun?: boolean): Promise<HealReport> => sdk.contentHeal.heal(dryRun),
   })
 }
