@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import type { DraggableAttributes } from '@dnd-kit/core'
 import type { SyntheticListenerMap } from '@dnd-kit/core/dist/hooks/utilities'
-import { ChevronRight, GripVertical, Trash2, Save } from 'lucide-react'
+import type { ContentStatus } from '@modulacms/admin-sdk'
+import { ChevronRight, GripVertical, Trash2, Save, Globe, FileText } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/shared/confirm-dialog'
@@ -9,9 +10,11 @@ import { cn } from '@/lib/utils'
 
 type BlockToolbarProps = {
   datatypeLabel: string
+  status: ContentStatus
   dirty: boolean
   saving: boolean
   deleting: boolean
+  statusUpdating: boolean
   childCount: number
   expanded: boolean
   dragHandleListeners: SyntheticListenerMap | undefined
@@ -20,13 +23,16 @@ type BlockToolbarProps = {
   onToggleExpand: () => void
   onSave: () => void
   onDelete: () => void
+  onStatusChange: (status: ContentStatus) => void
 }
 
 export function BlockToolbar({
   datatypeLabel,
+  status,
   dirty,
   saving,
   deleting,
+  statusUpdating,
   childCount,
   expanded,
   dragHandleListeners,
@@ -35,8 +41,10 @@ export function BlockToolbar({
   onToggleExpand,
   onSave,
   onDelete,
+  onStatusChange,
 }: BlockToolbarProps) {
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const isPublished = status === 'published'
 
   return (
     <>
@@ -74,6 +82,25 @@ export function BlockToolbar({
           </span>
         )}
         <div className="flex-1" />
+        <Button
+          size="sm"
+          variant="ghost"
+          className={cn(
+            'h-7 gap-1 text-xs',
+            isPublished
+              ? 'text-emerald-500 hover:text-emerald-600'
+              : 'text-muted-foreground hover:text-foreground',
+          )}
+          disabled={statusUpdating}
+          onClick={() => onStatusChange(isPublished ? 'draft' as ContentStatus : 'published' as ContentStatus)}
+        >
+          {isPublished ? (
+            <Globe className="h-3 w-3" />
+          ) : (
+            <FileText className="h-3 w-3" />
+          )}
+          {statusUpdating ? '...' : isPublished ? 'Published' : 'Draft'}
+        </Button>
         {dirty && (
           <Button size="sm" variant="ghost" onClick={onSave} disabled={saving}>
             <Save className="mr-1 h-3 w-3" />

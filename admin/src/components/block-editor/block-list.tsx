@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import type { ContentNode, Datatype, ContentID } from '@modulacms/admin-sdk'
+import type { ContentNode, ContentStatus, Datatype, ContentID } from '@modulacms/admin-sdk'
 import { useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
@@ -19,6 +19,8 @@ type BlockListProps = {
   datatypes: Datatype[]
   state: ReturnType<typeof useBlockEditorState>
   onInsert: (parentId: string, datatypeId: string) => void
+  onStatusChange: (node: ContentNode, status: ContentStatus) => void
+  statusUpdatingIds: Set<string>
   depth?: number
   parentId: string
 }
@@ -28,12 +30,16 @@ function BlockCardWrapper({
   state,
   datatypes,
   onInsert,
+  onStatusChange,
+  statusUpdatingIds,
   depth,
 }: {
   node: ContentNode
   state: ReturnType<typeof useBlockEditorState>
   datatypes: Datatype[]
   onInsert: (parentId: string, datatypeId: string) => void
+  onStatusChange: (node: ContentNode, status: ContentStatus) => void
+  statusUpdatingIds: Set<string>
   depth: number
 }) {
   const datatypeId = node.datatype.info.datatype_id
@@ -58,6 +64,8 @@ function BlockCardWrapper({
         datatypes={datatypes}
         state={state}
         onInsert={onInsert}
+        onStatusChange={onStatusChange}
+        statusUpdatingIds={statusUpdatingIds}
         depth={childDepth}
         parentId={parentNode.datatype.content.content_data_id}
       />
@@ -71,9 +79,11 @@ function BlockCardWrapper({
       dirty={dirty}
       saving={state.saving}
       deleting={deleteContent.isPending}
+      statusUpdating={statusUpdatingIds.has(contentDataId)}
       depth={depth}
       onSave={() => state.saveBlock(node, mergedFields)}
       onDelete={() => deleteContent.mutate(contentDataId as ContentID)}
+      onStatusChange={(status) => onStatusChange(node, status)}
       getFieldValue={state.getFieldValue}
       setFieldValue={state.setFieldValue}
       renderNestedList={renderNestedList}
@@ -86,6 +96,8 @@ export function BlockList({
   datatypes,
   state,
   onInsert,
+  onStatusChange,
+  statusUpdatingIds,
   depth = 0,
   parentId,
 }: BlockListProps) {
@@ -117,6 +129,8 @@ export function BlockList({
                 state={state}
                 datatypes={datatypes}
                 onInsert={onInsert}
+                onStatusChange={onStatusChange}
+                statusUpdatingIds={statusUpdatingIds}
                 depth={depth}
               />
               <BlockInserter datatypes={datatypes} onInsert={(dtId) => onInsert(parentId, dtId)} />

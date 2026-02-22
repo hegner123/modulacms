@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ContentNode } from '@modulacms/admin-sdk'
+import type { ContentNode, ContentStatus } from '@modulacms/admin-sdk'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
@@ -13,9 +13,11 @@ type BlockCardProps = {
   dirty: boolean
   saving: boolean
   deleting: boolean
+  statusUpdating: boolean
   depth: number
   onSave: () => void
   onDelete: () => void
+  onStatusChange: (status: ContentStatus) => void
   getFieldValue: (contentDataId: string, fieldId: string, mergedFields: MergedField[]) => string
   setFieldValue: (contentDataId: string, fieldId: string, value: string) => void
   renderNestedList: (parentNode: ContentNode, depth: number) => React.ReactNode
@@ -27,9 +29,11 @@ export function BlockCard({
   dirty,
   saving,
   deleting,
+  statusUpdating,
   depth,
   onSave,
   onDelete,
+  onStatusChange,
   getFieldValue,
   setFieldValue,
   renderNestedList,
@@ -67,9 +71,11 @@ export function BlockCard({
     >
       <BlockToolbar
         datatypeLabel={node.datatype.info.label}
+        status={node.datatype.content.status}
         dirty={dirty}
         saving={saving}
         deleting={deleting}
+        statusUpdating={statusUpdating}
         childCount={childNodes.length}
         expanded={expanded}
         dragHandleListeners={listeners}
@@ -78,6 +84,7 @@ export function BlockCard({
         onToggleExpand={() => setExpanded(!expanded)}
         onSave={onSave}
         onDelete={onDelete}
+        onStatusChange={onStatusChange}
       />
 
       <BlockFieldEditor

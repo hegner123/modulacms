@@ -14,7 +14,7 @@ import {
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import type { DatatypeField } from '@modulacms/admin-sdk'
-import { useCreateContentData, useReorderContentData, useMoveContentData } from '@/queries/content'
+import { useCreateContentData, useUpdateContentData, useReorderContentData, useMoveContentData } from '@/queries/content'
 import { useDatatypes, useDatatypeFieldsByDatatype, useDatatypeFields } from '@/queries/datatypes'
 import { useFields } from '@/queries/fields'
 import { useAuthContext } from '@/lib/auth'
@@ -106,10 +106,13 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
   const { data: allFields } = useFields()
   const { data: allDatatypeFields } = useDatatypeFields()
   const createContent = useCreateContentData()
+  const updateContent = useUpdateContentData()
   const reorderContentData = useReorderContentData()
   const moveContentData = useMoveContentData()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [statusUpdatingIds, setStatusUpdatingIds] = useState<Set<string>>(new Set())
+  const [publishing, setPublishing] = useState(false)
   const state = useBlockEditorState()
 
   const tree = treeData as ContentTree
@@ -210,6 +213,54 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
     })
   }
 
+  function buildUpdateParams(node: ContentNode, newStatus: ContentStatus) {
+    const c = node.datatype.content
+    return {
+      content_data_id: c.content_data_id,
+      parent_id: c.parent_id,
+      first_child_id: c.first_child_id,
+      next_sibling_id: c.next_sibling_id,
+      prev_sibling_id: c.prev_sibling_id,
+      route_id: c.route_id,
+      datatype_id: node.datatype.info.datatype_id,
+      author_id: c.author_id,
+      status: newStatus,
+      date_created: c.date_created,
+      date_modified: new Date().toISOString(),
+    }
+  }
+
+  async function handleStatusChange(node: ContentNode, newStatus: ContentStatus) {
+    const id = node.datatype.content.content_data_id
+    setStatusUpdatingIds((prev) => new Set(prev).add(id))
+    await updateContent.mutateAsync(buildUpdateParams(node, newStatus))
+    setStatusUpdatingIds((prev) => {
+      const next = new Set(prev)
+      next.delete(id)
+      return next
+    })
+  }
+
+  async function handlePublishAll() {
+    setPublishing(true)
+    const allNodes = collectAllNodes(rootNode)
+    for (const node of allNodes) {
+      if (node.datatype.content.status === 'published') continue
+      await updateContent.mutateAsync(buildUpdateParams(node, 'published' as ContentStatus))
+    }
+    setPublishing(false)
+  }
+
+  async function handleDraftAll() {
+    setPublishing(true)
+    const allNodes = collectAllNodes(rootNode)
+    for (const node of allNodes) {
+      if (node.datatype.content.status === 'draft') continue
+      await updateContent.mutateAsync(buildUpdateParams(node, 'draft' as ContentStatus))
+    }
+    setPublishing(false)
+  }
+
   const rootContentDataId = rootNode.datatype.content.content_data_id
   const activeDatatypeLabel = activeId ? findDatatypeLabel(rootNode, activeId) : null
 
@@ -243,11 +294,15 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
       <BlockEditorHeader
         title={route.title}
         slug={route.slug}
+        rootStatus={rootNode.datatype.content.status}
         dirtyCount={0}
         saving={state.saving}
+        publishing={publishing}
         settingsOpen={settingsOpen}
         onToggleSettings={() => setSettingsOpen(!settingsOpen)}
         onSaveAll={handleSaveAll}
+        onPublishAll={handlePublishAll}
+        onDraftAll={handleDraftAll}
       />
 
       <div className="flex flex-1 overflow-hidden">
@@ -267,6 +322,8 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
                   datatypes={datatypes ?? []}
                   state={state}
                   onInsert={handleInsert}
+                  onStatusChange={handleStatusChange}
+                  statusUpdatingIds={statusUpdatingIds}
                   parentId={rootContentDataId}
                 />
               ) : (
