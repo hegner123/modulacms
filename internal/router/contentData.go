@@ -200,6 +200,32 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		}
 	}
 
+	// Auto-create empty content fields for every field linked to the datatype
+	if createdContentData.DatatypeID.Valid {
+		dtFields, dtErr := d.ListDatatypeFieldByDatatypeID(createdContentData.DatatypeID.ID)
+		if dtErr != nil {
+			utility.DefaultLogger.Error("create: failed to list datatype fields for auto-creation", dtErr)
+		} else if dtFields != nil {
+			ctx := r.Context()
+			ac := middleware.AuditContextFromRequest(r, c)
+			now := types.TimestampNow()
+			for _, dtf := range *dtFields {
+				_, cfErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					RouteID:       createdContentData.RouteID,
+					ContentDataID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: dtf.FieldID, Valid: true},
+					FieldValue:    "",
+					AuthorID:      createdContentData.AuthorID,
+					DateCreated:   now,
+					DateModified:  now,
+				})
+				if cfErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("create: failed to auto-create content field for field %s", dtf.FieldID), cfErr)
+				}
+			}
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdContentData)
