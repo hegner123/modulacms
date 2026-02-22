@@ -118,7 +118,7 @@ function DatatypesPage() {
   }
 
   const totalRepairs = healReport
-    ? healReport.content_data_repairs.length + healReport.content_field_repairs.length
+    ? healReport.content_data_repairs.length + healReport.content_field_repairs.length + healReport.missing_fields.length
     : 0
 
   const columns: ColumnDef<Datatype>[] = [
@@ -330,7 +330,7 @@ function DatatypesPage() {
           <DialogHeader>
             <DialogTitle>Content Heal</DialogTitle>
             <DialogDescription>
-              Scan content_data and content_field rows for malformed IDs and repair them.
+              Scan for malformed IDs and create missing content fields for incomplete field sets.
             </DialogDescription>
           </DialogHeader>
 
@@ -398,6 +398,39 @@ function DatatypesPage() {
                                 <td className="px-2 py-1">{r.column}</td>
                                 <td className="px-2 py-1 font-mono text-destructive">{r.old_value}</td>
                                 <td className="px-2 py-1 font-mono text-green-500">{r.new_value}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                  {healReport.missing_fields.length > 0 && (
+                    <div>
+                      <h4 className="mb-1 text-sm font-medium">Missing Fields ({healReport.missing_fields.length})</h4>
+                      <div className="max-h-48 overflow-auto rounded border">
+                        <table className="w-full text-xs">
+                          <thead className="sticky top-0 bg-muted">
+                            <tr>
+                              <th className="px-2 py-1 text-left">Content Data ID</th>
+                              <th className="px-2 py-1 text-left">Field ID</th>
+                              <th className="px-2 py-1 text-left">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {healReport.missing_fields.map((m, i) => (
+                              <tr key={i} className="border-t">
+                                <td className="px-2 py-1 font-mono">{m.content_data_id}</td>
+                                <td className="px-2 py-1 font-mono">{m.field_id}</td>
+                                <td className="px-2 py-1">
+                                  {m.created ? (
+                                    <span className="text-green-500">Created</span>
+                                  ) : healReport.dry_run ? (
+                                    <span className="text-yellow-500">Pending</span>
+                                  ) : (
+                                    <span className="text-destructive">Failed</span>
+                                  )}
+                                </td>
                               </tr>
                             ))}
                           </tbody>

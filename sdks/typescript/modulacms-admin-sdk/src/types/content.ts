@@ -180,6 +180,17 @@ export type HealRepair = {
   new_value: string
 }
 
+/** A content_field row that was created (or would be in dry-run) for a
+ *  content_data node whose datatype requires the field but it was missing. */
+export type MissingFieldReport = {
+  /** The content_data row that was missing the field. */
+  content_data_id: string
+  /** The field_id from the datatype definition that was missing. */
+  field_id: string
+  /** Whether the missing field was actually created (false in dry-run). */
+  created: boolean
+}
+
 /** Response from the content heal endpoint (`POST /admin/content/heal`). */
 export type HealReport = {
   /** Whether the request was a dry run (no changes written). */
@@ -192,6 +203,8 @@ export type HealReport = {
   content_field_scanned: number
   /** Repairs made (or planned) to content_field rows. */
   content_field_repairs: HealRepair[]
+  /** Content fields that were missing and created (or would be in dry-run). */
+  missing_fields: MissingFieldReport[]
 }
 
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */

@@ -13,11 +13,12 @@ import (
 
 // HealReport is the JSON response from the content heal endpoint.
 type HealReport struct {
-	DryRun              bool         `json:"dry_run"`
-	ContentDataScanned  int          `json:"content_data_scanned"`
-	ContentDataRepairs  []HealRepair `json:"content_data_repairs"`
-	ContentFieldScanned int          `json:"content_field_scanned"`
-	ContentFieldRepairs []HealRepair `json:"content_field_repairs"`
+	DryRun              bool                 `json:"dry_run"`
+	ContentDataScanned  int                  `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair         `json:"content_data_repairs"`
+	ContentFieldScanned int                  `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair         `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport `json:"missing_fields"`
 }
 
 // HealRepair records a single ID repair made (or that would be made in dry-run).
@@ -26,6 +27,15 @@ type HealRepair struct {
 	Column   string `json:"column"`
 	OldValue string `json:"old_value"`
 	NewValue string `json:"new_value"`
+}
+
+// MissingFieldReport records a content_field row that was created (or would be
+// created in dry-run mode) because the parent content_data's datatype requires
+// a field that was not present.
+type MissingFieldReport struct {
+	ContentDataID string `json:"content_data_id"`
+	FieldID       string `json:"field_id"`
+	Created       bool   `json:"created"`
 }
 
 // ContentHealHandler handles POST /api/v1/admin/content/heal.
@@ -47,6 +57,7 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 		DryRun:              dryRun,
 		ContentDataRepairs:  []HealRepair{},
 		ContentFieldRepairs: []HealRepair{},
+		MissingFields:       []MissingFieldReport{},
 	}
 
 	// --- Heal content_data rows ---
@@ -116,6 +127,68 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 			})
 			if updateErr != nil {
 				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to update content_field %s", healed.ContentFieldID), updateErr)
+			}
+		}
+	}
+
+	// --- Detect and create missing content_field rows ---
+	// For each content_data row with a valid datatype, check that a content_field
+	// exists for every field linked to that datatype via datatypes_fields.
+	if contentRows != nil {
+		for _, row := range *contentRows {
+			if !row.DatatypeID.Valid {
+				continue
+			}
+			dtFields, dtErr := d.ListDatatypeFieldByDatatypeID(row.DatatypeID.ID)
+			if dtErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to list datatype fields for %s", row.DatatypeID.ID), dtErr)
+				continue
+			}
+			if dtFields == nil || len(*dtFields) == 0 {
+				continue
+			}
+
+			existingFields, efErr := d.ListContentFieldsByContentData(types.NullableContentID{ID: row.ContentDataID, Valid: true})
+			if efErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to list content fields for %s", row.ContentDataID), efErr)
+				continue
+			}
+
+			existingFieldIDs := make(map[types.FieldID]bool)
+			if existingFields != nil {
+				for _, cf := range *existingFields {
+					if cf.FieldID.Valid {
+						existingFieldIDs[cf.FieldID.ID] = true
+					}
+				}
+			}
+
+			now := types.TimestampNow()
+			for _, dtf := range *dtFields {
+				if existingFieldIDs[dtf.FieldID] {
+					continue
+				}
+				entry := MissingFieldReport{
+					ContentDataID: string(row.ContentDataID),
+					FieldID:       string(dtf.FieldID),
+					Created:       !dryRun,
+				}
+				if !dryRun {
+					_, cfErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+						RouteID:       row.RouteID,
+						ContentDataID: types.NullableContentID{ID: row.ContentDataID, Valid: true},
+						FieldID:       types.NullableFieldID{ID: dtf.FieldID, Valid: true},
+						FieldValue:    "",
+						AuthorID:      row.AuthorID,
+						DateCreated:   now,
+						DateModified:  now,
+					})
+					if cfErr != nil {
+						utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to create missing content field for %s field %s", row.ContentDataID, dtf.FieldID), cfErr)
+						entry.Created = false
+					}
+				}
+				report.MissingFields = append(report.MissingFields, entry)
 			}
 		}
 	}

@@ -127,6 +127,7 @@ export type {
   BatchContentUpdateResponse,
   HealRepair,
   HealReport,
+  MissingFieldReport,
 } from './types/content.js'
 export type {
   Datatype,
