@@ -1,10 +1,10 @@
 import { useState } from 'react'
-import type { ContentNode, ContentStatus } from '@modulacms/admin-sdk'
+import type { ContentNode, ContentStatus, Datatype } from '@modulacms/admin-sdk'
 import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
 import { cn } from '@/lib/utils'
 import { BlockToolbar } from './block-toolbar'
 import { BlockFieldEditor } from './block-field-editor'
+import { BlockInserter } from './block-inserter'
 import type { MergedField } from './build-merged-fields'
 
 type BlockCardProps = {
@@ -15,9 +15,11 @@ type BlockCardProps = {
   deleting: boolean
   statusUpdating: boolean
   depth: number
+  datatypes: Datatype[]
   onSave: () => void
   onDelete: () => void
   onStatusChange: (status: ContentStatus) => void
+  onInsertChild: (parentId: string, datatypeId: string, prevSiblingId?: string | null, nextSiblingId?: string | null) => void
   getFieldValue: (contentDataId: string, fieldId: string, mergedFields: MergedField[]) => string
   setFieldValue: (contentDataId: string, fieldId: string, value: string) => void
   renderNestedList: (parentNode: ContentNode, depth: number) => React.ReactNode
@@ -31,9 +33,11 @@ export function BlockCard({
   deleting,
   statusUpdating,
   depth,
+  datatypes,
   onSave,
   onDelete,
   onStatusChange,
+  onInsertChild,
   getFieldValue,
   setFieldValue,
   renderNestedList,
@@ -47,26 +51,18 @@ export function BlockCard({
     listeners,
     setNodeRef,
     setActivatorNodeRef,
-    transform,
-    transition,
     isDragging,
   } = useSortable({
     id: contentDataId,
     data: { parentId: node.datatype.content.parent_id, type: 'item' },
   })
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  }
-
   return (
     <div
       ref={setNodeRef}
-      style={style}
       className={cn(
         'rounded-lg border border-border',
-        isDragging && 'z-50 opacity-50 shadow-lg',
+        isDragging && 'opacity-25',
       )}
     >
       <BlockToolbar
@@ -94,9 +90,18 @@ export function BlockCard({
         setFieldValue={setFieldValue}
       />
 
-      {expanded && childNodes.length > 0 && (
+      {expanded && (
         <div className="border-t pl-6">
-          {renderNestedList(node, depth + 1)}
+          {childNodes.length > 0 ? (
+            renderNestedList(node, depth + 1)
+          ) : (
+            <div className="py-2">
+              <BlockInserter
+                datatypes={datatypes}
+                onInsert={(dtId) => onInsertChild(contentDataId, dtId)}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

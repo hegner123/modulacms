@@ -57,22 +57,20 @@ export function BlockToolbar({
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        {childCount > 0 && (
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-6 w-6"
-            onClick={(e) => {
-              e.stopPropagation()
-              onToggleExpand()
-            }}
-          >
-            <ChevronRight className={cn(
-              'h-3.5 w-3.5 transition-transform',
-              expanded && 'rotate-90',
-            )} />
-          </Button>
-        )}
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-6 w-6"
+          onClick={(e) => {
+            e.stopPropagation()
+            onToggleExpand()
+          }}
+        >
+          <ChevronRight className={cn(
+            'h-3.5 w-3.5 transition-transform',
+            expanded && 'rotate-90',
+          )} />
+        </Button>
         <Badge variant="outline" className="text-xs">
           {datatypeLabel}
         </Badge>

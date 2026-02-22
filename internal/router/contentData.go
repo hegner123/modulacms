@@ -105,7 +105,9 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		return err
 	}
 
-	// Append new node to parent's sibling chain
+	// Insert new node into the parent's sibling chain at the requested position.
+	// If prev_sibling_id/next_sibling_id are provided, splice between them.
+	// Otherwise, append to the end of the chain.
 	if createdContentData.ParentID.Valid {
 		ctx := r.Context()
 		now := types.TimestampNow()
@@ -116,8 +118,12 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 			return pErr
 		}
 
+		reqPrev := newContentData.PrevSiblingID
+		reqNext := newContentData.NextSiblingID
+		hasPosition := reqPrev.Valid || reqNext.Valid
+
 		if !parent.FirstChildID.Valid {
-			// Parent has no children yet — set first_child_id to new node
+			// Parent has no children — set first_child_id to new node.
 			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: parent.ContentDataID,
 				ParentID:      parent.ParentID,
@@ -136,8 +142,99 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
 				return pErr
 			}
+		} else if hasPosition {
+			// Splice into specific position in the sibling chain.
+
+			// Link prev sibling → new node
+			if reqPrev.Valid {
+				prev, gErr := d.GetContentData(reqPrev.ID)
+				if gErr != nil {
+					utility.DefaultLogger.Error("create: failed to fetch prev sibling", gErr)
+				} else {
+					_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+						ContentDataID: prev.ContentDataID,
+						ParentID:      prev.ParentID,
+						FirstChildID:  prev.FirstChildID,
+						NextSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+						PrevSiblingID: prev.PrevSiblingID,
+						RouteID:       prev.RouteID,
+						DatatypeID:    prev.DatatypeID,
+						AuthorID:      prev.AuthorID,
+						Status:        prev.Status,
+						DateCreated:   prev.DateCreated,
+						DateModified:  now,
+					})
+					if uErr != nil {
+						utility.DefaultLogger.Error("create: failed to update prev sibling next_sibling_id", uErr)
+					}
+				}
+			} else {
+				// Inserting at the start — update parent's first_child_id.
+				_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+					ContentDataID: parent.ContentDataID,
+					ParentID:      parent.ParentID,
+					FirstChildID:  types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+					NextSiblingID: parent.NextSiblingID,
+					PrevSiblingID: parent.PrevSiblingID,
+					RouteID:       parent.RouteID,
+					DatatypeID:    parent.DatatypeID,
+					AuthorID:      parent.AuthorID,
+					Status:        parent.Status,
+					DateCreated:   parent.DateCreated,
+					DateModified:  now,
+				})
+				if uErr != nil {
+					utility.DefaultLogger.Error("create: failed to update parent first_child_id for insert-at-start", uErr)
+				}
+			}
+
+			// Link next sibling → new node
+			if reqNext.Valid {
+				next, gErr := d.GetContentData(reqNext.ID)
+				if gErr != nil {
+					utility.DefaultLogger.Error("create: failed to fetch next sibling", gErr)
+				} else {
+					_, uErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+						ContentDataID: next.ContentDataID,
+						ParentID:      next.ParentID,
+						FirstChildID:  next.FirstChildID,
+						NextSiblingID: next.NextSiblingID,
+						PrevSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+						RouteID:       next.RouteID,
+						DatatypeID:    next.DatatypeID,
+						AuthorID:      next.AuthorID,
+						Status:        next.Status,
+						DateCreated:   next.DateCreated,
+						DateModified:  now,
+					})
+					if uErr != nil {
+						utility.DefaultLogger.Error("create: failed to update next sibling prev_sibling_id", uErr)
+					}
+				}
+			}
+
+			// Update the new node's sibling pointers.
+			_, wErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: createdContentData.ContentDataID,
+				ParentID:      createdContentData.ParentID,
+				FirstChildID:  createdContentData.FirstChildID,
+				NextSiblingID: reqNext,
+				PrevSiblingID: reqPrev,
+				RouteID:       createdContentData.RouteID,
+				DatatypeID:    createdContentData.DatatypeID,
+				AuthorID:      createdContentData.AuthorID,
+				Status:        createdContentData.Status,
+				DateCreated:   createdContentData.DateCreated,
+				DateModified:  now,
+			})
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to set new node sibling pointers", wErr)
+			}
+
+			// Re-fetch to return updated state.
+			createdContentData, _ = d.GetContentData(createdContentData.ContentDataID)
 		} else {
-			// Walk the sibling chain to find the last sibling
+			// No position specified — append to end of sibling chain.
 			last, wErr := d.GetContentData(parent.FirstChildID.ID)
 			if wErr != nil {
 				utility.DefaultLogger.Error("create: failed to fetch first child", wErr)
@@ -152,7 +249,7 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 					return wErr
 				}
 			}
-			// Link last sibling to new node
+			// Link last sibling → new node
 			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: last.ContentDataID,
 				ParentID:      last.ParentID,
@@ -190,7 +287,7 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 				http.Error(w, fmt.Sprintf("failed to update new node: %v", wErr), http.StatusInternalServerError)
 				return wErr
 			}
-			// Re-fetch to return updated state
+			// Re-fetch to return updated state.
 			createdContentData, wErr = d.GetContentData(createdContentData.ContentDataID)
 			if wErr != nil {
 				utility.DefaultLogger.Error("create: failed to re-fetch created node", wErr)

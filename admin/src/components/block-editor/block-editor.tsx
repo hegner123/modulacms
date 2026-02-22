@@ -11,6 +11,7 @@ import {
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
 import type { DatatypeField } from '@modulacms/admin-sdk'
@@ -111,6 +112,7 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
   const moveContentData = useMoveContentData()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [overId, setOverId] = useState<string | null>(null)
   const [statusUpdatingIds, setStatusUpdatingIds] = useState<Set<string>>(new Set())
   const [publishing, setPublishing] = useState(false)
   const state = useBlockEditorState()
@@ -130,11 +132,17 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     setActiveId(event.active.id as string)
+    setOverId(null)
+  }, [])
+
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setOverId(event.over ? (event.over.id as string) : null)
   }, [])
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveId(null)
+      setOverId(null)
       const { active, over } = event
       if (!over || active.id === over.id) return
       if (!rootNode) return
@@ -197,14 +205,19 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
     )
   }
 
-  function handleInsert(parentId: string, datatypeId: string) {
+  function handleInsert(
+    parentId: string,
+    datatypeId: string,
+    prevSiblingId?: string | null,
+    nextSiblingId?: string | null,
+  ) {
     const now = new Date().toISOString()
     createContent.mutate({
       route_id: route.route_id,
       parent_id: parentId as unknown as ContentID,
       first_child_id: null,
-      next_sibling_id: null,
-      prev_sibling_id: null,
+      next_sibling_id: (nextSiblingId ?? null) as ContentID | null,
+      prev_sibling_id: (prevSiblingId ?? null) as ContentID | null,
       datatype_id: datatypeId as DatatypeID,
       author_id: (user?.user_id ?? null) as UserID | null,
       status: 'draft' as ContentStatus,
@@ -314,6 +327,7 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
               onDragEnd={handleDragEnd}
             >
               {childNodes.length > 0 ? (
@@ -325,6 +339,8 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
                   onStatusChange={handleStatusChange}
                   statusUpdatingIds={statusUpdatingIds}
                   parentId={rootContentDataId}
+                  activeId={activeId}
+                  overId={overId}
                 />
               ) : (
                 <div className="py-8 text-center">
@@ -337,9 +353,9 @@ export function BlockEditor({ route, treeData }: BlockEditorProps) {
                   />
                 </div>
               )}
-              <DragOverlay>
+              <DragOverlay dropAnimation={null}>
                 {activeId && activeDatatypeLabel ? (
-                  <div className="rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-sm">
+                  <div className="w-40 rounded-md border border-primary/50 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary shadow-lg">
                     {activeDatatypeLabel}
                   </div>
                 ) : null}
