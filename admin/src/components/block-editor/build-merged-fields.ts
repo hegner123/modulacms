@@ -66,17 +66,6 @@ export function buildMergedFields(
         data: fieldDef?.data ?? existing.info.data ?? '',
         contentField: existing.content,
       })
-    } else if (fieldDef) {
-      result.push({
-        fieldId: df.field_id,
-        label: fieldDef.label,
-        type: fieldDef.type as FieldType,
-        value: '',
-        validation: fieldDef.validation ?? '',
-        ui_config: fieldDef.ui_config ?? '',
-        data: fieldDef.data ?? '',
-        contentField: null,
-      })
     }
   }
 

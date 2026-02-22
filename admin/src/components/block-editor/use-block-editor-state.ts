@@ -7,7 +7,7 @@ import type {
   RouteID,
   UserID,
 } from '@modulacms/admin-sdk'
-import { useCreateContentField, useUpdateContentField } from '@/queries/content'
+import { useUpdateContentField } from '@/queries/content'
 import { useAuthContext } from '@/lib/auth'
 import type { MergedField } from './build-merged-fields'
 
@@ -28,7 +28,6 @@ type BlockEditorState = {
 
 export function useBlockEditorState(): BlockEditorState {
   const { user } = useAuthContext()
-  const createContentField = useCreateContentField()
   const updateContentField = useUpdateContentField()
   const [localEdits, setLocalEdits] = useState<LocalEdits>({})
   const [saving, setSaving] = useState(false)
@@ -104,45 +103,27 @@ export function useBlockEditorState(): BlockEditorState {
       for (const field of mergedFields) {
         const currentValue = edits[field.fieldId]
         if (currentValue === undefined || currentValue === field.value) continue
+        if (!field.contentField?.content_field_id) continue
 
-        // The tree response includes stub entries for schema fields without
-        // saved values. These stubs have contentField set but an empty
-        // content_field_id. Treat them the same as missing content fields.
-        const hasPersistedField = field.contentField && field.contentField.content_field_id
-
-        if (hasPersistedField) {
-          promises.push(
-            updateContentField.mutateAsync({
-              content_field_id: field.contentField!.content_field_id as ContentFieldID,
-              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
-              content_data_id: node.datatype.content.content_data_id as ContentID | null,
-              field_id: field.fieldId as FieldID | null,
-              field_value: currentValue,
-              author_id: (user?.user_id ?? null) as UserID | null,
-              date_created: field.contentField!.date_created,
-              date_modified: now,
-            }),
-          )
-        } else {
-          promises.push(
-            createContentField.mutateAsync({
-              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
-              content_data_id: node.datatype.content.content_data_id as ContentID | null,
-              field_id: field.fieldId as FieldID | null,
-              field_value: currentValue,
-              author_id: (user?.user_id ?? null) as UserID | null,
-              date_created: now,
-              date_modified: now,
-            }),
-          )
-        }
+        promises.push(
+          updateContentField.mutateAsync({
+            content_field_id: field.contentField.content_field_id as ContentFieldID,
+            route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
+            content_data_id: node.datatype.content.content_data_id as ContentID | null,
+            field_id: field.fieldId as FieldID | null,
+            field_value: currentValue,
+            author_id: (user?.user_id ?? null) as UserID | null,
+            date_created: field.contentField.date_created,
+            date_modified: now,
+          }),
+        )
       }
 
       await Promise.all(promises)
       clearBlockEdits(contentDataId)
       setSaving(false)
     },
-    [localEdits, user, createContentField, updateContentField, clearBlockEdits],
+    [localEdits, user, updateContentField, clearBlockEdits],
   )
 
   const saveAll = useCallback(
@@ -166,40 +147,22 @@ export function useBlockEditorState(): BlockEditorState {
       const promises: Promise<unknown>[] = []
 
       for (const field of mergedFields) {
+        if (!field.contentField?.content_field_id) continue
         const localValue = edits?.[field.fieldId]
         const currentValue = localValue !== undefined ? localValue : field.value
 
-        // The tree response includes stub entries for schema fields without
-        // saved values. These stubs have contentField set but an empty
-        // content_field_id. Treat them the same as missing content fields.
-        const hasPersistedField = field.contentField && field.contentField.content_field_id
-
-        if (hasPersistedField) {
-          promises.push(
-            updateContentField.mutateAsync({
-              content_field_id: field.contentField!.content_field_id as ContentFieldID,
-              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
-              content_data_id: node.datatype.content.content_data_id as ContentID | null,
-              field_id: field.fieldId as FieldID | null,
-              field_value: currentValue,
-              author_id: (user?.user_id ?? null) as UserID | null,
-              date_created: field.contentField!.date_created,
-              date_modified: now,
-            }),
-          )
-        } else if (currentValue !== '') {
-          promises.push(
-            createContentField.mutateAsync({
-              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
-              content_data_id: node.datatype.content.content_data_id as ContentID | null,
-              field_id: field.fieldId as FieldID | null,
-              field_value: currentValue,
-              author_id: (user?.user_id ?? null) as UserID | null,
-              date_created: now,
-              date_modified: now,
-            }),
-          )
-        }
+        promises.push(
+          updateContentField.mutateAsync({
+            content_field_id: field.contentField.content_field_id as ContentFieldID,
+            route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
+            content_data_id: node.datatype.content.content_data_id as ContentID | null,
+            field_id: field.fieldId as FieldID | null,
+            field_value: currentValue,
+            author_id: (user?.user_id ?? null) as UserID | null,
+            date_created: field.contentField.date_created,
+            date_modified: now,
+          }),
+        )
       }
 
       if (promises.length > 0) {
@@ -207,7 +170,7 @@ export function useBlockEditorState(): BlockEditorState {
       }
       clearBlockEdits(contentDataId)
     },
-    [localEdits, user, createContentField, updateContentField, clearBlockEdits],
+    [localEdits, user, updateContentField, clearBlockEdits],
   )
 
   const saveAllForce = useCallback(
