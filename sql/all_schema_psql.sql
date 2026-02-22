@@ -771,3 +771,19 @@ CREATE TRIGGER update_admin_datatypes_modified_trigger
     BEFORE UPDATE ON admin_datatypes
     FOR EACH ROW
     EXECUTE FUNCTION update_admin_datatypes_modified();
+
+-- ===== 27_field_types =====
+
+CREATE TABLE IF NOT EXISTS field_types (
+    field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);
+
+-- ===== 28_admin_field_types =====
+
+CREATE TABLE IF NOT EXISTS admin_field_types (
+    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);

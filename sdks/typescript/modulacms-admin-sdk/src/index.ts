@@ -39,8 +39,9 @@ import { createPluginsResource } from './resources/plugins.js'
 import { createPluginRoutesResource } from './resources/plugin-routes.js'
 import { createPluginHooksResource } from './resources/plugin-hooks.js'
 import { createConfigResource } from './resources/config.js'
+import { createContentDeliveryResource } from './resources/content-delivery.js'
 
-import type { RequestOptions, AdminRouteID, Slug } from './types/common.js'
+import type { RequestOptions, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
 import type { AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams } from './types/admin.js'
 import type { CrudResource } from './resource.js'
@@ -68,6 +69,8 @@ export type {
   RoleID,
   PermissionID,
   RolePermissionID,
+  FieldTypeID,
+  AdminFieldTypeID,
   RouteID,
   SessionID,
   UserOauthID,
@@ -75,6 +78,7 @@ export type {
   Email,
   URL,
   ContentStatus,
+  ContentFormat,
   FieldType,
   RequestOptions,
   ApiError,
@@ -102,6 +106,10 @@ export type {
   UpdateAdminDatatypeParams,
   UpdateAdminFieldParams,
   UpdateAdminDatatypeFieldParams,
+  MoveAdminContentDataParams,
+  MoveAdminContentDataResponse,
+  ReorderAdminContentDataParams,
+  ReorderAdminContentDataResponse,
 } from './types/admin.js'
 export type {
   ContentData,
@@ -113,17 +121,30 @@ export type {
   UpdateContentFieldParams,
   ReorderContentDataParams,
   ReorderContentDataResponse,
+  MoveContentDataParams,
+  MoveContentDataResponse,
+  BatchContentUpdateParams,
+  BatchContentUpdateResponse,
 } from './types/content.js'
 export type {
   Datatype,
   Field,
+  FieldTypeInfo,
+  AdminFieldTypeInfo,
   DatatypeField,
+  AuthorView,
+  DatatypeFieldView,
+  DatatypeFullView,
   CreateDatatypeParams,
   CreateDatatypeFieldParams,
   CreateFieldParams,
+  CreateFieldTypeParams,
+  CreateAdminFieldTypeParams,
   UpdateDatatypeParams,
   UpdateDatatypeFieldParams,
   UpdateFieldParams,
+  UpdateFieldTypeParams,
+  UpdateAdminFieldTypeParams,
 } from './types/schema.js'
 export type {
   Media,
@@ -132,6 +153,8 @@ export type {
   CreateMediaDimensionParams,
   UpdateMediaParams,
   UpdateMediaDimensionParams,
+  MediaHealthResponse,
+  MediaCleanupResponse,
 } from './types/media.js'
 export type {
   User,
@@ -143,6 +166,12 @@ export type {
   Session,
   SshKey,
   SshKeyListItem,
+  UserWithRoleLabel,
+  UserOauthView,
+  UserSshKeyView,
+  SessionView,
+  TokenView,
+  UserFullView,
   CreateUserParams,
   CreateRoleParams,
   CreatePermissionParams,
@@ -194,6 +223,7 @@ export type {
   ConfigMetaResponse,
 } from './types/config.js'
 export type { ConfigResource } from './resources/config.js'
+export type { ContentDeliveryResource } from './resources/content-delivery.js'
 
 // ---------------------------------------------------------------------------
 // Imports for client type (type-only, for the ModulaCMSAdminClient shape)
@@ -215,6 +245,10 @@ import type {
   UpdateAdminDatatypeParams,
   UpdateAdminFieldParams,
   UpdateAdminDatatypeFieldParams,
+  MoveAdminContentDataParams,
+  MoveAdminContentDataResponse,
+  ReorderAdminContentDataParams,
+  ReorderAdminContentDataResponse,
 } from './types/admin.js'
 import type {
   ContentData,
@@ -225,17 +259,28 @@ import type {
   UpdateContentFieldParams,
   ReorderContentDataParams,
   ReorderContentDataResponse,
+  MoveContentDataParams,
+  MoveContentDataResponse,
+  BatchContentUpdateParams,
+  BatchContentUpdateResponse,
 } from './types/content.js'
 import type {
   Datatype,
   Field,
+  FieldTypeInfo,
+  AdminFieldTypeInfo,
   DatatypeField,
+  DatatypeFullView,
   CreateDatatypeParams,
   CreateDatatypeFieldParams,
   CreateFieldParams,
+  CreateFieldTypeParams,
+  CreateAdminFieldTypeParams,
   UpdateDatatypeParams,
   UpdateDatatypeFieldParams,
   UpdateFieldParams,
+  UpdateFieldTypeParams,
+  UpdateAdminFieldTypeParams,
 } from './types/schema.js'
 import type {
   Media,
@@ -244,6 +289,8 @@ import type {
   CreateMediaDimensionParams,
   UpdateMediaParams,
   UpdateMediaDimensionParams,
+  MediaHealthResponse,
+  MediaCleanupResponse,
 } from './types/media.js'
 import type {
   User,
@@ -284,7 +331,7 @@ import type {
   UserOauthID,
 } from './types/common.js'
 import type { LoginRequest, LoginResponse, MeResponse } from './types/auth.js'
-import type { Session, UpdateSessionParams, SshKey, SshKeyListItem, CreateSshKeyRequest } from './types/users.js'
+import type { Session, UpdateSessionParams, SshKey, SshKeyListItem, CreateSshKeyRequest, UserWithRoleLabel, UserFullView } from './types/users.js'
 import type { SessionID } from './types/common.js'
 import type { AdminTreeResponse, TreeFormat } from './types/tree.js'
 import type { ImportFormat, ImportResponse } from './types/import.js'
@@ -292,6 +339,7 @@ import type { PluginsResource } from './resources/plugins.js'
 import type { PluginRoutesResource } from './resources/plugin-routes.js'
 import type { PluginHooksResource } from './resources/plugin-hooks.js'
 import type { ConfigResource } from './resources/config.js'
+import type { ContentDeliveryResource } from './resources/content-delivery.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -398,7 +446,12 @@ export type ModulaCMSAdminClient = {
     remove: (id: AdminRouteID, opts?: RequestOptions) => Promise<void>
   }
   /** Admin content data nodes (tree structure). */
-  adminContentData: CrudResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID>
+  adminContentData: CrudResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID> & {
+    /** Reorder sibling admin content data nodes under a parent. */
+    reorder: (params: ReorderAdminContentDataParams, opts?: RequestOptions) => Promise<ReorderAdminContentDataResponse>
+    /** Move an admin content data node to a different parent at a given position. */
+    move: (params: MoveAdminContentDataParams, opts?: RequestOptions) => Promise<MoveAdminContentDataResponse>
+  }
   /** Admin content field values. */
   adminContentFields: CrudResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>
   /** Admin datatype definitions. */
@@ -409,21 +462,42 @@ export type ModulaCMSAdminClient = {
   contentData: CrudResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID> & {
     /** Reorder sibling content data nodes under a parent. */
     reorder: (params: ReorderContentDataParams, opts?: RequestOptions) => Promise<ReorderContentDataResponse>
+    /** Move a content data node to a different parent at a given position. */
+    move: (params: MoveContentDataParams, opts?: RequestOptions) => Promise<MoveContentDataResponse>
+    /** Batch update content data and field values in a single request. */
+    batch: (params: BatchContentUpdateParams, opts?: RequestOptions) => Promise<BatchContentUpdateResponse>
   }
   /** Public content field values. */
   contentFields: CrudResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>
   /** Datatype (content type) schema definitions. */
-  datatypes: CrudResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>
+  datatypes: CrudResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID> & {
+    /** Get a fully composed datatype with all field definitions. */
+    getFull: (id: DatatypeID, opts?: RequestOptions) => Promise<DatatypeFullView>
+  }
   /** Field schema definitions. */
   fields: CrudResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
+  /** Field type lookup entries (public content fields). */
+  fieldTypes: CrudResource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>
+  /** Admin field type lookup entries (admin content fields). */
+  adminFieldTypes: CrudResource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>
   /** Public routes. */
   routes: CrudResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>
   /** Media assets. */
-  media: CrudResource<Media, CreateMediaParams, UpdateMediaParams, MediaID>
+  media: CrudResource<Media, CreateMediaParams, UpdateMediaParams, MediaID> & {
+    /** Check for orphaned files in the media S3 bucket. */
+    health: (opts?: RequestOptions) => Promise<MediaHealthResponse>
+    /** Delete orphaned files from the media S3 bucket. */
+    cleanup: (opts?: RequestOptions) => Promise<MediaCleanupResponse>
+  }
   /** Media dimension presets for responsive rendering. */
   mediaDimensions: CrudResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>
   /** User accounts. */
-  users: CrudResource<User, CreateUserParams, UpdateUserParams, UserID>
+  users: CrudResource<User, CreateUserParams, UpdateUserParams, UserID> & {
+    /** List all users with their role labels joined. */
+    listFull: (opts?: RequestOptions) => Promise<UserWithRoleLabel[]>
+    /** Get a fully composed user with OAuth, SSH keys, sessions, and tokens. */
+    getFull: (id: UserID, opts?: RequestOptions) => Promise<UserFullView>
+  }
   /** Permission roles. */
   roles: CrudResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>
   /** Access control permissions. */
@@ -486,6 +560,8 @@ export type ModulaCMSAdminClient = {
   pluginHooks: PluginHooksResource
   /** Configuration management (get, update, meta). */
   config: ConfigResource
+  /** Content delivery via slug (rendered content trees). */
+  contentDelivery: ContentDeliveryResource
 
   /** Bulk content import from external CMS platforms. */
   import: {
@@ -590,7 +666,15 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
   return {
     auth: createAuthResource(http),
     adminRoutes,
-    adminContentData: createResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID>(http, 'admincontentdatas'),
+    adminContentData: {
+      ...createResource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID>(http, 'admincontentdatas'),
+      reorder(params: ReorderAdminContentDataParams, opts?: RequestOptions): Promise<ReorderAdminContentDataResponse> {
+        return http.post<ReorderAdminContentDataResponse>('/admincontentdatas/reorder', params as unknown as Record<string, unknown>, opts)
+      },
+      move(params: MoveAdminContentDataParams, opts?: RequestOptions): Promise<MoveAdminContentDataResponse> {
+        return http.post<MoveAdminContentDataResponse>('/admincontentdatas/move', params as unknown as Record<string, unknown>, opts)
+      },
+    },
     adminContentFields: createResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>(http, 'admincontentfields'),
     adminDatatypes: createResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>(http, 'admindatatypes'),
     adminFields: createResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>(http, 'adminfields'),
@@ -599,14 +683,55 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
       reorder(params: ReorderContentDataParams, opts?: RequestOptions): Promise<ReorderContentDataResponse> {
         return http.post<ReorderContentDataResponse>('/contentdata/reorder', params as unknown as Record<string, unknown>, opts)
       },
+      move(params: MoveContentDataParams, opts?: RequestOptions): Promise<MoveContentDataResponse> {
+        return http.post<MoveContentDataResponse>('/contentdata/move', params as unknown as Record<string, unknown>, opts)
+      },
+      batch(params: BatchContentUpdateParams, opts?: RequestOptions): Promise<BatchContentUpdateResponse> {
+        return http.post<BatchContentUpdateResponse>('/content/batch', params as unknown as Record<string, unknown>, opts)
+      },
     },
     contentFields: createResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>(http, 'contentfields'),
-    datatypes: createResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>(http, 'datatype'),
+    datatypes: {
+      ...createResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>(http, 'datatype'),
+      getFull(id: DatatypeID, opts?: RequestOptions): Promise<DatatypeFullView> {
+        return http.get<DatatypeFullView>('/datatype/full', { q: String(id) }, opts)
+      },
+    },
     fields: createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),
+    fieldTypes: createResource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>(http, 'fieldtypes'),
+    adminFieldTypes: createResource<AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID>(http, 'adminfieldtypes'),
     routes: createResource<Route, CreateRouteParams, UpdateRouteParams, RouteID>(http, 'routes'),
-    media: createResource<Media, CreateMediaParams, UpdateMediaParams, MediaID>(http, 'media'),
+    media: {
+      ...createResource<Media, CreateMediaParams, UpdateMediaParams, MediaID>(http, 'media'),
+      health(opts?: RequestOptions): Promise<MediaHealthResponse> {
+        return http.get<MediaHealthResponse>('/media/health', undefined, opts)
+      },
+      async cleanup(opts?: RequestOptions): Promise<MediaCleanupResponse> {
+        const h: Record<string, string> = { 'Content-Type': 'application/json' }
+        if (config.apiKey) h['Authorization'] = `Bearer ${config.apiKey}`
+        const response = await http.raw('/media/cleanup', {
+          method: 'DELETE',
+          headers: h,
+          credentials,
+          ...(opts?.signal ? { signal: opts.signal } : {}),
+        })
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(`media cleanup failed (${response.status}): ${text}`)
+        }
+        return response.json() as Promise<MediaCleanupResponse>
+      },
+    },
     mediaDimensions: createResource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams>(http, 'mediadimensions'),
-    users: createResource<User, CreateUserParams, UpdateUserParams, UserID>(http, 'users'),
+    users: {
+      ...createResource<User, CreateUserParams, UpdateUserParams, UserID>(http, 'users'),
+      listFull(opts?: RequestOptions): Promise<UserWithRoleLabel[]> {
+        return http.get<UserWithRoleLabel[]>('/users/full', undefined, opts)
+      },
+      getFull(id: UserID, opts?: RequestOptions): Promise<UserFullView> {
+        return http.get<UserFullView>('/users/full/', { q: String(id) }, opts)
+      },
+    },
     roles: createResource<Role, CreateRoleParams, UpdateRoleParams, RoleID>(http, 'roles'),
     permissions: createResource<Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID>(http, 'permissions'),
     rolePermissions: {
@@ -639,6 +764,7 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     pluginRoutes: createPluginRoutesResource(http),
     pluginHooks: createPluginHooksResource(http),
     config: createConfigResource(http),
+    contentDelivery: createContentDeliveryResource(http),
     import: createImportResource(http),
   }
 }

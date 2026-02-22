@@ -3,7 +3,6 @@
 package db
 
 import (
-	"database/sql"
 	"testing"
 )
 
@@ -24,10 +23,10 @@ func TestDatabase_CRUD_MediaDimension(t *testing.T) {
 
 	// --- Create ---
 	created, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
-		Label:       sql.NullString{String: "Thumbnail", Valid: true},
-		Width:       sql.NullInt64{Int64: 1920, Valid: true},
-		Height:      sql.NullInt64{Int64: 1080, Valid: true},
-		AspectRatio: sql.NullString{String: "16:9", Valid: true},
+		Label:       NewNullString("Thumbnail"),
+		Width:       NewNullInt64(1920),
+		Height:      NewNullInt64(1080),
+		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
 		t.Fatalf("CreateMediaDimension: %v", err)
@@ -98,10 +97,10 @@ func TestDatabase_CRUD_MediaDimension(t *testing.T) {
 
 	// --- Update ---
 	_, err = d.UpdateMediaDimension(ctx, ac, UpdateMediaDimensionParams{
-		Label:       sql.NullString{String: "Banner", Valid: true},
-		Width:       sql.NullInt64{Int64: 2560, Valid: true},
-		Height:      sql.NullInt64{Int64: 1440, Valid: true},
-		AspectRatio: sql.NullString{String: "16:9", Valid: true},
+		Label:       NewNullString("Banner"),
+		Width:       NewNullInt64(2560),
+		Height:      NewNullInt64(1440),
+		AspectRatio: NewNullString("16:9"),
 		MdID:        created.MdID,
 	})
 	if err != nil {
@@ -154,10 +153,10 @@ func TestDatabase_CRUD_MediaDimension_NullFields(t *testing.T) {
 	ac := testAuditCtx(d)
 
 	created, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
-		Label:       sql.NullString{Valid: false},
-		Width:       sql.NullInt64{Valid: false},
-		Height:      sql.NullInt64{Valid: false},
-		AspectRatio: sql.NullString{Valid: false},
+		Label:       NullString{},
+		Width:       NullInt64{},
+		Height:      NullInt64{},
+		AspectRatio: NullString{},
 	})
 	if err != nil {
 		t.Fatalf("CreateMediaDimension with nulls: %v", err)

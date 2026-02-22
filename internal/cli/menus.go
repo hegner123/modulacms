@@ -31,6 +31,7 @@ func (m Model) CmsMenuInit() []Page {
 		m.PageMap[ROUTES],
 		m.PageMap[MEDIA],
 		m.PageMap[USERSADMIN],
+		m.PageMap[FIELDTYPES],
 	}
 	return CmsMenu
 }
@@ -41,6 +42,7 @@ func (m Model) AdminCmsMenuInit() []Page {
 		m.PageMap[ADMINCONTENT],
 		m.PageMap[ADMINDATATYPES],
 		m.PageMap[ADMINROUTES],
+		m.PageMap[ADMINFIELDTYPES],
 	}
 	return AdminCmsMenu
 }

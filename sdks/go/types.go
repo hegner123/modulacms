@@ -752,6 +752,54 @@ type UpdateAdminFieldParams struct {
 }
 
 // ---------------------------------------------------------------------------
+// Field Type
+// ---------------------------------------------------------------------------
+
+// FieldTypeInfo represents a field type definition.
+type FieldTypeInfo struct {
+	FieldTypeID FieldTypeID `json:"field_type_id"`
+	Type        string      `json:"type"`
+	Label       string      `json:"label"`
+}
+
+// CreateFieldTypeParams contains parameters for creating a field type.
+type CreateFieldTypeParams struct {
+	Type  string `json:"type"`
+	Label string `json:"label"`
+}
+
+// UpdateFieldTypeParams contains parameters for updating a field type.
+type UpdateFieldTypeParams struct {
+	FieldTypeID FieldTypeID `json:"field_type_id"`
+	Type        string      `json:"type"`
+	Label       string      `json:"label"`
+}
+
+// ---------------------------------------------------------------------------
+// Admin Field Type
+// ---------------------------------------------------------------------------
+
+// AdminFieldTypeInfo represents an admin field type definition.
+type AdminFieldTypeInfo struct {
+	AdminFieldTypeID AdminFieldTypeID `json:"admin_field_type_id"`
+	Type             string           `json:"type"`
+	Label            string           `json:"label"`
+}
+
+// CreateAdminFieldTypeParams contains parameters for creating an admin field type.
+type CreateAdminFieldTypeParams struct {
+	Type  string `json:"type"`
+	Label string `json:"label"`
+}
+
+// UpdateAdminFieldTypeParams contains parameters for updating an admin field type.
+type UpdateAdminFieldTypeParams struct {
+	AdminFieldTypeID AdminFieldTypeID `json:"admin_field_type_id"`
+	Type             string           `json:"type"`
+	Label            string           `json:"label"`
+}
+
+// ---------------------------------------------------------------------------
 // Admin Route
 // ---------------------------------------------------------------------------
 

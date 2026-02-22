@@ -6,15 +6,73 @@
  */
 
 import type {
+  AdminFieldTypeID,
   ContentID,
   DatatypeID,
   FieldID,
   FieldType,
+  FieldTypeID,
   UserID,
 } from './common.js'
 
 // Re-export shared entity types
-export type { Datatype, Field, DatatypeField } from '@modulacms/types'
+export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo, DatatypeField } from '@modulacms/types'
+
+// ---------------------------------------------------------------------------
+// View types (composed responses from /datatype/full)
+// ---------------------------------------------------------------------------
+
+/** Author summary embedded in a full view response. */
+export type AuthorView = {
+  /** Unique identifier for this user. */
+  user_id: UserID
+  /** Login username. */
+  username: string
+  /** Display name. */
+  name: string
+  /** Email address. */
+  email: string
+  /** Role label. */
+  role: string
+}
+
+/** A field definition with sort order, used in the datatype full view. */
+export type DatatypeFieldView = {
+  /** Unique identifier for the field. */
+  field_id: FieldID
+  /** Human-readable label. */
+  label: string
+  /** The data type of this field. */
+  type: FieldType
+  /** Additional metadata (JSON-encoded). */
+  data: string
+  /** Validation rules (JSON-encoded). */
+  validation: string
+  /** UI configuration (JSON-encoded). */
+  ui_config: string
+  /** Display ordering position. */
+  sort_order: number
+}
+
+/** A fully composed datatype response from `GET /datatype/full`. */
+export type DatatypeFullView = {
+  /** Unique identifier for this datatype. */
+  datatype_id: DatatypeID
+  /** Human-readable label. */
+  label: string
+  /** Datatype category. */
+  type: string
+  /** Parent datatype ID, or `null`. */
+  parent_id: DatatypeID | null
+  /** Author who created this datatype. */
+  author?: AuthorView
+  /** All field definitions belonging to this datatype. */
+  fields: DatatypeFieldView[]
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+  /** ISO 8601 last-modification timestamp. */
+  date_modified: string
+}
 
 // ---------------------------------------------------------------------------
 // Create params
@@ -128,4 +186,44 @@ export type UpdateFieldParams = {
   date_created: string
   /** ISO 8601 modification timestamp. */
   date_modified: string
+}
+
+// ---------------------------------------------------------------------------
+// Field type lookup params
+// ---------------------------------------------------------------------------
+
+/** Parameters for creating a new field type via `POST /fieldtypes`. */
+export type CreateFieldTypeParams = {
+  /** Machine-readable type key. */
+  type: string
+  /** Human-readable label. */
+  label: string
+}
+
+/** Parameters for updating a field type via `PUT /fieldtypes/`. */
+export type UpdateFieldTypeParams = {
+  /** ID of the field type to update. */
+  field_type_id: FieldTypeID
+  /** Updated type key. */
+  type: string
+  /** Updated label. */
+  label: string
+}
+
+/** Parameters for creating a new admin field type via `POST /adminfieldtypes`. */
+export type CreateAdminFieldTypeParams = {
+  /** Machine-readable type key. */
+  type: string
+  /** Human-readable label. */
+  label: string
+}
+
+/** Parameters for updating an admin field type via `PUT /adminfieldtypes/`. */
+export type UpdateAdminFieldTypeParams = {
+  /** ID of the admin field type to update. */
+  admin_field_type_id: AdminFieldTypeID
+  /** Updated type key. */
+  type: string
+  /** Updated label. */
+  label: string
 }

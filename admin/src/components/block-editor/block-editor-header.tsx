@@ -45,7 +45,7 @@ export function BlockEditorHeader({
         <Button
           size="sm"
           onClick={onSaveAll}
-          disabled={dirtyCount === 0 || saving}
+          disabled={saving}
         >
           <Save className="mr-1 h-4 w-4" />
           {saving ? 'Saving...' : 'Save All'}

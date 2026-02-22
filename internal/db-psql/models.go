@@ -31,7 +31,7 @@ type AdminContentFields struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
-	AuthorID            types.NullableUserID         `json:"author_id"`
+	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
 }
@@ -59,6 +59,12 @@ type AdminDatatypesFields struct {
 	ID              string                `json:"id"`
 	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
 	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
+}
+
+type AdminFieldTypes struct {
+	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
+	Type             string                 `json:"type"`
+	Label            string                 `json:"label"`
 }
 
 type AdminFields struct {
@@ -166,7 +172,7 @@ type ContentFields struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 }
@@ -195,6 +201,12 @@ type DatatypesFields struct {
 	DatatypeID types.DatatypeID `json:"datatype_id"`
 	FieldID    types.FieldID    `json:"field_id"`
 	SortOrder  int32            `json:"sort_order"`
+}
+
+type FieldTypes struct {
+	FieldTypeID types.FieldTypeID `json:"field_type_id"`
+	Type        string            `json:"type"`
+	Label       string            `json:"label"`
 }
 
 type Fields struct {

@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
             ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_field_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- name: CountContentField :one

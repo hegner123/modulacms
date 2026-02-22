@@ -18,7 +18,7 @@ func TestDatabase_CRUD_ContentField(t *testing.T) {
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
 	cdAuthorID := seed.User.UserID // ContentData uses types.UserID (non-nullable)
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID
 	fieldID := types.NullableFieldID{ID: seed.Field.FieldID, Valid: true}
 
 	// --- Create prerequisite ContentData record ---

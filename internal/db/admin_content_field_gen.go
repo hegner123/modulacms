@@ -24,7 +24,7 @@ type AdminContentFields struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
-	AuthorID            types.NullableUserID         `json:"author_id"`
+	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
 }
@@ -35,7 +35,7 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID       types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue    string                       `json:"admin_field_value"`
-	AuthorID           types.NullableUserID         `json:"author_id"`
+	AuthorID           types.UserID                 `json:"author_id"`
 	DateCreated        types.Timestamp              `json:"date_created"`
 	DateModified       types.Timestamp              `json:"date_modified"`
 }
@@ -46,7 +46,7 @@ type UpdateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
-	AuthorID            types.NullableUserID         `json:"author_id"`
+	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
 	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`

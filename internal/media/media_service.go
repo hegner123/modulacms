@@ -5,7 +5,6 @@ package media
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -156,8 +155,8 @@ func ProcessMediaUpload(
 
 	// Step 5: Create DB record with URL and mimetype
 	params := db.CreateMediaParams{
-		Name:         sql.NullString{String: header.Filename, Valid: true},
-		Mimetype:     sql.NullString{String: contentType, Valid: true},
+		Name:         db.NewNullString(header.Filename),
+		Mimetype:     db.NewNullString(contentType),
 		URL:          types.URL(originalURL),
 		AuthorID:     types.NullableUserID{ID: ac.UserID, Valid: ac.UserID != ""},
 		DateCreated:  types.TimestampNow(),

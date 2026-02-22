@@ -180,10 +180,10 @@ func testIntegrationDB(t *testing.T, cfg config.Config) (db.Database, testSeed) 
 	// Seed a media dimension (100x100 thumbnail) for the optimize step
 	acUser := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, "test", "127.0.0.1")
 	_, err = d.CreateMediaDimension(ctx, acUser, db.CreateMediaDimensionParams{
-		Label:       sql.NullString{String: "thumbnail", Valid: true},
-		Width:       sql.NullInt64{Int64: 100, Valid: true},
-		Height:      sql.NullInt64{Int64: 100, Valid: true},
-		AspectRatio: sql.NullString{String: "1:1", Valid: true},
+		Label:       db.NewNullString("thumbnail"),
+		Width:       db.NewNullInt64(100),
+		Height:      db.NewNullInt64(100),
+		AspectRatio: db.NewNullString("1:1"),
 	})
 	if err != nil {
 		t.Fatalf("seed CreateMediaDimension: %v", err)
@@ -246,7 +246,7 @@ func TestIntegration_HandleMediaUpload(t *testing.T) {
 	mediaName := "integration-test"
 	imageFile := mediaName + ".png"
 	_, err := d.CreateMedia(ctx, ac, db.CreateMediaParams{
-		Name:         sql.NullString{String: mediaName, Valid: true},
+		Name:         db.NewNullString(mediaName),
 		URL:          originalS3URL(cfg, imageFile),
 		AuthorID:     authorID,
 		DateCreated:  now,
@@ -346,7 +346,7 @@ func TestIntegration_HandleMediaUpload_BadBucket(t *testing.T) {
 	mediaName := "bad-bucket-test"
 	imageFile := mediaName + ".png"
 	_, err := d.CreateMedia(ctx, ac, db.CreateMediaParams{
-		Name:         sql.NullString{String: mediaName, Valid: true},
+		Name:         db.NewNullString(mediaName),
 		URL:          originalS3URL(cfg, imageFile),
 		AuthorID:     authorID,
 		DateCreated:  now,

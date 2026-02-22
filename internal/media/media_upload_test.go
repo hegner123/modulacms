@@ -1,7 +1,6 @@
 package media
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/hegner123/modulacms/internal/db"
@@ -22,16 +21,16 @@ func TestMapMediaParams(t *testing.T) {
 			name: "all fields populated",
 			input: db.Media{
 				MediaID:      types.MediaID("01HX1234567890ABCDEF12345"),
-				Name:         sql.NullString{String: "photo.png", Valid: true},
-				DisplayName:  sql.NullString{String: "My Photo", Valid: true},
-				Alt:          sql.NullString{String: "A sunset", Valid: true},
-				Caption:      sql.NullString{String: "Taken in 2024", Valid: true},
-				Description:  sql.NullString{String: "Beautiful sunset over the ocean", Valid: true},
-				Class:        sql.NullString{String: "hero-image", Valid: true},
+				Name:         db.NewNullString("photo.png"),
+				DisplayName:  db.NewNullString("My Photo"),
+				Alt:          db.NewNullString("A sunset"),
+				Caption:      db.NewNullString("Taken in 2024"),
+				Description:  db.NewNullString("Beautiful sunset over the ocean"),
+				Class:        db.NewNullString("hero-image"),
 				URL:          types.URL("https://cdn.example.com/photo.png"),
-				Mimetype:     sql.NullString{String: "image/png", Valid: true},
-				Dimensions:   sql.NullString{String: "1920x1080", Valid: true},
-				Srcset:       sql.NullString{String: `["url1","url2"]`, Valid: true},
+				Mimetype:     db.NewNullString("image/png"),
+				Dimensions:   db.NewNullString("1920x1080"),
+				Srcset:       db.NewNullString(`["url1","url2"]`),
 				AuthorID:     types.NullableUserID{ID: types.UserID("user-123"), Valid: true},
 				DateCreated:  types.TimestampNow(),
 				DateModified: types.TimestampNow(),
@@ -41,15 +40,15 @@ func TestMapMediaParams(t *testing.T) {
 			name: "nullable fields empty",
 			input: db.Media{
 				MediaID:      types.MediaID("01HX9999999999ZZZZZZZZZZ"),
-				Name:         sql.NullString{},
-				DisplayName:  sql.NullString{},
-				Alt:          sql.NullString{},
-				Caption:      sql.NullString{},
-				Description:  sql.NullString{},
-				Class:        sql.NullString{},
-				Mimetype:     sql.NullString{},
-				Dimensions:   sql.NullString{},
-				Srcset:       sql.NullString{},
+				Name:         db.NullString{},
+				DisplayName:  db.NullString{},
+				Alt:          db.NullString{},
+				Caption:      db.NullString{},
+				Description:  db.NullString{},
+				Class:        db.NullString{},
+				Mimetype:     db.NullString{},
+				Dimensions:   db.NullString{},
+				Srcset:       db.NullString{},
 				AuthorID:     types.NullableUserID{},
 				DateCreated:  types.TimestampNow(),
 				DateModified: types.TimestampNow(),

@@ -1,7 +1,6 @@
 package media
 
 import (
-	"database/sql"
 	"errors"
 	"image"
 	"image/color"
@@ -225,8 +224,8 @@ func (m *mockDimensionLister) ListMediaDimensions() (*[]db.MediaDimensions, erro
 // dim is a shorthand constructor for db.MediaDimensions used in tests.
 func dim(w, h int64) db.MediaDimensions {
 	return db.MediaDimensions{
-		Width:  sql.NullInt64{Int64: w, Valid: true},
-		Height: sql.NullInt64{Int64: h, Valid: true},
+		Width:  db.NewNullInt64(w),
+		Height: db.NewNullInt64(h),
 	}
 }
 
@@ -410,10 +409,10 @@ func TestOptimizeUpload_SkipsInvalidDimensions(t *testing.T) {
 	srcPath := createTestImage(t, srcDir, "skip.png", 200, 200)
 
 	dims := []db.MediaDimensions{
-		{Width: sql.NullInt64{Valid: false}, Height: sql.NullInt64{Int64: 100, Valid: true}},  // no width
-		{Width: sql.NullInt64{Int64: 100, Valid: true}, Height: sql.NullInt64{Valid: false}},   // no height
-		{Width: sql.NullInt64{Int64: 0, Valid: true}, Height: sql.NullInt64{Int64: 100, Valid: true}},   // zero width
-		{Width: sql.NullInt64{Int64: -5, Valid: true}, Height: sql.NullInt64{Int64: 100, Valid: true}},  // negative width
+		{Width: db.NullInt64{}, Height: db.NewNullInt64(100)},                // no width
+		{Width: db.NewNullInt64(100), Height: db.NullInt64{}},                // no height
+		{Width: db.NewNullInt64(0), Height: db.NewNullInt64(100)},            // zero width
+		{Width: db.NewNullInt64(-5), Height: db.NewNullInt64(100)},           // negative width
 		dim(50, 50), // valid
 	}
 	lister := &mockDimensionLister{dims: &dims}

@@ -62,6 +62,12 @@ type FieldID string
 func (id FieldID) String() string { return string(id) }
 func (id FieldID) IsZero() bool   { return id == "" }
 
+// FieldTypeID identifies a field type.
+type FieldTypeID string
+
+func (id FieldTypeID) String() string { return string(id) }
+func (id FieldTypeID) IsZero() bool   { return id == "" }
+
 // Admin schema IDs
 
 // AdminDatatypeID identifies an admin datatype.
@@ -81,6 +87,12 @@ type AdminFieldID string
 
 func (id AdminFieldID) String() string { return string(id) }
 func (id AdminFieldID) IsZero() bool   { return id == "" }
+
+// AdminFieldTypeID identifies an admin field type.
+type AdminFieldTypeID string
+
+func (id AdminFieldTypeID) String() string { return string(id) }
+func (id AdminFieldTypeID) IsZero() bool   { return id == "" }
 
 // Media IDs
 

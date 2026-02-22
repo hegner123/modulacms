@@ -2,7 +2,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -21,10 +20,10 @@ type Sessions struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  sql.NullString       `json:"last_access"`
-	IpAddress   sql.NullString       `json:"ip_address"`
-	UserAgent   sql.NullString       `json:"user_agent"`
-	SessionData sql.NullString       `json:"session_data"`
+	LastAccess  NullString           `json:"last_access"`
+	IpAddress   NullString           `json:"ip_address"`
+	UserAgent   NullString           `json:"user_agent"`
+	SessionData NullString           `json:"session_data"`
 }
 
 // CreateSessionParams contains parameters for creating a new session.
@@ -32,10 +31,10 @@ type CreateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  sql.NullString       `json:"last_access"`
-	IpAddress   sql.NullString       `json:"ip_address"`
-	UserAgent   sql.NullString       `json:"user_agent"`
-	SessionData sql.NullString       `json:"session_data"`
+	LastAccess  NullString           `json:"last_access"`
+	IpAddress   NullString           `json:"ip_address"`
+	UserAgent   NullString           `json:"user_agent"`
+	SessionData NullString           `json:"session_data"`
 }
 
 // UpdateSessionParams contains parameters for updating an existing session.
@@ -43,10 +42,10 @@ type UpdateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  sql.NullString       `json:"last_access"`
-	IpAddress   sql.NullString       `json:"ip_address"`
-	UserAgent   sql.NullString       `json:"user_agent"`
-	SessionData sql.NullString       `json:"session_data"`
+	LastAccess  NullString           `json:"last_access"`
+	IpAddress   NullString           `json:"ip_address"`
+	UserAgent   NullString           `json:"user_agent"`
+	SessionData NullString           `json:"session_data"`
 	SessionID   types.SessionID      `json:"session_id"`
 }
 
@@ -57,10 +56,10 @@ func MapStringSession(a Sessions) StringSessions {
 		UserID:      a.UserID.String(),
 		DateCreated: a.DateCreated.String(),
 		ExpiresAt:   a.ExpiresAt.String(),
-		LastAccess:  NullStringToEmpty(a.LastAccess),
-		IpAddress:   NullStringToEmpty(a.IpAddress),
-		UserAgent:   NullStringToEmpty(a.UserAgent),
-		SessionData: NullStringToEmpty(a.SessionData),
+		LastAccess:  NullStringToEmpty(a.LastAccess.NullString),
+		IpAddress:   NullStringToEmpty(a.IpAddress.NullString),
+		UserAgent:   NullStringToEmpty(a.UserAgent.NullString),
+		SessionData: NullStringToEmpty(a.SessionData.NullString),
 	}
 }
 

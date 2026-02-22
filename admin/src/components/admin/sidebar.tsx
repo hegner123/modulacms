@@ -6,6 +6,7 @@ import {
   FileText,
   Blocks,
   FormInput,
+  List,
   Image,
   Users,
   Shield,
@@ -215,6 +216,12 @@ export function Sidebar({ collapsed, onToggle }: SidebarProps) {
           to="/schema/fields"
           icon={FormInput}
           label="Fields"
+          collapsed={collapsed}
+        />
+        <NavItem
+          to="/schema/field-types"
+          icon={List}
+          label="Field Types"
           collapsed={collapsed}
         />
 

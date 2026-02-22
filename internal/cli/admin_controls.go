@@ -310,6 +310,142 @@ func ShowEditAdminFieldDialogCmd(field db.AdminFields) tea.Cmd {
 	}
 }
 
+// FieldTypesControls handles keyboard navigation for the field types page.
+func (m Model) FieldTypesControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.FieldTypesList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionNew) {
+			return m, ShowRouteFormDialogCmd(FORMDIALOGCREATEFIELDTYPE, "New Field Type")
+		}
+		if km.Matches(key, config.ActionEdit) {
+			if len(m.FieldTypesList) > 0 && m.Cursor < len(m.FieldTypesList) {
+				return m, ShowEditFieldTypeDialogCmd(m.FieldTypesList[m.Cursor])
+			}
+		}
+		if km.Matches(key, config.ActionDelete) {
+			if len(m.FieldTypesList) > 0 && m.Cursor < len(m.FieldTypesList) {
+				ft := m.FieldTypesList[m.Cursor]
+				return m, ShowDeleteFieldTypeDialogCmd(ft.FieldTypeID, ft.Label)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// ShowEditFieldTypeDialogCmd shows an edit dialog for a field type.
+func ShowEditFieldTypeDialogCmd(ft db.FieldTypes) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditFieldTypeDialogMsg{FieldType: ft}
+	}
+}
+
+// AdminFieldTypesControls handles keyboard navigation for the admin field types page.
+func (m Model) AdminFieldTypesControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.AdminFieldTypesList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionNew) {
+			return m, ShowRouteFormDialogCmd(FORMDIALOGCREATEADMINFIELDTYPE, "New Admin Field Type")
+		}
+		if km.Matches(key, config.ActionEdit) {
+			if len(m.AdminFieldTypesList) > 0 && m.Cursor < len(m.AdminFieldTypesList) {
+				return m, ShowEditAdminFieldTypeDialogCmd(m.AdminFieldTypesList[m.Cursor])
+			}
+		}
+		if km.Matches(key, config.ActionDelete) {
+			if len(m.AdminFieldTypesList) > 0 && m.Cursor < len(m.AdminFieldTypesList) {
+				ft := m.AdminFieldTypesList[m.Cursor]
+				return m, ShowDeleteAdminFieldTypeDialogCmd(ft.AdminFieldTypeID, ft.Label)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// ShowEditAdminFieldTypeDialogCmd shows an edit dialog for an admin field type.
+func ShowEditAdminFieldTypeDialogCmd(ft db.AdminFieldTypes) tea.Cmd {
+	return func() tea.Msg {
+		return ShowEditAdminFieldTypeDialogMsg{AdminFieldType: ft}
+	}
+}
+
 // AdminContentBrowserControls handles keyboard navigation for admin content page.
 // Simplified flat list of m.AdminRootContentSummary.
 func (m Model) AdminContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {

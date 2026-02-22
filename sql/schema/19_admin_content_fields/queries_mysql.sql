@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
             ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_content_field_author_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
-            ON UPDATE CASCADE
+            ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 -- name: CountAdminContentField :one

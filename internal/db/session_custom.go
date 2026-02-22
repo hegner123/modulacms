@@ -21,12 +21,12 @@ func (d Database) MapSession(a mdb.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
-		LastAccess:  a.LastAccess,
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		LastAccess:  NullString{a.LastAccess},
+		IpAddress:   NullString{a.IpAddress},
+		UserAgent:   NullString{a.UserAgent},
+		SessionData: NullString{a.SessionData},
 	}
 }
 
@@ -35,12 +35,12 @@ func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessio
 	return mdb.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
-		LastAccess:  a.LastAccess,
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		LastAccess:  a.LastAccess.NullString,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 	}
 }
 
@@ -48,12 +48,12 @@ func (d Database) MapCreateSessionParams(a CreateSessionParams) mdb.CreateSessio
 func (d Database) MapUpdateSessionParams(a UpdateSessionParams) mdb.UpdateSessionParams {
 	return mdb.UpdateSessionParams{
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
-		LastAccess:  a.LastAccess,
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		LastAccess:  a.LastAccess.NullString,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 		SessionID:   a.SessionID,
 	}
 }
@@ -67,12 +67,12 @@ func (d MysqlDatabase) MapSession(a mdbm.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
-		LastAccess:  StringToNullString(a.LastAccess.String()),
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		LastAccess:  NewNullString(a.LastAccess.String()),
+		IpAddress:   NullString{a.IpAddress},
+		UserAgent:   NullString{a.UserAgent},
+		SessionData: NullString{a.SessionData},
 	}
 }
 
@@ -81,12 +81,12 @@ func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.Create
 	return mdbm.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String).Time,
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 	}
 }
 
@@ -94,12 +94,12 @@ func (d MysqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbm.Create
 func (d MysqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbm.UpdateSessionParams {
 	return mdbm.UpdateSessionParams{
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String).Time,
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 		SessionID:   a.SessionID,
 	}
 }
@@ -113,12 +113,12 @@ func (d PsqlDatabase) MapSession(a mdbp.Sessions) Sessions {
 	return Sessions{
 		SessionID:   a.SessionID,
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
-		LastAccess:  StringToNullString(NullTimeToString(a.LastAccess)),
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		LastAccess:  NewNullString(NullTimeToString(a.LastAccess)),
+		IpAddress:   NullString{a.IpAddress},
+		UserAgent:   NullString{a.UserAgent},
+		SessionData: NullString{a.SessionData},
 	}
 }
 
@@ -127,12 +127,12 @@ func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateS
 	return mdbp.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String),
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 	}
 }
 
@@ -140,12 +140,12 @@ func (d PsqlDatabase) MapCreateSessionParams(a CreateSessionParams) mdbp.CreateS
 func (d PsqlDatabase) MapUpdateSessionParams(a UpdateSessionParams) mdbp.UpdateSessionParams {
 	return mdbp.UpdateSessionParams{
 		UserID:      a.UserID,
-		DateCreated:   a.DateCreated,
+		DateCreated: a.DateCreated,
 		ExpiresAt:   a.ExpiresAt,
 		LastAccess:  StringToNTime(a.LastAccess.String),
-		IpAddress:   a.IpAddress,
-		UserAgent:   a.UserAgent,
-		SessionData: a.SessionData,
+		IpAddress:   a.IpAddress.NullString,
+		UserAgent:   a.UserAgent.NullString,
+		SessionData: a.SessionData.NullString,
 		SessionID:   a.SessionID,
 	}
 }
@@ -273,12 +273,12 @@ func (c NewSessionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Sessio
 	return queries.CreateSession(ctx, mdb.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
-		LastAccess:  c.params.LastAccess,
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		LastAccess:  c.params.LastAccess.NullString,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 	})
 }
 
@@ -311,12 +311,12 @@ func (c UpdateSessionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateSession(ctx, mdb.UpdateSessionParams{
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
-		LastAccess:  c.params.LastAccess,
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		LastAccess:  c.params.LastAccess.NullString,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 		SessionID:   c.params.SessionID,
 	})
 }
@@ -381,12 +381,12 @@ func (c NewSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.
 	err := queries.CreateSession(ctx, mdbm.CreateSessionParams{
 		SessionID:   id,
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
 		LastAccess:  StringToNTime(c.params.LastAccess.String).Time,
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 	})
 	if err != nil {
 		return mdbm.Sessions{}, fmt.Errorf("Failed to CreateSession: %w", err)
@@ -423,12 +423,12 @@ func (c UpdateSessionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) err
 	queries := mdbm.New(tx)
 	return queries.UpdateSession(ctx, mdbm.UpdateSessionParams{
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
 		LastAccess:  StringToNTime(c.params.LastAccess.String).Time,
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 		SessionID:   c.params.SessionID,
 	})
 }
@@ -492,12 +492,12 @@ func (c NewSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.S
 	return queries.CreateSession(ctx, mdbp.CreateSessionParams{
 		SessionID:   types.NewSessionID(),
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
 		LastAccess:  StringToNTime(c.params.LastAccess.String),
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 	})
 }
 
@@ -530,12 +530,12 @@ func (c UpdateSessionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) erro
 	queries := mdbp.New(tx)
 	return queries.UpdateSession(ctx, mdbp.UpdateSessionParams{
 		UserID:      c.params.UserID,
-		DateCreated:   c.params.DateCreated,
+		DateCreated: c.params.DateCreated,
 		ExpiresAt:   c.params.ExpiresAt,
 		LastAccess:  StringToNTime(c.params.LastAccess.String),
-		IpAddress:   c.params.IpAddress,
-		UserAgent:   c.params.UserAgent,
-		SessionData: c.params.SessionData,
+		IpAddress:   c.params.IpAddress.NullString,
+		UserAgent:   c.params.UserAgent.NullString,
+		SessionData: c.params.SessionData.NullString,
 		SessionID:   c.params.SessionID,
 	})
 }

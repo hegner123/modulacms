@@ -25,6 +25,8 @@ export type {
   RoleID,
   PermissionID,
   RolePermissionID,
+  FieldTypeID,
+  AdminFieldTypeID,
   RouteID,
   SessionID,
   UserOauthID,
@@ -52,7 +54,7 @@ export type { RequestOptions } from './request.js'
 
 // Entity types
 export type { ContentData, ContentField, ContentRelation } from './entities/content.js'
-export type { Datatype, Field, DatatypeField } from './entities/schema.js'
+export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo, DatatypeField } from './entities/schema.js'
 export type { Media, MediaDimension } from './entities/media.js'
 export type { Route } from './entities/routing.js'
 export type { NodeDatatype, NodeField, ContentNode, ContentTree } from './entities/tree.js'

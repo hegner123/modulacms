@@ -1,8 +1,6 @@
 package db
 
 import (
-	"database/sql"
-
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -177,8 +175,8 @@ func MapTokenView(t Tokens) TokenView {
 	}
 }
 
-// nullStringValue extracts the string from a sql.NullString, returning "" if not valid.
-func nullStringValue(ns sql.NullString) string {
+// nullStringValue extracts the string from a NullString, returning "" if not valid.
+func nullStringValue(ns NullString) string {
 	if ns.Valid {
 		return ns.String
 	}

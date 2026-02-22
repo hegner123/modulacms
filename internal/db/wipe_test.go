@@ -1109,7 +1109,7 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (29 tables total):
+	// Drop order (31 tables total):
 	//  0: admin_datatypes_fields
 	//  1: datatypes_fields
 	//  2: role_permissions
@@ -1133,32 +1133,35 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// 20: tokens
 	// 21: users
 	// 22: media_dimensions
-	// 23: roles
-	// 24: permissions
-	// 25: backup_sets
-	// 26: backup_verifications
-	// 27: backups
-	// 28: change_events
+	// 23: field_types
+	// 24: admin_field_types
+	// 25: roles
+	// 26: permissions
+	// 27: backup_sets
+	// 28: backup_verifications
+	// 29: backups
+	// 30: change_events
 
-	// CreateAllTables creates 27 tables. DropAllTables tries to drop 29
+	// CreateAllTables creates 29 tables. DropAllTables tries to drop 31
 	// (4 infrastructure tables use DROP TABLE IF EXISTS, so they never error).
-	// The 27 created tables minus the pre-dropped one minus the ones
+	// The 29 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
 	//
-	// Drop order positions (0-based) for the 25 non-IF-EXISTS tables:
-	//  0: admin_datatypes_fields   13: routes
-	//  1: datatypes_fields         14: admin_routes
-	//  2: role_permissions         15: media
-	//  3: admin_content_relations  16: tables
-	//  4: content_relations        17: sessions
-	//  5: admin_content_fields     18: user_ssh_keys
-	//  6: content_fields           19: user_oauth
-	//  7: admin_content_data       20: tokens
-	//  8: content_data             21: users
-	//  9: admin_fields             22: media_dimensions
-	// 10: fields                   23: roles
-	// 11: admin_datatypes          24: permissions
-	// 12: datatypes
+	// Drop order positions (0-based) for the 27 non-IF-EXISTS tables:
+	//  0: admin_datatypes_fields   14: admin_routes
+	//  1: datatypes_fields         15: media
+	//  2: role_permissions         16: tables
+	//  3: admin_content_relations  17: sessions
+	//  4: content_relations        18: user_ssh_keys
+	//  5: admin_content_fields     19: user_oauth
+	//  6: content_fields           20: tokens
+	//  7: admin_content_data       21: users
+	//  8: content_data             22: media_dimensions
+	//  9: admin_fields             23: field_types
+	// 10: fields                   24: admin_field_types
+	// 11: admin_datatypes          25: roles
+	// 12: datatypes                26: permissions
+	// 13: routes
 	// Then 4 IF EXISTS drops: backup_sets, backup_verifications, backups, change_events
 
 	tests := []struct {
@@ -1169,26 +1172,26 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	}{
 		{
 			// Pre-drop first table. Error fires immediately. No tables dropped.
-			// Remaining = 27 created - 1 pre-dropped = 26
+			// Remaining = 29 created - 1 pre-dropped = 28
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_datatypes_fields",
 			dropIndex:     0,
-			wantRemaining: 26,
+			wantRemaining: 28,
 		},
 		{
 			// Pre-drop users (position 21). Tables 0-20 dropped successfully (21 tables).
-			// Remaining = 27 created - 1 pre-dropped - 21 dropped = 5
+			// Remaining = 29 created - 1 pre-dropped - 21 dropped = 7
 			name:          "fail_at_users",
 			preDropTable:  "users",
 			dropIndex:     21,
-			wantRemaining: 5,
+			wantRemaining: 7,
 		},
 		{
 			// Pre-drop change_events. But it uses DROP TABLE IF EXISTS, so no error.
-			// All 27 tables get dropped successfully. Remaining = 0
+			// All 29 tables get dropped successfully. Remaining = 0
 			name:          "fail_at_last_table",
 			preDropTable:  "change_events",
-			dropIndex:     28,
+			dropIndex:     30,
 			wantRemaining: 0,
 		},
 	}

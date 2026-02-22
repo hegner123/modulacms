@@ -24,7 +24,7 @@ type ContentFields struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 }
@@ -35,7 +35,7 @@ type CreateContentFieldParams struct {
 	ContentDataID types.NullableContentID `json:"content_data_id"`
 	FieldID       types.NullableFieldID   `json:"field_id"`
 	FieldValue    string                  `json:"field_value"`
-	AuthorID      types.NullableUserID    `json:"author_id"`
+	AuthorID      types.UserID            `json:"author_id"`
 	DateCreated   types.Timestamp         `json:"date_created"`
 	DateModified  types.Timestamp         `json:"date_modified"`
 }
@@ -46,7 +46,7 @@ type UpdateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`

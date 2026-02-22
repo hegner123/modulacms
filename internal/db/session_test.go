@@ -43,10 +43,10 @@ func sessionTestFixture() (Sessions, types.SessionID, types.NullableUserID, type
 		UserID:      userID,
 		DateCreated:   ts,
 		ExpiresAt:   ts,
-		LastAccess:  sql.NullString{String: "2025-08-15T10:30:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "192.168.1.100", Valid: true},
-		UserAgent:   sql.NullString{String: "Mozilla/5.0 (Macintosh)", Valid: true},
-		SessionData: sql.NullString{String: `{"theme":"dark"}`, Valid: true},
+		LastAccess:  NewNullString("2025-08-15T10:30:00Z"),
+		IpAddress:   NewNullString("192.168.1.100"),
+		UserAgent:   NewNullString("Mozilla/5.0 (Macintosh)"),
+		SessionData: NewNullString(`{"theme":"dark"}`),
 	}
 	return s, sessionID, userID, ts
 }
@@ -59,10 +59,10 @@ func sessionCreateParams() CreateSessionParams {
 		UserID:      userID,
 		DateCreated:   ts,
 		ExpiresAt:   ts,
-		LastAccess:  sql.NullString{String: "2025-09-01T12:00:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "10.0.0.1", Valid: true},
-		UserAgent:   sql.NullString{String: "curl/7.88.1", Valid: true},
-		SessionData: sql.NullString{String: `{"role":"admin"}`, Valid: true},
+		LastAccess:  NewNullString("2025-09-01T12:00:00Z"),
+		IpAddress:   NewNullString("10.0.0.1"),
+		UserAgent:   NewNullString("curl/7.88.1"),
+		SessionData: NewNullString(`{"role":"admin"}`),
 	}
 }
 
@@ -75,10 +75,10 @@ func sessionUpdateParams() UpdateSessionParams {
 		UserID:      userID,
 		DateCreated:   ts,
 		ExpiresAt:   ts,
-		LastAccess:  sql.NullString{String: "2025-10-20T08:45:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "172.16.0.50", Valid: true},
-		UserAgent:   sql.NullString{String: "PostmanRuntime/7.32", Valid: true},
-		SessionData: sql.NullString{String: `{"lang":"en"}`, Valid: true},
+		LastAccess:  NewNullString("2025-10-20T08:45:00Z"),
+		IpAddress:   NewNullString("172.16.0.50"),
+		UserAgent:   NewNullString("PostmanRuntime/7.32"),
+		SessionData: NewNullString(`{"lang":"en"}`),
 		SessionID:   sessionID,
 	}
 }
@@ -146,10 +146,10 @@ func TestMapStringSession_NullOptionalFields(t *testing.T) {
 	// must NOT leak through; MapStringSession returns "" for invalid NullStrings.
 	s := Sessions{
 		SessionID:   types.NewSessionID(),
-		LastAccess:  sql.NullString{String: "should-not-appear", Valid: false},
-		IpAddress:   sql.NullString{String: "should-not-appear", Valid: false},
-		UserAgent:   sql.NullString{String: "should-not-appear", Valid: false},
-		SessionData: sql.NullString{String: "should-not-appear", Valid: false},
+		LastAccess:  NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		IpAddress:   NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		UserAgent:   NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		SessionData: NullString{sql.NullString{String: "should-not-appear", Valid: false}},
 	}
 
 	got := MapStringSession(s)
@@ -307,16 +307,16 @@ func TestDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
 	}
-	if got.LastAccess != params.LastAccess {
+	if got.LastAccess != params.LastAccess.NullString {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, params.LastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 }
@@ -339,9 +339,9 @@ func TestDatabase_MapCreateSessionParams_NullOptionalFields(t *testing.T) {
 	d := Database{}
 	params := CreateSessionParams{
 		UserID:     types.NullableUserID{Valid: false},
-		LastAccess: sql.NullString{Valid: false},
-		IpAddress:  sql.NullString{Valid: false},
-		UserAgent:  sql.NullString{Valid: false},
+		LastAccess: NullString{},
+		IpAddress:  NullString{},
+		UserAgent:  NullString{},
 	}
 
 	got := d.MapCreateSessionParams(params)
@@ -378,16 +378,16 @@ func TestDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.ExpiresAt != params.ExpiresAt {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, params.ExpiresAt)
 	}
-	if got.LastAccess != params.LastAccess {
+	if got.LastAccess != params.LastAccess.NullString {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, params.LastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 	// SessionID is the WHERE clause identifier -- must be preserved
@@ -448,7 +448,7 @@ func TestMysqlDatabase_MapSession_AllFields(t *testing.T) {
 	}
 	// MySQL maps LastAccess via StringToNullString(a.LastAccess.String())
 	// The time.Time.String() representation becomes the NullString value.
-	expectedLastAccess := StringToNullString(lastAccess.String())
+	expectedLastAccess := NullString{StringToNullString(lastAccess.String())}
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
@@ -502,13 +502,13 @@ func TestMysqlDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 }
@@ -552,13 +552,13 @@ func TestMysqlDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 }
@@ -604,7 +604,7 @@ func TestPsqlDatabase_MapSession_AllFields(t *testing.T) {
 		t.Errorf("ExpiresAt = %v, want %v", got.ExpiresAt, ts)
 	}
 	// PostgreSQL maps LastAccess via StringToNullString(NullTimeToString(a.LastAccess))
-	expectedLastAccess := StringToNullString(NullTimeToString(lastAccess))
+	expectedLastAccess := NullString{StringToNullString(NullTimeToString(lastAccess))}
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
@@ -675,13 +675,13 @@ func TestPsqlDatabase_MapCreateSessionParams_GeneratesID(t *testing.T) {
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 }
@@ -725,13 +725,13 @@ func TestPsqlDatabase_MapUpdateSessionParams_AllFields(t *testing.T) {
 	if got.LastAccess != expectedLastAccess {
 		t.Errorf("LastAccess = %v, want %v", got.LastAccess, expectedLastAccess)
 	}
-	if got.IpAddress != params.IpAddress {
+	if got.IpAddress != params.IpAddress.NullString {
 		t.Errorf("IpAddress = %v, want %v", got.IpAddress, params.IpAddress)
 	}
-	if got.UserAgent != params.UserAgent {
+	if got.UserAgent != params.UserAgent.NullString {
 		t.Errorf("UserAgent = %v, want %v", got.UserAgent, params.UserAgent)
 	}
-	if got.SessionData != params.SessionData {
+	if got.SessionData != params.SessionData.NullString {
 		t.Errorf("SessionData = %v, want %v", got.SessionData, params.SessionData)
 	}
 }

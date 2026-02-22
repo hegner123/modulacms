@@ -61,6 +61,16 @@ func templateFuncMap() template.FuncMap {
 			return e.IDField
 		},
 
+		// isNullWrapper returns true if the type is a JSON-aware null wrapper
+		// (NullString, NullInt32, NullInt64, NullTime) that embeds its sql.Null* counterpart.
+		"isNullWrapper": func(typ string) bool {
+			switch typ {
+			case "NullString", "NullInt32", "NullInt64", "NullTime":
+				return true
+			}
+			return false
+		},
+
 		// stringExpr returns the Go expression to convert a field to string based on StringConvert value.
 		"stringExpr": func(convert, expr string) string {
 			switch convert {
@@ -74,8 +84,14 @@ func templateFuncMap() template.FuncMap {
 				return "string(" + expr + ")"
 			case "nullToString":
 				return "utility.NullToString(" + expr + ")"
+			case "wrapperNullToString":
+				return "utility.NullToString(" + expr + ".NullString)"
 			case "nullToEmpty":
 				return "NullStringToEmpty(" + expr + ")"
+			case "wrapperNullToEmpty":
+				return "NullStringToEmpty(" + expr + ".NullString)"
+			case "wrapperNullInt64ToString":
+				return "utility.NullToString(" + expr + ".NullInt64)"
 			case "nullableIDToEmpty":
 				return "nullableIDToEmpty(" + expr + ")"
 			case "sprintfBool":

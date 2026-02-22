@@ -2,7 +2,6 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -17,38 +16,38 @@ import (
 
 // MediaDimensions represents a mediaDimension record in the database.
 type MediaDimensions struct {
-	MdID        string         `json:"md_id"`
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        string     `json:"md_id"`
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
 }
 
 // CreateMediaDimensionParams contains parameters for creating a new mediaDimension.
 type CreateMediaDimensionParams struct {
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
 }
 
 // UpdateMediaDimensionParams contains parameters for updating an existing mediaDimension.
 type UpdateMediaDimensionParams struct {
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
-	MdID        string         `json:"md_id"`
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
+	MdID        string     `json:"md_id"`
 }
 
 // MapStringMediaDimension converts MediaDimensions to StringMediaDimensions for TUI display.
 func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 	return StringMediaDimensions{
 		MdID:        a.MdID,
-		Label:       utility.NullToString(a.Label),
-		Width:       utility.NullToString(a.Width),
-		Height:      utility.NullToString(a.Height),
-		AspectRatio: utility.NullToString(a.AspectRatio),
+		Label:       utility.NullToString(a.Label.NullString),
+		Width:       utility.NullToString(a.Width.NullInt64),
+		Height:      utility.NullToString(a.Height.NullInt64),
+		AspectRatio: utility.NullToString(a.AspectRatio.NullString),
 	}
 }
 

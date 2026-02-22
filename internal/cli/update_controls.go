@@ -80,6 +80,10 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.PluginDetailControls(msg)
 	case QUICKSTARTPAGE:
 		return m.QuickstartControls(msg)
+	case FIELDTYPES:
+		return m.FieldTypesControls(msg)
+	case ADMINFIELDTYPES:
+		return m.AdminFieldTypesControls(msg)
 
 	}
 	return m, nil
@@ -243,6 +247,10 @@ func (m Model) BasicCMSControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, NavigateToPageCmd(m.PageMap[ADMINDATATYPES])
 			case ADMINCONTENT:
 				return m, NavigateToPageCmd(m.PageMap[ADMINCONTENT])
+			case FIELDTYPES:
+				return m, NavigateToPageCmd(m.PageMap[FIELDTYPES])
+			case ADMINFIELDTYPES:
+				return m, NavigateToPageCmd(m.PageMap[ADMINFIELDTYPES])
 			default:
 				return m, nil
 			}

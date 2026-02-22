@@ -160,10 +160,10 @@ func TestMapStringSession(t *testing.T) {
 		UserID:      userID,
 		DateCreated:   ts,
 		ExpiresAt:   ts,
-		LastAccess:  sql.NullString{String: "2024-06-15T13:00:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "192.168.1.1", Valid: true},
-		UserAgent:   sql.NullString{String: "Mozilla/5.0", Valid: true},
-		SessionData: sql.NullString{String: "{}", Valid: true},
+		LastAccess:  NewNullString("2024-06-15T13:00:00Z"),
+		IpAddress:   NewNullString("192.168.1.1"),
+		UserAgent:   NewNullString("Mozilla/5.0"),
+		SessionData: NewNullString("{}"),
 	}
 
 	got := MapStringSession(session)
@@ -192,10 +192,10 @@ func TestMapStringSession_NullFields(t *testing.T) {
 	t.Parallel()
 	// When NullString fields are not valid, they should be empty strings
 	session := Sessions{
-		LastAccess:  sql.NullString{Valid: false},
-		IpAddress:   sql.NullString{Valid: false},
-		UserAgent:   sql.NullString{Valid: false},
-		SessionData: sql.NullString{Valid: false},
+		LastAccess:  NullString{},
+		IpAddress:   NullString{},
+		UserAgent:   NullString{},
+		SessionData: NullString{},
 	}
 
 	got := MapStringSession(session)
@@ -971,10 +971,10 @@ func TestDatabase_MapCreateSessionParams(t *testing.T) {
 		UserID:      userID,
 		DateCreated:   ts,
 		ExpiresAt:   ts,
-		LastAccess:  sql.NullString{String: "2024-06-15T12:00:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "127.0.0.1", Valid: true},
-		UserAgent:   sql.NullString{String: "test-agent", Valid: true},
-		SessionData: sql.NullString{String: "{}", Valid: true},
+		LastAccess:  NewNullString("2024-06-15T12:00:00Z"),
+		IpAddress:   NewNullString("127.0.0.1"),
+		UserAgent:   NewNullString("test-agent"),
+		SessionData: NewNullString("{}"),
 	}
 
 	got := d.MapCreateSessionParams(input)

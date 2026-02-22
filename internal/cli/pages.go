@@ -43,6 +43,8 @@ const (
 	PLUGINDETAILPAGE
 	CONFIGCATEGORYPAGE
 	QUICKSTARTPAGE
+	FIELDTYPES
+	ADMINFIELDTYPES
 )
 
 // NewDatatypePage creates a new datatype page with the specified label.
@@ -107,6 +109,8 @@ func InitPages() *map[PageIndex]Page {
 	pluginDetailPage := NewPage(PLUGINDETAILPAGE, "Plugin Detail")
 	configCategoryPage := NewPage(CONFIGCATEGORYPAGE, "Config Category")
 	quickstartPage := NewPage(QUICKSTARTPAGE, "Quickstart")
+	fieldTypesPage := NewPage(FIELDTYPES, "Field Types")
+	adminFieldTypesPage := NewPage(ADMINFIELDTYPES, "Admin Field Types")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -140,5 +144,7 @@ func InitPages() *map[PageIndex]Page {
 	p[PLUGINDETAILPAGE] = pluginDetailPage
 	p[CONFIGCATEGORYPAGE] = configCategoryPage
 	p[QUICKSTARTPAGE] = quickstartPage
+	p[FIELDTYPES] = fieldTypesPage
+	p[ADMINFIELDTYPES] = adminFieldTypesPage
 	return &p
 }

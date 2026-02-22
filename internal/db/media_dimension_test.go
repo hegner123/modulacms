@@ -36,10 +36,10 @@ var (
 func mdTestFixture() MediaDimensions {
 	return MediaDimensions{
 		MdID:        "test-md-id-001",
-		Label:       sql.NullString{String: "Thumbnail", Valid: true},
-		Width:       sql.NullInt64{Int64: 1920, Valid: true},
-		Height:      sql.NullInt64{Int64: 1080, Valid: true},
-		AspectRatio: sql.NullString{String: "16:9", Valid: true},
+		Label:       NewNullString("Thumbnail"),
+		Width:       NewNullInt64(1920),
+		Height:      NewNullInt64(1080),
+		AspectRatio: NewNullString("16:9"),
 	}
 }
 
@@ -67,20 +67,20 @@ func mdUpdateFormParams() UpdateMediaDimensionFormParams {
 // mdCreateParams returns a CreateMediaDimensionParams with all fields set to valid values.
 func mdCreateParams() CreateMediaDimensionParams {
 	return CreateMediaDimensionParams{
-		Label:       sql.NullString{String: "Hero", Valid: true},
-		Width:       sql.NullInt64{Int64: 2560, Valid: true},
-		Height:      sql.NullInt64{Int64: 1440, Valid: true},
-		AspectRatio: sql.NullString{String: "16:9", Valid: true},
+		Label:       NewNullString("Hero"),
+		Width:       NewNullInt64(2560),
+		Height:      NewNullInt64(1440),
+		AspectRatio: NewNullString("16:9"),
 	}
 }
 
 // mdUpdateParams returns an UpdateMediaDimensionParams with all fields set to valid values.
 func mdUpdateParams() UpdateMediaDimensionParams {
 	return UpdateMediaDimensionParams{
-		Label:       sql.NullString{String: "Updated Hero", Valid: true},
-		Width:       sql.NullInt64{Int64: 3840, Valid: true},
-		Height:      sql.NullInt64{Int64: 2160, Valid: true},
-		AspectRatio: sql.NullString{String: "16:9", Valid: true},
+		Label:       NewNullString("Updated Hero"),
+		Width:       NewNullInt64(3840),
+		Height:      NewNullInt64(2160),
+		AspectRatio: NewNullString("16:9"),
 		MdID:        "update-hero-md-001",
 	}
 }
@@ -279,10 +279,10 @@ func TestMapStringMediaDimension_NullFields(t *testing.T) {
 	// Fields with Valid=false should render as "null" regardless of the underlying value.
 	md := MediaDimensions{
 		MdID:        "some-id",
-		Label:       sql.NullString{String: "should-not-appear", Valid: false},
-		Width:       sql.NullInt64{Int64: 9999, Valid: false},
-		Height:      sql.NullInt64{Int64: 8888, Valid: false},
-		AspectRatio: sql.NullString{String: "should-not-appear", Valid: false},
+		Label:       NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Width:       NullInt64{sql.NullInt64{Int64: 9999, Valid: false}},
+		Height:      NullInt64{sql.NullInt64{Int64: 8888, Valid: false}},
+		AspectRatio: NullString{sql.NullString{String: "should-not-appear", Valid: false}},
 	}
 
 	got := MapStringMediaDimension(md)
@@ -314,8 +314,8 @@ func TestMapStringMediaDimension_ZeroWidthHeight(t *testing.T) {
 	t.Parallel()
 	// When Width/Height are valid but zero, NullToString should return "0"
 	md := MediaDimensions{
-		Width:  sql.NullInt64{Int64: 0, Valid: true},
-		Height: sql.NullInt64{Int64: 0, Valid: true},
+		Width:  NewNullInt64(0),
+		Height: NewNullInt64(0),
 	}
 
 	got := MapStringMediaDimension(md)
@@ -478,6 +478,7 @@ func TestDatabase_MapMediaDimension_AllFields(t *testing.T) {
 		AspectRatio: sql.NullString{String: "4:3", Valid: true},
 	}
 
+
 	got := d.MapMediaDimension(input)
 
 	if got.MdID != "sqlite-md-001" {
@@ -526,8 +527,8 @@ func TestDatabase_MapMediaDimension_NullDimensions(t *testing.T) {
 	input := mdb.MediaDimensions{
 		MdID:        "sqlite-partial",
 		Label:       sql.NullString{String: "Icon", Valid: true},
-		Width:       sql.NullInt64{Valid: false},
-		Height:      sql.NullInt64{Valid: false},
+		Width:       sql.NullInt64{},
+		Height:      sql.NullInt64{},
 		AspectRatio: sql.NullString{String: "1:1", Valid: true},
 	}
 
@@ -560,16 +561,16 @@ func TestDatabase_MapCreateMediaDimensionParams_GeneratesID(t *testing.T) {
 	if got.MdID == "" {
 		t.Fatal("expected non-empty MdID to be generated")
 	}
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.Width != params.Width {
+	if got.Width != params.Width.NullInt64 {
 		t.Errorf("Width = %v, want %v", got.Width, params.Width)
 	}
-	if got.Height != params.Height {
+	if got.Height != params.Height.NullInt64 {
 		t.Errorf("Height = %v, want %v", got.Height, params.Height)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 }
@@ -612,16 +613,16 @@ func TestDatabase_MapUpdateMediaDimensionParams_AllFields(t *testing.T) {
 
 	got := d.MapUpdateMediaDimensionParams(params)
 
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.Width != params.Width {
+	if got.Width != params.Width.NullInt64 {
 		t.Errorf("Width = %v, want %v", got.Width, params.Width)
 	}
-	if got.Height != params.Height {
+	if got.Height != params.Height.NullInt64 {
 		t.Errorf("Height = %v, want %v", got.Height, params.Height)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 	// MdID is the WHERE clause identifier and must be preserved
@@ -729,10 +730,10 @@ func TestMysqlDatabase_MapCreateMediaDimensionParams_GeneratesID(t *testing.T) {
 	if got.MdID == "" {
 		t.Fatal("expected non-empty MdID to be generated")
 	}
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 	// Width/Height should be converted from int64 to NullInt32
@@ -766,10 +767,10 @@ func TestMysqlDatabase_MapUpdateMediaDimensionParams_AllFields(t *testing.T) {
 
 	got := d.MapUpdateMediaDimensionParams(params)
 
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 	if got.MdID != params.MdID {
@@ -863,10 +864,10 @@ func TestPsqlDatabase_MapCreateMediaDimensionParams_GeneratesID(t *testing.T) {
 	if got.MdID == "" {
 		t.Fatal("expected non-empty MdID to be generated")
 	}
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 	if got.Width.Int32 != int32(params.Width.Int64) {
@@ -899,10 +900,10 @@ func TestPsqlDatabase_MapUpdateMediaDimensionParams_AllFields(t *testing.T) {
 
 	got := d.MapUpdateMediaDimensionParams(params)
 
-	if got.Label != params.Label {
+	if got.Label != params.Label.NullString {
 		t.Errorf("Label = %v, want %v", got.Label, params.Label)
 	}
-	if got.AspectRatio != params.AspectRatio {
+	if got.AspectRatio != params.AspectRatio.NullString {
 		t.Errorf("AspectRatio = %v, want %v", got.AspectRatio, params.AspectRatio)
 	}
 	if got.MdID != params.MdID {
@@ -1725,10 +1726,10 @@ func TestMediaDimensionsHistoryEntry_PopulatedValues(t *testing.T) {
 	t.Parallel()
 	h := MediaDimensionsHistoryEntry{
 		MdID:        "history-md-001",
-		Label:       sql.NullString{String: "History Label", Valid: true},
-		Width:       sql.NullInt64{Int64: 512, Valid: true},
-		Height:      sql.NullInt64{Int64: 384, Valid: true},
-		AspectRatio: sql.NullString{String: "4:3", Valid: true},
+		Label:       NewNullString("History Label"),
+		Width:       NewNullInt64(512),
+		Height:      NewNullInt64(384),
+		AspectRatio: NewNullString("4:3"),
 	}
 
 	if h.MdID != "history-md-001" {

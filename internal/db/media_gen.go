@@ -21,16 +21,16 @@ import (
 // Media represents a media record in the database.
 type Media struct {
 	MediaID      types.MediaID         `json:"media_id"`
-	Name         sql.NullString        `json:"name"`
-	DisplayName  sql.NullString        `json:"display_name"`
-	Alt          sql.NullString        `json:"alt"`
-	Caption      sql.NullString        `json:"caption"`
-	Description  sql.NullString        `json:"description"`
-	Class        sql.NullString        `json:"class"`
-	Mimetype     sql.NullString        `json:"mimetype"`
-	Dimensions   sql.NullString        `json:"dimensions"`
+	Name         NullString            `json:"name"`
+	DisplayName  NullString            `json:"display_name"`
+	Alt          NullString            `json:"alt"`
+	Caption      NullString            `json:"caption"`
+	Description  NullString            `json:"description"`
+	Class        NullString            `json:"class"`
+	Mimetype     NullString            `json:"mimetype"`
+	Dimensions   NullString            `json:"dimensions"`
 	URL          types.URL             `json:"url"`
-	Srcset       sql.NullString        `json:"srcset"`
+	Srcset       NullString            `json:"srcset"`
 	FocalX       types.NullableFloat64 `json:"focal_x"`
 	FocalY       types.NullableFloat64 `json:"focal_y"`
 	AuthorID     types.NullableUserID  `json:"author_id"`
@@ -40,16 +40,16 @@ type Media struct {
 
 // CreateMediaParams contains parameters for creating a new media.
 type CreateMediaParams struct {
-	Name         sql.NullString        `json:"name"`
-	DisplayName  sql.NullString        `json:"display_name"`
-	Alt          sql.NullString        `json:"alt"`
-	Caption      sql.NullString        `json:"caption"`
-	Description  sql.NullString        `json:"description"`
-	Class        sql.NullString        `json:"class"`
-	Mimetype     sql.NullString        `json:"mimetype"`
-	Dimensions   sql.NullString        `json:"dimensions"`
+	Name         NullString            `json:"name"`
+	DisplayName  NullString            `json:"display_name"`
+	Alt          NullString            `json:"alt"`
+	Caption      NullString            `json:"caption"`
+	Description  NullString            `json:"description"`
+	Class        NullString            `json:"class"`
+	Mimetype     NullString            `json:"mimetype"`
+	Dimensions   NullString            `json:"dimensions"`
 	URL          types.URL             `json:"url"`
-	Srcset       sql.NullString        `json:"srcset"`
+	Srcset       NullString            `json:"srcset"`
 	FocalX       types.NullableFloat64 `json:"focal_x"`
 	FocalY       types.NullableFloat64 `json:"focal_y"`
 	AuthorID     types.NullableUserID  `json:"author_id"`
@@ -59,16 +59,16 @@ type CreateMediaParams struct {
 
 // UpdateMediaParams contains parameters for updating an existing media.
 type UpdateMediaParams struct {
-	Name         sql.NullString        `json:"name"`
-	DisplayName  sql.NullString        `json:"display_name"`
-	Alt          sql.NullString        `json:"alt"`
-	Caption      sql.NullString        `json:"caption"`
-	Description  sql.NullString        `json:"description"`
-	Class        sql.NullString        `json:"class"`
-	Mimetype     sql.NullString        `json:"mimetype"`
-	Dimensions   sql.NullString        `json:"dimensions"`
+	Name         NullString            `json:"name"`
+	DisplayName  NullString            `json:"display_name"`
+	Alt          NullString            `json:"alt"`
+	Caption      NullString            `json:"caption"`
+	Description  NullString            `json:"description"`
+	Class        NullString            `json:"class"`
+	Mimetype     NullString            `json:"mimetype"`
+	Dimensions   NullString            `json:"dimensions"`
 	URL          types.URL             `json:"url"`
-	Srcset       sql.NullString        `json:"srcset"`
+	Srcset       NullString            `json:"srcset"`
 	FocalX       types.NullableFloat64 `json:"focal_x"`
 	FocalY       types.NullableFloat64 `json:"focal_y"`
 	AuthorID     types.NullableUserID  `json:"author_id"`
@@ -81,16 +81,16 @@ type UpdateMediaParams struct {
 func MapStringMedia(a Media) StringMedia {
 	return StringMedia{
 		MediaID:      a.MediaID.String(),
-		Name:         utility.NullToString(a.Name),
-		DisplayName:  utility.NullToString(a.DisplayName),
-		Alt:          utility.NullToString(a.Alt),
-		Caption:      utility.NullToString(a.Caption),
-		Description:  utility.NullToString(a.Description),
-		Class:        utility.NullToString(a.Class),
-		Mimetype:     utility.NullToString(a.Mimetype),
-		Dimensions:   utility.NullToString(a.Dimensions),
+		Name:         utility.NullToString(a.Name.NullString),
+		DisplayName:  utility.NullToString(a.DisplayName.NullString),
+		Alt:          utility.NullToString(a.Alt.NullString),
+		Caption:      utility.NullToString(a.Caption.NullString),
+		Description:  utility.NullToString(a.Description.NullString),
+		Class:        utility.NullToString(a.Class.NullString),
+		Mimetype:     utility.NullToString(a.Mimetype.NullString),
+		Dimensions:   utility.NullToString(a.Dimensions.NullString),
 		URL:          a.URL.String(),
-		Srcset:       utility.NullToString(a.Srcset),
+		Srcset:       utility.NullToString(a.Srcset.NullString),
 		FocalX:       fmt.Sprintf("%v", a.FocalX.Float64),
 		FocalY:       fmt.Sprintf("%v", a.FocalY.Float64),
 		AuthorID:     a.AuthorID.String(),
@@ -109,16 +109,16 @@ func MapStringMedia(a Media) StringMedia {
 func (d Database) MapMedia(a mdb.Media) Media {
 	return Media{
 		MediaID:      a.MediaID,
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         NullString{a.Name},
+		DisplayName:  NullString{a.DisplayName},
+		Alt:          NullString{a.Alt},
+		Caption:      NullString{a.Caption},
+		Description:  NullString{a.Description},
+		Class:        NullString{a.Class},
+		Mimetype:     NullString{a.Mimetype},
+		Dimensions:   NullString{a.Dimensions},
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       NullString{a.Srcset},
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -131,16 +131,16 @@ func (d Database) MapMedia(a mdb.Media) Media {
 func (d Database) MapCreateMediaParams(a CreateMediaParams) mdb.CreateMediaParams {
 	return mdb.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -152,16 +152,16 @@ func (d Database) MapCreateMediaParams(a CreateMediaParams) mdb.CreateMediaParam
 // MapUpdateMediaParams converts wrapper params to sqlc-generated SQLite params.
 func (d Database) MapUpdateMediaParams(a UpdateMediaParams) mdb.UpdateMediaParams {
 	return mdb.UpdateMediaParams{
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -293,16 +293,16 @@ func (d Database) GetMediaByURL(url types.URL) (*Media, error) {
 func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 	return Media{
 		MediaID:      a.MediaID,
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         NullString{a.Name},
+		DisplayName:  NullString{a.DisplayName},
+		Alt:          NullString{a.Alt},
+		Caption:      NullString{a.Caption},
+		Description:  NullString{a.Description},
+		Class:        NullString{a.Class},
+		Mimetype:     NullString{a.Mimetype},
+		Dimensions:   NullString{a.Dimensions},
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       NullString{a.Srcset},
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -315,16 +315,16 @@ func (d MysqlDatabase) MapMedia(a mdbm.Media) Media {
 func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMediaParams {
 	return mdbm.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -336,16 +336,16 @@ func (d MysqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbm.CreateMedi
 // MapUpdateMediaParams converts wrapper params to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbm.UpdateMediaParams {
 	return mdbm.UpdateMediaParams{
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -477,16 +477,16 @@ func (d MysqlDatabase) GetMediaByURL(url types.URL) (*Media, error) {
 func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 	return Media{
 		MediaID:      a.MediaID,
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         NullString{a.Name},
+		DisplayName:  NullString{a.DisplayName},
+		Alt:          NullString{a.Alt},
+		Caption:      NullString{a.Caption},
+		Description:  NullString{a.Description},
+		Class:        NullString{a.Class},
+		Mimetype:     NullString{a.Mimetype},
+		Dimensions:   NullString{a.Dimensions},
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       NullString{a.Srcset},
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -499,16 +499,16 @@ func (d PsqlDatabase) MapMedia(a mdbp.Media) Media {
 func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMediaParams {
 	return mdbp.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -520,16 +520,16 @@ func (d PsqlDatabase) MapCreateMediaParams(a CreateMediaParams) mdbp.CreateMedia
 // MapUpdateMediaParams converts wrapper params to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapUpdateMediaParams(a UpdateMediaParams) mdbp.UpdateMediaParams {
 	return mdbp.UpdateMediaParams{
-		Name:         a.Name,
-		DisplayName:  a.DisplayName,
-		Alt:          a.Alt,
-		Caption:      a.Caption,
-		Description:  a.Description,
-		Class:        a.Class,
-		Mimetype:     a.Mimetype,
-		Dimensions:   a.Dimensions,
+		Name:         a.Name.NullString,
+		DisplayName:  a.DisplayName.NullString,
+		Alt:          a.Alt.NullString,
+		Caption:      a.Caption.NullString,
+		Description:  a.Description.NullString,
+		Class:        a.Class.NullString,
+		Mimetype:     a.Mimetype.NullString,
+		Dimensions:   a.Dimensions.NullString,
 		URL:          a.URL,
-		Srcset:       a.Srcset,
+		Srcset:       a.Srcset.NullString,
 		FocalX:       a.FocalX,
 		FocalY:       a.FocalY,
 		AuthorID:     a.AuthorID,
@@ -690,16 +690,16 @@ func (c NewMediaCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Media, e
 	queries := mdb.New(tx)
 	return queries.CreateMedia(ctx, mdb.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
@@ -755,16 +755,16 @@ func (c UpdateMediaCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Med
 func (c UpdateMediaCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateMedia(ctx, mdb.UpdateMediaParams{
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
@@ -862,16 +862,16 @@ func (c NewMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Me
 	queries := mdbm.New(tx)
 	params := mdbm.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
@@ -931,16 +931,16 @@ func (c UpdateMediaCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (md
 func (c UpdateMediaCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateMedia(ctx, mdbm.UpdateMediaParams{
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
@@ -1038,16 +1038,16 @@ func (c NewMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Med
 	queries := mdbp.New(tx)
 	return queries.CreateMedia(ctx, mdbp.CreateMediaParams{
 		MediaID:      types.NewMediaID(),
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,
@@ -1103,16 +1103,16 @@ func (c UpdateMediaCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdb
 func (c UpdateMediaCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateMedia(ctx, mdbp.UpdateMediaParams{
-		Name:         c.params.Name,
-		DisplayName:  c.params.DisplayName,
-		Alt:          c.params.Alt,
-		Caption:      c.params.Caption,
-		Description:  c.params.Description,
-		Class:        c.params.Class,
-		Mimetype:     c.params.Mimetype,
-		Dimensions:   c.params.Dimensions,
+		Name:         c.params.Name.NullString,
+		DisplayName:  c.params.DisplayName.NullString,
+		Alt:          c.params.Alt.NullString,
+		Caption:      c.params.Caption.NullString,
+		Description:  c.params.Description.NullString,
+		Class:        c.params.Class.NullString,
+		Mimetype:     c.params.Mimetype.NullString,
+		Dimensions:   c.params.Dimensions.NullString,
 		URL:          c.params.URL,
-		Srcset:       c.params.Srcset,
+		Srcset:       c.params.Srcset.NullString,
 		FocalX:       c.params.FocalX,
 		FocalY:       c.params.FocalY,
 		AuthorID:     c.params.AuthorID,

@@ -118,4 +118,12 @@ export const queryKeys = {
     all: ['pluginHooks'] as const,
     list: () => [...queryKeys.pluginHooks.all, 'list'] as const,
   },
+  fieldTypes: {
+    all: ['fieldTypes'] as const,
+    list: () => [...queryKeys.fieldTypes.all, 'list'] as const,
+  },
+  adminFieldTypes: {
+    all: ['adminFieldTypes'] as const,
+    list: () => [...queryKeys.adminFieldTypes.all, 'list'] as const,
+  },
 } as const

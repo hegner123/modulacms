@@ -264,3 +264,133 @@ type AdminContentFieldDisplay struct {
 	Type                string
 	Value               string
 }
+
+// =============================================================================
+// FIELD TYPES MESSAGES
+// =============================================================================
+
+// FieldTypesFetchMsg requests fetching all field types.
+type FieldTypesFetchMsg struct{}
+
+// FieldTypesFetchResultsMsg returns fetched field types.
+type FieldTypesFetchResultsMsg struct {
+	Data []db.FieldTypes
+}
+
+// FieldTypesSet sets the field types list.
+type FieldTypesSet struct {
+	FieldTypes []db.FieldTypes
+}
+
+// CreateFieldTypeFromDialogRequestMsg requests creating a field type from dialog input.
+type CreateFieldTypeFromDialogRequestMsg struct {
+	Type  string
+	Label string
+}
+
+// UpdateFieldTypeFromDialogRequestMsg requests updating a field type from dialog input.
+type UpdateFieldTypeFromDialogRequestMsg struct {
+	FieldTypeID string
+	Type        string
+	Label       string
+}
+
+// DeleteFieldTypeRequestMsg requests deleting a field type.
+type DeleteFieldTypeRequestMsg struct {
+	FieldTypeID types.FieldTypeID
+}
+
+// FieldTypeCreatedFromDialogMsg signals successful field type creation.
+type FieldTypeCreatedFromDialogMsg struct {
+	FieldTypeID types.FieldTypeID
+	Type        string
+	Label       string
+}
+
+// FieldTypeUpdatedFromDialogMsg signals successful field type update.
+type FieldTypeUpdatedFromDialogMsg struct {
+	FieldTypeID types.FieldTypeID
+	Type        string
+	Label       string
+}
+
+// FieldTypeDeletedMsg signals successful field type deletion.
+type FieldTypeDeletedMsg struct {
+	FieldTypeID types.FieldTypeID
+}
+
+// ShowDeleteFieldTypeDialogMsg requests showing the delete field type confirmation dialog.
+type ShowDeleteFieldTypeDialogMsg struct {
+	FieldTypeID types.FieldTypeID
+	Label       string
+}
+
+// ShowEditFieldTypeDialogMsg requests showing the edit field type dialog.
+type ShowEditFieldTypeDialogMsg struct {
+	FieldType db.FieldTypes
+}
+
+// =============================================================================
+// ADMIN FIELD TYPES MESSAGES
+// =============================================================================
+
+// AdminFieldTypesFetchMsg requests fetching all admin field types.
+type AdminFieldTypesFetchMsg struct{}
+
+// AdminFieldTypesFetchResultsMsg returns fetched admin field types.
+type AdminFieldTypesFetchResultsMsg struct {
+	Data []db.AdminFieldTypes
+}
+
+// AdminFieldTypesSet sets the admin field types list.
+type AdminFieldTypesSet struct {
+	AdminFieldTypes []db.AdminFieldTypes
+}
+
+// CreateAdminFieldTypeFromDialogRequestMsg requests creating an admin field type from dialog input.
+type CreateAdminFieldTypeFromDialogRequestMsg struct {
+	Type  string
+	Label string
+}
+
+// UpdateAdminFieldTypeFromDialogRequestMsg requests updating an admin field type from dialog input.
+type UpdateAdminFieldTypeFromDialogRequestMsg struct {
+	AdminFieldTypeID string
+	Type             string
+	Label            string
+}
+
+// DeleteAdminFieldTypeRequestMsg requests deleting an admin field type.
+type DeleteAdminFieldTypeRequestMsg struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+}
+
+// AdminFieldTypeCreatedFromDialogMsg signals successful admin field type creation.
+type AdminFieldTypeCreatedFromDialogMsg struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+	Type             string
+	Label            string
+}
+
+// AdminFieldTypeUpdatedFromDialogMsg signals successful admin field type update.
+type AdminFieldTypeUpdatedFromDialogMsg struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+	Type             string
+	Label            string
+}
+
+// AdminFieldTypeDeletedMsg signals successful admin field type deletion.
+type AdminFieldTypeDeletedMsg struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+}
+
+// ShowDeleteAdminFieldTypeDialogMsg requests showing the delete admin field type confirmation dialog.
+type ShowDeleteAdminFieldTypeDialogMsg struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+	Label            string
+}
+
+// ShowEditAdminFieldTypeDialogMsg requests showing the edit admin field type dialog.
+type ShowEditAdminFieldTypeDialogMsg struct {
+	AdminFieldType db.AdminFieldTypes
+}

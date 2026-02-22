@@ -14,11 +14,11 @@ import (
 
 // MediaDimensionsHistoryEntry represents a media dimension history record.
 type MediaDimensionsHistoryEntry struct {
-	MdID        string         `json:"md_id"`
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        string     `json:"md_id"`
+	Label       NullString `json:"label"`
+	Width       NullInt64  `json:"width"`
+	Height      NullInt64  `json:"height"`
+	AspectRatio NullString `json:"aspect_ratio"`
 }
 
 // CreateMediaDimensionFormParams contains form parameters for creating a media dimension.
@@ -67,20 +67,20 @@ type UpdateMediaDimensionParamsJSON struct {
 // MapCreateMediaDimensionParams converts form parameters to database parameters.
 func MapCreateMediaDimensionParams(a CreateMediaDimensionFormParams) CreateMediaDimensionParams {
 	return CreateMediaDimensionParams{
-		Label:       StringToNullString(a.Label),
-		Width:       StringToNullInt64(a.Width),
-		Height:      StringToNullInt64(a.Height),
-		AspectRatio: StringToNullString(a.AspectRatio),
+		Label:       NewNullString(a.Label),
+		Width:       NullInt64{StringToNullInt64(a.Width)},
+		Height:      NullInt64{StringToNullInt64(a.Height)},
+		AspectRatio: NewNullString(a.AspectRatio),
 	}
 }
 
 // MapUpdateMediaDimensionParams converts form parameters to database parameters.
 func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMediaDimensionParams {
 	return UpdateMediaDimensionParams{
-		Label:       StringToNullString(a.Label),
-		Width:       StringToNullInt64(a.Width),
-		Height:      StringToNullInt64(a.Height),
-		AspectRatio: StringToNullString(a.AspectRatio),
+		Label:       NewNullString(a.Label),
+		Width:       NullInt64{StringToNullInt64(a.Width)},
+		Height:      NullInt64{StringToNullInt64(a.Height)},
+		AspectRatio: NewNullString(a.AspectRatio),
 		MdID:        a.MdID,
 	}
 }
@@ -88,20 +88,20 @@ func MapUpdateMediaDimensionParams(a UpdateMediaDimensionFormParams) UpdateMedia
 // MapCreateMediaDimensionJSONParams converts JSON parameters to database parameters.
 func MapCreateMediaDimensionJSONParams(a CreateMediaDimensionParamsJSON) CreateMediaDimensionParams {
 	return CreateMediaDimensionParams{
-		Label:       a.Label.NullString,
-		Width:       a.Width.NullInt64,
-		Height:      a.Height.NullInt64,
-		AspectRatio: a.AspectRatio.NullString,
+		Label:       a.Label,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio,
 	}
 }
 
 // MapUpdateMediaDimensionJSONParams converts JSON parameters to database parameters.
 func MapUpdateMediaDimensionJSONParams(a UpdateMediaDimensionParamsJSON) UpdateMediaDimensionParams {
 	return UpdateMediaDimensionParams{
-		Label:       a.Label.NullString,
-		Width:       a.Width.NullInt64,
-		Height:      a.Height.NullInt64,
-		AspectRatio: a.AspectRatio.NullString,
+		Label:       a.Label,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio,
 		MdID:        a.MdID,
 	}
 }
@@ -114,10 +114,10 @@ func MapUpdateMediaDimensionJSONParams(a UpdateMediaDimensionParamsJSON) UpdateM
 func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        a.MdID,
-		Label:       a.Label,
-		Width:       a.Width,
-		Height:      a.Height,
-		AspectRatio: a.AspectRatio,
+		Label:       NullString{a.Label},
+		Width:       NullInt64{a.Width},
+		Height:      NullInt64{a.Height},
+		AspectRatio: NullString{a.AspectRatio},
 	}
 }
 
@@ -125,20 +125,20 @@ func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
 func (d Database) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdb.CreateMediaDimensionParams {
 	return mdb.CreateMediaDimensionParams{
 		MdID:        string(types.NewMediaDimensionID()),
-		Label:       a.Label,
-		Width:       a.Width,
-		Height:      a.Height,
-		AspectRatio: a.AspectRatio,
+		Label:       a.Label.NullString,
+		Width:       a.Width.NullInt64,
+		Height:      a.Height.NullInt64,
+		AspectRatio: a.AspectRatio.NullString,
 	}
 }
 
 // MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated SQLite params.
 func (d Database) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdb.UpdateMediaDimensionParams {
 	return mdb.UpdateMediaDimensionParams{
-		Label:       a.Label,
-		Width:       a.Width,
-		Height:      a.Height,
-		AspectRatio: a.AspectRatio,
+		Label:       a.Label.NullString,
+		Width:       a.Width.NullInt64,
+		Height:      a.Height.NullInt64,
+		AspectRatio: a.AspectRatio.NullString,
 		MdID:        a.MdID,
 	}
 }
@@ -151,10 +151,10 @@ func (d Database) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) md
 func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        a.MdID,
-		Label:       a.Label,
-		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
-		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
-		AspectRatio: a.AspectRatio,
+		Label:       NullString{a.Label},
+		Width:       NullInt64{Int64ToNullInt64(int64(a.Width.Int32))},
+		Height:      NullInt64{Int64ToNullInt64(int64(a.Height.Int32))},
+		AspectRatio: NullString{a.AspectRatio},
 	}
 }
 
@@ -162,20 +162,20 @@ func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions
 func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbm.CreateMediaDimensionParams {
 	return mdbm.CreateMediaDimensionParams{
 		MdID:        string(types.NewMediaDimensionID()),
-		Label:       a.Label,
+		Label:       a.Label.NullString,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
-		AspectRatio: a.AspectRatio,
+		AspectRatio: a.AspectRatio.NullString,
 	}
 }
 
 // MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated MySQL params.
 func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbm.UpdateMediaDimensionParams {
 	return mdbm.UpdateMediaDimensionParams{
-		Label:       a.Label,
+		Label:       a.Label.NullString,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
-		AspectRatio: a.AspectRatio,
+		AspectRatio: a.AspectRatio.NullString,
 		MdID:        a.MdID,
 	}
 }
@@ -188,10 +188,10 @@ func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParam
 func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions {
 	return MediaDimensions{
 		MdID:        a.MdID,
-		Label:       a.Label,
-		Width:       Int64ToNullInt64(int64(a.Width.Int32)),
-		Height:      Int64ToNullInt64(int64(a.Height.Int32)),
-		AspectRatio: a.AspectRatio,
+		Label:       NullString{a.Label},
+		Width:       NullInt64{Int64ToNullInt64(int64(a.Width.Int32))},
+		Height:      NullInt64{Int64ToNullInt64(int64(a.Height.Int32))},
+		AspectRatio: NullString{a.AspectRatio},
 	}
 }
 
@@ -199,20 +199,20 @@ func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions 
 func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbp.CreateMediaDimensionParams {
 	return mdbp.CreateMediaDimensionParams{
 		MdID:        string(types.NewMediaDimensionID()),
-		Label:       a.Label,
+		Label:       a.Label.NullString,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
-		AspectRatio: a.AspectRatio,
+		AspectRatio: a.AspectRatio.NullString,
 	}
 }
 
 // MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated PostgreSQL params.
 func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbp.UpdateMediaDimensionParams {
 	return mdbp.UpdateMediaDimensionParams{
-		Label:       a.Label,
+		Label:       a.Label.NullString,
 		Width:       Int64ToNullInt32(a.Width.Int64),
 		Height:      Int64ToNullInt32(a.Height.Int64),
-		AspectRatio: a.AspectRatio,
+		AspectRatio: a.AspectRatio.NullString,
 		MdID:        a.MdID,
 	}
 }
@@ -335,10 +335,10 @@ func (c NewMediaDimensionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	queries := mdb.New(tx)
 	return queries.CreateMediaDimension(ctx, mdb.CreateMediaDimensionParams{
 		MdID:        string(types.NewMediaDimensionID()),
-		Label:       c.params.Label,
-		Width:       c.params.Width,
-		Height:      c.params.Height,
-		AspectRatio: c.params.AspectRatio,
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width.NullInt64,
+		Height:      c.params.Height.NullInt64,
+		AspectRatio: c.params.AspectRatio.NullString,
 	})
 }
 
@@ -371,10 +371,10 @@ func (c UpdateMediaDimensionCmd) GetBefore(ctx context.Context, tx audited.DBTX)
 func (c UpdateMediaDimensionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateMediaDimension(ctx, mdb.UpdateMediaDimensionParams{
-		Label:       c.params.Label,
-		Width:       c.params.Width,
-		Height:      c.params.Height,
-		AspectRatio: c.params.AspectRatio,
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width.NullInt64,
+		Height:      c.params.Height.NullInt64,
+		AspectRatio: c.params.AspectRatio.NullString,
 		MdID:        c.params.MdID,
 	})
 }
@@ -439,10 +439,10 @@ func (c NewMediaDimensionCmdMysql) Execute(ctx context.Context, tx audited.DBTX)
 	queries := mdbm.New(tx)
 	err := queries.CreateMediaDimension(ctx, mdbm.CreateMediaDimensionParams{
 		MdID:        id,
-		Label:       c.params.Label,
+		Label:       c.params.Label.NullString,
 		Width:       Int64ToNullInt32(c.params.Width.Int64),
 		Height:      Int64ToNullInt32(c.params.Height.Int64),
-		AspectRatio: c.params.AspectRatio,
+		AspectRatio: c.params.AspectRatio.NullString,
 	})
 	if err != nil {
 		return mdbm.MediaDimensions{}, fmt.Errorf("execute create media_dimensions: %w", err)
@@ -479,10 +479,10 @@ func (c UpdateMediaDimensionCmdMysql) GetBefore(ctx context.Context, tx audited.
 func (c UpdateMediaDimensionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
 	return queries.UpdateMediaDimension(ctx, mdbm.UpdateMediaDimensionParams{
-		Label:       c.params.Label,
+		Label:       c.params.Label.NullString,
 		Width:       Int64ToNullInt32(c.params.Width.Int64),
 		Height:      Int64ToNullInt32(c.params.Height.Int64),
-		AspectRatio: c.params.AspectRatio,
+		AspectRatio: c.params.AspectRatio.NullString,
 		MdID:        c.params.MdID,
 	})
 }
@@ -546,10 +546,10 @@ func (c NewMediaDimensionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) 
 	queries := mdbp.New(tx)
 	return queries.CreateMediaDimension(ctx, mdbp.CreateMediaDimensionParams{
 		MdID:        string(types.NewMediaDimensionID()),
-		Label:       c.params.Label,
+		Label:       c.params.Label.NullString,
 		Width:       Int64ToNullInt32(c.params.Width.Int64),
 		Height:      Int64ToNullInt32(c.params.Height.Int64),
-		AspectRatio: c.params.AspectRatio,
+		AspectRatio: c.params.AspectRatio.NullString,
 	})
 }
 
@@ -582,10 +582,10 @@ func (c UpdateMediaDimensionCmdPsql) GetBefore(ctx context.Context, tx audited.D
 func (c UpdateMediaDimensionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
 	return queries.UpdateMediaDimension(ctx, mdbp.UpdateMediaDimensionParams{
-		Label:       c.params.Label,
+		Label:       c.params.Label.NullString,
 		Width:       Int64ToNullInt32(c.params.Width.Int64),
 		Height:      Int64ToNullInt32(c.params.Height.Int64),
-		AspectRatio: c.params.AspectRatio,
+		AspectRatio: c.params.AspectRatio.NullString,
 		MdID:        c.params.MdID,
 	})
 }

@@ -166,3 +166,91 @@ func AdminContentDataSetCmd(data []db.AdminContentData) tea.Cmd {
 func DeleteAdminContentCmd(adminContentID types.AdminContentID) tea.Cmd {
 	return func() tea.Msg { return DeleteAdminContentRequestMsg{AdminContentID: adminContentID} }
 }
+
+// =============================================================================
+// FIELD TYPES CONSTRUCTORS
+// =============================================================================
+
+// CreateFieldTypeFromDialogCmd creates a command to create a field type from dialog input.
+func CreateFieldTypeFromDialogCmd(fieldType, label string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateFieldTypeFromDialogRequestMsg{Type: fieldType, Label: label}
+	}
+}
+
+// UpdateFieldTypeFromDialogCmd creates a command to update a field type from dialog input.
+func UpdateFieldTypeFromDialogCmd(fieldTypeID, fieldType, label string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateFieldTypeFromDialogRequestMsg{
+			FieldTypeID: fieldTypeID,
+			Type:        fieldType,
+			Label:       label,
+		}
+	}
+}
+
+// CreateAdminFieldTypeFromDialogCmd creates a command to create an admin field type from dialog input.
+func CreateAdminFieldTypeFromDialogCmd(fieldType, label string) tea.Cmd {
+	return func() tea.Msg {
+		return CreateAdminFieldTypeFromDialogRequestMsg{Type: fieldType, Label: label}
+	}
+}
+
+// UpdateAdminFieldTypeFromDialogCmd creates a command to update an admin field type from dialog input.
+func UpdateAdminFieldTypeFromDialogCmd(adminFieldTypeID, fieldType, label string) tea.Cmd {
+	return func() tea.Msg {
+		return UpdateAdminFieldTypeFromDialogRequestMsg{
+			AdminFieldTypeID: adminFieldTypeID,
+			Type:             fieldType,
+			Label:            label,
+		}
+	}
+}
+
+// FieldTypesFetchCmd creates a command to fetch all field types.
+func FieldTypesFetchCmd() tea.Cmd {
+	return func() tea.Msg { return FieldTypesFetchMsg{} }
+}
+
+// FieldTypesSetCmd creates a command to set the field types list.
+func FieldTypesSetCmd(fieldTypes []db.FieldTypes) tea.Cmd {
+	return func() tea.Msg { return FieldTypesSet{FieldTypes: fieldTypes} }
+}
+
+// DeleteFieldTypeCmd creates a command to delete a field type.
+func DeleteFieldTypeCmd(fieldTypeID types.FieldTypeID) tea.Cmd {
+	return func() tea.Msg { return DeleteFieldTypeRequestMsg{FieldTypeID: fieldTypeID} }
+}
+
+// ShowDeleteFieldTypeDialogCmd creates a command to show the delete field type dialog.
+func ShowDeleteFieldTypeDialogCmd(fieldTypeID types.FieldTypeID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteFieldTypeDialogMsg{FieldTypeID: fieldTypeID, Label: label}
+	}
+}
+
+// =============================================================================
+// ADMIN FIELD TYPES CONSTRUCTORS
+// =============================================================================
+
+// AdminFieldTypesFetchCmd creates a command to fetch all admin field types.
+func AdminFieldTypesFetchCmd() tea.Cmd {
+	return func() tea.Msg { return AdminFieldTypesFetchMsg{} }
+}
+
+// AdminFieldTypesSetCmd creates a command to set the admin field types list.
+func AdminFieldTypesSetCmd(adminFieldTypes []db.AdminFieldTypes) tea.Cmd {
+	return func() tea.Msg { return AdminFieldTypesSet{AdminFieldTypes: adminFieldTypes} }
+}
+
+// DeleteAdminFieldTypeCmd creates a command to delete an admin field type.
+func DeleteAdminFieldTypeCmd(adminFieldTypeID types.AdminFieldTypeID) tea.Cmd {
+	return func() tea.Msg { return DeleteAdminFieldTypeRequestMsg{AdminFieldTypeID: adminFieldTypeID} }
+}
+
+// ShowDeleteAdminFieldTypeDialogCmd creates a command to show the delete admin field type dialog.
+func ShowDeleteAdminFieldTypeDialogCmd(adminFieldTypeID types.AdminFieldTypeID, label string) tea.Cmd {
+	return func() tea.Msg {
+		return ShowDeleteAdminFieldTypeDialogMsg{AdminFieldTypeID: adminFieldTypeID, Label: label}
+	}
+}

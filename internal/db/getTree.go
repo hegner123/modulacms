@@ -89,7 +89,7 @@ type ContentFieldWithFieldRow struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 	FFieldID       types.FieldID           `json:"f_field_id"`
@@ -127,7 +127,7 @@ type AdminContentFieldsWithFieldRow struct {
 	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
 	AdminFieldValue     string                        `json:"admin_field_value"`
-	AuthorID            types.NullableUserID          `json:"author_id"`
+	AuthorID            types.UserID                  `json:"author_id"`
 	DateCreated         types.Timestamp               `json:"date_created"`
 	DateModified        types.Timestamp               `json:"date_modified"`
 	FAdminFieldID       types.AdminFieldID            `json:"f_admin_field_id"`
@@ -157,7 +157,7 @@ func (d Database) MapGetRouteTreeByRouteIDRow(a mdb.GetRouteTreeByRouteIDRow) Ge
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 		FieldLabel:    a.FieldLabel,
-		FieldType:     a.FieldType,
+		FieldType:     a.FieldTypes,
 		FieldValue:    a.FieldValue,
 	}
 }
@@ -437,7 +437,7 @@ func (d MysqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbm.GetRouteTreeByRouteIDR
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 		FieldLabel:    a.FieldLabel,
-		FieldType:     a.FieldType,
+		FieldType:     a.FieldTypes,
 		FieldValue:    a.FieldValue,
 	}
 }
@@ -717,7 +717,7 @@ func (d PsqlDatabase) MapGetRouteTreeByRouteIDRow(a mdbp.GetRouteTreeByRouteIDRo
 		DatatypeLabel: a.DatatypeLabel,
 		DatatypeType:  a.DatatypeType,
 		FieldLabel:    a.FieldLabel,
-		FieldType:     a.FieldType,
+		FieldType:     a.FieldTypes,
 		FieldValue:    a.FieldValue,
 	}
 }

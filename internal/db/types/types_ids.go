@@ -1697,3 +1697,149 @@ func (id *RolePermissionID) UnmarshalJSON(data []byte) error {
 	*id = RolePermissionID(s)
 	return id.Validate()
 }
+
+// FieldTypeID uniquely identifies a field type.
+type FieldTypeID string
+
+// NewFieldTypeID generates a new ULID-based FieldTypeID.
+func NewFieldTypeID() FieldTypeID { return FieldTypeID(NewULID().String()) }
+
+// String returns the string representation of the FieldTypeID.
+func (id FieldTypeID) String() string { return string(id) }
+
+// IsZero returns true if the FieldTypeID is empty.
+func (id FieldTypeID) IsZero() bool { return id == "" }
+
+// Validate checks if the FieldTypeID is a valid ULID.
+func (id FieldTypeID) Validate() error { return validateULID(string(id), "FieldTypeID") }
+
+// ULID parses the FieldTypeID as a ulid.ULID.
+func (id FieldTypeID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the FieldTypeID.
+func (id FieldTypeID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseFieldTypeID parses and validates a string as a FieldTypeID.
+func ParseFieldTypeID(s string) (FieldTypeID, error) {
+	id := FieldTypeID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id FieldTypeID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("FieldTypeID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *FieldTypeID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("FieldTypeID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = FieldTypeID(v)
+	case []byte:
+		*id = FieldTypeID(string(v))
+	default:
+		return fmt.Errorf("FieldTypeID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id FieldTypeID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *FieldTypeID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("FieldTypeID: %w", err)
+	}
+	*id = FieldTypeID(s)
+	return id.Validate()
+}
+
+// AdminFieldTypeID uniquely identifies an admin field type.
+type AdminFieldTypeID string
+
+// NewAdminFieldTypeID generates a new ULID-based AdminFieldTypeID.
+func NewAdminFieldTypeID() AdminFieldTypeID { return AdminFieldTypeID(NewULID().String()) }
+
+// String returns the string representation of the AdminFieldTypeID.
+func (id AdminFieldTypeID) String() string { return string(id) }
+
+// IsZero returns true if the AdminFieldTypeID is empty.
+func (id AdminFieldTypeID) IsZero() bool { return id == "" }
+
+// Validate checks if the AdminFieldTypeID is a valid ULID.
+func (id AdminFieldTypeID) Validate() error { return validateULID(string(id), "AdminFieldTypeID") }
+
+// ULID parses the AdminFieldTypeID as a ulid.ULID.
+func (id AdminFieldTypeID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the AdminFieldTypeID.
+func (id AdminFieldTypeID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseAdminFieldTypeID parses and validates a string as an AdminFieldTypeID.
+func ParseAdminFieldTypeID(s string) (AdminFieldTypeID, error) {
+	id := AdminFieldTypeID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id AdminFieldTypeID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminFieldTypeID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *AdminFieldTypeID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminFieldTypeID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminFieldTypeID(v)
+	case []byte:
+		*id = AdminFieldTypeID(string(v))
+	default:
+		return fmt.Errorf("AdminFieldTypeID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id AdminFieldTypeID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *AdminFieldTypeID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminFieldTypeID: %w", err)
+	}
+	*id = AdminFieldTypeID(s)
+	return id.Validate()
+}

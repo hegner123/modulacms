@@ -277,6 +277,14 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel := m
 		newModel.AdminSelectedContentFields = msg.Fields
 		return newModel, NewStateUpdate()
+	case FieldTypesSet:
+		newModel := m
+		newModel.FieldTypesList = msg.FieldTypes
+		return newModel, NewStateUpdate()
+	case AdminFieldTypesSet:
+		newModel := m
+		newModel.AdminFieldTypesList = msg.AdminFieldTypes
+		return newModel, NewStateUpdate()
 
 	case UpdateMaxCursorMsg:
 		cursorUpdate := func() tea.Msg {

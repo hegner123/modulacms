@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id TEXT,
+    author_id TEXT NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
         ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(user_id)
-        ON DELETE SET NULL
+        ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_fields(admin_route_id);

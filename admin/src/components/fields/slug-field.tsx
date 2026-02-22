@@ -28,11 +28,6 @@ export function SlugField({ field, value, onChange, error }: FieldComponentProps
         onChange={handleChange}
         placeholder="enter-a-slug"
       />
-      {value && (
-        <p className="text-xs text-muted-foreground font-mono">
-          /{value}
-        </p>
-      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   )

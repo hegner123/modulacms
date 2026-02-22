@@ -349,7 +349,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 			Valid: true,
 		},
 		FieldValue:   field.Content.FieldValue,
-		AuthorID:     types.NullableUserID{ID: ctx.authorID, Valid: !ctx.authorID.IsZero()},
+		AuthorID:     ctx.authorID,
 		DateCreated:  now,
 		DateModified: now,
 	})

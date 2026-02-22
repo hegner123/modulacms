@@ -147,6 +147,16 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		AdminContentDataReorderHandler(w, r, *c)
 	})))
 
+	// Content data move (cross-parent)
+	mux.Handle("POST /api/v1/contentdata/move", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentDataMoveHandler(w, r, *c)
+	})))
+
+	// Admin content data move (cross-parent)
+	mux.Handle("POST /api/v1/admincontentdatas/move", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminContentDataMoveHandler(w, r, *c)
+	})))
+
 	// Datatypes
 	mux.Handle("/api/v1/datatype", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypesHandler(w, r, *c)
@@ -172,6 +182,22 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})))
 	mux.Handle("/api/v1/fields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		FieldHandler(w, r, *c)
+	})))
+
+	// Field types
+	mux.Handle("/api/v1/fieldtypes", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		FieldTypesHandler(w, r, *c)
+	})))
+	mux.Handle("/api/v1/fieldtypes/", middleware.RequireResourcePermission("field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		FieldTypeHandler(w, r, *c)
+	})))
+
+	// Admin field types
+	mux.Handle("/api/v1/adminfieldtypes", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminFieldTypesHandler(w, r, *c)
+	})))
+	mux.Handle("/api/v1/adminfieldtypes/", middleware.RequireResourcePermission("admin_field_types")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminFieldTypeHandler(w, r, *c)
 	})))
 
 	// Media

@@ -14,7 +14,7 @@ import (
 func CreateMedia(name string, c config.Config) (string, error) {
 	d := db.ConfigDB(c)
 	params := db.CreateMediaParams{
-		Name: db.StringToNullString(name),
+		Name: db.NewNullString(name),
 	}
 	ctx := context.Background()
 	ac := audited.Ctx(types.NodeID(c.Node_ID), types.UserID(""), "", "system")

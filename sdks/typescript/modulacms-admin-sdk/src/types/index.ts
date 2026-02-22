@@ -20,6 +20,8 @@ export type {
   FieldID,
   MediaID,
   RoleID,
+  FieldTypeID,
+  AdminFieldTypeID,
   RouteID,
   SessionID,
   UserOauthID,
@@ -27,6 +29,7 @@ export type {
   Email,
   URL,
   ContentStatus,
+  ContentFormat,
   FieldType,
   RequestOptions,
   ApiError,
@@ -62,6 +65,10 @@ export type {
   UpdateAdminDatatypeParams,
   UpdateAdminFieldParams,
   UpdateAdminDatatypeFieldParams,
+  MoveAdminContentDataParams,
+  MoveAdminContentDataResponse,
+  ReorderAdminContentDataParams,
+  ReorderAdminContentDataResponse,
 } from './admin.js'
 
 export type {
@@ -72,18 +79,29 @@ export type {
   CreateContentFieldParams,
   UpdateContentDataParams,
   UpdateContentFieldParams,
+  BatchContentUpdateParams,
+  BatchContentUpdateResponse,
 } from './content.js'
 
 export type {
   Datatype,
   Field,
+  FieldTypeInfo,
+  AdminFieldTypeInfo,
   DatatypeField,
+  AuthorView,
+  DatatypeFieldView,
+  DatatypeFullView,
   CreateDatatypeParams,
   CreateDatatypeFieldParams,
   CreateFieldParams,
+  CreateFieldTypeParams,
+  CreateAdminFieldTypeParams,
   UpdateDatatypeParams,
   UpdateDatatypeFieldParams,
   UpdateFieldParams,
+  UpdateFieldTypeParams,
+  UpdateAdminFieldTypeParams,
 } from './schema.js'
 
 export type {
@@ -93,6 +111,8 @@ export type {
   CreateMediaDimensionParams,
   UpdateMediaParams,
   UpdateMediaDimensionParams,
+  MediaHealthResponse,
+  MediaCleanupResponse,
 } from './media.js'
 
 export type {
@@ -103,6 +123,12 @@ export type {
   Session,
   SshKey,
   SshKeyListItem,
+  UserWithRoleLabel,
+  UserOauthView,
+  UserSshKeyView,
+  SessionView,
+  TokenView,
+  UserFullView,
   CreateUserParams,
   CreateRoleParams,
   CreateTokenParams,

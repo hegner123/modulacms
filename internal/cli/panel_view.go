@@ -1,19 +1,19 @@
 package cli
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES:
 		return true
 	default:
 		return false
@@ -127,6 +127,10 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Admin Content", "Details", "Info"
 	case PLUGINSPAGE:
 		return "Plugins", "Details", "Info"
+	case FIELDTYPES:
+		return "Field Types", "Details", "Actions"
+	case ADMINFIELDTYPES:
+		return "Admin Field Types", "Details", "Actions"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -194,6 +198,16 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = renderPluginsList(m)
 		center = renderPluginDetail(m)
 		right = renderPluginInfo(m)
+
+	case FIELDTYPES:
+		left = renderFieldTypesList(m)
+		center = renderFieldTypeDetail(m)
+		right = renderFieldTypeActions(m)
+
+	case ADMINFIELDTYPES:
+		left = renderAdminFieldTypesList(m)
+		center = renderAdminFieldTypeDetail(m)
+		right = renderAdminFieldTypeActions(m)
 
 	default:
 		left = ""
@@ -374,6 +388,16 @@ func getContextControls(m Model) string {
 	case PLUGINSPAGE:
 		return nav + " │ enter:view │ " + common
 
+	case FIELDTYPES:
+		return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
+
+	case ADMINFIELDTYPES:
+		return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
+			km.HintString(config.ActionEdit) + ":edit │ " +
+			km.HintString(config.ActionDelete) + ":delete │ " + common
+
 	default:
 		return common
 	}
@@ -498,7 +522,7 @@ func renderMediaDetail(m Model) string {
 
 	media := m.MediaList[m.Cursor]
 
-	nullStr := func(ns sql.NullString) string {
+	nullStr := func(ns db.NullString) string {
 		if ns.Valid {
 			return ns.String
 		}

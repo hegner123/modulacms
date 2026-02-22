@@ -161,6 +161,112 @@ func renderAdminDatatypeActions(m Model) string {
 	return strings.Join(lines, "\n")
 }
 
+// =============================================================================
+// FIELD TYPES RENDER FUNCTIONS
+// =============================================================================
+
+// renderFieldTypesList renders the field types list for the left panel.
+func renderFieldTypesList(m Model) string {
+	if len(m.FieldTypesList) == 0 {
+		return "(no field types)"
+	}
+
+	lines := make([]string, 0, len(m.FieldTypesList))
+	for i, ft := range m.FieldTypesList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, ft.Label, ft.Type))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderFieldTypeDetail renders the selected field type details for the center panel.
+func renderFieldTypeDetail(m Model) string {
+	if len(m.FieldTypesList) == 0 || m.Cursor >= len(m.FieldTypesList) {
+		return "No field type selected"
+	}
+
+	ft := m.FieldTypesList[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Type:  %s", ft.Type),
+		fmt.Sprintf("Label: %s", ft.Label),
+		"",
+		fmt.Sprintf("ID:    %s", ft.FieldTypeID),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderFieldTypeActions renders available actions for the right panel on field types.
+func renderFieldTypeActions(m Model) string {
+	lines := []string{
+		"Actions",
+		"",
+		"  n: New",
+		"  e: Edit",
+		"  d: Delete",
+		"",
+		fmt.Sprintf("Field Types: %d", len(m.FieldTypesList)),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// =============================================================================
+// ADMIN FIELD TYPES RENDER FUNCTIONS
+// =============================================================================
+
+// renderAdminFieldTypesList renders the admin field types list for the left panel.
+func renderAdminFieldTypesList(m Model) string {
+	if len(m.AdminFieldTypesList) == 0 {
+		return "(no admin field types)"
+	}
+
+	lines := make([]string, 0, len(m.AdminFieldTypesList))
+	for i, ft := range m.AdminFieldTypesList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, ft.Label, ft.Type))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderAdminFieldTypeDetail renders the selected admin field type details for the center panel.
+func renderAdminFieldTypeDetail(m Model) string {
+	if len(m.AdminFieldTypesList) == 0 || m.Cursor >= len(m.AdminFieldTypesList) {
+		return "No admin field type selected"
+	}
+
+	ft := m.AdminFieldTypesList[m.Cursor]
+	lines := []string{
+		fmt.Sprintf("Type:  %s", ft.Type),
+		fmt.Sprintf("Label: %s", ft.Label),
+		"",
+		fmt.Sprintf("ID:    %s", ft.AdminFieldTypeID),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderAdminFieldTypeActions renders available actions for the right panel on admin field types.
+func renderAdminFieldTypeActions(m Model) string {
+	lines := []string{
+		"Actions",
+		"",
+		"  n: New",
+		"  e: Edit",
+		"  d: Delete",
+		"",
+		fmt.Sprintf("Admin Field Types: %d", len(m.AdminFieldTypesList)),
+	}
+
+	return strings.Join(lines, "\n")
+}
+
 // renderAdminContentList renders a flat list of admin content data for the left panel.
 func renderAdminContentList(m Model) string {
 	if len(m.AdminRootContentSummary) == 0 {

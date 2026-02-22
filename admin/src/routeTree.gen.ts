@@ -29,6 +29,7 @@ import { Route as AdminPluginsNameRouteImport } from './routes/_admin/plugins/$n
 import { Route as AdminMediaIdRouteImport } from './routes/_admin/media/$id'
 import { Route as AdminContentTitleRouteImport } from './routes/_admin/content/$title'
 import { Route as AdminSchemaFieldsIndexRouteImport } from './routes/_admin/schema/fields/index'
+import { Route as AdminSchemaFieldTypesIndexRouteImport } from './routes/_admin/schema/field-types/index'
 import { Route as AdminSchemaDatatypesIndexRouteImport } from './routes/_admin/schema/datatypes/index'
 import { Route as AdminSchemaFieldsIdRouteImport } from './routes/_admin/schema/fields/$id'
 import { Route as AdminSchemaDatatypesIdRouteImport } from './routes/_admin/schema/datatypes/$id'
@@ -131,6 +132,12 @@ const AdminSchemaFieldsIndexRoute = AdminSchemaFieldsIndexRouteImport.update({
   path: '/schema/fields/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSchemaFieldTypesIndexRoute =
+  AdminSchemaFieldTypesIndexRouteImport.update({
+    id: '/schema/field-types/',
+    path: '/schema/field-types/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminSchemaDatatypesIndexRoute =
   AdminSchemaDatatypesIndexRouteImport.update({
     id: '/schema/datatypes/',
@@ -169,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/schema/datatypes/$id': typeof AdminSchemaDatatypesIdRoute
   '/schema/fields/$id': typeof AdminSchemaFieldsIdRoute
   '/schema/datatypes/': typeof AdminSchemaDatatypesIndexRoute
+  '/schema/field-types/': typeof AdminSchemaFieldTypesIndexRoute
   '/schema/fields/': typeof AdminSchemaFieldsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -192,6 +200,7 @@ export interface FileRoutesByTo {
   '/schema/datatypes/$id': typeof AdminSchemaDatatypesIdRoute
   '/schema/fields/$id': typeof AdminSchemaFieldsIdRoute
   '/schema/datatypes': typeof AdminSchemaDatatypesIndexRoute
+  '/schema/field-types': typeof AdminSchemaFieldTypesIndexRoute
   '/schema/fields': typeof AdminSchemaFieldsIndexRoute
 }
 export interface FileRoutesById {
@@ -218,6 +227,7 @@ export interface FileRoutesById {
   '/_admin/schema/datatypes/$id': typeof AdminSchemaDatatypesIdRoute
   '/_admin/schema/fields/$id': typeof AdminSchemaFieldsIdRoute
   '/_admin/schema/datatypes/': typeof AdminSchemaDatatypesIndexRoute
+  '/_admin/schema/field-types/': typeof AdminSchemaFieldTypesIndexRoute
   '/_admin/schema/fields/': typeof AdminSchemaFieldsIndexRoute
 }
 export interface FileRouteTypes {
@@ -243,6 +253,7 @@ export interface FileRouteTypes {
     | '/schema/datatypes/$id'
     | '/schema/fields/$id'
     | '/schema/datatypes/'
+    | '/schema/field-types/'
     | '/schema/fields/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -266,6 +277,7 @@ export interface FileRouteTypes {
     | '/schema/datatypes/$id'
     | '/schema/fields/$id'
     | '/schema/datatypes'
+    | '/schema/field-types'
     | '/schema/fields'
   id:
     | '__root__'
@@ -291,6 +303,7 @@ export interface FileRouteTypes {
     | '/_admin/schema/datatypes/$id'
     | '/_admin/schema/fields/$id'
     | '/_admin/schema/datatypes/'
+    | '/_admin/schema/field-types/'
     | '/_admin/schema/fields/'
   fileRoutesById: FileRoutesById
 }
@@ -441,6 +454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSchemaFieldsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/schema/field-types/': {
+      id: '/_admin/schema/field-types/'
+      path: '/schema/field-types'
+      fullPath: '/schema/field-types/'
+      preLoaderRoute: typeof AdminSchemaFieldTypesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_admin/schema/datatypes/': {
       id: '/_admin/schema/datatypes/'
       path: '/schema/datatypes'
@@ -485,6 +505,7 @@ interface AdminRouteChildren {
   AdminSchemaDatatypesIdRoute: typeof AdminSchemaDatatypesIdRoute
   AdminSchemaFieldsIdRoute: typeof AdminSchemaFieldsIdRoute
   AdminSchemaDatatypesIndexRoute: typeof AdminSchemaDatatypesIndexRoute
+  AdminSchemaFieldTypesIndexRoute: typeof AdminSchemaFieldTypesIndexRoute
   AdminSchemaFieldsIndexRoute: typeof AdminSchemaFieldsIndexRoute
 }
 
@@ -508,6 +529,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSchemaDatatypesIdRoute: AdminSchemaDatatypesIdRoute,
   AdminSchemaFieldsIdRoute: AdminSchemaFieldsIdRoute,
   AdminSchemaDatatypesIndexRoute: AdminSchemaDatatypesIndexRoute,
+  AdminSchemaFieldTypesIndexRoute: AdminSchemaFieldTypesIndexRoute,
   AdminSchemaFieldsIndexRoute: AdminSchemaFieldsIndexRoute,
 }
 

@@ -2,7 +2,6 @@ package router
 
 import (
 	"crypto/rand"
-	"database/sql"
 	"encoding/base64"
 	"encoding/json"
 	"net"
@@ -191,20 +190,11 @@ func OauthCallbackHandler(c config.Config) http.HandlerFunc {
 		}
 		ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 		_, err = dbc.CreateSession(r.Context(), ac, db.CreateSessionParams{
-			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
-			ExpiresAt: expiresAt,
-			SessionData: sql.NullString{
-				String: sessionToken,
-				Valid:  true,
-			},
-			IpAddress: sql.NullString{
-				String: r.RemoteAddr,
-				Valid:  true,
-			},
-			UserAgent: sql.NullString{
-				String: r.UserAgent(),
-				Valid:  true,
-			},
+			UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
+			ExpiresAt:   expiresAt,
+			SessionData: db.NewNullString(sessionToken),
+			IpAddress:   db.NewNullString(r.RemoteAddr),
+			UserAgent:   db.NewNullString(r.UserAgent()),
 		})
 
 		if err != nil {
@@ -343,18 +333,9 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	_, err = dbc.CreateSession(r.Context(), ac, db.CreateSessionParams{
 		UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 		ExpiresAt: expiresAt,
-		SessionData: sql.NullString{
-			String: sessionToken,
-			Valid:  true,
-		},
-		IpAddress: sql.NullString{
-			String: r.RemoteAddr,
-			Valid:  true,
-		},
-		UserAgent: sql.NullString{
-			String: r.UserAgent(),
-			Valid:  true,
-		},
+		SessionData: db.NewNullString(sessionToken),
+		IpAddress:   db.NewNullString(r.RemoteAddr),
+		UserAgent:   db.NewNullString(r.UserAgent()),
 	})
 
 	if err != nil {

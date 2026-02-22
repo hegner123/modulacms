@@ -125,6 +125,60 @@ func (m Model) UpdateAdminFetch(msg tea.Msg) (Model, tea.Cmd) {
 			AdminContentDataSetCmd(msg.Data),
 			LoadingStopCmd(),
 		)
+
+	// =========================================================================
+	// FIELD TYPES
+	// =========================================================================
+	case FieldTypesFetchMsg:
+		d := m.DB
+		if d == nil {
+			return m, func() tea.Msg {
+				return FetchErrMsg{Error: fmt.Errorf("database not connected")}
+			}
+		}
+		return m, func() tea.Msg {
+			fieldTypes, err := d.ListFieldTypes()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if fieldTypes == nil {
+				return FieldTypesFetchResultsMsg{Data: []db.FieldTypes{}}
+			}
+			return FieldTypesFetchResultsMsg{Data: *fieldTypes}
+		}
+
+	case FieldTypesFetchResultsMsg:
+		return m, tea.Batch(
+			FieldTypesSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
+
+	// =========================================================================
+	// ADMIN FIELD TYPES
+	// =========================================================================
+	case AdminFieldTypesFetchMsg:
+		d := m.DB
+		if d == nil {
+			return m, func() tea.Msg {
+				return FetchErrMsg{Error: fmt.Errorf("database not connected")}
+			}
+		}
+		return m, func() tea.Msg {
+			adminFieldTypes, err := d.ListAdminFieldTypes()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			if adminFieldTypes == nil {
+				return AdminFieldTypesFetchResultsMsg{Data: []db.AdminFieldTypes{}}
+			}
+			return AdminFieldTypesFetchResultsMsg{Data: *adminFieldTypes}
+		}
+
+	case AdminFieldTypesFetchResultsMsg:
+		return m, tea.Batch(
+			AdminFieldTypesSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
 	}
 
 	return m, nil

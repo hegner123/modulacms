@@ -72,7 +72,7 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 		DatatypeLabel: "Blog Post",
 		DatatypeType:  "dynamic",
 		FieldLabel:    "body",
-		FieldType:     types.FieldType("richtext"),
+		FieldTypes:    types.FieldType("richtext"),
 		FieldValue:    sql.NullString{String: "<p>content</p>", Valid: true},
 	}
 
@@ -155,7 +155,7 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_NullFieldValue(t *testing.T) {
 		ContentDataID: types.NewContentID(),
 		FieldValue:    sql.NullString{Valid: false},
 		FieldLabel:    "optional_field",
-		FieldType:     types.FieldType("text"),
+		FieldTypes:    types.FieldType("text"),
 	}
 
 	got := d.MapGetRouteTreeByRouteIDRow(input)
@@ -427,7 +427,7 @@ func TestMysqlDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 		DatatypeLabel: "Product",
 		DatatypeType:  "commerce",
 		FieldLabel:    "price",
-		FieldType:     types.FieldType("number"),
+		FieldTypes:    types.FieldType("number"),
 		FieldValue:    sql.NullString{String: "29.99", Valid: true},
 	}
 
@@ -672,7 +672,7 @@ func TestPsqlDatabase_MapGetRouteTreeByRouteIDRow_AllFields(t *testing.T) {
 		DatatypeLabel: "Category",
 		DatatypeType:  "taxonomy",
 		FieldLabel:    "slug",
-		FieldType:     types.FieldType("slug"),
+		FieldTypes:    types.FieldType("slug"),
 		FieldValue:    sql.NullString{String: "my-category", Valid: true},
 	}
 
@@ -916,19 +916,19 @@ func TestCrossDatabase_MapGetRouteTreeByRouteIDRow_Consistency(t *testing.T) {
 		ContentDataID: contentID, ParentID: parentID,
 		FirstChildID: firstChild, NextSiblingID: nextSibling, PrevSiblingID: prevSibling,
 		DatatypeLabel: "Cross", DatatypeType: "type",
-		FieldLabel: "label", FieldType: types.FieldType("text"), FieldValue: fieldValue,
+		FieldLabel: "label", FieldTypes: types.FieldType("text"), FieldValue: fieldValue,
 	}
 	mysqlInput := mdbm.GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID, ParentID: parentID,
 		FirstChildID: firstChild, NextSiblingID: nextSibling, PrevSiblingID: prevSibling,
 		DatatypeLabel: "Cross", DatatypeType: "type",
-		FieldLabel: "label", FieldType: types.FieldType("text"), FieldValue: fieldValue,
+		FieldLabel: "label", FieldTypes: types.FieldType("text"), FieldValue: fieldValue,
 	}
 	psqlInput := mdbp.GetRouteTreeByRouteIDRow{
 		ContentDataID: contentID, ParentID: parentID,
 		FirstChildID: firstChild, NextSiblingID: nextSibling, PrevSiblingID: prevSibling,
 		DatatypeLabel: "Cross", DatatypeType: "type",
-		FieldLabel: "label", FieldType: types.FieldType("text"), FieldValue: fieldValue,
+		FieldLabel: "label", FieldTypes: types.FieldType("text"), FieldValue: fieldValue,
 	}
 
 	sqliteResult := Database{}.MapGetRouteTreeByRouteIDRow(sqliteInput)
@@ -1326,7 +1326,7 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_FieldTypeVariants(t *testing.T) {
 			t.Parallel()
 			input := mdb.GetRouteTreeByRouteIDRow{
 				ContentDataID: types.NewContentID(),
-				FieldType:     ft,
+				FieldTypes:    ft,
 			}
 
 			got := d.MapGetRouteTreeByRouteIDRow(input)
@@ -1772,7 +1772,7 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T) {
 	adminRouteID := types.NullableAdminRouteID{ID: types.NewAdminRouteID(), Valid: true}
 	adminContentDataID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
 	adminFieldID := types.NullableAdminFieldID{ID: types.NewAdminFieldID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	fAdminFieldID := types.NewAdminFieldID()
 	fParentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
 	fAuthorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
@@ -1876,8 +1876,8 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_ZeroValues(t *testing.T) {
 	if got.AdminFieldValue != "" {
 		t.Errorf("AdminFieldValue = %q, want empty string", got.AdminFieldValue)
 	}
-	if got.AuthorID.Valid {
-		t.Errorf("AuthorID.Valid = true, want false for zero value")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero value", got.AuthorID)
 	}
 	if got.FAdminFieldID != "" {
 		t.Errorf("FAdminFieldID = %v, want zero value", got.FAdminFieldID)
@@ -1912,7 +1912,7 @@ func TestMysqlDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T)
 		AdminContentDataID:  types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true},
 		AdminFieldID:        types.NullableAdminFieldID{ID: types.NewAdminFieldID(), Valid: true},
 		AdminFieldValue:     "mysql-admin-value",
-		AuthorID:            types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:            types.NewUserID(),
 		DateCreated:         ts,
 		DateModified:        ts,
 		FAdminFieldId:       fAdminFieldID,
@@ -1975,7 +1975,7 @@ func TestPsqlDatabase_MapAdminContentFieldsWithFieldRow_AllFields(t *testing.T) 
 		AdminContentDataID:  types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true},
 		AdminFieldID:        types.NullableAdminFieldID{ID: types.NewAdminFieldID(), Valid: true},
 		AdminFieldValue:     "psql-admin-value",
-		AuthorID:            types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:            types.NewUserID(),
 		DateCreated:         ts,
 		DateModified:        ts,
 		FAdminFieldId:       fAdminFieldID,
@@ -2034,7 +2034,7 @@ func TestCrossDatabase_MapAdminContentFieldsWithFieldRow_Consistency(t *testing.
 	adminRouteID := types.NullableAdminRouteID{ID: types.NewAdminRouteID(), Valid: true}
 	adminContentDataID := types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true}
 	adminFieldID := types.NullableAdminFieldID{ID: types.NewAdminFieldID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	fAdminFieldID := types.NewAdminFieldID()
 	fParentID := types.NullableAdminDatatypeID{ID: types.NewAdminDatatypeID(), Valid: true}
 	fAuthorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
@@ -2094,7 +2094,7 @@ func TestDatabase_MapContentFieldWithFieldRow_AllFields(t *testing.T) {
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	contentDataID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	fieldID := types.NullableFieldID{ID: types.NewFieldID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	fFieldID := types.NewFieldID()
 
 	input := mdb.ListContentFieldsWithFieldByContentDataRow{
@@ -2168,8 +2168,8 @@ func TestDatabase_MapContentFieldWithFieldRow_ZeroValues(t *testing.T) {
 	if got.FieldValue != "" {
 		t.Errorf("FieldValue = %q, want empty string", got.FieldValue)
 	}
-	if got.AuthorID.Valid {
-		t.Errorf("AuthorID.Valid = true, want false for zero value")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string for zero value", got.AuthorID)
 	}
 	if got.FFieldID != "" {
 		t.Errorf("FFieldID = %v, want zero value", got.FFieldID)
@@ -2195,7 +2195,7 @@ func TestMysqlDatabase_MapContentFieldWithFieldRow_AllFields(t *testing.T) {
 		ContentDataID:  types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:        types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:     "mysql-content-field",
-		AuthorID:       types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:       types.NewUserID(),
 		DateCreated:    ts,
 		DateModified:   ts,
 		FFieldId:       fFieldID,
@@ -2254,7 +2254,7 @@ func TestPsqlDatabase_MapContentFieldWithFieldRow_AllFields(t *testing.T) {
 		ContentDataID:  types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:        types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:     "psql-content-field",
-		AuthorID:       types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:       types.NewUserID(),
 		DateCreated:    ts,
 		DateModified:   ts,
 		FFieldId:       fFieldID,
@@ -2306,7 +2306,7 @@ func TestCrossDatabase_MapContentFieldWithFieldRow_Consistency(t *testing.T) {
 	routeID := types.NullableRouteID{ID: types.NewRouteID(), Valid: true}
 	contentDataID := types.NullableContentID{ID: types.NewContentID(), Valid: true}
 	fieldID := types.NullableFieldID{ID: types.NewFieldID(), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	fFieldID := types.NewFieldID()
 
 	sqliteInput := mdb.ListContentFieldsWithFieldByContentDataRow{
@@ -2913,7 +2913,7 @@ func TestAdminContentFieldsWithFieldRow_JSONTags(t *testing.T) {
 		AdminContentDataID:  types.NullableAdminContentID{ID: types.NewAdminContentID(), Valid: true},
 		AdminFieldID:        types.NullableAdminFieldID{ID: types.NewAdminFieldID(), Valid: true},
 		AdminFieldValue:     "value",
-		AuthorID:            types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:            types.NewUserID(),
 		DateCreated:         ts,
 		DateModified:        ts,
 		FAdminFieldID:       types.NewAdminFieldID(),
@@ -2965,7 +2965,7 @@ func TestContentFieldWithFieldRow_JSONTags(t *testing.T) {
 		ContentDataID:  types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:        types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:     "value",
-		AuthorID:       types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:       types.NewUserID(),
 		DateCreated:    ts,
 		DateModified:   ts,
 		FFieldID:       types.NewFieldID(),
@@ -3090,7 +3090,7 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllNullableFieldsInvalid(t *
 		AdminContentDataID:  types.NullableAdminContentID{Valid: false},
 		AdminFieldID:        types.NullableAdminFieldID{Valid: false},
 		AdminFieldValue:     "orphan-value",
-		AuthorID:            types.NullableUserID{Valid: false},
+		AuthorID:            types.UserID(""),
 		DateCreated:         ts,
 		DateModified:        ts,
 		FAdminFieldId:       types.NewAdminFieldID(),
@@ -3116,8 +3116,8 @@ func TestDatabase_MapAdminContentFieldsWithFieldRow_AllNullableFieldsInvalid(t *
 	if got.AdminFieldID.Valid {
 		t.Errorf("AdminFieldID.Valid = true, want false")
 	}
-	if got.AuthorID.Valid {
-		t.Errorf("AuthorID.Valid = true, want false")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string", got.AuthorID)
 	}
 	if got.FParentID.Valid {
 		t.Errorf("FParentID.Valid = true, want false")
@@ -3150,7 +3150,7 @@ func TestDatabase_MapContentFieldWithFieldRow_EmptyFieldValue(t *testing.T) {
 		ContentDataID:  types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:        types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:     "",
-		AuthorID:       types.NullableUserID{ID: types.NewUserID(), Valid: true},
+		AuthorID:       types.NewUserID(),
 		DateCreated:    ts,
 		DateModified:   ts,
 		FFieldId:       types.NewFieldID(),

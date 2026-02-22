@@ -174,6 +174,18 @@ func (q *Queries) CountAdminField(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countAdminFieldTypes = `-- name: CountAdminFieldTypes :one
+SELECT COUNT(*)
+FROM admin_field_types
+`
+
+func (q *Queries) CountAdminFieldTypes(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminFieldTypes)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countAdminRoute = `-- name: CountAdminRoute :one
 SELECT COUNT(*)
 FROM admin_routes
@@ -318,6 +330,18 @@ FROM fields
 
 func (q *Queries) CountField(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countField)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countFieldTypes = `-- name: CountFieldTypes :one
+SELECT COUNT(*)
+FROM field_types
+`
+
+func (q *Queries) CountFieldTypes(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countFieldTypes)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -606,7 +630,7 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
-	AuthorID            types.NullableUserID         `json:"author_id"`
+	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
 }
@@ -655,7 +679,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
         ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(user_id)
-        ON DELETE SET NULL
+        ON DELETE CASCADE
 )
 `
 
@@ -946,6 +970,45 @@ CREATE TABLE IF NOT EXISTS admin_fields (
 
 func (q *Queries) CreateAdminFieldTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminFieldTable)
+	return err
+}
+
+const createAdminFieldTypes = `-- name: CreateAdminFieldTypes :one
+INSERT INTO admin_field_types(
+    admin_field_type_id,
+    type,
+    label
+) VALUES (
+    ?,
+    ?,
+    ?
+)
+RETURNING admin_field_type_id, type, label
+`
+
+type CreateAdminFieldTypesParams struct {
+	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
+	Type             string                 `json:"type"`
+	Label            string                 `json:"label"`
+}
+
+func (q *Queries) CreateAdminFieldTypes(ctx context.Context, arg CreateAdminFieldTypesParams) (AdminFieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, createAdminFieldTypes, arg.AdminFieldTypeID, arg.Type, arg.Label)
+	var i AdminFieldTypes
+	err := row.Scan(&i.AdminFieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
+const createAdminFieldTypesTable = `-- name: CreateAdminFieldTypesTable :exec
+CREATE TABLE IF NOT EXISTS admin_field_types (
+    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+)
+`
+
+func (q *Queries) CreateAdminFieldTypesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminFieldTypesTable)
 	return err
 }
 
@@ -1322,7 +1385,7 @@ type CreateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 }
@@ -1367,7 +1430,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
     field_value TEXT NOT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 )
@@ -1672,6 +1735,45 @@ CREATE TABLE IF NOT EXISTS fields(
 
 func (q *Queries) CreateFieldTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createFieldTable)
+	return err
+}
+
+const createFieldTypes = `-- name: CreateFieldTypes :one
+INSERT INTO field_types(
+    field_type_id,
+    type,
+    label
+) VALUES (
+    ?,
+    ?,
+    ?
+)
+RETURNING field_type_id, type, label
+`
+
+type CreateFieldTypesParams struct {
+	FieldTypeID types.FieldTypeID `json:"field_type_id"`
+	Type        string            `json:"type"`
+	Label       string            `json:"label"`
+}
+
+func (q *Queries) CreateFieldTypes(ctx context.Context, arg CreateFieldTypesParams) (FieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, createFieldTypes, arg.FieldTypeID, arg.Type, arg.Label)
+	var i FieldTypes
+	err := row.Scan(&i.FieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
+const createFieldTypesTable = `-- name: CreateFieldTypesTable :exec
+CREATE TABLE IF NOT EXISTS field_types (
+    field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+)
+`
+
+func (q *Queries) CreateFieldTypesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createFieldTypesTable)
 	return err
 }
 
@@ -2611,6 +2713,20 @@ func (q *Queries) DeleteAdminField(ctx context.Context, arg DeleteAdminFieldPara
 	return err
 }
 
+const deleteAdminFieldTypes = `-- name: DeleteAdminFieldTypes :exec
+DELETE FROM admin_field_types
+WHERE admin_field_type_id = ?
+`
+
+type DeleteAdminFieldTypesParams struct {
+	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
+}
+
+func (q *Queries) DeleteAdminFieldTypes(ctx context.Context, arg DeleteAdminFieldTypesParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminFieldTypes, arg.AdminFieldTypeID)
+	return err
+}
+
 const deleteAdminRoute = `-- name: DeleteAdminRoute :exec
 DELETE FROM admin_routes
 WHERE admin_route_id = ?
@@ -2764,6 +2880,20 @@ type DeleteFieldParams struct {
 
 func (q *Queries) DeleteField(ctx context.Context, arg DeleteFieldParams) error {
 	_, err := q.db.ExecContext(ctx, deleteField, arg.FieldID)
+	return err
+}
+
+const deleteFieldTypes = `-- name: DeleteFieldTypes :exec
+DELETE FROM field_types
+WHERE field_type_id = ?
+`
+
+type DeleteFieldTypesParams struct {
+	FieldTypeID types.FieldTypeID `json:"field_type_id"`
+}
+
+func (q *Queries) DeleteFieldTypes(ctx context.Context, arg DeleteFieldTypesParams) error {
+	_, err := q.db.ExecContext(ctx, deleteFieldTypes, arg.FieldTypeID)
 	return err
 }
 
@@ -3029,6 +3159,15 @@ func (q *Queries) DropAdminFieldTable(ctx context.Context) error {
 	return err
 }
 
+const dropAdminFieldTypesTable = `-- name: DropAdminFieldTypesTable :exec
+DROP TABLE admin_field_types
+`
+
+func (q *Queries) DropAdminFieldTypesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminFieldTypesTable)
+	return err
+}
+
 const dropAdminRouteTable = `-- name: DropAdminRouteTable :exec
 DROP TABLE admin_routes
 `
@@ -3143,6 +3282,15 @@ DROP TABLE fields
 
 func (q *Queries) DropFieldTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropFieldTable)
+	return err
+}
+
+const dropFieldTypesTable = `-- name: DropFieldTypesTable :exec
+DROP TABLE field_types
+`
+
+func (q *Queries) DropFieldTypesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropFieldTypesTable)
 	return err
 }
 
@@ -3378,6 +3526,38 @@ func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (A
 		&i.DateCreated,
 		&i.DateModified,
 	)
+	return i, err
+}
+
+const getAdminFieldTypes = `-- name: GetAdminFieldTypes :one
+SELECT admin_field_type_id, type, label FROM admin_field_types
+WHERE admin_field_type_id = ? LIMIT 1
+`
+
+type GetAdminFieldTypesParams struct {
+	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
+}
+
+func (q *Queries) GetAdminFieldTypes(ctx context.Context, arg GetAdminFieldTypesParams) (AdminFieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminFieldTypes, arg.AdminFieldTypeID)
+	var i AdminFieldTypes
+	err := row.Scan(&i.AdminFieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
+const getAdminFieldTypesByType = `-- name: GetAdminFieldTypesByType :one
+SELECT admin_field_type_id, type, label FROM admin_field_types
+WHERE type = ? LIMIT 1
+`
+
+type GetAdminFieldTypesByTypeParams struct {
+	Type string `json:"type"`
+}
+
+func (q *Queries) GetAdminFieldTypesByType(ctx context.Context, arg GetAdminFieldTypesByTypeParams) (AdminFieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, getAdminFieldTypesByType, arg.Type)
+	var i AdminFieldTypes
+	err := row.Scan(&i.AdminFieldTypeID, &i.Type, &i.Label)
 	return i, err
 }
 
@@ -4124,6 +4304,38 @@ func (q *Queries) GetFieldDefinitionsByRoute(ctx context.Context, arg GetFieldDe
 	return items, nil
 }
 
+const getFieldTypes = `-- name: GetFieldTypes :one
+SELECT field_type_id, type, label FROM field_types
+WHERE field_type_id = ? LIMIT 1
+`
+
+type GetFieldTypesParams struct {
+	FieldTypeID types.FieldTypeID `json:"field_type_id"`
+}
+
+func (q *Queries) GetFieldTypes(ctx context.Context, arg GetFieldTypesParams) (FieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, getFieldTypes, arg.FieldTypeID)
+	var i FieldTypes
+	err := row.Scan(&i.FieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
+const getFieldTypesByType = `-- name: GetFieldTypesByType :one
+SELECT field_type_id, type, label FROM field_types
+WHERE type = ? LIMIT 1
+`
+
+type GetFieldTypesByTypeParams struct {
+	Type string `json:"type"`
+}
+
+func (q *Queries) GetFieldTypesByType(ctx context.Context, arg GetFieldTypesByTypeParams) (FieldTypes, error) {
+	row := q.db.QueryRowContext(ctx, getFieldTypesByType, arg.Type)
+	var i FieldTypes
+	err := row.Scan(&i.FieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
 const getLatestBackup = `-- name: GetLatestBackup :one
 SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
 WHERE node_id = ? AND status = 'completed'
@@ -4558,7 +4770,7 @@ type GetRouteTreeByRouteIDRow struct {
 	DatatypeLabel string                  `json:"datatype_label"`
 	DatatypeType  string                  `json:"datatype_type"`
 	FieldLabel    string                  `json:"field_label"`
-	FieldType     types.FieldType         `json:"field_type"`
+	FieldTypes    types.FieldType         `json:"field_type"`
 	FieldValue    sql.NullString          `json:"field_value"`
 }
 
@@ -4580,7 +4792,7 @@ func (q *Queries) GetRouteTreeByRouteID(ctx context.Context, arg GetRouteTreeByR
 			&i.DatatypeLabel,
 			&i.DatatypeType,
 			&i.FieldLabel,
-			&i.FieldType,
+			&i.FieldTypes,
 			&i.FieldValue,
 		); err != nil {
 			return nil, err
@@ -5816,7 +6028,7 @@ type ListAdminContentFieldsWithFieldByRouteRow struct {
 	AdminContentDataID  types.NullableAdminContentID  `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID    `json:"admin_field_id"`
 	AdminFieldValue     string                        `json:"admin_field_value"`
-	AuthorID            types.NullableUserID          `json:"author_id"`
+	AuthorID            types.UserID                  `json:"author_id"`
 	DateCreated         types.Timestamp               `json:"date_created"`
 	DateModified        types.Timestamp               `json:"date_modified"`
 	FAdminFieldId       types.AdminFieldID            `json:"f_admin_field_id"`
@@ -6593,6 +6805,34 @@ func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFiel
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminFieldTypes = `-- name: ListAdminFieldTypes :many
+SELECT admin_field_type_id, type, label FROM admin_field_types
+ORDER BY label
+`
+
+func (q *Queries) ListAdminFieldTypes(ctx context.Context) ([]AdminFieldTypes, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminFieldTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminFieldTypes{}
+	for rows.Next() {
+		var i AdminFieldTypes
+		if err := rows.Scan(&i.AdminFieldTypeID, &i.Type, &i.Label); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -7393,7 +7633,7 @@ type ListContentFieldsWithFieldByContentDataRow struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 	FFieldId       types.FieldID           `json:"f_field_id"`
@@ -8141,6 +8381,34 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 			&i.DateCreated,
 			&i.DateModified,
 		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listFieldTypes = `-- name: ListFieldTypes :many
+SELECT field_type_id, type, label FROM field_types
+ORDER BY label
+`
+
+func (q *Queries) ListFieldTypes(ctx context.Context) ([]FieldTypes, error) {
+	rows, err := q.db.QueryContext(ctx, listFieldTypes)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []FieldTypes{}
+	for rows.Next() {
+		var i FieldTypes
+		if err := rows.Scan(&i.FieldTypeID, &i.Type, &i.Label); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -9243,7 +9511,7 @@ type UpdateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
-	AuthorID            types.NullableUserID         `json:"author_id"`
+	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
 	AdminContentFieldID types.AdminContentFieldID    `json:"admin_content_field_id"`
@@ -9373,6 +9641,24 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 		arg.DateModified,
 		arg.AdminFieldID,
 	)
+	return err
+}
+
+const updateAdminFieldTypes = `-- name: UpdateAdminFieldTypes :exec
+UPDATE admin_field_types
+SET type=?,
+    label=?
+WHERE admin_field_type_id = ?
+`
+
+type UpdateAdminFieldTypesParams struct {
+	Type             string                 `json:"type"`
+	Label            string                 `json:"label"`
+	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
+}
+
+func (q *Queries) UpdateAdminFieldTypes(ctx context.Context, arg UpdateAdminFieldTypesParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminFieldTypes, arg.Type, arg.Label, arg.AdminFieldTypeID)
 	return err
 }
 
@@ -9551,7 +9837,7 @@ type UpdateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
-	AuthorID       types.NullableUserID    `json:"author_id"`
+	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
 	ContentFieldID types.ContentFieldID    `json:"content_field_id"`
@@ -9704,6 +9990,24 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.DateModified,
 		arg.FieldID,
 	)
+	return err
+}
+
+const updateFieldTypes = `-- name: UpdateFieldTypes :exec
+UPDATE field_types
+SET type=?,
+    label=?
+WHERE field_type_id = ?
+`
+
+type UpdateFieldTypesParams struct {
+	Type        string            `json:"type"`
+	Label       string            `json:"label"`
+	FieldTypeID types.FieldTypeID `json:"field_type_id"`
+}
+
+func (q *Queries) UpdateFieldTypes(ctx context.Context, arg UpdateFieldTypesParams) error {
+	_, err := q.db.ExecContext(ctx, updateFieldTypes, arg.Type, arg.Label, arg.FieldTypeID)
 	return err
 }
 

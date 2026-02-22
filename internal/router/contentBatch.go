@@ -111,9 +111,9 @@ func ContentBatchHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		routeID = contentData.RouteID
 
 		// Derive author_id from the authenticated user (same as audit context).
-		var authorID types.NullableUserID
+		var authorID types.UserID
 		if user := middleware.AuthenticatedUser(ctx); user != nil {
-			authorID = types.NullableUserID{ID: user.UserID, Valid: !user.UserID.IsZero()}
+			authorID = user.UserID
 		}
 
 		for fieldID, value := range req.Fields {

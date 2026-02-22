@@ -321,7 +321,7 @@ func (m Model) CreateContentWithFields(
 				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 				FieldValue:    value,
 				RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
-				AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+				AuthorID:      authorID,
 				DateCreated:   types.TimestampNow(),
 				DateModified:  types.TimestampNow(),
 			})
@@ -412,7 +412,7 @@ func (m Model) HandleCreateContentFromDialog(
 				FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 				FieldValue:    value,
 				RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
-				AuthorID:      types.NullableUserID{ID: authorID, Valid: true},
+				AuthorID:      authorID,
 				DateCreated:   types.TimestampNow(),
 				DateModified:  types.TimestampNow(),
 			})
@@ -585,7 +585,7 @@ func (m Model) HandleUpdateContentFromDialog(
 					ContentDataID:  contentDataID,
 					FieldID:        types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:     value,
-					AuthorID:       types.NullableUserID{ID: authorID, Valid: !authorID.IsZero()},
+					AuthorID:       authorID,
 					DateCreated:    existing.DateCreated,
 					DateModified:   types.TimestampNow(),
 				})
@@ -602,7 +602,7 @@ func (m Model) HandleUpdateContentFromDialog(
 					FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 					FieldValue:    value,
 					RouteID:       types.NullableRouteID{ID: msg.RouteID, Valid: true},
-					AuthorID:      types.NullableUserID{ID: authorID, Valid: !authorID.IsZero()},
+					AuthorID:      authorID,
 					DateCreated:   types.TimestampNow(),
 					DateModified:  types.TimestampNow(),
 				})
@@ -1266,7 +1266,7 @@ func (m Model) HandleEditSingleField(contentFieldID types.ContentFieldID, conten
 			ContentDataID:  types.NullableContentID{ID: contentID, Valid: true},
 			FieldID:        types.NullableFieldID{ID: fieldID, Valid: true},
 			FieldValue:     newValue,
-			AuthorID:       types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			AuthorID:       userID,
 			DateCreated:    cf.DateCreated,
 			DateModified:   types.TimestampNow(),
 		})
@@ -1318,7 +1318,7 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 			FieldID:       types.NullableFieldID{ID: fieldID, Valid: true},
 			FieldValue:    "",
 			RouteID:       types.NullableRouteID{ID: routeID, Valid: true},
-			AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+			AuthorID:      userID,
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 		})
@@ -2029,7 +2029,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 					ContentDataID: types.NullableContentID{ID: newContent.ContentDataID, Valid: true},
 					FieldID:       field.FieldID,
 					FieldValue:    field.FieldValue,
-					AuthorID:      types.NullableUserID{ID: userID, Valid: !userID.IsZero()},
+					AuthorID:      userID,
 					DateCreated:   now,
 					DateModified:  now,
 				})

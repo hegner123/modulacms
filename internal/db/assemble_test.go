@@ -232,7 +232,7 @@ func TestAssembleContentDataView(t *testing.T) {
 	routeID := types.NullableRouteID{ID: seed.Route.RouteID, Valid: true}
 	datatypeID := types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true}
 	cdAuthorID := seed.User.UserID // ContentData uses types.UserID (non-nullable)
-	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
+	authorID := seed.User.UserID   // ContentFields also uses types.UserID (non-nullable)
 
 	// Link the field to the datatype
 	_, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{

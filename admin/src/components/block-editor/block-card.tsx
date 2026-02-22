@@ -46,7 +46,10 @@ export function BlockCard({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: contentDataId })
+  } = useSortable({
+    id: contentDataId,
+    data: { parentId: node.datatype.content.parent_id, type: 'item' },
+  })
 
   const style = {
     transform: CSS.Transform.toString(transform),

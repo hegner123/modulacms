@@ -63,9 +63,21 @@ func (n *NullInt64) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// NewNullInt64 creates a NullInt64 from a plain int64.
+func NewNullInt64(i int64) NullInt64 {
+	return NullInt64{sql.NullInt64{Int64: i, Valid: true}}
+}
+
 // NullString wraps sql.NullString with JSON marshaling support.
+// Serializes to the string value or null, instead of {"String":"...","Valid":true}.
 type NullString struct {
 	sql.NullString
+}
+
+// NewNullString creates a NullString from a plain string.
+// Empty string and "null" produce an invalid (null) NullString.
+func NewNullString(s string) NullString {
+	return NullString{StringToNullString(s)}
 }
 
 // MarshalJSON marshals NullString to JSON, returning null if invalid.

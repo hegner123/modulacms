@@ -14,6 +14,7 @@ import type {
   CreateContentFieldParams,
   UpdateContentFieldParams,
   ReorderContentDataParams,
+  MoveContentDataParams,
 } from '@modulacms/admin-sdk'
 import { sdk, cms } from '@/lib/sdk'
 import { queryKeys } from '@/lib/query-keys'
@@ -156,6 +157,17 @@ export function useReorderContentData() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (params: ReorderContentDataParams) => sdk.contentData.reorder(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.contentData.all })
+      queryClient.invalidateQueries({ queryKey: queryKeys.tree.all })
+    },
+  })
+}
+
+export function useMoveContentData() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (params: MoveContentDataParams) => sdk.contentData.move(params),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.contentData.all })
       queryClient.invalidateQueries({ queryKey: queryKeys.tree.all })

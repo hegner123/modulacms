@@ -393,6 +393,341 @@ func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, c confi
 	return nil
 }
 
+// MoveContentDataRequest is the JSON body for POST /api/v1/contentdata/move.
+type MoveContentDataRequest struct {
+	NodeID      types.ContentID         `json:"node_id"`
+	NewParentID types.NullableContentID `json:"new_parent_id"`
+	Position    int                     `json:"position"`
+}
+
+// MoveContentDataResponse is the JSON response for POST /api/v1/contentdata/move.
+type MoveContentDataResponse struct {
+	NodeID      types.ContentID         `json:"node_id"`
+	OldParentID types.NullableContentID `json:"old_parent_id"`
+	NewParentID types.NullableContentID `json:"new_parent_id"`
+	Position    int                     `json:"position"`
+}
+
+// ContentDataMoveHandler handles POST requests to move content data to a new parent.
+func ContentDataMoveHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+	apiMoveContentData(w, r, c)
+}
+
+// apiMoveContentData moves a content data node to a new parent at a given position.
+func apiMoveContentData(w http.ResponseWriter, r *http.Request, c config.Config) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
+	var req MoveContentDataRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, fmt.Sprintf("invalid JSON body: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	if err := req.NodeID.Validate(); err != nil {
+		http.Error(w, fmt.Sprintf("invalid node_id: %v", err), http.StatusBadRequest)
+		return
+	}
+	if req.NewParentID.Valid {
+		if err := req.NewParentID.ID.Validate(); err != nil {
+			http.Error(w, fmt.Sprintf("invalid new_parent_id: %v", err), http.StatusBadRequest)
+			return
+		}
+	}
+	if req.Position < 0 {
+		http.Error(w, "position must be >= 0", http.StatusBadRequest)
+		return
+	}
+
+	d := db.ConfigDB(c)
+
+	// Fetch the node being moved
+	node, err := d.GetContentData(req.NodeID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("node not found: %v", err), http.StatusBadRequest)
+		return
+	}
+
+	// Cycle detection: walk from new_parent_id up the parent chain
+	if req.NewParentID.Valid {
+		cursor := req.NewParentID.ID
+		for {
+			if cursor == req.NodeID {
+				http.Error(w, "cannot move a node under its own descendant", http.StatusBadRequest)
+				return
+			}
+			ancestor, aErr := d.GetContentData(cursor)
+			if aErr != nil {
+				http.Error(w, fmt.Sprintf("failed to verify ancestry: %v", aErr), http.StatusInternalServerError)
+				return
+			}
+			if !ancestor.ParentID.Valid {
+				break
+			}
+			cursor = ancestor.ParentID.ID
+		}
+	}
+
+	oldParentID := node.ParentID
+	ctx := r.Context()
+	ac := middleware.AuditContextFromRequest(r, c)
+	now := types.TimestampNow()
+
+	// --- Unlink from old parent ---
+
+	// Repair prev sibling's next pointer
+	if node.PrevSiblingID.Valid {
+		prev, pErr := d.GetContentData(node.PrevSiblingID.ID)
+		if pErr != nil {
+			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
+			return
+		}
+		_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: prev.ContentDataID,
+			ParentID:      prev.ParentID,
+			FirstChildID:  prev.FirstChildID,
+			NextSiblingID: node.NextSiblingID,
+			PrevSiblingID: prev.PrevSiblingID,
+			RouteID:       prev.RouteID,
+			DatatypeID:    prev.DatatypeID,
+			AuthorID:      prev.AuthorID,
+			Status:        prev.Status,
+			DateCreated:   prev.DateCreated,
+			DateModified:  now,
+		})
+		if pErr != nil {
+			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Repair next sibling's prev pointer
+	if node.NextSiblingID.Valid {
+		next, nErr := d.GetContentData(node.NextSiblingID.ID)
+		if nErr != nil {
+			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
+			return
+		}
+		_, nErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: next.ContentDataID,
+			ParentID:      next.ParentID,
+			FirstChildID:  next.FirstChildID,
+			NextSiblingID: next.NextSiblingID,
+			PrevSiblingID: node.PrevSiblingID,
+			RouteID:       next.RouteID,
+			DatatypeID:    next.DatatypeID,
+			AuthorID:      next.AuthorID,
+			Status:        next.Status,
+			DateCreated:   next.DateCreated,
+			DateModified:  now,
+		})
+		if nErr != nil {
+			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Update old parent's first_child_id if this node was the first child
+	if node.ParentID.Valid {
+		parent, pErr := d.GetContentData(node.ParentID.ID)
+		if pErr != nil {
+			http.Error(w, fmt.Sprintf("failed to fetch old parent: %v", pErr), http.StatusInternalServerError)
+			return
+		}
+		if parent.FirstChildID.Valid && parent.FirstChildID.ID == req.NodeID {
+			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: parent.ContentDataID,
+				ParentID:      parent.ParentID,
+				FirstChildID:  node.NextSiblingID,
+				NextSiblingID: parent.NextSiblingID,
+				PrevSiblingID: parent.PrevSiblingID,
+				RouteID:       parent.RouteID,
+				DatatypeID:    parent.DatatypeID,
+				AuthorID:      parent.AuthorID,
+				Status:        parent.Status,
+				DateCreated:   parent.DateCreated,
+				DateModified:  now,
+			})
+			if pErr != nil {
+				http.Error(w, fmt.Sprintf("failed to update old parent: %v", pErr), http.StatusInternalServerError)
+				return
+			}
+		}
+	}
+
+	// --- Insert at position in new parent ---
+
+	// Clear node's sibling pointers before reinsertion
+	var newPrev types.NullableContentID
+	var newNext types.NullableContentID
+
+	if !req.NewParentID.Valid {
+		// Moving to root level — just clear pointers and parent
+		_, err = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: node.ContentDataID,
+			ParentID:      req.NewParentID,
+			FirstChildID:  node.FirstChildID,
+			NextSiblingID: newNext,
+			PrevSiblingID: newPrev,
+			RouteID:       node.RouteID,
+			DatatypeID:    node.DatatypeID,
+			AuthorID:      node.AuthorID,
+			Status:        node.Status,
+			DateCreated:   node.DateCreated,
+			DateModified:  now,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
+			return
+		}
+	} else {
+		newParent, npErr := d.GetContentData(req.NewParentID.ID)
+		if npErr != nil {
+			http.Error(w, fmt.Sprintf("new parent not found: %v", npErr), http.StatusBadRequest)
+			return
+		}
+
+		if !newParent.FirstChildID.Valid || req.Position == 0 {
+			// Insert as first child
+			oldFirstChildID := newParent.FirstChildID
+			newNext = oldFirstChildID
+
+			// Update new parent's first_child_id
+			_, npErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: newParent.ContentDataID,
+				ParentID:      newParent.ParentID,
+				FirstChildID:  types.NullableContentID{ID: req.NodeID, Valid: true},
+				NextSiblingID: newParent.NextSiblingID,
+				PrevSiblingID: newParent.PrevSiblingID,
+				RouteID:       newParent.RouteID,
+				DatatypeID:    newParent.DatatypeID,
+				AuthorID:      newParent.AuthorID,
+				Status:        newParent.Status,
+				DateCreated:   newParent.DateCreated,
+				DateModified:  now,
+			})
+			if npErr != nil {
+				http.Error(w, fmt.Sprintf("failed to update new parent: %v", npErr), http.StatusInternalServerError)
+				return
+			}
+
+			// Update old first child's prev pointer
+			if oldFirstChildID.Valid {
+				oldFirst, ofErr := d.GetContentData(oldFirstChildID.ID)
+				if ofErr != nil {
+					http.Error(w, fmt.Sprintf("failed to fetch old first child: %v", ofErr), http.StatusInternalServerError)
+					return
+				}
+				_, ofErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+					ContentDataID: oldFirst.ContentDataID,
+					ParentID:      oldFirst.ParentID,
+					FirstChildID:  oldFirst.FirstChildID,
+					NextSiblingID: oldFirst.NextSiblingID,
+					PrevSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
+					RouteID:       oldFirst.RouteID,
+					DatatypeID:    oldFirst.DatatypeID,
+					AuthorID:      oldFirst.AuthorID,
+					Status:        oldFirst.Status,
+					DateCreated:   oldFirst.DateCreated,
+					DateModified:  now,
+				})
+				if ofErr != nil {
+					http.Error(w, fmt.Sprintf("failed to update old first child prev: %v", ofErr), http.StatusInternalServerError)
+					return
+				}
+			}
+		} else {
+			// Walk to position-1 to find the node to insert after
+			current, wErr := d.GetContentData(newParent.FirstChildID.ID)
+			if wErr != nil {
+				http.Error(w, fmt.Sprintf("failed to walk new parent children: %v", wErr), http.StatusInternalServerError)
+				return
+			}
+			for i := 0; i < req.Position-1 && current.NextSiblingID.Valid; i++ {
+				current, wErr = d.GetContentData(current.NextSiblingID.ID)
+				if wErr != nil {
+					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
+					return
+				}
+			}
+
+			// Insert after current
+			newPrev = types.NullableContentID{ID: current.ContentDataID, Valid: true}
+			newNext = current.NextSiblingID
+
+			// Update current's next pointer to the moved node
+			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: current.ContentDataID,
+				ParentID:      current.ParentID,
+				FirstChildID:  current.FirstChildID,
+				NextSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
+				PrevSiblingID: current.PrevSiblingID,
+				RouteID:       current.RouteID,
+				DatatypeID:    current.DatatypeID,
+				AuthorID:      current.AuthorID,
+				Status:        current.Status,
+				DateCreated:   current.DateCreated,
+				DateModified:  now,
+			})
+			if wErr != nil {
+				http.Error(w, fmt.Sprintf("failed to update insert-after node: %v", wErr), http.StatusInternalServerError)
+				return
+			}
+
+			// Update the node after current's prev pointer
+			if newNext.Valid {
+				afterNode, anErr := d.GetContentData(newNext.ID)
+				if anErr != nil {
+					http.Error(w, fmt.Sprintf("failed to fetch node after insertion point: %v", anErr), http.StatusInternalServerError)
+					return
+				}
+				_, anErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+					ContentDataID: afterNode.ContentDataID,
+					ParentID:      afterNode.ParentID,
+					FirstChildID:  afterNode.FirstChildID,
+					NextSiblingID: afterNode.NextSiblingID,
+					PrevSiblingID: types.NullableContentID{ID: req.NodeID, Valid: true},
+					RouteID:       afterNode.RouteID,
+					DatatypeID:    afterNode.DatatypeID,
+					AuthorID:      afterNode.AuthorID,
+					Status:        afterNode.Status,
+					DateCreated:   afterNode.DateCreated,
+					DateModified:  now,
+				})
+				if anErr != nil {
+					http.Error(w, fmt.Sprintf("failed to update after-insertion node: %v", anErr), http.StatusInternalServerError)
+					return
+				}
+			}
+		}
+
+		// Update the moved node itself
+		_, err = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: node.ContentDataID,
+			ParentID:      req.NewParentID,
+			FirstChildID:  node.FirstChildID,
+			NextSiblingID: newNext,
+			PrevSiblingID: newPrev,
+			RouteID:       node.RouteID,
+			DatatypeID:    node.DatatypeID,
+			AuthorID:      node.AuthorID,
+			Status:        node.Status,
+			DateCreated:   node.DateCreated,
+			DateModified:  now,
+		})
+		if err != nil {
+			http.Error(w, fmt.Sprintf("failed to update moved node: %v", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	writeJSON(w, MoveContentDataResponse{
+		NodeID:      req.NodeID,
+		OldParentID: oldParentID,
+		NewParentID: req.NewParentID,
+		Position:    req.Position,
+	})
+}
+
 // ReorderContentDataRequest is the JSON body for POST /api/v1/contentdata/reorder.
 type ReorderContentDataRequest struct {
 	ParentID   types.NullableContentID `json:"parent_id"`

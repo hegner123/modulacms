@@ -3,7 +3,6 @@ package media
 import (
 	"bytes"
 	"context"
-	"database/sql"
 	"errors"
 	"io"
 	"mime/multipart"
@@ -89,7 +88,7 @@ func TestProcessMediaUpload(t *testing.T) {
 	validPNG := pngHeader()
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "test.png", Valid: true},
+		Name:        db.NewNullString("test.png"),
 		AuthorID:    types.NullableUserID{ID: types.UserID("test-user"), Valid: true},
 		DateCreated: types.TimestampNow(),
 	}
@@ -320,7 +319,7 @@ func TestProcessMediaUpload_AcceptsAllValidMIMETypes(t *testing.T) {
 
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "test", Valid: true},
+		Name:        db.NewNullString("test"),
 		AuthorID:    types.NullableUserID{ID: types.UserID("test-user"), Valid: true},
 		DateCreated: types.TimestampNow(),
 	}
@@ -488,7 +487,7 @@ func TestProcessMediaUpload_FilenamePassedToStore(t *testing.T) {
 	expectedFilename := "my-special-image.png"
 
 	var getByNameArg string
-	var createNameArg sql.NullString
+	var createNameArg db.NullString
 
 	store := &recordingMockStore{
 		onGetByName: func(name string) (*db.Media, error) {
@@ -547,7 +546,7 @@ func TestProcessMediaUpload_ExactSizeBoundary(t *testing.T) {
 	validPNG := pngHeader()
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "boundary.png", Valid: true},
+		Name:        db.NewNullString("boundary.png"),
 		DateCreated: types.TimestampNow(),
 	}
 
@@ -577,7 +576,7 @@ func TestProcessMediaUpload_PipelineReceivesCorrectPaths(t *testing.T) {
 	validPNG := pngHeader()
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "pipeline-test.png", Valid: true},
+		Name:        db.NewNullString("pipeline-test.png"),
 		DateCreated: types.TimestampNow(),
 	}
 
@@ -650,7 +649,7 @@ func TestProcessMediaUpload_PipelineFailureRollsBackS3AndDB(t *testing.T) {
 	validPNG := pngHeader()
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "test.png", Valid: true},
+		Name:        db.NewNullString("test.png"),
 		DateCreated: types.TimestampNow(),
 	}
 
@@ -692,7 +691,7 @@ func TestProcessMediaUpload_NonImageSkipsPipeline(t *testing.T) {
 	textData := []byte("not an image, just plain text content")
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "readme.txt", Valid: true},
+		Name:        db.NewNullString("readme.txt"),
 		DateCreated: types.TimestampNow(),
 	}
 
@@ -731,7 +730,7 @@ func TestProcessMediaUpload_ImageRunsPipeline(t *testing.T) {
 	validPNG := pngHeader()
 	defaultMedia := &db.Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "photo.png", Valid: true},
+		Name:        db.NewNullString("photo.png"),
 		DateCreated: types.TimestampNow(),
 	}
 

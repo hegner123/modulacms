@@ -161,6 +161,16 @@ type DbDriver interface {
 	ListAdminFieldsByParentIDPaginated(ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error)
 	UpdateAdminField(context.Context, audited.AuditContext, UpdateAdminFieldParams) (*string, error)
 
+	// AdminFieldTypes
+	CountAdminFieldTypes() (*int64, error)
+	CreateAdminFieldType(context.Context, audited.AuditContext, CreateAdminFieldTypeParams) (*AdminFieldTypes, error)
+	CreateAdminFieldTypeTable() error
+	DeleteAdminFieldType(context.Context, audited.AuditContext, types.AdminFieldTypeID) error
+	GetAdminFieldType(types.AdminFieldTypeID) (*AdminFieldTypes, error)
+	GetAdminFieldTypeByType(string) (*AdminFieldTypes, error)
+	ListAdminFieldTypes() (*[]AdminFieldTypes, error)
+	UpdateAdminFieldType(context.Context, audited.AuditContext, UpdateAdminFieldTypeParams) (*string, error)
+
 	// AdminRoutes
 	CountAdminRoutes() (*int64, error)
 	CreateAdminRoute(context.Context, audited.AuditContext, CreateAdminRouteParams) (*AdminRoutes, error)
@@ -289,6 +299,16 @@ type DbDriver interface {
 	ListFieldsByDatatypeID(types.NullableDatatypeID) (*[]Fields, error)
 	ListFieldsPaginated(PaginationParams) (*[]Fields, error)
 	UpdateField(context.Context, audited.AuditContext, UpdateFieldParams) (*string, error)
+
+	// FieldTypes
+	CountFieldTypes() (*int64, error)
+	CreateFieldType(context.Context, audited.AuditContext, CreateFieldTypeParams) (*FieldTypes, error)
+	CreateFieldTypeTable() error
+	DeleteFieldType(context.Context, audited.AuditContext, types.FieldTypeID) error
+	GetFieldType(types.FieldTypeID) (*FieldTypes, error)
+	GetFieldTypeByType(string) (*FieldTypes, error)
+	ListFieldTypes() (*[]FieldTypes, error)
+	UpdateFieldType(context.Context, audited.AuditContext, UpdateFieldTypeParams) (*string, error)
 
 	// Media
 	CountMedia() (*int64, error)
@@ -511,6 +531,16 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 1: User management (depends on roles)
 	err = d.CreateUserTable()
 	if err != nil {
@@ -633,7 +663,7 @@ func (d Database) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 28 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d Database) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
@@ -665,6 +695,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
 		"config:read", "config:update", "config:admin",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -726,7 +758,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// Editor permissions: CRUD on content, datatypes, fields, media, routes, admin_tree; read-only on users, sessions, ssh_keys
+	// Editor permissions: CRUD on content, datatypes, fields, media, routes, admin_tree, field_types, admin_field_types; read-only on users, sessions, ssh_keys
 	editorPermLabels := []string{
 		"content:read", "content:create", "content:update", "content:delete",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
@@ -734,6 +766,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"media:read", "media:create", "media:update", "media:delete",
 		"routes:read", "routes:create", "routes:update", "routes:delete",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete",
 		"users:read",
 		"sessions:read",
 		"ssh_keys:read",
@@ -753,11 +787,13 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// Viewer permissions: read-only on content, media, routes
+	// Viewer permissions: read-only on content, media, routes, field_types, admin_field_types
 	viewerPermLabels := []string{
 		"content:read",
 		"media:read",
 		"routes:read",
+		"field_types:read",
+		"admin_field_types:read",
 	}
 	for _, label := range viewerPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -938,7 +974,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -955,7 +991,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
-		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:           systemUser.UserID,
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
@@ -968,10 +1004,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
-		Label:       StringToNullString("Default"),
-		Width:       Int64ToNullInt64(1920),
-		Height:      Int64ToNullInt64(1080),
-		AspectRatio: StringToNullString("16:9"),
+		Label:       NewNullString("Default"),
+		Width:       NewNullInt64(1920),
+		Height:      NewNullInt64(1080),
+		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default media_dimension: %w", err)
@@ -982,16 +1018,16 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 
 	// 16. Create default media record (media_id = 1) - Validation record
 	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
-		Name:         StringToNullString("default"),
-		DisplayName:  StringToNullString("Default Media"),
-		Alt:          StringToNullString("Default"),
-		Caption:      sql.NullString{},
-		Description:  sql.NullString{},
-		Class:        sql.NullString{},
+		Name:         NewNullString("default"),
+		DisplayName:  NewNullString("Default Media"),
+		Alt:          NewNullString("Default"),
+		Caption:      NullString{},
+		Description:  NullString{},
+		Class:        NullString{},
 		URL:          types.URL("https://placeholder.local/default"),
-		Mimetype:     sql.NullString{},
-		Dimensions:   sql.NullString{},
-		Srcset:       sql.NullString{},
+		Mimetype:     NullString{},
+		Dimensions:   NullString{},
+		Srcset:       NullString{},
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1024,10 +1060,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  StringToNullString(utility.TimestampS()),
-		IpAddress:   StringToNullString("127.0.0.1"),
-		UserAgent:   StringToNullString("bootstrap"),
-		SessionData: sql.NullString{},
+		LastAccess:  NewNullString(utility.TimestampS()),
+		IpAddress:   NewNullString("127.0.0.1"),
+		UserAgent:   NewNullString("bootstrap"),
+		SessionData: NullString{},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default session: %v", err)
@@ -1069,7 +1105,34 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 26 ModulaCMS tables in the tables registry
+	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	fieldTypeSeedData := []struct{ Type, Label string }{
+		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
+		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
+		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
+		{"email", "Email"}, {"url", "URL"},
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed field_type %q: %w", ft.Type, err)
+		}
+		if created.FieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed field_type %q: id is zero", ft.Type)
+		}
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed admin_field_type %q: %w", ft.Type, err)
+		}
+		if created.AdminFieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed admin_field_type %q: id is zero", ft.Type)
+		}
+	}
+
+	// 21. Register all 28 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -1079,6 +1142,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"field_types",
+		"admin_field_types",
 		"users",
 		"tokens",
 		"sessions",
@@ -1110,7 +1175,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: pageDatatype.DatatypeID,
 		FieldID:    field.FieldID,
@@ -1122,7 +1187,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
-	// 22. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
+	// 23. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: adminDatatype.AdminDatatypeID,
 		AdminFieldID:    adminField.AdminFieldID,
@@ -1134,7 +1199,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 26 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -1258,14 +1323,26 @@ func (d Database) ValidateBootstrapData() error {
 		errors = append(errors, "user_ssh_keys table: expected ≥1 records, validation failed")
 	}
 
-	// Validate tables table (should have EXACTLY 26 records - all core tables)
+	// Validate field_types table (should have at least 1 record)
+	fieldTypeCount, err := d.CountFieldTypes()
+	if err != nil || fieldTypeCount == nil || *fieldTypeCount < 1 {
+		errors = append(errors, "field_types table: expected ≥1 records, validation failed")
+	}
+
+	// Validate admin_field_types table (should have at least 1 record)
+	adminFieldTypeCount, err := d.CountAdminFieldTypes()
+	if err != nil || adminFieldTypeCount == nil || *adminFieldTypeCount < 1 {
+		errors = append(errors, "admin_field_types table: expected ≥1 records, validation failed")
+	}
+
+	// Validate tables table (should have EXACTLY 28 records - all core tables)
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount != 28 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
 	}
 
 	// Validate datatypes_fields junction table (should have at least 1 record)
@@ -1287,7 +1364,7 @@ func (d Database) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
 	return nil
 }
 
@@ -1323,6 +1400,16 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 1: User management (depends on roles)
 	err = d.CreateUserTable()
 	if err != nil {
@@ -1445,7 +1532,7 @@ func (d MysqlDatabase) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 28 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
@@ -1477,6 +1564,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
 		"config:read", "config:update", "config:admin",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -1537,6 +1626,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
+	// Editor permissions: CRUD on content, datatypes, fields, media, routes, admin_tree, field_types, admin_field_types; read-only on users, sessions, ssh_keys
 	editorPermLabels := []string{
 		"content:read", "content:create", "content:update", "content:delete",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
@@ -1544,6 +1634,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"media:read", "media:create", "media:update", "media:delete",
 		"routes:read", "routes:create", "routes:update", "routes:delete",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete",
 		"users:read",
 		"sessions:read",
 		"ssh_keys:read",
@@ -1563,10 +1655,13 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
+	// Viewer permissions: read-only on content, media, routes, field_types, admin_field_types
 	viewerPermLabels := []string{
 		"content:read",
 		"media:read",
 		"routes:read",
+		"field_types:read",
+		"admin_field_types:read",
 	}
 	for _, label := range viewerPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -1747,7 +1842,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -1764,7 +1859,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
-		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:           systemUser.UserID,
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
@@ -1777,10 +1872,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
-		Label:       StringToNullString("Default"),
-		Width:       Int64ToNullInt64(1920),
-		Height:      Int64ToNullInt64(1080),
-		AspectRatio: StringToNullString("16:9"),
+		Label:       NewNullString("Default"),
+		Width:       NewNullInt64(1920),
+		Height:      NewNullInt64(1080),
+		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default media_dimension: %w", err)
@@ -1791,16 +1886,16 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 16. Create default media record (media_id = 1) - Validation record
 	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
-		Name:         StringToNullString("default"),
-		DisplayName:  StringToNullString("Default Media"),
-		Alt:          StringToNullString("Default"),
-		Caption:      sql.NullString{},
-		Description:  sql.NullString{},
-		Class:        sql.NullString{},
+		Name:         NewNullString("default"),
+		DisplayName:  NewNullString("Default Media"),
+		Alt:          NewNullString("Default"),
+		Caption:      NullString{},
+		Description:  NullString{},
+		Class:        NullString{},
 		URL:          types.URL("https://placeholder.local/default"),
-		Mimetype:     sql.NullString{},
-		Dimensions:   sql.NullString{},
-		Srcset:       sql.NullString{},
+		Mimetype:     NullString{},
+		Dimensions:   NullString{},
+		Srcset:       NullString{},
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1833,10 +1928,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  StringToNullString(utility.TimestampS()),
-		IpAddress:   StringToNullString("127.0.0.1"),
-		UserAgent:   StringToNullString("bootstrap"),
-		SessionData: sql.NullString{},
+		LastAccess:  NewNullString(utility.TimestampS()),
+		IpAddress:   NewNullString("127.0.0.1"),
+		UserAgent:   NewNullString("bootstrap"),
+		SessionData: NullString{},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default session: %v", err)
@@ -1878,7 +1973,34 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 26 ModulaCMS tables in the tables registry
+	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	fieldTypeSeedData := []struct{ Type, Label string }{
+		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
+		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
+		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
+		{"email", "Email"}, {"url", "URL"},
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed field_type %q: %w", ft.Type, err)
+		}
+		if created.FieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed field_type %q: id is zero", ft.Type)
+		}
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed admin_field_type %q: %w", ft.Type, err)
+		}
+		if created.AdminFieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed admin_field_type %q: id is zero", ft.Type)
+		}
+	}
+
+	// 21. Register all 28 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -1888,6 +2010,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"field_types",
+		"admin_field_types",
 		"users",
 		"tokens",
 		"sessions",
@@ -1919,7 +2043,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: pageDatatype.DatatypeID,
 		FieldID:    field.FieldID,
@@ -1931,7 +2055,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
-	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
+	// 23. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: adminDatatype.AdminDatatypeID,
 		AdminFieldID:    adminField.AdminFieldID,
@@ -1943,7 +2067,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -1953,7 +2077,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 func (d MysqlDatabase) ValidateBootstrapData() error {
 	var errors []string
 
-	// Validate all 26 tables have expected record counts
+	// Validate all 28 tables have expected record counts
 	permCount, err := d.CountPermissions()
 	if err != nil || permCount == nil || *permCount < 1 {
 		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
@@ -2044,13 +2168,23 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 		errors = append(errors, "user_oauth table: expected ≥1 records, validation failed")
 	}
 
+	fieldTypeCount, err := d.CountFieldTypes()
+	if err != nil || fieldTypeCount == nil || *fieldTypeCount < 1 {
+		errors = append(errors, "field_types table: expected ≥1 records, validation failed")
+	}
+
+	adminFieldTypeCount, err := d.CountAdminFieldTypes()
+	if err != nil || adminFieldTypeCount == nil || *adminFieldTypeCount < 1 {
+		errors = append(errors, "admin_field_types table: expected ≥1 records, validation failed")
+	}
+
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount != 28 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
 	}
 
 	datatypeFieldCount, err := d.CountDatatypeFields()
@@ -2069,7 +2203,7 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
 	return nil
 }
 
@@ -2105,6 +2239,16 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 1: User management (depends on roles)
 	err = d.CreateUserTable()
 	if err != nil {
@@ -2227,7 +2371,7 @@ func (d PsqlDatabase) CreateAllTables() error {
 
 // CreateBootstrapData inserts required system records for initial database setup.
 // CRITICAL: Must be called after CreateAllTables() succeeds.
-// Inserts validation/bootstrap data for ALL 26 tables to verify successful table creation.
+// Inserts validation/bootstrap data for ALL 28 tables to verify successful table creation.
 // If any table failed to create, this function will catch it immediately during install rather than later during operation.
 func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	ctx := context.Background()
@@ -2259,6 +2403,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"ssh_keys:read", "ssh_keys:create", "ssh_keys:delete", "ssh_keys:admin",
 		"config:read", "config:update", "config:admin",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -2319,6 +2465,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
+	// Editor permissions: CRUD on content, datatypes, fields, media, routes, admin_tree, field_types, admin_field_types; read-only on users, sessions, ssh_keys
 	editorPermLabels := []string{
 		"content:read", "content:create", "content:update", "content:delete",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete",
@@ -2326,6 +2473,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"media:read", "media:create", "media:update", "media:delete",
 		"routes:read", "routes:create", "routes:update", "routes:delete",
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete",
+		"field_types:read", "field_types:create", "field_types:update", "field_types:delete",
+		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete",
 		"users:read",
 		"sessions:read",
 		"ssh_keys:read",
@@ -2345,10 +2494,13 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
+	// Viewer permissions: read-only on content, media, routes, field_types, admin_field_types
 	viewerPermLabels := []string{
 		"content:read",
 		"media:read",
 		"routes:read",
+		"field_types:read",
+		"admin_field_types:read",
 	}
 	for _, label := range viewerPermLabels {
 		permID, ok := rbacPermissions[label]
@@ -2529,7 +2681,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		ContentDataID: types.NullableContentID{Valid: true, ID: contentData.ContentDataID},
 		FieldID:       types.NullableFieldID{Valid: true, ID: field.FieldID},
 		FieldValue:    "Default content",
-		AuthorID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:      systemUser.UserID,
 		DateCreated:   types.TimestampNow(),
 		DateModified:  types.TimestampNow(),
 	})
@@ -2546,7 +2698,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		AdminContentDataID: types.NullableAdminContentID{Valid: true, ID: adminContentData.AdminContentDataID},
 		AdminFieldID:       types.NullableAdminFieldID{Valid: true, ID: adminField.AdminFieldID},
 		AdminFieldValue:    "Default admin content",
-		AuthorID:           types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		AuthorID:           systemUser.UserID,
 		DateCreated:        types.TimestampNow(),
 		DateModified:       types.TimestampNow(),
 	})
@@ -2559,10 +2711,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
-		Label:       StringToNullString("Default"),
-		Width:       Int64ToNullInt64(1920),
-		Height:      Int64ToNullInt64(1080),
-		AspectRatio: StringToNullString("16:9"),
+		Label:       NewNullString("Default"),
+		Width:       NewNullInt64(1920),
+		Height:      NewNullInt64(1080),
+		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default media_dimension: %w", err)
@@ -2573,16 +2725,16 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 16. Create default media record (media_id = 1) - Validation record
 	media, err := d.CreateMedia(ctx, ac, CreateMediaParams{
-		Name:         StringToNullString("default"),
-		DisplayName:  StringToNullString("Default Media"),
-		Alt:          StringToNullString("Default"),
-		Caption:      sql.NullString{},
-		Description:  sql.NullString{},
-		Class:        sql.NullString{},
+		Name:         NewNullString("default"),
+		DisplayName:  NewNullString("Default Media"),
+		Alt:          NewNullString("Default"),
+		Caption:      NullString{},
+		Description:  NullString{},
+		Class:        NullString{},
 		URL:          types.URL("https://placeholder.local/default"),
-		Mimetype:     sql.NullString{},
-		Dimensions:   sql.NullString{},
-		Srcset:       sql.NullString{},
+		Mimetype:     NullString{},
+		Dimensions:   NullString{},
+		Srcset:       NullString{},
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2615,10 +2767,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  StringToNullString(utility.TimestampS()),
-		IpAddress:   StringToNullString("127.0.0.1"),
-		UserAgent:   StringToNullString("bootstrap"),
-		SessionData: sql.NullString{},
+		LastAccess:  NewNullString(utility.TimestampS()),
+		IpAddress:   NewNullString("127.0.0.1"),
+		UserAgent:   NewNullString("bootstrap"),
+		SessionData: NullString{},
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create default session: %v", err)
@@ -2660,7 +2812,34 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Register all 26 ModulaCMS tables in the tables registry
+	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	fieldTypeSeedData := []struct{ Type, Label string }{
+		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
+		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
+		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
+		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
+		{"email", "Email"}, {"url", "URL"},
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed field_type %q: %w", ft.Type, err)
+		}
+		if created.FieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed field_type %q: id is zero", ft.Type)
+		}
+	}
+	for _, ft := range fieldTypeSeedData {
+		created, err := d.CreateAdminFieldType(ctx, ac, CreateAdminFieldTypeParams{Type: ft.Type, Label: ft.Label})
+		if err != nil {
+			return fmt.Errorf("failed to seed admin_field_type %q: %w", ft.Type, err)
+		}
+		if created.AdminFieldTypeID.IsZero() {
+			return fmt.Errorf("failed to seed admin_field_type %q: id is zero", ft.Type)
+		}
+	}
+
+	// 21. Register all 28 ModulaCMS tables in the tables registry
 	// This tracks all tables in the system and is critical for plugin support
 	tableNames := []string{
 		"change_events",
@@ -2670,6 +2849,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"permissions",
 		"roles",
 		"media_dimensions",
+		"field_types",
+		"admin_field_types",
 		"users",
 		"tokens",
 		"sessions",
@@ -2701,7 +2882,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 21. Create default datatypes_fields junction record (id = 1) - Links datatype to field
+	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
 	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
 		DatatypeID: pageDatatype.DatatypeID,
 		FieldID:    field.FieldID,
@@ -2713,7 +2894,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default datatypes_fields")
 	}
 
-	// 22. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
+	// 23. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
 	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
 		AdminDatatypeID: adminDatatype.AdminDatatypeID,
 		AdminFieldID:    adminField.AdminFieldID,
@@ -2725,7 +2906,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin_datatypes_fields")
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 21 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -2735,7 +2916,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 func (d PsqlDatabase) ValidateBootstrapData() error {
 	var errors []string
 
-	// Validate all 26 tables have expected record counts
+	// Validate all 28 tables have expected record counts
 	permCount, err := d.CountPermissions()
 	if err != nil || permCount == nil || *permCount < 1 {
 		errors = append(errors, "permissions table: expected ≥1 records, validation failed")
@@ -2826,13 +3007,23 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 		errors = append(errors, "user_oauth table: expected ≥1 records, validation failed")
 	}
 
+	fieldTypeCount, err := d.CountFieldTypes()
+	if err != nil || fieldTypeCount == nil || *fieldTypeCount < 1 {
+		errors = append(errors, "field_types table: expected ≥1 records, validation failed")
+	}
+
+	adminFieldTypeCount, err := d.CountAdminFieldTypes()
+	if err != nil || adminFieldTypeCount == nil || *adminFieldTypeCount < 1 {
+		errors = append(errors, "admin_field_types table: expected ≥1 records, validation failed")
+	}
+
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 26 {
+	if err != nil || tableCount == nil || *tableCount != 28 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
 	}
 
 	datatypeFieldCount, err := d.CountDatatypeFields()
@@ -2851,7 +3042,7 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 		return err
 	}
 
-	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 26 tables contain expected records")
+	utility.DefaultLogger.Finfo("Bootstrap validation passed: all 28 tables contain expected records")
 	return nil
 }
 

@@ -91,7 +91,11 @@ func MapString{{.Entity.Singular}}(a {{.Entity.Name}}) {{.Entity.StringTypeName}
 func (d {{$driver.Struct}}) Map{{$.Entity.Singular}}(a {{$driver.Package}}.{{$.Entity.SqlcTypeName}}) {{$.Entity.Name}} {
 	return {{$.Entity.Name}}{
 {{- range $.Entity.StructFields}}
+{{- if isNullWrapper .Type}}
+		{{.AppName}}: {{.Type}}{a.{{.SqlcFieldName}}},
+{{- else}}
 		{{.AppName}}: a.{{.SqlcFieldName}},
+{{- end}}
 {{- end}}
 	}
 }
@@ -116,7 +120,11 @@ func (d {{$driver.Struct}}) MapCreate{{$.Entity.Singular}}Params(a Create{{$.Ent
 		{{$.Entity.IDField}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
+{{- if isNullWrapper .Type}}
+		{{.SqlcFieldName}}: a.{{.AppName}}.{{.Type}},
+{{- else}}
 		{{.SqlcFieldName}}: a.{{.AppName}},
+{{- end}}
 {{- end}}
 	}
 }
@@ -125,7 +133,11 @@ func (d {{$driver.Struct}}) MapCreate{{$.Entity.Singular}}Params(a Create{{$.Ent
 func (d {{$driver.Struct}}) MapUpdate{{$.Entity.Singular}}Params(a Update{{$.Entity.Singular}}Params) {{$driver.Package}}.Update{{$.Entity.Singular}}Params {
 	return {{$driver.Package}}.Update{{$.Entity.Singular}}Params{
 {{- range $.Entity.NonIDUpdateFields}}
+{{- if isNullWrapper .Type}}
+		{{.SqlcFieldName}}: a.{{.AppName}}.{{.Type}},
+{{- else}}
 		{{.SqlcFieldName}}: a.{{.AppName}},
+{{- end}}
 {{- end}}
 {{- range $.Entity.Fields}}
 {{- if and .IsPrimaryID .InUpdate}}
@@ -353,7 +365,11 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Co
 		{{$.Entity.IDField}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
+{{- if isNullWrapper .Type}}
+		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
+{{- end}}
 {{- end}}
 	}
 	if err := queries.Create{{$.Entity.Singular}}(ctx, params); err != nil {
@@ -382,7 +398,11 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Co
 		{{$.Entity.IDField}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
+{{- if isNullWrapper .Type}}
+		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
+{{- end}}
 {{- end}}
 	})
 }
@@ -436,7 +456,11 @@ func (c Update{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context
 	queries := {{$driver.Package}}.New(tx)
 	return queries.Update{{$.Entity.Singular}}(ctx, {{$driver.Package}}.Update{{$.Entity.Singular}}Params{
 {{- range $.Entity.NonIDUpdateFields}}
+{{- if isNullWrapper .Type}}
+		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
+{{- end}}
 {{- end}}
 {{- range $.Entity.Fields}}
 {{- if and .IsPrimaryID .InUpdate}}

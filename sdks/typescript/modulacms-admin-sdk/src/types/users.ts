@@ -182,6 +182,118 @@ export type SshKeyListItem = {
 }
 
 // ---------------------------------------------------------------------------
+// View types (composed responses from /users/full endpoints)
+// ---------------------------------------------------------------------------
+
+/** A user row joined with the role label, returned by `GET /users/full`. */
+export type UserWithRoleLabel = {
+  /** Unique identifier for this user. */
+  user_id: UserID
+  /** Login username. */
+  username: string
+  /** Display name. */
+  name: string
+  /** Email address. */
+  email: Email
+  /** Role identifier. */
+  role: string
+  /** Human-readable role label. */
+  role_label: string
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+  /** ISO 8601 last-modification timestamp. */
+  date_modified: string
+}
+
+/** Safe subset of an OAuth connection (excludes tokens). */
+export type UserOauthView = {
+  /** Unique identifier for this OAuth connection. */
+  user_oauth_id: UserOauthID
+  /** OAuth provider name. */
+  oauth_provider: string
+  /** User ID on the provider's platform. */
+  oauth_provider_user_id: string
+  /** ISO 8601 timestamp when the access token expires. */
+  token_expires_at: string
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+}
+
+/** Safe subset of an SSH key (excludes public key material). */
+export type UserSshKeyView = {
+  /** Unique identifier for this SSH key. */
+  ssh_key_id: string
+  /** Key algorithm. */
+  key_type: string
+  /** Key fingerprint. */
+  fingerprint: string
+  /** Human-readable label. */
+  label: string
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+  /** ISO 8601 timestamp of last use. */
+  last_used: string
+}
+
+/** Safe subset of a session (excludes session_data). */
+export type SessionView = {
+  /** Unique identifier for this session. */
+  session_id: SessionID
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+  /** ISO 8601 expiration timestamp. */
+  expires_at: string
+  /** ISO 8601 timestamp of last access. */
+  last_access: string
+  /** Client IP address. */
+  ip_address: string
+  /** Client user-agent string. */
+  user_agent: string
+}
+
+/** Safe subset of a token (excludes token value). */
+export type TokenView = {
+  /** Unique identifier for this token record. */
+  id: string
+  /** Token category. */
+  token_type: string
+  /** ISO 8601 issue timestamp. */
+  issued_at: string
+  /** ISO 8601 expiration timestamp. */
+  expires_at: string
+  /** Whether this token has been revoked. */
+  revoked: boolean
+}
+
+/** A fully composed user response from `GET /users/full/{id}`. */
+export type UserFullView = {
+  /** Unique identifier for this user. */
+  user_id: UserID
+  /** Login username. */
+  username: string
+  /** Display name. */
+  name: string
+  /** Email address. */
+  email: Email
+  /** Role identifier. */
+  role_id: string
+  /** Human-readable role label. */
+  role_label: string
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+  /** ISO 8601 last-modification timestamp. */
+  date_modified: string
+  /** OAuth connection, or absent if none. */
+  oauth?: UserOauthView
+  /** SSH keys registered to this user. */
+  ssh_keys: UserSshKeyView[]
+  /** Active session, or absent if none. */
+  sessions?: SessionView
+  /** API tokens issued to this user. */
+  tokens: TokenView[]
+}
+
+// ---------------------------------------------------------------------------
 // Create params
 // ---------------------------------------------------------------------------
 

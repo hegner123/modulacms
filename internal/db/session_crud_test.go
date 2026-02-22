@@ -3,7 +3,6 @@
 package db
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -33,10 +32,10 @@ func TestDatabase_CRUD_Session(t *testing.T) {
 		UserID:      userID,
 		DateCreated:   now,
 		ExpiresAt:   later,
-		LastAccess:  sql.NullString{String: "2026-01-01T00:00:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "192.168.1.1", Valid: true},
-		UserAgent:   sql.NullString{String: "test-agent/1.0", Valid: true},
-		SessionData: sql.NullString{String: "{}", Valid: true},
+		LastAccess:  NewNullString("2026-01-01T00:00:00Z"),
+		IpAddress:   NewNullString("192.168.1.1"),
+		UserAgent:   NewNullString("test-agent/1.0"),
+		SessionData: NewNullString("{}"),
 	})
 	if err != nil {
 		t.Fatalf("CreateSession: %v", err)
@@ -118,10 +117,10 @@ func TestDatabase_CRUD_Session(t *testing.T) {
 		UserID:      userID,
 		DateCreated:   created.DateCreated,
 		ExpiresAt:   updatedNow,
-		LastAccess:  sql.NullString{String: "2026-02-01T00:00:00Z", Valid: true},
-		IpAddress:   sql.NullString{String: "10.0.0.1", Valid: true},
-		UserAgent:   sql.NullString{String: "test-agent/2.0", Valid: true},
-		SessionData: sql.NullString{String: "{\"updated\": true}", Valid: true},
+		LastAccess:  NewNullString("2026-02-01T00:00:00Z"),
+		IpAddress:   NewNullString("10.0.0.1"),
+		UserAgent:   NewNullString("test-agent/2.0"),
+		SessionData: NewNullString("{\"updated\": true}"),
 	})
 	if err != nil {
 		t.Fatalf("UpdateSession: %v", err)
@@ -179,10 +178,10 @@ func TestDatabase_CRUD_Session_NullOptionalFields(t *testing.T) {
 		UserID:      userID,
 		DateCreated:   now,
 		ExpiresAt:   now,
-		LastAccess:  sql.NullString{},
-		IpAddress:   sql.NullString{},
-		UserAgent:   sql.NullString{},
-		SessionData: sql.NullString{},
+		LastAccess:  NullString{},
+		IpAddress:   NullString{},
+		UserAgent:   NullString{},
+		SessionData: NullString{},
 	})
 	if err != nil {
 		t.Fatalf("CreateSession with null optionals: %v", err)

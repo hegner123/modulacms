@@ -54,6 +54,12 @@ export type PermissionID = Brand<string, 'PermissionID'>
 /** Unique identifier for a role-permission junction row. */
 export type RolePermissionID = Brand<string, 'RolePermissionID'>
 
+/** Unique identifier for a field type lookup entry. */
+export type FieldTypeID = Brand<string, 'FieldTypeID'>
+
+/** Unique identifier for an admin field type lookup entry. */
+export type AdminFieldTypeID = Brand<string, 'AdminFieldTypeID'>
+
 /** Unique identifier for a public route. */
 export type RouteID = Brand<string, 'RouteID'>
 

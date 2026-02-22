@@ -617,6 +617,317 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 }
 
 // =============================================================================
+// FIELD TYPE HANDLERS
+// =============================================================================
+
+// DeleteFieldTypeContext stores context for deleting a field type.
+type DeleteFieldTypeContext struct {
+	FieldTypeID types.FieldTypeID
+	Label       string
+}
+
+var deleteFieldTypeContext *DeleteFieldTypeContext
+
+// HandleCreateFieldTypeFromDialog processes the field type creation request.
+func (m Model) HandleCreateFieldTypeFromDialog(msg CreateFieldTypeFromDialogRequestMsg) tea.Cmd {
+	authorID := m.UserID
+	cfg := m.Config
+
+	if authorID.IsZero() {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create field type: no user is logged in",
+			}
+		}
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		params := db.CreateFieldTypeParams{
+			Type:  msg.Type,
+			Label: msg.Label,
+		}
+
+		ft, err := d.CreateFieldType(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create field type: %v", err),
+			}
+		}
+
+		return FieldTypeCreatedFromDialogMsg{
+			FieldTypeID: ft.FieldTypeID,
+			Type:        ft.Type,
+			Label:       ft.Label,
+		}
+	}
+}
+
+// HandleUpdateFieldTypeFromDialog processes the field type update request.
+func (m Model) HandleUpdateFieldTypeFromDialog(msg UpdateFieldTypeFromDialogRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot update field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		// STEP 1: Fetch existing record (Golden Rule)
+		fieldTypeID := types.FieldTypeID(msg.FieldTypeID)
+		existing, err := d.GetFieldType(fieldTypeID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get field type for update: %v", err),
+			}
+		}
+
+		// STEP 2: Build params -- set EVERY field
+		// For field_types, there are only Type and Label (no timestamps, no FKs).
+		// Changed fields use new values; unchanged fields use existing values.
+		updateType := msg.Type
+		if updateType == "" {
+			updateType = existing.Type
+		}
+		updateLabel := msg.Label
+		if updateLabel == "" {
+			updateLabel = existing.Label
+		}
+
+		params := db.UpdateFieldTypeParams{
+			Type:        updateType,
+			Label:       updateLabel,
+			FieldTypeID: fieldTypeID,
+		}
+
+		// STEP 3: Execute update
+		_, err = d.UpdateFieldType(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to update field type: %v", err),
+			}
+		}
+
+		return FieldTypeUpdatedFromDialogMsg{
+			FieldTypeID: fieldTypeID,
+			Type:        updateType,
+			Label:       updateLabel,
+		}
+	}
+}
+
+// HandleDeleteFieldType processes the field type deletion request.
+func (m Model) HandleDeleteFieldType(msg DeleteFieldTypeRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot delete field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		err := d.DeleteFieldType(ctx, ac, msg.FieldTypeID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to delete field type: %v", err),
+			}
+		}
+
+		return FieldTypeDeletedMsg{FieldTypeID: msg.FieldTypeID}
+	}
+}
+
+// =============================================================================
+// ADMIN FIELD TYPE HANDLERS
+// =============================================================================
+
+// DeleteAdminFieldTypeContext stores context for deleting an admin field type.
+type DeleteAdminFieldTypeContext struct {
+	AdminFieldTypeID types.AdminFieldTypeID
+	Label            string
+}
+
+var deleteAdminFieldTypeContext *DeleteAdminFieldTypeContext
+
+// HandleCreateAdminFieldTypeFromDialog processes the admin field type creation request.
+func (m Model) HandleCreateAdminFieldTypeFromDialog(msg CreateAdminFieldTypeFromDialogRequestMsg) tea.Cmd {
+	authorID := m.UserID
+	cfg := m.Config
+
+	if authorID.IsZero() {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin field type: no user is logged in",
+			}
+		}
+	}
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot create admin field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		params := db.CreateAdminFieldTypeParams{
+			Type:  msg.Type,
+			Label: msg.Label,
+		}
+
+		ft, err := d.CreateAdminFieldType(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create admin field type: %v", err),
+			}
+		}
+
+		return AdminFieldTypeCreatedFromDialogMsg{
+			AdminFieldTypeID: ft.AdminFieldTypeID,
+			Type:             ft.Type,
+			Label:            ft.Label,
+		}
+	}
+}
+
+// HandleUpdateAdminFieldTypeFromDialog processes the admin field type update request.
+func (m Model) HandleUpdateAdminFieldTypeFromDialog(msg UpdateAdminFieldTypeFromDialogRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot update admin field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		// STEP 1: Fetch existing record (Golden Rule)
+		adminFieldTypeID := types.AdminFieldTypeID(msg.AdminFieldTypeID)
+		existing, err := d.GetAdminFieldType(adminFieldTypeID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to get admin field type for update: %v", err),
+			}
+		}
+
+		// STEP 2: Build params -- set EVERY field
+		// For admin_field_types, there are only Type and Label (no timestamps, no FKs).
+		updateType := msg.Type
+		if updateType == "" {
+			updateType = existing.Type
+		}
+		updateLabel := msg.Label
+		if updateLabel == "" {
+			updateLabel = existing.Label
+		}
+
+		params := db.UpdateAdminFieldTypeParams{
+			Type:             updateType,
+			Label:            updateLabel,
+			AdminFieldTypeID: adminFieldTypeID,
+		}
+
+		// STEP 3: Execute update
+		_, err = d.UpdateAdminFieldType(ctx, ac, params)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to update admin field type: %v", err),
+			}
+		}
+
+		return AdminFieldTypeUpdatedFromDialogMsg{
+			AdminFieldTypeID: adminFieldTypeID,
+			Type:             updateType,
+			Label:            updateLabel,
+		}
+	}
+}
+
+// HandleDeleteAdminFieldType processes the admin field type deletion request.
+func (m Model) HandleDeleteAdminFieldType(msg DeleteAdminFieldTypeRequestMsg) tea.Cmd {
+	cfg := m.Config
+	authorID := m.UserID
+
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: "Cannot delete admin field type: configuration not loaded",
+			}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, authorID)
+
+		err := d.DeleteAdminFieldType(ctx, ac, msg.AdminFieldTypeID)
+		if err != nil {
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to delete admin field type: %v", err),
+			}
+		}
+
+		return AdminFieldTypeDeletedMsg{AdminFieldTypeID: msg.AdminFieldTypeID}
+	}
+}
+
+// =============================================================================
 // ADMIN CONTENT HANDLERS
 // =============================================================================
 

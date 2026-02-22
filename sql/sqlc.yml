@@ -43,6 +43,8 @@ sql:
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
+          field_type_id: "FieldTypeID"
+          admin_field_type_id: "AdminFieldTypeID"
           first_child_id: "FirstChildID"
           md_id: "MdID"
           media_dimension_id: "MediaDimensionID"
@@ -79,6 +81,8 @@ sql:
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
+          field_type: FieldTypes
+          admin_field_type: AdminFieldTypes
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
@@ -136,6 +140,11 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FIELD TYPES
+          - column: "field_types.field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
+          - column: "admin_field_types.admin_field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldTypeID"}
           # ROLE PERMISSIONS
           - column: "role_permissions.id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
@@ -178,6 +187,10 @@ sql:
           - column: "admin_content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "content_fields.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_fields.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
@@ -454,6 +467,8 @@ sql:
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
+          field_type_id: "FieldTypeID"
+          admin_field_type_id: "AdminFieldTypeID"
           first_child_id: "FirstChildID"
           md_id: "MdID"
           media_dimension_id: "MediaDimensionID"
@@ -490,6 +505,8 @@ sql:
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
+          field_type: FieldTypes
+          admin_field_type: AdminFieldTypes
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
@@ -547,6 +564,11 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FIELD TYPES
+          - column: "field_types.field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
+          - column: "admin_field_types.admin_field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldTypeID"}
           # ROLE PERMISSIONS
           - column: "role_permissions.id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
@@ -589,6 +611,10 @@ sql:
           - column: "admin_content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "content_fields.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_fields.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"
@@ -865,6 +891,8 @@ sql:
           datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
+          field_type_id: "FieldTypeID"
+          admin_field_type_id: "AdminFieldTypeID"
           first_child_id: "FirstChildID"
           md_id: "MdID"
           media_dimension_id: "MediaDimensionID"
@@ -901,6 +929,8 @@ sql:
           datatype: Datatypes
           datatypes_field: DatatypesFields
           field: Fields
+          field_type: FieldTypes
+          admin_field_type: AdminFieldTypes
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
@@ -958,6 +988,11 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
           - column: "admin_datatypes_fields.admin_datatype_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
+          # FIELD TYPES
+          - column: "field_types.field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
+          - column: "admin_field_types.admin_field_type_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldTypeID"}
           # ROLE PERMISSIONS
           - column: "role_permissions.id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RolePermissionID"}
@@ -1000,6 +1035,10 @@ sql:
           - column: "admin_content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           - column: "admin_datatypes.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "content_fields.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "admin_content_fields.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
           # FOREIGN KEY COLUMNS
           - column: "*.datatype_id"

@@ -216,6 +216,24 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, PanelFocusResetCmd())
 
 			return m, tea.Batch(cmds...)
+		case FIELDTYPES:
+			page := m.PageMap[FIELDTYPES]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, FieldTypesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case ADMINFIELDTYPES:
+			page := m.PageMap[ADMINFIELDTYPES]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, AdminFieldTypesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
 		case PLUGINSPAGE:
 			page := m.PageMap[PLUGINSPAGE]
 			cmds = append(cmds, LoadingStartCmd())

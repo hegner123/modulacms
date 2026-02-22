@@ -404,3 +404,45 @@ export type UpdateAdminFieldParams = {
   /** ISO 8601 modification timestamp. */
   date_modified: string
 }
+
+// ---------------------------------------------------------------------------
+// Admin content data move/reorder
+// ---------------------------------------------------------------------------
+
+/** Parameters for moving an admin content data node to a new parent via `POST /admincontentdatas/move`. */
+export type MoveAdminContentDataParams = {
+  /** ID of the node to move. */
+  node_id: AdminContentID
+  /** New parent node ID, or `null` for root level. */
+  new_parent_id: AdminContentID | null
+  /** 0-indexed position within the new parent's children. */
+  position: number
+}
+
+/** Response from the move admin content data endpoint. */
+export type MoveAdminContentDataResponse = {
+  /** ID of the moved node. */
+  node_id: AdminContentID
+  /** Previous parent node ID, or `null`. */
+  old_parent_id: AdminContentID | null
+  /** New parent node ID, or `null`. */
+  new_parent_id: AdminContentID | null
+  /** Position within the new parent's children. */
+  position: number
+}
+
+/** Parameters for reordering admin content data siblings via `POST /admincontentdatas/reorder`. */
+export type ReorderAdminContentDataParams = {
+  /** Parent node ID, or `null` for root-level siblings. */
+  parent_id: AdminContentID | null
+  /** Ordered list of sibling admin content data IDs in the desired sequence. */
+  ordered_ids: AdminContentID[]
+}
+
+/** Response from the reorder admin content data endpoint. */
+export type ReorderAdminContentDataResponse = {
+  /** Number of nodes updated. */
+  updated: number
+  /** Parent node ID, or `null`. */
+  parent_id: AdminContentID | null
+}

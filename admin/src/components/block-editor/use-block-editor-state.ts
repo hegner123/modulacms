@@ -22,6 +22,7 @@ type BlockEditorState = {
   dirtyCount: (allBlocks: Array<{ contentDataId: string; mergedFields: MergedField[] }>) => number
   saveBlock: (node: ContentNode, mergedFields: MergedField[]) => Promise<void>
   saveAll: (blocks: Array<{ node: ContentNode; mergedFields: MergedField[] }>) => Promise<void>
+  saveAllForce: (blocks: Array<{ node: ContentNode; mergedFields: MergedField[] }>) => Promise<void>
   clearBlockEdits: (contentDataId: string) => void
 }
 
@@ -152,6 +153,69 @@ export function useBlockEditorState(): BlockEditorState {
     [isBlockDirty, saveBlock],
   )
 
+  const saveBlockForce = useCallback(
+    async (node: ContentNode, mergedFields: MergedField[]) => {
+      const contentDataId = node.datatype.content.content_data_id
+      const edits = localEdits[contentDataId]
+      const now = new Date().toISOString()
+      const promises: Promise<unknown>[] = []
+
+      for (const field of mergedFields) {
+        const localValue = edits?.[field.fieldId]
+        const currentValue = localValue !== undefined ? localValue : field.value
+
+        // The tree response includes stub entries for schema fields without
+        // saved values. These stubs have contentField set but an empty
+        // content_field_id. Treat them the same as missing content fields.
+        const hasPersistedField = field.contentField && field.contentField.content_field_id
+
+        if (hasPersistedField) {
+          promises.push(
+            updateContentField.mutateAsync({
+              content_field_id: field.contentField!.content_field_id as ContentFieldID,
+              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
+              content_data_id: node.datatype.content.content_data_id as ContentID | null,
+              field_id: field.fieldId as FieldID | null,
+              field_value: currentValue,
+              author_id: (user?.user_id ?? null) as UserID | null,
+              date_created: field.contentField!.date_created,
+              date_modified: now,
+            }),
+          )
+        } else if (currentValue !== '') {
+          promises.push(
+            createContentField.mutateAsync({
+              route_id: (node.datatype.content.route_id ?? null) as RouteID | null,
+              content_data_id: node.datatype.content.content_data_id as ContentID | null,
+              field_id: field.fieldId as FieldID | null,
+              field_value: currentValue,
+              author_id: (user?.user_id ?? null) as UserID | null,
+              date_created: now,
+              date_modified: now,
+            }),
+          )
+        }
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises)
+      }
+      clearBlockEdits(contentDataId)
+    },
+    [localEdits, user, createContentField, updateContentField, clearBlockEdits],
+  )
+
+  const saveAllForce = useCallback(
+    async (blocks: Array<{ node: ContentNode; mergedFields: MergedField[] }>) => {
+      setSaving(true)
+      for (const block of blocks) {
+        await saveBlockForce(block.node, block.mergedFields)
+      }
+      setSaving(false)
+    },
+    [saveBlockForce],
+  )
+
   return {
     saving,
     getFieldValue,
@@ -161,6 +225,7 @@ export function useBlockEditorState(): BlockEditorState {
     dirtyCount,
     saveBlock,
     saveAll,
+    saveAllForce,
     clearBlockEdits,
   }
 }

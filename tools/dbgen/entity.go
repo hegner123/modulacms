@@ -300,10 +300,11 @@ func (e Entity) NeedsSqlImport() bool {
 	return false
 }
 
-// NeedsUtilityImport returns true if any field uses nullToString conversion.
+// NeedsUtilityImport returns true if any field uses a StringConvert that calls utility.NullToString.
 func (e Entity) NeedsUtilityImport() bool {
 	for _, f := range e.Fields {
-		if f.StringConvert == "nullToString" {
+		switch f.StringConvert {
+		case "nullToString", "wrapperNullToString", "wrapperNullInt64ToString":
 			return true
 		}
 	}

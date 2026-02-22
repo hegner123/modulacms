@@ -434,6 +434,52 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowDeleteFieldTypeDialogMsg:
+		dialog := NewDialog("Delete Field Type", fmt.Sprintf("Delete field type '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEFIELDTYPE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteFieldTypeContext = &DeleteFieldTypeContext{
+			FieldTypeID: msg.FieldTypeID,
+			Label:       msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditFieldTypeDialogMsg:
+		// Edit field type dialog with pre-populated values
+		dialog := NewRouteFormDialog("Edit Field Type", FORMDIALOGEDITFIELDTYPE)
+		dialog.LabelInput.SetValue(msg.FieldType.Type)
+		dialog.TypeInput.SetValue(msg.FieldType.Label)
+		dialog.EntityID = string(msg.FieldType.FieldTypeID)
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowDeleteAdminFieldTypeDialogMsg:
+		dialog := NewDialog("Delete Admin Field Type", fmt.Sprintf("Delete admin field type '%s'?\nThis cannot be undone.", msg.Label), true, DIALOGDELETEADMINFIELDTYPE)
+		dialog.SetButtons("Delete", "Cancel")
+		deleteAdminFieldTypeContext = &DeleteAdminFieldTypeContext{
+			AdminFieldTypeID: msg.AdminFieldTypeID,
+			Label:            msg.Label,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case ShowEditAdminFieldTypeDialogMsg:
+		// Edit admin field type dialog with pre-populated values
+		dialog := NewRouteFormDialog("Edit Admin Field Type", FORMDIALOGEDITADMINFIELDTYPE)
+		dialog.LabelInput.SetValue(msg.AdminFieldType.Type)
+		dialog.TypeInput.SetValue(msg.AdminFieldType.Label)
+		dialog.EntityID = string(msg.AdminFieldType.AdminFieldTypeID)
+		return m, tea.Batch(
+			FormDialogSetCmd(&dialog),
+			FormDialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case UserFormDialogAcceptMsg:
 		switch msg.Action {
 		case FORMDIALOGCREATEUSER:
@@ -660,6 +706,36 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					DeleteAdminFieldCmd(ctx.AdminFieldID, ctx.AdminDatatypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEFIELDTYPE:
+			if deleteFieldTypeContext != nil {
+				fieldTypeID := deleteFieldTypeContext.FieldTypeID
+				deleteFieldTypeContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteFieldTypeCmd(fieldTypeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDELETEADMINFIELDTYPE:
+			if deleteAdminFieldTypeContext != nil {
+				adminFieldTypeID := deleteAdminFieldTypeContext.AdminFieldTypeID
+				deleteAdminFieldTypeContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					DeleteAdminFieldTypeCmd(adminFieldTypeID),
 				)
 			}
 			return m, tea.Batch(
@@ -1095,6 +1171,38 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				UpdateAdminFieldFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+			)
+		case FORMDIALOGCREATEFIELDTYPE:
+			// Create a new field type (Label=Type value, Type=Label value)
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateFieldTypeFromDialogCmd(msg.Label, msg.Type),
+			)
+		case FORMDIALOGEDITFIELDTYPE:
+			// Update an existing field type (Label=Type value, Type=Label value)
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateFieldTypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+			)
+		case FORMDIALOGCREATEADMINFIELDTYPE:
+			// Create a new admin field type (Label=Type value, Type=Label value)
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				CreateAdminFieldTypeFromDialogCmd(msg.Label, msg.Type),
+			)
+		case FORMDIALOGEDITADMINFIELDTYPE:
+			// Update an existing admin field type (Label=Type value, Type=Label value)
+			return m, tea.Batch(
+				FormDialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				LoadingStartCmd(),
+				UpdateAdminFieldTypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
 			)
 		case FORMDIALOGCONFIGEDIT:
 			// EntityID holds the JSON key, Label holds the new value

@@ -105,3 +105,31 @@ export type UpdateMediaDimensionParams = {
   /** Updated aspect ratio, or `null`. */
   aspect_ratio: string | null
 }
+
+// ---------------------------------------------------------------------------
+// Media health/cleanup
+// ---------------------------------------------------------------------------
+
+/** Response from `GET /media/health` showing orphaned S3 objects. */
+export type MediaHealthResponse = {
+  /** Total number of objects in the media bucket. */
+  total_objects: number
+  /** Number of objects with a corresponding database record. */
+  tracked_keys: number
+  /** S3 keys with no database record. */
+  orphaned_keys: string[]
+  /** Count of orphaned keys. */
+  orphan_count: number
+}
+
+/** Response from `DELETE /media/cleanup` after deleting orphaned S3 objects. */
+export type MediaCleanupResponse = {
+  /** S3 keys that were successfully deleted. */
+  deleted: string[]
+  /** Number of keys deleted. */
+  deleted_count: number
+  /** S3 keys that failed to delete. */
+  failed: string[]
+  /** Number of keys that failed to delete. */
+  failed_count: number
+}

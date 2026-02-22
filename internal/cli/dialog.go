@@ -36,6 +36,8 @@ const (
 	DIALOGAPPROVEPLUGINROUTES    DialogAction = "approve_plugin_routes"
 	DIALOGAPPROVEPLUGINSHOOKS    DialogAction = "approve_plugin_hooks"
 	DIALOGQUICKSTART             DialogAction = "quickstart_confirm"
+	DIALOGDELETEFIELDTYPE        DialogAction = "delete_field_type"
+	DIALOGDELETEADMINFIELDTYPE   DialogAction = "delete_admin_field_type"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -104,7 +106,7 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGDELETEDATATYPE, DIALOGDELETEFIELD, DIALOGDELETEROUTE, DIALOGDELETEMEDIA, DIALOGDELETEUSER,
 		DIALOGDELETECONTENTFIELD, DIALOGDELETEADMINROUTE, DIALOGDELETEADMINDATATYPE, DIALOGDELETEADMINFIELD,
 		DIALOGDELETEADMINCONTENT, DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
-		DIALOGQUICKSTART:
+		DIALOGQUICKSTART, DIALOGDELETEFIELDTYPE, DIALOGDELETEADMINFIELDTYPE:
 		return d.ToggleControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc

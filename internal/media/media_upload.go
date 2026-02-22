@@ -125,7 +125,7 @@ func HandleMediaUpload(srcFile string, dstPath string, c config.Config) error {
 	}
 
 	params := MapMediaParams(row)
-	params.Srcset = db.StringToNullString(string(srcsetJSON))
+	params.Srcset = db.NewNullString(string(srcsetJSON))
 
 	ctx := context.Background()
 	ac := audited.Ctx(types.NodeID(c.Node_ID), types.UserID(""), "", "system")

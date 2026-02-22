@@ -130,6 +130,74 @@ func (m Model) UpdateAdminCms(msg tea.Msg) (Model, tea.Cmd) {
 			AdminContentDataFetchCmd(),
 		)
 
+	// =========================================================================
+	// FIELD TYPE REQUEST MESSAGES -> dispatch to handlers
+	// =========================================================================
+	case CreateFieldTypeFromDialogRequestMsg:
+		return m, m.HandleCreateFieldTypeFromDialog(msg)
+	case UpdateFieldTypeFromDialogRequestMsg:
+		return m, m.HandleUpdateFieldTypeFromDialog(msg)
+	case DeleteFieldTypeRequestMsg:
+		return m, m.HandleDeleteFieldType(msg)
+
+	// =========================================================================
+	// FIELD TYPE RESULT MESSAGES -> re-fetch data
+	// =========================================================================
+	case FieldTypeCreatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Field type created: %s", msg.Label)),
+			FieldTypesFetchCmd(),
+		)
+	case FieldTypeUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Field type updated: %s", msg.Label)),
+			FieldTypesFetchCmd(),
+		)
+	case FieldTypeDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Field type deleted: %s", msg.FieldTypeID)),
+			FieldTypesFetchCmd(),
+		)
+
+	// =========================================================================
+	// ADMIN FIELD TYPE REQUEST MESSAGES -> dispatch to handlers
+	// =========================================================================
+	case CreateAdminFieldTypeFromDialogRequestMsg:
+		return m, m.HandleCreateAdminFieldTypeFromDialog(msg)
+	case UpdateAdminFieldTypeFromDialogRequestMsg:
+		return m, m.HandleUpdateAdminFieldTypeFromDialog(msg)
+	case DeleteAdminFieldTypeRequestMsg:
+		return m, m.HandleDeleteAdminFieldType(msg)
+
+	// =========================================================================
+	// ADMIN FIELD TYPE RESULT MESSAGES -> re-fetch data
+	// =========================================================================
+	case AdminFieldTypeCreatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin field type created: %s", msg.Label)),
+			AdminFieldTypesFetchCmd(),
+		)
+	case AdminFieldTypeUpdatedFromDialogMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin field type updated: %s", msg.Label)),
+			AdminFieldTypesFetchCmd(),
+		)
+	case AdminFieldTypeDeletedMsg:
+		newModel := m
+		newModel.Cursor = 0
+		return newModel, tea.Batch(
+			LoadingStopCmd(),
+			LogMessageCmd(fmt.Sprintf("Admin field type deleted: %s", msg.AdminFieldTypeID)),
+			AdminFieldTypesFetchCmd(),
+		)
+
 	default:
 		return m, nil
 	}

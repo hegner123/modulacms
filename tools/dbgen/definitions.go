@@ -56,16 +56,16 @@ var Entities = []Entity{
 		StringTypeName:     "StringMedia",
 		Fields: []Field{
 			{AppName: "MediaID", Type: "types.MediaID", JSONTag: "media_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
-			{AppName: "Name", Type: "sql.NullString", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "DisplayName", Type: "sql.NullString", JSONTag: "display_name", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Alt", Type: "sql.NullString", JSONTag: "alt", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Caption", Type: "sql.NullString", JSONTag: "caption", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Description", Type: "sql.NullString", JSONTag: "description", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Class", Type: "sql.NullString", JSONTag: "class", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Mimetype", Type: "sql.NullString", JSONTag: "mimetype", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Dimensions", Type: "sql.NullString", JSONTag: "dimensions", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
+			{AppName: "Name", Type: "NullString", JSONTag: "name", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "DisplayName", Type: "NullString", JSONTag: "display_name", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Alt", Type: "NullString", JSONTag: "alt", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Caption", Type: "NullString", JSONTag: "caption", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Description", Type: "NullString", JSONTag: "description", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Class", Type: "NullString", JSONTag: "class", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Mimetype", Type: "NullString", JSONTag: "mimetype", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Dimensions", Type: "NullString", JSONTag: "dimensions", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
 			{AppName: "URL", Type: "types.URL", JSONTag: "url", InCreate: true, InUpdate: true, StringConvert: "toString"},
-			{AppName: "Srcset", Type: "sql.NullString", JSONTag: "srcset", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
+			{AppName: "Srcset", Type: "NullString", JSONTag: "srcset", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
 			{AppName: "FocalX", Type: "types.NullableFloat64", JSONTag: "focal_x", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
 			{AppName: "FocalY", Type: "types.NullableFloat64", JSONTag: "focal_y", InCreate: true, InUpdate: true, StringConvert: "sprintfFloat64"},
 			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
@@ -200,7 +200,7 @@ var Entities = []Entity{
 			{AppName: "ContentDataID", Type: "types.NullableContentID", JSONTag: "content_data_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "FieldID", Type: "types.NullableFieldID", JSONTag: "field_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "FieldValue", Type: "string", JSONTag: "field_value", InCreate: true, InUpdate: true, StringConvert: "string"},
-			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "AuthorID", Type: "types.UserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
 		},
@@ -346,7 +346,7 @@ var Entities = []Entity{
 			{AppName: "AdminContentDataID", Type: "types.NullableAdminContentID", JSONTag: "admin_content_data_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminFieldID", Type: "types.NullableAdminFieldID", JSONTag: "admin_field_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "AdminFieldValue", Type: "string", JSONTag: "admin_field_value", InCreate: true, InUpdate: true, StringConvert: "string"},
-			{AppName: "AuthorID", Type: "types.NullableUserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
+			{AppName: "AuthorID", Type: "types.UserID", JSONTag: "author_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateModified", Type: "types.Timestamp", JSONTag: "date_modified", InCreate: true, InUpdate: true, StringConvert: "toString"},
 		},
@@ -736,6 +736,66 @@ var Entities = []Entity{
 		OutputFile: "admin_datatype_field_gen.go",
 	},
 
+	// FieldTypes
+	{
+		Name:               "FieldTypes",
+		Singular:           "FieldType",
+		Plural:             "FieldTypes",
+		SqlcTypeName:       "FieldTypes",
+		TableName:          "field_types",
+		IDType:             "types.FieldTypeID",
+		IDField:            "FieldTypeID",
+		NewIDFunc:          "types.NewFieldTypeID()",
+		UpdateSuccessField: "s.Type",
+		StringTypeName:     "StringFieldTypes",
+		Fields: []Field{
+			{AppName: "FieldTypeID", Type: "types.FieldTypeID", JSONTag: "field_type_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Type", Type: "string", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "GetFieldTypeByType",
+				SqlcName:    "GetFieldTypesByType",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "fieldType", ParamType: "string", SqlcField: "Type"},
+				},
+			},
+		},
+		OutputFile: "field_type_gen.go",
+	},
+
+	// AdminFieldTypes
+	{
+		Name:               "AdminFieldTypes",
+		Singular:           "AdminFieldType",
+		Plural:             "AdminFieldTypes",
+		SqlcTypeName:       "AdminFieldTypes",
+		TableName:          "admin_field_types",
+		IDType:             "types.AdminFieldTypeID",
+		IDField:            "AdminFieldTypeID",
+		NewIDFunc:          "types.NewAdminFieldTypeID()",
+		UpdateSuccessField: "s.Type",
+		StringTypeName:     "StringAdminFieldTypes",
+		Fields: []Field{
+			{AppName: "AdminFieldTypeID", Type: "types.AdminFieldTypeID", JSONTag: "admin_field_type_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "toString"},
+			{AppName: "Type", Type: "string", JSONTag: "type", InCreate: true, InUpdate: true, StringConvert: "string"},
+			{AppName: "Label", Type: "string", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "string"},
+		},
+		ExtraQueries: []ExtraQuery{
+			{
+				MethodName:  "GetAdminFieldTypeByType",
+				SqlcName:    "GetAdminFieldTypesByType",
+				ReturnsList: false,
+				Params: []ExtraQueryParam{
+					{ParamName: "fieldType", ParamType: "string", SqlcField: "Type"},
+				},
+			},
+		},
+		OutputFile: "admin_field_type_gen.go",
+	},
+
 	// ===================================================
 	// SKIP MAPPERS + AUDITED COMMANDS (per-driver diffs)
 	// ===================================================
@@ -847,10 +907,10 @@ var Entities = []Entity{
 			{AppName: "UserID", Type: "types.NullableUserID", JSONTag: "user_id", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "DateCreated", Type: "types.Timestamp", JSONTag: "date_created", InCreate: true, InUpdate: true, StringConvert: "toString"},
 			{AppName: "ExpiresAt", Type: "types.Timestamp", JSONTag: "expires_at", InCreate: true, InUpdate: true, StringConvert: "toString"},
-			{AppName: "LastAccess", Type: "sql.NullString", JSONTag: "last_access", InCreate: true, InUpdate: true, StringConvert: "nullToEmpty"},
-			{AppName: "IpAddress", Type: "sql.NullString", JSONTag: "ip_address", InCreate: true, InUpdate: true, StringConvert: "nullToEmpty"},
-			{AppName: "UserAgent", Type: "sql.NullString", JSONTag: "user_agent", InCreate: true, InUpdate: true, StringConvert: "nullToEmpty"},
-			{AppName: "SessionData", Type: "sql.NullString", JSONTag: "session_data", InCreate: true, InUpdate: true, StringConvert: "nullToEmpty"},
+			{AppName: "LastAccess", Type: "NullString", JSONTag: "last_access", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToEmpty"},
+			{AppName: "IpAddress", Type: "NullString", JSONTag: "ip_address", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToEmpty"},
+			{AppName: "UserAgent", Type: "NullString", JSONTag: "user_agent", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToEmpty"},
+			{AppName: "SessionData", Type: "NullString", JSONTag: "session_data", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToEmpty"},
 		},
 		ExtraQueries: []ExtraQuery{
 			{
@@ -881,10 +941,10 @@ var Entities = []Entity{
 		StringTypeName:      "StringMediaDimensions",
 		Fields: []Field{
 			{AppName: "MdID", Type: "string", JSONTag: "md_id", IsPrimaryID: true, InCreate: false, InUpdate: true, StringConvert: "string"},
-			{AppName: "Label", Type: "sql.NullString", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Width", Type: "sql.NullInt64", JSONTag: "width", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "Height", Type: "sql.NullInt64", JSONTag: "height", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
-			{AppName: "AspectRatio", Type: "sql.NullString", JSONTag: "aspect_ratio", InCreate: true, InUpdate: true, StringConvert: "nullToString"},
+			{AppName: "Label", Type: "NullString", JSONTag: "label", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
+			{AppName: "Width", Type: "NullInt64", JSONTag: "width", InCreate: true, InUpdate: true, StringConvert: "wrapperNullInt64ToString"},
+			{AppName: "Height", Type: "NullInt64", JSONTag: "height", InCreate: true, InUpdate: true, StringConvert: "wrapperNullInt64ToString"},
+			{AppName: "AspectRatio", Type: "NullString", JSONTag: "aspect_ratio", InCreate: true, InUpdate: true, StringConvert: "wrapperNullToString"},
 		},
 		OutputFile: "media_dimension_gen.go",
 	},

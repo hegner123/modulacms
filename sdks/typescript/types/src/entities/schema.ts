@@ -6,9 +6,11 @@
  */
 
 import type {
+  AdminFieldTypeID,
   ContentID,
   DatatypeID,
   FieldID,
+  FieldTypeID,
   UserID,
 } from '../ids.js'
 import type { FieldType } from '../enums.js'
@@ -58,6 +60,30 @@ export type Field = {
   date_created: string
   /** ISO 8601 last-modification timestamp. */
   date_modified: string
+}
+
+/**
+ * A field type lookup entry (public content fields).
+ */
+export type FieldTypeInfo = {
+  /** Unique identifier for this field type. */
+  field_type_id: FieldTypeID
+  /** Machine-readable type key (e.g. `'text'`, `'number'`). */
+  type: string
+  /** Human-readable label for this field type. */
+  label: string
+}
+
+/**
+ * An admin field type lookup entry (admin content fields).
+ */
+export type AdminFieldTypeInfo = {
+  /** Unique identifier for this admin field type. */
+  admin_field_type_id: AdminFieldTypeID
+  /** Machine-readable type key (e.g. `'text'`, `'number'`). */
+  type: string
+  /** Human-readable label for this admin field type. */
+  label: string
 }
 
 /**

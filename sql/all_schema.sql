@@ -677,3 +677,19 @@ CREATE TRIGGER IF NOT EXISTS update_admin_datatypes_modified
         UPDATE admin_datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE admin_datatype_id = NEW.admin_datatype_id;
     END;
+
+-- ===== 27_field_types =====
+
+CREATE TABLE IF NOT EXISTS field_types (
+    field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);
+
+-- ===== 28_admin_field_types =====
+
+CREATE TABLE IF NOT EXISTS admin_field_types (
+    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);

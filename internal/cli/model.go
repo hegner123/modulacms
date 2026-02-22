@@ -154,6 +154,10 @@ type Model struct {
 	AdminSelectedContentFields  []AdminContentFieldDisplay
 	AdminFieldCursor            int
 
+	// Field types state
+	FieldTypesList      []db.FieldTypes
+	AdminFieldTypesList []db.AdminFieldTypes
+
 	// Cursor tracking across tree reloads (e.g., after sibling reorder)
 	PendingCursorContentID types.ContentID
 

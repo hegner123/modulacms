@@ -16,10 +16,10 @@ import (
 // --- Test data helpers ---
 
 // acfTestFixture returns a fully populated AdminContentFields struct for testing.
-func acfTestFixture() (AdminContentFields, types.AdminContentFieldID, types.NullableAdminFieldID, types.NullableUserID, types.Timestamp) {
+func acfTestFixture() (AdminContentFields, types.AdminContentFieldID, types.NullableAdminFieldID, types.UserID, types.Timestamp) {
 	fieldID := types.NewAdminContentFieldID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 6, 15, 14, 30, 0, 0, time.UTC))
 
 	acf := AdminContentFields{
@@ -216,17 +216,17 @@ func TestMapStringAdminContentField_NullAdminFieldID(t *testing.T) {
 	}
 }
 
-func TestMapStringAdminContentField_NullAuthorID(t *testing.T) {
+func TestMapStringAdminContentField_EmptyAuthorID(t *testing.T) {
 	t.Parallel()
-	// NullableUserID with Valid=false should produce "null" from .String()
+	// Zero-value UserID should produce "" from .String()
 	acf := AdminContentFields{
-		AuthorID: types.NullableUserID{Valid: false},
+		AuthorID: types.UserID(""),
 	}
 	got := MapStringAdminContentField(acf)
 
-	// NullableUserID.String() returns "null" when Valid=false
-	if got.AuthorID != "null" {
-		t.Errorf("AuthorID = %q, want %q", got.AuthorID, "null")
+	// UserID.String() returns "" when zero-value
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want %q", got.AuthorID, "")
 	}
 }
 
@@ -250,7 +250,7 @@ func TestDatabase_MapAdminContentField_AllFields(t *testing.T) {
 	d := Database{}
 	fieldID := types.NewAdminContentFieldID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 3, 15, 10, 30, 0, 0, time.UTC))
 
 	input := mdb.AdminContentFields{
@@ -314,7 +314,7 @@ func TestDatabase_MapCreateAdminContentFieldParams_GeneratesID(t *testing.T) {
 	t.Parallel()
 	d := Database{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
 
 	input := CreateAdminContentFieldParams{
@@ -378,7 +378,7 @@ func TestDatabase_MapCreateAdminContentFieldParams_NullFields(t *testing.T) {
 	input := CreateAdminContentFieldParams{
 		AdminRouteID: types.NullableAdminRouteID{Valid: false},
 		AdminFieldID: types.NullableAdminFieldID{Valid: false},
-		AuthorID:     types.NullableUserID{Valid: false},
+		AuthorID:     types.UserID(""),
 	}
 
 	got := d.MapCreateAdminContentFieldParams(input)
@@ -389,8 +389,8 @@ func TestDatabase_MapCreateAdminContentFieldParams_NullFields(t *testing.T) {
 	if got.AdminFieldID.Valid {
 		t.Error("AdminFieldID.Valid = true, want false")
 	}
-	if got.AuthorID.Valid {
-		t.Error("AuthorID.Valid = true, want false")
+	if got.AuthorID != "" {
+		t.Errorf("AuthorID = %q, want empty string", got.AuthorID)
 	}
 }
 
@@ -400,7 +400,7 @@ func TestDatabase_MapUpdateAdminContentFieldParams_AllFields(t *testing.T) {
 	t.Parallel()
 	d := Database{}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
 	acfID := types.NewAdminContentFieldID()
 
@@ -451,7 +451,7 @@ func TestMysqlDatabase_MapAdminContentField_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	fieldID := types.NewAdminContentFieldID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 1, 15, 8, 0, 0, 0, time.UTC))
 
 	input := mdbm.AdminContentFields{
@@ -571,7 +571,7 @@ func TestPsqlDatabase_MapAdminContentField_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	fieldID := types.NewAdminContentFieldID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 2, 20, 14, 0, 0, 0, time.UTC))
 
 	input := mdbp.AdminContentFields{
@@ -684,7 +684,7 @@ func TestCrossDatabaseMapAdminContentField_Consistency(t *testing.T) {
 	t.Parallel()
 	fieldID := types.NewAdminContentFieldID()
 	adminFieldID := types.NullableAdminFieldID{ID: types.AdminFieldID(types.NewAdminFieldID()), Valid: true}
-	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
+	authorID := types.NewUserID()
 	ts := types.NewTimestamp(time.Date(2025, 4, 10, 9, 15, 0, 0, time.UTC))
 	routeID := types.NullableAdminRouteID{ID: types.AdminRouteID("cross-route"), Valid: true}
 

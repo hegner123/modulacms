@@ -1,7 +1,6 @@
 package media
 
 import (
-	"database/sql"
 	"fmt"
 	"image"
 	"os"
@@ -25,8 +24,8 @@ func TestFocalPointArtifacts(t *testing.T) {
 	}
 
 	dims := []db.MediaDimensions{
-		{Width: sql.NullInt64{Int64: 150, Valid: true}, Height: sql.NullInt64{Int64: 150, Valid: true}},
-		{Width: sql.NullInt64{Int64: 200, Valid: true}, Height: sql.NullInt64{Int64: 100, Valid: true}},
+		{Width: db.NewNullInt64(150), Height: db.NewNullInt64(150)},
+		{Width: db.NewNullInt64(200), Height: db.NewNullInt64(100)},
 	}
 	lister := &mockDimensionLister{dims: &dims}
 

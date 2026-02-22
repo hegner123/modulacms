@@ -22,16 +22,16 @@ func mediaTestFixture() (Media, types.MediaID, types.NullableUserID, types.Times
 	ts := types.NewTimestamp(time.Date(2025, 5, 20, 14, 30, 0, 0, time.UTC))
 	m := Media{
 		MediaID:      mediaID,
-		Name:         sql.NullString{String: "hero-banner.jpg", Valid: true},
-		DisplayName:  sql.NullString{String: "Hero Banner", Valid: true},
-		Alt:          sql.NullString{String: "A wide hero banner image", Valid: true},
-		Caption:      sql.NullString{String: "Site header image", Valid: true},
-		Description:  sql.NullString{String: "Full-width hero banner for landing page", Valid: true},
-		Class:        sql.NullString{String: "image", Valid: true},
-		Mimetype:     sql.NullString{String: "image/jpeg", Valid: true},
-		Dimensions:   sql.NullString{String: "1920x1080", Valid: true},
+		Name:         NullString{sql.NullString{String: "hero-banner.jpg", Valid: true}},
+		DisplayName:  NullString{sql.NullString{String: "Hero Banner", Valid: true}},
+		Alt:          NullString{sql.NullString{String: "A wide hero banner image", Valid: true}},
+		Caption:      NullString{sql.NullString{String: "Site header image", Valid: true}},
+		Description:  NullString{sql.NullString{String: "Full-width hero banner for landing page", Valid: true}},
+		Class:        NullString{sql.NullString{String: "image", Valid: true}},
+		Mimetype:     NullString{sql.NullString{String: "image/jpeg", Valid: true}},
+		Dimensions:   NullString{sql.NullString{String: "1920x1080", Valid: true}},
 		URL:          types.URL("https://cdn.example.com/images/hero-banner.jpg"),
-		Srcset:       sql.NullString{String: "hero-480.jpg 480w, hero-1080.jpg 1080w", Valid: true},
+		Srcset:       NullString{sql.NullString{String: "hero-480.jpg 480w, hero-1080.jpg 1080w", Valid: true}},
 		AuthorID:     authorID,
 		DateCreated:  ts,
 		DateModified: ts,
@@ -44,16 +44,16 @@ func mediaCreateParams() CreateMediaParams {
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 10, 0, 0, 0, time.UTC))
 	return CreateMediaParams{
-		Name:         sql.NullString{String: "document.pdf", Valid: true},
-		DisplayName:  sql.NullString{String: "Annual Report", Valid: true},
-		Alt:          sql.NullString{String: "PDF document", Valid: true},
-		Caption:      sql.NullString{String: "Annual Report 2025", Valid: true},
-		Description:  sql.NullString{String: "Company annual financial report", Valid: true},
-		Class:        sql.NullString{String: "document", Valid: true},
-		Mimetype:     sql.NullString{String: "application/pdf", Valid: true},
-		Dimensions:   sql.NullString{Valid: false},
+		Name:         NullString{sql.NullString{String: "document.pdf", Valid: true}},
+		DisplayName:  NullString{sql.NullString{String: "Annual Report", Valid: true}},
+		Alt:          NullString{sql.NullString{String: "PDF document", Valid: true}},
+		Caption:      NullString{sql.NullString{String: "Annual Report 2025", Valid: true}},
+		Description:  NullString{sql.NullString{String: "Company annual financial report", Valid: true}},
+		Class:        NullString{sql.NullString{String: "document", Valid: true}},
+		Mimetype:     NullString{sql.NullString{String: "application/pdf", Valid: true}},
+		Dimensions:   NullString{},
 		URL:          types.URL("https://cdn.example.com/docs/annual-report.pdf"),
-		Srcset:       sql.NullString{Valid: false},
+		Srcset:       NullString{},
 		AuthorID:     authorID,
 		DateCreated:  ts,
 		DateModified: ts,
@@ -66,16 +66,16 @@ func mediaUpdateParams() UpdateMediaParams {
 	authorID := types.NullableUserID{ID: types.NewUserID(), Valid: true}
 	ts := types.NewTimestamp(time.Date(2025, 7, 15, 8, 45, 0, 0, time.UTC))
 	return UpdateMediaParams{
-		Name:         sql.NullString{String: "updated-photo.png", Valid: true},
-		DisplayName:  sql.NullString{String: "Updated Photo", Valid: true},
-		Alt:          sql.NullString{String: "Updated alt text", Valid: true},
-		Caption:      sql.NullString{String: "Updated caption", Valid: true},
-		Description:  sql.NullString{String: "Updated description", Valid: true},
-		Class:        sql.NullString{String: "image", Valid: true},
-		Mimetype:     sql.NullString{String: "image/png", Valid: true},
-		Dimensions:   sql.NullString{String: "640x480", Valid: true},
+		Name:         NullString{sql.NullString{String: "updated-photo.png", Valid: true}},
+		DisplayName:  NullString{sql.NullString{String: "Updated Photo", Valid: true}},
+		Alt:          NullString{sql.NullString{String: "Updated alt text", Valid: true}},
+		Caption:      NullString{sql.NullString{String: "Updated caption", Valid: true}},
+		Description:  NullString{sql.NullString{String: "Updated description", Valid: true}},
+		Class:        NullString{sql.NullString{String: "image", Valid: true}},
+		Mimetype:     NullString{sql.NullString{String: "image/png", Valid: true}},
+		Dimensions:   NullString{sql.NullString{String: "640x480", Valid: true}},
 		URL:          types.URL("https://cdn.example.com/images/updated-photo.png"),
-		Srcset:       sql.NullString{String: "updated-480.png 480w", Valid: true},
+		Srcset:       NullString{sql.NullString{String: "updated-480.png 480w", Valid: true}},
 		AuthorID:     authorID,
 		DateCreated:  ts,
 		DateModified: ts,
@@ -164,15 +164,15 @@ func TestMapStringMedia_NullFields(t *testing.T) {
 	// so the internal String value ("should-not-appear") must NOT leak through.
 	m := Media{
 		MediaID:     types.NewMediaID(),
-		Name:        sql.NullString{String: "should-not-appear", Valid: false},
-		DisplayName: sql.NullString{String: "should-not-appear", Valid: false},
-		Alt:         sql.NullString{String: "should-not-appear", Valid: false},
-		Caption:     sql.NullString{String: "should-not-appear", Valid: false},
-		Description: sql.NullString{String: "should-not-appear", Valid: false},
-		Class:       sql.NullString{String: "should-not-appear", Valid: false},
-		Mimetype:    sql.NullString{String: "should-not-appear", Valid: false},
-		Dimensions:  sql.NullString{String: "should-not-appear", Valid: false},
-		Srcset:      sql.NullString{String: "should-not-appear", Valid: false},
+		Name:        NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		DisplayName: NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Alt:         NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Caption:     NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Description: NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Class:       NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Mimetype:    NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Dimensions:  NullString{sql.NullString{String: "should-not-appear", Valid: false}},
+		Srcset:      NullString{sql.NullString{String: "should-not-appear", Valid: false}},
 		AuthorID:    types.NullableUserID{Valid: false},
 	}
 
@@ -337,34 +337,34 @@ func TestDatabase_MapCreateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID.IsZero() {
 		t.Fatal("expected non-zero MediaID to be generated")
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
-	if got.DisplayName != params.DisplayName {
+	if got.DisplayName != params.DisplayName.NullString {
 		t.Errorf("DisplayName = %v, want %v", got.DisplayName, params.DisplayName)
 	}
-	if got.Alt != params.Alt {
+	if got.Alt != params.Alt.NullString {
 		t.Errorf("Alt = %v, want %v", got.Alt, params.Alt)
 	}
-	if got.Caption != params.Caption {
+	if got.Caption != params.Caption.NullString {
 		t.Errorf("Caption = %v, want %v", got.Caption, params.Caption)
 	}
-	if got.Description != params.Description {
+	if got.Description != params.Description.NullString {
 		t.Errorf("Description = %v, want %v", got.Description, params.Description)
 	}
-	if got.Class != params.Class {
+	if got.Class != params.Class.NullString {
 		t.Errorf("Class = %v, want %v", got.Class, params.Class)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
-	if got.Dimensions != params.Dimensions {
+	if got.Dimensions != params.Dimensions.NullString {
 		t.Errorf("Dimensions = %v, want %v", got.Dimensions, params.Dimensions)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Srcset != params.Srcset {
+	if got.Srcset != params.Srcset.NullString {
 		t.Errorf("Srcset = %v, want %v", got.Srcset, params.Srcset)
 	}
 	if got.AuthorID != params.AuthorID {
@@ -421,34 +421,34 @@ func TestDatabase_MapUpdateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID != params.MediaID {
 		t.Errorf("MediaID = %v, want %v", got.MediaID, params.MediaID)
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
-	if got.DisplayName != params.DisplayName {
+	if got.DisplayName != params.DisplayName.NullString {
 		t.Errorf("DisplayName = %v, want %v", got.DisplayName, params.DisplayName)
 	}
-	if got.Alt != params.Alt {
+	if got.Alt != params.Alt.NullString {
 		t.Errorf("Alt = %v, want %v", got.Alt, params.Alt)
 	}
-	if got.Caption != params.Caption {
+	if got.Caption != params.Caption.NullString {
 		t.Errorf("Caption = %v, want %v", got.Caption, params.Caption)
 	}
-	if got.Description != params.Description {
+	if got.Description != params.Description.NullString {
 		t.Errorf("Description = %v, want %v", got.Description, params.Description)
 	}
-	if got.Class != params.Class {
+	if got.Class != params.Class.NullString {
 		t.Errorf("Class = %v, want %v", got.Class, params.Class)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
-	if got.Dimensions != params.Dimensions {
+	if got.Dimensions != params.Dimensions.NullString {
 		t.Errorf("Dimensions = %v, want %v", got.Dimensions, params.Dimensions)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Srcset != params.Srcset {
+	if got.Srcset != params.Srcset.NullString {
 		t.Errorf("Srcset = %v, want %v", got.Srcset, params.Srcset)
 	}
 	if got.AuthorID != params.AuthorID {
@@ -548,16 +548,16 @@ func TestMysqlDatabase_MapCreateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID.IsZero() {
 		t.Fatal("expected non-zero MediaID to be generated")
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
-	if got.DisplayName != params.DisplayName {
+	if got.DisplayName != params.DisplayName.NullString {
 		t.Errorf("DisplayName = %v, want %v", got.DisplayName, params.DisplayName)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
 	if got.AuthorID != params.AuthorID {
@@ -593,13 +593,13 @@ func TestMysqlDatabase_MapUpdateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID != params.MediaID {
 		t.Errorf("MediaID = %v, want %v", got.MediaID, params.MediaID)
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
 	if got.AuthorID != params.AuthorID {
@@ -683,16 +683,16 @@ func TestPsqlDatabase_MapCreateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID.IsZero() {
 		t.Fatal("expected non-zero MediaID to be generated")
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
-	if got.DisplayName != params.DisplayName {
+	if got.DisplayName != params.DisplayName.NullString {
 		t.Errorf("DisplayName = %v, want %v", got.DisplayName, params.DisplayName)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
 	if got.AuthorID != params.AuthorID {
@@ -728,13 +728,13 @@ func TestPsqlDatabase_MapUpdateMediaParams_AllFields(t *testing.T) {
 	if got.MediaID != params.MediaID {
 		t.Errorf("MediaID = %v, want %v", got.MediaID, params.MediaID)
 	}
-	if got.Name != params.Name {
+	if got.Name != params.Name.NullString {
 		t.Errorf("Name = %v, want %v", got.Name, params.Name)
 	}
 	if got.URL != params.URL {
 		t.Errorf("URL = %v, want %v", got.URL, params.URL)
 	}
-	if got.Mimetype != params.Mimetype {
+	if got.Mimetype != params.Mimetype.NullString {
 		t.Errorf("Mimetype = %v, want %v", got.Mimetype, params.Mimetype)
 	}
 	if got.AuthorID != params.AuthorID {

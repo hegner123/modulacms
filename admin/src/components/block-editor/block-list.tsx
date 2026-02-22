@@ -1,22 +1,14 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import type { ContentNode, Datatype, ContentID } from '@modulacms/admin-sdk'
-import {
-  DndContext,
-  closestCenter,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from '@dnd-kit/core'
+import { useDroppable } from '@dnd-kit/core'
 import {
   SortableContext,
   verticalListSortingStrategy,
-  sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
-import { useDeleteContentData, useReorderContentData } from '@/queries/content'
+import { useDeleteContentData } from '@/queries/content'
 import { useDatatypeFieldsByDatatype } from '@/queries/datatypes'
 import { useFields } from '@/queries/fields'
+import { cn } from '@/lib/utils'
 import { BlockCard } from './block-card'
 import { BlockInserter } from './block-inserter'
 import { buildMergedFields } from './build-merged-fields'
@@ -97,50 +89,23 @@ export function BlockList({
   depth = 0,
   parentId,
 }: BlockListProps) {
-  const reorderContentData = useReorderContentData()
-
   const sortableIds = useMemo(
     () => childNodes.map((n) => n.datatype.content.content_data_id as string),
     [childNodes],
   )
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  )
-
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      const { active, over } = event
-      if (!over || active.id === over.id) return
-
-      const oldIndex = sortableIds.indexOf(active.id as string)
-      const newIndex = sortableIds.indexOf(over.id as string)
-      if (oldIndex === -1 || newIndex === -1) return
-
-      // Build the new order
-      const newOrder = [...sortableIds]
-      newOrder.splice(oldIndex, 1)
-      newOrder.splice(newIndex, 0, active.id as string)
-
-      // Use the reorder endpoint to atomically update all sibling pointers
-      reorderContentData.mutate({
-        parent_id: (parentId || null) as ContentID | null,
-        ordered_ids: newOrder as ContentID[],
-      })
-    },
-    [sortableIds, reorderContentData, parentId],
-  )
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'droppable-' + parentId,
+    data: { parentId, type: 'container' },
+  })
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'rounded-lg transition-colors',
+        isOver && 'bg-primary/5 ring-2 ring-primary/20',
+      )}
     >
       <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
         <div className="space-y-1">
@@ -159,6 +124,6 @@ export function BlockList({
           ))}
         </div>
       </SortableContext>
-    </DndContext>
+    </div>
   )
 }

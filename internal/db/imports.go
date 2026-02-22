@@ -134,6 +134,20 @@ type StringPermissions struct {
 	Label        string `json:"label"`
 }
 
+// StringFieldTypes represents field type data as strings for TUI display.
+type StringFieldTypes struct {
+	FieldTypeID string `json:"field_type_id"`
+	Type        string `json:"type"`
+	Label       string `json:"label"`
+}
+
+// StringAdminFieldTypes represents admin field type data as strings for TUI display.
+type StringAdminFieldTypes struct {
+	AdminFieldTypeID string `json:"admin_field_type_id"`
+	Type             string `json:"type"`
+	Label            string `json:"label"`
+}
+
 // StringContentData represents content data as strings for TUI display.
 type StringContentData struct {
 	ContentDataID string `json:"content_data_id"`

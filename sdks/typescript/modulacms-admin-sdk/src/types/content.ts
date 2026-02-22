@@ -110,6 +110,60 @@ export type ReorderContentDataResponse = {
   parent_id: ContentID | null
 }
 
+/** Parameters for moving a content data node to a new parent via `POST /contentdata/move`. */
+export type MoveContentDataParams = {
+  /** ID of the node to move. */
+  node_id: ContentID
+  /** New parent node ID, or `null` for root level. */
+  new_parent_id: ContentID | null
+  /** 0-indexed position within the new parent's children. */
+  position: number
+}
+
+/** Response from the move content data endpoint. */
+export type MoveContentDataResponse = {
+  /** ID of the moved node. */
+  node_id: ContentID
+  /** Previous parent node ID, or `null`. */
+  old_parent_id: ContentID | null
+  /** New parent node ID, or `null`. */
+  new_parent_id: ContentID | null
+  /** Position within the new parent's children. */
+  position: number
+}
+
+// ---------------------------------------------------------------------------
+// Batch content update
+// ---------------------------------------------------------------------------
+
+/** Parameters for a batch content update via `POST /content/batch`. */
+export type BatchContentUpdateParams = {
+  /** ID of the content data node to update. */
+  content_data_id: ContentID
+  /** Optional content data fields to update. */
+  content_data?: UpdateContentDataParams
+  /** Map of field ID to value for field upserts. */
+  fields?: Record<FieldID, string>
+}
+
+/** Response from the batch content update endpoint. */
+export type BatchContentUpdateResponse = {
+  /** ID of the content data node that was updated. */
+  content_data_id: ContentID
+  /** Whether the content data row was updated. */
+  content_data_updated: boolean
+  /** Error message if the content data update failed. */
+  content_data_error?: string
+  /** Number of existing fields updated. */
+  fields_updated: number
+  /** Number of new fields created. */
+  fields_created: number
+  /** Number of field operations that failed. */
+  fields_failed: number
+  /** Individual error messages for partial failures. */
+  errors?: string[]
+}
+
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */
 export type UpdateContentFieldParams = {
   /** ID of the field value to update. */
