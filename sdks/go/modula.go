@@ -59,6 +59,7 @@ type Client struct {
 	Sessions     *SessionsResource
 	Import       *ImportResource
 	ContentBatch *ContentBatchResource
+	ContentHeal  *ContentHealResource
 
 	// RBAC resources
 	RolePermissions *RolePermissionsResource
@@ -128,6 +129,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Sessions:     &SessionsResource{http: h},
 		Import:       &ImportResource{http: h},
 		ContentBatch: &ContentBatchResource{http: h},
+		ContentHeal:  &ContentHealResource{http: h},
 
 		// RBAC
 		RolePermissions: &RolePermissionsResource{http: h},

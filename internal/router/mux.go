@@ -147,6 +147,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		AdminContentDataReorderHandler(w, r, *c)
 	})))
 
+	// Content tree heal (admin repair of malformed IDs)
+	mux.Handle("POST /api/v1/admin/content/heal", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentHealHandler(w, r, *c)
+	})))
+
 	// Content data move (cross-parent)
 	mux.Handle("POST /api/v1/contentdata/move", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataMoveHandler(w, r, *c)

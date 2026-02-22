@@ -125,6 +125,8 @@ export type {
   MoveContentDataResponse,
   BatchContentUpdateParams,
   BatchContentUpdateResponse,
+  HealRepair,
+  HealReport,
 } from './types/content.js'
 export type {
   Datatype,
@@ -263,6 +265,7 @@ import type {
   MoveContentDataResponse,
   BatchContentUpdateParams,
   BatchContentUpdateResponse,
+  HealReport,
 } from './types/content.js'
 import type {
   Datatype,
@@ -562,6 +565,11 @@ export type ModulaCMSAdminClient = {
   config: ConfigResource
   /** Content delivery via slug (rendered content trees). */
   contentDelivery: ContentDeliveryResource
+  /** Content tree healing — scan and repair malformed IDs. */
+  contentHeal: {
+    /** Scan content_data and content_field rows for malformed IDs and repair them. */
+    heal: (dryRun?: boolean, opts?: RequestOptions) => Promise<HealReport>
+  }
 
   /** Bulk content import from external CMS platforms. */
   import: {
@@ -765,6 +773,12 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     pluginHooks: createPluginHooksResource(http),
     config: createConfigResource(http),
     contentDelivery: createContentDeliveryResource(http),
+    contentHeal: {
+      heal(dryRun?: boolean, opts?: RequestOptions): Promise<HealReport> {
+        const path = dryRun ? '/admin/content/heal?dry_run=true' : '/admin/content/heal'
+        return http.post<HealReport>(path, {} as Record<string, unknown>, opts)
+      },
+    },
     import: createImportResource(http),
   }
 }

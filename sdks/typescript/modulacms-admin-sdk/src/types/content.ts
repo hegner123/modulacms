@@ -164,6 +164,36 @@ export type BatchContentUpdateResponse = {
   errors?: string[]
 }
 
+// ---------------------------------------------------------------------------
+// Content tree heal
+// ---------------------------------------------------------------------------
+
+/** A single ID repair made (or that would be made in dry-run mode). */
+export type HealRepair = {
+  /** Primary key of the row that was repaired. */
+  row_id: string
+  /** Column name that contained the invalid ID. */
+  column: string
+  /** The original invalid value. */
+  old_value: string
+  /** The replacement value (`"null"` for nullable IDs cleared). */
+  new_value: string
+}
+
+/** Response from the content heal endpoint (`POST /admin/content/heal`). */
+export type HealReport = {
+  /** Whether the request was a dry run (no changes written). */
+  dry_run: boolean
+  /** Number of content_data rows scanned. */
+  content_data_scanned: number
+  /** Repairs made (or planned) to content_data rows. */
+  content_data_repairs: HealRepair[]
+  /** Number of content_field rows scanned. */
+  content_field_scanned: number
+  /** Repairs made (or planned) to content_field rows. */
+  content_field_repairs: HealRepair[]
+}
+
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */
 export type UpdateContentFieldParams = {
   /** ID of the field value to update. */

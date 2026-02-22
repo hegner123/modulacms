@@ -49,6 +49,7 @@ public final class ModulaClient: Sendable {
     public let sessions: SessionsResource
     public let importResource: ImportResource
     public let contentBatch: ContentBatchResource
+    public let contentHeal: ContentHealResource
 
     // RBAC resources
     public let rolePermissions: RolePermissionsResource
@@ -122,6 +123,7 @@ public final class ModulaClient: Sendable {
         sessions = SessionsResource(http: http)
         importResource = ImportResource(http: http)
         contentBatch = ContentBatchResource(http: http)
+        contentHeal = ContentHealResource(http: http)
 
         // RBAC
         rolePermissions = RolePermissionsResource(http: http)
