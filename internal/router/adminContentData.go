@@ -109,6 +109,101 @@ func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
+	// Append new node to parent's sibling chain
+	if createdAdminContentData.ParentID.Valid {
+		ctx := r.Context()
+		now := types.TimestampNow()
+		parent, pErr := d.GetAdminContentData(createdAdminContentData.ParentID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("create: failed to fetch parent", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+
+		if !parent.FirstChildID.Valid {
+			// Parent has no children yet — set first_child_id to new node
+			_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+				AdminContentDataID: parent.AdminContentDataID,
+				ParentID:           parent.ParentID,
+				FirstChildID:       types.NullableAdminContentID{ID: createdAdminContentData.AdminContentDataID, Valid: true},
+				NextSiblingID:      parent.NextSiblingID,
+				PrevSiblingID:      parent.PrevSiblingID,
+				AdminRouteID:       parent.AdminRouteID,
+				AdminDatatypeID:    parent.AdminDatatypeID,
+				AuthorID:           parent.AuthorID,
+				Status:             parent.Status,
+				DateCreated:        parent.DateCreated,
+				DateModified:       now,
+			})
+			if pErr != nil {
+				utility.DefaultLogger.Error("create: failed to set parent first_child_id", pErr)
+				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
+				return pErr
+			}
+		} else {
+			// Walk the sibling chain to find the last sibling
+			last, wErr := d.GetAdminContentData(parent.FirstChildID.ID)
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to fetch first child", wErr)
+				http.Error(w, fmt.Sprintf("failed to fetch first child: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			for last.NextSiblingID.Valid {
+				last, wErr = d.GetAdminContentData(last.NextSiblingID.ID)
+				if wErr != nil {
+					utility.DefaultLogger.Error("create: failed to walk sibling chain", wErr)
+					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
+					return wErr
+				}
+			}
+			// Link last sibling to new node
+			_, wErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+				AdminContentDataID: last.AdminContentDataID,
+				ParentID:           last.ParentID,
+				FirstChildID:       last.FirstChildID,
+				NextSiblingID:      types.NullableAdminContentID{ID: createdAdminContentData.AdminContentDataID, Valid: true},
+				PrevSiblingID:      last.PrevSiblingID,
+				AdminRouteID:       last.AdminRouteID,
+				AdminDatatypeID:    last.AdminDatatypeID,
+				AuthorID:           last.AuthorID,
+				Status:             last.Status,
+				DateCreated:        last.DateCreated,
+				DateModified:       now,
+			})
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to link last sibling", wErr)
+				http.Error(w, fmt.Sprintf("failed to link last sibling: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			// Set new node's prev_sibling_id to last sibling
+			_, wErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+				AdminContentDataID: createdAdminContentData.AdminContentDataID,
+				ParentID:           createdAdminContentData.ParentID,
+				FirstChildID:       createdAdminContentData.FirstChildID,
+				NextSiblingID:      createdAdminContentData.NextSiblingID,
+				PrevSiblingID:      types.NullableAdminContentID{ID: last.AdminContentDataID, Valid: true},
+				AdminRouteID:       createdAdminContentData.AdminRouteID,
+				AdminDatatypeID:    createdAdminContentData.AdminDatatypeID,
+				AuthorID:           createdAdminContentData.AuthorID,
+				Status:             createdAdminContentData.Status,
+				DateCreated:        createdAdminContentData.DateCreated,
+				DateModified:       now,
+			})
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to set new node prev_sibling_id", wErr)
+				http.Error(w, fmt.Sprintf("failed to update new node: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			// Re-fetch to return updated state
+			createdAdminContentData, wErr = d.GetAdminContentData(createdAdminContentData.AdminContentDataID)
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to re-fetch created node", wErr)
+				http.Error(w, fmt.Sprintf("failed to re-fetch created node: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(createdAdminContentData)
@@ -181,8 +276,105 @@ func apiDeleteAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
+	// Fetch the node to repair sibling pointers before deleting
+	node, err := d.GetAdminContentData(acdID)
+	if err != nil {
+		utility.DefaultLogger.Error("delete: failed to fetch node", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteAdminContentData(r.Context(), ac, acdID)
+	ctx := r.Context()
+	now := types.TimestampNow()
+
+	// Repair prev sibling's next pointer
+	if node.PrevSiblingID.Valid {
+		prev, pErr := d.GetAdminContentData(node.PrevSiblingID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch prev sibling", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+		_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: prev.AdminContentDataID,
+			ParentID:           prev.ParentID,
+			FirstChildID:       prev.FirstChildID,
+			NextSiblingID:      node.NextSiblingID,
+			PrevSiblingID:      prev.PrevSiblingID,
+			AdminRouteID:       prev.AdminRouteID,
+			AdminDatatypeID:    prev.AdminDatatypeID,
+			AuthorID:           prev.AuthorID,
+			Status:             prev.Status,
+			DateCreated:        prev.DateCreated,
+			DateModified:       now,
+		})
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to update prev sibling", pErr)
+			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+	}
+
+	// Repair next sibling's prev pointer
+	if node.NextSiblingID.Valid {
+		next, nErr := d.GetAdminContentData(node.NextSiblingID.ID)
+		if nErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch next sibling", nErr)
+			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
+			return nErr
+		}
+		_, nErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+			AdminContentDataID: next.AdminContentDataID,
+			ParentID:           next.ParentID,
+			FirstChildID:       next.FirstChildID,
+			NextSiblingID:      next.NextSiblingID,
+			PrevSiblingID:      node.PrevSiblingID,
+			AdminRouteID:       next.AdminRouteID,
+			AdminDatatypeID:    next.AdminDatatypeID,
+			AuthorID:           next.AuthorID,
+			Status:             next.Status,
+			DateCreated:        next.DateCreated,
+			DateModified:       now,
+		})
+		if nErr != nil {
+			utility.DefaultLogger.Error("delete: failed to update next sibling", nErr)
+			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
+			return nErr
+		}
+	}
+
+	// If this node is the parent's first child, update parent
+	if node.ParentID.Valid {
+		parent, pErr := d.GetAdminContentData(node.ParentID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch parent", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+		if parent.FirstChildID.Valid && parent.FirstChildID.ID == acdID {
+			_, pErr = d.UpdateAdminContentData(ctx, ac, db.UpdateAdminContentDataParams{
+				AdminContentDataID: parent.AdminContentDataID,
+				ParentID:           parent.ParentID,
+				FirstChildID:       node.NextSiblingID,
+				NextSiblingID:      parent.NextSiblingID,
+				PrevSiblingID:      parent.PrevSiblingID,
+				AdminRouteID:       parent.AdminRouteID,
+				AdminDatatypeID:    parent.AdminDatatypeID,
+				AuthorID:           parent.AuthorID,
+				Status:             parent.Status,
+				DateCreated:        parent.DateCreated,
+				DateModified:       now,
+			})
+			if pErr != nil {
+				utility.DefaultLogger.Error("delete: failed to update parent first_child_id", pErr)
+				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
+				return pErr
+			}
+		}
+	}
+
+	err = d.DeleteAdminContentData(ctx, ac, acdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

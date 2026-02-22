@@ -1,5 +1,5 @@
 import { useMemo, useCallback } from 'react'
-import type { ContentNode, Datatype, ContentID, ContentStatus, DatatypeID, UserID } from '@modulacms/admin-sdk'
+import type { ContentNode, Datatype, ContentID } from '@modulacms/admin-sdk'
 import {
   DndContext,
   closestCenter,
@@ -14,10 +14,9 @@ import {
   verticalListSortingStrategy,
   sortableKeyboardCoordinates,
 } from '@dnd-kit/sortable'
-import { useDeleteContentData, useUpdateContentData } from '@/queries/content'
+import { useDeleteContentData, useReorderContentData } from '@/queries/content'
 import { useDatatypeFieldsByDatatype } from '@/queries/datatypes'
 import { useFields } from '@/queries/fields'
-import { useAuthContext } from '@/lib/auth'
 import { BlockCard } from './block-card'
 import { BlockInserter } from './block-inserter'
 import { buildMergedFields } from './build-merged-fields'
@@ -56,7 +55,6 @@ function BlockCardWrapper({
   )
 
   const contentDataId = node.datatype.content.content_data_id
-  const selected = state.selectedBlockId === contentDataId
   const dirty = state.isBlockDirty(contentDataId, mergedFields)
 
   function renderNestedList(parentNode: ContentNode, childDepth: number) {
@@ -78,13 +76,10 @@ function BlockCardWrapper({
     <BlockCard
       node={node}
       mergedFields={mergedFields}
-      selected={selected}
       dirty={dirty}
       saving={state.saving}
       deleting={deleteContent.isPending}
       depth={depth}
-      onSelect={() => state.setSelectedBlockId(contentDataId)}
-      onDeselect={() => state.setSelectedBlockId(null)}
       onSave={() => state.saveBlock(node, mergedFields)}
       onDelete={() => deleteContent.mutate(contentDataId as ContentID)}
       getFieldValue={state.getFieldValue}
@@ -102,8 +97,7 @@ export function BlockList({
   depth = 0,
   parentId,
 }: BlockListProps) {
-  const { user } = useAuthContext()
-  const updateContentData = useUpdateContentData()
+  const reorderContentData = useReorderContentData()
 
   const sortableIds = useMemo(
     () => childNodes.map((n) => n.datatype.content.content_data_id as string),
@@ -133,32 +127,13 @@ export function BlockList({
       newOrder.splice(oldIndex, 1)
       newOrder.splice(newIndex, 0, active.id as string)
 
-      // Find the moved node
-      const movedNode = childNodes.find(
-        (n) => n.datatype.content.content_data_id === active.id,
-      )
-      if (!movedNode) return
-
-      // Compute new prev/next sibling IDs from new position
-      const newPrev = newIndex > 0 ? newOrder[newIndex - 1] : null
-      const newNext = newIndex < newOrder.length - 1 ? newOrder[newIndex + 1] : null
-
-      const now = new Date().toISOString()
-      updateContentData.mutate({
-        content_data_id: active.id as ContentID,
-        parent_id: movedNode.datatype.content.parent_id as ContentID | null,
-        first_child_id: movedNode.datatype.content.first_child_id,
-        next_sibling_id: newNext,
-        prev_sibling_id: newPrev,
-        route_id: (movedNode.datatype.content.route_id ?? null) as any,
-        datatype_id: (movedNode.datatype.content.datatype_id ?? null) as DatatypeID | null,
-        author_id: (user?.user_id ?? null) as UserID | null,
-        status: movedNode.datatype.content.status as ContentStatus,
-        date_created: movedNode.datatype.content.date_created,
-        date_modified: now,
+      // Use the reorder endpoint to atomically update all sibling pointers
+      reorderContentData.mutate({
+        parent_id: (parentId || null) as ContentID | null,
+        ordered_ids: newOrder as ContentID[],
       })
     },
-    [sortableIds, childNodes, updateContentData, user],
+    [sortableIds, reorderContentData, parentId],
   )
 
   return (

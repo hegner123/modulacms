@@ -105,6 +105,101 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		return err
 	}
 
+	// Append new node to parent's sibling chain
+	if createdContentData.ParentID.Valid {
+		ctx := r.Context()
+		now := types.TimestampNow()
+		parent, pErr := d.GetContentData(createdContentData.ParentID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("create: failed to fetch parent", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+
+		if !parent.FirstChildID.Valid {
+			// Parent has no children yet — set first_child_id to new node
+			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: parent.ContentDataID,
+				ParentID:      parent.ParentID,
+				FirstChildID:  types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+				NextSiblingID: parent.NextSiblingID,
+				PrevSiblingID: parent.PrevSiblingID,
+				RouteID:       parent.RouteID,
+				DatatypeID:    parent.DatatypeID,
+				AuthorID:      parent.AuthorID,
+				Status:        parent.Status,
+				DateCreated:   parent.DateCreated,
+				DateModified:  now,
+			})
+			if pErr != nil {
+				utility.DefaultLogger.Error("create: failed to set parent first_child_id", pErr)
+				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
+				return pErr
+			}
+		} else {
+			// Walk the sibling chain to find the last sibling
+			last, wErr := d.GetContentData(parent.FirstChildID.ID)
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to fetch first child", wErr)
+				http.Error(w, fmt.Sprintf("failed to fetch first child: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			for last.NextSiblingID.Valid {
+				last, wErr = d.GetContentData(last.NextSiblingID.ID)
+				if wErr != nil {
+					utility.DefaultLogger.Error("create: failed to walk sibling chain", wErr)
+					http.Error(w, fmt.Sprintf("failed to walk sibling chain: %v", wErr), http.StatusInternalServerError)
+					return wErr
+				}
+			}
+			// Link last sibling to new node
+			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: last.ContentDataID,
+				ParentID:      last.ParentID,
+				FirstChildID:  last.FirstChildID,
+				NextSiblingID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
+				PrevSiblingID: last.PrevSiblingID,
+				RouteID:       last.RouteID,
+				DatatypeID:    last.DatatypeID,
+				AuthorID:      last.AuthorID,
+				Status:        last.Status,
+				DateCreated:   last.DateCreated,
+				DateModified:  now,
+			})
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to link last sibling", wErr)
+				http.Error(w, fmt.Sprintf("failed to link last sibling: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			// Set new node's prev_sibling_id to last sibling
+			_, wErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: createdContentData.ContentDataID,
+				ParentID:      createdContentData.ParentID,
+				FirstChildID:  createdContentData.FirstChildID,
+				NextSiblingID: createdContentData.NextSiblingID,
+				PrevSiblingID: types.NullableContentID{ID: last.ContentDataID, Valid: true},
+				RouteID:       createdContentData.RouteID,
+				DatatypeID:    createdContentData.DatatypeID,
+				AuthorID:      createdContentData.AuthorID,
+				Status:        createdContentData.Status,
+				DateCreated:   createdContentData.DateCreated,
+				DateModified:  now,
+			})
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to set new node prev_sibling_id", wErr)
+				http.Error(w, fmt.Sprintf("failed to update new node: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+			// Re-fetch to return updated state
+			createdContentData, wErr = d.GetContentData(createdContentData.ContentDataID)
+			if wErr != nil {
+				utility.DefaultLogger.Error("create: failed to re-fetch created node", wErr)
+				http.Error(w, fmt.Sprintf("failed to re-fetch created node: %v", wErr), http.StatusInternalServerError)
+				return wErr
+			}
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdContentData)
@@ -155,8 +250,106 @@ func apiDeleteContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
+
+	// Fetch the node to repair sibling pointers before deleting
+	node, err := d.GetContentData(cdID)
+	if err != nil {
+		utility.DefaultLogger.Error("delete: failed to fetch node", err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return err
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
-	err := d.DeleteContentData(r.Context(), ac, cdID)
+	ctx := r.Context()
+	now := types.TimestampNow()
+
+	// Repair prev sibling's next pointer
+	if node.PrevSiblingID.Valid {
+		prev, pErr := d.GetContentData(node.PrevSiblingID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch prev sibling", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch prev sibling: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+		_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: prev.ContentDataID,
+			ParentID:      prev.ParentID,
+			FirstChildID:  prev.FirstChildID,
+			NextSiblingID: node.NextSiblingID,
+			PrevSiblingID: prev.PrevSiblingID,
+			RouteID:       prev.RouteID,
+			DatatypeID:    prev.DatatypeID,
+			AuthorID:      prev.AuthorID,
+			Status:        prev.Status,
+			DateCreated:   prev.DateCreated,
+			DateModified:  now,
+		})
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to update prev sibling", pErr)
+			http.Error(w, fmt.Sprintf("failed to update prev sibling: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+	}
+
+	// Repair next sibling's prev pointer
+	if node.NextSiblingID.Valid {
+		next, nErr := d.GetContentData(node.NextSiblingID.ID)
+		if nErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch next sibling", nErr)
+			http.Error(w, fmt.Sprintf("failed to fetch next sibling: %v", nErr), http.StatusInternalServerError)
+			return nErr
+		}
+		_, nErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+			ContentDataID: next.ContentDataID,
+			ParentID:      next.ParentID,
+			FirstChildID:  next.FirstChildID,
+			NextSiblingID: next.NextSiblingID,
+			PrevSiblingID: node.PrevSiblingID,
+			RouteID:       next.RouteID,
+			DatatypeID:    next.DatatypeID,
+			AuthorID:      next.AuthorID,
+			Status:        next.Status,
+			DateCreated:   next.DateCreated,
+			DateModified:  now,
+		})
+		if nErr != nil {
+			utility.DefaultLogger.Error("delete: failed to update next sibling", nErr)
+			http.Error(w, fmt.Sprintf("failed to update next sibling: %v", nErr), http.StatusInternalServerError)
+			return nErr
+		}
+	}
+
+	// If this node is the parent's first child, update parent
+	if node.ParentID.Valid {
+		parent, pErr := d.GetContentData(node.ParentID.ID)
+		if pErr != nil {
+			utility.DefaultLogger.Error("delete: failed to fetch parent", pErr)
+			http.Error(w, fmt.Sprintf("failed to fetch parent: %v", pErr), http.StatusInternalServerError)
+			return pErr
+		}
+		if parent.FirstChildID.Valid && parent.FirstChildID.ID == cdID {
+			_, pErr = d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: parent.ContentDataID,
+				ParentID:      parent.ParentID,
+				FirstChildID:  node.NextSiblingID,
+				NextSiblingID: parent.NextSiblingID,
+				PrevSiblingID: parent.PrevSiblingID,
+				RouteID:       parent.RouteID,
+				DatatypeID:    parent.DatatypeID,
+				AuthorID:      parent.AuthorID,
+				Status:        parent.Status,
+				DateCreated:   parent.DateCreated,
+				DateModified:  now,
+			})
+			if pErr != nil {
+				utility.DefaultLogger.Error("delete: failed to update parent first_child_id", pErr)
+				http.Error(w, fmt.Sprintf("failed to update parent: %v", pErr), http.StatusInternalServerError)
+				return pErr
+			}
+		}
+	}
+
+	err = d.DeleteContentData(ctx, ac, cdID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

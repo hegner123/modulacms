@@ -111,6 +111,8 @@ export type {
   CreateContentFieldParams,
   UpdateContentDataParams,
   UpdateContentFieldParams,
+  ReorderContentDataParams,
+  ReorderContentDataResponse,
 } from './types/content.js'
 export type {
   Datatype,
@@ -221,6 +223,8 @@ import type {
   CreateContentFieldParams,
   UpdateContentDataParams,
   UpdateContentFieldParams,
+  ReorderContentDataParams,
+  ReorderContentDataResponse,
 } from './types/content.js'
 import type {
   Datatype,
@@ -402,7 +406,10 @@ export type ModulaCMSAdminClient = {
   /** Admin field definitions. */
   adminFields: CrudResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>
   /** Public content data nodes (tree structure). */
-  contentData: CrudResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID>
+  contentData: CrudResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID> & {
+    /** Reorder sibling content data nodes under a parent. */
+    reorder: (params: ReorderContentDataParams, opts?: RequestOptions) => Promise<ReorderContentDataResponse>
+  }
   /** Public content field values. */
   contentFields: CrudResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>
   /** Datatype (content type) schema definitions. */
@@ -587,7 +594,12 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     adminContentFields: createResource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>(http, 'admincontentfields'),
     adminDatatypes: createResource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>(http, 'admindatatypes'),
     adminFields: createResource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>(http, 'adminfields'),
-    contentData: createResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID>(http, 'contentdata'),
+    contentData: {
+      ...createResource<ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID>(http, 'contentdata'),
+      reorder(params: ReorderContentDataParams, opts?: RequestOptions): Promise<ReorderContentDataResponse> {
+        return http.post<ReorderContentDataResponse>('/contentdata/reorder', params as unknown as Record<string, unknown>, opts)
+      },
+    },
     contentFields: createResource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>(http, 'contentfields'),
     datatypes: createResource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>(http, 'datatype'),
     fields: createResource<Field, CreateFieldParams, UpdateFieldParams, FieldID>(http, 'fields'),

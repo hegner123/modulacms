@@ -94,6 +94,22 @@ export type UpdateContentDataParams = {
   date_modified: string
 }
 
+/** Parameters for reordering content data siblings via `POST /contentdata/reorder`. */
+export type ReorderContentDataParams = {
+  /** Parent node ID, or `null` for root-level siblings. */
+  parent_id: ContentID | null
+  /** Ordered list of sibling content data IDs in the desired sequence. */
+  ordered_ids: ContentID[]
+}
+
+/** Response from the reorder content data endpoint. */
+export type ReorderContentDataResponse = {
+  /** Number of nodes updated. */
+  updated: number
+  /** Parent node ID, or `null`. */
+  parent_id: ContentID | null
+}
+
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */
 export type UpdateContentFieldParams = {
   /** ID of the field value to update. */
