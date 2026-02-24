@@ -8,7 +8,7 @@
 
 import type { HttpClient } from '../http.js'
 import type { RequestOptions } from '../types/common.js'
-import type { LoginRequest, LoginResponse, MeResponse } from '../types/auth.js'
+import type { LoginRequest, LoginResponse, MeResponse, RequestPasswordResetParams, ConfirmPasswordResetParams, MessageResponse } from '../types/auth.js'
 import type { User, CreateUserParams, UpdateUserParams } from '../types/users.js'
 
 /**
@@ -51,8 +51,24 @@ type AuthResource = {
    * @param params - Updated user details including the new password hash.
    * @param opts - Optional request options.
    * @returns A confirmation message string.
+   * @deprecated Use {@link requestPasswordReset} and {@link confirmPasswordReset} instead.
    */
   reset: (params: UpdateUserParams, opts?: RequestOptions) => Promise<string>
+
+  /**
+   * Request a password reset email for the given address.
+   * Always succeeds regardless of whether the email exists (prevents user enumeration).
+   * @param params - The email address to send the reset link to.
+   * @param opts - Optional request options.
+   */
+  requestPasswordReset: (params: RequestPasswordResetParams, opts?: RequestOptions) => Promise<MessageResponse>
+
+  /**
+   * Confirm a password reset using a token received via email.
+   * @param params - The reset token and new password.
+   * @param opts - Optional request options.
+   */
+  confirmPasswordReset: (params: ConfirmPasswordResetParams, opts?: RequestOptions) => Promise<MessageResponse>
 }
 
 /**
@@ -81,6 +97,14 @@ function createAuthResource(http: HttpClient): AuthResource {
 
     async reset(params: UpdateUserParams, opts?: RequestOptions): Promise<string> {
       return http.post<string>('/auth/reset', params as Record<string, unknown>, opts)
+    },
+
+    requestPasswordReset(params: RequestPasswordResetParams, opts?: RequestOptions): Promise<MessageResponse> {
+      return http.post<MessageResponse>('/auth/request-password-reset', params as Record<string, unknown>, opts)
+    },
+
+    confirmPasswordReset(params: ConfirmPasswordResetParams, opts?: RequestOptions): Promise<MessageResponse> {
+      return http.post<MessageResponse>('/auth/confirm-password-reset', params as Record<string, unknown>, opts)
     },
   }
 }

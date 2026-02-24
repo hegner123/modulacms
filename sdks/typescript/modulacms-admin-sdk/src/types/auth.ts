@@ -46,3 +46,29 @@ export type MeResponse = {
   /** Role label assigned to the current user. */
   role: string
 }
+
+/**
+ * Payload sent to `POST /auth/request-password-reset`.
+ */
+export type RequestPasswordResetParams = {
+  /** The email address of the account to reset. */
+  email: string
+}
+
+/**
+ * Payload sent to `POST /auth/confirm-password-reset`.
+ */
+export type ConfirmPasswordResetParams = {
+  /** The password reset token received via email. */
+  token: string
+  /** The new password to set. */
+  password: string
+}
+
+/**
+ * Simple message response from the server.
+ */
+export type MessageResponse = {
+  /** The server's response message. */
+  message: string
+}
