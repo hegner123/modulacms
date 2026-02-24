@@ -346,10 +346,27 @@ type UpdateUserParams struct {
 }
 
 // ResetPasswordParams contains parameters for resetting a user's password.
+// Deprecated: Use RequestPasswordResetParams and ConfirmPasswordResetParams instead.
 type ResetPasswordParams struct {
 	Email       Email  `json:"email"`
 	NewPassword string `json:"new_password"`
 	Token       string `json:"token"`
+}
+
+// RequestPasswordResetParams contains parameters for requesting a password reset email.
+type RequestPasswordResetParams struct {
+	Email string `json:"email"`
+}
+
+// ConfirmPasswordResetParams contains parameters for confirming a password reset with a token.
+type ConfirmPasswordResetParams struct {
+	Token    string `json:"token"`
+	Password string `json:"password"`
+}
+
+// MessageResponse represents a simple server message response.
+type MessageResponse struct {
+	Message string `json:"message"`
 }
 
 // ---------------------------------------------------------------------------

@@ -31,6 +31,7 @@ func init() {
 	rootCmd.AddCommand(configParentCmd)
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(pluginCmd)
+	rootCmd.AddCommand(deployCmd)
 }
 
 // Execute runs the root CLI command and returns any error encountered.

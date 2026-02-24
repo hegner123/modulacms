@@ -6161,6 +6161,41 @@ func (q *Queries) ListAdminContentFieldsWithFieldByRoute(ctx context.Context, ar
 	return items, nil
 }
 
+const listAdminContentRelations = `-- name: ListAdminContentRelations :many
+SELECT admin_content_relation_id, source_content_id, target_content_id, admin_field_id, sort_order, date_created FROM admin_content_relations
+ORDER BY date_created
+`
+
+func (q *Queries) ListAdminContentRelations(ctx context.Context) ([]AdminContentRelations, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentRelations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentRelations{}
+	for rows.Next() {
+		var i AdminContentRelations
+		if err := rows.Scan(
+			&i.AdminContentRelationID,
+			&i.SourceContentID,
+			&i.TargetContentID,
+			&i.AdminFieldID,
+			&i.SortOrder,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAdminContentRelationsBySource = `-- name: ListAdminContentRelationsBySource :many
 SELECT admin_content_relation_id, source_content_id, target_content_id, admin_field_id, sort_order, date_created FROM admin_content_relations
 WHERE source_content_id = $1
@@ -7734,6 +7769,41 @@ func (q *Queries) ListContentFieldsWithFieldByContentData(ctx context.Context, a
 			&i.FFieldId,
 			&i.FLabel,
 			&i.FType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentRelations = `-- name: ListContentRelations :many
+SELECT content_relation_id, source_content_id, target_content_id, field_id, sort_order, date_created FROM content_relations
+ORDER BY date_created
+`
+
+func (q *Queries) ListContentRelations(ctx context.Context) ([]ContentRelations, error) {
+	rows, err := q.db.QueryContext(ctx, listContentRelations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentRelations{}
+	for rows.Next() {
+		var i ContentRelations
+		if err := rows.Scan(
+			&i.ContentRelationID,
+			&i.SourceContentID,
+			&i.TargetContentID,
+			&i.FieldID,
+			&i.SortOrder,
+			&i.DateCreated,
 		); err != nil {
 			return nil, err
 		}

@@ -1,34 +1,98 @@
 package db
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 // DBTable represents a database table name.
 type DBTable string
 
 // Database table name constants.
 const (
-	Admin_content_data    DBTable = "admin_content_data"
-	Admin_content_fields  DBTable = "admin_content_fields"
-	Admin_datatype        DBTable = "admin_datatypes"
-	Admin_datatype_fields DBTable = "admin_datatypes_fields"
-	Admin_field           DBTable = "admin_fields"
-	Admin_route           DBTable = "admin_routes"
-	Content_data          DBTable = "content_data"
-	Content_fields        DBTable = "content_fields"
-	Datatype_fields       DBTable = "datatypes_fields"
-	Datatype              DBTable = "datatypes"
-	Field                 DBTable = "fields"
-	MediaT                DBTable = "media"
-	Media_dimension       DBTable = "media_dimensions"
-	Permission            DBTable = "permissions"
-	Role                  DBTable = "roles"
-	Route                 DBTable = "routes"
-	Session               DBTable = "sessions"
-	Table                 DBTable = "tables"
-	Token                 DBTable = "tokens"
-	User                  DBTable = "users"
-	User_oauth            DBTable = "user_oauth"
+	Admin_content_data      DBTable = "admin_content_data"
+	Admin_content_fields    DBTable = "admin_content_fields"
+	Admin_content_relations DBTable = "admin_content_relations"
+	Admin_datatype          DBTable = "admin_datatypes"
+	Admin_datatype_fields   DBTable = "admin_datatypes_fields"
+	Admin_field             DBTable = "admin_fields"
+	Admin_field_types       DBTable = "admin_field_types"
+	Admin_route             DBTable = "admin_routes"
+	BackupT                 DBTable = "backups"
+	Backup_set              DBTable = "backup_sets"
+	Backup_verification     DBTable = "backup_verifications"
+	Change_event            DBTable = "change_events"
+	Content_data            DBTable = "content_data"
+	Content_fields          DBTable = "content_fields"
+	Content_relations       DBTable = "content_relations"
+	Datatype_fields         DBTable = "datatypes_fields"
+	Datatype                DBTable = "datatypes"
+	Field                   DBTable = "fields"
+	Field_types             DBTable = "field_types"
+	MediaT                  DBTable = "media"
+	Media_dimension         DBTable = "media_dimensions"
+	Permission              DBTable = "permissions"
+	Role                    DBTable = "roles"
+	Role_permissions        DBTable = "role_permissions"
+	Route                   DBTable = "routes"
+	Session                 DBTable = "sessions"
+	Table                   DBTable = "tables"
+	Token                   DBTable = "tokens"
+	User                    DBTable = "users"
+	User_oauth              DBTable = "user_oauth"
+	User_ssh_keys           DBTable = "user_ssh_keys"
 )
+
+// allTables is the exhaustive set of known table names for validation.
+var allTables = map[DBTable]struct{}{
+	Admin_content_data:      {},
+	Admin_content_fields:    {},
+	Admin_content_relations: {},
+	Admin_datatype:          {},
+	Admin_datatype_fields:   {},
+	Admin_field:             {},
+	Admin_field_types:       {},
+	Admin_route:             {},
+	BackupT:                 {},
+	Backup_set:              {},
+	Backup_verification:     {},
+	Change_event:            {},
+	Content_data:            {},
+	Content_fields:          {},
+	Content_relations:       {},
+	Datatype_fields:         {},
+	Datatype:                {},
+	Field:                   {},
+	Field_types:             {},
+	MediaT:                  {},
+	Media_dimension:         {},
+	Permission:              {},
+	Role:                    {},
+	Role_permissions:        {},
+	Route:                   {},
+	Session:                 {},
+	Table:                   {},
+	Token:                   {},
+	User:                    {},
+	User_oauth:              {},
+	User_ssh_keys:           {},
+}
+
+// ValidateTableName checks that name corresponds to a known table.
+// Returns the typed DBTable on success or an error for unknown names.
+func ValidateTableName(name string) (DBTable, error) {
+	t := DBTable(name)
+	if _, ok := allTables[t]; !ok {
+		return "", fmt.Errorf("unknown table name: %q", name)
+	}
+	return t, nil
+}
+
+// IsValidTable reports whether t is a known table name.
+func IsValidTable(t DBTable) bool {
+	_, ok := allTables[t]
+	return ok
+}
 
 // TableStructMap maps each DBTable to its associated struct type
 var TableStructMap = map[DBTable]reflect.Type{
@@ -37,10 +101,12 @@ var TableStructMap = map[DBTable]reflect.Type{
 	Admin_datatype:        reflect.TypeFor[AdminDatatypes](),
 	Admin_datatype_fields: reflect.TypeFor[AdminDatatypeFields](),
 	Admin_field:           reflect.TypeFor[AdminFields](),
-	Admin_route:           reflect.TypeFor[AdminRoutes](),
-	Content_data:          reflect.TypeFor[ContentData](),
-	Content_fields:        reflect.TypeFor[ContentFields](),
-	Datatype_fields:       reflect.TypeFor[DatatypeFields](),
+	Admin_route:             reflect.TypeFor[AdminRoutes](),
+	Content_data:            reflect.TypeFor[ContentData](),
+	Content_fields:          reflect.TypeFor[ContentFields](),
+	Content_relations:       reflect.TypeFor[ContentRelations](),
+	Admin_content_relations: reflect.TypeFor[AdminContentRelations](),
+	Datatype_fields:         reflect.TypeFor[DatatypeFields](),
 	Datatype:              reflect.TypeFor[Datatypes](),
 	Field:                 reflect.TypeFor[Fields](),
 	MediaT:                reflect.TypeFor[Media](),
@@ -92,6 +158,14 @@ func CastToTypedSlice(result any, table DBTable) any {
 		}
 	case Content_fields:
 		if slice, ok := result.([]ContentFields); ok {
+			return slice
+		}
+	case Content_relations:
+		if slice, ok := result.([]ContentRelations); ok {
+			return slice
+		}
+	case Admin_content_relations:
+		if slice, ok := result.([]AdminContentRelations); ok {
 			return slice
 		}
 	case Datatype_fields:

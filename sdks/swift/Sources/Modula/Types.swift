@@ -863,6 +863,28 @@ public struct ResetPasswordParams: Encodable, Sendable {
     }
 }
 
+public struct RequestPasswordResetParams: Encodable, Sendable {
+    public let email: String
+
+    public init(email: String) {
+        self.email = email
+    }
+}
+
+public struct ConfirmPasswordResetParams: Encodable, Sendable {
+    public let token: String
+    public let password: String
+
+    public init(token: String, password: String) {
+        self.token = token
+        self.password = password
+    }
+}
+
+public struct MessageResponse: Decodable, Sendable {
+    public let message: String
+}
+
 // MARK: - Role
 
 public struct Role: Codable, Sendable {

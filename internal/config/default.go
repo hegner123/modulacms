@@ -103,6 +103,10 @@ func DefaultConfig() Config {
 	c.Email_Reply_To = ""
 	c.Email_AWS_Access_Key_ID = ""
 	c.Email_AWS_Secret_Access_Key = ""
+	c.Password_Reset_URL = ""
+
+	// Default deploy settings
+	c.Deploy_Snapshot_Dir = "./deploy/snapshots"
 
 	c.Node_ID = string(types.NewNodeID())
 

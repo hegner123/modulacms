@@ -71,3 +71,7 @@ ORDER BY date_created;
 SELECT * FROM admin_content_relations
 WHERE source_content_id = ? AND admin_field_id = ?
 ORDER BY sort_order;
+
+-- name: ListAdminContentRelations :many
+SELECT * FROM admin_content_relations
+ORDER BY date_created;

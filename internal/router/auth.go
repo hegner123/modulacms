@@ -1,8 +1,10 @@
 package router
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"net"
 	"net/http"
@@ -13,6 +15,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 	"golang.org/x/oauth2"
@@ -82,6 +85,211 @@ func ResetPasswordHandler(w http.ResponseWriter, r *http.Request, c config.Confi
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+}
+
+// RequestPasswordResetHandler initiates a token-based password reset flow.
+// It looks up the user by email, generates a reset token, and sends an email
+// with a reset link. Always returns 200 regardless of whether the email exists
+// to prevent user enumeration.
+func RequestPasswordResetHandler(w http.ResponseWriter, r *http.Request, c config.Config, emailSvc *email.Service, driver db.DbDriver) {
+	var req struct {
+		Email string `json:"email"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// Always return the same response to prevent user enumeration.
+	successMsg := map[string]string{"message": "If an account with that email exists, a reset link has been sent."}
+
+	if req.Email == "" {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(successMsg)
+		return
+	}
+
+	user, err := driver.GetUserByEmail(types.Email(req.Email))
+	if err != nil || user == nil {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(successMsg)
+		return
+	}
+
+	ctx := r.Context()
+	clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+	if splitErr != nil {
+		clientIP = r.RemoteAddr
+	}
+	ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(ctx), clientIP)
+	userNullID := types.NullableUserID{ID: user.UserID, Valid: true}
+
+	// Clean up any existing password_reset tokens for this user.
+	existingTokens, err := driver.GetTokenByUserId(userNullID)
+	if err == nil && existingTokens != nil {
+		for _, tok := range *existingTokens {
+			if tok.TokenType != "password_reset" {
+				continue
+			}
+			if delErr := driver.DeleteToken(ctx, ac, tok.ID); delErr != nil {
+				utility.DefaultLogger.Warn("failed to delete existing password reset token", delErr)
+			}
+		}
+	}
+
+	// Generate 32-byte random token, hex-encoded.
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		utility.DefaultLogger.Error("failed to generate reset token", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	tokenValue := hex.EncodeToString(tokenBytes)
+
+	_, err = driver.CreateToken(ctx, ac, db.CreateTokenParams{
+		UserID:    userNullID,
+		TokenType: "password_reset",
+		Token:     tokenValue,
+		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
+		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(1 * time.Hour)),
+		Revoked:   false,
+	})
+	if err != nil {
+		utility.DefaultLogger.Error("failed to create password reset token", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Send the reset email if email service is enabled and reset URL is configured.
+	if emailSvc.Enabled() && c.Password_Reset_URL != "" {
+		resetLink := c.Password_Reset_URL + "?token=" + tokenValue
+		sendErr := emailSvc.Send(context.Background(), email.Message{
+			To:      []email.Address{email.NewAddress(user.Name, string(user.Email))},
+			Subject: "Password Reset Request",
+			PlainBody: "You requested a password reset for your ModulaCMS account.\n\n" +
+				"Click the link below to reset your password:\n" + resetLink + "\n\n" +
+				"This link expires in 1 hour. If you did not request this, ignore this email.",
+			HTMLBody: "<p>You requested a password reset for your ModulaCMS account.</p>" +
+				"<p><a href=\"" + resetLink + "\">Click here to reset your password</a></p>" +
+				"<p>This link expires in 1 hour. If you did not request this, ignore this email.</p>",
+		})
+		if sendErr != nil {
+			utility.DefaultLogger.Error("failed to send password reset email", sendErr)
+			// Still return 200 — the token was created, the email just failed to send.
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(successMsg)
+}
+
+// ConfirmPasswordResetHandler validates a password reset token and sets the new password.
+// The token must be of type "password_reset", not revoked, and not expired.
+func ConfirmPasswordResetHandler(w http.ResponseWriter, r *http.Request, c config.Config, driver db.DbDriver) {
+	var req struct {
+		Token    string `json:"token"`
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Token == "" || req.Password == "" {
+		http.Error(w, "token and password are required", http.StatusBadRequest)
+		return
+	}
+
+	tok, err := driver.GetTokenByTokenValue(req.Token)
+	if err != nil || tok == nil {
+		http.Error(w, "invalid or expired reset token", http.StatusBadRequest)
+		return
+	}
+
+	if tok.TokenType != "password_reset" {
+		http.Error(w, "invalid or expired reset token", http.StatusBadRequest)
+		return
+	}
+
+	if tok.Revoked {
+		http.Error(w, "invalid or expired reset token", http.StatusBadRequest)
+		return
+	}
+
+	if !tok.ExpiresAt.Valid || time.Now().UTC().After(tok.ExpiresAt.Time) {
+		http.Error(w, "invalid or expired reset token", http.StatusBadRequest)
+		return
+	}
+
+	if !tok.UserID.Valid {
+		http.Error(w, "invalid reset token", http.StatusBadRequest)
+		return
+	}
+
+	user, err := driver.GetUser(tok.UserID.ID)
+	if err != nil || user == nil {
+		http.Error(w, "user not found", http.StatusBadRequest)
+		return
+	}
+
+	hash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to hash password", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	ctx := r.Context()
+	clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+	if splitErr != nil {
+		clientIP = r.RemoteAddr
+	}
+	ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(ctx), clientIP)
+
+	_, err = driver.UpdateUser(ctx, ac, db.UpdateUserParams{
+		UserID:       user.UserID,
+		Username:     user.Username,
+		Name:         user.Name,
+		Email:        user.Email,
+		Hash:         hash,
+		Role:         user.Role,
+		DateCreated:  user.DateCreated,
+		DateModified: types.NewTimestamp(time.Now().UTC()),
+	})
+	if err != nil {
+		utility.DefaultLogger.Error("failed to update user password", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	// Revoke the used token.
+	_, revokeErr := driver.UpdateToken(ctx, ac, db.UpdateTokenParams{
+		ID:        tok.ID,
+		Token:     tok.Token,
+		IssuedAt:  tok.IssuedAt,
+		ExpiresAt: tok.ExpiresAt,
+		Revoked:   true,
+	})
+	if revokeErr != nil {
+		utility.DefaultLogger.Warn("failed to revoke used password reset token", revokeErr)
+	}
+
+	// Clean up any other password_reset tokens for this user.
+	userNullID := types.NullableUserID{ID: user.UserID, Valid: true}
+	existingTokens, tokErr := driver.GetTokenByUserId(userNullID)
+	if tokErr == nil && existingTokens != nil {
+		for _, t := range *existingTokens {
+			if t.TokenType != "password_reset" || t.ID == tok.ID {
+				continue
+			}
+			if delErr := driver.DeleteToken(ctx, ac, t.ID); delErr != nil {
+				utility.DefaultLogger.Warn("failed to delete leftover password reset token", delErr)
+			}
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"message": "Password has been reset successfully."})
 }
 
 func respond(w http.ResponseWriter, data any) error {

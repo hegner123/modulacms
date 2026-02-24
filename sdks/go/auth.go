@@ -40,6 +40,27 @@ func (a *AuthResource) Register(ctx context.Context, params CreateUserParams) (*
 }
 
 // ResetPassword initiates a password reset.
+// Deprecated: Use RequestPasswordReset and ConfirmPasswordReset instead.
 func (a *AuthResource) ResetPassword(ctx context.Context, params ResetPasswordParams) error {
 	return a.http.post(ctx, "/api/v1/auth/reset", params, nil)
+}
+
+// RequestPasswordReset sends a password reset email to the given address.
+// Always succeeds (returns 200) regardless of whether the email exists,
+// to prevent user enumeration.
+func (a *AuthResource) RequestPasswordReset(ctx context.Context, params RequestPasswordResetParams) (*MessageResponse, error) {
+	var result MessageResponse
+	if err := a.http.post(ctx, "/api/v1/auth/request-password-reset", params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// ConfirmPasswordReset validates a reset token and sets the new password.
+func (a *AuthResource) ConfirmPasswordReset(ctx context.Context, params ConfirmPasswordResetParams) (*MessageResponse, error) {
+	var result MessageResponse
+	if err := a.http.post(ctx, "/api/v1/auth/confirm-password-reset", params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
 }

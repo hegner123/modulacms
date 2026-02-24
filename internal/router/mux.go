@@ -9,12 +9,14 @@ import (
 	"github.com/hegner123/modulacms/admin"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/deploy"
+	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"golang.org/x/time/rate"
 )
 
-func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache) *http.ServeMux {
+func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -52,6 +54,12 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	}))))
 	mux.Handle("POST /api/v1/auth/reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ResetPasswordHandler(w, r, *c)
+	}))))
+	mux.Handle("POST /api/v1/auth/request-password-reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RequestPasswordResetHandler(w, r, *c, emailSvc, driver)
+	}))))
+	mux.Handle("POST /api/v1/auth/confirm-password-reset", corsMiddleware(authLimiter.Middleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ConfirmPasswordResetHandler(w, r, *c, driver)
 	}))))
 
 	// OAuth endpoints with CORS and rate limiting (PUBLIC - no auth required)
@@ -337,6 +345,17 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})))
 	mux.Handle("GET /api/v1/role-permissions/role/", middleware.RequirePermission("roles:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		RolePermissionsByRoleHandler(w, r, *c)
+	})))
+
+	// Deploy sync endpoints
+	mux.Handle("GET /api/v1/deploy/health", middleware.RequirePermission("deploy:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deploy.DeployHealthHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/deploy/export", middleware.RequirePermission("deploy:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deploy.DeployExportHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/deploy/import", middleware.RequirePermission("deploy:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		deploy.DeployImportHandler(w, r, *c)
 	})))
 
 	// Config management endpoints (permission-gated)

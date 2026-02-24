@@ -121,6 +121,7 @@ type DbDriver interface {
 	DeleteAdminContentRelation(context.Context, audited.AuditContext, types.AdminContentRelationID) error
 	DropAdminContentRelationTable() error
 	GetAdminContentRelation(types.AdminContentRelationID) (*AdminContentRelations, error)
+	ListAdminContentRelations() (*[]AdminContentRelations, error)
 	ListAdminContentRelationsBySource(types.AdminContentID) (*[]AdminContentRelations, error)
 	ListAdminContentRelationsByTarget(types.AdminContentID) (*[]AdminContentRelations, error)
 	ListAdminContentRelationsBySourceAndField(types.AdminContentID, types.AdminFieldID) (*[]AdminContentRelations, error)
@@ -254,6 +255,7 @@ type DbDriver interface {
 	DeleteContentRelation(context.Context, audited.AuditContext, types.ContentRelationID) error
 	DropContentRelationTable() error
 	GetContentRelation(types.ContentRelationID) (*ContentRelations, error)
+	ListContentRelations() (*[]ContentRelations, error)
 	ListContentRelationsBySource(types.ContentID) (*[]ContentRelations, error)
 	ListContentRelationsByTarget(types.ContentID) (*[]ContentRelations, error)
 	ListContentRelationsBySourceAndField(types.ContentID, types.FieldID) (*[]ContentRelations, error)
@@ -697,6 +699,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
+		"deploy:read", "deploy:create",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -1566,6 +1569,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
+		"deploy:read", "deploy:create",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -2405,6 +2409,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"admin_tree:read", "admin_tree:create", "admin_tree:update", "admin_tree:delete", "admin_tree:admin",
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
+		"deploy:read", "deploy:create",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {

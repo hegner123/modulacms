@@ -65,3 +65,7 @@ ORDER BY date_created;
 SELECT * FROM content_relations
 WHERE source_content_id = $1 AND field_id = $2
 ORDER BY sort_order;
+
+-- name: ListContentRelations :many
+SELECT * FROM content_relations
+ORDER BY date_created;

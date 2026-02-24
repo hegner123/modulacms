@@ -159,6 +159,20 @@ func (d Database) GetContentRelation(id types.ContentRelationID) (*ContentRelati
 	return &res, nil
 }
 
+// ListContentRelations retrieves all content relations.
+func (d Database) ListContentRelations() (*[]ContentRelations, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content relations: %w", err)
+	}
+	res := []ContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapContentRelation(v))
+	}
+	return &res, nil
+}
+
 // ListContentRelationsBySource retrieves all relations for a given source content ID.
 func (d Database) ListContentRelationsBySource(id types.ContentID) (*[]ContentRelations, error) {
 	queries := mdb.New(d.Connection)
@@ -300,6 +314,20 @@ func (d MysqlDatabase) GetContentRelation(id types.ContentRelationID) (*ContentR
 	return &res, nil
 }
 
+// ListContentRelations retrieves all content relations.
+func (d MysqlDatabase) ListContentRelations() (*[]ContentRelations, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content relations: %w", err)
+	}
+	res := []ContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapContentRelation(v))
+	}
+	return &res, nil
+}
+
 // ListContentRelationsBySource retrieves all relations for a given source content ID.
 func (d MysqlDatabase) ListContentRelationsBySource(id types.ContentID) (*[]ContentRelations, error) {
 	queries := mdbm.New(d.Connection)
@@ -438,6 +466,20 @@ func (d PsqlDatabase) GetContentRelation(id types.ContentRelationID) (*ContentRe
 		return nil, fmt.Errorf("failed to get content relation: %w", err)
 	}
 	res := d.MapContentRelation(row)
+	return &res, nil
+}
+
+// ListContentRelations retrieves all content relations.
+func (d PsqlDatabase) ListContentRelations() (*[]ContentRelations, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content relations: %w", err)
+	}
+	res := []ContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapContentRelation(v))
+	}
 	return &res, nil
 }
 

@@ -237,7 +237,7 @@ var serveCmd = &cobra.Command{
 				}
 			}
 
-			mux := router.NewModulacmsMux(mgr, bridge, driver, pc)
+			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {

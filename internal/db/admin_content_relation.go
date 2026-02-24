@@ -159,6 +159,20 @@ func (d Database) GetAdminContentRelation(id types.AdminContentRelationID) (*Adm
 	return &res, nil
 }
 
+// ListAdminContentRelations retrieves all admin content relations.
+func (d Database) ListAdminContentRelations() (*[]AdminContentRelations, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content relations: %w", err)
+	}
+	res := []AdminContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentRelation(v))
+	}
+	return &res, nil
+}
+
 // ListAdminContentRelationsBySource returns all admin content relations for a source content item.
 func (d Database) ListAdminContentRelationsBySource(id types.AdminContentID) (*[]AdminContentRelations, error) {
 	queries := mdb.New(d.Connection)
@@ -300,6 +314,20 @@ func (d MysqlDatabase) GetAdminContentRelation(id types.AdminContentRelationID) 
 	return &res, nil
 }
 
+// ListAdminContentRelations retrieves all admin content relations.
+func (d MysqlDatabase) ListAdminContentRelations() (*[]AdminContentRelations, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content relations: %w", err)
+	}
+	res := []AdminContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentRelation(v))
+	}
+	return &res, nil
+}
+
 // ListAdminContentRelationsBySource returns all admin content relations for a source content item.
 func (d MysqlDatabase) ListAdminContentRelationsBySource(id types.AdminContentID) (*[]AdminContentRelations, error) {
 	queries := mdbm.New(d.Connection)
@@ -438,6 +466,20 @@ func (d PsqlDatabase) GetAdminContentRelation(id types.AdminContentRelationID) (
 		return nil, fmt.Errorf("failed to get admin content relation: %w", err)
 	}
 	res := d.MapAdminContentRelation(row)
+	return &res, nil
+}
+
+// ListAdminContentRelations retrieves all admin content relations.
+func (d PsqlDatabase) ListAdminContentRelations() (*[]AdminContentRelations, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminContentRelations(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin content relations: %w", err)
+	}
+	res := []AdminContentRelations{}
+	for _, v := range rows {
+		res = append(res, d.MapAdminContentRelation(v))
+	}
 	return &res, nil
 }
 

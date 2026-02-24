@@ -136,6 +136,7 @@ type Config struct {
 	Email_Reply_To             string        `json:"email_reply_to"`
 	Email_AWS_Access_Key_ID    string        `json:"email_aws_access_key_id"`
 	Email_AWS_Secret_Access_Key string       `json:"email_aws_secret_access_key"`
+	Password_Reset_URL         string        `json:"password_reset_url"`
 
 	// Plugin runtime configuration
 	Plugin_Enabled   bool   `json:"plugin_enabled"`
@@ -169,7 +170,19 @@ type Config struct {
 	Plugin_Max_Failures   int    `json:"plugin_max_failures"`    // circuit breaker threshold, default 5
 	Plugin_Reset_Interval string `json:"plugin_reset_interval"`  // circuit breaker reset interval, default "60s"
 
+	// Deploy sync configuration
+	Deploy_Environments []DeployEnvironmentConfig `json:"deploy_environments"`
+	Deploy_Snapshot_Dir string                    `json:"deploy_snapshot_dir"`
+
 	KeyBindings KeyMap `json:"keybindings"`
+}
+
+// DeployEnvironmentConfig describes a remote ModulaCMS instance for deploy operations.
+// APIKey supports ${VAR} expansion via the existing config system.
+type DeployEnvironmentConfig struct {
+	Name   string `json:"name"`
+	URL    string `json:"url"`
+	APIKey string `json:"api_key"`
 }
 
 // BucketEndpointURL returns Bucket_Endpoint prefixed with the scheme
