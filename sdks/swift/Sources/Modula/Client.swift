@@ -50,6 +50,7 @@ public final class ModulaClient: Sendable {
     public let importResource: ImportResource
     public let contentBatch: ContentBatchResource
     public let contentHeal: ContentHealResource
+    public let deploy: DeployResource
 
     // RBAC resources
     public let rolePermissions: RolePermissionsResource
@@ -124,6 +125,7 @@ public final class ModulaClient: Sendable {
         importResource = ImportResource(http: http)
         contentBatch = ContentBatchResource(http: http)
         contentHeal = ContentHealResource(http: http)
+        deploy = DeployResource(http: http)
 
         // RBAC
         rolePermissions = RolePermissionsResource(http: http)

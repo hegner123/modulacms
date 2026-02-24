@@ -1,0 +1,45 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+// FieldsTableRows renders table rows for the fields list, including pagination.
+// Used as an HTMX partial response for pagination and table refresh.
+templ FieldsTableRows(items []db.Fields, pg PaginationPageData) {
+	if len(items) == 0 {
+		<tr>
+			<td colspan="4">
+				@EmptyState("No fields found.")
+			</td>
+		</tr>
+	} else {
+		for _, f := range items {
+			<tr>
+				<td>
+					<a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }>
+						{ f.Label }
+					</a>
+				</td>
+				<td><span class="badge">{ f.Type.String() }</span></td>
+				<td>{ f.DateModified.String() }</td>
+				<td>
+					<div class="table-actions">
+						<a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }
+						   class="btn btn-sm btn-ghost">Edit</a>
+						<button class="btn btn-sm btn-danger"
+						        hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+						        hx-target="closest tr"
+						        hx-swap="outerHTML swap:300ms"
+						        hx-confirm="Delete this field? This cannot be undone.">
+							Delete
+						</button>
+					</div>
+				</td>
+			</tr>
+		}
+	}
+	<tr>
+		<td colspan="4">
+			@Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/schema/fields", pg.Limit)
+		</td>
+	</tr>
+}

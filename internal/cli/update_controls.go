@@ -84,6 +84,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.FieldTypesControls(msg)
 	case ADMINFIELDTYPES:
 		return m.AdminFieldTypesControls(msg)
+	case DEPLOYPAGE:
+		return m.DeployControls(msg)
 
 	}
 	return m, nil

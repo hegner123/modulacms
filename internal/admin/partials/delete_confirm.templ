@@ -1,0 +1,17 @@
+package partials
+
+templ DeleteConfirm(title string, message string, deleteURL string, target string) {
+	<div class="delete-confirm">
+		<p class="delete-confirm-title">{ title }</p>
+		<p class="delete-confirm-message">{ message }</p>
+		<div class="delete-confirm-actions">
+			<button class="btn btn-ghost" onclick="this.closest('.delete-confirm').remove()">Cancel</button>
+			<button class="btn btn-danger"
+			        hx-delete={ deleteURL }
+			        hx-target={ target }
+			        hx-swap="outerHTML">
+				Delete
+			</button>
+		</div>
+	</div>
+}

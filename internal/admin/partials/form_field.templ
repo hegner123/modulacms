@@ -1,0 +1,11 @@
+package partials
+
+templ FormField(name string, label string, value string, fieldErr string) {
+	<div class={ "form-field", templ.KV("has-error", fieldErr != "") }>
+		<label for={ name }>{ label }</label>
+		<input type="text" id={ name } name={ name } value={ value }/>
+		if fieldErr != "" {
+			<span class="field-error">{ fieldErr }</span>
+		}
+	</div>
+}

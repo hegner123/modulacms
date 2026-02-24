@@ -1,0 +1,162 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/components"
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ ContentList(layout layouts.AdminData, items []db.ContentData, pg partials.PaginationPageData, treeNodes []db.GetContentTreeByRouteRow) {
+	@layouts.Admin(layout) {
+		<div class="page-header">
+			<h1>Content</h1>
+			<button
+				class="btn btn-primary"
+				hx-get="/admin/content/create"
+				hx-target="#main-content"
+				hx-push-url="true"
+			>
+				Create Content
+			</button>
+		</div>
+		<div class="content-layout">
+			<aside class="content-tree-sidebar">
+				<h3>Content Tree</h3>
+				<div id="content-tree">
+					if len(treeNodes) > 0 {
+						@ContentTreeNodes(treeNodes)
+					} else {
+						@partials.EmptyState("No content tree available")
+					}
+				</div>
+			</aside>
+			<div class="content-list">
+				<div class="content-list-toolbar">
+					<input
+						type="search"
+						name="search"
+						placeholder="Search content..."
+						hx-get="/admin/content"
+						hx-target="#content-table-body"
+						hx-trigger="input changed delay:300ms"
+						hx-push-url="false"
+						class="search-input"
+					/>
+				</div>
+				<table class="table">
+					<thead>
+						<tr>
+							<th>ID</th>
+							<th>Status</th>
+							<th>Author</th>
+							<th>Modified</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="content-table-body">
+						@ContentTableRows(items)
+					</tbody>
+				</table>
+				<div id="pagination">
+					@partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ ContentTableRows(items []db.ContentData) {
+	if len(items) == 0 {
+		<tr>
+			<td colspan="5">
+				@partials.EmptyState("No content found")
+			</td>
+		</tr>
+	}
+	for _, item := range items {
+		<tr id={ "content-row-" + item.ContentDataID.String() }>
+			<td>
+				<a
+					href={ templ.SafeURL("/admin/content/" + item.ContentDataID.String()) }
+					hx-get={ "/admin/content/" + item.ContentDataID.String() }
+					hx-target="#main-content"
+					hx-push-url="true"
+				>
+					{ truncateID(item.ContentDataID.String()) }
+				</a>
+			</td>
+			<td>
+				@components.StatusBadge(string(item.Status))
+			</td>
+			<td>{ truncateID(item.AuthorID.String()) }</td>
+			<td>{ item.DateModified.String() }</td>
+			<td>
+				<div class="table-actions">
+					<a
+						href={ templ.SafeURL("/admin/content/" + item.ContentDataID.String()) }
+						class="btn btn-ghost btn-sm"
+						hx-get={ "/admin/content/" + item.ContentDataID.String() }
+						hx-target="#main-content"
+						hx-push-url="true"
+					>
+						Edit
+					</a>
+					<button
+						class="btn btn-ghost btn-sm btn-danger"
+						hx-delete={ "/admin/content/" + item.ContentDataID.String() }
+						hx-target={ "#content-row-" + item.ContentDataID.String() }
+						hx-swap="outerHTML"
+						hx-confirm="Are you sure you want to delete this content?"
+					>
+						Delete
+					</button>
+				</div>
+			</td>
+		</tr>
+	}
+}
+
+templ ContentTableRowsPartial(items []db.ContentData, pg partials.PaginationPageData) {
+	@ContentTableRows(items)
+	<tr id="pagination" hx-swap-oob="true">
+		<td colspan="5">
+			@partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+		</td>
+	</tr>
+}
+
+templ ContentTreeNodes(nodes []db.GetContentTreeByRouteRow) {
+	<ul class="tree-list">
+		for _, node := range nodes {
+			if !node.ParentID.Valid {
+				@contentTreeNode(node, nodes)
+			}
+		}
+	</ul>
+}
+
+templ contentTreeNode(node db.GetContentTreeByRouteRow, allNodes []db.GetContentTreeByRouteRow) {
+	<li class="tree-node">
+		<a
+			href={ templ.SafeURL("/admin/content/" + node.ContentDataID.String()) }
+			class="tree-node-label"
+			hx-get={ "/admin/content/" + node.ContentDataID.String() }
+			hx-target="#main-content"
+			hx-push-url="true"
+		>
+			<span class="tree-node-type">{ node.DatatypeLabel }</span>
+			<span class="tree-node-id">{ truncateID(node.ContentDataID.String()) }</span>
+			@components.StatusBadge(string(node.Status))
+		</a>
+		if node.FirstChildID.Valid {
+			<ul class="tree-children">
+				for _, child := range allNodes {
+					if child.ParentID.Valid && child.ParentID.ID == node.ContentDataID {
+						@contentTreeNode(child, allNodes)
+					}
+				}
+			</ul>
+		}
+	</li>
+}

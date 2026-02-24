@@ -35,6 +35,7 @@ import { createMediaUploadResource, isDuplicateMedia, isFileTooLarge, isInvalidM
 import { createSessionsResource } from './resources/sessions.js'
 import { createSshKeysResource } from './resources/ssh-keys.js'
 import { createImportResource } from './resources/import.js'
+import { createDeployResource } from './resources/deploy.js'
 import { createPluginsResource } from './resources/plugins.js'
 import { createPluginRoutesResource } from './resources/plugin-routes.js'
 import { createPluginHooksResource } from './resources/plugin-hooks.js'
@@ -194,6 +195,14 @@ export type { Route, CreateRouteParams, UpdateRouteParams } from './types/routin
 export type { Table, CreateTableParams, UpdateTableParams } from './types/tables.js'
 export type { ImportFormat, ImportResponse } from './types/import.js'
 export type {
+  DeployHealthResponse,
+  DeployExportRequest,
+  DeploySyncPayload,
+  DeploySyncError,
+  DeploySyncResult,
+} from './types/deploy.js'
+export type { DeployResource } from './resources/deploy.js'
+export type {
   ContentTreeField,
   ContentTreeNode,
   AdminTreeResponse,
@@ -345,6 +354,7 @@ import type { PluginRoutesResource } from './resources/plugin-routes.js'
 import type { PluginHooksResource } from './resources/plugin-hooks.js'
 import type { ConfigResource } from './resources/config.js'
 import type { ContentDeliveryResource } from './resources/content-delivery.js'
+import type { DeployHealthResponse, DeploySyncPayload, DeploySyncResult } from './types/deploy.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -573,6 +583,16 @@ export type ModulaCMSAdminClient = {
     heal: (dryRun?: boolean, opts?: RequestOptions) => Promise<HealReport>
   }
 
+  /** Deploy sync operations (health check, export, import). */
+  deploy: {
+    /** Check deploy endpoint health and version info. */
+    health: (opts?: RequestOptions) => Promise<DeployHealthResponse>
+    /** Export CMS data as a sync payload. Optionally limit to specific tables. */
+    export: (tables?: string[], opts?: RequestOptions) => Promise<DeploySyncPayload>
+    /** Import a sync payload into this instance. Set dryRun=true to validate without changes. */
+    importPayload: (payload: DeploySyncPayload, dryRun?: boolean, opts?: RequestOptions) => Promise<DeploySyncResult>
+  }
+
   /** Bulk content import from external CMS platforms. */
   import: {
     /** Import from Contentful export format. */
@@ -781,6 +801,7 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
         return http.post<HealReport>(path, {} as Record<string, unknown>, opts)
       },
     },
+    deploy: createDeployResource(http),
     import: createImportResource(http),
   }
 }

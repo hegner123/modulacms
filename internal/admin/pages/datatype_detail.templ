@@ -1,0 +1,92 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ DatatypeDetail(layout layouts.AdminData, dt db.Datatypes, linkedFields []db.Fields, allFields []db.Fields, csrfToken string) {
+	@layouts.Admin(layout) {
+		<div class="page-header">
+			<div class="page-header-left">
+				<a href="/admin/schema/datatypes" class="btn btn-ghost">&larr; Back</a>
+				<h1>{ dt.Label }</h1>
+				<span class="badge">{ dt.Type }</span>
+			</div>
+		</div>
+		<div class="detail-grid">
+			<!-- Edit Form Section -->
+			<section class="detail-section">
+				<h2>Details</h2>
+				<div id="datatype-edit-form">
+					<form hx-post={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+					      hx-target="#datatype-edit-form"
+					      hx-swap="innerHTML">
+						@partials.CSRFField(csrfToken)
+						@partials.FormField("label", "Label", dt.Label, "")
+						<div class="form-field">
+							<label for="type">Type</label>
+							<select id="type" name="type">
+								<option value="page" selected?={ dt.Type == "page" }>Page</option>
+								<option value="post" selected?={ dt.Type == "post" }>Post</option>
+								<option value="block" selected?={ dt.Type == "block" }>Block</option>
+								<option value="component" selected?={ dt.Type == "component" }>Component</option>
+								<option value="template" selected?={ dt.Type == "template" }>Template</option>
+							</select>
+						</div>
+						<div class="form-actions">
+							<button type="submit" class="btn btn-primary">Save Changes</button>
+						</div>
+					</form>
+				</div>
+				<div class="detail-meta">
+					<p><strong>ID:</strong> { dt.DatatypeID.String() }</p>
+					<p><strong>Created:</strong> { dt.DateCreated.String() }</p>
+					<p><strong>Modified:</strong> { dt.DateModified.String() }</p>
+				</div>
+			</section>
+			<!-- Linked Fields Section -->
+			<section class="detail-section">
+				<div class="section-header">
+					<h2>Linked Fields</h2>
+					<button class="btn btn-sm btn-primary"
+					        onclick="document.getElementById('link-field-dialog').showModal()">
+						Link Field
+					</button>
+				</div>
+				<div id="linked-fields-list">
+					@partials.DatatypeFieldList(dt.DatatypeID.String(), linkedFields, csrfToken)
+				</div>
+			</section>
+		</div>
+		<!-- Link Field Dialog -->
+		<dialog id="link-field-dialog" class="admin-dialog">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<h2>Link Field</h2>
+					<button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+				</div>
+				<form hx-post={ "/admin/schema/datatypes/" + dt.DatatypeID.String() + "/fields" }
+				      hx-target="#link-field-form"
+				      hx-swap="innerHTML"
+				      id="link-field-form">
+					@partials.CSRFField(csrfToken)
+					<div class="form-field">
+						<label for="field_id">Field</label>
+						<select id="field_id" name="field_id">
+							<option value="">Select a field</option>
+							for _, f := range allFields {
+								<option value={ f.FieldID.String() }>{ f.Label } ({ f.Type.String() })</option>
+							}
+						</select>
+					</div>
+					<div class="dialog-actions">
+						<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+						<button type="submit" class="btn btn-primary">Link</button>
+					</div>
+				</form>
+			</div>
+		</dialog>
+	}
+}

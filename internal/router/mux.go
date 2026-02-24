@@ -2,11 +2,10 @@ package router
 
 import (
 	"encoding/json"
-	"io/fs"
 	"net/http"
-	"strings"
 
-	"github.com/hegner123/modulacms/admin"
+	htmxadmin "github.com/hegner123/modulacms/internal/admin"
+	adminhandlers "github.com/hegner123/modulacms/internal/admin/handlers"
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/deploy"
@@ -386,37 +385,8 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		SlugHandler(w, r, *c)
 	})
 
-	// Embedded admin panel (SPA)
-	distFS, err := fs.Sub(admin.DistFS, "dist")
-	if err == nil {
-		// Pre-read index.html so we can serve it directly without going through
-		// http.FileServer, which 301-redirects "/index.html" → "./" causing a loop.
-		indexHTML, indexErr := fs.ReadFile(distFS, "index.html")
-		if indexErr != nil {
-			indexHTML = []byte("admin panel not built")
-		}
-		fileServer := http.FileServer(http.FS(distFS))
-		mux.HandleFunc("/admin/", func(w http.ResponseWriter, r *http.Request) {
-			// Strip the /admin prefix for filesystem lookups
-			path := strings.TrimPrefix(r.URL.Path, "/admin")
-			if path == "" || path == "/" {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write(indexHTML)
-				return
-			}
-			// Try to open the file; if it doesn't exist, serve index.html for SPA routing
-			f, openErr := distFS.Open(strings.TrimPrefix(path, "/"))
-			if openErr != nil {
-				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				w.Write(indexHTML)
-				return
-			}
-			f.Close()
-			// File exists — let the file server handle it (with /admin/ stripped)
-			r.URL.Path = path
-			fileServer.ServeHTTP(w, r)
-		})
-	}
+	// HTMX admin panel
+	registerAdminRoutes(mux, mgr, driver, pc)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -503,6 +473,118 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 		// the response is already partially written so no recovery is possible.
 		json.NewEncoder(w).Encode(map[string]any{"ok": true})
 	})
+}
+
+// registerAdminRoutes registers all HTMX-based admin panel routes.
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache) {
+	// Static assets (no auth, no CSRF)
+	staticFS, staticErr := htmxadmin.StaticFS()
+	if staticErr == nil {
+		mux.Handle("GET /admin/static/", http.StripPrefix("/admin/static/", htmxadmin.CacheControl(http.FileServer(staticFS))))
+	}
+
+	// Auth pages (no session auth required)
+	loginCSRF := htmxadmin.CSRFMiddleware()
+	loginLimiter := middleware.NewRateLimiter(rate.Limit(10.0/60.0), 10) // 10 attempts/min per IP
+	mux.Handle("GET /admin/login", loginCSRF(http.HandlerFunc(adminhandlers.LoginPageHandler())))
+	mux.Handle("POST /admin/login", loginLimiter.Middleware(loginCSRF(http.HandlerFunc(adminhandlers.LoginSubmitHandler(mgr)))))
+	mux.HandleFunc("POST /admin/logout", adminhandlers.LogoutHandler(mgr))
+
+	adminAuth := htmxadmin.AdminAuthMiddleware(mgr)
+	csrf := htmxadmin.CSRFMiddleware()
+
+	// mutating wraps auth + CSRF + permission for POST/DELETE handlers
+	mutating := func(permission string, h http.HandlerFunc) http.Handler {
+		return adminAuth(csrf(middleware.RequirePermission(permission)(http.HandlerFunc(h))))
+	}
+	// viewing wraps auth + permission for GET handlers
+	viewing := func(resource string, h http.HandlerFunc) http.Handler {
+		return adminAuth(middleware.RequirePermission(resource+":read")(http.HandlerFunc(h)))
+	}
+
+	// Dashboard (requires auth but no specific permission)
+	mux.Handle("GET /admin/{$}", adminAuth(http.HandlerFunc(adminhandlers.DashboardHandler(driver))))
+
+	// Content
+	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr)))
+	mux.Handle("GET /admin/content/{id}", viewing("content", adminhandlers.ContentEditHandler(driver)))
+	mux.Handle("POST /admin/content", mutating("content:create", adminhandlers.ContentCreateHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/{id}", mutating("content:update", adminhandlers.ContentUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/content/{id}", mutating("content:delete", adminhandlers.ContentDeleteHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/reorder", mutating("content:update", adminhandlers.ContentReorderHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(driver, mgr)))
+
+	// Schema — datatypes
+	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(driver)))
+	mux.Handle("GET /admin/schema/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(driver)))
+	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(driver)))
+	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(driver)))
+	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver)))
+
+	// Schema — fields
+	mux.Handle("GET /admin/schema/fields", viewing("fields", adminhandlers.FieldsListHandler(driver)))
+	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver)))
+	mux.Handle("POST /admin/schema/fields", mutating("fields:create", adminhandlers.FieldCreateHandler(driver)))
+	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver)))
+	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver)))
+
+	// Schema — field types
+	mux.Handle("GET /admin/schema/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler()))
+
+	// Schema — datatype-field links
+	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeLinkFieldHandler(driver)))
+	mux.Handle("DELETE /admin/schema/datatypes/{id}/fields/{linkId}", mutating("fields:delete", adminhandlers.DatatypeUnlinkFieldHandler(driver)))
+
+	// Media
+	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(driver)))
+	mux.Handle("GET /admin/media/{id}", viewing("media", adminhandlers.MediaDetailHandler(driver)))
+	mux.Handle("POST /admin/media", mutating("media:create", adminhandlers.MediaUploadHandler(driver, mgr)))
+	mux.Handle("POST /admin/media/{id}", mutating("media:update", adminhandlers.MediaUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/media/{id}", mutating("media:delete", adminhandlers.MediaDeleteHandler(driver, mgr)))
+
+	// Routes
+	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(driver)))
+	mux.Handle("GET /admin/routes/admin", viewing("routes", adminhandlers.AdminRoutesListHandler(driver)))
+	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(driver)))
+	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(driver)))
+	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(driver)))
+
+	// Users
+	mux.Handle("GET /admin/users", viewing("users", adminhandlers.UsersListHandler(driver)))
+	mux.Handle("GET /admin/users/{id}", viewing("users", adminhandlers.UserDetailHandler(driver)))
+	mux.Handle("POST /admin/users", mutating("users:create", adminhandlers.UserCreateHandler(driver)))
+	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(driver)))
+	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(driver)))
+
+	// Roles
+	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(driver, pc)))
+	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(driver, pc)))
+	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(driver, pc)))
+	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(driver, pc)))
+
+	// Tokens
+	mux.Handle("GET /admin/users/tokens", viewing("tokens", adminhandlers.TokensListHandler(driver)))
+	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(driver)))
+	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(driver)))
+
+	// Sessions
+	mux.Handle("GET /admin/sessions", viewing("sessions", adminhandlers.SessionsListHandler(driver)))
+	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(driver)))
+
+	// Plugins
+	mux.Handle("GET /admin/plugins", viewing("plugins", adminhandlers.PluginsListHandler(driver)))
+	mux.Handle("GET /admin/plugins/{name}", viewing("plugins", adminhandlers.PluginDetailHandler(driver)))
+
+	// Import
+	mux.Handle("GET /admin/import", viewing("import", adminhandlers.ImportPageHandler()))
+	mux.Handle("POST /admin/import", mutating("import:create", adminhandlers.ImportSubmitHandler(driver)))
+
+	// Audit
+	mux.Handle("GET /admin/audit", adminAuth(http.HandlerFunc(adminhandlers.AuditLogHandler(driver))))
+
+	// Settings
+	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))
+	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(mgr)))
 }
 
 // pluginRoutesRevokeHandler revokes approval for one or more plugin routes.

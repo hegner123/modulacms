@@ -45,6 +45,7 @@ const (
 	QUICKSTARTPAGE
 	FIELDTYPES
 	ADMINFIELDTYPES
+	DEPLOYPAGE
 )
 
 // NewDatatypePage creates a new datatype page with the specified label.
@@ -111,6 +112,7 @@ func InitPages() *map[PageIndex]Page {
 	quickstartPage := NewPage(QUICKSTARTPAGE, "Quickstart")
 	fieldTypesPage := NewPage(FIELDTYPES, "Field Types")
 	adminFieldTypesPage := NewPage(ADMINFIELDTYPES, "Admin Field Types")
+	deployPage := NewPage(DEPLOYPAGE, "Deploy")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -146,5 +148,6 @@ func InitPages() *map[PageIndex]Page {
 	p[QUICKSTARTPAGE] = quickstartPage
 	p[FIELDTYPES] = fieldTypesPage
 	p[ADMINFIELDTYPES] = adminFieldTypesPage
+	p[DEPLOYPAGE] = deployPage
 	return &p
 }

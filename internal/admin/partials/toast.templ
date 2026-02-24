@@ -1,0 +1,8 @@
+package partials
+
+templ Toast(message string, toastType string) {
+	<div class={ "toast", "toast-" + toastType } role="alert">
+		<span class="toast-message">{ message }</span>
+		<button class="toast-close" onclick="this.parentElement.remove()">&times;</button>
+	</div>
+}

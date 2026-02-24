@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE:
 		return true
 	default:
 		return false
@@ -131,6 +131,8 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Field Types", "Details", "Actions"
 	case ADMINFIELDTYPES:
 		return "Admin Field Types", "Details", "Actions"
+	case DEPLOYPAGE:
+		return "Environments", "Details", "Actions"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -208,6 +210,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = renderAdminFieldTypesList(m)
 		center = renderAdminFieldTypeDetail(m)
 		right = renderAdminFieldTypeActions(m)
+
+	case DEPLOYPAGE:
+		left = renderDeployEnvsList(m)
+		center = renderDeployDetail(m)
+		right = renderDeployActions(m)
 
 	default:
 		left = ""
@@ -397,6 +404,9 @@ func getContextControls(m Model) string {
 		return nav + " │ " + km.HintString(config.ActionNew) + ":new │ " +
 			km.HintString(config.ActionEdit) + ":edit │ " +
 			km.HintString(config.ActionDelete) + ":delete │ " + common
+
+	case DEPLOYPAGE:
+		return nav + " │ t:test │ p:pull │ s:push │ P:dry pull │ S:dry push │ " + common
 
 	default:
 		return common

@@ -1,0 +1,89 @@
+package partials
+
+// FieldForm renders the create field form fields.
+// Used as an HTMX partial for validation error responses.
+templ FieldForm(label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+	@CSRFField(csrfToken)
+	if errs["_"] != "" {
+		<div class="form-error">{ errs["_"] }</div>
+	}
+	@FormField("label", "Label", label, errs["label"])
+	<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
+		<label for="type">Type</label>
+		<select id="type" name="type">
+			<option value="">Select a type</option>
+			<option value="text" selected?={ fieldType == "text" }>Text</option>
+			<option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
+			<option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
+			<option value="number" selected?={ fieldType == "number" }>Number</option>
+			<option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
+			<option value="date" selected?={ fieldType == "date" }>Date</option>
+			<option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
+			<option value="select" selected?={ fieldType == "select" }>Select</option>
+			<option value="media" selected?={ fieldType == "media" }>Media</option>
+			<option value="relation" selected?={ fieldType == "relation" }>Relation</option>
+			<option value="json" selected?={ fieldType == "json" }>JSON</option>
+			<option value="slug" selected?={ fieldType == "slug" }>Slug</option>
+			<option value="email" selected?={ fieldType == "email" }>Email</option>
+			<option value="url" selected?={ fieldType == "url" }>URL</option>
+		</select>
+		if errs["type"] != "" {
+			<span class="field-error">{ errs["type"] }</span>
+		}
+	</div>
+	<div class="dialog-actions">
+		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+		<button type="submit" class="btn btn-primary">Create</button>
+	</div>
+}
+
+// FieldEditForm renders the edit field form fields.
+// Used as an HTMX partial for validation error responses on the detail page.
+templ FieldEditForm(id string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+	<form hx-post={ "/admin/schema/fields/" + id }
+	      hx-target="#field-edit-form"
+	      hx-swap="innerHTML">
+		@CSRFField(csrfToken)
+		if errs["_"] != "" {
+			<div class="form-error">{ errs["_"] }</div>
+		}
+		@FormField("label", "Label", label, errs["label"])
+		<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
+			<label for="type">Type</label>
+			<select id="type" name="type">
+				<option value="text" selected?={ fieldType == "text" }>Text</option>
+				<option value="textarea" selected?={ fieldType == "textarea" }>Textarea</option>
+				<option value="richtext" selected?={ fieldType == "richtext" }>Rich Text</option>
+				<option value="number" selected?={ fieldType == "number" }>Number</option>
+				<option value="boolean" selected?={ fieldType == "boolean" }>Boolean</option>
+				<option value="date" selected?={ fieldType == "date" }>Date</option>
+				<option value="datetime" selected?={ fieldType == "datetime" }>Datetime</option>
+				<option value="select" selected?={ fieldType == "select" }>Select</option>
+				<option value="media" selected?={ fieldType == "media" }>Media</option>
+				<option value="relation" selected?={ fieldType == "relation" }>Relation</option>
+				<option value="json" selected?={ fieldType == "json" }>JSON</option>
+				<option value="slug" selected?={ fieldType == "slug" }>Slug</option>
+				<option value="email" selected?={ fieldType == "email" }>Email</option>
+				<option value="url" selected?={ fieldType == "url" }>URL</option>
+			</select>
+			if errs["type"] != "" {
+				<span class="field-error">{ errs["type"] }</span>
+			}
+		</div>
+		<div class="form-field">
+			<label for="data">Data (JSON)</label>
+			<textarea id="data" name="data" rows="4">{ data }</textarea>
+		</div>
+		<div class="form-field">
+			<label for="validation">Validation (JSON)</label>
+			<textarea id="validation" name="validation" rows="4">{ validation }</textarea>
+		</div>
+		<div class="form-field">
+			<label for="ui_config">UI Config (JSON)</label>
+			<textarea id="ui_config" name="ui_config" rows="4">{ uiConfig }</textarea>
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary">Save Changes</button>
+		</div>
+	</form>
+}

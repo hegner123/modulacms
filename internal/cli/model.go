@@ -173,6 +173,13 @@ type Model struct {
 	ConfigCategoryFields []config.FieldMeta
 	ConfigFieldCursor   int
 
+	// Deploy state
+	DeployEnvironments    []config.DeployEnvironmentConfig
+	DeployLastResult      *DeploySyncResult
+	DeployLastHealth      *DeployHealthResult
+	DeployStatusMessage   string
+	DeployOperationActive bool
+
 	// SSH User Provisioning
 	NeedsProvisioning bool
 	SSHFingerprint    string

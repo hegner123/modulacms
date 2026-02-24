@@ -1,0 +1,19 @@
+package layouts
+
+import "github.com/hegner123/modulacms/internal/admin/components"
+
+templ Admin(data AdminData) {
+	@Base(data.Title, data.CSRFToken, data.Version) {
+		<div class="admin-layout">
+			@components.Sidebar(data.CurrentPath, data.Permissions)
+			<div class="sidebar-overlay"></div>
+			<div class="admin-main">
+				@components.Topbar(data.User)
+				<main id="main-content" class="admin-content">
+					{ children... }
+				</main>
+			</div>
+		</div>
+		<mcms-toast position="bottom-right" duration="5000"></mcms-toast>
+	}
+}

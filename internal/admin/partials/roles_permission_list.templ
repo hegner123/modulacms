@@ -1,0 +1,28 @@
+package partials
+
+import (
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+)
+
+templ RolesPermissionList(permissions []db.Permissions, activePerms map[types.PermissionID]bool) {
+	<div class="permissions-checklist">
+		for _, perm := range permissions {
+			<label class="permission-checkbox">
+				<input
+					type="checkbox"
+					name="permissions"
+					value={ perm.PermissionID.String() }
+					checked?={ activePerms != nil && activePerms[perm.PermissionID] }
+				/>
+				<span class="permission-label">{ perm.Label }</span>
+				if perm.SystemProtected {
+					<span class="badge badge-info badge-sm">System</span>
+				}
+			</label>
+		}
+		if len(permissions) == 0 {
+			<p class="empty-text">No permissions available.</p>
+		}
+	</div>
+}

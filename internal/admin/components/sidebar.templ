@@ -1,0 +1,24 @@
+package components
+
+import "github.com/hegner123/modulacms/internal/middleware"
+
+templ Sidebar(currentPath string, perms middleware.PermissionSet) {
+	<nav class="sidebar">
+		<div class="sidebar-brand">
+			<a href="/admin/">ModulaCMS</a>
+		</div>
+		<ul class="sidebar-nav">
+			for _, item := range NavItems {
+				if CanSee(item, perms) {
+					<li>
+						<a href={ templ.SafeURL(item.Href) }
+						   class={ "sidebar-link", templ.KV("active", IsActive(currentPath, item.Href)) }>
+							@Icon(item.Icon)
+							<span>{ item.Label }</span>
+						</a>
+					</li>
+				}
+			}
+		</ul>
+	</nav>
+}

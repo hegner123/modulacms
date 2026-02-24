@@ -1,0 +1,21 @@
+package partials
+
+templ Pagination(current int, totalPages int, target string, baseURL string, limit int64) {
+	if totalPages > 1 {
+		<nav class="pagination">
+			for _, page := range pages(totalPages) {
+				if page == current {
+					<span class="pagination-current">{ IntToStr(page) }</span>
+				} else {
+					<a hx-get={ urlForPage(baseURL, page, limit) }
+					   hx-target={ target }
+					   hx-swap="innerHTML"
+					   hx-push-url="true"
+					   class="pagination-link">
+						{ IntToStr(page) }
+					</a>
+				}
+			}
+		</nav>
+	}
+}

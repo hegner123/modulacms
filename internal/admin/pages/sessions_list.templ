@@ -1,0 +1,31 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ SessionsList(layout layouts.AdminData, items []db.Sessions) {
+	@layouts.Admin(layout) {
+		<div class="page-header">
+			<h1>Active Sessions</h1>
+		</div>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Session ID</th>
+					<th>User</th>
+					<th>IP Address</th>
+					<th>User Agent</th>
+					<th>Created</th>
+					<th>Expires</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody id="sessions-table-body">
+				@partials.SessionsTableRows(items)
+			</tbody>
+		</table>
+	}
+}

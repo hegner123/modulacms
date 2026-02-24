@@ -1,0 +1,43 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+templ TokensTableRows(items []db.Tokens) {
+	if len(items) == 0 {
+		<tr>
+			<td colspan="8">
+				@EmptyState("No API tokens found")
+			</td>
+		</tr>
+	}
+	for _, item := range items {
+		<tr id={ "token-row-" + item.ID }>
+			<td>{ truncateStr(item.ID, 12) }</td>
+			<td>{ item.TokenType }</td>
+			<td><code>{ maskToken(item.Token) }</code></td>
+			<td>{ truncateStr(item.UserID.String(), 12) }</td>
+			<td>{ item.IssuedAt }</td>
+			<td>{ item.ExpiresAt.String() }</td>
+			<td>
+				if item.Revoked {
+					<span class="badge badge-danger">Revoked</span>
+				} else {
+					<span class="badge badge-success">Active</span>
+				}
+			</td>
+			<td>
+				if !item.Revoked {
+					<button
+						class="btn btn-ghost btn-sm btn-danger"
+						hx-delete={ "/admin/users/tokens/" + item.ID }
+						hx-target={ "#token-row-" + item.ID }
+						hx-swap="outerHTML"
+						hx-confirm="Are you sure you want to revoke this token?"
+					>
+						Revoke
+					</button>
+				}
+			</td>
+		</tr>
+	}
+}

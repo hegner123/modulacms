@@ -1,0 +1,109 @@
+package pages
+
+import (
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ FieldsList(layout layouts.AdminData, items []db.Fields, pg partials.PaginationPageData) {
+	@layouts.Admin(layout) {
+		<div class="page-header">
+			<h1>Fields</h1>
+			<button class="btn btn-primary"
+			        onclick="document.getElementById('create-field-dialog').showModal()">
+				New Field
+			</button>
+		</div>
+		<div class="table-container">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>Label</th>
+						<th>Type</th>
+						<th>Modified</th>
+						<th>Actions</th>
+					</tr>
+				</thead>
+				<tbody id="fields-table-body"
+				       hx-get="/admin/schema/fields"
+				       hx-trigger="refreshTable from:body"
+				       hx-swap="innerHTML">
+					if len(items) == 0 {
+						<tr>
+							<td colspan="4">
+								@partials.EmptyState("No fields found. Create your first field to define content properties.")
+							</td>
+						</tr>
+					} else {
+						for _, f := range items {
+							<tr>
+								<td>
+									<a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }>
+										{ f.Label }
+									</a>
+								</td>
+								<td><span class="badge">{ f.Type.String() }</span></td>
+								<td>{ f.DateModified.String() }</td>
+								<td>
+									<div class="table-actions">
+										<a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }
+										   class="btn btn-sm btn-ghost">Edit</a>
+										<button class="btn btn-sm btn-danger"
+										        hx-delete={ "/admin/schema/fields/" + f.FieldID.String() }
+										        hx-target="closest tr"
+										        hx-swap="outerHTML swap:300ms"
+										        hx-confirm="Delete this field? This cannot be undone.">
+											Delete
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+		</div>
+		@partials.Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/schema/fields", pg.Limit)
+		<!-- Create Field Dialog -->
+		<dialog id="create-field-dialog" class="admin-dialog">
+			<div class="dialog-content">
+				<div class="dialog-header">
+					<h2>New Field</h2>
+					<button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+				</div>
+				<form hx-post="/admin/schema/fields"
+				      hx-target="#create-field-form"
+				      hx-swap="innerHTML"
+				      id="create-field-form">
+					@partials.CSRFField(layout.CSRFToken)
+					@partials.FormField("label", "Label", "", "")
+					<div class="form-field">
+						<label for="type">Type</label>
+						<select id="type" name="type">
+							<option value="">Select a type</option>
+							<option value="text">Text</option>
+							<option value="textarea">Textarea</option>
+							<option value="richtext">Rich Text</option>
+							<option value="number">Number</option>
+							<option value="boolean">Boolean</option>
+							<option value="date">Date</option>
+							<option value="datetime">Datetime</option>
+							<option value="select">Select</option>
+							<option value="media">Media</option>
+							<option value="relation">Relation</option>
+							<option value="json">JSON</option>
+							<option value="slug">Slug</option>
+							<option value="email">Email</option>
+							<option value="url">URL</option>
+						</select>
+					</div>
+					<div class="dialog-actions">
+						<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+						<button type="submit" class="btn btn-primary">Create</button>
+					</div>
+				</form>
+			</div>
+		</dialog>
+	}
+}

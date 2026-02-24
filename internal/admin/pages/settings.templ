@@ -1,0 +1,150 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/hegner123/modulacms/internal/admin/layouts"
+	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
+)
+
+templ Settings(layout layouts.AdminData, cfg *config.Config) {
+	@layouts.Admin(layout) {
+		<div class="page-header">
+			<h1>Settings</h1>
+		</div>
+		<form
+			hx-post="/admin/settings"
+			hx-swap="none"
+			class="settings-form"
+		>
+			@partials.CSRFField(layout.CSRFToken)
+			<!-- General -->
+			<fieldset class="settings-section">
+				<legend>General</legend>
+				@partials.FormField("environment", "Environment", cfg.Environment, "")
+				@partials.FormField("port", "HTTP Port", cfg.Port, "")
+				@partials.FormField("ssl_port", "HTTPS Port", cfg.SSL_Port, "")
+				@partials.FormField("ssh_host", "SSH Host", cfg.SSH_Host, "")
+				@partials.FormField("ssh_port", "SSH Port", cfg.SSH_Port, "")
+				@partials.FormField("client_site", "Client Site URL", cfg.Client_Site, "")
+				@partials.FormField("admin_site", "Admin Site URL", cfg.Admin_Site, "")
+				@partials.FormField("log_path", "Log Path", cfg.Log_Path, "")
+				@partials.FormField("output_format", "Output Format", string(cfg.Output_Format), "")
+				@partials.FormField("node_id", "Node ID", cfg.Node_ID, "")
+				@partials.FormField("space_id", "Space ID", cfg.Space_ID, "")
+			</fieldset>
+			<!-- Database -->
+			<fieldset class="settings-section">
+				<legend>Database</legend>
+				@partials.FormField("db_driver", "Driver", string(cfg.Db_Driver), "")
+				@partials.FormField("db_url", "URL", cfg.Db_URL, "")
+				@partials.FormField("db_name", "Database Name", cfg.Db_Name, "")
+				@partials.FormField("db_username", "Username", cfg.Db_User, "")
+				@settingsPasswordField("db_password", "Password", cfg.Db_Password)
+			</fieldset>
+			<!-- S3 / Storage -->
+			<fieldset class="settings-section">
+				<legend>Storage (S3)</legend>
+				@partials.FormField("bucket_region", "Region", cfg.Bucket_Region, "")
+				@partials.FormField("bucket_media", "Media Bucket", cfg.Bucket_Media, "")
+				@partials.FormField("bucket_backup", "Backup Bucket", cfg.Bucket_Backup, "")
+				@partials.FormField("bucket_endpoint", "Endpoint", cfg.Bucket_Endpoint, "")
+				@settingsPasswordField("bucket_access_key", "Access Key", cfg.Bucket_Access_Key)
+				@settingsPasswordField("bucket_secret_key", "Secret Key", cfg.Bucket_Secret_Key)
+				@partials.FormField("bucket_public_url", "Public URL", cfg.Bucket_Public_URL, "")
+				@partials.FormField("bucket_default_acl", "Default ACL", cfg.Bucket_Default_ACL, "")
+				@settingsCheckbox("bucket_force_path_style", "Force Path Style", cfg.Bucket_Force_Path_Style)
+				@partials.FormField("max_upload_size", "Max Upload Size (bytes)", fmt.Sprintf("%d", cfg.MaxUploadSize()), "")
+			</fieldset>
+			<!-- Auth / Cookies -->
+			<fieldset class="settings-section">
+				<legend>Authentication</legend>
+				@settingsPasswordField("auth_salt", "Auth Salt", cfg.Auth_Salt)
+				@partials.FormField("cookie_name", "Cookie Name", cfg.Cookie_Name, "")
+				@partials.FormField("cookie_duration", "Cookie Duration", cfg.Cookie_Duration, "")
+				@settingsCheckbox("cookie_secure", "Secure Cookie", cfg.Cookie_Secure)
+				@partials.FormField("cookie_samesite", "SameSite", cfg.Cookie_SameSite, "")
+			</fieldset>
+			<!-- OAuth -->
+			<fieldset class="settings-section">
+				<legend>OAuth</legend>
+				@partials.FormField("oauth_provider_name", "Provider Name", cfg.Oauth_Provider_Name, "")
+				@settingsPasswordField("oauth_client_id", "Client ID", cfg.Oauth_Client_Id)
+				@settingsPasswordField("oauth_client_secret", "Client Secret", cfg.Oauth_Client_Secret)
+				@partials.FormField("oauth_redirect_url", "Redirect URL", cfg.Oauth_Redirect_URL, "")
+				@partials.FormField("oauth_success_redirect", "Success Redirect", cfg.Oauth_Success_Redirect, "")
+			</fieldset>
+			<!-- CORS -->
+			<fieldset class="settings-section">
+				<legend>CORS</legend>
+				@settingsCheckbox("cors_credentials", "Allow Credentials", cfg.Cors_Credentials)
+			</fieldset>
+			<!-- Email -->
+			<fieldset class="settings-section">
+				<legend>Email</legend>
+				@settingsCheckbox("email_enabled", "Enabled", cfg.Email_Enabled)
+				@partials.FormField("email_provider", "Provider", string(cfg.Email_Provider), "")
+				@partials.FormField("email_from_address", "From Address", cfg.Email_From_Address, "")
+				@partials.FormField("email_from_name", "From Name", cfg.Email_From_Name, "")
+				@partials.FormField("email_host", "SMTP Host", cfg.Email_Host, "")
+				@partials.FormField("email_port", "SMTP Port", fmt.Sprintf("%d", cfg.Email_Port), "")
+				@partials.FormField("email_username", "Username", cfg.Email_Username, "")
+				@settingsPasswordField("email_password", "Password", cfg.Email_Password)
+				@settingsCheckbox("email_tls", "Use TLS", cfg.Email_TLS)
+				@settingsPasswordField("email_api_key", "API Key", cfg.Email_API_Key)
+				@partials.FormField("email_reply_to", "Reply-To", cfg.Email_Reply_To, "")
+				@partials.FormField("password_reset_url", "Password Reset URL", cfg.Password_Reset_URL, "")
+			</fieldset>
+			<!-- Plugins -->
+			<fieldset class="settings-section">
+				<legend>Plugins</legend>
+				@settingsCheckbox("plugin_enabled", "Enabled", cfg.Plugin_Enabled)
+				@partials.FormField("plugin_directory", "Plugin Directory", cfg.Plugin_Directory, "")
+				@partials.FormField("plugin_max_vms", "Max VMs Per Plugin", fmt.Sprintf("%d", cfg.Plugin_Max_VMs), "")
+				@partials.FormField("plugin_timeout", "Timeout (seconds)", fmt.Sprintf("%d", cfg.Plugin_Timeout), "")
+			</fieldset>
+			<!-- Observability -->
+			<fieldset class="settings-section">
+				<legend>Observability</legend>
+				@settingsCheckbox("observability_enabled", "Enabled", cfg.Observability_Enabled)
+				@partials.FormField("observability_provider", "Provider", cfg.Observability_Provider, "")
+				@settingsPasswordField("observability_dsn", "DSN", cfg.Observability_DSN)
+				@partials.FormField("observability_environment", "Environment", cfg.Observability_Environment, "")
+				@partials.FormField("observability_server_name", "Server Name", cfg.Observability_Server_Name, "")
+			</fieldset>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary">Save Settings</button>
+			</div>
+		</form>
+	}
+}
+
+// settingsPasswordField renders a password field that masks sensitive values.
+// Shows "********" for non-empty values so secrets are not leaked to the browser.
+templ settingsPasswordField(name string, label string, value string) {
+	<div class="form-field">
+		<label for={ name }>{ label }</label>
+		if value != "" {
+			<input type="password" id={ name } name={ name } value="********" autocomplete="off"/>
+		} else {
+			<input type="password" id={ name } name={ name } value="" placeholder="Not set" autocomplete="off"/>
+		}
+	</div>
+}
+
+// settingsCheckbox renders a checkbox with a hidden companion field for proper form submission.
+templ settingsCheckbox(name string, label string, checked bool) {
+	<div class="form-field form-field-checkbox">
+		<label>
+			if checked {
+				<input type="hidden" name={ name } value="false"/>
+				<input type="checkbox" name={ name } value="true" checked/>
+			} else {
+				<input type="hidden" name={ name } value="false"/>
+				<input type="checkbox" name={ name } value="true"/>
+			}
+			{ label }
+		</label>
+	</div>
+}

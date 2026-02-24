@@ -251,6 +251,15 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, CursorResetCmd())
 
 			return m, tea.Batch(cmds...)
+		case DEPLOYPAGE:
+			page := m.PageMap[DEPLOYPAGE]
+			cmds = append(cmds, DeployEnvsFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+			cmds = append(cmds, CursorResetCmd())
+
+			return m, tea.Batch(cmds...)
 		}
 
 		return m, nil

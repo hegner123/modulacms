@@ -480,6 +480,28 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			FormDialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	// =========================================================================
+	// DEPLOY CONFIRMATION DIALOGS
+	// =========================================================================
+	case DeployConfirmPullMsg:
+		dialog := NewDialog("Pull from "+msg.EnvName, "This will overwrite local data with data\nfrom the remote environment.\n\nProceed?", true, DIALOGDEPLOYPULL)
+		dialog.SetButtons("Pull", "Cancel")
+		deployPullContext = &DeployPullContext{EnvName: msg.EnvName}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+	case DeployConfirmPushMsg:
+		dialog := NewDialog("Push to "+msg.EnvName, "This will overwrite remote data with\nlocal data.\n\nProceed?", true, DIALOGDEPLOYPUSH)
+		dialog.SetButtons("Push", "Cancel")
+		deployPushContext = &DeployPushContext{EnvName: msg.EnvName}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
 	case UserFormDialogAcceptMsg:
 		switch msg.Action {
 		case FORMDIALOGCREATEUSER:
@@ -825,6 +847,34 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
 				RunQuickstartInstallCmd(m.Config, m.UserID, schemaIndex),
+			)
+		case DIALOGDEPLOYPULL:
+			if deployPullContext != nil {
+				envName := deployPullContext.EnvName
+				deployPullContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					DeployPullCmd(envName, false),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGDEPLOYPUSH:
+			if deployPushContext != nil {
+				envName := deployPushContext.EnvName
+				deployPushContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					DeployPushCmd(envName, false),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
 			)
 		default:
 			return m, tea.Batch(

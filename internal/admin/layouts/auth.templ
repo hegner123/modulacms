@@ -1,0 +1,14 @@
+package layouts
+
+templ Auth(title string, csrfToken string, version string) {
+	@Base(title, csrfToken, version) {
+		<div class="auth-layout">
+			<div class="auth-card">
+				<div class="auth-brand">
+					<h1>ModulaCMS</h1>
+				</div>
+				{ children... }
+			</div>
+		</div>
+	}
+}

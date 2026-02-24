@@ -47,6 +47,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	if m, cmd := m.UpdateAdminCms(msg); cmd != nil {
 		return m, cmd
 	}
+	if m, cmd := m.UpdateDeployFetch(msg); cmd != nil {
+		return m, cmd
+	}
+	if m, cmd := m.UpdateDeployCms(msg); cmd != nil {
+		return m, cmd
+	}
 	// Handle editor finished: update the content form dialog field with edited content.
 	if editorMsg, ok := msg.(EditorFinishedMsg); ok {
 		if m.Logger != nil {

@@ -202,6 +202,19 @@ rollback:
     exit 1
     ROLLBACK
 
+# [Admin] Generate templ Go code from .templ files
+admin-generate:
+    templ generate
+
+# [Admin] Watch .templ files and regenerate on change
+admin-watch:
+    templ generate --watch
+
+# [Admin] Verify generated templ files are up-to-date (for CI)
+admin-verify:
+    templ generate
+    git diff --exit-code internal/admin/
+
 # [SQL] Run sqlc generate in sql directory
 sqlc:
     cd ./sql && sqlc generate && echo "generated code successfully"

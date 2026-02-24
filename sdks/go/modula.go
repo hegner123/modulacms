@@ -60,6 +60,7 @@ type Client struct {
 	Import       *ImportResource
 	ContentBatch *ContentBatchResource
 	ContentHeal  *ContentHealResource
+	Deploy       *DeployResource
 
 	// RBAC resources
 	RolePermissions *RolePermissionsResource
@@ -130,6 +131,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Import:       &ImportResource{http: h},
 		ContentBatch: &ContentBatchResource{http: h},
 		ContentHeal:  &ContentHealResource{http: h},
+		Deploy:       &DeployResource{http: h},
 
 		// RBAC
 		RolePermissions: &RolePermissionsResource{http: h},

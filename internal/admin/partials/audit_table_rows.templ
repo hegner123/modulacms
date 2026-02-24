@@ -1,0 +1,23 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+templ AuditTableRows(events []db.ChangeEvent) {
+	if len(events) == 0 {
+		<tr>
+			<td colspan="6">
+				@EmptyState("No audit events found")
+			</td>
+		</tr>
+	}
+	for _, event := range events {
+		<tr>
+			<td>{ event.WallTimestamp.String() }</td>
+			<td>{ event.TableName }</td>
+			<td>{ truncateStr(event.RecordID, 12) }</td>
+			<td>{ string(event.Operation) }</td>
+			<td>{ string(event.Action) }</td>
+			<td>{ truncateStr(event.UserID.String(), 12) }</td>
+		</tr>
+	}
+}

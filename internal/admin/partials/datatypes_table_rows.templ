@@ -1,0 +1,47 @@
+package partials
+
+import (
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+// DatatypesTableRows renders table rows for the datatypes list, including pagination.
+// Used as an HTMX partial response for pagination and table refresh.
+templ DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) {
+	if len(items) == 0 {
+		<tr>
+			<td colspan="4">
+				@EmptyState("No datatypes found.")
+			</td>
+		</tr>
+	} else {
+		for _, dt := range items {
+			<tr>
+				<td>
+					<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }>
+						{ dt.Label }
+					</a>
+				</td>
+				<td><span class="badge">{ dt.Type }</span></td>
+				<td>{ dt.DateModified.String() }</td>
+				<td>
+					<div class="table-actions">
+						<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
+						   class="btn btn-sm btn-ghost">Edit</a>
+						<button class="btn btn-sm btn-danger"
+						        hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+						        hx-target="closest tr"
+						        hx-swap="outerHTML swap:300ms"
+						        hx-confirm="Delete this datatype? This cannot be undone.">
+							Delete
+						</button>
+					</div>
+				</td>
+			</tr>
+		}
+	}
+	<tr>
+		<td colspan="4">
+			@Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit)
+		</td>
+	</tr>
+}

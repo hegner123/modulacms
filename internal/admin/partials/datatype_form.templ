@@ -1,0 +1,59 @@
+package partials
+
+// DatatypeForm renders the create datatype form fields.
+// Used as an HTMX partial for validation error responses.
+templ DatatypeForm(label string, dtype string, errs map[string]string, csrfToken string) {
+	@CSRFField(csrfToken)
+	if errs["_"] != "" {
+		<div class="form-error">{ errs["_"] }</div>
+	}
+	@FormField("label", "Label", label, errs["label"])
+	<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
+		<label for="type">Type</label>
+		<select id="type" name="type">
+			<option value="">Select a type</option>
+			<option value="page" selected?={ dtype == "page" }>Page</option>
+			<option value="post" selected?={ dtype == "post" }>Post</option>
+			<option value="block" selected?={ dtype == "block" }>Block</option>
+			<option value="component" selected?={ dtype == "component" }>Component</option>
+			<option value="template" selected?={ dtype == "template" }>Template</option>
+		</select>
+		if errs["type"] != "" {
+			<span class="field-error">{ errs["type"] }</span>
+		}
+	</div>
+	<div class="dialog-actions">
+		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+		<button type="submit" class="btn btn-primary">Create</button>
+	</div>
+}
+
+// DatatypeEditForm renders the edit datatype form fields.
+// Used as an HTMX partial for validation error responses on the detail page.
+templ DatatypeEditForm(id string, label string, dtype string, errs map[string]string, csrfToken string) {
+	<form hx-post={ "/admin/schema/datatypes/" + id }
+	      hx-target="#datatype-edit-form"
+	      hx-swap="innerHTML">
+		@CSRFField(csrfToken)
+		if errs["_"] != "" {
+			<div class="form-error">{ errs["_"] }</div>
+		}
+		@FormField("label", "Label", label, errs["label"])
+		<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
+			<label for="type">Type</label>
+			<select id="type" name="type">
+				<option value="page" selected?={ dtype == "page" }>Page</option>
+				<option value="post" selected?={ dtype == "post" }>Post</option>
+				<option value="block" selected?={ dtype == "block" }>Block</option>
+				<option value="component" selected?={ dtype == "component" }>Component</option>
+				<option value="template" selected?={ dtype == "template" }>Template</option>
+			</select>
+			if errs["type"] != "" {
+				<span class="field-error">{ errs["type"] }</span>
+			}
+		</div>
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary">Save Changes</button>
+		</div>
+	</form>
+}

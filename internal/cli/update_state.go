@@ -286,6 +286,12 @@ func (m Model) UpdateState(msg tea.Msg) (Model, tea.Cmd) {
 		newModel.AdminFieldTypesList = msg.AdminFieldTypes
 		return newModel, NewStateUpdate()
 
+	// Deploy state setters
+	case DeployEnvsSet:
+		newModel := m
+		newModel.DeployEnvironments = msg.Envs
+		return newModel, NewStateUpdate()
+
 	case UpdateMaxCursorMsg:
 		cursorUpdate := func() tea.Msg {
 			if m.Cursor > msg.CursorMax-1 {
