@@ -62,8 +62,8 @@ func (d Database) MapAdminFieldType(a mdb.AdminFieldTypes) AdminFieldTypes {
 }
 
 // MapCreateAdminFieldTypeParams converts wrapper params to sqlc-generated SQLite params.
-func (d Database) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdb.CreateAdminFieldTypesParams {
-	return mdb.CreateAdminFieldTypesParams{
+func (d Database) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdb.CreateAdminFieldTypeParams {
+	return mdb.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             a.Type,
 		Label:            a.Label,
@@ -71,8 +71,8 @@ func (d Database) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) md
 }
 
 // MapUpdateAdminFieldTypeParams converts wrapper params to sqlc-generated SQLite params.
-func (d Database) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdb.UpdateAdminFieldTypesParams {
-	return mdb.UpdateAdminFieldTypesParams{
+func (d Database) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdb.UpdateAdminFieldTypeParams {
+	return mdb.UpdateAdminFieldTypeParams{
 		Type:             a.Type,
 		Label:            a.Label,
 		AdminFieldTypeID: a.AdminFieldTypeID,
@@ -84,7 +84,7 @@ func (d Database) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) md
 // CountAdminFieldTypes returns the total number of adminFieldTypes in the database.
 func (d Database) CountAdminFieldTypes() (*int64, error) {
 	queries := mdb.New(d.Connection)
-	c, err := queries.CountAdminFieldTypes(d.Context)
+	c, err := queries.CountAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -94,7 +94,7 @@ func (d Database) CountAdminFieldTypes() (*int64, error) {
 // CreateAdminFieldTypeTable creates the admin_field_types table in the database.
 func (d Database) CreateAdminFieldTypeTable() error {
 	queries := mdb.New(d.Connection)
-	err := queries.CreateAdminFieldTypesTable(d.Context)
+	err := queries.CreateAdminFieldTypeTable(d.Context)
 	return err
 }
 
@@ -118,7 +118,7 @@ func (d Database) DeleteAdminFieldType(ctx context.Context, ac audited.AuditCont
 // GetAdminFieldType retrieves a adminFieldType by ID.
 func (d Database) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminFieldTypes, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetAdminFieldTypes(d.Context, mdb.GetAdminFieldTypesParams{AdminFieldTypeID: id})
+	row, err := queries.GetAdminFieldType(d.Context, mdb.GetAdminFieldTypeParams{AdminFieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (d Database) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminFieldTypes
 // ListAdminFieldTypes retrieves all adminFieldTypes in the database.
 func (d Database) ListAdminFieldTypes() (*[]AdminFieldTypes, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminFieldTypes(d.Context)
+	rows, err := queries.ListAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminFieldTypes: %v\n", err)
 	}
@@ -178,8 +178,8 @@ func (d MysqlDatabase) MapAdminFieldType(a mdbm.AdminFieldTypes) AdminFieldTypes
 }
 
 // MapCreateAdminFieldTypeParams converts wrapper params to sqlc-generated MySQL params.
-func (d MysqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdbm.CreateAdminFieldTypesParams {
-	return mdbm.CreateAdminFieldTypesParams{
+func (d MysqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdbm.CreateAdminFieldTypeParams {
+	return mdbm.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             a.Type,
 		Label:            a.Label,
@@ -187,8 +187,8 @@ func (d MysqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParam
 }
 
 // MapUpdateAdminFieldTypeParams converts wrapper params to sqlc-generated MySQL params.
-func (d MysqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdbm.UpdateAdminFieldTypesParams {
-	return mdbm.UpdateAdminFieldTypesParams{
+func (d MysqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdbm.UpdateAdminFieldTypeParams {
+	return mdbm.UpdateAdminFieldTypeParams{
 		Type:             a.Type,
 		Label:            a.Label,
 		AdminFieldTypeID: a.AdminFieldTypeID,
@@ -200,7 +200,7 @@ func (d MysqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParam
 // CountAdminFieldTypes returns the total number of adminFieldTypes in the database.
 func (d MysqlDatabase) CountAdminFieldTypes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
-	c, err := queries.CountAdminFieldTypes(d.Context)
+	c, err := queries.CountAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -210,7 +210,7 @@ func (d MysqlDatabase) CountAdminFieldTypes() (*int64, error) {
 // CreateAdminFieldTypeTable creates the admin_field_types table in the database.
 func (d MysqlDatabase) CreateAdminFieldTypeTable() error {
 	queries := mdbm.New(d.Connection)
-	err := queries.CreateAdminFieldTypesTable(d.Context)
+	err := queries.CreateAdminFieldTypeTable(d.Context)
 	return err
 }
 
@@ -234,7 +234,7 @@ func (d MysqlDatabase) DeleteAdminFieldType(ctx context.Context, ac audited.Audi
 // GetAdminFieldType retrieves a adminFieldType by ID.
 func (d MysqlDatabase) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminFieldTypes, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetAdminFieldTypes(d.Context, mdbm.GetAdminFieldTypesParams{AdminFieldTypeID: id})
+	row, err := queries.GetAdminFieldType(d.Context, mdbm.GetAdminFieldTypeParams{AdminFieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (d MysqlDatabase) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminField
 // ListAdminFieldTypes retrieves all adminFieldTypes in the database.
 func (d MysqlDatabase) ListAdminFieldTypes() (*[]AdminFieldTypes, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminFieldTypes(d.Context)
+	rows, err := queries.ListAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminFieldTypes: %v\n", err)
 	}
@@ -294,8 +294,8 @@ func (d PsqlDatabase) MapAdminFieldType(a mdbp.AdminFieldTypes) AdminFieldTypes 
 }
 
 // MapCreateAdminFieldTypeParams converts wrapper params to sqlc-generated PostgreSQL params.
-func (d PsqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdbp.CreateAdminFieldTypesParams {
-	return mdbp.CreateAdminFieldTypesParams{
+func (d PsqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams) mdbp.CreateAdminFieldTypeParams {
+	return mdbp.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             a.Type,
 		Label:            a.Label,
@@ -303,8 +303,8 @@ func (d PsqlDatabase) MapCreateAdminFieldTypeParams(a CreateAdminFieldTypeParams
 }
 
 // MapUpdateAdminFieldTypeParams converts wrapper params to sqlc-generated PostgreSQL params.
-func (d PsqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdbp.UpdateAdminFieldTypesParams {
-	return mdbp.UpdateAdminFieldTypesParams{
+func (d PsqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams) mdbp.UpdateAdminFieldTypeParams {
+	return mdbp.UpdateAdminFieldTypeParams{
 		Type:             a.Type,
 		Label:            a.Label,
 		AdminFieldTypeID: a.AdminFieldTypeID,
@@ -316,7 +316,7 @@ func (d PsqlDatabase) MapUpdateAdminFieldTypeParams(a UpdateAdminFieldTypeParams
 // CountAdminFieldTypes returns the total number of adminFieldTypes in the database.
 func (d PsqlDatabase) CountAdminFieldTypes() (*int64, error) {
 	queries := mdbp.New(d.Connection)
-	c, err := queries.CountAdminFieldTypes(d.Context)
+	c, err := queries.CountAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -326,7 +326,7 @@ func (d PsqlDatabase) CountAdminFieldTypes() (*int64, error) {
 // CreateAdminFieldTypeTable creates the admin_field_types table in the database.
 func (d PsqlDatabase) CreateAdminFieldTypeTable() error {
 	queries := mdbp.New(d.Connection)
-	err := queries.CreateAdminFieldTypesTable(d.Context)
+	err := queries.CreateAdminFieldTypeTable(d.Context)
 	return err
 }
 
@@ -350,7 +350,7 @@ func (d PsqlDatabase) DeleteAdminFieldType(ctx context.Context, ac audited.Audit
 // GetAdminFieldType retrieves a adminFieldType by ID.
 func (d PsqlDatabase) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminFieldTypes, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetAdminFieldTypes(d.Context, mdbp.GetAdminFieldTypesParams{AdminFieldTypeID: id})
+	row, err := queries.GetAdminFieldType(d.Context, mdbp.GetAdminFieldTypeParams{AdminFieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (d PsqlDatabase) GetAdminFieldType(id types.AdminFieldTypeID) (*AdminFieldT
 // ListAdminFieldTypes retrieves all adminFieldTypes in the database.
 func (d PsqlDatabase) ListAdminFieldTypes() (*[]AdminFieldTypes, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminFieldTypes(d.Context)
+	rows, err := queries.ListAdminFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get AdminFieldTypes: %v\n", err)
 	}
@@ -431,7 +431,7 @@ func (c NewAdminFieldTypeCmd) GetID(u mdb.AdminFieldTypes) string { return strin
 // Execute creates the adminFieldType in the database.
 func (c NewAdminFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.AdminFieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.CreateAdminFieldTypes(ctx, mdb.CreateAdminFieldTypesParams{
+	return queries.CreateAdminFieldType(ctx, mdb.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             c.params.Type,
 		Label:            c.params.Label,
@@ -478,13 +478,13 @@ func (c UpdateAdminFieldTypeCmd) GetID() string { return string(c.params.AdminFi
 // GetBefore retrieves the adminFieldType before the update.
 func (c UpdateAdminFieldTypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminFieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdb.GetAdminFieldTypesParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
+	return queries.GetAdminFieldType(ctx, mdb.GetAdminFieldTypeParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
 }
 
 // Execute updates the adminFieldType in the database.
 func (c UpdateAdminFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
-	return queries.UpdateAdminFieldTypes(ctx, mdb.UpdateAdminFieldTypesParams{
+	return queries.UpdateAdminFieldType(ctx, mdb.UpdateAdminFieldTypeParams{
 		Type:             c.params.Type,
 		Label:            c.params.Label,
 		AdminFieldTypeID: c.params.AdminFieldTypeID,
@@ -528,13 +528,13 @@ func (c DeleteAdminFieldTypeCmd) GetID() string { return string(c.id) }
 // GetBefore retrieves the adminFieldType before the delete.
 func (c DeleteAdminFieldTypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminFieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdb.GetAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.GetAdminFieldType(ctx, mdb.GetAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // Execute deletes the adminFieldType from the database.
 func (c DeleteAdminFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
-	return queries.DeleteAdminFieldTypes(ctx, mdb.DeleteAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.DeleteAdminFieldType(ctx, mdb.DeleteAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // DeleteAdminFieldTypeCmd creates a command for deleting a adminFieldType.
@@ -579,15 +579,15 @@ func (c NewAdminFieldTypeCmdMysql) GetID(u mdbm.AdminFieldTypes) string {
 // Execute creates the adminFieldType in the database.
 func (c NewAdminFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.AdminFieldTypes, error) {
 	queries := mdbm.New(tx)
-	params := mdbm.CreateAdminFieldTypesParams{
+	params := mdbm.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             c.params.Type,
 		Label:            c.params.Label,
 	}
-	if err := queries.CreateAdminFieldTypes(ctx, params); err != nil {
+	if err := queries.CreateAdminFieldType(ctx, params); err != nil {
 		return mdbm.AdminFieldTypes{}, err
 	}
-	return queries.GetAdminFieldTypes(ctx, mdbm.GetAdminFieldTypesParams{AdminFieldTypeID: params.AdminFieldTypeID})
+	return queries.GetAdminFieldType(ctx, mdbm.GetAdminFieldTypeParams{AdminFieldTypeID: params.AdminFieldTypeID})
 }
 
 // NewAdminFieldTypeCmd creates a command for inserting a adminFieldType.
@@ -630,13 +630,13 @@ func (c UpdateAdminFieldTypeCmdMysql) GetID() string { return string(c.params.Ad
 // GetBefore retrieves the adminFieldType before the update.
 func (c UpdateAdminFieldTypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminFieldTypes, error) {
 	queries := mdbm.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdbm.GetAdminFieldTypesParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
+	return queries.GetAdminFieldType(ctx, mdbm.GetAdminFieldTypeParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
 }
 
 // Execute updates the adminFieldType in the database.
 func (c UpdateAdminFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
-	return queries.UpdateAdminFieldTypes(ctx, mdbm.UpdateAdminFieldTypesParams{
+	return queries.UpdateAdminFieldType(ctx, mdbm.UpdateAdminFieldTypeParams{
 		Type:             c.params.Type,
 		Label:            c.params.Label,
 		AdminFieldTypeID: c.params.AdminFieldTypeID,
@@ -680,13 +680,13 @@ func (c DeleteAdminFieldTypeCmdMysql) GetID() string { return string(c.id) }
 // GetBefore retrieves the adminFieldType before the delete.
 func (c DeleteAdminFieldTypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminFieldTypes, error) {
 	queries := mdbm.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdbm.GetAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.GetAdminFieldType(ctx, mdbm.GetAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // Execute deletes the adminFieldType from the database.
 func (c DeleteAdminFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
-	return queries.DeleteAdminFieldTypes(ctx, mdbm.DeleteAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.DeleteAdminFieldType(ctx, mdbm.DeleteAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // DeleteAdminFieldTypeCmd creates a command for deleting a adminFieldType.
@@ -731,7 +731,7 @@ func (c NewAdminFieldTypeCmdPsql) GetID(u mdbp.AdminFieldTypes) string {
 // Execute creates the adminFieldType in the database.
 func (c NewAdminFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.AdminFieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.CreateAdminFieldTypes(ctx, mdbp.CreateAdminFieldTypesParams{
+	return queries.CreateAdminFieldType(ctx, mdbp.CreateAdminFieldTypeParams{
 		AdminFieldTypeID: types.NewAdminFieldTypeID(),
 		Type:             c.params.Type,
 		Label:            c.params.Label,
@@ -778,13 +778,13 @@ func (c UpdateAdminFieldTypeCmdPsql) GetID() string { return string(c.params.Adm
 // GetBefore retrieves the adminFieldType before the update.
 func (c UpdateAdminFieldTypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminFieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdbp.GetAdminFieldTypesParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
+	return queries.GetAdminFieldType(ctx, mdbp.GetAdminFieldTypeParams{AdminFieldTypeID: c.params.AdminFieldTypeID})
 }
 
 // Execute updates the adminFieldType in the database.
 func (c UpdateAdminFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
-	return queries.UpdateAdminFieldTypes(ctx, mdbp.UpdateAdminFieldTypesParams{
+	return queries.UpdateAdminFieldType(ctx, mdbp.UpdateAdminFieldTypeParams{
 		Type:             c.params.Type,
 		Label:            c.params.Label,
 		AdminFieldTypeID: c.params.AdminFieldTypeID,
@@ -828,13 +828,13 @@ func (c DeleteAdminFieldTypeCmdPsql) GetID() string { return string(c.id) }
 // GetBefore retrieves the adminFieldType before the delete.
 func (c DeleteAdminFieldTypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminFieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetAdminFieldTypes(ctx, mdbp.GetAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.GetAdminFieldType(ctx, mdbp.GetAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // Execute deletes the adminFieldType from the database.
 func (c DeleteAdminFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
-	return queries.DeleteAdminFieldTypes(ctx, mdbp.DeleteAdminFieldTypesParams{AdminFieldTypeID: c.id})
+	return queries.DeleteAdminFieldType(ctx, mdbp.DeleteAdminFieldTypeParams{AdminFieldTypeID: c.id})
 }
 
 // DeleteAdminFieldTypeCmd creates a command for deleting a adminFieldType.

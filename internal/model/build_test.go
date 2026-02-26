@@ -44,7 +44,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 			name: "ordered children via complete chain",
 			datatypes: []Datatype{
 				// Root: first child is C
-				makeDatatype("root", "", "C", "", "", "ROOT"),
+				makeDatatype("root", "", "C", "", "", "_root"),
 				// Children in arbitrary slice order: A, B, C
 				// Chain: C -> A -> B
 				makeDatatype("A", "root", "", "B", "C", "page"),
@@ -57,7 +57,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 			name: "broken chain — partial order plus remainder",
 			datatypes: []Datatype{
 				// Root: first child is C
-				makeDatatype("root", "", "C", "", "", "ROOT"),
+				makeDatatype("root", "", "C", "", "", "_root"),
 				// Chain: C -> A, then A's next points to "missing"
 				makeDatatype("A", "root", "", "missing", "C", "page"),
 				makeDatatype("B", "root", "", "", "", "page"),
@@ -70,7 +70,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 			name: "cycle detection — original order preserved",
 			datatypes: []Datatype{
 				// Root: first child is A
-				makeDatatype("root", "", "A", "", "", "ROOT"),
+				makeDatatype("root", "", "A", "", "", "_root"),
 				// Cycle: A -> B -> A
 				makeDatatype("A", "root", "", "B", "", "page"),
 				makeDatatype("B", "root", "", "A", "A", "page"),
@@ -83,7 +83,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 		{
 			name: "single child — no reordering needed",
 			datatypes: []Datatype{
-				makeDatatype("root", "", "only", "", "", "ROOT"),
+				makeDatatype("root", "", "only", "", "", "_root"),
 				makeDatatype("only", "root", "", "", "", "page"),
 			},
 			wantOrder: []string{"only"},
@@ -92,7 +92,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 			name: "empty FirstChildID — no crash, children preserved",
 			datatypes: []Datatype{
 				// Root has no FirstChildID set
-				makeDatatype("root", "", "", "", "", "ROOT"),
+				makeDatatype("root", "", "", "", "", "_root"),
 				makeDatatype("X", "root", "", "", "", "page"),
 				makeDatatype("Y", "root", "", "", "", "page"),
 			},
@@ -127,7 +127,7 @@ func TestBuildNodes_SiblingOrdering(t *testing.T) {
 				// Just verify all children are present (no exact order guarantee)
 				expectedCount := 0
 				for _, dt := range tc.datatypes {
-					if dt.Info.Type != "ROOT" {
+					if dt.Info.Type != "_root" {
 						expectedCount++
 					}
 				}

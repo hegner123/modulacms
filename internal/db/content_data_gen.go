@@ -267,6 +267,23 @@ func (d Database) ListContentDataByRoutePaginated(params ListContentDataByRouteP
 	return &res, nil
 }
 
+// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
+func (d Database) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdb.GetContentDataDescendantsParams{
+		ContentDataID: id,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -448,6 +465,23 @@ func (d MysqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByR
 	return &res, nil
 }
 
+// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
+func (d MysqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdbm.GetContentDataDescendantsParams{
+		ContentDataID: id,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -622,6 +656,23 @@ func (d PsqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRo
 		return nil, fmt.Errorf("failed to get ContentData paginated: %v", err)
 	}
 	res := []ContentData{}
+	for _, v := range rows {
+		m := d.MapContentData(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
+// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
+func (d PsqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdbp.GetContentDataDescendantsParams{
+		ContentDataID: id,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
 	for _, v := range rows {
 		m := d.MapContentData(v)
 		res = append(res, m)

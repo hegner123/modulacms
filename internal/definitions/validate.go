@@ -36,8 +36,8 @@ func Validate(def SchemaDefinition) error {
 			if field.Label == "" {
 				return fmt.Errorf("definitions: %q datatype %q field[%d] has empty label", def.Name, key, i)
 			}
-			if err := field.Type.Validate(); err != nil {
-				return fmt.Errorf("definitions: %q datatype %q field[%d] %q has invalid type: %w", def.Name, key, i, field.Label, err)
+			if field.Type == "" {
+				return fmt.Errorf("definitions: %q datatype %q field[%d] %q has empty type", def.Name, key, i, field.Label)
 			}
 		}
 	}

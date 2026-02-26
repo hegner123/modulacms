@@ -1,0 +1,87 @@
+package types
+
+import "fmt"
+
+// DatatypeType represents the type classification of a datatype.
+// Values prefixed with underscore are engine-reserved and trigger
+// built-in behavior. All other values are user-defined pass-through.
+type DatatypeType string
+
+const (
+	DatatypeTypeRoot       DatatypeType = "_root"
+	DatatypeTypeReference  DatatypeType = "_reference"
+	DatatypeTypeNestedRoot DatatypeType = "_nested_root"
+	DatatypeTypeSystemLog  DatatypeType = "_system_log"
+)
+
+// reservedTypes maps each reserved type to a description of its engine behavior.
+var reservedTypes = map[DatatypeType]string{
+	DatatypeTypeRoot:       "Tree entry point, one per route",
+	DatatypeTypeReference:  "Triggers tree composition — resolves content_tree_ref field values, attaches referenced trees as children",
+	DatatypeTypeNestedRoot: "Root of a composed subtree, assigned by the engine during tree composition",
+	DatatypeTypeSystemLog:  "Synthetic node injected when a reference cannot be resolved",
+}
+
+// IsReserved returns true if the type is engine-reserved.
+func (t DatatypeType) IsReserved() bool {
+	_, ok := reservedTypes[t]
+	return ok
+}
+
+// IsReservedPrefix returns true if the string starts with underscore,
+// which is the reserved namespace. Used to reject user-created types
+// that start with underscore even if not currently in the registry.
+func IsReservedPrefix(t string) bool {
+	return len(t) > 0 && t[0] == '_'
+}
+
+// IsRootType returns true if the type identifies a tree root node.
+// Used by the tree-building algorithm to find root nodes.
+func (t DatatypeType) IsRootType() bool {
+	return t == DatatypeTypeRoot || t == DatatypeTypeNestedRoot
+}
+
+// String returns the string representation of DatatypeType.
+func (t DatatypeType) String() string {
+	return string(t)
+}
+
+// ReservedTypes returns a copy of the registry for documentation/UI purposes.
+func ReservedTypes() map[DatatypeType]string {
+	out := make(map[DatatypeType]string, len(reservedTypes))
+	for k, v := range reservedTypes {
+		out[k] = v
+	}
+	return out
+}
+
+// ValidateDatatypeType validates a datatype type string.
+// Rules:
+//   - Empty string: error
+//   - Starts with _ but not in registry: error (reserved prefix, unknown type)
+//   - Starts with _ and in registry: valid reserved type
+//   - Does not start with _: valid user type
+func ValidateDatatypeType(t string) error {
+	if t == "" {
+		return fmt.Errorf("DatatypeType: cannot be empty")
+	}
+	if t[0] == '_' {
+		dt := DatatypeType(t)
+		if !dt.IsReserved() {
+			return fmt.Errorf("DatatypeType: %q uses reserved prefix '_' but is not a recognized engine type", t)
+		}
+	}
+	return nil
+}
+
+// ValidateUserDatatypeType validates that a user-provided type does not
+// use the reserved underscore prefix. Used at API creation/update boundaries.
+func ValidateUserDatatypeType(t string) error {
+	if t == "" {
+		return fmt.Errorf("DatatypeType: cannot be empty")
+	}
+	if IsReservedPrefix(t) {
+		return fmt.Errorf("type names starting with '_' are reserved for system use")
+	}
+	return nil
+}

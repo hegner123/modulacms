@@ -945,7 +945,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ShowAdminFormDialogMsg:
 		// Admin form dialog with parent options from admin datatypes
 		parentOpts := []ParentOption{
-			{Label: "ROOT (no parent)", Value: ""},
+			{Label: "_root (no parent)", Value: ""},
 		}
 		for _, p := range msg.Parents {
 			parentOpts = append(parentOpts, ParentOption{
@@ -974,7 +974,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ShowEditAdminDatatypeDialogMsg:
 		// Edit admin datatype dialog with pre-populated values
 		parentOpts := []ParentOption{
-			{Label: "ROOT (no parent)", Value: ""},
+			{Label: "_root (no parent)", Value: ""},
 		}
 		for _, p := range msg.Parents {
 			if p.AdminDatatypeID == msg.Datatype.AdminDatatypeID {
@@ -1736,11 +1736,7 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
-		// Prepare the type - default to ROOT if empty
 		dtype := msg.Type
-		if dtype == "" {
-			dtype = "ROOT"
-		}
 
 		// Prepare parent ID
 		var parentID types.NullableDatatypeID
@@ -2468,67 +2464,63 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
-
-		// Prepare the slug - use Slugify to ensure valid format
-		slug := msg.Slug
-		if slug == "" {
-			slug = msg.Title
-		}
-		validSlug := types.Slugify(slug)
-
-		// Validate the slug
-		if err := validSlug.Validate(); err != nil {
-			return ActionResultMsg{
-				Title:   "Invalid Slug",
-				Message: fmt.Sprintf("Could not create route: %v", err),
-			}
-		}
-
-		// Check if slug already exists
-		existingID, _ := d.GetRouteID(string(validSlug))
-		if existingID != nil {
-			return ActionResultMsg{
-				Title:   "Duplicate Slug",
-				Message: fmt.Sprintf("A route with slug %q already exists", validSlug),
-			}
-		}
-
-		// Create the route
-		routeParams := db.CreateRouteParams{
-			Slug:   validSlug,
-			Title:  msg.Title,
-			Status: 1, // Active by default
-			AuthorID: types.NullableUserID{
-				ID:    authorID,
-				Valid: true,
-			},
-			DateCreated:  types.TimestampNow(),
-			DateModified: types.TimestampNow(),
-		}
-
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
-
-		route, routeErr := d.CreateRoute(ctx, ac, routeParams)
-		if routeErr != nil {
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: fmt.Sprintf("Failed to create route: %v", routeErr),
-			}
-		}
-		if route.RouteID.IsZero() {
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: "Failed to create route in database",
-			}
-		}
-
-		// Create initial content data for this route
 		datatypeID := types.DatatypeID(msg.DatatypeID)
+
+		var routeID types.RouteID
+		var routeSlug string
+
+		// If slug is provided, create a route; otherwise create content without a route
+		if msg.Slug != "" {
+			validSlug := types.Slugify(msg.Slug)
+
+			if err := validSlug.Validate(); err != nil {
+				return ActionResultMsg{
+					Title:   "Invalid Slug",
+					Message: fmt.Sprintf("Could not create route: %v", err),
+				}
+			}
+
+			existingID, _ := d.GetRouteID(string(validSlug))
+			if existingID != nil {
+				return ActionResultMsg{
+					Title:   "Duplicate Slug",
+					Message: fmt.Sprintf("A route with slug %q already exists", validSlug),
+				}
+			}
+
+			route, routeErr := d.CreateRoute(ctx, ac, db.CreateRouteParams{
+				Slug:   validSlug,
+				Title:  msg.Title,
+				Status: 1,
+				AuthorID: types.NullableUserID{
+					ID:    authorID,
+					Valid: true,
+				},
+				DateCreated:  types.TimestampNow(),
+				DateModified: types.TimestampNow(),
+			})
+			if routeErr != nil {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: fmt.Sprintf("Failed to create route: %v", routeErr),
+				}
+			}
+			if route.RouteID.IsZero() {
+				return ActionResultMsg{
+					Title:   "Error",
+					Message: "Failed to create route in database",
+				}
+			}
+			routeID = route.RouteID
+			routeSlug = string(route.Slug)
+		}
+
 		contentParams := db.CreateContentDataParams{
 			RouteID: types.NullableRouteID{
-				ID:    route.RouteID,
-				Valid: true,
+				ID:    routeID,
+				Valid: !routeID.IsZero(),
 			},
 			DatatypeID: types.NullableDatatypeID{
 				ID:    datatypeID,
@@ -2542,18 +2534,24 @@ func (m Model) HandleCreateRouteWithContent(msg CreateRouteWithContentRequestMsg
 
 		contentData, contentErr := d.CreateContentData(ctx, ac, contentParams)
 		if contentErr != nil || contentData.ContentDataID.IsZero() {
+			if !routeID.IsZero() {
+				return ActionResultMsg{
+					Title:   "Warning",
+					Message: fmt.Sprintf("Route created but failed to create initial content. Route: %s", msg.Title),
+				}
+			}
 			return ActionResultMsg{
-				Title:   "Warning",
-				Message: fmt.Sprintf("Route created but failed to create initial content. Route: %s", route.Title),
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to create content: %v", contentErr),
 			}
 		}
 
 		return RouteWithContentCreatedMsg{
-			RouteID:       route.RouteID,
+			RouteID:       routeID,
 			ContentDataID: contentData.ContentDataID,
 			DatatypeID:    datatypeID,
-			Title:         route.Title,
-			Slug:          string(route.Slug),
+			Title:         msg.Title,
+			Slug:          routeSlug,
 		}
 	}
 }

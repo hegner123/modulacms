@@ -174,6 +174,9 @@ type Config struct {
 	Deploy_Environments []DeployEnvironmentConfig `json:"deploy_environments"`
 	Deploy_Snapshot_Dir string                    `json:"deploy_snapshot_dir"`
 
+	// Tree composition depth limit
+	Composition_Max_Depth int `json:"composition_max_depth"`
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 
@@ -211,6 +214,15 @@ func (c Config) BucketPublicURL() string {
 		return c.Bucket_Public_URL
 	}
 	return c.BucketEndpointURL()
+}
+
+// CompositionMaxDepth returns the configured maximum composition depth.
+// Falls back to 10 if no positive value is configured.
+func (c Config) CompositionMaxDepth() int {
+	if c.Composition_Max_Depth <= 0 {
+		return 10
+	}
+	return c.Composition_Max_Depth
 }
 
 // MaxUploadSize returns the configured maximum upload size in bytes.

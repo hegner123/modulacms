@@ -13,6 +13,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -62,11 +63,15 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			BaseURL:    pd.BaseURL,
 		}
 
-		// Load tree nodes for sidebar
-		var treeNodes []db.GetContentTreeByRouteRow
+		// Load tree nodes for sidebar via core.BuildFromRows
+		var treeRoot *core.Root
 		tree, treeErr := driver.GetContentTreeByRoute(types.NullableRouteID{})
 		if treeErr == nil && tree != nil {
-			treeNodes = *tree
+			built, _, buildErr := core.BuildFromRows(*tree)
+			if buildErr != nil {
+				utility.DefaultLogger.Warn("content tree build issue", buildErr)
+			}
+			treeRoot = built
 		}
 
 		if IsHTMX(r) {
@@ -75,7 +80,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		}
 
 		layout := NewAdminData(r, "Content")
-		Render(w, r, pages.ContentList(layout, contentItems, pg, treeNodes))
+		Render(w, r, pages.ContentList(layout, contentItems, pg, treeRoot))
 	}
 }
 

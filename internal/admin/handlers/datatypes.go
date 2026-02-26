@@ -126,6 +126,8 @@ func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 		if dtype == "" {
 			errs["type"] = "Type is required"
+		} else if types.IsReservedPrefix(dtype) {
+			errs["type"] = "Type names starting with '_' are reserved for system use"
 		}
 
 		if len(errs) > 0 {
@@ -193,6 +195,8 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 		if dtype == "" {
 			errs["type"] = "Type is required"
+		} else if types.IsReservedPrefix(dtype) {
+			errs["type"] = "Type names starting with '_' are reserved for system use"
 		}
 
 		if len(errs) > 0 {

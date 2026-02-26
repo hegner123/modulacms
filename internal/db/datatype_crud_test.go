@@ -144,7 +144,7 @@ func TestDatabase_CRUD_Datatype(t *testing.T) {
 }
 
 // TestDatabase_CRUD_Datatype_ListDatatypesRoot tests that root datatypes
-// (Type = 'ROOT') are returned correctly.
+// (Type = '_root') are returned correctly.
 func TestDatabase_CRUD_Datatype_ListDatatypesRoot(t *testing.T) {
 	t.Parallel()
 	d, seed := testSeededDB(t)
@@ -154,7 +154,7 @@ func TestDatabase_CRUD_Datatype_ListDatatypesRoot(t *testing.T) {
 	authorID := seed.User.UserID
 
 	// Seed datatype has Type="page", so it does NOT appear in root list.
-	// ListDatatypesRoot filters by WHERE type = 'ROOT'.
+	// ListDatatypesRoot filters by WHERE type = '_root'.
 	roots, err := d.ListDatatypesRoot()
 	if err != nil {
 		t.Fatalf("ListDatatypesRoot: %v", err)
@@ -163,21 +163,21 @@ func TestDatabase_CRUD_Datatype_ListDatatypesRoot(t *testing.T) {
 		t.Fatal("ListDatatypesRoot returned nil")
 	}
 	if len(*roots) != 0 {
-		t.Fatalf("ListDatatypesRoot len = %d, want 0 (no ROOT type exists)", len(*roots))
+		t.Fatalf("ListDatatypesRoot len = %d, want 0 (no _root type exists)", len(*roots))
 	}
 
-	// Create a ROOT type datatype
+	// Create a _root type datatype
 	rootDT, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		DatatypeID:   types.NewDatatypeID(),
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "root-datatype",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     authorID,
 		DateCreated:  now,
 		DateModified: now,
 	})
 	if err != nil {
-		t.Fatalf("CreateDatatype (ROOT): %v", err)
+		t.Fatalf("CreateDatatype (_root): %v", err)
 	}
 
 	roots, err = d.ListDatatypesRoot()

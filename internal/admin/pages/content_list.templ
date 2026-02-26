@@ -5,9 +5,10 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/tree/core"
 )
 
-templ ContentList(layout layouts.AdminData, items []db.ContentData, pg partials.PaginationPageData, treeNodes []db.GetContentTreeByRouteRow) {
+templ ContentList(layout layouts.AdminData, items []db.ContentData, pg partials.PaginationPageData, treeRoot *core.Root) {
 	@layouts.Admin(layout) {
 		<div class="page-header">
 			<h1>Content</h1>
@@ -24,8 +25,8 @@ templ ContentList(layout layouts.AdminData, items []db.ContentData, pg partials.
 			<aside class="content-tree-sidebar">
 				<h3>Content Tree</h3>
 				<div id="content-tree">
-					if len(treeNodes) > 0 {
-						@ContentTreeNodes(treeNodes)
+					if treeRoot != nil && treeRoot.Node != nil {
+						@ContentTreeNodes(treeRoot)
 					} else {
 						@partials.EmptyState("No content tree available")
 					}
@@ -126,37 +127,40 @@ templ ContentTableRowsPartial(items []db.ContentData, pg partials.PaginationPage
 	</tr>
 }
 
-templ ContentTreeNodes(nodes []db.GetContentTreeByRouteRow) {
+templ ContentTreeNodes(root *core.Root) {
 	<ul class="tree-list">
-		for _, node := range nodes {
-			if !node.ParentID.Valid {
-				@contentTreeNode(node, nodes)
-			}
-		}
+		@contentTreeNode(root.Node)
 	</ul>
 }
 
-templ contentTreeNode(node db.GetContentTreeByRouteRow, allNodes []db.GetContentTreeByRouteRow) {
-	<li class="tree-node">
-		<a
-			href={ templ.SafeURL("/admin/content/" + node.ContentDataID.String()) }
-			class="tree-node-label"
-			hx-get={ "/admin/content/" + node.ContentDataID.String() }
-			hx-target="#main-content"
-			hx-push-url="true"
-		>
-			<span class="tree-node-type">{ node.DatatypeLabel }</span>
-			<span class="tree-node-id">{ truncateID(node.ContentDataID.String()) }</span>
-			@components.StatusBadge(string(node.Status))
-		</a>
-		if node.FirstChildID.Valid {
-			<ul class="tree-children">
-				for _, child := range allNodes {
-					if child.ParentID.Valid && child.ParentID.ID == node.ContentDataID {
-						@contentTreeNode(child, allNodes)
-					}
-				}
-			</ul>
+templ contentTreeNode(node *core.Node) {
+	if node != nil && node.ContentData != nil {
+		<li class="tree-node">
+			<a
+				href={ templ.SafeURL("/admin/content/" + node.ContentData.ContentDataID.String()) }
+				class="tree-node-label"
+				hx-get={ "/admin/content/" + node.ContentData.ContentDataID.String() }
+				hx-target="#main-content"
+				hx-push-url="true"
+			>
+				<span class="tree-node-type">{ node.Datatype.Label }</span>
+				<span class="tree-node-id">{ truncateID(node.ContentData.ContentDataID.String()) }</span>
+				@components.StatusBadge(string(node.ContentData.Status))
+			</a>
+			if node.FirstChild != nil {
+				<ul class="tree-children">
+					@contentTreeChildren(node.FirstChild)
+				</ul>
+			}
+		</li>
+	}
+}
+
+templ contentTreeChildren(child *core.Node) {
+	if child != nil {
+		@contentTreeNode(child)
+		if child.NextSibling != nil {
+			@contentTreeChildren(child.NextSibling)
 		}
-	</li>
+	}
 }

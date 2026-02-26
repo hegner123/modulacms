@@ -85,7 +85,7 @@ FROM content_data cd
     INNER JOIN routes r ON cd.route_id = r.route_id
     INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.parent_id IS NULL
-    AND dt.type = 'ROOT'
+    AND dt.type = '_root'
 ORDER BY dt.label, r.slug;
 
 -- name: ListAdminContentDataWithDatatypeByRoute :many

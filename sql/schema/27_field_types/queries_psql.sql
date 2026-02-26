@@ -1,14 +1,14 @@
--- name: DropFieldTypesTable :exec
+-- name: DropFieldTypeTable :exec
 DROP TABLE field_types;
 
--- name: CreateFieldTypesTable :exec
+-- name: CreateFieldTypeTable :exec
 CREATE TABLE IF NOT EXISTS field_types (
     field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
     type TEXT NOT NULL UNIQUE,
     label TEXT NOT NULL
 );
 
--- name: GetFieldTypes :one
+-- name: GetFieldType :one
 SELECT * FROM field_types
 WHERE field_type_id = $1 LIMIT 1;
 
@@ -16,15 +16,15 @@ WHERE field_type_id = $1 LIMIT 1;
 SELECT * FROM field_types
 WHERE type = $1 LIMIT 1;
 
--- name: CountFieldTypes :one
+-- name: CountFieldType :one
 SELECT COUNT(*)
 FROM field_types;
 
--- name: ListFieldTypes :many
+-- name: ListFieldType :many
 SELECT * FROM field_types
 ORDER BY label;
 
--- name: CreateFieldTypes :one
+-- name: CreateFieldType :one
 INSERT INTO field_types(
     field_type_id,
     type,
@@ -36,12 +36,12 @@ INSERT INTO field_types(
 )
 RETURNING *;
 
--- name: UpdateFieldTypes :exec
+-- name: UpdateFieldType :exec
 UPDATE field_types
 SET type=$1,
     label=$2
 WHERE field_type_id = $3;
 
--- name: DeleteFieldTypes :exec
+-- name: DeleteFieldType :exec
 DELETE FROM field_types
 WHERE field_type_id = $1;

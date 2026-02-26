@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/model"
 	"github.com/hegner123/modulacms/internal/transform"
+	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -131,6 +132,19 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 		utility.DefaultLogger.Error("BuildTree error", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
+	}
+
+	// Compose referenced subtrees
+	if root.CoreRoot != nil {
+		fetcher := core.NewCachedFetcher(&core.DbTreeFetcher{Driver: d})
+		composeErr := core.ComposeTrees(r.Context(), root.CoreRoot, fetcher, core.ComposeOptions{
+			MaxDepth:       c.CompositionMaxDepth(),
+			MaxConcurrency: 10,
+		})
+		if composeErr != nil {
+			utility.DefaultLogger.Warn("composition error", composeErr)
+		}
+		root.RebuildFromCore()
 	}
 
 	// Allow format override via query parameter

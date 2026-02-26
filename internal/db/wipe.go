@@ -97,10 +97,10 @@ func (d Database) DropAllTables() error {
 	if err := queries.DropMediaDimensionTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_dimensions: %w", err)
 	}
-	if err := queries.DropFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop field_types: %w", err)
 	}
-	if err := queries.DropAdminFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
 	}
 	if err := queries.DropRoleTable(d.Context); err != nil {
@@ -216,10 +216,10 @@ func (d MysqlDatabase) DropAllTables() error {
 	if err := queries.DropMediaDimensionTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_dimensions: %w", err)
 	}
-	if err := queries.DropFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop field_types: %w", err)
 	}
-	if err := queries.DropAdminFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
 	}
 	if err := queries.DropRoleTable(d.Context); err != nil {
@@ -335,10 +335,10 @@ func (d PsqlDatabase) DropAllTables() error {
 	if err := queries.DropMediaDimensionTable(d.Context); err != nil {
 		return fmt.Errorf("drop media_dimensions: %w", err)
 	}
-	if err := queries.DropFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop field_types: %w", err)
 	}
-	if err := queries.DropAdminFieldTypesTable(d.Context); err != nil {
+	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
 	}
 	if err := queries.DropRoleTable(d.Context); err != nil {

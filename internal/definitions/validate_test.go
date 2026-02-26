@@ -85,17 +85,17 @@ func TestValidate(t *testing.T) {
 			wantErr: "has empty label",
 		},
 		{
-			name: "invalid field type",
+			name: "empty field type",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
 					Label: "Page",
 					Type:  types.NewNullableString("page"),
 					FieldRefs: []FieldDef{
-						{Label: "Title", Type: types.FieldType("invalid")},
+						{Label: "Title", Type: types.FieldType("")},
 					},
 				}
 			},
-			wantErr: "has invalid type",
+			wantErr: "has empty type",
 		},
 		{
 			name: "empty datatype label",

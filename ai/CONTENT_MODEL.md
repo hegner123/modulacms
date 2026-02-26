@@ -31,7 +31,7 @@ CREATE TABLE datatypes (
     datatype_id   TEXT PRIMARY KEY NOT NULL CHECK (length(datatype_id) = 26),  -- ULID
     parent_id     TEXT DEFAULT NULL REFERENCES datatypes ON DELETE SET NULL,   -- type-level parent
     label         TEXT NOT NULL,          -- human-readable name (e.g. "Hero Section")
-    type          TEXT NOT NULL,          -- "ROOT" or a free-form category string
+    type          TEXT NOT NULL,          -- "_root" or a free-form category string
     author_id     TEXT NOT NULL REFERENCES users ON DELETE SET NULL,
     date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
@@ -130,11 +130,11 @@ route (1) ──────────< content_data (many)
 
 ## Rules and Constraints
 
-### 1. ROOT Datatypes
+### 1. _root Datatypes
 
-A datatype with `type = "ROOT"` is the **only** type that can serve as the root node of a content tree. The tree-building algorithm identifies the root by checking `Datatype.Info.Type == "ROOT"`. Every route's content tree must have exactly one content_data node whose datatype has `type = "ROOT"`.
+A datatype with `type = "_root"` is the **only** type that can serve as the root node of a content tree. The tree-building algorithm identifies the root by checking `Datatype.Info.Type == "_root"`. Every route's content tree must have exactly one content_data node whose datatype has `type = "_root"`.
 
-ROOT datatypes represent first-party page-level content types: **Page**, **Post**, **Case Study**, **Class**, **Service**, etc.
+_root datatypes represent first-party page-level content types: **Page**, **Post**, **Case Study**, **Class**, **Service**, etc.
 
 ### 2. Parent-Constrained Datatypes
 
@@ -142,9 +142,9 @@ When a datatype has a non-null `parent_id`, it can **only** be used as a child o
 
 Example: A "Featured Card" datatype with `parent_id` pointing to the "Cards" datatype can only appear nested under a "Cards" instance in the content tree.
 
-### 3. Unparented Non-ROOT Datatypes
+### 3. Unparented Non-_root Datatypes
 
-A datatype can have `parent_id = NULL` and `type != "ROOT"`. This is a currently undefined state reserved for future use. When designing templates, avoid creating datatypes in this state unless you have a specific reason and document the intent.
+A datatype can have `parent_id = NULL` and `type != "_root"`. This is a currently undefined state reserved for future use. When designing templates, avoid creating datatypes in this state unless you have a specific reason and document the intent.
 
 ### 4. Fields Belong to Datatypes
 
@@ -164,7 +164,7 @@ A datatype can have **any number of fields** (zero or more).
 
 ### 6. Route-to-Content Binding
 
-A route is linked to an instance of a ROOT datatype via a content_data row where `content_data.route_id = routes.route_id` and the content_data node's datatype has `type = "ROOT"`.
+A route is linked to an instance of a _root datatype via a content_data row where `content_data.route_id = routes.route_id` and the content_data node's datatype has `type = "_root"`.
 
 ### 7. Content Delivery Builds a Tree
 
@@ -175,7 +175,7 @@ When a client accesses a route through the content delivery endpoint `GET /{slug
 3. Fetches the `datatype` definition for each content_data node
 4. Fetches all `content_fields` for that route
 5. Fetches the `field` definition for each content_field
-6. Assembles a tree: the ROOT-typed node becomes the root, all other nodes are linked via `parent_id`, children are ordered via the `first_child_id → next_sibling_id` pointer chain
+6. Assembles a tree: the _root-typed node becomes the root, all other nodes are linked via `parent_id`, children are ordered via the `first_child_id → next_sibling_id` pointer chain
 7. Fields are attached to their owning node via matching `content_data_id`
 
 ### 8. Tree Navigation is O(1)
@@ -198,7 +198,7 @@ A "Page" route at `/about` with a Hero section and a Cards section containing tw
 
 ```
 Route: /about
-└── content_data (ROOT "Page")          ← datatype.type = "ROOT"
+└── content_data (_root "Page")          ← datatype.type = "_root"
     ├── content_field: title = "About Us"
     ├── content_field: meta_description = "Learn about our company"
     │
@@ -223,7 +223,7 @@ Route: /about
 {
   "root": {
     "datatype": {
-      "info": { "label": "Page", "type": "ROOT" },
+      "info": { "label": "Page", "type": "_root" },
       "content": { "content_data_id": "...", "status": "published" }
     },
     "fields": [
@@ -273,17 +273,17 @@ Route: /about
 
 When designing installable CMS templates, produce a structured definition containing:
 
-1. **Datatypes**: Each with a `label`, `type` (use `"ROOT"` only for the page-level type), and optionally a `parent_id` referencing another datatype's label to enforce nesting rules.
+1. **Datatypes**: Each with a `label`, `type` (use `"_root"` only for the page-level type), and optionally a `parent_id` referencing another datatype's label to enforce nesting rules.
 
 2. **Fields per Datatype**: For each datatype, define its fields with `label`, `type` (from the 14 allowed values), `data` (frontend metadata), `validation` (JSON), and `ui_config` (JSON). Each field is unique to its datatype.
 
-3. **Tree Structure**: Define the default content_data hierarchy — which datatype instances appear as children of which, and in what order. The root must be a ROOT-typed datatype.
+3. **Tree Structure**: Define the default content_data hierarchy — which datatype instances appear as children of which, and in what order. The root must be a _root-typed datatype.
 
 4. **Default Field Values**: Optionally provide default `field_value` entries for content_fields to pre-populate the template.
 
 ### Template Constraints
 
-- Exactly one datatype must have `type = "ROOT"` — this is the page-level type
+- Exactly one datatype must have `type = "_root"` — this is the page-level type
 - Datatypes with a `parent_id` can only be instantiated under their declared parent
 - Field types must be one of: `text`, `textarea`, `number`, `date`, `datetime`, `boolean`, `select`, `media`, `relation`, `json`, `richtext`, `slug`, `email`, `url`
 - All IDs are 26-character ULIDs generated at creation time

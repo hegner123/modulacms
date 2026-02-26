@@ -82,7 +82,7 @@ CREATE TABLE datatypes (
 );
 ```
 
-Columns: datatype_id is ULID primary key, parent_id allows hierarchical organization, label is display name, type categorizes datatype as GLOBAL or ROOT, author_id tracks who created it.
+Columns: datatype_id is ULID primary key, parent_id allows hierarchical organization, label is display name, type categorizes datatype as GLOBAL or _root, author_id tracks who created it.
 
 Foreign keys: parent_id self-references datatypes.datatype_id, author_id references users.user_id.
 

@@ -37,10 +37,10 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 	var (
 		parent   string
 		label    string
-		datatype = "ROOT"
+		datatype string
 	)
 	groupDescription := "Define datatype"
-	typeDescription := "Optional - ROOT is reserved for root content types.\n"
+	typeDescription := "Type names starting with '_' are reserved for system use.\n"
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -53,7 +53,7 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 						return options
 					}
 					blankOption := huh.Option[string]{
-						Key:   "ROOT",
+						Key:   "_root",
 						Value: "",
 					}
 					options = append(options, blankOption)
@@ -74,6 +74,9 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 			huh.NewInput().
 				Title("Type").
 				Description(typeDescription).
+				Validate(func(s string) error {
+					return types.ValidateUserDatatypeType(s)
+				}).
 				Value(&datatype),
 		).Description(groupDescription),
 	)
@@ -111,7 +114,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 	}
 
 	groupDescription := "Edit datatype"
-	typeDescription := "Optional - ROOT is reserved for root content types.\n"
+	typeDescription := "Type names starting with '_' are reserved for system use.\n"
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -124,7 +127,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 						return options
 					}
 					blankOption := huh.Option[string]{
-						Key:   "ROOT",
+						Key:   "_root",
 						Value: "",
 					}
 					options = append(options, blankOption)
@@ -145,6 +148,9 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 			huh.NewInput().
 				Title("Type").
 				Description(typeDescription).
+				Validate(func(s string) error {
+					return types.ValidateUserDatatypeType(s)
+				}).
 				Value(&datatype),
 		).Description(groupDescription),
 	)

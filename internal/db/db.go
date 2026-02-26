@@ -229,6 +229,7 @@ type DbDriver interface {
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
 	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
 	ListContentDataByRoutePaginated(ListContentDataByRoutePaginatedParams) (*[]ContentData, error)
+	GetContentDataDescendants(context.Context, types.ContentID) (*[]ContentData, error)
 	ListRootContentSummary() (*[]RootContentSummary, error)
 	UpdateContentData(context.Context, audited.AuditContext, UpdateContentDataParams) (*string, error)
 
@@ -831,7 +832,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
-		Slug:         types.Slug("home"),
+		Slug:         types.Slug("/"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -849,7 +850,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -881,7 +882,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1108,13 +1109,14 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	// 20. Seed field_types and admin_field_types with the 15 built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
+		{"content_tree_ref", "Content Tree Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -1700,7 +1702,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
-		Slug:         types.Slug("home"),
+		Slug:         types.Slug("/"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -1718,7 +1720,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1750,7 +1752,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -1977,13 +1979,14 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	// 20. Seed field_types and admin_field_types with the 15 built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
+		{"content_tree_ref", "Content Tree Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})
@@ -2540,7 +2543,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 5. Create default home route (route_id = 1) - Recommended
 	homeRoute, err := d.CreateRoute(ctx, ac, CreateRouteParams{
-		Slug:         types.Slug("home"),
+		Slug:         types.Slug("/"),
 		Title:        "Home",
 		Status:       1,
 		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
@@ -2558,7 +2561,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	pageDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
 		Label:        "Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2590,7 +2593,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	adminDatatype, err := d.CreateAdminDatatype(ctx, ac, CreateAdminDatatypeParams{
 		ParentID:     types.NullableAdminDatatypeID{},
 		Label:        "Admin Page",
-		Type:         "ROOT",
+		Type:         string(types.DatatypeTypeRoot),
 		AuthorID:     systemUser.UserID,
 		DateCreated:  types.TimestampNow(),
 		DateModified: types.TimestampNow(),
@@ -2817,13 +2820,14 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default user_ssh_key: ssh_key_id is empty")
 	}
 
-	// 20. Seed field_types and admin_field_types with the 14 built-in field types
+	// 20. Seed field_types and admin_field_types with the 15 built-in field types
 	fieldTypeSeedData := []struct{ Type, Label string }{
 		{"text", "Text Input"}, {"textarea", "Text Area"}, {"number", "Number"},
 		{"date", "Date"}, {"datetime", "Date & Time"}, {"boolean", "Boolean"},
 		{"select", "Select"}, {"media", "Media"}, {"relation", "Relation"},
 		{"json", "JSON"}, {"richtext", "Rich Text"}, {"slug", "Slug"},
 		{"email", "Email"}, {"url", "URL"},
+		{"content_tree_ref", "Content Tree Reference"},
 	}
 	for _, ft := range fieldTypeSeedData {
 		created, err := d.CreateFieldType(ctx, ac, CreateFieldTypeParams{Type: ft.Type, Label: ft.Label})

@@ -52,7 +52,7 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 }
 
 ///////////////////////////////
-// ROOT CONTENT SUMMARY
+// _root CONTENT SUMMARY
 //////////////////////////////
 
 // RootContentSummary represents a root content data entry with route and datatype info

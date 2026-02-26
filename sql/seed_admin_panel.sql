@@ -80,7 +80,7 @@ DELETE FROM admin_routes WHERE admin_route_id IN (
 -- Admin Datatypes (3: Page, Section, Component)
 -- =============================================================================
 INSERT INTO admin_datatypes (admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified) VALUES ('01KG5WR1VPZG63WF3Z1P6RK2KK', NULL, 'Component', 'component', '01KG5SY7D47H1WT33JKAF177AF', '2026-01-29 22:07:26.573717', '2026-01-29 22:07:26.573717');
-INSERT INTO admin_datatypes (admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified) VALUES ('01KG5WR1VPZG63WF3Z1HTZSKZ4', NULL, 'Page', 'ROOT', '01KG5SY7D47H1WT33JKAF177AF', '2026-01-29 22:07:26.573717', '2026-01-29 22:07:26.573717');
+INSERT INTO admin_datatypes (admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified) VALUES ('01KG5WR1VPZG63WF3Z1HTZSKZ4', NULL, 'Page', '_root', '01KG5SY7D47H1WT33JKAF177AF', '2026-01-29 22:07:26.573717', '2026-01-29 22:07:26.573717');
 INSERT INTO admin_datatypes (admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified) VALUES ('01KG5WR1VPZG63WF3Z1M3TX6C3', NULL, 'Section', 'section', '01KG5SY7D47H1WT33JKAF177AF', '2026-01-29 22:07:26.573717', '2026-01-29 22:07:26.573717');
 
 -- =============================================================================

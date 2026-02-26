@@ -247,9 +247,6 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
 		dtype := msg.Type
-		if dtype == "" {
-			dtype = "ROOT"
-		}
 
 		var parentID types.NullableAdminDatatypeID
 		if msg.ParentID != "" {

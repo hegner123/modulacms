@@ -413,7 +413,7 @@ func getContextControls(m Model) string {
 	}
 }
 
-// renderRootDatatypesList renders ROOT datatypes for the left panel on the CONTENT page.
+// renderRootDatatypesList renders _root datatypes for the left panel on the CONTENT page.
 func renderRootDatatypesList(m Model) string {
 	if len(m.RootDatatypes) == 0 {
 		return "(no root types)"
@@ -681,7 +681,7 @@ func renderDatatypeActions(m Model) string {
 	return strings.Join(lines, "\n")
 }
 
-// renderRootContentSummaryList renders content data instances with slug and ROOT datatype label for the left panel.
+// renderRootContentSummaryList renders content data instances with slug and _root datatype label for the left panel.
 func renderRootContentSummaryList(m Model) string {
 	if len(m.RootContentSummary) == 0 {
 		return "(no content)"

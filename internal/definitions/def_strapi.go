@@ -11,7 +11,7 @@ func init() {
 		Datatypes: map[string]DatatypeDef{
 			"article": {
 				Label: "Article",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -23,7 +23,7 @@ func init() {
 			},
 			"page": {
 				Label: "Page",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Page Title", Type: types.FieldTypeText},
 					{Label: "Page Slug", Type: types.FieldTypeSlug},
@@ -32,7 +32,7 @@ func init() {
 			},
 			"global": {
 				Label: "Global",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Site Name", Type: types.FieldTypeText},
 					{Label: "Site Description", Type: types.FieldTypeTextarea},

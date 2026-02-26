@@ -9,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/tree/core"
 )
 
 // Logger is the logging interface consumed by the model package. Callers pass
@@ -24,6 +25,10 @@ type Logger interface {
 // for serialization into various CMS output formats (Contentful, Sanity, etc.).
 type Root struct {
 	Node *Node `json:"root"`
+
+	// CoreRoot holds the shared core tree for composition layer access (Phase 3).
+	// Excluded from JSON serialization.
+	CoreRoot *core.Root `json:"-"`
 }
 
 // Node represents a single node in the content hierarchy. Each node combines
@@ -158,4 +163,80 @@ func NewNode(d Datatype) Node {
 // AddChild which only sets the root.
 func (n *Node) AddChild(child *Node) {
 	n.Nodes = append(n.Nodes, child)
+}
+
+// RebuildFromCore re-converts the CoreRoot into the model Node tree.
+// This is useful when the core tree has been mutated and the model
+// representation needs to be refreshed.
+func (r *Root) RebuildFromCore() {
+	if r.CoreRoot == nil || r.CoreRoot.Node == nil {
+		r.Node = nil
+		return
+	}
+	r.Node = fromCoreNode(r.CoreRoot.Node)
+}
+
+// fromCoreRoot converts a core.Root into a model.Root by walking the core
+// tree recursively and mapping DB types to JSON types via db.Map*JSON.
+func fromCoreRoot(cr *core.Root) Root {
+	r := Root{CoreRoot: cr}
+	if cr == nil || cr.Node == nil {
+		return r
+	}
+	r.Node = fromCoreNode(cr.Node)
+	return r
+}
+
+// fromCoreNode recursively converts a core.Node into a model.Node.
+// It walks FirstChild/NextSibling pointers to build the child slice.
+func fromCoreNode(cn *core.Node) *Node {
+	if cn == nil {
+		return nil
+	}
+
+	// Map datatype and content data to JSON types
+	dtJSON := db.MapDatatypeJSON(cn.Datatype)
+	var cdJSON db.ContentDataJSON
+	if cn.ContentData != nil {
+		cdJSON = db.MapContentDataJSON(*cn.ContentData)
+	}
+
+	// Map fields: pair content fields with field definitions
+	fields := make([]Field, 0, len(cn.ContentFields))
+	for i, cf := range cn.ContentFields {
+		info := db.MapFieldJSON(cn.Fields[i])
+		// Override ParentID from the field definition's datatype reference to the
+		// content data instance ID, so downstream consumers can match fields to
+		// the correct node by ContentDataID.
+		info.ParentID = cf.ContentDataID.String()
+		fields = append(fields, Field{
+			Info:    info,
+			Content: db.MapContentFieldJSON(cf),
+		})
+	}
+
+	// Build child slice by walking the sibling chain
+	var children []*Node
+	child := cn.FirstChild
+	for child != nil {
+		children = append(children, fromCoreNode(child))
+		child = child.NextSibling
+	}
+
+	// Ensure non-nil slices for JSON marshaling
+	if fields == nil {
+		fields = []Field{}
+	}
+	if children == nil {
+		children = []*Node{}
+	}
+
+	return &Node{
+		Datatype: Datatype{
+			Info:    dtJSON,
+			Content: cdJSON,
+		},
+		Fields: fields,
+		Nodes:  children,
+	}
 }

@@ -573,7 +573,7 @@ func (m Model) datatypesControlsSelect() (Model, tea.Cmd) {
 
 // ContentBrowserControls handles keyboard navigation for the content browser.
 // The Content page shows:
-//   - Left panel: content data instances with slug and ROOT datatype label
+//   - Left panel: content data instances with slug and _root datatype label
 //   - Center panel: details of selected content (or content tree if viewing)
 //   - Right panel: actions
 func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {

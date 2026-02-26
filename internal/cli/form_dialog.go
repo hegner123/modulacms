@@ -66,7 +66,7 @@ const (
 // ParentOption represents a selectable parent datatype
 type ParentOption struct {
 	Label string
-	Value string // DatatypeID or empty for ROOT
+	Value string // DatatypeID or empty for _root
 }
 
 // TypeOption represents a selectable field type from the registry
@@ -178,13 +178,13 @@ func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes
 
 	// Create type input
 	typeInput := textinput.New()
-	typeInput.Placeholder = "ROOT"
+	typeInput.Placeholder = "_root"
 	typeInput.CharLimit = 32
 	typeInput.Width = 40
 
 	// Build parent options
 	parentOptions := []ParentOption{
-		{Label: "ROOT (no parent)", Value: ""},
+		{Label: "_root (no parent)", Value: ""},
 	}
 	for _, p := range parents {
 		parentOptions = append(parentOptions, ParentOption{
@@ -747,14 +747,14 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 
 	// Create type input with current value
 	typeInput := textinput.New()
-	typeInput.Placeholder = "ROOT"
+	typeInput.Placeholder = "_root"
 	typeInput.CharLimit = 32
 	typeInput.Width = 40
 	typeInput.SetValue(datatype.Type)
 
 	// Build parent options
 	parentOptions := []ParentOption{
-		{Label: "ROOT (no parent)", Value: ""},
+		{Label: "_root (no parent)", Value: ""},
 	}
 	selectedParentIndex := 0
 	for _, p := range parents {

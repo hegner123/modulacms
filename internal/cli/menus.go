@@ -67,11 +67,11 @@ func (m Model) DatabaseMenuInit() []Page {
 	return DatabaseMenu
 }
 
-// BuildDatatypeMenu builds a menu of ROOT datatype pages from the provided datatypes.
+// BuildDatatypeMenu builds a menu of _root datatype pages from the provided datatypes.
 func (m Model) BuildDatatypeMenu(datatypes []db.Datatypes) []Page {
 	out := make([]Page, 0)
 	for _, item := range datatypes {
-		if item.Type == "ROOT" {
+		if types.DatatypeType(item.Type).IsRootType() {
 			page := NewDatatypePage(item.Label)
 			out = append(out, page)
 		}

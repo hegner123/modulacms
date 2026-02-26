@@ -280,22 +280,20 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 
 	case FetchChildDatatypesMsg:
 		d := m.DB
-		parentID := msg.ParentDatatypeID
 		routeID := msg.RouteID
 		return m, func() tea.Msg {
-			children, err := d.ListDatatypeChildren(parentID)
+			all, err := d.ListDatatypes()
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
-			if children == nil || len(*children) == 0 {
-				// No child datatypes, cannot create child content
+			if all == nil || len(*all) == 0 {
 				return ActionResultMsg{
-					Title:   "No Child Types",
-					Message: "This datatype has no child types defined.",
+					Title:   "No Datatypes",
+					Message: "No datatypes are defined.",
 				}
 			}
 			return ShowChildDatatypeDialogMsg{
-				ChildDatatypes: *children,
+				ChildDatatypes: *all,
 				RouteID:        string(routeID),
 			}
 		}

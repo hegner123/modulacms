@@ -90,24 +90,10 @@ const (
 	FieldTypeJSON     FieldType = "json"
 	FieldTypeRichText FieldType = "richtext"
 	FieldTypeSlug     FieldType = "slug"
-	FieldTypeEmail    FieldType = "email"
-	FieldTypeURL      FieldType = "url"
+	FieldTypeEmail          FieldType = "email"
+	FieldTypeURL            FieldType = "url"
+	FieldTypeContentTreeRef FieldType = "content_tree_ref"
 )
-
-// Validate checks that the FieldType is one of the allowed values.
-func (t FieldType) Validate() error {
-	switch t {
-	case FieldTypeText, FieldTypeTextarea, FieldTypeNumber, FieldTypeDate,
-		FieldTypeDatetime, FieldTypeBoolean, FieldTypeSelect, FieldTypeMedia,
-		FieldTypeRelation, FieldTypeJSON, FieldTypeRichText, FieldTypeSlug,
-		FieldTypeEmail, FieldTypeURL:
-		return nil
-	case "":
-		return fmt.Errorf("FieldType: cannot be empty")
-	default:
-		return fmt.Errorf("FieldType: invalid value %q (valid: text, textarea, number, date, datetime, boolean, select, media, relation, json, richtext, slug, email, url)", t)
-	}
-}
 
 // String returns the string representation of FieldType.
 func (t FieldType) String() string {
@@ -115,9 +101,11 @@ func (t FieldType) String() string {
 }
 
 // Value returns the database driver value for FieldType.
+// Validation is performed against the field_types table at the handler level,
+// not here — this allows custom field types registered in the DB.
 func (t FieldType) Value() (driver.Value, error) {
-	if err := t.Validate(); err != nil {
-		return nil, err
+	if t == "" {
+		return nil, fmt.Errorf("FieldType: cannot be empty")
 	}
 	return string(t), nil
 }
@@ -135,7 +123,7 @@ func (t *FieldType) Scan(value any) error {
 	default:
 		return fmt.Errorf("FieldType: cannot scan %T", value)
 	}
-	return t.Validate()
+	return nil
 }
 
 // MarshalJSON marshals FieldType to JSON.
@@ -150,7 +138,7 @@ func (t *FieldType) UnmarshalJSON(data []byte) error {
 		return fmt.Errorf("FieldType: %w", err)
 	}
 	*t = FieldType(str)
-	return t.Validate()
+	return nil
 }
 
 // RouteType represents the type of a route

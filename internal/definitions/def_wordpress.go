@@ -11,7 +11,7 @@ func init() {
 		Datatypes: map[string]DatatypeDef{
 			"post": {
 				Label: "Post",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -25,7 +25,7 @@ func init() {
 			},
 			"page": {
 				Label: "Page",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Page Title", Type: types.FieldTypeText},
 					{Label: "Page Slug", Type: types.FieldTypeSlug},

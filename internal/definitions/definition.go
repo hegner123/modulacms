@@ -15,7 +15,7 @@ type FieldDef struct {
 // DatatypeDef describes a datatype and which fields/children it has.
 type DatatypeDef struct {
 	Label     string               // Display name: "Page", "Blog Post"
-	Type      types.NullableString // Category: "page", "post", "ROOT", "GLOBAL"
+	Type      types.NullableString // Category: "page", "post", "_root", "GLOBAL"
 	ParentRef string               // Keys into SchemaDefinition.Datatypes (parent-child hierarchy)
 	FieldRefs []FieldDef           // Keys into SchemaDefinition.Fields
 }

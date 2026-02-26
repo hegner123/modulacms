@@ -109,3 +109,13 @@ SELECT * FROM content_data
 WHERE route_id = $1
 ORDER BY content_data_id
 LIMIT $2 OFFSET $3;
+
+-- name: GetContentDataDescendants :many
+WITH RECURSIVE tree AS (
+    SELECT cd1.content_data_id AS cid FROM content_data cd1 WHERE cd1.content_data_id = $1
+    UNION ALL
+    SELECT cd2.content_data_id FROM content_data cd2
+    INNER JOIN tree t ON cd2.parent_id = t.cid
+)
+SELECT cd.* FROM content_data cd
+INNER JOIN tree t ON cd.content_data_id = t.cid;

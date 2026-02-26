@@ -527,7 +527,7 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 	// Build the tree by assigning each node to its parent
 	for _, node := range nodes {
 		// Identify the root node
-		if node.Datatype.Info.Type == "ROOT" {
+		if node.Datatype.Info.Type == "_root" {
 			root = node
 			continue
 		}
@@ -565,7 +565,7 @@ func BuildNodes(datatypes []Datatype, fields []Field) *Node {
 1. **Phase 1 - Create nodes**: Create a node for each datatype
 2. **Phase 2 - Build hierarchy**: Link nodes to their parents using ParentID
 3. **Phase 3 - Attach fields**: Associate fields with nodes by parent_id
-4. **Root detection**: Find node with Type == "ROOT"
+4. **Root detection**: Find node with Type == "_root"
 5. **Self-parenting protection**: Skip nodes where ParentID == ContentDataID
 
 **Key Differences from CLI TreeRoot:**
@@ -596,7 +596,7 @@ func createContentTree() model.Root {
 	rootDatatype := model.Datatype{
 		Info: db.DatatypeJSON{
 			DatatypeID: 1,
-			Type:       "ROOT",
+			Type:       "_root",
 			Name:       "Site Root",
 		},
 		Content: db.ContentDataJSON{
@@ -1075,7 +1075,7 @@ func TestBuildTree(t *testing.T) {
 	}
 
 	datatypes := []db.Datatypes{
-		{DatatypeID: 1, Name: "Root", Type: "ROOT"},
+		{DatatypeID: 1, Name: "Root", Type: "_root"},
 		{DatatypeID: 2, Name: "Page", Type: "page"},
 	}
 
@@ -1095,8 +1095,8 @@ func TestBuildTree(t *testing.T) {
 		t.Fatal("Expected root node")
 	}
 
-	if root.Node.Datatype.Info.Type != "ROOT" {
-		t.Errorf("Expected ROOT type, got %s", root.Node.Datatype.Info.Type)
+	if root.Node.Datatype.Info.Type != "_root" {
+		t.Errorf("Expected _root type, got %s", root.Node.Datatype.Info.Type)
 	}
 
 	if len(root.Node.Nodes) != 1 {

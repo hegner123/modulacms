@@ -35,7 +35,7 @@ ModulaCMS uses a **dynamic schema system** where content structure is defined in
 A **datatype** is a content schema template that defines:
 1. What kind of content it represents (Page, Post, Product, etc.)
 2. Which fields it contains (via junction table)
-3. Its classification (ROOT, ELEMENT, CONTAINER)
+3. Its classification (_root, ELEMENT, CONTAINER)
 4. Optional hierarchy (parent datatypes)
 
 **Analogy:**
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
     parent_id INTEGER DEFAULT NULL
         REFERENCES datatypes ON DELETE SET DEFAULT,
     label TEXT NOT NULL,                 -- "Page", "Post", "Product"
-    type TEXT NOT NULL,                  -- "ROOT", "ELEMENT", "CONTAINER"
+    type TEXT NOT NULL,                  -- "_root", "ELEMENT", "CONTAINER"
     author_id INTEGER DEFAULT 1 NOT NULL
         REFERENCES users ON DELETE SET DEFAULT,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -73,13 +73,13 @@ CREATE TABLE IF NOT EXISTS datatypes(
 - `datatype_id` - Unique identifier for this datatype
 - `parent_id` - Optional parent datatype (for organizing datatypes hierarchically)
 - `label` - Human-readable name displayed in TUI ("Page", "Blog Post", "Product")
-- `type` - Classification: ROOT, ELEMENT, or CONTAINER
+- `type` - Classification: _root, ELEMENT, or CONTAINER
 - `author_id` - User who created this datatype
 - `history` - JSON audit trail of changes
 
 ### Datatype Classifications (type field)
 
-**ROOT:**
+**_root:**
 - Top-level content types that can be root nodes in content trees
 - Typically user-facing content types
 - Examples: Page, Post, Product, Category, Event
@@ -325,7 +325,7 @@ Let's walk through creating a complete "Blog Post" datatype with fields.
 ```sql
 -- name: CreateDatatype :one
 INSERT INTO datatypes (label, type, author_id)
-VALUES ('Blog Post', 'ROOT', 1)
+VALUES ('Blog Post', '_root', 1)
 RETURNING *;
 ```
 
@@ -334,7 +334,7 @@ RETURNING *;
 ```go
 datatype, err := db.CreateDatatype(ctx, db.CreateDatatypeParams{
     Label:    "Blog Post",
-    Type:     "ROOT",
+    Type:     "_root",
     AuthorID: userID,
 })
 
@@ -532,12 +532,12 @@ ORDER BY df.id;
 ```
 datatype   | datatype_type | field_name      | field_type | field_order
 -----------|---------------|-----------------|------------|------------
-Blog Post  | ROOT          | Post Title      | text       | 1
-Blog Post  | ROOT          | Post Body       | richtext   | 2
-Blog Post  | ROOT          | Excerpt         | textarea   | 3
-Blog Post  | ROOT          | Featured Image  | image      | 4
-Blog Post  | ROOT          | Publish Date    | datetime   | 5
-Blog Post  | ROOT          | Published       | boolean    | 6
+Blog Post  | _root          | Post Title      | text       | 1
+Blog Post  | _root          | Post Body       | richtext   | 2
+Blog Post  | _root          | Excerpt         | textarea   | 3
+Blog Post  | _root          | Featured Image  | image      | 4
+Blog Post  | _root          | Publish Date    | datetime   | 5
+Blog Post  | _root          | Published       | boolean    | 6
 ```
 
 ---
@@ -839,7 +839,7 @@ func MigrateWordPressSchema(wpPosts []WordPressPost) error {
     // Create datatype
     dt, _ := db.CreateDatatype(ctx, CreateDatatypeParams{
         Label: "WP Post",
-        Type:  "ROOT",
+        Type:  "_root",
     })
 
     // Create fields dynamically
@@ -914,7 +914,7 @@ func MigrateWordPressSchema(wpPosts []WordPressPost) error {
 
 ```sql
 -- Create Page datatype with common fields
-INSERT INTO datatypes (label, type) VALUES ('Page', 'ROOT');
+INSERT INTO datatypes (label, type) VALUES ('Page', '_root');
 INSERT INTO fields (label, type, data) VALUES
   ('Title', 'text', '{"required": true, "maxLength": 200}'),
   ('Slug', 'text', '{"required": true, "pattern": "^[a-z0-9-]+$"}'),
@@ -934,7 +934,7 @@ SELECT 1, field_id FROM fields WHERE label IN (
 
 ```sql
 -- Create Product datatype
-INSERT INTO datatypes (label, type) VALUES ('Product', 'ROOT');
+INSERT INTO datatypes (label, type) VALUES ('Product', '_root');
 
 -- Create product-specific fields
 INSERT INTO fields (label, type, data) VALUES
@@ -1243,7 +1243,7 @@ SELECT * FROM content_data WHERE datatype_id = ?;
 // Create datatype
 dt, err := db.CreateDatatype(ctx, CreateDatatypeParams{
     Label: "Blog Post",
-    Type: "ROOT",
+    Type: "_root",
 })
 
 // Create field

@@ -132,7 +132,7 @@ func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 		if fieldType == "" {
 			errs["type"] = "Type is required"
-		} else if validateErr := types.FieldType(fieldType).Validate(); validateErr != nil {
+		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
 			errs["type"] = "Invalid field type"
 		}
 
@@ -217,7 +217,7 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 		if fieldType == "" {
 			errs["type"] = "Type is required"
-		} else if validateErr := types.FieldType(fieldType).Validate(); validateErr != nil {
+		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
 			errs["type"] = "Invalid field type"
 		}
 

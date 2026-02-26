@@ -128,9 +128,9 @@ Returns an error if slice lengths do not match or if orphan nodes or fields are 
 func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error)
 ```
 
-BuildNodes is the core tree-assembly algorithm. It takes flat slices of Datatypes one per content node and Fields one per field value and produces a tree by creating one Node per Datatype with empty Fields and Nodes slices, building a map index for O(1) lookups by ContentDataID, identifying the root node with Type equals ROOT, linking each non-root node to its parent via ContentData.ParentID, and attaching fields to their owning node via Field.Info.ParentID.
+BuildNodes is the core tree-assembly algorithm. It takes flat slices of Datatypes one per content node and Fields one per field value and produces a tree by creating one Node per Datatype with empty Fields and Nodes slices, building a map index for O(1) lookups by ContentDataID, identifying the root node with Type equals _root, linking each non-root node to its parent via ContentData.ParentID, and attaching fields to their owning node via Field.Info.ParentID.
 
-Returns the root Node pointer which is nil if no node has Type ROOT and an error if orphan nodes or fields were encountered.
+Returns the root Node pointer which is nil if no node has Type _root and an error if orphan nodes or fields were encountered.
 
 ## Methods
 
@@ -176,7 +176,7 @@ Render serializes the entire Root including all nested Nodes to a JSON string. U
 
 ## Tree Assembly Algorithm
 
-BuildNodes executes in three phases. Phase 1 creates a flat slice of Node pointers, one per Datatype, and builds a map index for O(1) lookups by ContentDataID. Phase 2 builds the tree hierarchy by linking children to parents, identifying the root node with Type ROOT, and appending all other nodes to their parent Nodes slice. Phase 2.5 reorders children to match stored sibling pointer ordering by calling reorderChildren. Phase 3 associates each field with its owning node by matching Field.Info.ParentID to node Datatype.Content.ContentDataID.
+BuildNodes executes in three phases. Phase 1 creates a flat slice of Node pointers, one per Datatype, and builds a map index for O(1) lookups by ContentDataID. Phase 2 builds the tree hierarchy by linking children to parents, identifying the root node with Type _root, and appending all other nodes to their parent Nodes slice. Phase 2.5 reorders children to match stored sibling pointer ordering by calling reorderChildren. Phase 3 associates each field with its owning node by matching Field.Info.ParentID to node Datatype.Content.ContentDataID.
 
 Orphan nodes occur when a node references a parent that does not exist in the index. Orphan fields occur when a field references a parent node that does not exist. All orphans are logged as warnings and returned as part of the error.
 

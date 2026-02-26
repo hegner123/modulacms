@@ -27,17 +27,8 @@ func allEnumContracts() []enumContract {
 				return string(cs), err
 			},
 		},
-		{
-			name:        "FieldType",
-			validValues: []string{"text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url"},
-			validateFn:  func(s string) error { return FieldType(s).Validate() },
-			valueFn:     func(s string) (any, error) { return FieldType(s).Value() },
-			scanFn: func(v any) (string, error) {
-				var ft FieldType
-				err := ft.Scan(v)
-				return string(ft), err
-			},
-		},
+		// FieldType validation is DB-driven (field_types table), not hardcoded.
+		// Value/Scan are tested separately below.
 		{
 			name:        "RouteType",
 			validValues: []string{"static", "dynamic", "api", "redirect"},
@@ -286,6 +277,69 @@ func TestEnums_Scan_InvalidValue(t *testing.T) {
 				t.Errorf("%s.Scan(\"NOPE\") = nil error, want error", c.name)
 			}
 		})
+	}
+}
+
+// --- FieldType tests (DB-validated, no hardcoded Validate) ---
+
+func TestFieldType_Value_Known(t *testing.T) {
+	t.Parallel()
+	val, err := FieldTypeText.Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+	if val != "text" {
+		t.Errorf("Value() = %v, want %q", val, "text")
+	}
+}
+
+func TestFieldType_Value_Custom(t *testing.T) {
+	t.Parallel()
+	// Custom field types registered in DB should pass through Value()
+	val, err := FieldType("custom_type").Value()
+	if err != nil {
+		t.Fatalf("Value() error = %v", err)
+	}
+	if val != "custom_type" {
+		t.Errorf("Value() = %v, want %q", val, "custom_type")
+	}
+}
+
+func TestFieldType_Value_Empty(t *testing.T) {
+	t.Parallel()
+	_, err := FieldType("").Value()
+	if err == nil {
+		t.Error("Value() with empty string should return error")
+	}
+}
+
+func TestFieldType_Scan_String(t *testing.T) {
+	t.Parallel()
+	var ft FieldType
+	if err := ft.Scan("richtext"); err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if ft != FieldTypeRichText {
+		t.Errorf("Scan() = %q, want %q", ft, FieldTypeRichText)
+	}
+}
+
+func TestFieldType_Scan_Custom(t *testing.T) {
+	t.Parallel()
+	var ft FieldType
+	if err := ft.Scan("custom_type"); err != nil {
+		t.Fatalf("Scan() error = %v", err)
+	}
+	if ft != "custom_type" {
+		t.Errorf("Scan() = %q, want %q", ft, "custom_type")
+	}
+}
+
+func TestFieldType_Scan_Nil(t *testing.T) {
+	t.Parallel()
+	var ft FieldType
+	if err := ft.Scan(nil); err == nil {
+		t.Error("Scan(nil) should return error")
 	}
 }
 

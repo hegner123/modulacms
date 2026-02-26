@@ -114,7 +114,7 @@ Returns slice of Pages for database menu including Create, Read, Update, Delete.
 
 ### BuildDatatypeMenu
 
-Builds menu of Pages from slice of Datatypes, filtering for ROOT type.
+Builds menu of Pages from slice of Datatypes, filtering for _root type.
 
 ### BuildContentDataMenu
 

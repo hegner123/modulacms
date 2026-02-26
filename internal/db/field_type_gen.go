@@ -62,8 +62,8 @@ func (d Database) MapFieldType(a mdb.FieldTypes) FieldTypes {
 }
 
 // MapCreateFieldTypeParams converts wrapper params to sqlc-generated SQLite params.
-func (d Database) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdb.CreateFieldTypesParams {
-	return mdb.CreateFieldTypesParams{
+func (d Database) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdb.CreateFieldTypeParams {
+	return mdb.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        a.Type,
 		Label:       a.Label,
@@ -71,8 +71,8 @@ func (d Database) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdb.CreateFi
 }
 
 // MapUpdateFieldTypeParams converts wrapper params to sqlc-generated SQLite params.
-func (d Database) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdb.UpdateFieldTypesParams {
-	return mdb.UpdateFieldTypesParams{
+func (d Database) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdb.UpdateFieldTypeParams {
+	return mdb.UpdateFieldTypeParams{
 		Type:        a.Type,
 		Label:       a.Label,
 		FieldTypeID: a.FieldTypeID,
@@ -84,7 +84,7 @@ func (d Database) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdb.UpdateFi
 // CountFieldTypes returns the total number of fieldTypes in the database.
 func (d Database) CountFieldTypes() (*int64, error) {
 	queries := mdb.New(d.Connection)
-	c, err := queries.CountFieldTypes(d.Context)
+	c, err := queries.CountFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -94,7 +94,7 @@ func (d Database) CountFieldTypes() (*int64, error) {
 // CreateFieldTypeTable creates the field_types table in the database.
 func (d Database) CreateFieldTypeTable() error {
 	queries := mdb.New(d.Connection)
-	err := queries.CreateFieldTypesTable(d.Context)
+	err := queries.CreateFieldTypeTable(d.Context)
 	return err
 }
 
@@ -118,7 +118,7 @@ func (d Database) DeleteFieldType(ctx context.Context, ac audited.AuditContext, 
 // GetFieldType retrieves a fieldType by ID.
 func (d Database) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 	queries := mdb.New(d.Connection)
-	row, err := queries.GetFieldTypes(d.Context, mdb.GetFieldTypesParams{FieldTypeID: id})
+	row, err := queries.GetFieldType(d.Context, mdb.GetFieldTypeParams{FieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (d Database) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 // ListFieldTypes retrieves all fieldTypes in the database.
 func (d Database) ListFieldTypes() (*[]FieldTypes, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListFieldTypes(d.Context)
+	rows, err := queries.ListFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get FieldTypes: %v\n", err)
 	}
@@ -178,8 +178,8 @@ func (d MysqlDatabase) MapFieldType(a mdbm.FieldTypes) FieldTypes {
 }
 
 // MapCreateFieldTypeParams converts wrapper params to sqlc-generated MySQL params.
-func (d MysqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbm.CreateFieldTypesParams {
-	return mdbm.CreateFieldTypesParams{
+func (d MysqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbm.CreateFieldTypeParams {
+	return mdbm.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        a.Type,
 		Label:       a.Label,
@@ -187,8 +187,8 @@ func (d MysqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbm.Cr
 }
 
 // MapUpdateFieldTypeParams converts wrapper params to sqlc-generated MySQL params.
-func (d MysqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbm.UpdateFieldTypesParams {
-	return mdbm.UpdateFieldTypesParams{
+func (d MysqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbm.UpdateFieldTypeParams {
+	return mdbm.UpdateFieldTypeParams{
 		Type:        a.Type,
 		Label:       a.Label,
 		FieldTypeID: a.FieldTypeID,
@@ -200,7 +200,7 @@ func (d MysqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbm.Up
 // CountFieldTypes returns the total number of fieldTypes in the database.
 func (d MysqlDatabase) CountFieldTypes() (*int64, error) {
 	queries := mdbm.New(d.Connection)
-	c, err := queries.CountFieldTypes(d.Context)
+	c, err := queries.CountFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -210,7 +210,7 @@ func (d MysqlDatabase) CountFieldTypes() (*int64, error) {
 // CreateFieldTypeTable creates the field_types table in the database.
 func (d MysqlDatabase) CreateFieldTypeTable() error {
 	queries := mdbm.New(d.Connection)
-	err := queries.CreateFieldTypesTable(d.Context)
+	err := queries.CreateFieldTypeTable(d.Context)
 	return err
 }
 
@@ -234,7 +234,7 @@ func (d MysqlDatabase) DeleteFieldType(ctx context.Context, ac audited.AuditCont
 // GetFieldType retrieves a fieldType by ID.
 func (d MysqlDatabase) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 	queries := mdbm.New(d.Connection)
-	row, err := queries.GetFieldTypes(d.Context, mdbm.GetFieldTypesParams{FieldTypeID: id})
+	row, err := queries.GetFieldType(d.Context, mdbm.GetFieldTypeParams{FieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (d MysqlDatabase) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 // ListFieldTypes retrieves all fieldTypes in the database.
 func (d MysqlDatabase) ListFieldTypes() (*[]FieldTypes, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListFieldTypes(d.Context)
+	rows, err := queries.ListFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get FieldTypes: %v\n", err)
 	}
@@ -294,8 +294,8 @@ func (d PsqlDatabase) MapFieldType(a mdbp.FieldTypes) FieldTypes {
 }
 
 // MapCreateFieldTypeParams converts wrapper params to sqlc-generated PostgreSQL params.
-func (d PsqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbp.CreateFieldTypesParams {
-	return mdbp.CreateFieldTypesParams{
+func (d PsqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbp.CreateFieldTypeParams {
+	return mdbp.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        a.Type,
 		Label:       a.Label,
@@ -303,8 +303,8 @@ func (d PsqlDatabase) MapCreateFieldTypeParams(a CreateFieldTypeParams) mdbp.Cre
 }
 
 // MapUpdateFieldTypeParams converts wrapper params to sqlc-generated PostgreSQL params.
-func (d PsqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbp.UpdateFieldTypesParams {
-	return mdbp.UpdateFieldTypesParams{
+func (d PsqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbp.UpdateFieldTypeParams {
+	return mdbp.UpdateFieldTypeParams{
 		Type:        a.Type,
 		Label:       a.Label,
 		FieldTypeID: a.FieldTypeID,
@@ -316,7 +316,7 @@ func (d PsqlDatabase) MapUpdateFieldTypeParams(a UpdateFieldTypeParams) mdbp.Upd
 // CountFieldTypes returns the total number of fieldTypes in the database.
 func (d PsqlDatabase) CountFieldTypes() (*int64, error) {
 	queries := mdbp.New(d.Connection)
-	c, err := queries.CountFieldTypes(d.Context)
+	c, err := queries.CountFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("%v", err)
 	}
@@ -326,7 +326,7 @@ func (d PsqlDatabase) CountFieldTypes() (*int64, error) {
 // CreateFieldTypeTable creates the field_types table in the database.
 func (d PsqlDatabase) CreateFieldTypeTable() error {
 	queries := mdbp.New(d.Connection)
-	err := queries.CreateFieldTypesTable(d.Context)
+	err := queries.CreateFieldTypeTable(d.Context)
 	return err
 }
 
@@ -350,7 +350,7 @@ func (d PsqlDatabase) DeleteFieldType(ctx context.Context, ac audited.AuditConte
 // GetFieldType retrieves a fieldType by ID.
 func (d PsqlDatabase) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 	queries := mdbp.New(d.Connection)
-	row, err := queries.GetFieldTypes(d.Context, mdbp.GetFieldTypesParams{FieldTypeID: id})
+	row, err := queries.GetFieldType(d.Context, mdbp.GetFieldTypeParams{FieldTypeID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -361,7 +361,7 @@ func (d PsqlDatabase) GetFieldType(id types.FieldTypeID) (*FieldTypes, error) {
 // ListFieldTypes retrieves all fieldTypes in the database.
 func (d PsqlDatabase) ListFieldTypes() (*[]FieldTypes, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListFieldTypes(d.Context)
+	rows, err := queries.ListFieldType(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get FieldTypes: %v\n", err)
 	}
@@ -431,7 +431,7 @@ func (c NewFieldTypeCmd) GetID(u mdb.FieldTypes) string { return string(u.FieldT
 // Execute creates the fieldType in the database.
 func (c NewFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.FieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.CreateFieldTypes(ctx, mdb.CreateFieldTypesParams{
+	return queries.CreateFieldType(ctx, mdb.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        c.params.Type,
 		Label:       c.params.Label,
@@ -478,13 +478,13 @@ func (c UpdateFieldTypeCmd) GetID() string { return string(c.params.FieldTypeID)
 // GetBefore retrieves the fieldType before the update.
 func (c UpdateFieldTypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.FieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.GetFieldTypes(ctx, mdb.GetFieldTypesParams{FieldTypeID: c.params.FieldTypeID})
+	return queries.GetFieldType(ctx, mdb.GetFieldTypeParams{FieldTypeID: c.params.FieldTypeID})
 }
 
 // Execute updates the fieldType in the database.
 func (c UpdateFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
-	return queries.UpdateFieldTypes(ctx, mdb.UpdateFieldTypesParams{
+	return queries.UpdateFieldType(ctx, mdb.UpdateFieldTypeParams{
 		Type:        c.params.Type,
 		Label:       c.params.Label,
 		FieldTypeID: c.params.FieldTypeID,
@@ -528,13 +528,13 @@ func (c DeleteFieldTypeCmd) GetID() string { return string(c.id) }
 // GetBefore retrieves the fieldType before the delete.
 func (c DeleteFieldTypeCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.FieldTypes, error) {
 	queries := mdb.New(tx)
-	return queries.GetFieldTypes(ctx, mdb.GetFieldTypesParams{FieldTypeID: c.id})
+	return queries.GetFieldType(ctx, mdb.GetFieldTypeParams{FieldTypeID: c.id})
 }
 
 // Execute deletes the fieldType from the database.
 func (c DeleteFieldTypeCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
-	return queries.DeleteFieldTypes(ctx, mdb.DeleteFieldTypesParams{FieldTypeID: c.id})
+	return queries.DeleteFieldType(ctx, mdb.DeleteFieldTypeParams{FieldTypeID: c.id})
 }
 
 // DeleteFieldTypeCmd creates a command for deleting a fieldType.
@@ -577,15 +577,15 @@ func (c NewFieldTypeCmdMysql) GetID(u mdbm.FieldTypes) string { return string(u.
 // Execute creates the fieldType in the database.
 func (c NewFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.FieldTypes, error) {
 	queries := mdbm.New(tx)
-	params := mdbm.CreateFieldTypesParams{
+	params := mdbm.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        c.params.Type,
 		Label:       c.params.Label,
 	}
-	if err := queries.CreateFieldTypes(ctx, params); err != nil {
+	if err := queries.CreateFieldType(ctx, params); err != nil {
 		return mdbm.FieldTypes{}, err
 	}
-	return queries.GetFieldTypes(ctx, mdbm.GetFieldTypesParams{FieldTypeID: params.FieldTypeID})
+	return queries.GetFieldType(ctx, mdbm.GetFieldTypeParams{FieldTypeID: params.FieldTypeID})
 }
 
 // NewFieldTypeCmd creates a command for inserting a fieldType.
@@ -628,13 +628,13 @@ func (c UpdateFieldTypeCmdMysql) GetID() string { return string(c.params.FieldTy
 // GetBefore retrieves the fieldType before the update.
 func (c UpdateFieldTypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.FieldTypes, error) {
 	queries := mdbm.New(tx)
-	return queries.GetFieldTypes(ctx, mdbm.GetFieldTypesParams{FieldTypeID: c.params.FieldTypeID})
+	return queries.GetFieldType(ctx, mdbm.GetFieldTypeParams{FieldTypeID: c.params.FieldTypeID})
 }
 
 // Execute updates the fieldType in the database.
 func (c UpdateFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
-	return queries.UpdateFieldTypes(ctx, mdbm.UpdateFieldTypesParams{
+	return queries.UpdateFieldType(ctx, mdbm.UpdateFieldTypeParams{
 		Type:        c.params.Type,
 		Label:       c.params.Label,
 		FieldTypeID: c.params.FieldTypeID,
@@ -678,13 +678,13 @@ func (c DeleteFieldTypeCmdMysql) GetID() string { return string(c.id) }
 // GetBefore retrieves the fieldType before the delete.
 func (c DeleteFieldTypeCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.FieldTypes, error) {
 	queries := mdbm.New(tx)
-	return queries.GetFieldTypes(ctx, mdbm.GetFieldTypesParams{FieldTypeID: c.id})
+	return queries.GetFieldType(ctx, mdbm.GetFieldTypeParams{FieldTypeID: c.id})
 }
 
 // Execute deletes the fieldType from the database.
 func (c DeleteFieldTypeCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbm.New(tx)
-	return queries.DeleteFieldTypes(ctx, mdbm.DeleteFieldTypesParams{FieldTypeID: c.id})
+	return queries.DeleteFieldType(ctx, mdbm.DeleteFieldTypeParams{FieldTypeID: c.id})
 }
 
 // DeleteFieldTypeCmd creates a command for deleting a fieldType.
@@ -727,7 +727,7 @@ func (c NewFieldTypeCmdPsql) GetID(u mdbp.FieldTypes) string { return string(u.F
 // Execute creates the fieldType in the database.
 func (c NewFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.FieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.CreateFieldTypes(ctx, mdbp.CreateFieldTypesParams{
+	return queries.CreateFieldType(ctx, mdbp.CreateFieldTypeParams{
 		FieldTypeID: types.NewFieldTypeID(),
 		Type:        c.params.Type,
 		Label:       c.params.Label,
@@ -774,13 +774,13 @@ func (c UpdateFieldTypeCmdPsql) GetID() string { return string(c.params.FieldTyp
 // GetBefore retrieves the fieldType before the update.
 func (c UpdateFieldTypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.FieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetFieldTypes(ctx, mdbp.GetFieldTypesParams{FieldTypeID: c.params.FieldTypeID})
+	return queries.GetFieldType(ctx, mdbp.GetFieldTypeParams{FieldTypeID: c.params.FieldTypeID})
 }
 
 // Execute updates the fieldType in the database.
 func (c UpdateFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
-	return queries.UpdateFieldTypes(ctx, mdbp.UpdateFieldTypesParams{
+	return queries.UpdateFieldType(ctx, mdbp.UpdateFieldTypeParams{
 		Type:        c.params.Type,
 		Label:       c.params.Label,
 		FieldTypeID: c.params.FieldTypeID,
@@ -824,13 +824,13 @@ func (c DeleteFieldTypeCmdPsql) GetID() string { return string(c.id) }
 // GetBefore retrieves the fieldType before the delete.
 func (c DeleteFieldTypeCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.FieldTypes, error) {
 	queries := mdbp.New(tx)
-	return queries.GetFieldTypes(ctx, mdbp.GetFieldTypesParams{FieldTypeID: c.id})
+	return queries.GetFieldType(ctx, mdbp.GetFieldTypeParams{FieldTypeID: c.id})
 }
 
 // Execute deletes the fieldType from the database.
 func (c DeleteFieldTypeCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdbp.New(tx)
-	return queries.DeleteFieldTypes(ctx, mdbp.DeleteFieldTypesParams{FieldTypeID: c.id})
+	return queries.DeleteFieldType(ctx, mdbp.DeleteFieldTypeParams{FieldTypeID: c.id})
 }
 
 // DeleteFieldTypeCmd creates a command for deleting a fieldType.

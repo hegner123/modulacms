@@ -125,7 +125,7 @@ Admin site domain? admin.localhost:1234
 2. Press 'n' to create new datatype
 3. Fill in form:
    - Label: "Page"
-   - Type: "ROOT" (for top-level content)
+   - Type: "_root" (for top-level content)
 4. Press Enter to save
 ```
 

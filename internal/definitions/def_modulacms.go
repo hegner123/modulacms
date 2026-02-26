@@ -16,7 +16,7 @@ func init() {
 
 			"page": {
 				Label: "Page",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -171,7 +171,7 @@ func init() {
 
 			"post": {
 				Label: "Post",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -196,7 +196,7 @@ func init() {
 
 			"case_study": {
 				Label: "Case Study",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -216,7 +216,7 @@ func init() {
 
 			"documentation": {
 				Label: "Documentation",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
@@ -284,15 +284,13 @@ func init() {
 
 			"menu": {
 				Label: "Menu",
-				Type:  types.NewNullableString("ROOT"),
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
 				FieldRefs: []FieldDef{
 					{Label: "Title", Type: types.FieldTypeText},
 					{Label: "Slug", Type: types.FieldTypeSlug},
-					{Label: "Position", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["header","footer","sidebar"]}`)},
+					{Label: "Position", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["header","sidebar"]}`)},
 				},
 			},
-
-			// Menu Link: direct navigation item under menu
 
 			"menu_link": {
 				Label:     "Menu Link",
@@ -305,8 +303,6 @@ func init() {
 					{Label: "Icon", Type: types.FieldTypeText},
 				},
 			},
-
-			// Menu List: dropdown group under menu
 
 			"menu_list": {
 				Label:     "Menu List",
@@ -328,8 +324,6 @@ func init() {
 				},
 			},
 
-			// Menu Nested List: sub-group under a menu list
-
 			"menu_nested_list": {
 				Label:     "Menu Nested List",
 				Type:      types.NewNullableString("menu_component"),
@@ -347,6 +341,59 @@ func init() {
 					{Label: "Label", Type: types.FieldTypeText},
 					{Label: "URL", Type: types.FieldTypeURL},
 					{Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+				},
+			},
+
+			// ──────────────────────────────────────
+			// Root: Footer
+			// ──────────────────────────────────────
+
+			"footer": {
+				Label: "Footer",
+				Type:  types.NewNullableString(string(types.DatatypeTypeRoot)),
+				FieldRefs: []FieldDef{
+					{Label: "Title", Type: types.FieldTypeText},
+					{Label: "Slug", Type: types.FieldTypeSlug},
+					{Label: "Copyright", Type: types.FieldTypeText},
+				},
+			},
+
+			"footer_column": {
+				Label:     "Footer Column",
+				Type:      types.NewNullableString("footer_component"),
+				ParentRef: "footer",
+				FieldRefs: []FieldDef{
+					{Label: "Heading", Type: types.FieldTypeText},
+				},
+			},
+
+			"footer_link": {
+				Label:     "Footer Link",
+				Type:      types.NewNullableString("footer_component"),
+				ParentRef: "footer_column",
+				FieldRefs: []FieldDef{
+					{Label: "Label", Type: types.FieldTypeText},
+					{Label: "URL", Type: types.FieldTypeURL},
+					{Label: "Target", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["_self","_blank"]}`)},
+				},
+			},
+
+			"footer_social": {
+				Label:     "Footer Social",
+				Type:      types.NewNullableString("footer_component"),
+				ParentRef: "footer",
+				FieldRefs: []FieldDef{
+					{Label: "Platform", Type: types.FieldTypeSelect, Data: types.NewNullableString(`{"options":["github","twitter","linkedin","youtube","discord","instagram","facebook","mastodon"]}`)},
+					{Label: "URL", Type: types.FieldTypeURL},
+				},
+			},
+
+			"footer_text": {
+				Label:     "Footer Text",
+				Type:      types.NewNullableString("footer_component"),
+				ParentRef: "footer",
+				FieldRefs: []FieldDef{
+					{Label: "Content", Type: types.FieldTypeRichText},
 				},
 			},
 		},

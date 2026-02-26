@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/tree/core"
 )
 
 // BuildTree constructs a content tree from public (non-admin) database entities.
@@ -12,88 +14,34 @@ import (
 //   - cd and dt are paired: cd[i] is the content instance, dt[i] is its type definition.
 //   - cf and df are paired: cf[i] is the field value, df[i] is its field definition.
 //
-// Each pair is mapped into the model's Datatype and Field types using the db
-// package's MapXxxJSON converters, then passed to BuildNodes to assemble the
-// hierarchy.
+// Delegates to core.BuildTree for shared tree-building logic, then converts
+// the core tree to the model representation via fromCoreRoot.
 //
 // Called by the router layer (slugs.go) to build trees for public API responses.
 func BuildTree(log Logger, cd []db.ContentData, dt []db.Datatypes, cf []db.ContentFields, df []db.Fields) (Root, error) {
-	if len(cd) != len(dt) {
-		return Root{}, fmt.Errorf("BuildTree: content data length (%d) != datatypes length (%d)", len(cd), len(dt))
-	}
-	if len(cf) != len(df) {
-		return Root{}, fmt.Errorf("BuildTree: content fields length (%d) != fields length (%d)", len(cf), len(df))
+	coreRoot, _, err := core.BuildTree(cd, dt, cf, df)
+	if err != nil {
+		log.Warn("BuildTree: core tree construction issue", err)
 	}
 
-	// Map each content-data/datatype pair into a model Datatype.
-	d := make([]Datatype, len(cd))
-	f := make([]Field, len(cf))
-	for i, v := range cd {
-		d[i].Info = db.MapDatatypeJSON(dt[i])
-		d[i].Content = db.MapContentDataJSON(v)
-	}
-
-	// Map each content-field/field-definition pair into a model Field.
-	// Override ParentID from the field definition's datatype reference to the
-	// content data instance ID, so BuildNodes phase 3 can match fields to the
-	// correct node by ContentDataID. This mirrors what BuildAdminTree does
-	// for admin fields.
-	for i, v := range cf {
-		info := db.MapFieldJSON(df[i])
-		info.ParentID = v.ContentDataID.String()
-		f[i].Info = info
-		f[i].Content = db.MapContentFieldJSON(v)
-	}
-
-	// Assemble the flat slices into a parent-child tree and wrap in a Root.
-	nodes, err := BuildNodes(log, d, f)
-	root := NewRoot()
-	root.Node = nodes
-
+	root := fromCoreRoot(coreRoot)
 	return root, err
 }
 
 // BuildAdminTree constructs a content tree from admin database entities.
 // Same structure as BuildTree but uses admin-prefixed DB types.
 //
-// Called by the router layer (adminTree.go) to build trees for admin API responses.
+// Delegates to core.BuildAdminTree for shared tree-building logic, then converts
+// the core tree to the model representation via fromCoreRoot.
 //
-// Note: Mutates the mapped FieldsJSON.ParentID after creation because
-// AdminFields.ParentID refers to the datatype owner (type-level), but
-// BuildNodes needs ParentID to point to the content data instance. The fix
-// reassigns ParentID from AdminContentFields.AdminContentDataID.
+// Called by the router layer (adminTree.go) to build trees for admin API responses.
 func BuildAdminTree(log Logger, cd []db.AdminContentData, dt []db.AdminDatatypes, cf []db.AdminContentFields, df []db.AdminFields) (Root, error) {
-	if len(cd) != len(dt) {
-		return Root{}, fmt.Errorf("BuildAdminTree: content data length (%d) != datatypes length (%d)", len(cd), len(dt))
-	}
-	if len(cf) != len(df) {
-		return Root{}, fmt.Errorf("BuildAdminTree: content fields length (%d) != fields length (%d)", len(cf), len(df))
+	coreRoot, _, err := core.BuildAdminTree(cd, dt, cf, df)
+	if err != nil {
+		log.Warn("BuildAdminTree: core tree construction issue", err)
 	}
 
-	// Map each admin content-data/datatype pair into a model Datatype.
-	d := make([]Datatype, len(cd))
-	f := make([]Field, len(cf))
-	for i, v := range cd {
-		d[i].Info = db.MapAdminDatatypeJSON(dt[i])
-		d[i].Content = db.MapAdminContentDataJSON(v)
-	}
-
-	// Map each admin content-field/field-definition pair into a model Field.
-	// The ParentID override is necessary because AdminFields.ParentID is the
-	// datatype owner (field definition scope), not the content node the field
-	// value belongs to. We replace it with AdminContentDataID so BuildNodes
-	// can match fields to the correct nodes by content instance ID.
-	for i, v := range cf {
-		info := db.MapAdminFieldJSON(df[i])
-		info.ParentID = v.AdminContentDataID.String()
-		f[i].Info = info
-		f[i].Content = db.MapAdminContentFieldJSON(v)
-	}
-
-	nodes, err := BuildNodes(log, d, f)
-	root := NewRoot()
-	root.Node = nodes
-
+	root := fromCoreRoot(coreRoot)
 	return root, err
 }
 
@@ -103,11 +51,11 @@ func BuildAdminTree(log Logger, cd []db.AdminContentData, dt []db.AdminDatatypes
 //
 //  1. Creating one Node per Datatype with empty Fields and Nodes slices.
 //  2. Building a map[string]*Node index for O(1) lookups by ContentDataID.
-//  3. Identifying the root node (Type == "ROOT").
+//  3. Identifying the root node (Type satisfies IsRootType: "_root" or "_nested_root").
 //  4. Linking each non-root node to its parent via ContentData.ParentID.
 //  5. Attaching fields to their owning node via Field.Info.ParentID.
 //
-// Returns the root Node pointer (nil if no node has Type "ROOT") and an error
+// Returns the root Node pointer (nil if no node has a root type) and an error
 // if orphan nodes or fields were encountered.
 func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error) {
 	// Phase 1: Create a flat slice of Node pointers, one per Datatype.
@@ -133,10 +81,10 @@ func BuildNodes(log Logger, datatypes []Datatype, fields []Field) (*Node, error)
 	var orphans []string
 
 	// Phase 2: Build the tree hierarchy by linking children to parents.
-	// Iterates all nodes; the one with Type "ROOT" becomes the tree root,
+	// Iterates all nodes; the one with a root type becomes the tree root,
 	// all others are appended to their parent's Nodes slice.
 	for _, node := range nodes {
-		if node.Datatype.Info.Type == "ROOT" {
+		if types.DatatypeType(node.Datatype.Info.Type).IsRootType() {
 			root = node
 			continue
 		}

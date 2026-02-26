@@ -1,14 +1,14 @@
--- name: DropAdminFieldTypesTable :exec
+-- name: DropAdminFieldTypeTable :exec
 DROP TABLE admin_field_types;
 
--- name: CreateAdminFieldTypesTable :exec
+-- name: CreateAdminFieldTypeTable :exec
 CREATE TABLE IF NOT EXISTS admin_field_types (
     admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
     type TEXT NOT NULL UNIQUE,
     label TEXT NOT NULL
 );
 
--- name: GetAdminFieldTypes :one
+-- name: GetAdminFieldType :one
 SELECT * FROM admin_field_types
 WHERE admin_field_type_id = ? LIMIT 1;
 
@@ -16,15 +16,15 @@ WHERE admin_field_type_id = ? LIMIT 1;
 SELECT * FROM admin_field_types
 WHERE type = ? LIMIT 1;
 
--- name: CountAdminFieldTypes :one
+-- name: CountAdminFieldType :one
 SELECT COUNT(*)
 FROM admin_field_types;
 
--- name: ListAdminFieldTypes :many
+-- name: ListAdminFieldType :many
 SELECT * FROM admin_field_types
 ORDER BY label;
 
--- name: CreateAdminFieldTypes :one
+-- name: CreateAdminFieldType :one
 INSERT INTO admin_field_types(
     admin_field_type_id,
     type,
@@ -36,12 +36,12 @@ INSERT INTO admin_field_types(
 )
 RETURNING *;
 
--- name: UpdateAdminFieldTypes :exec
+-- name: UpdateAdminFieldType :exec
 UPDATE admin_field_types
 SET type=?,
     label=?
 WHERE admin_field_type_id = ?;
 
--- name: DeleteAdminFieldTypes :exec
+-- name: DeleteAdminFieldType :exec
 DELETE FROM admin_field_types
 WHERE admin_field_type_id = ?;

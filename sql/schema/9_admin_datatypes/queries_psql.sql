@@ -37,7 +37,7 @@ WHERE type = 'GLOBAL' LIMIT 1;
 
 -- name: ListAdminDatatypeRoot :many
 SELECT * FROM admin_datatypes
-WHERE type = 'ROOT' LIMIT 1;
+WHERE type = '_root' LIMIT 1;
 
 -- name: ListAdminDatatypeChildren :many
 SELECT * FROM admin_datatypes

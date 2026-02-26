@@ -133,6 +133,19 @@ func apiCreateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		return err
 	}
 
+	if newDatatype.Label == "" {
+		http.Error(w, "label is required", http.StatusBadRequest)
+		return fmt.Errorf("label is required")
+	}
+	if newDatatype.Type == "" {
+		http.Error(w, "type is required", http.StatusBadRequest)
+		return fmt.Errorf("type is required")
+	}
+	if err := types.ValidateUserDatatypeType(newDatatype.Type); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return err
+	}
+
 	if newDatatype.DatatypeID.IsZero() {
 		newDatatype.DatatypeID = types.NewDatatypeID()
 	}
@@ -173,6 +186,13 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	if updateDatatype.Type != "" {
+		if err := types.ValidateUserDatatypeType(updateDatatype.Type); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return err
+		}
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)
