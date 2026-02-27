@@ -144,6 +144,11 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		ContentBatchHandler(w, r, *c)
 	})))
 
+	// Content tree save (bulk pointer updates + deletes)
+	mux.Handle("POST /api/v1/content/tree", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ContentTreeSaveHandler(w, r, *c)
+	})))
+
 	// Content data reorder
 	mux.Handle("POST /api/v1/contentdata/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataReorderHandler(w, r, *c)
@@ -497,13 +502,16 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mutating := func(permission string, h http.HandlerFunc) http.Handler {
 		return adminAuth(csrf(middleware.RequirePermission(permission)(http.HandlerFunc(h))))
 	}
-	// viewing wraps auth + permission for GET handlers
+	// viewing wraps auth + CSRF + permission for GET handlers.
+	// CSRF is needed so the csrf_token cookie and meta tag are refreshed on
+	// every page load — without it, POST requests from the page (HTMX, XHR)
+	// would lack a valid CSRF cookie after the session cookie expires.
 	viewing := func(resource string, h http.HandlerFunc) http.Handler {
-		return adminAuth(middleware.RequirePermission(resource+":read")(http.HandlerFunc(h)))
+		return adminAuth(csrf(middleware.RequirePermission(resource + ":read")(http.HandlerFunc(h))))
 	}
 
 	// Dashboard (requires auth but no specific permission)
-	mux.Handle("GET /admin/{$}", adminAuth(http.HandlerFunc(adminhandlers.DashboardHandler(driver))))
+	mux.Handle("GET /admin/{$}", adminAuth(csrf(http.HandlerFunc(adminhandlers.DashboardHandler(driver)))))
 
 	// Content
 	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr)))
@@ -513,6 +521,10 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("DELETE /admin/content/{id}", mutating("content:delete", adminhandlers.ContentDeleteHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/reorder", mutating("content:update", adminhandlers.ContentReorderHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/tree", mutating("content:update", adminhandlers.ContentTreeSaveHandler(driver, mgr)))
+
+	// Schema — datatypes (JSON API for block editor)
+	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(driver)))
 
 	// Schema — datatypes
 	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(driver)))
@@ -521,19 +533,16 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(driver)))
 	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver)))
 
-	// Schema — fields
-	mux.Handle("GET /admin/schema/fields", viewing("fields", adminhandlers.FieldsListHandler(driver)))
+	// Schema — fields (detail, update, delete only — no standalone list or create)
 	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver)))
-	mux.Handle("POST /admin/schema/fields", mutating("fields:create", adminhandlers.FieldCreateHandler(driver)))
 	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver)))
 	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver)))
 
 	// Schema — field types
 	mux.Handle("GET /admin/schema/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler()))
 
-	// Schema — datatype-field links
-	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeLinkFieldHandler(driver)))
-	mux.Handle("DELETE /admin/schema/datatypes/{id}/fields/{linkId}", mutating("fields:delete", adminhandlers.DatatypeUnlinkFieldHandler(driver)))
+	// Schema — datatype field creation
+	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(driver)))
 
 	// Media
 	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(driver)))
@@ -558,6 +567,8 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// Roles
 	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(driver, pc)))
+	mux.Handle("GET /admin/users/roles/new", viewing("roles", adminhandlers.RoleNewFormHandler(driver, pc)))
+	mux.Handle("GET /admin/users/roles/{id}", viewing("roles", adminhandlers.RoleDetailHandler(driver, pc)))
 	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(driver, pc)))
 	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(driver, pc)))
 	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(driver, pc)))
@@ -579,8 +590,11 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/import", viewing("import", adminhandlers.ImportPageHandler()))
 	mux.Handle("POST /admin/import", mutating("import:create", adminhandlers.ImportSubmitHandler(driver)))
 
+	// Demo
+	mux.Handle("GET /admin/demo", viewing("settings", adminhandlers.DemoHandler()))
+
 	// Audit
-	mux.Handle("GET /admin/audit", adminAuth(http.HandlerFunc(adminhandlers.AuditLogHandler(driver))))
+	mux.Handle("GET /admin/audit", adminAuth(csrf(http.HandlerFunc(adminhandlers.AuditLogHandler(driver)))))
 
 	// Settings
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))

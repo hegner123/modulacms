@@ -46,6 +46,12 @@ func AuditLogHandler(driver db.DbDriver) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Audit Log"}`)
+			Render(w, r, pages.AuditContent(changeEvents, pg))
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, pages.AuditTableRowsPartial(changeEvents, pg))
 			return

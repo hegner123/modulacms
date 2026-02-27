@@ -57,6 +57,21 @@ func (h *httpClient) del(ctx context.Context, path string, params url.Values) er
 	return h.do(req, nil)
 }
 
+// delBody performs a DELETE request and JSON-decodes the response body into result.
+func (h *httpClient) delBody(ctx context.Context, path string, params url.Values, result any) error {
+	fullURL := h.baseURL + path
+	if len(params) > 0 {
+		fullURL += "?" + params.Encode()
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, fullURL, nil)
+	if err != nil {
+		return fmt.Errorf("modula: %w", err)
+	}
+
+	return h.do(req, result)
+}
+
 // doRaw executes a pre-built request and returns the raw response.
 // Caller is responsible for closing Body.
 func (h *httpClient) doRaw(ctx context.Context, req *http.Request) (*http.Response, error) {

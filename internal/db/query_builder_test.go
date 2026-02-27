@@ -1839,3 +1839,906 @@ func TestTransactions(t *testing.T) {
 		}
 	})
 }
+
+// ===== CONDITION TESTS =====
+
+func TestConditions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("Eq explicit equality", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"status": Eq("active")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 active rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("Neq not equal", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"status": Neq("active")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 non-active rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("Gt greater than", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Gt(3)},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority > 3: delta(4), epsilon(5)
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows with priority > 3, got %d", len(rows))
+		}
+	})
+
+	t.Run("Gte greater than or equal", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Gte(3)},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority >= 3: alpha(3), delta(4), epsilon(5)
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows with priority >= 3, got %d", len(rows))
+		}
+	})
+
+	t.Run("Lt less than", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Lt(3)},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority < 3: beta(1), gamma(2)
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows with priority < 3, got %d", len(rows))
+		}
+	})
+
+	t.Run("Lte less than or equal", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Lte(3)},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority <= 3: beta(1), gamma(2), alpha(3)
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows with priority <= 3, got %d", len(rows))
+		}
+	})
+
+	t.Run("Like pattern", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"name": Like("a%")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// alpha
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row matching a%%, got %d", len(rows))
+		}
+		if rows[0]["name"] != "alpha" {
+			t.Fatalf("expected alpha, got %v", rows[0]["name"])
+		}
+	})
+
+	t.Run("NotLike pattern", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"name": NotLike("a%")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// beta, gamma, delta, epsilon
+		if len(rows) != 4 {
+			t.Fatalf("expected 4 rows not matching a%%, got %d", len(rows))
+		}
+	})
+
+	t.Run("In multiple values", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"name": In("alpha", "gamma", "epsilon")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("NotIn multiple values", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"name": NotIn("alpha", "gamma")},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// beta, delta, epsilon
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("In empty values returns error", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		_, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"name": In()},
+		})
+		if err == nil {
+			t.Fatal("expected error for empty In()")
+		}
+	})
+
+	t.Run("Between range", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Between(2, 4)},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority 2,3,4: gamma, alpha, delta
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows with priority between 2 and 4, got %d", len(rows))
+		}
+	})
+
+	t.Run("IsNull condition", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"description": IsNull()},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// beta, epsilon
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 null-description rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("IsNotNull condition", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"description": IsNotNull()},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// alpha, gamma, delta
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 non-null-description rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("mixed conditions and plain values", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{
+				"status":   "active",
+				"priority": Gt(2),
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// active AND priority > 2: alpha(3), delta(4)
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("condition in update where", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		result, err := QUpdate(ctx, db, DialectSQLite, UpdateParams{
+			Table: "test_items",
+			Set:   map[string]any{"status": "promoted"},
+			Where: map[string]any{"priority": Gte(4)},
+		})
+		if err != nil {
+			t.Fatalf("update: %v", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			t.Fatalf("rows affected: %v", err)
+		}
+		// delta(4), epsilon(5)
+		if affected != 2 {
+			t.Fatalf("expected 2 rows affected, got %d", affected)
+		}
+	})
+
+	t.Run("condition in delete where", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		result, err := QDelete(ctx, db, DialectSQLite, DeleteParams{
+			Table: "test_items",
+			Where: map[string]any{"priority": Lt(2)},
+		})
+		if err != nil {
+			t.Fatalf("delete: %v", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			t.Fatalf("rows affected: %v", err)
+		}
+		// beta(1)
+		if affected != 1 {
+			t.Fatalf("expected 1 row affected, got %d", affected)
+		}
+	})
+}
+
+// ===== WHERE OR TESTS =====
+
+func TestWhereOr(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("WhereOr only", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			WhereOr: []map[string]any{
+				{"name": "alpha"},
+				{"name": "gamma"},
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("Where and WhereOr combined", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		// status = active AND (name = alpha OR name = delta)
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{"status": "active"},
+			WhereOr: []map[string]any{
+				{"name": "alpha"},
+				{"name": "delta"},
+				{"name": "gamma"}, // gamma is archived, so AND with status=active filters it out
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// alpha(active), delta(active) match; gamma(archived) filtered by status=active
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("WhereOr with conditions", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			WhereOr: []map[string]any{
+				{"priority": Gt(4)},    // epsilon(5)
+				{"priority": Lt(2)},    // beta(1)
+				{"name": Like("gam%")}, // gamma
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// epsilon, beta, gamma
+		if len(rows) != 3 {
+			t.Fatalf("expected 3 rows, got %d", len(rows))
+		}
+	})
+
+	t.Run("WhereOr on update", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		result, err := QUpdate(ctx, db, DialectSQLite, UpdateParams{
+			Table: "test_items",
+			Set:   map[string]any{"status": "flagged"},
+			WhereOr: []map[string]any{
+				{"name": "alpha"},
+				{"name": "beta"},
+			},
+		})
+		if err != nil {
+			t.Fatalf("update: %v", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			t.Fatalf("rows affected: %v", err)
+		}
+		if affected != 2 {
+			t.Fatalf("expected 2 rows affected, got %d", affected)
+		}
+	})
+
+	t.Run("WhereOr on delete", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		result, err := QDelete(ctx, db, DialectSQLite, DeleteParams{
+			Table: "test_items",
+			WhereOr: []map[string]any{
+				{"name": "alpha"},
+				{"name": "beta"},
+			},
+		})
+		if err != nil {
+			t.Fatalf("delete: %v", err)
+		}
+		affected, err := result.RowsAffected()
+		if err != nil {
+			t.Fatalf("rows affected: %v", err)
+		}
+		if affected != 2 {
+			t.Fatalf("expected 2 rows affected, got %d", affected)
+		}
+	})
+
+	t.Run("empty WhereOr groups skipped", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			WhereOr: []map[string]any{
+				{}, // empty group skipped
+				{"name": "alpha"},
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 1 {
+			t.Fatalf("expected 1 row, got %d", len(rows))
+		}
+	})
+}
+
+// ===== JOIN TESTS =====
+
+func setupJoinTestDB(t *testing.T) *sql.DB {
+	t.Helper()
+	db := setupTestDB(t)
+
+	_, err := db.Exec(`CREATE TABLE test_categories (
+		id TEXT PRIMARY KEY NOT NULL,
+		label TEXT NOT NULL
+	)`)
+	if err != nil {
+		t.Fatalf("create categories table: %v", err)
+	}
+
+	// Add category_id to test_items
+	_, err = db.Exec(`ALTER TABLE test_items ADD COLUMN category_id TEXT`)
+	if err != nil {
+		t.Fatalf("alter table: %v", err)
+	}
+
+	// Seed categories
+	for _, c := range []struct{ id, label string }{
+		{"cat1", "Tools"},
+		{"cat2", "Parts"},
+	} {
+		_, err = db.Exec(`INSERT INTO test_categories (id, label) VALUES (?, ?)`, c.id, c.label)
+		if err != nil {
+			t.Fatalf("seed category: %v", err)
+		}
+	}
+
+	// Seed items with categories
+	for _, r := range []struct {
+		id, name, status, catID string
+		priority                int
+	}{
+		{"1", "alpha", "active", "cat1", 3},
+		{"2", "beta", "active", "cat1", 1},
+		{"3", "gamma", "archived", "cat2", 2},
+		{"4", "delta", "active", "cat2", 4},
+		{"5", "epsilon", "archived", "", 5}, // no category
+	} {
+		var catID any
+		if r.catID != "" {
+			catID = r.catID
+		}
+		_, err = db.Exec(
+			`INSERT INTO test_items (id, name, status, priority, category_id) VALUES (?, ?, ?, ?, ?)`,
+			r.id, r.name, r.status, r.priority, catID,
+		)
+		if err != nil {
+			t.Fatalf("seed item %s: %v", r.id, err)
+		}
+	}
+
+	return db
+}
+
+func TestJoins(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("inner join", func(t *testing.T) {
+		db := setupJoinTestDB(t)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:   "test_items",
+			Columns: []string{"test_items.name", "test_categories.label"},
+			Joins: []JoinClause{
+				{
+					Type:       InnerJoin,
+					Table:      "test_categories",
+					LocalCol:   "test_items.category_id",
+					ForeignCol: "test_categories.id",
+				},
+			},
+			OrderBy: "priority",
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// epsilon has no category, so INNER JOIN excludes it
+		if len(rows) != 4 {
+			t.Fatalf("expected 4 rows (inner join excludes epsilon), got %d", len(rows))
+		}
+	})
+
+	t.Run("left join", func(t *testing.T) {
+		db := setupJoinTestDB(t)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:   "test_items",
+			Columns: []string{"test_items.name", "test_categories.label"},
+			Joins: []JoinClause{
+				{
+					Type:       LeftJoin,
+					Table:      "test_categories",
+					LocalCol:   "test_items.category_id",
+					ForeignCol: "test_categories.id",
+				},
+			},
+			OrderBy: "priority",
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// LEFT JOIN keeps all items including epsilon with NULL category
+		if len(rows) != 5 {
+			t.Fatalf("expected 5 rows (left join includes epsilon), got %d", len(rows))
+		}
+	})
+
+	t.Run("join with where on joined table", func(t *testing.T) {
+		db := setupJoinTestDB(t)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:   "test_items",
+			Columns: []string{"test_items.name"},
+			Joins: []JoinClause{
+				{
+					Type:       InnerJoin,
+					Table:      "test_categories",
+					LocalCol:   "test_items.category_id",
+					ForeignCol: "test_categories.id",
+				},
+			},
+			Where: map[string]any{"test_categories.label": "Tools"},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// alpha and beta are in Tools
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 rows in Tools category, got %d", len(rows))
+		}
+	})
+
+	t.Run("invalid join table name", func(t *testing.T) {
+		db := setupJoinTestDB(t)
+
+		_, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Joins: []JoinClause{
+				{
+					Type:       InnerJoin,
+					Table:      "DROP",
+					LocalCol:   "test_items.id",
+					ForeignCol: "bad.id",
+				},
+			},
+		})
+		if err == nil {
+			t.Fatal("expected error for SQL keyword join table name")
+		}
+	})
+}
+
+// ===== MULTI-COLUMN ORDER BY TESTS =====
+
+func TestMultiColumnOrderBy(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("two column order", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table: "test_items",
+			Orders: []OrderByClause{
+				{Column: "status", Desc: false},  // active first
+				{Column: "priority", Desc: true}, // then by priority desc within status
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 5 {
+			t.Fatalf("expected 5 rows, got %d", len(rows))
+		}
+		// active group (sorted by priority DESC): delta(4), alpha(3), beta(1)
+		// archived group (sorted by priority DESC): epsilon(5), gamma(2)
+		if rows[0]["name"] != "delta" {
+			t.Fatalf("expected first row delta, got %v", rows[0]["name"])
+		}
+		if rows[1]["name"] != "alpha" {
+			t.Fatalf("expected second row alpha, got %v", rows[1]["name"])
+		}
+		if rows[2]["name"] != "beta" {
+			t.Fatalf("expected third row beta, got %v", rows[2]["name"])
+		}
+		if rows[3]["name"] != "epsilon" {
+			t.Fatalf("expected fourth row epsilon, got %v", rows[3]["name"])
+		}
+		if rows[4]["name"] != "gamma" {
+			t.Fatalf("expected fifth row gamma, got %v", rows[4]["name"])
+		}
+	})
+
+	t.Run("Orders takes precedence over legacy OrderBy", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:   "test_items",
+			OrderBy: "name", // legacy — should be ignored
+			Desc:    true,   // legacy — should be ignored
+			Orders: []OrderByClause{
+				{Column: "priority", Desc: false}, // ascending
+			},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		// priority ASC: beta(1), gamma(2), alpha(3), delta(4), epsilon(5)
+		if rows[0]["name"] != "beta" {
+			t.Fatalf("expected first row beta (priority ASC), got %v", rows[0]["name"])
+		}
+	})
+}
+
+// ===== GROUP BY / HAVING TESTS =====
+
+func TestGroupByHaving(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("group by with count", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:   "test_items",
+			Columns: []string{"status"},
+			GroupBy: []string{"status"},
+			Orders:  []OrderByClause{{Column: "status"}},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 groups, got %d", len(rows))
+		}
+		if rows[0]["status"] != "active" {
+			t.Fatalf("expected first group active, got %v", rows[0]["status"])
+		}
+		if rows[1]["status"] != "archived" {
+			t.Fatalf("expected second group archived, got %v", rows[1]["status"])
+		}
+	})
+
+	t.Run("having without group_by returns error", func(t *testing.T) {
+		db := setupTestDB(t)
+
+		_, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:  "test_items",
+			Having: map[string]any{"priority": Gt(1)},
+		})
+		if err == nil {
+			t.Fatal("expected error for having without group_by")
+		}
+	})
+}
+
+// ===== DISTINCT TESTS =====
+
+func TestDistinct(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("distinct values", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		rows, err := QSelect(ctx, db, DialectSQLite, SelectParams{
+			Table:    "test_items",
+			Columns:  []string{"status"},
+			Distinct: true,
+			Orders:   []OrderByClause{{Column: "status"}},
+		})
+		if err != nil {
+			t.Fatalf("select: %v", err)
+		}
+		if len(rows) != 2 {
+			t.Fatalf("expected 2 distinct statuses, got %d", len(rows))
+		}
+	})
+}
+
+// ===== POSTGRES PLACEHOLDER TESTS =====
+
+func TestPostgresPlaceholders(t *testing.T) {
+	t.Run("select with conditions uses numbered placeholders", func(t *testing.T) {
+		query, args, err := buildSelectQuery(DialectPostgres, SelectParams{
+			Table: "test_items",
+			Where: map[string]any{
+				"name":     "alpha",
+				"priority": Gt(3),
+				"status":   In("active", "archived"),
+			},
+			Limit: 10,
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+
+		// Keys sorted: name, priority, status
+		// name = $1, priority > $2, status IN ($3, $4)
+		expected := `SELECT * FROM "test_items" WHERE "name" = $1 AND "priority" > $2 AND "status" IN ($3, $4) LIMIT 10`
+		if query != expected {
+			t.Fatalf("expected:\n  %s\ngot:\n  %s", expected, query)
+		}
+		if len(args) != 4 {
+			t.Fatalf("expected 4 args, got %d", len(args))
+		}
+	})
+
+	t.Run("update with WhereOr uses correct numbering", func(t *testing.T) {
+		// Build manually to check SQL — can't execute against PG without a real PG db
+		// Just verify the query string and args via buildWhereClause
+		d := DialectPostgres
+		where := map[string]any{"status": "active"}
+		whereOr := []map[string]any{
+			{"name": "alpha"},
+			{"name": "beta"},
+		}
+		// argOffset 3 (simulating SET clauses consumed 1-2)
+		clause, args, nextIdx, err := buildWhereClause(d, where, whereOr, 3)
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		expected := ` WHERE ("status" = $3) AND (("name" = $4) OR ("name" = $5))`
+		if clause != expected {
+			t.Fatalf("expected:\n  %s\ngot:\n  %s", expected, clause)
+		}
+		if len(args) != 3 {
+			t.Fatalf("expected 3 args, got %d", len(args))
+		}
+		if nextIdx != 6 {
+			t.Fatalf("expected nextIdx=6, got %d", nextIdx)
+		}
+	})
+
+	t.Run("join with qualified columns uses PG placeholders", func(t *testing.T) {
+		query, _, err := buildSelectQuery(DialectPostgres, SelectParams{
+			Table:   "test_items",
+			Columns: []string{"test_items.name", "categories.label"},
+			Joins: []JoinClause{
+				{
+					Type:       LeftJoin,
+					Table:      "categories",
+					LocalCol:   "test_items.category_id",
+					ForeignCol: "categories.id",
+				},
+			},
+			Where: map[string]any{"test_items.status": "active"},
+			Limit: 10,
+		})
+		if err != nil {
+			t.Fatalf("build: %v", err)
+		}
+		expected := `SELECT "test_items"."name", "categories"."label" FROM "test_items" LEFT JOIN "categories" ON "test_items"."category_id" = "categories"."id" WHERE "test_items"."status" = $1 LIMIT 10`
+		if query != expected {
+			t.Fatalf("expected:\n  %s\ngot:\n  %s", expected, query)
+		}
+	})
+}
+
+// ===== QUALIFIED COLUMN NAME TESTS =====
+
+func TestQuoteQualifiedIdent(t *testing.T) {
+	t.Run("simple column", func(t *testing.T) {
+		got, err := quoteQualifiedIdent(DialectSQLite, "name")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if got != `"name"` {
+			t.Fatalf("expected \"name\", got %s", got)
+		}
+	})
+
+	t.Run("qualified column", func(t *testing.T) {
+		got, err := quoteQualifiedIdent(DialectSQLite, "users.name")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if got != `"users"."name"` {
+			t.Fatalf("expected \"users\".\"name\", got %s", got)
+		}
+	})
+
+	t.Run("mysql qualified column", func(t *testing.T) {
+		got, err := quoteQualifiedIdent(DialectMySQL, "users.name")
+		if err != nil {
+			t.Fatalf("error: %v", err)
+		}
+		if got != "`users`.`name`" {
+			t.Fatalf("expected `users`.`name`, got %s", got)
+		}
+	})
+
+	t.Run("invalid column part", func(t *testing.T) {
+		_, err := quoteQualifiedIdent(DialectSQLite, "users.bad col!")
+		if err == nil {
+			t.Fatal("expected error for invalid column part")
+		}
+	})
+
+	t.Run("invalid table part", func(t *testing.T) {
+		_, err := quoteQualifiedIdent(DialectSQLite, "DROP.name")
+		if err == nil {
+			t.Fatal("expected error for SQL keyword table part")
+		}
+	})
+
+	t.Run("SQL keyword as column", func(t *testing.T) {
+		_, err := quoteQualifiedIdent(DialectSQLite, "SELECT")
+		if err == nil {
+			t.Fatal("expected error for SQL keyword column")
+		}
+	})
+}
+
+// ===== BETWEEN / ISNULL / ISNOTNULL IN COUNT AND EXISTS =====
+
+func TestConditionsInCountAndExists(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("count with condition", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		count, err := QCount(ctx, db, DialectSQLite, "test_items", map[string]any{"priority": Gte(3)})
+		if err != nil {
+			t.Fatalf("count: %v", err)
+		}
+		// alpha(3), delta(4), epsilon(5)
+		if count != 3 {
+			t.Fatalf("expected 3, got %d", count)
+		}
+	})
+
+	t.Run("exists with condition", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		exists, err := QExists(ctx, db, DialectSQLite, "test_items", map[string]any{"priority": Gt(10)})
+		if err != nil {
+			t.Fatalf("exists: %v", err)
+		}
+		if exists {
+			t.Fatal("expected false for priority > 10")
+		}
+	})
+
+	t.Run("exists with Like", func(t *testing.T) {
+		db := setupTestDB(t)
+		seedRows(t, db)
+
+		exists, err := QExists(ctx, db, DialectSQLite, "test_items", map[string]any{"name": Like("alp%")})
+		if err != nil {
+			t.Fatalf("exists: %v", err)
+		}
+		if !exists {
+			t.Fatal("expected true for name LIKE alp%")
+		}
+	})
+}

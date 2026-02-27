@@ -11,6 +11,6 @@ import (
 func DashboardHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		layout := NewAdminData(r, "Dashboard")
-		Render(w, r, pages.Dashboard(layout))
+		RenderNav(w, r, "Dashboard", pages.DashboardContent(), pages.Dashboard(layout))
 	}
 }

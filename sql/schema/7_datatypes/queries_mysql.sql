@@ -80,6 +80,10 @@ SET parent_id = ?,
 DELETE FROM datatypes
 WHERE datatype_id = ?;
 
+-- name: GetDatatypeByType :one
+SELECT * FROM datatypes
+WHERE type = ? LIMIT 1;
+
 -- name: ListDatatypePaginated :many
 SELECT * FROM datatypes
 ORDER BY datatype_id

@@ -6,36 +6,40 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+templ AdminRoutesListContent(items []db.AdminRoutes, pagination partials.PaginationPageData) {
+	<div class="page-header">
+		<h1>Admin Routes</h1>
+		<a
+			href="/admin/routes"
+			class="btn btn-ghost"
+			hx-get="/admin/routes"
+			hx-target="#main-content"
+			hx-push-url="true"
+		>
+			Back to Routes
+		</a>
+	</div>
+	<p class="page-description">Internal CMS routes managed by the system. These routes are read-only.</p>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Slug</th>
+				<th>Title</th>
+				<th>Status</th>
+				<th>Modified</th>
+			</tr>
+		</thead>
+		<tbody id="admin-routes-table-body">
+			@partials.AdminRoutesTableRowsInner(items)
+		</tbody>
+	</table>
+	<div id="pagination">
+		@partials.Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
+	</div>
+}
+
 templ AdminRoutesList(layout layouts.AdminData, items []db.AdminRoutes, pagination partials.PaginationPageData) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Admin Routes</h1>
-			<a
-				href="/admin/routes"
-				class="btn btn-ghost"
-				hx-get="/admin/routes"
-				hx-target="#main-content"
-				hx-push-url="true"
-			>
-				Back to Routes
-			</a>
-		</div>
-		<p class="page-description">Internal CMS routes managed by the system. These routes are read-only.</p>
-		<table class="table">
-			<thead>
-				<tr>
-					<th>Slug</th>
-					<th>Title</th>
-					<th>Status</th>
-					<th>Modified</th>
-				</tr>
-			</thead>
-			<tbody id="admin-routes-table-body">
-				@partials.AdminRoutesTableRowsInner(items)
-			</tbody>
-		</table>
-		<div id="pagination">
-			@partials.Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
-		</div>
+		@AdminRoutesListContent(items, pagination)
 	}
 }

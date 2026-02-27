@@ -103,6 +103,15 @@ type dialogStyles struct {
 	confirmButtonStyle lipgloss.Style
 }
 
+// buttonLabel prefixes text with a cursor indicator when focused,
+// ensuring buttons are distinguishable on monochrome terminals.
+func buttonLabel(text string, focused bool) string {
+	if focused {
+		return "\u25b8 " + text
+	}
+	return "  " + text
+}
+
 func newDialogStyles() dialogStyles {
 	return dialogStyles{
 		borderStyle: lipgloss.NewStyle().
@@ -604,26 +613,28 @@ func (d FormDialogModel) renderChildDatatypeSelection(windowWidth, windowHeight 
 
 // renderCancelButton returns the styled cancel button view.
 func (d FormDialogModel) renderCancelButton() string {
+	focused := d.focusIndex == FormDialogButtonCancel
 	style := d.cancelButtonStyle
-	if d.focusIndex == FormDialogButtonCancel {
+	if focused {
 		style = style.
 			Foreground(config.DefaultStyle.Primary).
 			Background(config.DefaultStyle.Tertiary).
 			Bold(true)
 	}
-	return style.Render("Cancel")
+	return style.Render(buttonLabel("Cancel", focused))
 }
 
 // renderConfirmButton returns the styled confirm button view.
 func (d FormDialogModel) renderConfirmButton() string {
+	focused := d.focusIndex == FormDialogButtonConfirm
 	style := d.confirmButtonStyle
-	if d.focusIndex == FormDialogButtonConfirm {
+	if focused {
 		style = style.
 			Foreground(config.DefaultStyle.Primary).
 			Background(config.DefaultStyle.Accent).
 			Bold(true)
 	}
-	return style.Render("Confirm")
+	return style.Render(buttonLabel("Confirm", focused))
 }
 
 // FormDialogOverlay positions a form dialog over existing content
@@ -1356,26 +1367,28 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 
 // renderCancelButton returns the styled cancel button view for the content form.
 func (d ContentFormDialogModel) renderCancelButton() string {
+	focused := d.focusIndex == d.ButtonCancelIndex()
 	style := d.cancelButtonStyle
-	if d.focusIndex == d.ButtonCancelIndex() {
+	if focused {
 		style = style.
 			Foreground(config.DefaultStyle.Primary).
 			Background(config.DefaultStyle.Tertiary).
 			Bold(true)
 	}
-	return style.Render("Cancel")
+	return style.Render(buttonLabel("Cancel", focused))
 }
 
 // renderConfirmButton returns the styled confirm button view for the content form.
 func (d ContentFormDialogModel) renderConfirmButton() string {
+	focused := d.focusIndex == d.ButtonConfirmIndex()
 	style := d.confirmButtonStyle
-	if d.focusIndex == d.ButtonConfirmIndex() {
+	if focused {
 		style = style.
 			Foreground(config.DefaultStyle.Primary).
 			Background(config.DefaultStyle.Accent).
 			Bold(true)
 	}
-	return style.Render("Confirm")
+	return style.Render(buttonLabel("Confirm", focused))
 }
 
 // ContentFormDialogOverlay positions a content form dialog over existing content
@@ -1995,8 +2008,8 @@ func (d UserFormDialogModel) Render(windowWidth, windowHeight int) string {
 	if d.focusIndex == d.confirmFocusIndex() {
 		confirmStyle = confirmStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
 	}
-	cancelBtn := cancelStyle.Render("Cancel")
-	confirmBtn := confirmStyle.Render("Save")
+	cancelBtn := cancelStyle.Render(buttonLabel("Cancel", d.focusIndex == d.cancelFocusIndex()))
+	confirmBtn := confirmStyle.Render(buttonLabel("Save", d.focusIndex == d.confirmFocusIndex()))
 	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, "  ", confirmBtn)
 	content.WriteString(buttonBar)
 

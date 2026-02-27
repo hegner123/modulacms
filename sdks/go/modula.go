@@ -59,6 +59,7 @@ type Client struct {
 	Sessions     *SessionsResource
 	Import       *ImportResource
 	ContentBatch *ContentBatchResource
+	ContentTree  *ContentTreeResource
 	ContentHeal  *ContentHealResource
 	Deploy       *DeployResource
 
@@ -72,6 +73,19 @@ type Client struct {
 
 	// Config resource
 	Config *ConfigResource
+
+	// Health
+	Health *HealthResource
+
+	// Users full
+	UsersFull *UsersFullResource
+
+	// Media admin
+	MediaAdmin *MediaAdminResource
+
+	// Content reorder
+	ContentReorder      *ContentReorderResource
+	AdminContentReorder *AdminContentReorderResource
 }
 
 // NewClient creates a new Modula API client.
@@ -130,6 +144,7 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Sessions:     &SessionsResource{http: h},
 		Import:       &ImportResource{http: h},
 		ContentBatch: &ContentBatchResource{http: h},
+		ContentTree:  &ContentTreeResource{http: h},
 		ContentHeal:  &ContentHealResource{http: h},
 		Deploy:       &DeployResource{http: h},
 
@@ -143,6 +158,19 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 
 		// Config
 		Config: &ConfigResource{http: h},
+
+		// Health
+		Health: &HealthResource{http: h},
+
+		// Users full
+		UsersFull: &UsersFullResource{http: h},
+
+		// Media admin
+		MediaAdmin: &MediaAdminResource{http: h},
+
+		// Content reorder
+		ContentReorder:      &ContentReorderResource{http: h},
+		AdminContentReorder: &AdminContentReorderResource{http: h},
 	}, nil
 }
 

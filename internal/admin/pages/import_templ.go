@@ -13,7 +13,7 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/partials"
 )
 
-func Import(layout layouts.AdminData) templ.Component {
+func ImportContent(csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -34,7 +34,44 @@ func Import(layout layouts.AdminData) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Import Content</h1></div><div class=\"settings-section\"><p>Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p><form hx-post=\"/admin/import\" hx-encoding=\"multipart/form-data\" hx-swap=\"none\" class=\"form-stack\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = partials.CSRFField(csrfToken).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"form-field\"><label for=\"format\">Source Format</label> <select id=\"format\" name=\"format\" required><option value=\"\">-- Select format --</option> <option value=\"wordpress\">WordPress</option> <option value=\"strapi\">Strapi</option> <option value=\"sanity\">Sanity</option> <option value=\"contentful\">Contentful</option> <option value=\"json\">Custom JSON</option></select></div><mcms-file-input name=\"import_file\" accept=\".json,.xml,.csv,.zip\" required label=\"Export File\"></mcms-file-input><div class=\"form-actions\"><button type=\"submit\" class=\"btn btn-primary\">Start Import</button></div></form></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func Import(layout layouts.AdminData) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var2 == nil {
+			templ_7745c5c3_Var2 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -46,21 +83,13 @@ func Import(layout layouts.AdminData) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Import Content</h1></div><div class=\"settings-section\"><p>Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p><form hx-post=\"/admin/import\" hx-encoding=\"multipart/form-data\" hx-swap=\"none\" class=\"form-stack\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = partials.CSRFField(layout.CSRFToken).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"form-field\"><label for=\"format\">Source Format</label> <select id=\"format\" name=\"format\" required><option value=\"\">-- Select format --</option> <option value=\"wordpress\">WordPress</option> <option value=\"strapi\">Strapi</option> <option value=\"sanity\">Sanity</option> <option value=\"contentful\">Contentful</option> <option value=\"json\">Custom JSON</option></select></div><div class=\"form-field\"><label for=\"import_file\">Export File</label> <input type=\"file\" id=\"import_file\" name=\"import_file\" accept=\".json,.xml,.csv,.zip\" required> <span class=\"field-hint\">Supported: .json, .xml, .csv, .zip</span></div><div class=\"form-actions\"><button type=\"submit\" class=\"btn btn-primary\">Start Import</button></div></form></div>")
+			templ_7745c5c3_Err = ImportContent(layout.CSRFToken).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.Admin(layout).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.Admin(layout).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -8,20 +8,7 @@ templ DatatypeForm(label string, dtype string, errs map[string]string, csrfToken
 		<div class="form-error">{ errs["_"] }</div>
 	}
 	@FormField("label", "Label", label, errs["label"])
-	<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
-		<label for="type">Type</label>
-		<select id="type" name="type">
-			<option value="">Select a type</option>
-			<option value="page" selected?={ dtype == "page" }>Page</option>
-			<option value="post" selected?={ dtype == "post" }>Post</option>
-			<option value="block" selected?={ dtype == "block" }>Block</option>
-			<option value="component" selected?={ dtype == "component" }>Component</option>
-			<option value="template" selected?={ dtype == "template" }>Template</option>
-		</select>
-		if errs["type"] != "" {
-			<span class="field-error">{ errs["type"] }</span>
-		}
-	</div>
+	@FormField("type", "Type", dtype, errs["type"])
 	<div class="dialog-actions">
 		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
 		<button type="submit" class="btn btn-primary">Create</button>
@@ -39,19 +26,7 @@ templ DatatypeEditForm(id string, label string, dtype string, errs map[string]st
 			<div class="form-error">{ errs["_"] }</div>
 		}
 		@FormField("label", "Label", label, errs["label"])
-		<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
-			<label for="type">Type</label>
-			<select id="type" name="type">
-				<option value="page" selected?={ dtype == "page" }>Page</option>
-				<option value="post" selected?={ dtype == "post" }>Post</option>
-				<option value="block" selected?={ dtype == "block" }>Block</option>
-				<option value="component" selected?={ dtype == "component" }>Component</option>
-				<option value="template" selected?={ dtype == "template" }>Template</option>
-			</select>
-			if errs["type"] != "" {
-				<span class="field-error">{ errs["type"] }</span>
-			}
-		</div>
+		@FormField("type", "Type", dtype, errs["type"])
 		<div class="form-actions">
 			<button type="submit" class="btn btn-primary">Save Changes</button>
 		</div>

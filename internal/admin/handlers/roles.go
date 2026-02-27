@@ -15,7 +15,7 @@ import (
 )
 
 // RolesListHandler handles GET /admin/users/roles.
-// Lists roles with their associated permissions.
+// Lists roles with a sidebar; the first role's detail is rendered by default.
 func RolesListHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		roles, err := driver.ListRoles()
@@ -44,17 +44,88 @@ func RolesListHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.H
 			rolePerms = &[]db.RolePermissions{}
 		}
 
-		// Build a map of role ID -> permission IDs for display
 		rolePermMap := buildRolePermMap(*rolePerms)
+
+		if IsNavHTMX(r) {
+			var defaultMatrix partials.PermissionMatrix
+			if len(roleList) > 0 {
+				defaultMatrix = partials.BuildPermissionMatrix(*perms, rolePermMap[roleList[0].RoleID])
+			}
+			csrfToken := CSRFTokenFromContext(r.Context())
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Roles"}`)
+			Render(w, r, pages.RolesListContent(roleList, defaultMatrix, csrfToken))
+			return
+		}
 
 		if IsHTMX(r) {
 			Render(w, r, partials.RolesTableRows(roleList, *perms, rolePermMap))
 			return
 		}
 
+		// Build the permission matrix for the first (default-selected) role
+		var defaultMatrix partials.PermissionMatrix
+		if len(roleList) > 0 {
+			defaultMatrix = partials.BuildPermissionMatrix(*perms, rolePermMap[roleList[0].RoleID])
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Roles")
-		Render(w, r, pages.RolesList(layout, roleList, *perms, rolePermMap, csrfToken))
+		Render(w, r, pages.RolesList(layout, roleList, defaultMatrix, csrfToken))
+	}
+}
+
+// RoleDetailHandler handles GET /admin/users/roles/{id}.
+// Returns the detail partial for a single role (HTMX swap target).
+func RoleDetailHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Missing role ID", http.StatusBadRequest)
+			return
+		}
+
+		role, err := driver.GetRole(types.RoleID(id))
+		if err != nil {
+			utility.DefaultLogger.Error("failed to get role", err)
+			http.Error(w, "Role not found", http.StatusNotFound)
+			return
+		}
+
+		perms, permsErr := driver.ListPermissions()
+		if permsErr != nil {
+			utility.DefaultLogger.Error("failed to list permissions", permsErr)
+			perms = &[]db.Permissions{}
+		}
+
+		rolePerms, rpErr := driver.ListRolePermissions()
+		if rpErr != nil {
+			utility.DefaultLogger.Error("failed to list role permissions", rpErr)
+			rolePerms = &[]db.RolePermissions{}
+		}
+
+		rolePermMap := buildRolePermMap(*rolePerms)
+		matrix := partials.BuildPermissionMatrix(*perms, rolePermMap[role.RoleID])
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		Render(w, r, partials.RoleDetail(*role, matrix, csrfToken))
+	}
+}
+
+// RoleNewFormHandler handles GET /admin/users/roles/new.
+// Returns the new-role form partial (HTMX swap target).
+func RoleNewFormHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		perms, permsErr := driver.ListPermissions()
+		if permsErr != nil {
+			utility.DefaultLogger.Error("failed to list permissions", permsErr)
+			perms = &[]db.Permissions{}
+		}
+
+		// Empty active permissions — new role starts with nothing
+		matrix := partials.BuildPermissionMatrix(*perms, nil)
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		Render(w, r, partials.RoleNewForm(matrix, csrfToken))
 	}
 }
 
@@ -267,6 +338,7 @@ func RoleDeleteHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 		go pc.Load(driver)
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Role deleted", "type": "success"}}`)
+		w.Header().Set("HX-Redirect", "/admin/users/roles")
 		w.WriteHeader(http.StatusOK)
 	}
 }

@@ -1,0 +1,24 @@
+package pages
+
+import "github.com/hegner123/modulacms/internal/admin/layouts"
+
+templ DemoContent() {
+    <div class="page-header">
+        <h1>Demo</h1>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 2rem; padding: 2rem;">
+        <div>
+            <h3>Brand Spinner</h3>
+            <div style="display: flex; align-items: center; gap: 1.5rem; margin-top: 1rem;">
+                <div class="spinner-brand"></div>
+                <div class="spinner-brand spinner-brand-lg"></div>
+            </div>
+        </div>
+    </div>
+}
+
+templ Demo(layout layouts.AdminData) {
+    @layouts.Admin(layout) {
+        @DemoContent()
+    }
+}

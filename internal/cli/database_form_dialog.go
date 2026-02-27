@@ -331,8 +331,8 @@ func (d DatabaseFormDialogModel) Render(windowWidth, windowHeight int) string {
 	if d.focusIndex == d.confirmButtonIndex() {
 		confirmStyle = confirmStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
 	}
-	cancelBtn := cancelStyle.Render("Cancel")
-	confirmBtn := confirmStyle.Render("Save")
+	cancelBtn := cancelStyle.Render(buttonLabel("Cancel", d.focusIndex == d.cancelButtonIndex()))
+	confirmBtn := confirmStyle.Render(buttonLabel("Save", d.focusIndex == d.confirmButtonIndex()))
 	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, "  ", confirmBtn)
 
 	// Assemble

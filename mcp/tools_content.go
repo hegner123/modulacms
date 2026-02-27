@@ -127,6 +127,57 @@ func registerContentTools(srv *server.MCPServer, client *modulacms.Client) {
 		handleDeleteContentField(client),
 	)
 
+	// --- Content Field Get ---
+
+	srv.AddTool(
+		mcp.NewTool("get_content_field",
+			mcp.WithDescription("Get a single content field by ID."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Content field ID (ULID)")),
+		),
+		handleGetContentField(client),
+	)
+
+	// --- Content Reorder ---
+
+	srv.AddTool(
+		mcp.NewTool("reorder_content",
+			mcp.WithDescription("Atomically reorder sibling content data nodes under a parent. Provide the parent_id and an ordered list of content IDs."),
+			mcp.WithString("parent_id", mcp.Description("Parent content ID (null for root-level siblings)")),
+			mcp.WithObject("ordered_ids", mcp.Required(), mcp.Description("Array of content data IDs in desired order")),
+		),
+		handleReorderContent(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("move_content",
+			mcp.WithDescription("Move a content data node to a new parent at a given position."),
+			mcp.WithString("node_id", mcp.Required(), mcp.Description("Content data ID to move")),
+			mcp.WithString("new_parent_id", mcp.Description("New parent content ID (null for root)")),
+			mcp.WithNumber("position", mcp.Required(), mcp.Description("Zero-based position among siblings")),
+		),
+		handleMoveContent(client),
+	)
+
+	// --- Content Tree ---
+
+	srv.AddTool(
+		mcp.NewTool("save_content_tree",
+			mcp.WithDescription("Atomically apply tree structure changes (creates, deletes, pointer updates) in a single request. This is the preferred way to persist block editor state."),
+			mcp.WithObject("request", mcp.Required(), mcp.Description("TreeSaveRequest JSON: content_id (required), creates (array), updates (array), deletes (array of IDs)")),
+		),
+		handleSaveContentTree(client),
+	)
+
+	// --- Content Heal ---
+
+	srv.AddTool(
+		mcp.NewTool("heal_content",
+			mcp.WithDescription("Scan content_data and content_field rows for malformed IDs and repair them. Use dry_run=true to preview without writing."),
+			mcp.WithBoolean("dry_run", mcp.Description("If true, preview repairs without writing changes (default false)")),
+		),
+		handleHealContent(client),
+	)
+
 	// --- Content Batch ---
 
 	srv.AddTool(
@@ -415,5 +466,108 @@ func handleBatchUpdateContent(client *modulacms.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultText(string(result)), nil
 		}
 		return mcp.NewToolResultText(string(formatted)), nil
+	}
+}
+
+// --- Content Field Get Handler ---
+
+func handleGetContentField(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		result, err := client.ContentFields.Get(ctx, modulacms.ContentFieldID(id))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+// --- Content Reorder Handlers ---
+
+func handleReorderContent(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		rawIDs, ok := args["ordered_ids"].([]any)
+		if !ok || len(rawIDs) == 0 {
+			return mcp.NewToolResultError("ordered_ids must be a non-empty array of content IDs"), nil
+		}
+		ids := make([]modulacms.ContentID, 0, len(rawIDs))
+		for _, raw := range rawIDs {
+			s, ok := raw.(string)
+			if !ok {
+				return mcp.NewToolResultError("each ordered_id must be a string"), nil
+			}
+			ids = append(ids, modulacms.ContentID(s))
+		}
+		params := modulacms.ContentReorderRequest{
+			ParentID:   optionalIDPtr[modulacms.ContentID](req, "parent_id"),
+			OrderedIDs: ids,
+		}
+		result, err := client.ContentReorder.Reorder(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleMoveContent(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		nodeID, err := req.RequireString("node_id")
+		if err != nil {
+			return mcp.NewToolResultError("node_id is required"), nil
+		}
+		position := int(req.GetFloat("position", 0))
+		params := modulacms.ContentMoveRequest{
+			NodeID:      modulacms.ContentID(nodeID),
+			NewParentID: optionalIDPtr[modulacms.ContentID](req, "new_parent_id"),
+			Position:    position,
+		}
+		result, err := client.ContentReorder.Move(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+// --- Content Tree Handler ---
+
+func handleSaveContentTree(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		rawReq, ok := args["request"]
+		if !ok {
+			return mcp.NewToolResultError("request is required"), nil
+		}
+		b, err := json.Marshal(rawReq)
+		if err != nil {
+			return mcp.NewToolResultError("invalid request object"), nil
+		}
+		var treeReq modulacms.TreeSaveRequest
+		if err := json.Unmarshal(b, &treeReq); err != nil {
+			return mcp.NewToolResultError("invalid TreeSaveRequest: " + err.Error()), nil
+		}
+		result, err := client.ContentTree.Save(ctx, treeReq)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+// --- Content Heal Handler ---
+
+func handleHealContent(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		dryRun := req.GetBool("dry_run", false)
+		result, err := client.ContentHeal.Heal(ctx, dryRun)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
 	}
 }

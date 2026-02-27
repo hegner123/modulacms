@@ -59,14 +59,21 @@ func MediaListHandler(driver db.DbDriver) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		if IsNavHTMX(r) {
+			csrfToken := CSRFTokenFromContext(r.Context())
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Media"}`)
+			RenderWithOOB(w, r, pages.MediaListContent(mediaItems, pg),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.MediaUploadDialog(csrfToken)})
+			return
+		}
+
 		if picker || IsHTMX(r) {
 			Render(w, r, pages.MediaGridPartial(mediaItems, pg, picker))
 			return
 		}
 
 		layout := NewAdminData(r, "Media")
-		csrfToken := CSRFTokenFromContext(r.Context())
-		Render(w, r, pages.MediaList(layout, mediaItems, pg, csrfToken))
+		Render(w, r, pages.MediaList(layout, mediaItems, pg))
 	}
 }
 
@@ -88,7 +95,7 @@ func MediaDetailHandler(driver db.DbDriver) http.HandlerFunc {
 
 		layout := NewAdminData(r, "Media Detail")
 		csrfToken := CSRFTokenFromContext(r.Context())
-		Render(w, r, pages.MediaDetail(layout, *media, csrfToken))
+		RenderNav(w, r, "Media Detail", pages.MediaDetailContent(*media, csrfToken), pages.MediaDetail(layout, *media, csrfToken))
 	}
 }
 

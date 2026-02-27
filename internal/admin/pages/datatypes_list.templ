@@ -1,100 +1,102 @@
 package pages
 
 import (
-	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
 )
 
+templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData) {
+    <div class="page-header">
+        <h1>Datatypes</h1>
+        <button class="btn btn-primary"
+                onclick="document.getElementById('create-datatype-dialog').showModal()">
+            New Datatype
+        </button>
+    </div>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Label</th>
+                    <th>Type</th>
+                    <th>Modified</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="datatypes-table-body"
+                   hx-get="/admin/schema/datatypes"
+                   hx-trigger="refreshTable from:body"
+                   hx-swap="innerHTML">
+                if len(items) == 0 {
+                    <tr>
+                        <td colspan="4">
+                            @partials.EmptyState("No datatypes found. Create your first datatype to define content structure.")
+                        </td>
+                    </tr>
+                } else {
+                    for _, dt := range items {
+                        <tr>
+                            <td>
+                                <a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
+                                   hx-get={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                                   hx-target="#main-content"
+                                   hx-push-url="true">
+                                    { dt.Label }
+                                </a>
+                            </td>
+                            <td><span class="badge">{ dt.Type }</span></td>
+                            <td>{ dt.DateModified.String() }</td>
+                            <td>
+                                <div class="table-actions">
+                                    <a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
+                                       class="btn btn-sm btn-ghost"
+                                       hx-get={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                                       hx-target="#main-content"
+                                       hx-push-url="true">Edit</a>
+                                    <button class="btn btn-sm btn-danger"
+                                            hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                                            hx-target="closest tr"
+                                            hx-swap="outerHTML swap:300ms"
+                                            hx-confirm="Delete this datatype? This cannot be undone.">
+                                        Delete
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    @partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit)
+}
+
+templ DatatypeCreateDialog(csrfToken string) {
+    <dialog id="create-datatype-dialog" class="admin-dialog">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2>New Datatype</h2>
+                <button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+            </div>
+            <form hx-post="/admin/schema/datatypes"
+                  hx-target="#create-datatype-form"
+                  hx-swap="innerHTML"
+                  id="create-datatype-form">
+                @partials.CSRFField(csrfToken)
+                @partials.FormField("label", "Label", "", "")
+                @partials.FormField("type", "Type", "", "")
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+}
+
 templ DatatypesList(layout layouts.AdminData, items []db.Datatypes, pg partials.PaginationPageData) {
-	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Datatypes</h1>
-			<button class="btn btn-primary"
-			        onclick="document.getElementById('create-datatype-dialog').showModal()">
-				New Datatype
-			</button>
-		</div>
-		<div class="table-container">
-			<table class="data-table">
-				<thead>
-					<tr>
-						<th>Label</th>
-						<th>Type</th>
-						<th>Modified</th>
-						<th>Actions</th>
-					</tr>
-				</thead>
-				<tbody id="datatypes-table-body"
-				       hx-get="/admin/schema/datatypes"
-				       hx-trigger="refreshTable from:body"
-				       hx-swap="innerHTML">
-					if len(items) == 0 {
-						<tr>
-							<td colspan="4">
-								@partials.EmptyState("No datatypes found. Create your first datatype to define content structure.")
-							</td>
-						</tr>
-					} else {
-						for _, dt := range items {
-							<tr>
-								<td>
-									<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }>
-										{ dt.Label }
-									</a>
-								</td>
-								<td><span class="badge">{ dt.Type }</span></td>
-								<td>{ dt.DateModified.String() }</td>
-								<td>
-									<div class="table-actions">
-										<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
-										   class="btn btn-sm btn-ghost">Edit</a>
-										<button class="btn btn-sm btn-danger"
-										        hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
-										        hx-target="closest tr"
-										        hx-swap="outerHTML swap:300ms"
-										        hx-confirm="Delete this datatype? This cannot be undone.">
-											Delete
-										</button>
-									</div>
-								</td>
-							</tr>
-						}
-					}
-				</tbody>
-			</table>
-		</div>
-		@partials.Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit)
-		<!-- Create Datatype Dialog -->
-		<dialog id="create-datatype-dialog" class="admin-dialog">
-			<div class="dialog-content">
-				<div class="dialog-header">
-					<h2>New Datatype</h2>
-					<button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
-				</div>
-				<form hx-post="/admin/schema/datatypes"
-				      hx-target="#create-datatype-form"
-				      hx-swap="innerHTML"
-				      id="create-datatype-form">
-					@partials.CSRFField(layout.CSRFToken)
-					@partials.FormField("label", "Label", "", "")
-					<div class="form-field">
-						<label for="type">Type</label>
-						<select id="type" name="type">
-							<option value="">Select a type</option>
-							<option value="page">Page</option>
-							<option value="post">Post</option>
-							<option value="block">Block</option>
-							<option value="component">Component</option>
-							<option value="template">Template</option>
-						</select>
-					</div>
-					<div class="dialog-actions">
-						<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-						<button type="submit" class="btn btn-primary">Create</button>
-					</div>
-				</form>
-			</div>
-		</dialog>
-	}
+    @layouts.Admin(layout.WithDialogs(DatatypeCreateDialog(layout.CSRFToken))) {
+        @DatatypesListContent(items, pg)
+    }
 }

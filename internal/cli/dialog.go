@@ -172,8 +172,8 @@ func (d DialogModel) Render(windowWidth, windowHeight int) string {
 			Foreground(config.DefaultStyle.Primary)
 	}
 
-	okButtonText := okButton.Render(d.OkText)
-	cancelButtonText := cancelButton.Render(d.CancelText)
+	okButtonText := okButton.Render(buttonLabel(d.OkText, d.focusIndex == 0))
+	cancelButtonText := cancelButton.Render(buttonLabel(d.CancelText, d.focusIndex == 1))
 
 	// Position buttons
 	var buttonBar string

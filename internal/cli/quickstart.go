@@ -36,29 +36,28 @@ type dbInstallerAdapter struct {
 	ac     audited.AuditContext
 }
 
-func (a *dbInstallerAdapter) CreateDatatype(p db.CreateDatatypeParams) db.Datatypes {
+func (a *dbInstallerAdapter) CreateDatatype(p db.CreateDatatypeParams) (db.Datatypes, error) {
 	result, err := a.driver.CreateDatatype(a.ctx, a.ac, p)
-	if err != nil || result == nil {
-		return db.Datatypes{}
+	if err != nil {
+		return db.Datatypes{}, fmt.Errorf("failed to create datatype %q: %w", p.Label, err)
 	}
-	return *result
+	if result == nil {
+		return db.Datatypes{}, fmt.Errorf("create datatype %q returned nil", p.Label)
+	}
+	return *result, nil
 }
 
-func (a *dbInstallerAdapter) CreateField(p db.CreateFieldParams) db.Fields {
+func (a *dbInstallerAdapter) CreateField(p db.CreateFieldParams) (db.Fields, error) {
 	result, err := a.driver.CreateField(a.ctx, a.ac, p)
-	if err != nil || result == nil {
-		return db.Fields{}
+	if err != nil {
+		return db.Fields{}, fmt.Errorf("failed to create field %q: %w", p.Label, err)
 	}
-	return *result
+	if result == nil {
+		return db.Fields{}, fmt.Errorf("create field %q returned nil", p.Label)
+	}
+	return *result, nil
 }
 
-func (a *dbInstallerAdapter) CreateDatatypeField(p db.CreateDatatypeFieldParams) db.DatatypeFields {
-	result, err := a.driver.CreateDatatypeField(a.ctx, a.ac, p)
-	if err != nil || result == nil {
-		return db.DatatypeFields{}
-	}
-	return *result
-}
 
 // RunQuickstartInstallCmd creates a tea.Cmd that installs a schema definition by index.
 func RunQuickstartInstallCmd(cfg *config.Config, userID types.UserID, schemaIndex int) tea.Cmd {
@@ -95,8 +94,8 @@ func RunQuickstartInstallCmd(cfg *config.Config, userID types.UserID, schemaInde
 
 		return ActionResultMsg{
 			Title: "Install Complete",
-			Message: fmt.Sprintf("Installed %q successfully.\n\nDatatypes: %d\nFields: %d\nJunction links: %d",
-				result.DefinitionName, result.Datatypes, result.Fields, result.JunctionLinks),
+			Message: fmt.Sprintf("Installed %q successfully.\n\nDatatypes: %d\nFields: %d",
+				result.DefinitionName, result.Datatypes, result.Fields),
 		}
 	}
 }

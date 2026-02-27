@@ -17,7 +17,7 @@ import (
 )
 
 // UsersListHandler handles GET /admin/users.
-// Lists all users. HTMX requests receive partial table rows only.
+// HTMX requests receive the page content partial; full requests get the complete layout.
 func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		items, err := driver.ListUsersWithRoleLabel()
@@ -32,11 +32,6 @@ func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
 			list = *items
 		}
 
-		if IsHTMX(r) {
-			Render(w, r, partials.UsersTableRows(list))
-			return
-		}
-
 		// Load roles for the create form dropdown
 		roles, rolesErr := driver.ListRoles()
 		if rolesErr != nil {
@@ -45,13 +40,25 @@ func UsersListHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Users"}`)
+			Render(w, r, partials.UsersListContent(list, *roles, csrfToken))
+			return
+		}
+
+		if IsHTMX(r) {
+			Render(w, r, partials.UsersListContent(list, *roles, csrfToken))
+			return
+		}
+
 		layout := NewAdminData(r, "Users")
 		Render(w, r, pages.UsersList(layout, list, *roles, csrfToken))
 	}
 }
 
 // UserDetailHandler handles GET /admin/users/{id}.
-// Shows user detail with edit form and role assignment.
+// HTMX requests receive the detail content partial; full requests get the complete layout.
 func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -75,6 +82,18 @@ func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "User: `+user.Name+`"}`)
+			Render(w, r, partials.UserDetailContent(*user, *roles, csrfToken))
+			return
+		}
+
+		if IsHTMX(r) {
+			Render(w, r, partials.UserDetailContent(*user, *roles, csrfToken))
+			return
+		}
+
 		layout := NewAdminData(r, "User: "+user.Name)
 		Render(w, r, pages.UserDetail(layout, *user, *roles, csrfToken))
 	}

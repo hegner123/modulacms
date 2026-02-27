@@ -268,6 +268,7 @@ type DbDriver interface {
 	CreateDatatypeTable() error
 	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
 	GetDatatype(types.DatatypeID) (*Datatypes, error)
+	GetDatatypeByType(string) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
 	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
@@ -860,6 +861,52 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	}
 	if pageDatatype.DatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default page datatype")
+	}
+
+	// 6b. Create _reference system datatype
+	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Reference",
+		Type:         string(types.DatatypeTypeReference),
+		AuthorID:     systemUser.UserID,
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference datatype: %w", err)
+	}
+	if refDatatype.DatatypeID.IsZero() {
+		return fmt.Errorf("failed to create _reference datatype")
+	}
+
+	// 6c. Create "Target" field for _reference datatype
+	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Target",
+		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
+		Type:         types.FieldTypeContentTreeRef,
+		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference Target field: %w", err)
+	}
+	if refField.FieldID.IsZero() {
+		return fmt.Errorf("failed to create _reference Target field")
+	}
+
+	// 6d. Link Target field to _reference datatype
+	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
+		DatatypeID: refDatatype.DatatypeID,
+		FieldID:    refField.FieldID,
+		SortOrder:  0,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
@@ -1732,6 +1779,52 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default page datatype")
 	}
 
+	// 6b. Create _reference system datatype
+	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Reference",
+		Type:         string(types.DatatypeTypeReference),
+		AuthorID:     systemUser.UserID,
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference datatype: %w", err)
+	}
+	if refDatatype.DatatypeID.IsZero() {
+		return fmt.Errorf("failed to create _reference datatype")
+	}
+
+	// 6c. Create "Target" field for _reference datatype
+	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Target",
+		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
+		Type:         types.FieldTypeContentTreeRef,
+		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference Target field: %w", err)
+	}
+	if refField.FieldID.IsZero() {
+		return fmt.Errorf("failed to create _reference Target field")
+	}
+
+	// 6d. Link Target field to _reference datatype
+	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
+		DatatypeID: refDatatype.DatatypeID,
+		FieldID:    refField.FieldID,
+		SortOrder:  0,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
+	}
+
 	// 7. Create default admin route (admin_route_id = 1)
 	adminRoute, err := d.CreateAdminRoute(ctx, ac, CreateAdminRouteParams{
 		Slug:         types.Slug("admin"),
@@ -2571,6 +2664,52 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	}
 	if pageDatatype.DatatypeID.IsZero() {
 		return fmt.Errorf("failed to create default page datatype")
+	}
+
+	// 6b. Create _reference system datatype
+	refDatatype, err := d.CreateDatatype(ctx, ac, CreateDatatypeParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Reference",
+		Type:         string(types.DatatypeTypeReference),
+		AuthorID:     systemUser.UserID,
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference datatype: %w", err)
+	}
+	if refDatatype.DatatypeID.IsZero() {
+		return fmt.Errorf("failed to create _reference datatype")
+	}
+
+	// 6c. Create "Target" field for _reference datatype
+	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
+		ParentID:     types.NullableDatatypeID{},
+		Label:        "Target",
+		Data:         "",
+		Validation:   types.EmptyJSON,
+		UIConfig:     types.EmptyJSON,
+		Type:         types.FieldTypeContentTreeRef,
+		AuthorID:     types.NullableUserID{Valid: true, ID: systemUser.UserID},
+		DateCreated:  types.TimestampNow(),
+		DateModified: types.TimestampNow(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create _reference Target field: %w", err)
+	}
+	if refField.FieldID.IsZero() {
+		return fmt.Errorf("failed to create _reference Target field")
+	}
+
+	// 6d. Link Target field to _reference datatype
+	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
+		ID:         string(types.NewDatatypeFieldID()),
+		DatatypeID: refDatatype.DatatypeID,
+		FieldID:    refField.FieldID,
+		SortOrder:  0,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)

@@ -21,5 +21,17 @@ templ Login(csrfToken string, version string, nextURL string, errMsg string) {
 			<input type="hidden" name="_csrf" value={ csrfToken }/>
 			<button type="submit" class="btn btn-primary btn-full">Sign In</button>
 		</form>
+		<div id="login-loading" class="login-loading hidden">
+			<div class="spinner-brand spinner-brand-lg"></div>
+		</div>
+		<script>
+			document.querySelector('.auth-form').addEventListener('submit', function(e) {
+				var form = e.target;
+				var overlay = document.getElementById('login-loading');
+				e.preventDefault();
+				overlay.classList.remove('hidden');
+				setTimeout(function() { form.submit(); }, 750);
+			});
+		</script>
 	}
 }

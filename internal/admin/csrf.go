@@ -20,17 +20,27 @@ func generateCSRFToken() (string, error) {
 }
 
 // CSRFMiddleware implements double-submit cookie CSRF protection.
-// For GET/HEAD/OPTIONS: generates a new token, sets it in a cookie, stores in context.
+// For GET/HEAD/OPTIONS: reuses the existing cookie token if present, otherwise
+// generates a new one. Reusing avoids invalidating the <meta> tag token during
+// HTMX partial navigations (cookie updates but <head> doesn't refresh).
 // For POST/PUT/PATCH/DELETE: validates that the token from cookie matches header or form field.
 func CSRFMiddleware() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			switch r.Method {
 			case http.MethodGet, http.MethodHead, http.MethodOptions:
-				token, err := generateCSRFToken()
-				if err != nil {
-					http.Error(w, "Internal server error", http.StatusInternalServerError)
-					return
+				// Reuse existing CSRF cookie if present so SPA/HTMX
+				// partial navigations don't desync cookie vs meta tag.
+				var token string
+				if existing, cookieErr := r.Cookie("csrf_token"); cookieErr == nil && existing.Value != "" {
+					token = existing.Value
+				} else {
+					var genErr error
+					token, genErr = generateCSRFToken()
+					if genErr != nil {
+						http.Error(w, "Internal server error", http.StatusInternalServerError)
+						return
+					}
 				}
 				http.SetCookie(w, &http.Cookie{
 					Name:     "csrf_token",

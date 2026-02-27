@@ -221,6 +221,97 @@ export type HealReport = {
   duplicate_fields: DuplicateFieldReport[]
 }
 
+// ---------------------------------------------------------------------------
+// Content tree save (bulk creates, updates, deletes)
+// ---------------------------------------------------------------------------
+
+/**
+ * A new content_data node to insert via the tree save endpoint.
+ *
+ * The caller supplies a client-generated ID (e.g. from `crypto.randomUUID()`).
+ * The server generates a ULID and returns the mapping in
+ * {@link TreeSaveResponse.id_map}. Pointer fields may reference other new
+ * nodes by their client IDs — the server remaps them automatically.
+ *
+ * The server inherits `route_id` from the parent content node, sets `author_id`
+ * from the authenticated user, and defaults `status` to `"draft"`.
+ */
+export type TreeNodeCreate = {
+  /** Caller-generated temporary ID for this node. Must be unique within the request. */
+  client_id: string
+  /** Datatype to assign, or empty string for no datatype. */
+  datatype_id: string
+  /** Parent content node, or `null` for root-level. May be a client ID of another new node. */
+  parent_id: string | null
+  /** First child, or `null`. May be a client ID of another new node. */
+  first_child_id: string | null
+  /** Next sibling, or `null`. May be a client ID of another new node. */
+  next_sibling_id: string | null
+  /** Previous sibling, or `null`. May be a client ID of another new node. */
+  prev_sibling_id: string | null
+}
+
+/**
+ * Pointer-field changes for an existing content_data node.
+ *
+ * Only the four tree-pointer fields are updated; all other fields (route,
+ * datatype, author, status, dates) are preserved from the existing row.
+ * Pointer fields may reference new nodes by client ID — the server remaps
+ * them using the ID map built during the creates phase.
+ */
+export type TreeNodeUpdate = {
+  /** ULID of the existing node to update. */
+  content_data_id: ContentID
+  /** New parent, or `null` for SQL NULL. May be a client ID. */
+  parent_id: string | null
+  /** New first child, or `null`. May be a client ID. */
+  first_child_id: string | null
+  /** New next sibling, or `null`. May be a client ID. */
+  next_sibling_id: string | null
+  /** New previous sibling, or `null`. May be a client ID. */
+  prev_sibling_id: string | null
+}
+
+/**
+ * Request body for the tree save endpoint (`POST /api/v1/content/tree`).
+ *
+ * Atomically applies creates, deletes, and pointer-field updates to
+ * content_data nodes in a single HTTP round-trip. This is the preferred
+ * way to persist structural changes from a block editor or tree manipulation UI.
+ *
+ * Processing order: creates first (with ID remapping), then deletes, then updates.
+ */
+export type TreeSaveRequest = {
+  /** Root content node being edited. Used to resolve route_id for new child nodes. */
+  content_id: ContentID
+  /** New content_data nodes to insert. */
+  creates?: TreeNodeCreate[]
+  /** Existing nodes whose pointer fields changed. */
+  updates?: TreeNodeUpdate[]
+  /** Content data IDs to remove. */
+  deletes?: ContentID[]
+}
+
+/**
+ * Response from the tree save endpoint.
+ *
+ * Always returns HTTP 200. Check {@link errors} for per-node failure messages.
+ * {@link created}, {@link updated}, and {@link deleted} counts reflect only
+ * successful operations.
+ */
+export type TreeSaveResponse = {
+  /** Number of nodes successfully created. */
+  created: number
+  /** Number of nodes successfully updated. */
+  updated: number
+  /** Number of nodes successfully deleted. */
+  deleted: number
+  /** Maps client-supplied IDs to server-generated ULIDs. Only present when creates were included. */
+  id_map?: Record<string, string>
+  /** Per-node error messages for partial failures. Empty when all operations succeeded. */
+  errors?: string[]
+}
+
 /** Parameters for updating a public content field value via `PUT /contentfields/`. */
 export type UpdateContentFieldParams = {
   /** ID of the field value to update. */

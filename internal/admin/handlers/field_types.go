@@ -29,6 +29,6 @@ var allFieldTypes = []pages.FieldTypeInfo{
 func FieldTypesListHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		layout := NewAdminData(r, "Field Types")
-		Render(w, r, pages.FieldTypesList(layout, allFieldTypes))
+		RenderNav(w, r, "Field Types", pages.FieldTypesListContent(allFieldTypes), pages.FieldTypesList(layout, allFieldTypes))
 	}
 }

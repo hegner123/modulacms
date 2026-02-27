@@ -320,8 +320,8 @@ func (d UIConfigFormDialogModel) Render(windowWidth, windowHeight int) string {
 	if d.focusIndex == 5 {
 		confirmStyle = confirmStyle.Background(config.DefaultStyle.Accent).Foreground(config.DefaultStyle.Primary)
 	}
-	cancelBtn := cancelStyle.Render("Cancel")
-	confirmBtn := confirmStyle.Render("Save")
+	cancelBtn := cancelStyle.Render(buttonLabel("Cancel", d.focusIndex == 4))
+	confirmBtn := confirmStyle.Render(buttonLabel("Save", d.focusIndex == 5))
 	buttonBar := lipgloss.JoinHorizontal(lipgloss.Center, cancelBtn, "  ", confirmBtn)
 
 	// Assemble

@@ -4,91 +4,55 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
 )
 
-templ RolesList(layout layouts.AdminData, roles []db.Roles, permissions []db.Permissions, rolePermMap map[types.RoleID]map[types.PermissionID]bool, csrfToken string) {
-	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Roles</h1>
-			<button
-				class="btn btn-primary"
-				onclick="document.getElementById('create-role-dialog').showModal()"
-			>
-				Create Role
-			</button>
+templ RolesListContent(roles []db.Roles, defaultMatrix partials.PermissionMatrix, csrfToken string) {
+	<div class="page-header">
+		<h1>Roles</h1>
+	</div>
+	if len(roles) == 0 {
+		<div class="empty-state">
+			<p>No roles found. Create your first role to get started.</p>
 		</div>
-		<dialog id="create-role-dialog" class="dialog">
-			<div class="dialog-content">
-				<div class="dialog-header">
-					<h2>Create Role</h2>
-					<button class="dialog-close" onclick="document.getElementById('create-role-dialog').close()">&times;</button>
+	} else {
+		<div class="roles-layout">
+			<aside class="roles-sidebar">
+				<div class="roles-sidebar-header">
+					<h4>Roles</h4>
+					<button
+						hx-get="/admin/users/roles/new"
+						hx-target="#role-detail-panel"
+						hx-swap="innerHTML"
+						class="btn btn-primary btn-sm"
+					>
+						New
+					</button>
 				</div>
-				<form
-					hx-post="/admin/users/roles"
-					hx-target="#create-role-form-container"
-					hx-swap="innerHTML"
-					class="admin-form"
-					id="create-role-form"
-				>
-					<div id="create-role-form-container">
-						@partials.RoleForm("", nil, csrfToken)
-					</div>
-				</form>
-			</div>
-		</dialog>
-		<div id="roles-list" class="roles-list">
-			for _, role := range roles {
-				<div id={ "role-card-" + role.RoleID.String() } class="role-card">
-					<div class="role-card-header">
-						<h3>{ role.Label }</h3>
-						<div class="role-card-actions">
+				<nav class="roles-sidebar-nav">
+					for i, role := range roles {
+						<a
+							class={ "roles-sidebar-item", templ.KV("active", i == 0) }
+							hx-get={ "/admin/users/roles/" + role.RoleID.String() }
+							hx-target="#role-detail-panel"
+							hx-swap="innerHTML"
+						>
+							<span class="roles-sidebar-label">{ role.Label }</span>
 							if role.SystemProtected {
 								<span class="badge badge-info">System</span>
-							} else {
-								<button
-									class="btn btn-ghost btn-sm btn-danger"
-									hx-delete={ "/admin/users/roles/" + role.RoleID.String() }
-									hx-target={ "#role-card-" + role.RoleID.String() }
-									hx-swap="outerHTML"
-									hx-confirm="Are you sure you want to delete this role?"
-								>
-									Delete
-								</button>
 							}
-						</div>
-					</div>
-					<form
-						hx-post={ "/admin/users/roles/" + role.RoleID.String() }
-						class="admin-form role-permissions-form"
-					>
-						@partials.CSRFField(csrfToken)
-						if !role.SystemProtected {
-							<div class="form-field">
-								<label for={ "role-label-" + role.RoleID.String() }>Label</label>
-								<input
-									type="text"
-									id={ "role-label-" + role.RoleID.String() }
-									name="label"
-									value={ role.Label }
-								/>
-							</div>
-						} else {
-							<input type="hidden" name="label" value={ role.Label }/>
-						}
-						<div class="permissions-grid">
-							<h4>Permissions</h4>
-							@partials.RolesPermissionList(permissions, rolePermMap[role.RoleID])
-						</div>
-						<div class="form-actions">
-							<button type="submit" class="btn btn-primary btn-sm">Save Permissions</button>
-						</div>
-					</form>
-				</div>
-			}
-			if len(roles) == 0 {
-				@partials.EmptyState("No roles found. Create your first role to get started.")
-			}
+						</a>
+					}
+				</nav>
+			</aside>
+			<div id="role-detail-panel" class="role-detail-panel">
+				@partials.RoleDetail(roles[0], defaultMatrix, csrfToken)
+			</div>
 		</div>
+	}
+}
+
+templ RolesList(layout layouts.AdminData, roles []db.Roles, defaultMatrix partials.PermissionMatrix, csrfToken string) {
+	@layouts.Admin(layout) {
+		@RolesListContent(roles, defaultMatrix, csrfToken)
 	}
 }

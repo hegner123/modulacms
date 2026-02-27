@@ -1,11 +1,119 @@
 package partials
 
 import (
+	"sort"
 	"strconv"
+	"strings"
+	"unicode"
 
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
+
+// PermissionCell represents a single cell in the permissions matrix.
+type PermissionCell struct {
+	PermissionID types.PermissionID
+	Exists       bool
+	Active       bool
+}
+
+// PermissionRow represents one resource row in the permissions matrix.
+type PermissionRow struct {
+	Resource    string
+	DisplayName string
+	Cells       map[string]PermissionCell
+}
+
+// PermissionMatrix holds the full grouped permissions matrix data.
+type PermissionMatrix struct {
+	AdminPerm PermissionCell
+	Columns   []string
+	Rows      []PermissionRow
+}
+
+// BuildPermissionMatrix groups permissions by resource:operation into a matrix.
+func BuildPermissionMatrix(permissions []db.Permissions, activePerms map[types.PermissionID]bool) PermissionMatrix {
+	m := PermissionMatrix{
+		Columns: []string{"read", "create", "update", "delete", "admin"},
+	}
+
+	rowMap := make(map[string]*PermissionRow)
+
+	for _, perm := range permissions {
+		resource, operation := splitLabel(perm.Label)
+		if operation == "" {
+			// Standalone permission (e.g. "admin" with no colon)
+			m.AdminPerm = PermissionCell{
+				PermissionID: perm.PermissionID,
+				Exists:       true,
+				Active:       activePerms != nil && activePerms[perm.PermissionID],
+			}
+			continue
+		}
+
+		row, ok := rowMap[resource]
+		if !ok {
+			row = &PermissionRow{
+				Resource:    resource,
+				DisplayName: ResourceDisplayName(resource),
+				Cells:       make(map[string]PermissionCell),
+			}
+			rowMap[resource] = row
+		}
+
+		row.Cells[operation] = PermissionCell{
+			PermissionID: perm.PermissionID,
+			Exists:       true,
+			Active:       activePerms != nil && activePerms[perm.PermissionID],
+		}
+	}
+
+	m.Rows = make([]PermissionRow, 0, len(rowMap))
+	for _, row := range rowMap {
+		m.Rows = append(m.Rows, *row)
+	}
+	sort.Slice(m.Rows, func(i, j int) bool {
+		return m.Rows[i].Resource < m.Rows[j].Resource
+	})
+
+	return m
+}
+
+// splitLabel splits a "resource:operation" label by scanning for ':'.
+func splitLabel(label string) (resource, operation string) {
+	for i := 0; i < len(label); i++ {
+		if label[i] == ':' {
+			return label[:i], label[i+1:]
+		}
+	}
+	return label, ""
+}
+
+// ResourceDisplayName converts a snake_case resource name to a display name.
+func ResourceDisplayName(s string) string {
+	switch s {
+	case "admin_tree":
+		return "Admin Tree"
+	case "admin_field_types":
+		return "Admin Field Types"
+	case "ssh_keys":
+		return "SSH Keys"
+	case "field_types":
+		return "Field Types"
+	case "content_data":
+		return "Content Data"
+	}
+	// Default: capitalize first letter of each word, split on '_'
+	parts := strings.Split(s, "_")
+	for i, p := range parts {
+		if len(p) > 0 {
+			runes := []rune(p)
+			runes[0] = unicode.ToUpper(runes[0])
+			parts[i] = string(runes)
+		}
+	}
+	return strings.Join(parts, " ")
+}
 
 // PaginationPageData holds pagination state for use in templ partials.
 // This type lives in partials to avoid import cycles between handlers and pages/partials.

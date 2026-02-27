@@ -12,7 +12,7 @@ import (
 func PluginsListHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		layout := NewAdminData(r, "Plugins")
-		Render(w, r, pages.PluginsList(layout))
+		RenderNav(w, r, "Plugins", pages.PluginsListContent(), pages.PluginsList(layout))
 	}
 }
 
@@ -27,6 +27,6 @@ func PluginDetailHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Plugin: "+name)
-		Render(w, r, pages.PluginDetail(layout, name))
+		RenderNav(w, r, "Plugin: "+name, pages.PluginDetailContent(name), pages.PluginDetail(layout, name))
 	}
 }

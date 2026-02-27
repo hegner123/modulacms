@@ -16,9 +16,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     prev_sibling_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    route_id TEXT NOT NULL
+    route_id TEXT
         REFERENCES routes
-            ON DELETE CASCADE,
+            ON DELETE SET NULL,
     datatype_id TEXT NOT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
 );

@@ -6,57 +6,61 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-templ MediaList(layout layouts.AdminData, items []db.Media, pg partials.PaginationPageData, csrfToken string) {
-	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Media</h1>
-			<button
-				class="btn btn-primary"
-				onclick="document.getElementById('upload-dialog').showModal()"
-			>
-				Upload Media
-			</button>
-		</div>
-		<dialog id="upload-dialog" class="dialog">
-			<div class="dialog-content">
-				<div class="dialog-header">
-					<h2>Upload Media</h2>
-					<button class="dialog-close" onclick="document.getElementById('upload-dialog').close()">&times;</button>
-				</div>
-				<form
-					hx-post="/admin/media/upload"
-					hx-target="#upload-result"
-					hx-encoding="multipart/form-data"
-					hx-swap="innerHTML"
-					class="upload-form"
-				>
-					@partials.CSRFField(csrfToken)
-					<div class="form-field">
-						<label for="file">File</label>
-						<input type="file" id="file" name="file" required accept="image/*,video/*,audio/*,.pdf,.doc,.docx"/>
-					</div>
-					<div class="form-field">
-						<label for="alt">Alt Text</label>
-						<input type="text" id="alt" name="alt" placeholder="Describe this media..."/>
-					</div>
-					<div class="form-field">
-						<label for="description">Description</label>
-						<textarea id="description" name="description" rows="3" placeholder="Optional description..."></textarea>
-					</div>
-					<div class="form-actions">
-						<button type="button" class="btn btn-ghost" onclick="document.getElementById('upload-dialog').close()">Cancel</button>
-						<button type="submit" class="btn btn-primary">Upload</button>
-					</div>
-				</form>
-				<div id="upload-result"></div>
+templ MediaListContent(items []db.Media, pg partials.PaginationPageData) {
+	<div class="page-header">
+		<h1>Media</h1>
+		<button
+			class="btn btn-primary"
+			onclick="document.getElementById('upload-dialog').showModal()"
+		>
+			Upload Media
+		</button>
+	</div>
+	<div id="media-grid" class="media-grid">
+		@MediaGridItems(items)
+	</div>
+	<div id="pagination">
+		@partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
+	</div>
+}
+
+templ MediaUploadDialog(csrfToken string) {
+	<dialog id="upload-dialog" class="dialog">
+		<div class="dialog-content">
+			<div class="dialog-header">
+				<h2>Upload Media</h2>
+				<button class="dialog-close" onclick="document.getElementById('upload-dialog').close()">&times;</button>
 			</div>
-		</dialog>
-		<div id="media-grid" class="media-grid">
-			@MediaGridItems(items)
+			<form
+				hx-post="/admin/media"
+				hx-target="#upload-result"
+				hx-encoding="multipart/form-data"
+				hx-swap="innerHTML"
+				class="upload-form"
+			>
+				@partials.CSRFField(csrfToken)
+				<mcms-file-input name="file" accept="image/*,video/*,audio/*,.pdf,.doc,.docx" required label="File"></mcms-file-input>
+				<div class="form-field">
+					<label for="alt">Alt Text</label>
+					<input type="text" id="alt" name="alt" placeholder="Describe this media..."/>
+				</div>
+				<div class="form-field">
+					<label for="description">Description</label>
+					<textarea id="description" name="description" rows="3" placeholder="Optional description..."></textarea>
+				</div>
+				<div class="form-actions">
+					<button type="button" class="btn btn-ghost" onclick="document.getElementById('upload-dialog').close()">Cancel</button>
+					<button type="submit" class="btn btn-primary">Upload</button>
+				</div>
+			</form>
+			<div id="upload-result"></div>
 		</div>
-		<div id="pagination">
-			@partials.Pagination(pg.Current, pg.TotalPages, pg.Target, pg.BaseURL, pg.Limit)
-		</div>
+	</dialog>
+}
+
+templ MediaList(layout layouts.AdminData, items []db.Media, pg partials.PaginationPageData) {
+	@layouts.Admin(layout.WithDialogs(MediaUploadDialog(layout.CSRFToken))) {
+		@MediaListContent(items, pg)
 	}
 }
 

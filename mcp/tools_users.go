@@ -64,6 +64,21 @@ func registerUserTools(srv *server.MCPServer, client *modulacms.Client) {
 		),
 		handleDeleteUser(client),
 	)
+
+	srv.AddTool(
+		mcp.NewTool("list_users_full",
+			mcp.WithDescription("List all users with full associated data (roles, permissions, sessions, etc.). Returns raw JSON."),
+		),
+		handleListUsersFull(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_user_full",
+			mcp.WithDescription("Get a single user with full associated data by ID. Returns raw JSON."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("User ID (ULID)")),
+		),
+		handleGetUserFull(client),
+	)
 }
 
 func handleWhoami(client *modulacms.Client) server.ToolHandlerFunc {
@@ -170,5 +185,29 @@ func handleDeleteUser(client *modulacms.Client) server.ToolHandlerFunc {
 			return errResult(err), nil
 		}
 		return mcp.NewToolResultText("deleted"), nil
+	}
+}
+
+func handleListUsersFull(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		result, err := client.UsersFull.List(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText(string(result)), nil
+	}
+}
+
+func handleGetUserFull(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		result, err := client.UsersFull.Get(ctx, modulacms.UserID(id))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText(string(result)), nil
 	}
 }

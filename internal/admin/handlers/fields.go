@@ -49,6 +49,14 @@ func FieldsListHandler(driver db.DbDriver) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		if IsNavHTMX(r) {
+			csrfToken := CSRFTokenFromContext(r.Context())
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Fields"}`)
+			RenderWithOOB(w, r, pages.FieldsListContent(list, pg),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.FieldCreateDialog(csrfToken)})
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, partials.FieldsTableRows(list, pg))
 			return
@@ -96,7 +104,7 @@ func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
 
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Field: "+field.Label)
-		Render(w, r, pages.FieldDetail(layout, *field, linkedDatatypes, csrfToken))
+		RenderNav(w, r, "Field: "+field.Label, pages.FieldDetailContent(*field, linkedDatatypes, csrfToken), pages.FieldDetail(layout, *field, linkedDatatypes, csrfToken))
 	}
 }
 

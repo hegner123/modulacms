@@ -92,7 +92,7 @@ func Login(csrfToken string, version string, nextURL string, errMsg string) temp
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"btn btn-primary btn-full\">Sign In</button></form>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <button type=\"submit\" class=\"btn btn-primary btn-full\">Sign In</button></form><div id=\"login-loading\" class=\"login-loading hidden\"><div class=\"spinner-brand spinner-brand-lg\"></div></div><script>\n\t\t\tdocument.querySelector('.auth-form').addEventListener('submit', function(e) {\n\t\t\t\tvar form = e.target;\n\t\t\t\tvar overlay = document.getElementById('login-loading');\n\t\t\t\te.preventDefault();\n\t\t\t\toverlay.classList.remove('hidden');\n\t\t\t\tsetTimeout(function() { form.submit(); }, 750);\n\t\t\t});\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -166,6 +166,27 @@ func IsHTMX(r *http.Request) bool {
 	return r.Header.Get("HX-Request") != ""
 }
 
+// IsNavHTMX returns true if the request is an HTMX navigation request
+// targeting #main-content (sidebar nav), as opposed to pagination or
+// other partial HTMX swaps.
+func IsNavHTMX(r *http.Request) bool {
+	return r.Header.Get("HX-Request") != "" && r.Header.Get("HX-Target") == "main-content"
+}
+
+// RenderNav handles the HTMX navigation vs full-page branching.
+// For sidebar HTMX requests, it renders the content-only component and
+// sets an HX-Trigger header so the client updates the page title.
+// For direct URL access (no HTMX), it renders the full page with layout.
+func RenderNav(w http.ResponseWriter, r *http.Request, title string, content, fullPage templ.Component) {
+	if IsNavHTMX(r) {
+		safeTitle := strings.NewReplacer(`\`, `\\`, `"`, `\"`).Replace(title)
+		w.Header().Set("HX-Trigger", `{"pageTitle": "`+safeTitle+`"}`)
+		Render(w, r, content)
+		return
+	}
+	Render(w, r, fullPage)
+}
+
 // HasPermission checks if the current request has a specific permission.
 func HasPermission(r *http.Request, perm string) bool {
 	if middleware.ContextIsAdmin(r.Context()) {

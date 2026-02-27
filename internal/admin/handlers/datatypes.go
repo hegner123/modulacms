@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"strings"
@@ -49,6 +50,14 @@ func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		if IsNavHTMX(r) {
+			csrfToken := CSRFTokenFromContext(r.Context())
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Datatypes"}`)
+			RenderWithOOB(w, r, pages.DatatypesListContent(list, pg),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeCreateDialog(csrfToken)})
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, partials.DatatypesTableRows(list, pg))
 			return
@@ -95,16 +104,17 @@ func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			}
 		}
 
-		// Fetch all fields for the "add field" selector
-		allFields, err := driver.ListFieldsPaginated(db.PaginationParams{Limit: 1000, Offset: 0})
-		if err != nil {
-			utility.DefaultLogger.Error("failed to list all fields", err)
-			allFields = &[]db.Fields{}
-		}
-
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Datatype: "+dt.Label)
-		Render(w, r, pages.DatatypeDetail(layout, *dt, linkedFields, *allFields, csrfToken))
+
+		if IsNavHTMX(r) {
+			safeTitle := "Datatype: " + dt.Label
+			w.Header().Set("HX-Trigger", `{"pageTitle": "`+safeTitle+`"}`)
+			RenderWithOOB(w, r, pages.DatatypeDetailContent(*dt, linkedFields, csrfToken),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeAddFieldDialog(dt.DatatypeID.String(), csrfToken)})
+			return
+		}
+		Render(w, r, pages.DatatypeDetail(layout, *dt, linkedFields, csrfToken))
 	}
 }
 
@@ -212,6 +222,14 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		// Block type changes on system datatypes (label changes are allowed)
+		if types.IsReservedPrefix(existing.Type) && dtype != existing.Type {
+			w.WriteHeader(http.StatusForbidden)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.DatatypeEditForm(id, label, dtype, map[string]string{"type": "Cannot change type of system datatype"}, csrfToken))
+			return
+		}
+
 		user := middleware.AuthenticatedUser(r.Context())
 		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
 		if splitErr != nil {
@@ -261,6 +279,20 @@ func DatatypeDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		// Block deletion of system datatypes (e.g. _root, _reference)
+		existing, lookupErr := driver.GetDatatype(types.DatatypeID(id))
+		if lookupErr != nil {
+			utility.DefaultLogger.Error("failed to look up datatype for delete", lookupErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype not found", "type": "error"}}`)
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		if types.IsReservedPrefix(existing.Type) {
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Cannot delete system datatype", "type": "error"}}`)
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+
 		user := middleware.AuthenticatedUser(r.Context())
 		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
 		if splitErr != nil {
@@ -281,9 +313,9 @@ func DatatypeDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 	}
 }
 
-// DatatypeLinkFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
-// Links a field to a datatype via the junction table.
-func DatatypeLinkFieldHandler(driver db.DbDriver) http.HandlerFunc {
+// DatatypeCreateFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
+// Creates a new field owned by this datatype and links it via the junction table.
+func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -296,10 +328,23 @@ func DatatypeLinkFieldHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		fieldID := strings.TrimSpace(r.FormValue("field_id"))
-		if fieldID == "" {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field is required", "type": "error"}}`)
+		label := strings.TrimSpace(r.FormValue("label"))
+		fieldType := strings.TrimSpace(r.FormValue("type"))
+
+		errs := make(map[string]string)
+		if label == "" {
+			errs["label"] = "Label is required"
+		}
+		if fieldType == "" {
+			errs["type"] = "Type is required"
+		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
+			errs["type"] = "Invalid field type"
+		}
+
+		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", errs, csrfToken))
 			return
 		}
 
@@ -310,16 +355,39 @@ func DatatypeLinkFieldHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
-		_, err := driver.CreateDatatypeField(r.Context(), ac, db.CreateDatatypeFieldParams{
-			ID:         string(types.NewDatatypeFieldID()),
-			DatatypeID: types.DatatypeID(id),
-			FieldID:    types.FieldID(fieldID),
-			SortOrder:  0,
+		now := types.NewTimestamp(time.Now())
+		field, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
+			FieldID:      types.NewFieldID(),
+			ParentID:     types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true},
+			Label:        label,
+			Type:         types.FieldType(fieldType),
+			Data:         "{}",
+			Validation:   "{}",
+			UIConfig:     "{}",
+			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
+			DateCreated:  now,
+			DateModified: now,
 		})
 		if err != nil {
-			utility.DefaultLogger.Error("failed to link field to datatype", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to link field", "type": "error"}}`)
+			utility.DefaultLogger.Error("failed to create field for datatype", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", map[string]string{"_": "Failed to create field"}, csrfToken))
+			return
+		}
+
+		// Link the new field to the datatype via junction table
+		_, junctionErr := driver.CreateDatatypeField(r.Context(), ac, db.CreateDatatypeFieldParams{
+			ID:         string(types.NewDatatypeFieldID()),
+			DatatypeID: types.DatatypeID(id),
+			FieldID:    field.FieldID,
+			SortOrder:  0,
+		})
+		if junctionErr != nil {
+			utility.DefaultLogger.Error("failed to link new field to datatype", junctionErr)
+			w.WriteHeader(http.StatusInternalServerError)
+			csrfToken := CSRFTokenFromContext(r.Context())
+			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", map[string]string{"_": "Field created but failed to link to datatype"}, csrfToken))
 			return
 		}
 
@@ -327,44 +395,31 @@ func DatatypeLinkFieldHandler(driver db.DbDriver) http.HandlerFunc {
 			http.Redirect(w, r, "/admin/schema/datatypes/"+id, http.StatusSeeOther)
 			return
 		}
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field linked", "type": "success"}}`)
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field created", "type": "success"}}`)
 		w.Header().Set("HX-Redirect", "/admin/schema/datatypes/"+id)
 		w.WriteHeader(http.StatusOK)
 	}
 }
 
-// DatatypeUnlinkFieldHandler handles DELETE /admin/schema/datatypes/{id}/fields/{linkId}.
-// Removes a field-to-datatype link from the junction table.
-func DatatypeUnlinkFieldHandler(driver db.DbDriver) http.HandlerFunc {
+// DatatypesJSONHandler handles GET /admin/api/datatypes.
+// Returns all datatypes as JSON for the block editor insert dialog.
+func DatatypesJSONHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !IsHTMX(r) {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-
-		dtID := r.PathValue("id")
-		linkID := r.PathValue("linkId")
-		if dtID == "" || linkID == "" {
-			http.Error(w, "Missing IDs", http.StatusBadRequest)
-			return
-		}
-
-		user := middleware.AuthenticatedUser(r.Context())
-		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			clientIP = r.RemoteAddr
-		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
-
-		err := driver.DeleteDatatypeField(r.Context(), ac, linkID)
+		items, err := driver.ListDatatypes()
 		if err != nil {
-			utility.DefaultLogger.Error("failed to unlink field from datatype", err)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to unlink field", "type": "error"}}`)
-			w.WriteHeader(http.StatusInternalServerError)
+			utility.DefaultLogger.Error("failed to list datatypes", err)
+			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Field unlinked", "type": "success"}}`)
-		w.WriteHeader(http.StatusOK)
+		list := make([]db.Datatypes, 0)
+		if items != nil {
+			list = *items
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if encErr := json.NewEncoder(w).Encode(list); encErr != nil {
+			utility.DefaultLogger.Error("failed to encode datatypes JSON", encErr)
+		}
 	}
 }

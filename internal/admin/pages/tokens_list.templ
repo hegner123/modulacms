@@ -6,46 +6,50 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
+templ TokensListContent(items []db.Tokens, csrfToken string) {
+	<div class="page-header">
+		<h1>API Tokens</h1>
+	</div>
+	<div class="settings-section">
+		<h3>Create New Token</h3>
+		<form
+			hx-post="/admin/users/tokens"
+			hx-target="#tokens-table-body"
+			hx-swap="innerHTML"
+			class="form-inline"
+		>
+			@partials.CSRFField(csrfToken)
+			<div class="form-field">
+				<label for="token_type">Token Type</label>
+				<select id="token_type" name="token_type">
+					<option value="api">API Key</option>
+					<option value="personal">Personal Access Token</option>
+				</select>
+			</div>
+			<button type="submit" class="btn btn-primary">Generate Token</button>
+		</form>
+	</div>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Type</th>
+				<th>Token</th>
+				<th>User</th>
+				<th>Issued</th>
+				<th>Expires</th>
+				<th>Status</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody id="tokens-table-body">
+			@partials.TokensTableRows(items)
+		</tbody>
+	</table>
+}
+
 templ TokensList(layout layouts.AdminData, items []db.Tokens) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>API Tokens</h1>
-		</div>
-		<div class="settings-section">
-			<h3>Create New Token</h3>
-			<form
-				hx-post="/admin/users/tokens"
-				hx-target="#tokens-table-body"
-				hx-swap="innerHTML"
-				class="form-inline"
-			>
-				@partials.CSRFField(layout.CSRFToken)
-				<div class="form-field">
-					<label for="token_type">Token Type</label>
-					<select id="token_type" name="token_type">
-						<option value="api">API Key</option>
-						<option value="personal">Personal Access Token</option>
-					</select>
-				</div>
-				<button type="submit" class="btn btn-primary">Generate Token</button>
-			</form>
-		</div>
-		<table class="table">
-			<thead>
-				<tr>
-					<th>ID</th>
-					<th>Type</th>
-					<th>Token</th>
-					<th>User</th>
-					<th>Issued</th>
-					<th>Expires</th>
-					<th>Status</th>
-					<th>Actions</th>
-				</tr>
-			</thead>
-			<tbody id="tokens-table-body">
-				@partials.TokensTableRows(items)
-			</tbody>
-		</table>
+		@TokensListContent(items, layout.CSRFToken)
 	}
 }

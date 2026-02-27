@@ -5,14 +5,21 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/partials"
 )
 
+templ PluginDetailContent(name string) {
+	<div class="page-header">
+		<h1>Plugin: { name }</h1>
+		<a href="/admin/plugins" class="btn btn-ghost"
+		   hx-get="/admin/plugins"
+		   hx-target="#main-content"
+		   hx-push-url="true">
+			Back to Plugins
+		</a>
+	</div>
+	@partials.EmptyState("Plugin detail view is not yet available. The plugin system is under development.")
+}
+
 templ PluginDetail(layout layouts.AdminData, name string) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Plugin: { name }</h1>
-			<a href="/admin/plugins" class="btn btn-ghost" hx-get="/admin/plugins" hx-target="#main-content" hx-push-url="true">
-				Back to Plugins
-			</a>
-		</div>
-		@partials.EmptyState("Plugin detail view is not yet available. The plugin system is under development.")
+		@PluginDetailContent(name)
 	}
 }

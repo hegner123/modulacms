@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <clipPath id="bg-clip">
+      <rect width="64" height="64" rx="12"/>
+    </clipPath>
+  </defs>
+  <rect width="64" height="64" rx="12" fill="#000"/>
+  <g clip-path="url(#bg-clip)">
+    <rect x="38" y="0" width="26" height="26" rx="3" fill="#3b82f6"/>
+    <rect x="0" y="26" width="38" height="38" rx="3" fill="#3b82f6"/>
+  </g>
+</svg>

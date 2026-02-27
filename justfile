@@ -52,6 +52,10 @@ test-integration:
 test-minio-down:
     docker compose -f {{compose_sqlite}} down minio
 
+# [Test] Run cross-backend DB integration tests (requires MySQL + PostgreSQL via docker-infra)
+test-integration-db:
+    {{gotest}} -tags integration -v -count=1 -timeout 120s ./internal/db/ -run TestCrossBackend
+
 # [Test] Run the tests and export coverage
 coverage:
     {{gotest}} -cover -covermode=count -coverprofile=profile.cov ./...
@@ -66,6 +70,7 @@ check:
 # [Dev] Build local x86 binary for development
 dev:
     #!/usr/bin/env bash
+    just admin bundle
     echo "" > debug.log
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -80,9 +85,34 @@ dev:
 run: dev
     ./{{x86_binary_name}}
 
+# [Dev] Build and run with live CSS/JS from disk (no embed, no cache)
+# Uses air for hot reload: rebuilds on .go and .templ changes, runs templ generate as pre_cmd
+run-admin:
+    air
+
+# [Dev] Build with live static assets (CSS/JS served from disk)
+dev-admin:
+    #!/usr/bin/env bash
+    mkdir -p out
+    if [ ! -f out/config.json ]; then
+        cp config.json out/config.json
+        echo "Copied config.json to out/ — edit out/config.json for dev settings"
+    fi
+    echo "" > debug.log
+    VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
+    COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+    BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
+    GO111MODULE=on {{gocmd}} build -mod vendor -tags dev \
+        -ldflags="-X 'github.com/hegner123/modulacms/internal/utility.Version=${VERSION}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.GitCommit=${COMMIT}' \
+        -X 'github.com/hegner123/modulacms/internal/utility.BuildDate=${BUILD_DATE}'" \
+        -o out/modulacms-dev ./cmd
+    codesign -s - out/modulacms-dev
+
 # [Build] Build production binary to out/bin/
 build:
     #!/usr/bin/env bash
+    just admin bundle
     VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "dev")
     COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
     BUILD_DATE=$(date -u '+%Y-%m-%d_%H:%M:%S')
@@ -202,18 +232,20 @@ rollback:
     exit 1
     ROLLBACK
 
-# [Admin] Generate templ Go code from .templ files
-admin-generate:
-    templ generate
-
-# [Admin] Watch .templ files and regenerate on change
-admin-watch:
-    templ generate --watch
-
-# [Admin] Verify generated templ files are up-to-date (for CI)
-admin-verify:
-    templ generate
-    git diff --exit-code internal/admin/
+# [Admin] Manage admin panel codegen: just admin <action>
+# Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify
+admin action:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{action}}" in
+        generate)      templ generate ;;
+        watch)         templ generate --watch ;;
+        verify)        templ generate && git diff --exit-code internal/admin/ ;;
+        bundle)        esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js ;;
+        bundle-watch)  esbuild internal/admin/static/js/block-editor-src/index.js --bundle --format=esm --banner:js="// AUTO-GENERATED — DO NOT EDIT. Source: block-editor-src/. Regenerate: just admin bundle" --outfile=internal/admin/static/js/block-editor.js --watch ;;
+        bundle-verify) just admin bundle && git diff --exit-code internal/admin/static/js/block-editor.js ;;
+        *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify"; exit 1 ;;
+    esac
 
 # [SQL] Run sqlc generate in sql directory
 sqlc:
@@ -231,45 +263,37 @@ dbgen-entity name:
 dbgen-verify:
     {{gocmd}} run ./tools/dbgen/... -verify
 
-# [SDK] Install TypeScript SDK dependencies
-sdk-install:
-    cd sdks/typescript && pnpm install
-
-# [SDK] Build all TypeScript SDK packages
-sdk-build:
-    cd sdks/typescript && pnpm build
-
-# [SDK] Run TypeScript SDK tests
-sdk-test:
-    cd sdks/typescript && pnpm test
-
-# [SDK] Typecheck all TypeScript SDK packages
-sdk-typecheck:
-    cd sdks/typescript && pnpm typecheck
-
-# [SDK] Clean TypeScript SDK build artifacts
-sdk-clean:
-    cd sdks/typescript && pnpm clean
-
-# [SDK] Run Go SDK tests
-sdk-go-test:
-    cd sdks/go && go test -v ./...
-
-# [SDK] Vet Go SDK
-sdk-go-vet:
-    cd sdks/go && go vet ./...
-
-# [SDK] Build Swift SDK
-sdk-swift-build:
-    cd sdks/swift && swift build
-
-# [SDK] Run Swift SDK tests
-sdk-swift-test:
-    cd sdks/swift && swift test
-
-# [SDK] Clean Swift SDK build artifacts
-sdk-swift-clean:
-    cd sdks/swift && swift package clean
+# [SDK] Run SDK command: just sdk <lang> <action>
+# Langs: ts (install, build, test, typecheck, clean), go (test, vet), swift (build, test, clean)
+sdk lang action:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{lang}}" in
+        ts)
+            case "{{action}}" in
+                install)   cd sdks/typescript && pnpm install ;;
+                build)     cd sdks/typescript && pnpm build ;;
+                test)      cd sdks/typescript && pnpm test ;;
+                typecheck) cd sdks/typescript && pnpm typecheck ;;
+                clean)     cd sdks/typescript && pnpm clean ;;
+                *)         echo "Unknown ts action: {{action}}"; echo "Actions: install, build, test, typecheck, clean"; exit 1 ;;
+            esac ;;
+        go)
+            case "{{action}}" in
+                test) cd sdks/go && go test -v ./... ;;
+                vet)  cd sdks/go && go vet ./... ;;
+                *)    echo "Unknown go action: {{action}}"; echo "Actions: test, vet"; exit 1 ;;
+            esac ;;
+        swift)
+            case "{{action}}" in
+                build) cd sdks/swift && swift build ;;
+                test)  cd sdks/swift && swift test ;;
+                clean) cd sdks/swift && swift package clean ;;
+                *)     echo "Unknown swift action: {{action}}"; echo "Actions: build, test, clean"; exit 1 ;;
+            esac ;;
+        *)
+            echo "Unknown lang: {{lang}}"; echo "Langs: ts, go, swift"; exit 1 ;;
+    esac
 
 # [MCP] Build MCP server binary
 mcp-build:
@@ -279,33 +303,21 @@ mcp-build:
 mcp-install: mcp-build
     cp mcp/modula-mcp /usr/local/bin/modula-mcp
 
-# [Plugin] List installed plugins
-plugin-list:
-    ./{{x86_binary_name}} plugin list
-
-# [Plugin] Create a new plugin scaffold
-plugin-init name:
-    ./{{x86_binary_name}} plugin init {{name}}
-
-# [Plugin] Validate a plugin
-plugin-validate path:
-    ./{{x86_binary_name}} plugin validate {{path}}
-
-# [Plugin] Show plugin details (requires running server)
-plugin-info name:
-    ./{{x86_binary_name}} plugin info {{name}}
-
-# [Plugin] Reload a plugin (requires running server)
-plugin-reload name:
-    ./{{x86_binary_name}} plugin reload {{name}}
-
-# [Plugin] Enable a plugin (requires running server)
-plugin-enable name:
-    ./{{x86_binary_name}} plugin enable {{name}}
-
-# [Plugin] Disable a plugin (requires running server)
-plugin-disable name:
-    ./{{x86_binary_name}} plugin disable {{name}}
+# [Plugin] Manage plugins: just plugin <action> [name/path]
+# Actions: list, init, validate, info, reload, enable, disable
+plugin action arg='':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{action}}" in
+        list)     ./{{x86_binary_name}} plugin list ;;
+        init)     [ -z "{{arg}}" ] && echo "Usage: just plugin init <name>" && exit 1; ./{{x86_binary_name}} plugin init "{{arg}}" ;;
+        validate) [ -z "{{arg}}" ] && echo "Usage: just plugin validate <path>" && exit 1; ./{{x86_binary_name}} plugin validate "{{arg}}" ;;
+        info)     [ -z "{{arg}}" ] && echo "Usage: just plugin info <name>" && exit 1; ./{{x86_binary_name}} plugin info "{{arg}}" ;;
+        reload)   [ -z "{{arg}}" ] && echo "Usage: just plugin reload <name>" && exit 1; ./{{x86_binary_name}} plugin reload "{{arg}}" ;;
+        enable)   [ -z "{{arg}}" ] && echo "Usage: just plugin enable <name>" && exit 1; ./{{x86_binary_name}} plugin enable "{{arg}}" ;;
+        disable)  [ -z "{{arg}}" ] && echo "Usage: just plugin disable <name>" && exit 1; ./{{x86_binary_name}} plugin disable "{{arg}}" ;;
+        *)        echo "Unknown action: {{action}}"; echo "Actions: list, init, validate, info, reload, enable, disable"; exit 1 ;;
+    esac
 
 # [Lint] Run all available linters
 lint: lint-go lint-dockerfile lint-yaml
@@ -346,33 +358,39 @@ lint-yaml:
     fi
     eval "docker run --rm -it -v $(pwd):/data cytopia/yamllint -f parsable $(git ls-files '*.yml' '*.yaml') ${OUTPUT_OPTIONS}"
 
-# [Docker] Start full stack (CMS + databases + MinIO)
-docker-up:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_file}} up -d --build
-
-# [Docker] Rebuild and restart CMS only (incremental via BuildKit cache)
-docker-dev:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_file}} up -d --build modula
+# [Docker] Manage a database stack: just dc <backend> <action>
+# Backends: full, sqlite, mysql, postgres, prod
+# Actions: up, down, reset, dev, fresh, logs, destroy (full only), minio-reset (postgres only)
+dc backend action:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{backend}}" in
+        full)     FILE="{{compose_file}}" ;;
+        sqlite)   FILE="{{compose_sqlite}}" ;;
+        mysql)    FILE="{{compose_mysql}}" ;;
+        postgres) FILE="{{compose_postgres}}" ;;
+        prod)     FILE="{{prod_compose}}" ;;
+        *)        echo "Unknown backend: {{backend}}"; echo "Backends: full, sqlite, mysql, postgres, prod"; exit 1 ;;
+    esac
+    case "{{action}}" in
+        up)           DOCKER_BUILDKIT=1 docker compose -f "$FILE" up -d --build ;;
+        down)         docker compose -f "$FILE" down ;;
+        reset)        docker compose -f "$FILE" down -v ;;
+        dev)          DOCKER_BUILDKIT=1 docker compose -f "$FILE" up -d --build modula ;;
+        fresh)        docker compose -f "$FILE" down -v && DOCKER_BUILDKIT=1 docker compose -f "$FILE" up -d --build ;;
+        logs)         docker compose -f "$FILE" logs -f modula ;;
+        destroy)
+            if [ "{{backend}}" != "full" ]; then echo "destroy is only supported for the full backend"; exit 1; fi
+            docker compose -f "$FILE" down -v --rmi all ;;
+        minio-reset)
+            if [ "{{backend}}" != "postgres" ]; then echo "minio-reset is only supported for postgres backend"; exit 1; fi
+            docker compose -f "$FILE" down minio && docker compose -f "$FILE" up -d minio ;;
+        *)            echo "Unknown action: {{action}}"; echo "Actions: up, down, reset, dev, fresh, logs, destroy (full), minio-reset (postgres)"; exit 1 ;;
+    esac
 
 # [Docker] Start infrastructure only (postgres, mysql, minio)
 docker-infra:
     docker compose -f {{compose_file}} up -d postgres mysql minio
-
-# [Docker] Stop all containers, keep volumes
-docker-down:
-    docker compose -f {{compose_file}} down
-
-# [Docker] Stop all containers and delete volumes
-docker-reset:
-    docker compose -f {{compose_file}} down -v
-
-# [Docker] Remove all project containers, volumes, and images
-docker-destroy:
-    docker compose -f {{compose_file}} down -v --rmi all
-
-# [Docker] Tail CMS container logs
-docker-logs:
-    docker compose -f {{compose_file}} logs -f modula
 
 # [Docker] Build standalone CMS image (for CI)
 docker-build:
@@ -385,123 +403,17 @@ docker-release:
     docker push {{docker_registry}}modula:latest
     docker push {{docker_registry}}modula:{{version}}
 
-# [Docker:SQLite] Start SQLite stack (CMS + MinIO)
-docker-sqlite-up:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_sqlite}} up -d --build
-
-# [Docker:SQLite] Stop SQLite stack, keep volumes
-docker-sqlite-down:
-    docker compose -f {{compose_sqlite}} down
-
-# [Docker:SQLite] Stop SQLite stack and delete volumes
-docker-sqlite-reset:
-    docker compose -f {{compose_sqlite}} down -v
-
-# [Docker:SQLite] Rebuild and restart CMS only (keeps database intact)
-docker-sqlite-dev:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_sqlite}} up -d --build modula
-
-# [Docker:SQLite] Wipe volumes and rebuild SQLite stack from scratch
-docker-sqlite-fresh: docker-sqlite-reset docker-sqlite-up
-
-# [Docker:SQLite] Tail SQLite stack CMS logs
-docker-sqlite-logs:
-    docker compose -f {{compose_sqlite}} logs -f modula
-
-# [Docker:MySQL] Start MySQL stack (CMS + MySQL + MinIO)
-docker-mysql-up:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_mysql}} up -d --build
-
-# [Docker:MySQL] Stop MySQL stack, keep volumes
-docker-mysql-down:
-    docker compose -f {{compose_mysql}} down
-
-# [Docker:MySQL] Stop MySQL stack and delete volumes
-docker-mysql-reset:
-    docker compose -f {{compose_mysql}} down -v
-
-# [Docker:MySQL] Rebuild and restart CMS only (keeps database intact)
-docker-mysql-dev:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_mysql}} up -d --build modula
-
-# [Docker:MySQL] Wipe volumes and rebuild MySQL stack from scratch
-docker-mysql-fresh: docker-mysql-reset docker-mysql-up
-
-# [Docker:MySQL] Tail MySQL stack CMS logs
-docker-mysql-logs:
-    docker compose -f {{compose_mysql}} logs -f modula
-
-# [Docker:Postgres] Start PostgreSQL stack (CMS + PostgreSQL + MinIO)
-docker-postgres-up:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_postgres}} up -d --build
-
-# [Docker:Postgres] Stop PostgreSQL stack, keep volumes
-docker-postgres-down:
-    docker compose -f {{compose_postgres}} down
-
-# [Docker:Postgres] Stop PostgreSQL stack and delete volumes
-docker-postgres-reset:
-    docker compose -f {{compose_postgres}} down -v
-
-# [Docker:Postgres] Rebuild and restart CMS only (keeps database intact)
-docker-postgres-dev:
-    DOCKER_BUILDKIT=1 docker compose -f {{compose_postgres}} up -d --build modula
-
-# [Docker:Postgres] Wipe volumes and rebuild PostgreSQL stack from scratch
-docker-postgres-fresh: docker-postgres-reset docker-postgres-up
-
-# [Docker:Postgres] Reset MinIO container and volumes only
-docker-postgres-minio-reset:
-    docker compose -f {{compose_postgres}} down minio
-    docker compose -f {{compose_postgres}} up -d minio
-
-# [Docker:Postgres] Tail PostgreSQL stack CMS logs
-docker-postgres-logs:
-    docker compose -f {{compose_postgres}} logs -f modula
-
-# [Docker:Prod] Start production stack (CMS + Caddy + PostgreSQL + MinIO)
-docker-prod-up:
-    DOCKER_BUILDKIT=1 docker compose -f {{prod_compose}} up -d --build
-
-# [Docker:Prod] Stop production stack, keep volumes
-docker-prod-down:
-    docker compose -f {{prod_compose}} down
-
-# [Docker:Prod] Stop production stack and delete volumes
-docker-prod-reset:
-    docker compose -f {{prod_compose}} down -v
-
-# [Docker:Prod] Rebuild and restart CMS only (keeps database intact)
-docker-prod-dev:
-    DOCKER_BUILDKIT=1 docker compose -f {{prod_compose}} up -d --build modula
-
-# [Docker:Prod] Wipe volumes and rebuild production stack from scratch
-docker-prod-fresh: docker-prod-reset docker-prod-up
-
-# [Docker:Prod] Tail production stack CMS logs
-docker-prod-logs:
-    docker compose -f {{prod_compose}} logs -f modula
-
-# [Dealer] Start dealer CMS container
-dealer-up:
-    DOCKER_BUILDKIT=1 {{dealer_compose}} up -d --build
-
-# [Dealer] Stop dealer container, keep volumes
-dealer-down:
-    {{dealer_compose}} down
-
-# [Dealer] Stop dealer container and delete volumes
-dealer-reset:
-    {{dealer_compose}} down -v
-
-# [Dealer] Remove dealer container, volumes, and images
-dealer-destroy:
-    {{dealer_compose}} down -v --rmi all
-
-# [Dealer] Tail dealer container logs
-dealer-logs:
-    {{dealer_compose}} logs -f modula
-
-# [Dealer] Force rebuild dealer image and restart
-dealer-rebuild:
-    DOCKER_BUILDKIT=1 {{dealer_compose}} up -d --build --force-recreate
+# [Dealer] Manage dealer container: just dealer <action>
+# Actions: up, down, reset, destroy, rebuild, logs
+dealer action:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    case "{{action}}" in
+        up)      DOCKER_BUILDKIT=1 {{dealer_compose}} up -d --build ;;
+        down)    {{dealer_compose}} down ;;
+        reset)   {{dealer_compose}} down -v ;;
+        destroy) {{dealer_compose}} down -v --rmi all ;;
+        rebuild) DOCKER_BUILDKIT=1 {{dealer_compose}} up -d --build --force-recreate ;;
+        logs)    {{dealer_compose}} logs -f modula ;;
+        *)       echo "Unknown action: {{action}}"; echo "Actions: up, down, reset, destroy, rebuild, logs"; exit 1 ;;
+    esac

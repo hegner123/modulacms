@@ -4354,6 +4354,30 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 	return i, err
 }
 
+const getDatatypeByType = `-- name: GetDatatypeByType :one
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+WHERE type = $1 LIMIT 1
+`
+
+type GetDatatypeByTypeParams struct {
+	Type string `json:"type"`
+}
+
+func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypeParams) (Datatypes, error) {
+	row := q.db.QueryRowContext(ctx, getDatatypeByType, arg.Type)
+	var i Datatypes
+	err := row.Scan(
+		&i.DatatypeID,
+		&i.ParentID,
+		&i.Label,
+		&i.Type,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
 const getField = `-- name: GetField :one
 SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
 WHERE field_id = $1 LIMIT 1

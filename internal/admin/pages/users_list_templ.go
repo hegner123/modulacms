@@ -47,23 +47,7 @@ func UsersList(layout layouts.AdminData, items []db.UserWithRoleLabelRow, roles 
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"page-header\"><h1>Users</h1><button class=\"btn btn-primary\" onclick=\"document.getElementById('create-user-dialog').showModal()\">Create User</button></div><dialog id=\"create-user-dialog\" class=\"dialog\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2>Create User</h2><button class=\"dialog-close\" onclick=\"document.getElementById('create-user-dialog').close()\">&times;</button></div><form hx-post=\"/admin/users\" hx-target=\"#create-user-form-container\" hx-swap=\"innerHTML\" class=\"admin-form\" id=\"create-user-form\"><div id=\"create-user-form-container\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = partials.UserForm("", "", "", "viewer", roles, nil, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></form></div></dialog><table class=\"table\"><thead><tr><th>Username</th><th>Name</th><th>Email</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead> <tbody id=\"users-table-body\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = partials.UsersTableRowsInner(items).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</tbody></table>")
+			templ_7745c5c3_Err = partials.UsersListContent(items, roles, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

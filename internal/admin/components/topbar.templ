@@ -3,25 +3,25 @@ package components
 import "github.com/hegner123/modulacms/internal/db"
 
 templ Topbar(user *db.Users) {
-	<header class="topbar">
-		<div class="topbar-left">
-			<button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
-				&#9776;
-			</button>
-		</div>
-		<div class="topbar-right">
-			<button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle light/dark mode">
-				&#9728;
-			</button>
-			if user != nil {
-				<div class="topbar-user">
-					<span class="topbar-username">{ user.Username }</span>
-					<span class="topbar-role">{ user.Role }</span>
-				</div>
-				<form method="POST" action="/admin/logout" class="topbar-logout">
-					<button type="submit" class="btn btn-ghost btn-sm">Logout</button>
-				</form>
-			}
-		</div>
-	</header>
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+                &#9776;
+            </button>
+            <a href="/admin/" class="topbar-brand">ModulaCMS</a>
+        </div>
+        <div class="topbar-right">
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme" title="Toggle light/dark mode">
+                &#9728;
+            </button>
+            if user != nil {
+                <div class="topbar-user">
+                    <span class="topbar-username">{ user.Username }</span>
+                </div>
+                <form method="POST" action="/admin/logout" class="topbar-logout">
+                    <button type="submit" class="btn btn-ghost btn-sm">Logout</button>
+                </form>
+            }
+        </div>
+    </header>
 }

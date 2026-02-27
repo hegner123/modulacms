@@ -8,53 +8,6 @@ import (
 
 templ UserDetail(layout layouts.AdminData, user db.Users, roles []db.Roles, csrfToken string) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>User: { user.Name }</h1>
-			<div class="page-header-actions">
-				<a
-					href="/admin/users"
-					class="btn btn-ghost"
-					hx-get="/admin/users"
-					hx-target="#main-content"
-					hx-push-url="true"
-				>
-					Back to Users
-				</a>
-				<button
-					class="btn btn-danger"
-					hx-delete={ "/admin/users/" + user.UserID.String() }
-					hx-confirm="Are you sure you want to delete this user? This cannot be undone."
-					hx-target="#main-content"
-				>
-					Delete User
-				</button>
-			</div>
-		</div>
-		<div class="detail-card">
-			<div class="detail-meta">
-				<span class="detail-meta-item">ID: { user.UserID.String() }</span>
-				<span class="detail-meta-item">Created: { user.DateCreated.String() }</span>
-				<span class="detail-meta-item">Modified: { user.DateModified.String() }</span>
-			</div>
-			<form
-				hx-post={ "/admin/users/" + user.UserID.String() }
-				hx-target="#user-edit-form-container"
-				hx-swap="innerHTML"
-				class="admin-form"
-			>
-				<div id="user-edit-form-container">
-					@partials.UserEditForm(
-						user.UserID.String(),
-						user.Username,
-						user.Name,
-						string(user.Email),
-						user.Role,
-						roles,
-						nil,
-						csrfToken,
-					)
-				</div>
-			</form>
-		</div>
+		@partials.UserDetailContent(user, roles, csrfToken)
 	}
 }

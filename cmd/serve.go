@@ -98,6 +98,12 @@ var serveCmd = &cobra.Command{
 			}
 		}()
 
+		// Ensure system-level data exists (idempotent, safe on every boot).
+		// Non-fatal: CMS still boots, tree composition stays inactive if this fails.
+		if ensureErr := db.EnsureSystemData(rootCtx, driver); ensureErr != nil {
+			utility.DefaultLogger.Warn("EnsureSystemData failed, tree composition may be inactive", ensureErr)
+		}
+
 		cfg, err := mgr.Config()
 		if err != nil {
 			return err

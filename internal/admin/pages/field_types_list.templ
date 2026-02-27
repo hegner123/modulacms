@@ -9,31 +9,35 @@ type FieldTypeInfo struct {
 	Description string
 }
 
+templ FieldTypesListContent(fieldTypes []FieldTypeInfo) {
+	<div class="page-header">
+		<h1>Field Types</h1>
+	</div>
+	<p class="page-description">Available field types that can be assigned to fields. These are built-in types and cannot be modified.</p>
+	<div class="table-container">
+		<table class="data-table">
+			<thead>
+				<tr>
+					<th>Type</th>
+					<th>Label</th>
+					<th>Description</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, ft := range fieldTypes {
+					<tr>
+						<td><code>{ ft.Value }</code></td>
+						<td>{ ft.Label }</td>
+						<td>{ ft.Description }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}
+
 templ FieldTypesList(layout layouts.AdminData, fieldTypes []FieldTypeInfo) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Field Types</h1>
-		</div>
-		<p class="page-description">Available field types that can be assigned to fields. These are built-in types and cannot be modified.</p>
-		<div class="table-container">
-			<table class="data-table">
-				<thead>
-					<tr>
-						<th>Type</th>
-						<th>Label</th>
-						<th>Description</th>
-					</tr>
-				</thead>
-				<tbody>
-					for _, ft := range fieldTypes {
-						<tr>
-							<td><code>{ ft.Value }</code></td>
-							<td>{ ft.Label }</td>
-							<td>{ ft.Description }</td>
-						</tr>
-					}
-				</tbody>
-			</table>
-		</div>
+		@FieldTypesListContent(fieldTypes)
 	}
 }

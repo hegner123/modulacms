@@ -19,6 +19,14 @@ func registerImportTools(srv *server.MCPServer, client *modulacms.Client) {
 		),
 		handleImportContent(client),
 	)
+
+	srv.AddTool(
+		mcp.NewTool("import_bulk",
+			mcp.WithDescription("Bulk import data. Accepts a raw JSON object that is posted directly to the bulk import endpoint."),
+			mcp.WithObject("data", mcp.Required(), mcp.Description("Import data as a JSON object")),
+		),
+		handleImportBulk(client),
+	)
 }
 
 func handleImportContent(client *modulacms.Client) server.ToolHandlerFunc {
@@ -49,6 +57,21 @@ func handleImportContent(client *modulacms.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("invalid format: must be one of contentful, sanity, strapi, wordpress, clean"), nil
 		}
 
+		if err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText(string(result)), nil
+	}
+}
+
+func handleImportBulk(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		args := req.GetArguments()
+		data, ok := args["data"]
+		if !ok {
+			return mcp.NewToolResultError("data is required"), nil
+		}
+		result, err := client.Import.Bulk(ctx, data)
 		if err != nil {
 			return errResult(err), nil
 		}

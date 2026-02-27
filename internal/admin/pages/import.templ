@@ -5,40 +5,40 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/partials"
 )
 
+templ ImportContent(csrfToken string) {
+	<div class="page-header">
+		<h1>Import Content</h1>
+	</div>
+	<div class="settings-section">
+		<p>Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p>
+		<form
+			hx-post="/admin/import"
+			hx-encoding="multipart/form-data"
+			hx-swap="none"
+			class="form-stack"
+		>
+			@partials.CSRFField(csrfToken)
+			<div class="form-field">
+				<label for="format">Source Format</label>
+				<select id="format" name="format" required>
+					<option value="">-- Select format --</option>
+					<option value="wordpress">WordPress</option>
+					<option value="strapi">Strapi</option>
+					<option value="sanity">Sanity</option>
+					<option value="contentful">Contentful</option>
+					<option value="json">Custom JSON</option>
+				</select>
+			</div>
+			<mcms-file-input name="import_file" accept=".json,.xml,.csv,.zip" required label="Export File"></mcms-file-input>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary">Start Import</button>
+			</div>
+		</form>
+	</div>
+}
+
 templ Import(layout layouts.AdminData) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Import Content</h1>
-		</div>
-		<div class="settings-section">
-			<p>Import content from another CMS or a custom JSON export. Select the source format and upload the export file.</p>
-			<form
-				hx-post="/admin/import"
-				hx-encoding="multipart/form-data"
-				hx-swap="none"
-				class="form-stack"
-			>
-				@partials.CSRFField(layout.CSRFToken)
-				<div class="form-field">
-					<label for="format">Source Format</label>
-					<select id="format" name="format" required>
-						<option value="">-- Select format --</option>
-						<option value="wordpress">WordPress</option>
-						<option value="strapi">Strapi</option>
-						<option value="sanity">Sanity</option>
-						<option value="contentful">Contentful</option>
-						<option value="json">Custom JSON</option>
-					</select>
-				</div>
-				<div class="form-field">
-					<label for="import_file">Export File</label>
-					<input type="file" id="import_file" name="import_file" accept=".json,.xml,.csv,.zip" required/>
-					<span class="field-hint">Supported: .json, .xml, .csv, .zip</span>
-				</div>
-				<div class="form-actions">
-					<button type="submit" class="btn btn-primary">Start Import</button>
-				</div>
-			</form>
-		</div>
+		@ImportContent(layout.CSRFToken)
 	}
 }

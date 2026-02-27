@@ -142,6 +142,81 @@ func registerSchemaTools(srv *server.MCPServer, client *modulacms.Client) {
 		),
 		handleUnlinkFieldFromDatatype(client),
 	)
+
+	// --- Datatype-Field Get/Update ---
+
+	srv.AddTool(
+		mcp.NewTool("get_datatype_field",
+			mcp.WithDescription("Get a single datatype-field link by ID."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype-field link ID (ULID)")),
+		),
+		handleGetDatatypeField(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("update_datatype_field",
+			mcp.WithDescription("Update a datatype-field link (change sort order or reassign)."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype-field link ID (ULID)")),
+			mcp.WithString("datatype_id", mcp.Required(), mcp.Description("Datatype ID")),
+			mcp.WithString("field_id", mcp.Required(), mcp.Description("Field ID")),
+			mcp.WithNumber("sort_order", mcp.Required(), mcp.Description("Sort order")),
+		),
+		handleUpdateDatatypeField(client),
+	)
+
+	// --- Datatype Full ---
+
+	srv.AddTool(
+		mcp.NewTool("get_datatype_full",
+			mcp.WithDescription("Get a single datatype with its linked fields joined. If id is omitted, returns all datatypes with fields."),
+			mcp.WithString("id", mcp.Description("Datatype ID (ULID). Omit to list all with fields.")),
+		),
+		handleGetDatatypeFull(client),
+	)
+
+	// --- Field Types ---
+
+	srv.AddTool(
+		mcp.NewTool("list_field_types",
+			mcp.WithDescription("List all field type definitions."),
+		),
+		handleListFieldTypes(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("get_field_type",
+			mcp.WithDescription("Get a single field type by ID."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Field type ID (ULID)")),
+		),
+		handleGetFieldType(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("create_field_type",
+			mcp.WithDescription("Create a new field type definition."),
+			mcp.WithString("type", mcp.Required(), mcp.Description("Field type key (e.g. 'color', 'rating')")),
+			mcp.WithString("label", mcp.Required(), mcp.Description("Human-readable label")),
+		),
+		handleCreateFieldType(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("update_field_type",
+			mcp.WithDescription("Update a field type definition."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Field type ID (ULID)")),
+			mcp.WithString("type", mcp.Required(), mcp.Description("Field type key")),
+			mcp.WithString("label", mcp.Required(), mcp.Description("Human-readable label")),
+		),
+		handleUpdateFieldType(client),
+	)
+
+	srv.AddTool(
+		mcp.NewTool("delete_field_type",
+			mcp.WithDescription("Delete a field type by ID."),
+			mcp.WithString("id", mcp.Required(), mcp.Description("Field type ID (ULID)")),
+		),
+		handleDeleteFieldType(client),
+	)
 }
 
 // --- Datatype Handlers ---
@@ -396,6 +471,155 @@ func handleUnlinkFieldFromDatatype(client *modulacms.Client) server.ToolHandlerF
 			return mcp.NewToolResultError("id is required"), nil
 		}
 		err = client.DatatypeFields.Delete(ctx, modulacms.DatatypeFieldID(id))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText("deleted"), nil
+	}
+}
+
+// --- Datatype-Field Get/Update Handlers ---
+
+func handleGetDatatypeField(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		result, err := client.DatatypeFields.Get(ctx, modulacms.DatatypeFieldID(id))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleUpdateDatatypeField(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		dtID, err := req.RequireString("datatype_id")
+		if err != nil {
+			return mcp.NewToolResultError("datatype_id is required"), nil
+		}
+		fID, err := req.RequireString("field_id")
+		if err != nil {
+			return mcp.NewToolResultError("field_id is required"), nil
+		}
+		sortOrder := int64(req.GetFloat("sort_order", 0))
+		params := modulacms.UpdateDatatypeFieldParams{
+			ID:         modulacms.DatatypeFieldID(id),
+			DatatypeID: modulacms.DatatypeID(dtID),
+			FieldID:    modulacms.FieldID(fID),
+			SortOrder:  sortOrder,
+		}
+		result, err := client.DatatypeFields.Update(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+// --- Datatype Full Handler ---
+
+func handleGetDatatypeFull(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		params := url.Values{}
+		params.Set("full", "true")
+		id := req.GetString("id", "")
+		if id != "" {
+			params.Set("q", id)
+		}
+		result, err := client.Datatypes.RawList(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return mcp.NewToolResultText(string(result)), nil
+	}
+}
+
+// --- Field Type Handlers ---
+
+func handleListFieldTypes(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		result, err := client.FieldTypes.List(ctx)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleGetFieldType(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		result, err := client.FieldTypes.Get(ctx, modulacms.FieldTypeID(id))
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleCreateFieldType(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		typ, err := req.RequireString("type")
+		if err != nil {
+			return mcp.NewToolResultError("type is required"), nil
+		}
+		label, err := req.RequireString("label")
+		if err != nil {
+			return mcp.NewToolResultError("label is required"), nil
+		}
+		params := modulacms.CreateFieldTypeParams{Type: typ, Label: label}
+		result, err := client.FieldTypes.Create(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleUpdateFieldType(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		typ, err := req.RequireString("type")
+		if err != nil {
+			return mcp.NewToolResultError("type is required"), nil
+		}
+		label, err := req.RequireString("label")
+		if err != nil {
+			return mcp.NewToolResultError("label is required"), nil
+		}
+		params := modulacms.UpdateFieldTypeParams{
+			FieldTypeID: modulacms.FieldTypeID(id),
+			Type:        typ,
+			Label:       label,
+		}
+		result, err := client.FieldTypes.Update(ctx, params)
+		if err != nil {
+			return errResult(err), nil
+		}
+		return jsonResult(result)
+	}
+}
+
+func handleDeleteFieldType(client *modulacms.Client) server.ToolHandlerFunc {
+	return func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		id, err := req.RequireString("id")
+		if err != nil {
+			return mcp.NewToolResultError("id is required"), nil
+		}
+		err = client.FieldTypes.Delete(ctx, modulacms.FieldTypeID(id))
 		if err != nil {
 			return errResult(err), nil
 		}

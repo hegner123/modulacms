@@ -1,28 +1,67 @@
 package partials
 
-import (
-	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
-)
-
-templ RolesPermissionList(permissions []db.Permissions, activePerms map[types.PermissionID]bool) {
-	<div class="permissions-checklist">
-		for _, perm := range permissions {
+templ RolesPermissionList(matrix PermissionMatrix) {
+	if matrix.AdminPerm.Exists {
+		<div class="perm-matrix-admin">
 			<label class="permission-checkbox">
 				<input
 					type="checkbox"
 					name="permissions"
-					value={ perm.PermissionID.String() }
-					checked?={ activePerms != nil && activePerms[perm.PermissionID] }
+					value={ matrix.AdminPerm.PermissionID.String() }
+					checked?={ matrix.AdminPerm.Active }
 				/>
-				<span class="permission-label">{ perm.Label }</span>
-				if perm.SystemProtected {
-					<span class="badge badge-info badge-sm">System</span>
-				}
+				<span class="permission-label"><strong>Super Admin</strong></span>
 			</label>
-		}
-		if len(permissions) == 0 {
-			<p class="empty-text">No permissions available.</p>
-		}
-	</div>
+		</div>
+	}
+	if len(matrix.Rows) > 0 {
+		<div class="perm-matrix-wrap">
+			<table class="perm-matrix">
+				<thead>
+					<tr>
+						<th class="perm-matrix-resource">Resource</th>
+						<th class="perm-matrix-cell"></th>
+						for _, col := range matrix.Columns {
+							<th class="perm-matrix-op">
+								<label class="perm-matrix-col-toggle">
+									<input type="checkbox" data-toggle-col={ col }/>
+									<span>{ col }</span>
+								</label>
+							</th>
+						}
+					</tr>
+				</thead>
+				<tbody>
+					for _, row := range matrix.Rows {
+						<tr>
+							<td class="perm-matrix-resource">{ row.DisplayName }</td>
+							<td class="perm-matrix-cell">
+								<label class="perm-matrix-row-toggle">
+									<input type="checkbox" data-toggle-row={ row.Resource }/>
+								</label>
+							</td>
+							for _, col := range matrix.Columns {
+								<td class="perm-matrix-cell">
+									if cell, ok := row.Cells[col]; ok && cell.Exists {
+										<input
+											type="checkbox"
+											name="permissions"
+											value={ cell.PermissionID.String() }
+											checked?={ cell.Active }
+											data-resource={ row.Resource }
+											data-operation={ col }
+										/>
+									} else {
+										<span class="perm-matrix-na">&mdash;</span>
+									}
+								</td>
+							}
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	} else {
+		<p class="empty-text">No permissions available.</p>
+	}
 }

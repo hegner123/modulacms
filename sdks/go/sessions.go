@@ -10,6 +10,26 @@ type SessionsResource struct {
 	http *httpClient
 }
 
+// List returns all sessions.
+func (s *SessionsResource) List(ctx context.Context) ([]Session, error) {
+	var result []Session
+	if err := s.http.get(ctx, "/api/v1/sessions", nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// Get returns a single session by ID.
+func (s *SessionsResource) Get(ctx context.Context, id SessionID) (*Session, error) {
+	params := url.Values{}
+	params.Set("q", string(id))
+	var result Session
+	if err := s.http.get(ctx, "/api/v1/sessions/", params, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
 // Update updates an existing session.
 func (s *SessionsResource) Update(ctx context.Context, params UpdateSessionParams) (*Session, error) {
 	var result Session

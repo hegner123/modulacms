@@ -1394,6 +1394,22 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 			}
 		}
 
+		// Block deletion of system datatypes (e.g. _root, _reference)
+		targetDt, dtErr := d.GetDatatype(msg.DatatypeID)
+		if dtErr != nil {
+			logger.Ferror("Failed to look up datatype", dtErr)
+			return ActionResultMsg{
+				Title:   "Error",
+				Message: fmt.Sprintf("Failed to look up datatype: %v", dtErr),
+			}
+		}
+		if types.IsReservedPrefix(targetDt.Type) {
+			return ActionResultMsg{
+				Title:   "Cannot Delete",
+				Message: fmt.Sprintf("Cannot delete system datatype '%s' (type: %s).", targetDt.Label, targetDt.Type),
+			}
+		}
+
 		// Delete all junction records (datatypes_fields) for this datatype
 		dtFields, err := d.ListDatatypeFieldByDatatypeID(msg.DatatypeID)
 		if err != nil {

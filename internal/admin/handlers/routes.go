@@ -50,14 +50,22 @@ func RoutesListHandler(driver db.DbDriver) http.HandlerFunc {
 			BaseURL:    pd.BaseURL,
 		}
 
+		csrfToken := CSRFTokenFromContext(r.Context())
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Routes"}`)
+			RenderWithOOB(w, r, pages.RoutesListContent(list, pg),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.RouteCreateDialog(csrfToken)})
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, partials.RoutesTableRows(list, pg))
 			return
 		}
 
-		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Routes")
-		Render(w, r, pages.RoutesList(layout, list, pg, csrfToken))
+		Render(w, r, pages.RoutesList(layout, list, pg))
 	}
 }
 
@@ -288,6 +296,12 @@ func AdminRoutesListHandler(driver db.DbDriver) http.HandlerFunc {
 			Limit:      pd2.Limit,
 			Target:     pd2.Target,
 			BaseURL:    pd2.BaseURL,
+		}
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Admin Routes"}`)
+			Render(w, r, pages.AdminRoutesListContent(list, pg2))
+			return
 		}
 
 		if IsHTMX(r) {

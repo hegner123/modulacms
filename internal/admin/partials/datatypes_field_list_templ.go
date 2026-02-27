@@ -10,8 +10,8 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "github.com/hegner123/modulacms/internal/db"
 
-// DatatypeFieldList renders the list of fields linked to a datatype.
-// Used on the datatype detail page and as an HTMX partial for link/unlink operations.
+// DatatypeFieldList renders the list of fields belonging to a datatype.
+// Used on the datatype detail page and as an HTMX partial after field mutations.
 func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -34,7 +34,7 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(fields) == 0 {
-			templ_7745c5c3_Err = EmptyState("No fields linked. Use the Link Field button to add fields to this datatype.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = EmptyState("No fields. Use the Add Field button to create fields for this datatype.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -51,7 +51,7 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 				var templ_7745c5c3_Var2 templ.SafeURL
 				templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 23, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 23, Col: 97}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 				if templ_7745c5c3_Err != nil {
@@ -64,7 +64,7 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(f.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 24, Col: 17}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 24, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -77,7 +77,7 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(f.Type.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 27, Col: 47}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 27, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -88,15 +88,15 @@ func DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string) 
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + datatypeID + "/fields/" + f.FieldID.String())
+				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/fields/" + f.FieldID.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 30, Col: 100}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatypes_field_list.templ`, Line: 30, Col: 92}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Unlink this field from the datatype?\">Unlink</button></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" hx-target=\"closest tr\" hx-swap=\"outerHTML swap:300ms\" hx-confirm=\"Delete this field? This cannot be undone.\">Delete</button></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

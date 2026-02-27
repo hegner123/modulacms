@@ -42,6 +42,26 @@ func quoteIdent(d Dialect, name string) string {
 	return `"` + name + `"`
 }
 
+// quoteQualifiedIdent quotes a column name that may be qualified with a table name.
+// "col" becomes `"col"`, "table.col" becomes `"table"."col"`.
+// Returns an error if either part fails validation.
+func quoteQualifiedIdent(d Dialect, name string) (string, error) {
+	parts := strings.SplitN(name, ".", 2)
+	if len(parts) == 1 {
+		if err := ValidColumnName(parts[0]); err != nil {
+			return "", fmt.Errorf("invalid column %q: %w", name, err)
+		}
+		return quoteIdent(d, parts[0]), nil
+	}
+	if err := ValidTableName(parts[0]); err != nil {
+		return "", fmt.Errorf("invalid table in qualified name %q: %w", name, err)
+	}
+	if err := ValidColumnName(parts[1]); err != nil {
+		return "", fmt.Errorf("invalid column in qualified name %q: %w", name, err)
+	}
+	return quoteIdent(d, parts[0]) + "." + quoteIdent(d, parts[1]), nil
+}
+
 // placeholder returns the parameter placeholder for the given 1-based index.
 // SQLite and MySQL use ?; PostgreSQL uses $1, $2, etc.
 func placeholder(d Dialect, index int) string {
@@ -395,13 +415,19 @@ type Row map[string]any
 
 // SelectParams configures a SELECT query.
 type SelectParams struct {
-	Table   string
-	Columns []string       // nil = SELECT *
-	Where   map[string]any // AND equality; nil values produce IS NULL
-	OrderBy string         // empty = no ORDER BY
-	Desc    bool           // only used when OrderBy is set
-	Limit   int64          // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
-	Offset  int64          // 0 = no offset
+	Table    string
+	Columns  []string         // nil = SELECT *
+	Where    map[string]any   // AND conditions; nil values produce IS NULL; Condition values use operators
+	WhereOr  []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
+	Joins    []JoinClause     // JOIN clauses (INNER, LEFT, RIGHT)
+	OrderBy  string           // empty = no ORDER BY (legacy; use Orders for multi-column)
+	Desc     bool             // only used when OrderBy is set (legacy; use Orders for multi-column)
+	Orders   []OrderByClause  // multi-column ORDER BY; takes precedence over OrderBy/Desc when non-empty
+	GroupBy  []string         // GROUP BY column names
+	Having   map[string]any   // HAVING conditions (same Condition system as Where); requires GroupBy
+	Distinct bool             // SELECT DISTINCT
+	Limit    int64            // 0 = default (maxLimit); negative = no limit; positive = capped at maxLimit
+	Offset   int64            // 0 = no offset
 }
 
 // InsertParams configures an INSERT query.
@@ -412,15 +438,92 @@ type InsertParams struct {
 
 // UpdateParams configures an UPDATE query.
 type UpdateParams struct {
-	Table string
-	Set   map[string]any // must be non-empty
-	Where map[string]any // must be non-empty (safety: prevents full-table update)
+	Table   string
+	Set     map[string]any   // must be non-empty
+	Where   map[string]any   // AND conditions (safety: prevents full-table update)
+	WhereOr []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
 }
 
 // DeleteParams configures a DELETE query.
 type DeleteParams struct {
-	Table string
-	Where map[string]any // must be non-empty (safety: prevents full-table delete)
+	Table   string
+	Where   map[string]any   // must be non-empty (safety: prevents full-table delete)
+	WhereOr []map[string]any // OR groups; each inner map is AND-joined, groups are OR-joined
+}
+
+// ===== CONDITION TYPE =====
+
+// Condition represents a comparison operator with a value for WHERE clauses.
+// Use the constructor functions (Eq, Gt, Like, In, etc.) to create conditions.
+type Condition struct {
+	op    string
+	value any
+}
+
+// Eq creates an explicit equality condition (=).
+func Eq(v any) Condition { return Condition{op: "=", value: v} }
+
+// Neq creates a not-equal condition (!=).
+func Neq(v any) Condition { return Condition{op: "!=", value: v} }
+
+// Gt creates a greater-than condition (>).
+func Gt(v any) Condition { return Condition{op: ">", value: v} }
+
+// Gte creates a greater-than-or-equal condition (>=).
+func Gte(v any) Condition { return Condition{op: ">=", value: v} }
+
+// Lt creates a less-than condition (<).
+func Lt(v any) Condition { return Condition{op: "<", value: v} }
+
+// Lte creates a less-than-or-equal condition (<=).
+func Lte(v any) Condition { return Condition{op: "<=", value: v} }
+
+// Like creates a LIKE pattern condition.
+func Like(v string) Condition { return Condition{op: "LIKE", value: v} }
+
+// NotLike creates a NOT LIKE pattern condition.
+func NotLike(v string) Condition { return Condition{op: "NOT LIKE", value: v} }
+
+// In creates an IN condition. Panics if no values provided.
+func In(vals ...any) Condition { return Condition{op: "IN", value: vals} }
+
+// NotIn creates a NOT IN condition. Panics if no values provided.
+func NotIn(vals ...any) Condition { return Condition{op: "NOT IN", value: vals} }
+
+// Between creates a BETWEEN low AND high condition.
+func Between(low, high any) Condition { return Condition{op: "BETWEEN", value: [2]any{low, high}} }
+
+// IsNull creates an IS NULL condition.
+func IsNull() Condition { return Condition{op: "IS NULL"} }
+
+// IsNotNull creates an IS NOT NULL condition.
+func IsNotNull() Condition { return Condition{op: "IS NOT NULL"} }
+
+// ===== JOIN TYPES =====
+
+// JoinType represents the type of SQL JOIN.
+type JoinType string
+
+const (
+	InnerJoin JoinType = "INNER JOIN"
+	LeftJoin  JoinType = "LEFT JOIN"
+	RightJoin JoinType = "RIGHT JOIN"
+)
+
+// JoinClause defines a single JOIN in a SELECT query.
+type JoinClause struct {
+	Type       JoinType // InnerJoin, LeftJoin, RightJoin
+	Table      string   // table to join (validated)
+	LocalCol   string   // column on the left side (may be "table.col")
+	ForeignCol string   // column on the joined table (may be "table.col")
+}
+
+// ===== ORDER BY =====
+
+// OrderByClause defines a single column in a multi-column ORDER BY.
+type OrderByClause struct {
+	Column string // may be qualified ("table.col")
+	Desc   bool
 }
 
 const maxLimit int64 = 10000
@@ -564,7 +667,7 @@ func QInsert(ctx context.Context, exec Executor, d Dialect, p InsertParams) (sql
 	return exec.ExecContext(ctx, query, args...)
 }
 
-// QUpdate executes an UPDATE query. Where must be non-empty to prevent accidental full-table updates.
+// QUpdate executes an UPDATE query. Where or WhereOr must be non-empty to prevent accidental full-table updates.
 func QUpdate(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
 		return nil, fmt.Errorf("invalid table: %w", err)
@@ -572,7 +675,7 @@ func QUpdate(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql
 	if len(p.Set) == 0 {
 		return nil, fmt.Errorf("update requires non-empty set")
 	}
-	if len(p.Where) == 0 {
+	if len(p.Where) == 0 && len(p.WhereOr) == 0 {
 		return nil, fmt.Errorf("update requires non-empty where (safety: prevents full-table update)")
 	}
 
@@ -596,28 +699,29 @@ func QUpdate(ctx context.Context, exec Executor, d Dialect, p UpdateParams) (sql
 
 	query := fmt.Sprintf(`UPDATE %s SET %s`, quoteIdent(d, p.Table), strings.Join(setClauses, ", "))
 
-	whereClause, whereArgs, err := buildWhere(d, p.Where, argIdx)
+	whereClause, whereArgs, nextIdx, err := buildWhereClause(d, p.Where, p.WhereOr, argIdx)
 	if err != nil {
 		return nil, err
 	}
+	_ = nextIdx
 	query += whereClause
 	args = append(args, whereArgs...)
 
 	return exec.ExecContext(ctx, query, args...)
 }
 
-// QDelete executes a DELETE query. Where must be non-empty to prevent accidental full-table deletes.
+// QDelete executes a DELETE query. Where or WhereOr must be non-empty to prevent accidental full-table deletes.
 func QDelete(ctx context.Context, exec Executor, d Dialect, p DeleteParams) (sql.Result, error) {
 	if err := ValidTableName(p.Table); err != nil {
 		return nil, fmt.Errorf("invalid table: %w", err)
 	}
-	if len(p.Where) == 0 {
+	if len(p.Where) == 0 && len(p.WhereOr) == 0 {
 		return nil, fmt.Errorf("delete requires non-empty where (safety: prevents full-table delete)")
 	}
 
 	query := fmt.Sprintf(`DELETE FROM %s`, quoteIdent(d, p.Table))
 
-	whereClause, args, err := buildWhere(d, p.Where, 1)
+	whereClause, args, _, err := buildWhereClause(d, p.Where, p.WhereOr, 1)
 	if err != nil {
 		return nil, err
 	}
@@ -687,27 +791,101 @@ func buildSelectQuery(d Dialect, p SelectParams) (query string, args []any, err 
 		return "", nil, fmt.Errorf("invalid table: %w", err)
 	}
 
+	// DISTINCT
+	selectKw := "SELECT"
+	if p.Distinct {
+		selectKw = "SELECT DISTINCT"
+	}
+
+	// Columns
 	cols := "*"
 	if len(p.Columns) > 0 {
 		quoted := make([]string, len(p.Columns))
 		for i, c := range p.Columns {
-			if err := ValidColumnName(c); err != nil {
-				return "", nil, fmt.Errorf("invalid column %q: %w", c, err)
+			q, qerr := quoteQualifiedIdent(d, c)
+			if qerr != nil {
+				return "", nil, fmt.Errorf("invalid column %q: %w", c, qerr)
 			}
-			quoted[i] = quoteIdent(d, c)
+			quoted[i] = q
 		}
 		cols = strings.Join(quoted, ", ")
 	}
 
-	query = fmt.Sprintf(`SELECT %s FROM %s`, cols, quoteIdent(d, p.Table))
-	whereClause, whereArgs, err := buildWhere(d, p.Where, 1)
-	if err != nil {
-		return "", nil, err
+	query = fmt.Sprintf(`%s %s FROM %s`, selectKw, cols, quoteIdent(d, p.Table))
+	argIdx := 1
+
+	// JOINs
+	for _, j := range p.Joins {
+		if err := ValidTableName(j.Table); err != nil {
+			return "", nil, fmt.Errorf("invalid join table %q: %w", j.Table, err)
+		}
+		localQ, lerr := quoteQualifiedIdent(d, j.LocalCol)
+		if lerr != nil {
+			return "", nil, fmt.Errorf("invalid join local column %q: %w", j.LocalCol, lerr)
+		}
+		foreignQ, ferr := quoteQualifiedIdent(d, j.ForeignCol)
+		if ferr != nil {
+			return "", nil, fmt.Errorf("invalid join foreign column %q: %w", j.ForeignCol, ferr)
+		}
+		joinType := string(j.Type)
+		if joinType == "" {
+			joinType = "INNER JOIN"
+		}
+		query += fmt.Sprintf(` %s %s ON %s = %s`, joinType, quoteIdent(d, j.Table), localQ, foreignQ)
+	}
+
+	// WHERE
+	whereClause, whereArgs, nextIdx, werr := buildWhereClause(d, p.Where, p.WhereOr, argIdx)
+	if werr != nil {
+		return "", nil, werr
 	}
 	query += whereClause
 	args = whereArgs
+	argIdx = nextIdx
 
-	if p.OrderBy != "" {
+	// GROUP BY
+	if len(p.GroupBy) > 0 {
+		groupCols := make([]string, len(p.GroupBy))
+		for i, c := range p.GroupBy {
+			q, qerr := quoteQualifiedIdent(d, c)
+			if qerr != nil {
+				return "", nil, fmt.Errorf("invalid group_by column %q: %w", c, qerr)
+			}
+			groupCols[i] = q
+		}
+		query += " GROUP BY " + strings.Join(groupCols, ", ")
+	}
+
+	// HAVING (requires GROUP BY)
+	if len(p.Having) > 0 {
+		if len(p.GroupBy) == 0 {
+			return "", nil, fmt.Errorf("having requires group_by")
+		}
+		havingClause, havingArgs, hNextIdx, herr := buildConditionMap(d, p.Having, argIdx)
+		if herr != nil {
+			return "", nil, fmt.Errorf("invalid having: %w", herr)
+		}
+		query += " HAVING " + strings.Join(havingClause, " AND ")
+		args = append(args, havingArgs...)
+		argIdx = hNextIdx
+	}
+
+	// ORDER BY: new Orders takes precedence over legacy OrderBy/Desc
+	if len(p.Orders) > 0 {
+		orderParts := make([]string, len(p.Orders))
+		for i, o := range p.Orders {
+			q, qerr := quoteQualifiedIdent(d, o.Column)
+			if qerr != nil {
+				return "", nil, fmt.Errorf("invalid order_by column %q: %w", o.Column, qerr)
+			}
+			dir := "ASC"
+			if o.Desc {
+				dir = "DESC"
+			}
+			orderParts[i] = q + " " + dir
+		}
+		query += " ORDER BY " + strings.Join(orderParts, ", ")
+	} else if p.OrderBy != "" {
 		if err := ValidColumnName(p.OrderBy); err != nil {
 			return "", nil, fmt.Errorf("invalid order_by column %q: %w", p.OrderBy, err)
 		}
@@ -738,31 +916,155 @@ func buildSelectQuery(d Dialect, p SelectParams) (query string, args []any, err 
 }
 
 // buildWhere constructs a WHERE clause from a map of column=value conditions joined by AND.
-// nil values produce "column" IS NULL. Keys are sorted for deterministic output.
+// nil values produce "column" IS NULL. Condition values use their operator.
+// Keys are sorted for deterministic output.
 // argOffset is the 1-based starting index for placeholders (relevant for PostgreSQL).
+// This is the thin wrapper used by QCount and QExists (which don't support WhereOr).
 func buildWhere(d Dialect, where map[string]any, argOffset int) (clause string, args []any, err error) {
 	if len(where) == 0 {
 		return "", nil, nil
 	}
 
-	keys := sortedKeys(where)
-	conditions := make([]string, 0, len(keys))
+	conditions, condArgs, _, cerr := buildConditionMap(d, where, argOffset)
+	if cerr != nil {
+		return "", nil, cerr
+	}
+
+	return " WHERE " + strings.Join(conditions, " AND "), condArgs, nil
+}
+
+// buildWhereClause constructs a full WHERE clause supporting both AND conditions (where)
+// and OR groups (whereOr). Returns the clause string, args, next arg index, and error.
+//
+// Semantics:
+//   - Where only   → WHERE a AND b
+//   - WhereOr only → WHERE (g1) OR (g2)
+//   - Both         → WHERE (a AND b) AND ((g1) OR (g2))
+func buildWhereClause(d Dialect, where map[string]any, whereOr []map[string]any, argOffset int) (clause string, args []any, nextIdx int, err error) {
+	argIdx := argOffset
+
+	if len(where) == 0 && len(whereOr) == 0 {
+		return "", nil, argIdx, nil
+	}
+
+	var parts []string
+
+	// AND group from Where
+	if len(where) > 0 {
+		conditions, condArgs, nextArg, cerr := buildConditionMap(d, where, argIdx)
+		if cerr != nil {
+			return "", nil, 0, cerr
+		}
+		andPart := strings.Join(conditions, " AND ")
+		if len(whereOr) > 0 {
+			andPart = "(" + andPart + ")"
+		}
+		parts = append(parts, andPart)
+		args = append(args, condArgs...)
+		argIdx = nextArg
+	}
+
+	// OR groups from WhereOr
+	if len(whereOr) > 0 {
+		orParts := make([]string, 0, len(whereOr))
+		for _, group := range whereOr {
+			if len(group) == 0 {
+				continue
+			}
+			conditions, condArgs, nextArg, cerr := buildConditionMap(d, group, argIdx)
+			if cerr != nil {
+				return "", nil, 0, cerr
+			}
+			orParts = append(orParts, "("+strings.Join(conditions, " AND ")+")")
+			args = append(args, condArgs...)
+			argIdx = nextArg
+		}
+		if len(orParts) > 0 {
+			orClause := strings.Join(orParts, " OR ")
+			if len(where) > 0 {
+				orClause = "(" + orClause + ")"
+			}
+			parts = append(parts, orClause)
+		}
+	}
+
+	if len(parts) == 0 {
+		return "", nil, argIdx, nil
+	}
+
+	return " WHERE " + strings.Join(parts, " AND "), args, argIdx, nil
+}
+
+// buildConditionMap processes a map[string]any of conditions, returning SQL fragments,
+// args, and the next arg index. Handles plain values, nil, and Condition types.
+func buildConditionMap(d Dialect, m map[string]any, argOffset int) (conditions []string, args []any, nextIdx int, err error) {
+	keys := sortedKeys(m)
+	conditions = make([]string, 0, len(keys))
 	argIdx := argOffset
 
 	for _, k := range keys {
-		if err := ValidColumnName(k); err != nil {
-			return "", nil, fmt.Errorf("invalid where column %q: %w", k, err)
+		quotedCol, qerr := quoteQualifiedIdent(d, k)
+		if qerr != nil {
+			return nil, nil, 0, fmt.Errorf("invalid where column %q: %w", k, qerr)
 		}
-		if where[k] == nil {
-			conditions = append(conditions, fmt.Sprintf(`%s IS NULL`, quoteIdent(d, k)))
-		} else {
-			conditions = append(conditions, fmt.Sprintf(`%s = %s`, quoteIdent(d, k), placeholder(d, argIdx)))
-			args = append(args, where[k])
+
+		switch v := m[k].(type) {
+		case Condition:
+			frag, condArgs, nextArg, cerr := buildCondition(d, quotedCol, v, argIdx)
+			if cerr != nil {
+				return nil, nil, 0, fmt.Errorf("column %q: %w", k, cerr)
+			}
+			conditions = append(conditions, frag)
+			args = append(args, condArgs...)
+			argIdx = nextArg
+		case nil:
+			conditions = append(conditions, quotedCol+" IS NULL")
+		default:
+			conditions = append(conditions, quotedCol+" = "+placeholder(d, argIdx))
+			args = append(args, v)
 			argIdx++
 		}
 	}
 
-	return " WHERE " + strings.Join(conditions, " AND "), args, nil
+	return conditions, args, argIdx, nil
+}
+
+// buildCondition generates a SQL fragment for a single Condition.
+func buildCondition(d Dialect, quotedCol string, cond Condition, argIdx int) (frag string, args []any, nextIdx int, err error) {
+	switch cond.op {
+	case "=", "!=", ">", ">=", "<", "<=", "LIKE", "NOT LIKE":
+		return fmt.Sprintf("%s %s %s", quotedCol, cond.op, placeholder(d, argIdx)),
+			[]any{cond.value}, argIdx + 1, nil
+
+	case "IN", "NOT IN":
+		vals, ok := cond.value.([]any)
+		if !ok || len(vals) == 0 {
+			return "", nil, 0, fmt.Errorf("%s requires at least one value", cond.op)
+		}
+		phs := make([]string, len(vals))
+		for i := range vals {
+			phs[i] = placeholder(d, argIdx+i)
+		}
+		return fmt.Sprintf("%s %s (%s)", quotedCol, cond.op, strings.Join(phs, ", ")),
+			vals, argIdx + len(vals), nil
+
+	case "BETWEEN":
+		pair, ok := cond.value.([2]any)
+		if !ok {
+			return "", nil, 0, fmt.Errorf("BETWEEN requires [2]any value")
+		}
+		return fmt.Sprintf("%s BETWEEN %s AND %s", quotedCol, placeholder(d, argIdx), placeholder(d, argIdx+1)),
+			[]any{pair[0], pair[1]}, argIdx + 2, nil
+
+	case "IS NULL":
+		return quotedCol + " IS NULL", nil, argIdx, nil
+
+	case "IS NOT NULL":
+		return quotedCol + " IS NOT NULL", nil, argIdx, nil
+
+	default:
+		return "", nil, 0, fmt.Errorf("unsupported operator %q", cond.op)
+	}
 }
 
 // execQuery runs a SELECT query and scans all result rows into []Row.

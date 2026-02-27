@@ -5,11 +5,15 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/partials"
 )
 
+templ PluginsListContent() {
+	<div class="page-header">
+		<h1>Plugins</h1>
+	</div>
+	@partials.EmptyState("Plugin system coming soon. Lua-based plugins will be manageable from this page once the runtime is enabled.")
+}
+
 templ PluginsList(layout layouts.AdminData) {
 	@layouts.Admin(layout) {
-		<div class="page-header">
-			<h1>Plugins</h1>
-		</div>
-		@partials.EmptyState("Plugin system coming soon. Lua-based plugins will be manageable from this page once the runtime is enabled.")
+		@PluginsListContent()
 	}
 }

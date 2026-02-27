@@ -1,25 +1,28 @@
 package layouts
 
 templ Base(title string, csrfToken string, version string) {
-	<!DOCTYPE html>
-	<html lang="en">
-	<head>
-		<meta charset="UTF-8"/>
-		<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-		<meta name="csrf-token" content={ csrfToken }/>
-		<title>{ title } — ModulaCMS</title>
-		<script>
-			// Apply saved theme before CSS loads to prevent flash
-			if (localStorage.getItem('mcms-theme') === 'light') {
-				document.documentElement.classList.add('light');
-			}
-		</script>
-		<link rel="stylesheet" href={ "/admin/static/css/admin.css?v=" + version }/>
-		<script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
-		<script src={ "/admin/static/js/admin.js?v=" + version } defer></script>
-	</head>
-	<body hx-headers='{"X-CSRF-Token": ""}' class="admin-body">
-		{ children... }
-	</body>
-	</html>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="csrf-token" content={ csrfToken }/>
+        <link rel="icon" type="image/svg+xml" href="/admin/static/icons/favicon.svg"/>
+        <title>{ title } — ModulaCMS</title>
+        <script>
+            // Apply saved theme before CSS loads to prevent flash
+            if (localStorage.getItem('mcms-theme') === 'light') {
+                document.documentElement.classList.add('light');
+            }
+        </script>
+        <link rel="stylesheet" href={ "/admin/static/css/admin.css?v=" + version }/>
+        <script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
+        <script src="https://unpkg.com/lucide@latest"></script>
+        <script src={ "/admin/static/js/admin.js?v=" + version } defer></script>
+        <script type="module" src={ "/admin/static/js/block-editor.js?v=" + version }></script>
+    </head>
+    <body hx-headers='{"X-CSRF-Token": ""}' class="admin-body">
+        { children... }
+    </body>
+    </html>
 }

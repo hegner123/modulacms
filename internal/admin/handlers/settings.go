@@ -20,7 +20,7 @@ func SettingsHandler(mgr *config.Manager) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Settings")
-		Render(w, r, pages.Settings(layout, cfg))
+		RenderNav(w, r, "Settings", pages.SettingsContent(cfg, layout.CSRFToken), pages.Settings(layout, cfg))
 	}
 }
 

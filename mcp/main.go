@@ -42,6 +42,17 @@ func main() {
 	registerRBACTools(srv, client)
 	registerConfigTools(srv, client)
 	registerImportTools(srv, client)
+	registerDeployTools(srv, client)
+	registerHealthTools(srv, client)
+	registerSessionTools(srv, client)
+	registerTokenTools(srv, client)
+	registerSSHKeyTools(srv, client)
+	registerOAuthTools(srv, client)
+	registerTableTools(srv, client)
+	registerPluginTools(srv, client)
+	registerAdminContentTools(srv, client)
+	registerAdminSchemaTools(srv, client)
+	registerAdminRouteTools(srv, client)
 
 	if err := server.ServeStdio(srv); err != nil {
 		fmt.Fprintf(os.Stderr, "Server error: %v\n", err)

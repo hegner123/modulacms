@@ -1,9 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
@@ -13,7 +16,6 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
-	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -24,6 +26,37 @@ func clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return ip
+}
+
+// resolveContentDisplayName returns a human-readable name for a content item.
+// Priority: route title + slug > title content field > truncated ID.
+func resolveContentDisplayName(driver db.DbDriver, item db.ContentData) string {
+	// If a route is assigned, use route title and slug
+	if item.RouteID.Valid {
+		rt, rtErr := driver.GetRoute(item.RouteID.ID)
+		if rtErr == nil && rt != nil {
+			return rt.Title
+		}
+	}
+
+	// Look for a "title" content field
+	fields, fieldsErr := driver.ListContentFieldsWithFieldByContentData(
+		types.NullableContentID{ID: item.ContentDataID, Valid: true},
+	)
+	if fieldsErr == nil && fields != nil {
+		for _, f := range *fields {
+			if strings.EqualFold(f.FLabel, "title") && f.FieldValue != "" {
+				return f.FieldValue
+			}
+		}
+	}
+
+	// Fallback: truncated ID
+	id := item.ContentDataID.String()
+	if len(id) > 12 {
+		return id[:8] + "..."
+	}
+	return id
 }
 
 // ContentListHandler lists content with pagination.
@@ -49,9 +82,22 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		var contentItems []db.ContentData
+		var rawItems []db.ContentData
 		if items != nil {
-			contentItems = *items
+			rawItems = *items
+		}
+
+		// Resolve display names: route title+slug if route assigned, else title field value
+		listItems := make([]pages.ContentListItem, len(rawItems))
+		for i, item := range rawItems {
+			listItems[i] = pages.ContentListItem{ContentData: item}
+			listItems[i].DisplayName = resolveContentDisplayName(driver, item)
+			if item.RouteID.Valid {
+				rt, rtErr := driver.GetRoute(item.RouteID.ID)
+				if rtErr == nil && rt != nil {
+					listItems[i].Slug = string(rt.Slug)
+				}
+			}
 		}
 
 		pd := NewPaginationData(*total, limit, offset, "#content-table-body", "/admin/content")
@@ -63,29 +109,161 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			BaseURL:    pd.BaseURL,
 		}
 
-		// Load tree nodes for sidebar via core.BuildFromRows
-		var treeRoot *core.Root
-		tree, treeErr := driver.GetContentTreeByRoute(types.NullableRouteID{})
-		if treeErr == nil && tree != nil {
-			built, _, buildErr := core.BuildFromRows(*tree)
-			if buildErr != nil {
-				utility.DefaultLogger.Warn("content tree build issue", buildErr)
-			}
-			treeRoot = built
+		if IsHTMX(r) && !IsNavHTMX(r) {
+			Render(w, r, pages.ContentTableRowsPartial(listItems, pg))
+			return
 		}
 
-		if IsHTMX(r) {
-			Render(w, r, pages.ContentTableRowsPartial(contentItems, pg))
+		// Load datatypes for the create dialog
+		var datatypes []db.Datatypes
+		dtList, dtErr := driver.ListDatatypes()
+		if dtErr != nil {
+			utility.DefaultLogger.Error("failed to list datatypes for content dialog", dtErr)
+		} else if dtList != nil {
+			datatypes = *dtList
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Content"}`)
+			RenderWithOOB(w, r, pages.ContentListContent(listItems, pg),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.ContentCreateDialog(datatypes, csrfToken)})
 			return
 		}
 
 		layout := NewAdminData(r, "Content")
-		Render(w, r, pages.ContentList(layout, contentItems, pg, treeRoot))
+		Render(w, r, pages.ContentList(layout, listItems, pg, datatypes))
 	}
+}
+
+// blockNode is a JSON-serializable representation of a content tree node
+// for the block editor web component. Includes all ContentData fields so the
+// JS can send full UpdateContentDataParams to the batch API endpoint.
+// Nullable fields use empty string for no value. Non-nullable fields always have values.
+type blockNode struct {
+	ID            string `json:"id"`
+	ParentID      string `json:"parentId"`
+	FirstChildID  string `json:"firstChildId"`
+	NextSiblingID string `json:"nextSiblingId"`
+	PrevSiblingID string `json:"prevSiblingId"`
+	RouteID       string `json:"routeId"`
+	DatatypeID    string `json:"datatypeId"`
+	AuthorID      string `json:"authorId"`
+	Status        string `json:"status"`
+	DateCreated   string `json:"dateCreated"`
+	DateModified  string `json:"dateModified"`
+	Type          string `json:"type"`
+	Label         string `json:"label"`
+}
+
+// nullableIDStr returns the string value of a NullableContentID, or empty string if not valid.
+func nullableIDStr(n types.NullableContentID) string {
+	if !n.Valid {
+		return ""
+	}
+	return n.ID.String()
+}
+
+// emptyEditorState is the JSON for an empty block editor (no children).
+const emptyEditorState = `{"blocks":{},"rootId":null}`
+
+// buildTreeJSON loads the descendants of a content node and their datatype labels,
+// then returns the block editor state as a JSON string. Always returns valid JSON
+// so the editor can render even with zero children (allowing users to add blocks).
+func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.ContentID) string {
+	descendants, descErr := driver.GetContentDataDescendants(ctx, contentID)
+	if descErr != nil || descendants == nil || len(*descendants) <= 1 {
+		return emptyEditorState
+	}
+
+	nodes := *descendants
+
+	// Build datatype label cache
+	dtLabels := make(map[string]string)
+	for _, node := range nodes {
+		if !node.DatatypeID.Valid {
+			continue
+		}
+		dtKey := node.DatatypeID.ID.String()
+		if _, ok := dtLabels[dtKey]; ok {
+			continue
+		}
+		dt, dtErr := driver.GetDatatype(node.DatatypeID.ID)
+		if dtErr == nil && dt != nil {
+			dtLabels[dtKey] = dt.Label
+		}
+	}
+
+	// Build block nodes — skip the root node itself (first in descendants is the queried node)
+	blocks := make([]blockNode, 0, len(nodes)-1)
+	for _, node := range nodes {
+		if node.ContentDataID == contentID {
+			continue
+		}
+		label := "Untitled"
+		if node.DatatypeID.Valid {
+			if l, ok := dtLabels[node.DatatypeID.ID.String()]; ok {
+				label = l
+			}
+		}
+		routeID := ""
+		if node.RouteID.Valid {
+			routeID = node.RouteID.ID.String()
+		}
+		datatypeID := ""
+		if node.DatatypeID.Valid {
+			datatypeID = node.DatatypeID.ID.String()
+		}
+		blocks = append(blocks, blockNode{
+			ID:            node.ContentDataID.String(),
+			ParentID:      nullableIDStr(node.ParentID),
+			FirstChildID:  nullableIDStr(node.FirstChildID),
+			NextSiblingID: nullableIDStr(node.NextSiblingID),
+			PrevSiblingID: nullableIDStr(node.PrevSiblingID),
+			RouteID:       routeID,
+			DatatypeID:    datatypeID,
+			AuthorID:      string(node.AuthorID),
+			Status:        string(node.Status),
+			DateCreated:   node.DateCreated.Time.UTC().Format(time.RFC3339),
+			DateModified:  node.DateModified.Time.UTC().Format(time.RFC3339),
+			Type:          "container",
+			Label:         label,
+		})
+	}
+
+	if len(blocks) == 0 {
+		return emptyEditorState
+	}
+
+	// Build editor state: blocks map + rootId (first child of current node)
+	type editorState struct {
+		Blocks map[string]blockNode `json:"blocks"`
+		RootID string               `json:"rootId"`
+	}
+
+	state := editorState{
+		Blocks: make(map[string]blockNode, len(blocks)),
+	}
+	for _, b := range blocks {
+		state.Blocks[b.ID] = b
+		// Root block = direct child of the content node being edited
+		if b.ParentID == contentID.String() && b.PrevSiblingID == "" {
+			state.RootID = b.ID
+		}
+	}
+
+	data, marshalErr := json.Marshal(state)
+	if marshalErr != nil {
+		utility.DefaultLogger.Error("failed to marshal tree JSON", marshalErr)
+		return emptyEditorState
+	}
+	return string(data)
 }
 
 // ContentEditHandler renders the content editor page.
 // Loads content by ID from the URL path and its associated fields.
+// Resolves datatype, route, and author IDs to human-readable labels.
 func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
@@ -115,8 +293,33 @@ func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
 			contentFields = *fields
 		}
 
+		// Resolve related entities to human-readable labels
+		meta := pages.ContentMeta{}
+		if content.DatatypeID.Valid {
+			dt, dtErr := driver.GetDatatype(content.DatatypeID.ID)
+			if dtErr == nil && dt != nil {
+				meta.DatatypeLabel = dt.Label
+			}
+		}
+		if content.RouteID.Valid {
+			rt, rtErr := driver.GetRoute(content.RouteID.ID)
+			if rtErr == nil && rt != nil {
+				meta.RouteTitle = rt.Title
+			}
+		}
+		author, authorErr := driver.GetUser(content.AuthorID)
+		if authorErr == nil && author != nil {
+			meta.AuthorName = author.Username
+		}
+
+		treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID)
+
+		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Edit Content")
-		Render(w, r, pages.ContentEdit(layout, *content, contentFields))
+		RenderNav(w, r, "Edit Content",
+			pages.ContentEditContent(*content, contentFields, csrfToken, treeJSON, meta),
+			pages.ContentEdit(layout, *content, contentFields, treeJSON, meta),
+		)
 	}
 }
 
@@ -148,7 +351,8 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 
 		parentID := r.FormValue("parent_id")
 		datatypeID := r.FormValue("datatype_id")
-		routeID := r.FormValue("route_id")
+		slug := r.FormValue("slug")
+		title := r.FormValue("title")
 
 		now := types.NewTimestamp(time.Now())
 		ac := audited.Ctx(
@@ -158,10 +362,38 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			clientIP(r),
 		)
 
+		// If a slug was provided, create a new route for this content
+		var routeID types.NullableRouteID
+		if slug != "" {
+			routeTitle := title
+			if routeTitle == "" {
+				routeTitle = slug
+			}
+			route, routeErr := driver.CreateRoute(r.Context(), ac, db.CreateRouteParams{
+				Slug:         types.Slug(slug),
+				Title:        routeTitle,
+				Status:       1,
+				AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
+				DateCreated:  now,
+				DateModified: now,
+			})
+			if routeErr != nil {
+				utility.DefaultLogger.Error("failed to create route for content", routeErr)
+				if IsHTMX(r) {
+					w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create route", "type": "error"}}`)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				http.Error(w, "Failed to create route", http.StatusInternalServerError)
+				return
+			}
+			routeID = types.NullableRouteID{ID: route.RouteID, Valid: true}
+		}
+
 		params := db.CreateContentDataParams{
 			ParentID:     types.NullableContentID{ID: types.ContentID(parentID), Valid: parentID != ""},
 			DatatypeID:   types.NullableDatatypeID{ID: types.DatatypeID(datatypeID), Valid: datatypeID != ""},
-			RouteID:      types.NullableRouteID{ID: types.RouteID(routeID), Valid: routeID != ""},
+			RouteID:      routeID,
 			AuthorID:     user.UserID,
 			Status:       status,
 			DateCreated:  now,
@@ -178,6 +410,35 @@ func ContentCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerF
 			}
 			http.Error(w, "Failed to create content", http.StatusInternalServerError)
 			return
+		}
+
+		// Create content field rows for every field defined on the datatype.
+		// Pre-fill the "title" field if the user provided a name in the dialog.
+		if datatypeID != "" {
+			dtFields, dtFieldsErr := driver.ListFieldsByDatatypeID(
+				types.NullableDatatypeID{ID: types.DatatypeID(datatypeID), Valid: true},
+			)
+			if dtFieldsErr != nil {
+				utility.DefaultLogger.Error("failed to list datatype fields for content field creation", dtFieldsErr)
+			} else if dtFields != nil {
+				for _, f := range *dtFields {
+					value := ""
+					if title != "" && strings.EqualFold(f.Label, "title") {
+						value = title
+					}
+					_, cfErr := driver.CreateContentField(r.Context(), ac, db.CreateContentFieldParams{
+						ContentDataID: types.NullableContentID{ID: created.ContentDataID, Valid: true},
+						FieldID:       types.NullableFieldID{ID: f.FieldID, Valid: true},
+						FieldValue:    value,
+						AuthorID:      user.UserID,
+						DateCreated:   now,
+						DateModified:  now,
+					})
+					if cfErr != nil {
+						utility.DefaultLogger.Error("failed to create content field for "+f.Label, cfErr)
+					}
+				}
+			}
 		}
 
 		if IsHTMX(r) {
@@ -645,5 +906,309 @@ func ContentMoveHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 
 		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content moved", "type": "success"}}`)
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+// --- Content Tree Save (bulk creates, updates, deletes) ---
+
+type treeSaveRequest struct {
+	ContentID string           `json:"content_id"`
+	Creates   []treeNodeCreate `json:"creates"`
+	Updates   []treeNodeUpdate `json:"updates"`
+	Deletes   []string         `json:"deletes"`
+}
+
+type treeNodeCreate struct {
+	ClientID      string  `json:"client_id"`
+	DatatypeID    string  `json:"datatype_id"`
+	ParentID      *string `json:"parent_id"`
+	FirstChildID  *string `json:"first_child_id"`
+	NextSiblingID *string `json:"next_sibling_id"`
+	PrevSiblingID *string `json:"prev_sibling_id"`
+}
+
+type treeNodeUpdate struct {
+	ContentDataID string  `json:"content_data_id"`
+	ParentID      *string `json:"parent_id"`
+	FirstChildID  *string `json:"first_child_id"`
+	NextSiblingID *string `json:"next_sibling_id"`
+	PrevSiblingID *string `json:"prev_sibling_id"`
+}
+
+type treeSaveResponse struct {
+	Created int               `json:"created"`
+	Updated int               `json:"updated"`
+	Deleted int               `json:"deleted"`
+	IDMap   map[string]string `json:"id_map,omitempty"`
+	Errors  []string          `json:"errors,omitempty"`
+}
+
+// parseNullableID converts a *string JSON pointer into a NullableContentID.
+// nil means SQL NULL; non-nil is parsed as a ContentID.
+func parseNullableID(s *string) (types.NullableContentID, error) {
+	if s == nil {
+		return types.NullableContentID{Valid: false}, nil
+	}
+	id := types.ContentID(*s)
+	if err := id.Validate(); err != nil {
+		return types.NullableContentID{}, fmt.Errorf("invalid id %q: %w", *s, err)
+	}
+	return types.NullableContentID{ID: id, Valid: true}, nil
+}
+
+// remapPtr replaces a client UUID pointer with its server ULID if mapped.
+func remapPtr(ptr *string, idMap map[string]string) *string {
+	if ptr == nil {
+		return nil
+	}
+	if mapped, ok := idMap[*ptr]; ok {
+		return &mapped
+	}
+	return ptr
+}
+
+// ContentTreeSaveHandler handles POST /admin/content/tree — bulk tree
+// creates, pointer updates, and deletes from the block editor.
+func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !IsHTMX(r) {
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
+		var req treeSaveRequest
+		if decodeErr := json.NewDecoder(r.Body).Decode(&req); decodeErr != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		if req.ContentID == "" {
+			http.Error(w, "content_id required", http.StatusBadRequest)
+			return
+		}
+
+		if len(req.Creates) == 0 && len(req.Updates) == 0 && len(req.Deletes) == 0 {
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "No changes to save", "type": "info"}}`)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		ac := audited.Ctx(
+			types.NodeID(cfg.Node_ID),
+			user.UserID,
+			middleware.RequestIDFromContext(r.Context()),
+			clientIP(r),
+		)
+
+		ctx := r.Context()
+		now := types.NewTimestamp(time.Now())
+		nullPtr := types.NullableContentID{Valid: false}
+
+		resp := treeSaveResponse{}
+
+		// Resolve routeID from the parent content node for new blocks.
+		var parentRouteID types.NullableRouteID
+		parentContent, parentErr := driver.GetContentData(types.ContentID(req.ContentID))
+		if parentErr != nil {
+			resp.Errors = append(resp.Errors, fmt.Sprintf("get parent %s: %v", req.ContentID, parentErr))
+		} else {
+			parentRouteID = parentContent.RouteID
+		}
+
+		// --- Phase 1a: Create rows with NULL pointers, collect server IDs ---
+		idMap := make(map[string]string, len(req.Creates))
+		type createdNode struct {
+			clientID string
+			serverID types.ContentID
+			create   treeNodeCreate
+		}
+		created := make([]createdNode, 0, len(req.Creates))
+
+		for _, cr := range req.Creates {
+			if cr.ClientID == "" {
+				resp.Errors = append(resp.Errors, "create: missing client_id")
+				continue
+			}
+
+			var datatypeID types.NullableDatatypeID
+			if cr.DatatypeID != "" {
+				dtID := types.DatatypeID(cr.DatatypeID)
+				if validateErr := dtID.Validate(); validateErr != nil {
+					resp.Errors = append(resp.Errors, fmt.Sprintf("create %s: invalid datatype_id: %v", cr.ClientID, validateErr))
+					continue
+				}
+				datatypeID = types.NullableDatatypeID{ID: dtID, Valid: true}
+			}
+
+			result, createErr := driver.CreateContentData(ctx, ac, db.CreateContentDataParams{
+				ParentID:      nullPtr,
+				FirstChildID:  nullPtr,
+				NextSiblingID: nullPtr,
+				PrevSiblingID: nullPtr,
+				RouteID:       parentRouteID,
+				DatatypeID:    datatypeID,
+				AuthorID:      user.UserID,
+				Status:        types.ContentStatusDraft,
+				DateCreated:   now,
+				DateModified:  now,
+			})
+			if createErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("tree-save: create %s failed", cr.ClientID), createErr)
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s: %v", cr.ClientID, createErr))
+				continue
+			}
+
+			serverID := result.ContentDataID
+			idMap[cr.ClientID] = serverID.String()
+			created = append(created, createdNode{clientID: cr.ClientID, serverID: serverID, create: cr})
+			resp.Created++
+		}
+
+		if len(idMap) > 0 {
+			resp.IDMap = idMap
+		}
+
+		// --- Phase 1b: Update newly created rows with remapped pointers ---
+		for _, cn := range created {
+			parentID, parseErr := parseNullableID(remapPtr(cn.create.ParentID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointers: %v", cn.clientID, parseErr))
+				continue
+			}
+			firstChildID, parseErr := parseNullableID(remapPtr(cn.create.FirstChildID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointers: %v", cn.clientID, parseErr))
+				continue
+			}
+			nextSiblingID, parseErr := parseNullableID(remapPtr(cn.create.NextSiblingID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointers: %v", cn.clientID, parseErr))
+				continue
+			}
+			prevSiblingID, parseErr := parseNullableID(remapPtr(cn.create.PrevSiblingID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointers: %v", cn.clientID, parseErr))
+				continue
+			}
+
+			// Skip update if all pointers are NULL (nothing to set).
+			if !parentID.Valid && !firstChildID.Valid && !nextSiblingID.Valid && !prevSiblingID.Valid {
+				continue
+			}
+
+			existing, getErr := driver.GetContentData(cn.serverID)
+			if getErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointer update: %v", cn.clientID, getErr))
+				continue
+			}
+
+			_, updateErr := driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: cn.serverID,
+				ParentID:      parentID,
+				FirstChildID:  firstChildID,
+				NextSiblingID: nextSiblingID,
+				PrevSiblingID: prevSiblingID,
+				RouteID:       existing.RouteID,
+				DatatypeID:    existing.DatatypeID,
+				AuthorID:      existing.AuthorID,
+				Status:        existing.Status,
+				DateCreated:   existing.DateCreated,
+				DateModified:  now,
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("tree-save: create %s pointer update failed", cn.clientID), updateErr)
+				resp.Errors = append(resp.Errors, fmt.Sprintf("create %s pointers: %v", cn.clientID, updateErr))
+			}
+		}
+
+		// --- Phase 2: Deletes ---
+		for _, idStr := range req.Deletes {
+			id := types.ContentID(idStr)
+			if validateErr := id.Validate(); validateErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("invalid delete id %s: %v", idStr, validateErr))
+				continue
+			}
+			if deleteErr := driver.DeleteContentData(ctx, ac, id); deleteErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("tree-save: delete %s failed", idStr), deleteErr)
+				resp.Errors = append(resp.Errors, fmt.Sprintf("delete %s: %v", idStr, deleteErr))
+				continue
+			}
+			resp.Deleted++
+		}
+
+		// --- Phase 3: Updates ---
+		for _, upd := range req.Updates {
+			id := types.ContentID(upd.ContentDataID)
+			if validateErr := id.Validate(); validateErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("invalid update id %s: %v", upd.ContentDataID, validateErr))
+				continue
+			}
+
+			existing, getErr := driver.GetContentData(id)
+			if getErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("get %s: %v", upd.ContentDataID, getErr))
+				continue
+			}
+
+			parentID, parseErr := parseNullableID(remapPtr(upd.ParentID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("update %s: %v", upd.ContentDataID, parseErr))
+				continue
+			}
+			firstChildID, parseErr := parseNullableID(remapPtr(upd.FirstChildID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("update %s: %v", upd.ContentDataID, parseErr))
+				continue
+			}
+			nextSiblingID, parseErr := parseNullableID(remapPtr(upd.NextSiblingID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("update %s: %v", upd.ContentDataID, parseErr))
+				continue
+			}
+			prevSiblingID, parseErr := parseNullableID(remapPtr(upd.PrevSiblingID, idMap))
+			if parseErr != nil {
+				resp.Errors = append(resp.Errors, fmt.Sprintf("update %s: %v", upd.ContentDataID, parseErr))
+				continue
+			}
+
+			_, updateErr := driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
+				ContentDataID: existing.ContentDataID,
+				ParentID:      parentID,
+				FirstChildID:  firstChildID,
+				NextSiblingID: nextSiblingID,
+				PrevSiblingID: prevSiblingID,
+				RouteID:       existing.RouteID,
+				DatatypeID:    existing.DatatypeID,
+				AuthorID:      existing.AuthorID,
+				Status:        existing.Status,
+				DateCreated:   existing.DateCreated,
+				DateModified:  now,
+			})
+			if updateErr != nil {
+				utility.DefaultLogger.Error(fmt.Sprintf("tree-save: update %s failed", upd.ContentDataID), updateErr)
+				resp.Errors = append(resp.Errors, fmt.Sprintf("update %s: %v", upd.ContentDataID, updateErr))
+				continue
+			}
+			resp.Updated++
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		// Encode error is non-recoverable (client disconnected); response already partially written.
+		json.NewEncoder(w).Encode(resp)
 	}
 }

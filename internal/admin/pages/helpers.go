@@ -15,6 +15,15 @@ func truncateID(id string) string {
 	return id[:8] + "..."
 }
 
+// ContentListItem wraps ContentData with human-readable display fields
+// resolved from the associated route or title content field.
+type ContentListItem struct {
+	db.ContentData
+	DisplayName string
+	Slug        string
+}
+
+
 // nullStr extracts the string value from a NullString, returning empty string if not valid.
 func nullStr(ns db.NullString) string {
 	if !ns.Valid {

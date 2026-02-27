@@ -1,18 +1,48 @@
 package definitions
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // Installer is the consumer-defined interface for creating schema records.
 type Installer interface {
-	CreateDatatype(db.CreateDatatypeParams) db.Datatypes
-	CreateField(db.CreateFieldParams) db.Fields
-	CreateDatatypeField(db.CreateDatatypeFieldParams) db.DatatypeFields
+	CreateDatatype(db.CreateDatatypeParams) (db.Datatypes, error)
+	CreateField(db.CreateFieldParams) (db.Fields, error)
+}
+
+// Cleaner is the consumer-defined interface for listing and deleting
+// bootstrapped records during a reinstall. Separate from Installer to
+// keep Install() unchanged.
+type Cleaner interface {
+	GetUserByEmail(types.Email) (*db.Users, error)
+	ListDatatypes() (*[]db.Datatypes, error)
+	ListFields() (*[]db.Fields, error)
+	ListContentData() (*[]db.ContentData, error)
+	ListContentFields() (*[]db.ContentFields, error)
+	ListRoutes() (*[]db.Routes, error)
+	ListDatatypeFieldByDatatypeID(types.DatatypeID) (*[]db.DatatypeFields, error)
+	DeleteContentField(context.Context, audited.AuditContext, types.ContentFieldID) error
+	DeleteContentData(context.Context, audited.AuditContext, types.ContentID) error
+	DeleteDatatypeField(context.Context, audited.AuditContext, string) error
+	DeleteField(context.Context, audited.AuditContext, types.FieldID) error
+	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
+	DeleteRoute(context.Context, audited.AuditContext, types.RouteID) error
+}
+
+// CleanupResult reports what was deleted during cleanup.
+type CleanupResult struct {
+	ContentFields  int
+	ContentData    int
+	DatatypeFields int
+	Fields         int
+	Datatypes      int
+	Routes         int
 }
 
 // InstallResult reports what was created during installation.
@@ -20,10 +50,9 @@ type InstallResult struct {
 	DefinitionName string
 	Datatypes      int
 	Fields         int
-	JunctionLinks  int
 }
 
-// Install creates all datatypes, fields, and junction records from a SchemaDefinition.
+// Install creates all datatypes and fields from a SchemaDefinition.
 func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (InstallResult, error) {
 	if authorID.IsZero() {
 		return InstallResult{}, fmt.Errorf("definitions: authorID cannot be empty")
@@ -45,7 +74,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		if dt.ParentRef != "" {
 			continue
 		}
-		created := driver.CreateDatatype(db.CreateDatatypeParams{
+		created, createErr := driver.CreateDatatype(db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
 			Label:        dt.Label,
 			Type:         dt.Type.String,
@@ -53,6 +82,9 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 			DateCreated:  now,
 			DateModified: now,
 		})
+		if createErr != nil {
+			return InstallResult{}, fmt.Errorf("definitions: datatype %q: %w", key, createErr)
+		}
 		if created.DatatypeID.IsZero() {
 			return InstallResult{}, fmt.Errorf("definitions: datatype %q created with zero ID", key)
 		}
@@ -75,7 +107,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				continue
 			}
 
-			created := driver.CreateDatatype(db.CreateDatatypeParams{
+			created, createErr := driver.CreateDatatype(db.CreateDatatypeParams{
 				DatatypeID: types.NewDatatypeID(),
 				ParentID: types.NullableDatatypeID{
 					ID:    parentID,
@@ -87,6 +119,9 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				DateCreated:  now,
 				DateModified: now,
 			})
+			if createErr != nil {
+				return InstallResult{}, fmt.Errorf("definitions: datatype %q: %w", key, createErr)
+			}
 			if created.DatatypeID.IsZero() {
 				return InstallResult{}, fmt.Errorf("definitions: datatype %q created with zero ID", key)
 			}
@@ -107,10 +142,10 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		return InstallResult{}, fmt.Errorf("definitions: %d datatypes could not be resolved", len(def.Datatypes)-len(datatypeIDMap))
 	}
 
-	// Phase 3: Create fields and junction records for each datatype
+	// Phase 3: Create fields with parent_id linking them to their datatype
 	for key, dt := range def.Datatypes {
 		datatypeID := datatypeIDMap[key]
-		for i, fieldDef := range dt.FieldRefs {
+		for _, fieldDef := range dt.FieldRefs {
 			data := types.EmptyJSON
 			if fieldDef.Data.Valid {
 				data = fieldDef.Data.String
@@ -126,8 +161,9 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				return InstallResult{}, fmt.Errorf("definitions: datatype %q field %q ui_config: %w", key, fieldDef.Label, err)
 			}
 
-			created := driver.CreateField(db.CreateFieldParams{
+			created, fieldErr := driver.CreateField(db.CreateFieldParams{
 				FieldID:      types.NewFieldID(),
+				ParentID:     types.NullableDatatypeID{ID: datatypeID, Valid: true},
 				Label:        fieldDef.Label,
 				Data:         data,
 				Validation:   validation,
@@ -137,25 +173,159 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 				DateCreated:  now,
 				DateModified: now,
 			})
+			if fieldErr != nil {
+				return InstallResult{}, fmt.Errorf("definitions: datatype %q field %q: %w", key, fieldDef.Label, fieldErr)
+			}
 			if created.FieldID.IsZero() {
 				return InstallResult{}, fmt.Errorf("definitions: field %q created with zero ID", fieldDef.Label)
 			}
 			result.Fields++
-
-			junc := driver.CreateDatatypeField(db.CreateDatatypeFieldParams{
-				ID:         string(types.NewDatatypeFieldID()),
-				DatatypeID: datatypeID,
-				FieldID:    created.FieldID,
-				SortOrder:  int64(i),
-			})
-			if junc.ID == "" {
-				return InstallResult{}, fmt.Errorf("definitions: junction link for datatype %q field %q created with empty ID", key, fieldDef.Label)
-			}
-			result.JunctionLinks++
 		}
 	}
 
 	return result, nil
+}
+
+// Reinstall deletes all system-authored records from a previous install, then
+// runs Install to recreate them from the definition. User-created records and
+// system datatypes (type starting with "_") are preserved.
+func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def SchemaDefinition, authorID types.UserID) (InstallResult, error) {
+	if authorID.IsZero() {
+		return InstallResult{}, fmt.Errorf("definitions: authorID cannot be empty")
+	}
+
+	// Look up system user to identify bootstrapped records.
+	systemUser, err := cleaner.GetUserByEmail(types.Email("system@modulacms.local"))
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: get system user: %w", err)
+	}
+	systemUserID := systemUser.UserID
+
+	ac := audited.Ctx(types.NewNodeID(), authorID, "reinstall", "system")
+
+	// Build a set of system datatype IDs so we can skip their fields.
+	allDatatypes, err := cleaner.ListDatatypes()
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: list datatypes: %w", err)
+	}
+	systemDatatypeIDs := make(map[types.DatatypeID]bool)
+	if allDatatypes != nil {
+		for _, dt := range *allDatatypes {
+			if types.IsReservedPrefix(dt.Type) {
+				systemDatatypeIDs[dt.DatatypeID] = true
+			}
+		}
+	}
+
+	var cleanup CleanupResult
+
+	// Step 1: Delete system-authored content_fields.
+	contentFields, err := cleaner.ListContentFields()
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: list content_fields: %w", err)
+	}
+	if contentFields != nil {
+		for _, cf := range *contentFields {
+			if cf.AuthorID == systemUserID {
+				if delErr := cleaner.DeleteContentField(ctx, ac, cf.ContentFieldID); delErr != nil {
+					return InstallResult{}, fmt.Errorf("definitions: delete content_field %s: %w", cf.ContentFieldID, delErr)
+				}
+				cleanup.ContentFields++
+			}
+		}
+	}
+
+	// Step 2: Delete system-authored content_data.
+	contentData, err := cleaner.ListContentData()
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: list content_data: %w", err)
+	}
+	if contentData != nil {
+		for _, cd := range *contentData {
+			if cd.AuthorID == systemUserID {
+				if delErr := cleaner.DeleteContentData(ctx, ac, cd.ContentDataID); delErr != nil {
+					return InstallResult{}, fmt.Errorf("definitions: delete content_data %s: %w", cd.ContentDataID, delErr)
+				}
+				cleanup.ContentData++
+			}
+		}
+	}
+
+	// Step 3: Delete datatype_field junction records for datatypes we'll remove.
+	// Collect which non-system datatypes belong to the system user.
+	deletableDatatypeIDs := make(map[types.DatatypeID]bool)
+	if allDatatypes != nil {
+		for _, dt := range *allDatatypes {
+			if dt.AuthorID == systemUserID && !types.IsReservedPrefix(dt.Type) {
+				deletableDatatypeIDs[dt.DatatypeID] = true
+			}
+		}
+	}
+	for dtID := range deletableDatatypeIDs {
+		junctions, listErr := cleaner.ListDatatypeFieldByDatatypeID(dtID)
+		if listErr != nil {
+			return InstallResult{}, fmt.Errorf("definitions: list datatype_fields for %s: %w", dtID, listErr)
+		}
+		if junctions != nil {
+			for _, jn := range *junctions {
+				if delErr := cleaner.DeleteDatatypeField(ctx, ac, jn.ID); delErr != nil {
+					return InstallResult{}, fmt.Errorf("definitions: delete datatype_field %s: %w", jn.ID, delErr)
+				}
+				cleanup.DatatypeFields++
+			}
+		}
+	}
+
+	// Step 4: Delete system-authored fields (skip fields belonging to system datatypes).
+	fields, err := cleaner.ListFields()
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: list fields: %w", err)
+	}
+	if fields != nil {
+		for _, f := range *fields {
+			if !f.AuthorID.Valid || f.AuthorID.ID != systemUserID {
+				continue
+			}
+			if f.ParentID.Valid && systemDatatypeIDs[f.ParentID.ID] {
+				continue
+			}
+			if delErr := cleaner.DeleteField(ctx, ac, f.FieldID); delErr != nil {
+				return InstallResult{}, fmt.Errorf("definitions: delete field %s: %w", f.FieldID, delErr)
+			}
+			cleanup.Fields++
+		}
+	}
+
+	// Step 5: Delete system-authored datatypes (skip reserved prefix types).
+	if allDatatypes != nil {
+		for _, dt := range *allDatatypes {
+			if dt.AuthorID == systemUserID && !types.IsReservedPrefix(dt.Type) {
+				if delErr := cleaner.DeleteDatatype(ctx, ac, dt.DatatypeID); delErr != nil {
+					return InstallResult{}, fmt.Errorf("definitions: delete datatype %s: %w", dt.DatatypeID, delErr)
+				}
+				cleanup.Datatypes++
+			}
+		}
+	}
+
+	// Step 6: Delete system-authored routes.
+	routes, err := cleaner.ListRoutes()
+	if err != nil {
+		return InstallResult{}, fmt.Errorf("definitions: list routes: %w", err)
+	}
+	if routes != nil {
+		for _, r := range *routes {
+			if r.AuthorID.Valid && r.AuthorID.ID == systemUserID {
+				if delErr := cleaner.DeleteRoute(ctx, ac, r.RouteID); delErr != nil {
+					return InstallResult{}, fmt.Errorf("definitions: delete route %s: %w", r.RouteID, delErr)
+				}
+				cleanup.Routes++
+			}
+		}
+	}
+
+	// Now install fresh.
+	return Install(installer, def, authorID)
 }
 
 // marshalConfig marshals a config struct to JSON. Returns EmptyJSON for zero-value structs.

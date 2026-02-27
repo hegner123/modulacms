@@ -130,6 +130,10 @@ export type {
   HealReport,
   MissingFieldReport,
   DuplicateFieldReport,
+  TreeNodeCreate,
+  TreeNodeUpdate,
+  TreeSaveRequest,
+  TreeSaveResponse,
 } from './types/content.js'
 export type {
   Datatype,
@@ -277,6 +281,8 @@ import type {
   BatchContentUpdateParams,
   BatchContentUpdateResponse,
   HealReport,
+  TreeSaveRequest,
+  TreeSaveResponse,
 } from './types/content.js'
 import type {
   Datatype,
@@ -577,6 +583,18 @@ export type ModulaCMSAdminClient = {
   config: ConfigResource
   /** Content delivery via slug (rendered content trees). */
   contentDelivery: ContentDeliveryResource
+  /**
+   * Bulk content tree save — atomically applies creates, deletes, and pointer
+   * updates to content_data nodes in a single HTTP round-trip.
+   *
+   * This is the preferred way to persist structural changes from a block editor
+   * or tree manipulation UI. New nodes use client-generated IDs that are remapped
+   * to server ULIDs; the mapping is returned in `TreeSaveResponse.id_map`.
+   */
+  contentTree: {
+    /** Save tree structure changes (creates, updates, deletes) in one request. */
+    save: (params: TreeSaveRequest, opts?: RequestOptions) => Promise<TreeSaveResponse>
+  }
   /** Content tree healing — scan and repair malformed IDs. */
   contentHeal: {
     /** Scan content_data and content_field rows for malformed IDs and repair them. */
@@ -795,6 +813,11 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
     pluginHooks: createPluginHooksResource(http),
     config: createConfigResource(http),
     contentDelivery: createContentDeliveryResource(http),
+    contentTree: {
+      save(params: TreeSaveRequest, opts?: RequestOptions): Promise<TreeSaveResponse> {
+        return http.post<TreeSaveResponse>('/content/tree', params as unknown as Record<string, unknown>, opts)
+      },
+    },
     contentHeal: {
       heal(dryRun?: boolean, opts?: RequestOptions): Promise<HealReport> {
         const path = dryRun ? '/admin/content/heal?dry_run=true' : '/admin/content/heal'

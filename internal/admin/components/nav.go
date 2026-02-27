@@ -20,7 +20,6 @@ var NavItems = []NavItem{
 	{Label: "Content", Href: "/admin/content", Icon: "file-text", Permission: "content:read"},
 	{Label: "Media", Href: "/admin/media", Icon: "image", Permission: "media:read"},
 	{Label: "Datatypes", Href: "/admin/schema/datatypes", Icon: "blocks", Permission: "datatypes:read"},
-	{Label: "Fields", Href: "/admin/schema/fields", Icon: "form-input", Permission: "fields:read"},
 	{Label: "Routes", Href: "/admin/routes", Icon: "globe", Permission: "routes:read"},
 	{Label: "Users", Href: "/admin/users", Icon: "users", Permission: "users:read"},
 	{Label: "Roles", Href: "/admin/users/roles", Icon: "shield", Permission: "roles:read"},
@@ -29,6 +28,7 @@ var NavItems = []NavItem{
 	{Label: "Import", Href: "/admin/import", Icon: "upload", Permission: "import:create"},
 	{Label: "Audit", Href: "/admin/audit", Icon: "history"},
 	{Label: "Settings", Href: "/admin/settings", Icon: "settings", Permission: "config:read"},
+	{Label: "Demo", Href: "/admin/demo", Icon: "flask-conical"},
 }
 
 // IsActive returns true if the current path matches or is a child of the nav item's href.

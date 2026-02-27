@@ -6,43 +6,45 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-templ ContentEdit(layout layouts.AdminData, content db.ContentData, fields []db.ContentFieldWithFieldRow) {
-	@layouts.Admin(layout) {
-		<div class="page-header">
-			<div class="page-header-left">
-				<a
-					href="/admin/content"
-					class="btn btn-ghost"
-					hx-get="/admin/content"
-					hx-target="#main-content"
-					hx-push-url="true"
-				>
-					Back to Content
-				</a>
-				<h1>Edit Content</h1>
-			</div>
-			<div class="page-header-right">
-				<span class="content-id">{ content.ContentDataID.String() }</span>
-			</div>
+// ContentMeta holds resolved human-readable labels for content relationships.
+type ContentMeta struct {
+	DatatypeLabel string
+	RouteTitle    string
+	AuthorName    string
+}
+
+templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFieldRow, csrfToken string, treeJSON string, meta ContentMeta) {
+	<div class="page-header">
+		<div class="page-header-left">
+			<a
+				href="/admin/content"
+				class="btn btn-ghost"
+				hx-get="/admin/content"
+				hx-target="#main-content"
+				hx-push-url="true"
+			>
+				&larr; Back
+			</a>
+			<h1>Edit Content</h1>
 		</div>
-		<div class="content-edit-layout">
-			<div class="content-edit-main">
+	</div>
+	<div class="detail-grid">
+		<!-- Fields + Form -->
+		<section class="detail-section">
+			<h2>Content Fields</h2>
+			<div id="content-edit-form">
 				<form
 					hx-post={ "/admin/content/" + content.ContentDataID.String() }
-					hx-target="#main-content"
+					hx-target="#content-edit-form"
 					hx-swap="innerHTML"
-					class="content-edit-form"
 				>
-					@partials.CSRFField(layout.CSRFToken)
-					<div class="content-fields-section">
-						<h2>Content Fields</h2>
-						if len(fields) == 0 {
-							@partials.EmptyState("No fields configured for this content type")
-						}
-						for _, field := range fields {
-							@ContentFieldEditor(field, layout.CSRFToken)
-						}
-					</div>
+					@partials.CSRFField(csrfToken)
+					if len(fields) == 0 {
+						@partials.EmptyState("No fields configured for this content type")
+					}
+					for _, field := range fields {
+						@ContentFieldEditor(field)
+					}
 					<div class="form-actions">
 						<button type="submit" class="btn btn-primary">Save Changes</button>
 						<button
@@ -56,56 +58,69 @@ templ ContentEdit(layout layouts.AdminData, content db.ContentData, fields []db.
 					</div>
 				</form>
 			</div>
-			<aside class="content-edit-sidebar">
-				<div class="sidebar-section">
-					<h3>Details</h3>
-					<dl class="detail-list">
-						<dt>Status</dt>
-						<dd>
-							<select
-								name="status"
-								form={ "status-form-" + content.ContentDataID.String() }
-								class="status-select"
-							>
-								<option value="draft" selected?={ string(content.Status) == "draft" }>Draft</option>
-								<option value="published" selected?={ string(content.Status) == "published" }>Published</option>
-							</select>
-						</dd>
-						if content.DatatypeID.Valid {
-							<dt>Datatype</dt>
-							<dd>{ content.DatatypeID.ID.String() }</dd>
-						}
-						if content.RouteID.Valid {
-							<dt>Route</dt>
-							<dd>{ content.RouteID.ID.String() }</dd>
-						}
-						<dt>Author</dt>
-						<dd>{ content.AuthorID.String() }</dd>
-						<dt>Created</dt>
-						<dd>{ content.DateCreated.String() }</dd>
-						<dt>Modified</dt>
-						<dd>{ content.DateModified.String() }</dd>
-					</dl>
+			<div class="detail-meta">
+				<p><strong>ID:</strong> { content.ContentDataID.String() }</p>
+				<p><strong>Created:</strong> { content.DateCreated.String() }</p>
+				<p><strong>Modified:</strong> { content.DateModified.String() }</p>
+			</div>
+		</section>
+		<!-- Sidebar: metadata + danger zone -->
+		<section class="detail-section">
+			<h2>Details</h2>
+			<div class="detail-meta">
+				<div class="form-field">
+					<label for="status">Status</label>
+					<select
+						id="status"
+						name="status"
+						form={ "status-form-" + content.ContentDataID.String() }
+					>
+						<option value="draft" selected?={ string(content.Status) == "draft" }>Draft</option>
+						<option value="published" selected?={ string(content.Status) == "published" }>Published</option>
+					</select>
 				</div>
-				<div class="sidebar-section sidebar-section-danger">
-					<h3>Danger Zone</h3>
-					@partials.DeleteConfirm(
-						"Delete Content",
-						"This will permanently delete this content and all its children.",
-						"/admin/content/"+content.ContentDataID.String(),
-						"#main-content",
-					)
-				</div>
-			</aside>
-		</div>
+				if meta.DatatypeLabel != "" {
+					<p><strong>Datatype:</strong> { meta.DatatypeLabel }</p>
+				}
+				if meta.RouteTitle != "" {
+					<p><strong>Route:</strong> { meta.RouteTitle }</p>
+				}
+				if meta.AuthorName != "" {
+					<p><strong>Author:</strong> { meta.AuthorName }</p>
+				}
+			</div>
+			<div class="detail-danger">
+				@partials.DeleteConfirm(
+					"Delete Content",
+					"This will permanently delete this content and all its children.",
+					"/admin/content/"+content.ContentDataID.String(),
+					"#main-content",
+				)
+			</div>
+		</section>
+	</div>
+	<!-- Block Editor: full width below the grid -->
+	<section class="detail-section detail-section-full">
+		<h2>Content Structure</h2>
+		<block-editor
+			id="content-block-editor"
+			data-content-id={ content.ContentDataID.String() }
+			data-state={ treeJSON }
+		></block-editor>
+	</section>
+}
+
+templ ContentEdit(layout layouts.AdminData, content db.ContentData, fields []db.ContentFieldWithFieldRow, treeJSON string, meta ContentMeta) {
+	@layouts.Admin(layout) {
+		@ContentEditContent(content, fields, layout.CSRFToken, treeJSON, meta)
 	}
 }
 
-templ ContentFieldEditor(field db.ContentFieldWithFieldRow, csrfToken string) {
-	<div class="content-field-editor" data-field-id={ field.ContentFieldID.String() } data-field-type={ string(field.FType) }>
+templ ContentFieldEditor(field db.ContentFieldWithFieldRow) {
+	<div class="form-field" data-field-id={ field.ContentFieldID.String() } data-field-type={ string(field.FType) }>
 		<label for={ "field-" + field.ContentFieldID.String() }>
 			{ field.FLabel }
-			<span class="field-type-badge">{ string(field.FType) }</span>
+			<span class="badge">{ string(field.FType) }</span>
 		</label>
 		if string(field.FType) == "text" || string(field.FType) == "string" {
 			<input
@@ -113,13 +128,11 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow, csrfToken string) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
-				class="form-control"
 			/>
 		} else if string(field.FType) == "textarea" || string(field.FType) == "richtext" {
 			<textarea
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
-				class="form-control"
 				rows="6"
 			>{ field.FieldValue }</textarea>
 		} else if string(field.FType) == "number" {
@@ -128,7 +141,6 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow, csrfToken string) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
-				class="form-control"
 			/>
 		} else if string(field.FType) == "boolean" {
 			<label class="checkbox-label">
@@ -165,7 +177,6 @@ templ ContentFieldEditor(field db.ContentFieldWithFieldRow, csrfToken string) {
 				id={ "field-" + field.ContentFieldID.String() }
 				name={ "field_" + field.FieldID.ID.String() }
 				value={ field.FieldValue }
-				class="form-control"
 			/>
 		}
 	</div>

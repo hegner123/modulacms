@@ -13,7 +13,7 @@ import (
 func ImportPageHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		layout := NewAdminData(r, "Import")
-		Render(w, r, pages.Import(layout))
+		RenderNav(w, r, "Import", pages.ImportContent(layout.CSRFToken), pages.Import(layout))
 	}
 }
 

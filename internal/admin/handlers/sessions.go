@@ -28,6 +28,12 @@ func SessionsListHandler(driver db.DbDriver) http.HandlerFunc {
 			sessions = *items
 		}
 
+		if IsNavHTMX(r) {
+			w.Header().Set("HX-Trigger", `{"pageTitle": "Sessions"}`)
+			Render(w, r, pages.SessionsListContent(sessions))
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, partials.SessionsTableRows(sessions))
 			return

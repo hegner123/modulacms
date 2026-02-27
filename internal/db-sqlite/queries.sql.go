@@ -1329,9 +1329,9 @@ CREATE TABLE IF NOT EXISTS content_data (
     prev_sibling_id TEXT
         REFERENCES content_data
             ON DELETE SET NULL,
-    route_id TEXT NOT NULL
+    route_id TEXT
         REFERENCES routes
-            ON DELETE CASCADE,
+            ON DELETE SET NULL,
     datatype_id TEXT NOT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
@@ -1346,7 +1346,7 @@ CREATE TABLE IF NOT EXISTS content_data (
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE SET NULL
 )
@@ -4264,6 +4264,30 @@ type GetDatatypeParams struct {
 
 func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datatypes, error) {
 	row := q.db.QueryRowContext(ctx, getDatatype, arg.DatatypeID)
+	var i Datatypes
+	err := row.Scan(
+		&i.DatatypeID,
+		&i.ParentID,
+		&i.Label,
+		&i.Type,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getDatatypeByType = `-- name: GetDatatypeByType :one
+SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+WHERE type = ? LIMIT 1
+`
+
+type GetDatatypeByTypeParams struct {
+	Type string `json:"type"`
+}
+
+func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypeParams) (Datatypes, error) {
+	row := q.db.QueryRowContext(ctx, getDatatypeByType, arg.Type)
 	var i Datatypes
 	err := row.Scan(
 		&i.DatatypeID,

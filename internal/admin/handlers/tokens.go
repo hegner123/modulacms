@@ -31,6 +31,13 @@ func TokensListHandler(driver db.DbDriver) http.HandlerFunc {
 			tokens = *items
 		}
 
+		if IsNavHTMX(r) {
+			csrfToken := CSRFTokenFromContext(r.Context())
+			w.Header().Set("HX-Trigger", `{"pageTitle": "API Tokens"}`)
+			Render(w, r, pages.TokensListContent(tokens, csrfToken))
+			return
+		}
+
 		if IsHTMX(r) {
 			Render(w, r, partials.TokensTableRows(tokens))
 			return
