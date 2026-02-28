@@ -886,7 +886,6 @@ func TestDatabase_CreateAllTables_Success(t *testing.T) {
 		"sessions", "tables", "change_events", "backups",
 		"admin_routes", "admin_datatypes", "admin_fields",
 		"admin_content_data", "admin_content_fields",
-		"datatypes_fields", "admin_datatypes_fields",
 		"content_relations", "admin_content_relations",
 	}
 

@@ -328,6 +328,7 @@ func (m Model) RoutesControls(msg tea.Msg) (Model, tea.Cmd) {
 //   - TreePanel (left): Navigate datatypes list, 'n' creates new datatype
 //   - ContentPanel (center): Navigate fields list, 'n' creates new field
 //   - RoutePanel (right): Actions panel (info only)
+//
 // DatatypesControls handles keyboard navigation for the datatypes page.
 func (m Model) DatatypesControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -1005,10 +1006,9 @@ func (m Model) contentFieldReorderUp() (Model, tea.Cmd) {
 	}
 	current := m.SelectedContentFields[m.FieldCursor]
 	prev := m.SelectedContentFields[m.FieldCursor-1]
-	// We need sort_order from the junction records. Since the fields are in sort_order,
-	// use index as fallback sort order if DatatypeFieldID is available
+	// Swap sort_order between the two fields using their field IDs
 	return m, m.HandleReorderField(
-		current.DatatypeFieldID, prev.DatatypeFieldID,
+		string(current.FieldID), string(prev.FieldID),
 		int64(m.FieldCursor), int64(m.FieldCursor-1),
 		node.Instance.DatatypeID, node.Instance.ContentDataID, m.PageRouteId, "up",
 	)
@@ -1025,8 +1025,9 @@ func (m Model) contentFieldReorderDown() (Model, tea.Cmd) {
 	}
 	current := m.SelectedContentFields[m.FieldCursor]
 	next := m.SelectedContentFields[m.FieldCursor+1]
+	// Swap sort_order between the two fields using their field IDs
 	return m, m.HandleReorderField(
-		current.DatatypeFieldID, next.DatatypeFieldID,
+		string(current.FieldID), string(next.FieldID),
 		int64(m.FieldCursor), int64(m.FieldCursor+1),
 		node.Instance.DatatypeID, node.Instance.ContentDataID, m.PageRouteId, "down",
 	)
@@ -1208,7 +1209,6 @@ func (m Model) BasicContentControls(msg tea.Msg) (Model, tea.Cmd) {
 	return m, nil
 }
 
-
 // BasicDynamicControls handles keyboard navigation for dynamic pages.
 func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	switch msg := msg.(type) {
@@ -1254,6 +1254,7 @@ func (m Model) BasicDynamicControls(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	return m, nil
 }
+
 // SelectTable handles keyboard navigation for selecting a database table.
 func (m Model) SelectTable(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -1394,6 +1395,7 @@ func (m Model) UpdateDatabaseDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	cmds = append(cmds, pcmd)
 	return m, tea.Batch(cmds...)
 }
+
 // DefineDatatypeControls handles keyboard events for the datatype definition form.
 func (m Model) DefineDatatypeControls(msg tea.Msg) (Model, tea.Cmd) {
 	var cmds []tea.Cmd
@@ -1901,4 +1903,3 @@ func (m Model) QuickstartControls(msg tea.Msg) (Model, tea.Cmd) {
 	}
 	return m, nil
 }
-

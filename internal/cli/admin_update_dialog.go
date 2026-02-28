@@ -85,8 +85,8 @@ func (m Model) HandleCreateAdminRouteFromDialog(msg CreateAdminRouteFromDialogRe
 		}
 
 		params := db.CreateAdminRouteParams{
-			Slug:  validSlug,
-			Title: msg.Title,
+			Slug:   validSlug,
+			Title:  msg.Title,
 			Status: 1,
 			AuthorID: types.NullableUserID{
 				ID:    authorID,
@@ -155,8 +155,8 @@ func (m Model) HandleUpdateAdminRouteFromDialog(msg UpdateAdminRouteFromDialogRe
 		}
 
 		params := db.UpdateAdminRouteParams{
-			Slug:  validSlug,
-			Title: msg.Title,
+			Slug:   validSlug,
+			Title:  msg.Title,
 			Status: existingRoute.Status,
 			AuthorID: types.NullableUserID{
 				ID:    authorID,
@@ -368,22 +368,8 @@ func (m Model) HandleDeleteAdminDatatype(msg DeleteAdminDatatypeRequestMsg) tea.
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
-		// Delete junction records first
-		dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(msg.AdminDatatypeID)
-		if err == nil && dtFields != nil {
-			for _, dtf := range *dtFields {
-				deleteErr := d.DeleteAdminDatatypeField(ctx, ac, dtf.ID)
-				if deleteErr != nil {
-					return ActionResultMsg{
-						Title:   "Error",
-						Message: fmt.Sprintf("Failed to delete admin datatype field junction: %v", deleteErr),
-					}
-				}
-			}
-		}
-
-		// Delete the datatype
-		err = d.DeleteAdminDatatype(ctx, ac, msg.AdminDatatypeID)
+		// Delete the datatype (fields with parent_id referencing it are set to NULL by FK cascade)
+		err := d.DeleteAdminDatatype(ctx, ac, msg.AdminDatatypeID)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",
@@ -443,6 +429,7 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 		fieldType := types.FieldType(fieldTypeStr)
 
 		fieldParams := db.CreateAdminFieldParams{
+			ParentID:   types.NullableAdminDatatypeID{ID: msg.AdminDatatypeID, Valid: true},
 			Name:       msg.Name,
 			Label:      msg.Label,
 			Data:       "",
@@ -466,20 +453,6 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 			return ActionResultMsg{
 				Title:   "Error",
 				Message: errMsg,
-			}
-		}
-
-		// Link field to admin datatype via junction table
-		dtFieldParams := db.CreateAdminDatatypeFieldParams{
-			AdminDatatypeID: msg.AdminDatatypeID,
-			AdminFieldID:    field.AdminFieldID,
-		}
-
-		_, dtfErr := d.CreateAdminDatatypeField(ctx, ac, dtFieldParams)
-		if dtfErr != nil {
-			return ActionResultMsg{
-				Title:   "Warning",
-				Message: fmt.Sprintf("Admin field created but failed to link to datatype: %v", dtfErr),
 			}
 		}
 
@@ -587,22 +560,8 @@ func (m Model) HandleDeleteAdminField(msg DeleteAdminFieldRequestMsg) tea.Cmd {
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, authorID)
 
-		// Delete junction records first
-		dtFields, err := d.ListAdminDatatypeFieldByFieldID(msg.AdminFieldID)
-		if err == nil && dtFields != nil {
-			for _, dtf := range *dtFields {
-				deleteErr := d.DeleteAdminDatatypeField(ctx, ac, dtf.ID)
-				if deleteErr != nil {
-					return ActionResultMsg{
-						Title:   "Error",
-						Message: fmt.Sprintf("Failed to delete admin datatype field junction: %v", deleteErr),
-					}
-				}
-			}
-		}
-
-		// Delete the field
-		err = d.DeleteAdminField(ctx, ac, msg.AdminFieldID)
+		// Delete the field (parent_id FK on admin_datatypes is handled by cascade)
+		err := d.DeleteAdminField(ctx, ac, msg.AdminFieldID)
 		if err != nil {
 			return ActionResultMsg{
 				Title:   "Error",

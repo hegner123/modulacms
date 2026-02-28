@@ -22,12 +22,6 @@ func (d Database) DropAllTables() error {
 	}
 
 	// Tier 6: Junction tables
-	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop admin_datatypes_fields: %w", err)
-	}
-	if err := queries.DropDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop datatypes_fields: %w", err)
-	}
 	if err := queries.DropRolePermissionsTable(d.Context); err != nil {
 		return fmt.Errorf("drop role_permissions: %w", err)
 	}
@@ -149,12 +143,6 @@ func (d MysqlDatabase) DropAllTables() error {
 	}
 
 	// Tier 6: Junction tables
-	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop admin_datatypes_fields: %w", err)
-	}
-	if err := queries.DropDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop datatypes_fields: %w", err)
-	}
 	if err := queries.DropRolePermissionsTable(d.Context); err != nil {
 		return fmt.Errorf("drop role_permissions: %w", err)
 	}
@@ -276,12 +264,6 @@ func (d PsqlDatabase) DropAllTables() error {
 	}
 
 	// Tier 6: Junction tables
-	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop admin_datatypes_fields: %w", err)
-	}
-	if err := queries.DropDatatypesFieldsTable(d.Context); err != nil {
-		return fmt.Errorf("drop datatypes_fields: %w", err)
-	}
 	if err := queries.DropRolePermissionsTable(d.Context); err != nil {
 		return fmt.Errorf("drop role_permissions: %w", err)
 	}

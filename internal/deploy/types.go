@@ -36,11 +36,11 @@ type SyncManifest struct {
 	Timestamp     string         `json:"timestamp"`      // RFC3339 UTC
 	SourceNodeID  string         `json:"source_node_id"`
 	SourceURL     string         `json:"source_url"`
-	Version       string         `json:"version"`       // ModulaCMS version
+	Version       string         `json:"version"` // ModulaCMS version
 	Strategy      MergeStrategy  `json:"strategy"`
-	Tables        []string       `json:"tables"`        // table names included
-	RowCounts     map[string]int `json:"row_counts"`    // table -> count
-	PayloadHash   string         `json:"payload_hash"`  // SHA256 of Tables map JSON
+	Tables        []string       `json:"tables"`       // table names included
+	RowCounts     map[string]int `json:"row_counts"`   // table -> count
+	PayloadHash   string         `json:"payload_hash"` // SHA256 of Tables map JSON
 }
 
 // SyncResult is returned after a sync operation completes.
@@ -68,10 +68,10 @@ type SyncError struct {
 
 // SyncConfig controls the behavior of a sync operation.
 type SyncConfig struct {
-	Source     string        // "local" or environment name
-	Target     string        // "local" or environment name
+	Source     string // "local" or environment name
+	Target     string // "local" or environment name
 	Strategy   MergeStrategy
-	Tables     []db.DBTable  // empty = DefaultTableSet
+	Tables     []db.DBTable // empty = DefaultTableSet
 	DryRun     bool
 	SkipBackup bool
 	Timeout    time.Duration // default 5 minutes
@@ -88,10 +88,7 @@ var DefaultTableSet = []db.DBTable{
 	db.Admin_field,
 	db.Route,
 	db.Admin_route,
-	// Tier 3: junction tables
-	db.Datatype_fields,
-	db.Admin_datatype_fields,
-	// Tier 4: content
+	// Tier 3: content
 	db.Content_data,
 	db.Admin_content_data,
 	// Tier 5: content fields

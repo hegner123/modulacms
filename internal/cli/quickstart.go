@@ -58,7 +58,6 @@ func (a *dbInstallerAdapter) CreateField(p db.CreateFieldParams) (db.Fields, err
 	return *result, nil
 }
 
-
 // RunQuickstartInstallCmd creates a tea.Cmd that installs a schema definition by index.
 func RunQuickstartInstallCmd(cfg *config.Config, userID types.UserID, schemaIndex int) tea.Cmd {
 	return func() tea.Msg {

@@ -118,14 +118,6 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		AdminFieldHandler(w, r, *c)
 	})))
 
-	// Admin datatype fields
-	mux.Handle("/api/v1/admindatatypefields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypeFieldsHandler(w, r, *c)
-	})))
-	mux.Handle("/api/v1/admindatatypefields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminDatatypeFieldHandler(w, r, *c)
-	})))
-
 	// Admin routes
 	mux.Handle("/api/v1/adminroutes", middleware.RequireResourcePermission("routes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminRoutesHandler(w, r, *c)
@@ -194,14 +186,6 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})))
 	mux.Handle("/api/v1/datatype/", middleware.RequireResourcePermission("datatypes")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		DatatypeHandler(w, r, *c)
-	})))
-
-	// Datatype fields
-	mux.Handle("/api/v1/datatypefields", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeFieldsHandler(w, r, *c)
-	})))
-	mux.Handle("/api/v1/datatypefields/", middleware.RequireResourcePermission("fields")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		DatatypeFieldHandler(w, r, *c)
 	})))
 
 	// Fields
@@ -540,6 +524,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// Schema — datatypes (JSON API for block editor)
 	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(driver)))
+	mux.Handle("GET /admin/api/datatypes/{id}/fields", viewing("datatypes", adminhandlers.DatatypeFieldsJSONHandler(driver)))
 
 	// Schema — datatypes
 	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(driver)))

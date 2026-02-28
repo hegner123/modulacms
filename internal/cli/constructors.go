@@ -145,6 +145,7 @@ func FormActionCmd(action DatabaseCMD, table string, columns []string, values []
 		}
 	}
 }
+
 // FormAbortCmd creates a command to abort the current form operation.
 func FormAbortCmd(action DatabaseCMD, table string) tea.Cmd {
 	return func() tea.Msg {
@@ -186,6 +187,7 @@ func DatabaseGetCmd(source FetchSource, table db.DBTable, id int64) tea.Cmd {
 		}
 	}
 }
+
 // DatabaseListCmd creates a command to list all records from a table.
 func DatabaseListCmd(source FetchSource, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
@@ -195,6 +197,7 @@ func DatabaseListCmd(source FetchSource, table db.DBTable) tea.Cmd {
 		}
 	}
 }
+
 // DatabaseListFilteredCmd creates a command to list filtered database records.
 func DatabaseListFilteredCmd(source FetchSource, table db.DBTable, columns []string, whereColumn string, value any) tea.Cmd {
 	return func() tea.Msg {
@@ -207,6 +210,7 @@ func DatabaseListFilteredCmd(source FetchSource, table db.DBTable, columns []str
 		}
 	}
 }
+
 // DatabaseGetRowsCmd creates a command to return single row results.
 func DatabaseGetRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
@@ -217,6 +221,7 @@ func DatabaseGetRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd 
 		}
 	}
 }
+
 // DatabaseListRowsCmd creates a command to return list row results.
 func DatabaseListRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
@@ -227,6 +232,7 @@ func DatabaseListRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd
 		}
 	}
 }
+
 // DatabaseListFilteredRowsCmd creates a command to return filtered row results.
 func DatabaseListFilteredRowsCmd(source FetchSource, rows any, table db.DBTable) tea.Cmd {
 	return func() tea.Msg {
@@ -237,6 +243,7 @@ func DatabaseListFilteredRowsCmd(source FetchSource, rows any, table db.DBTable)
 		}
 	}
 }
+
 // DatabaseDeleteEntryCmd creates a command to delete a database entry.
 func DatabaseDeleteEntryCmd(id int, table string) tea.Cmd {
 	return func() tea.Msg { return DatabaseDeleteEntry{Id: id, Table: table} }
@@ -252,6 +259,7 @@ func DatabaseInsertCmd(table db.DBTable, columns []string, values []*string) tea
 		}
 	}
 }
+
 // DatabaseUpdateEntryCmd creates a command to update a database record.
 func DatabaseUpdateEntryCmd(table db.DBTable, rowID string, values map[string]string) tea.Cmd {
 	return func() tea.Msg {
@@ -267,6 +275,7 @@ func DatabaseUpdateEntryCmd(table db.DBTable, rowID string, values map[string]st
 func ColumnsFetchedCmd(columns *[]string, columnTypes *[]*sql.ColumnType) tea.Cmd {
 	return func() tea.Msg { return ColumnsFetched{Columns: columns, ColumnTypes: columnTypes} }
 }
+
 // ColumnsSetCmd creates a command to set table columns.
 func ColumnsSetCmd(columns *[]string) tea.Cmd {
 	return func() tea.Msg { return ColumnsSet{Columns: columns} }
@@ -443,6 +452,7 @@ func GetFullTreeResCMD(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
 		}
 	}
 }
+
 // BuildTreeFromRowsCmd creates a command to build a tree from database rows.
 func BuildTreeFromRowsCmd(rows []db.GetRouteTreeByRouteIDRow) tea.Cmd {
 	return func() tea.Msg {
@@ -481,12 +491,14 @@ func CmsDefineDatatypeReadyCmd() tea.Cmd {
 		return CmsDefineDatatypeReadyMsg{}
 	}
 }
+
 // CmsBuildDefineDatatypeFormCmd creates a command to build the datatype definition form.
 func CmsBuildDefineDatatypeFormCmd() tea.Cmd {
 	return func() tea.Msg {
 		return CmsBuildDefineDatatypeFormMsg{}
 	}
 }
+
 // CmsEditDatatypeLoadCmd creates a command to load a datatype for editing.
 func CmsEditDatatypeLoadCmd(dt db.Datatypes) tea.Cmd {
 	return func() tea.Msg { return CmsEditDatatypeLoadMsg{Datatype: dt} }
@@ -503,6 +515,7 @@ func CmsDefineDatatypeFormCmd() tea.Cmd {
 		return CmsDefineDatatypeFormMsg{}
 	}
 }
+
 // FormOptionsSetCmd creates a command to set form options.
 func FormOptionsSetCmd(options *FormOptionsMap) tea.Cmd {
 	return func() tea.Msg {
@@ -521,6 +534,7 @@ func FormInitOptionsCmd(form, table string) tea.Cmd {
 		}
 	}
 }
+
 // CmsAddNewContentDataCmd creates a command to add new content data.
 func CmsAddNewContentDataCmd(id types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
@@ -529,6 +543,7 @@ func CmsAddNewContentDataCmd(id types.DatatypeID) tea.Cmd {
 		}
 	}
 }
+
 // CmsAddNewContentFieldsCmd creates a command to add new content fields.
 func CmsAddNewContentFieldsCmd(id int64) tea.Cmd {
 	return func() tea.Msg {
@@ -580,8 +595,9 @@ func RolesListSetCmd(roles []db.Roles) tea.Cmd {
 func RootContentSummaryFetchCmd() tea.Cmd {
 	return func() tea.Msg { return RootContentSummaryFetchMsg{} }
 }
+
 // RootContentSummarySetCmd creates a command to set root content summary data.
-func RootContentSummarySetCmd(summary []db.RootContentSummary) tea.Cmd {
+func RootContentSummarySetCmd(summary []db.ContentDataTopLevel) tea.Cmd {
 	return func() tea.Msg { return RootContentSummarySet{RootContentSummary: summary} }
 }
 
@@ -607,6 +623,7 @@ func RoutesSetCmd(routes []db.Routes) tea.Cmd {
 func RootDatatypesFetchCmd() tea.Cmd {
 	return func() tea.Msg { return RootDatatypesFetchMsg{} }
 }
+
 // RootDatatypesSetCmd creates a command to set root datatypes list.
 func RootDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
 	return func() tea.Msg { return RootDatatypesSet{RootDatatypes: datatypes} }
@@ -616,6 +633,7 @@ func RootDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
 func AllDatatypesFetchCmd() tea.Cmd {
 	return func() tea.Msg { return AllDatatypesFetchMsg{} }
 }
+
 // AllDatatypesSetCmd creates a command to set all datatypes list.
 func AllDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
 	return func() tea.Msg { return AllDatatypesSet{AllDatatypes: datatypes} }
@@ -625,6 +643,7 @@ func AllDatatypesSetCmd(datatypes []db.Datatypes) tea.Cmd {
 func DatatypeFieldsFetchCmd(datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg { return DatatypeFieldsFetchMsg{DatatypeID: datatypeID} }
 }
+
 // DatatypeFieldsSetCmd creates a command to set datatype fields list.
 func DatatypeFieldsSetCmd(fields []db.Fields) tea.Cmd {
 	return func() tea.Msg { return DatatypeFieldsSet{Fields: fields} }
@@ -634,6 +653,7 @@ func DatatypeFieldsSetCmd(fields []db.Fields) tea.Cmd {
 func RoutesByDatatypeFetchCmd(datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg { return RoutesByDatatypeFetchMsg{DatatypeID: datatypeID} }
 }
+
 // SelectedDatatypeSetCmd creates a command to set the selected datatype.
 func SelectedDatatypeSetCmd(datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg { return SelectedDatatypeSet{DatatypeID: datatypeID} }

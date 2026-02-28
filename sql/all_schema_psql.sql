@@ -98,7 +98,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id TEXT PRIMARY KEY NOT NULL,
     parent_id TEXT
         REFERENCES admin_datatypes
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
@@ -439,41 +440,6 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 
--- ===== 20_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id TEXT PRIMARY KEY NOT NULL,
-    datatype_id TEXT NOT NULL
-        CONSTRAINT fk_df_datatype
-            REFERENCES datatypes
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    field_id TEXT NOT NULL
-        CONSTRAINT fk_df_field
-            REFERENCES fields
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    sort_order INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_datatypes_fields_datatype ON datatypes_fields(datatype_id);
-CREATE INDEX IF NOT EXISTS idx_datatypes_fields_field ON datatypes_fields(field_id);
-
--- ===== 21_admin_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
-    id TEXT PRIMARY KEY NOT NULL,
-    admin_datatype_id TEXT NOT NULL
-        CONSTRAINT fk_df_admin_datatype
-            REFERENCES admin_datatypes
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    admin_field_id TEXT NOT NULL
-        CONSTRAINT fk_df_admin_field
-            REFERENCES admin_fields
-            ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_datatype ON admin_datatypes_fields(admin_datatype_id);
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_field ON admin_datatypes_fields(admin_field_id);
-
 -- ===== 23_user_ssh_keys =====
 
 -- user_ssh_keys table for storing SSH public keys linked to user accounts
@@ -710,7 +676,8 @@ CREATE TABLE IF NOT EXISTS fields (
     parent_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,

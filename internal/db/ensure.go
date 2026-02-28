@@ -105,9 +105,10 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	}
 	utility.DefaultLogger.Info("Creating missing _reference system datatype", "datatype_id", refDatatype.DatatypeID)
 
-	// Create "Target" field
-	refField, err := driver.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+	// Create "Target" field linked to _reference datatype via parent_id
+	_, err = driver.CreateField(ctx, ac, CreateFieldParams{
+		ParentID:     types.NullableDatatypeID{ID: refDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Name:         "target",
 		Label:        "Target",
 		Data:         "",
@@ -120,17 +121,6 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	})
 	if err != nil {
 		return fmt.Errorf("create _reference Target field: %w", err)
-	}
-
-	// Link field to datatype
-	_, err = driver.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
-		DatatypeID: refDatatype.DatatypeID,
-		FieldID:    refField.FieldID,
-		SortOrder:  0,
-	})
-	if err != nil {
-		return fmt.Errorf("link Target field to _reference datatype: %w", err)
 	}
 
 	return nil

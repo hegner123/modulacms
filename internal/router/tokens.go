@@ -141,4 +141,3 @@ func apiDeleteToken(w http.ResponseWriter, r *http.Request, c config.Config) err
 	w.WriteHeader(http.StatusOK)
 	return nil
 }
-

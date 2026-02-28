@@ -194,7 +194,9 @@ func countUsersPsql(t *testing.T, pool *sql.DB) int64 {
 
 // TestIntegration_ResolveUserRefs_PostgreSQL is the primary regression test
 // for the $1 placeholder fix. Before the fix, this test would fail with:
-//   "could not determine data type of parameter $1"
+//
+//	"could not determine data type of parameter $1"
+//
 // because resolveUserRefs hardcoded "?" instead of using ops.Placeholder(1).
 func TestIntegration_ResolveUserRefs_PostgreSQL(t *testing.T) {
 	pool, ops, viewerRoleID := setupPsqlDeployDB(t)

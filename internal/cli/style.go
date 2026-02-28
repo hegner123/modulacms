@@ -239,4 +239,3 @@ func RenderBorderBlock(s string) string {
 	return borderStyle.Render(blockStyle.Render(s))
 
 }
-

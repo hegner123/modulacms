@@ -38,10 +38,10 @@ func TestCardinality_Validate(t *testing.T) {
 func TestParseValidationConfig(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		name       string
-		input      string
-		wantErr    bool
-		checkFn    func(t *testing.T, vc ValidationConfig)
+		name    string
+		input   string
+		wantErr bool
+		checkFn func(t *testing.T, vc ValidationConfig)
 	}{
 		{
 			name:    "empty string returns zero",

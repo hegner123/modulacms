@@ -578,47 +578,6 @@ type UpdateAdminFieldParams = {
 
 admin_field_id identifies the field to update.
 
-## Admin Datatype Fields
-
-AdminDatatypeField is a junction record linking an admin datatype to an admin field. No dedicated list or get endpoints exist.
-
-### interface AdminDatatypeField
-
-Junction record linking an admin datatype to an admin field.
-
-```typescript
-type AdminDatatypeField = {
-  id: string
-  admin_datatype_id: AdminDatatypeID
-  admin_field_id: AdminFieldID
-}
-```
-
-### interface CreateAdminDatatypeFieldParams
-
-Parameters for creating a junction record via POST to admindatatypefields.
-
-```typescript
-type CreateAdminDatatypeFieldParams = {
-  admin_datatype_id: AdminDatatypeID
-  admin_field_id: AdminFieldID
-}
-```
-
-### interface UpdateAdminDatatypeFieldParams
-
-Parameters for updating a junction record via PUT to admindatatypefields.
-
-```typescript
-type UpdateAdminDatatypeFieldParams = {
-  id: string
-  admin_datatype_id: AdminDatatypeID
-  admin_field_id: AdminFieldID
-}
-```
-
-id identifies the junction record to update.
-
 ## Admin Content Relations
 
 AdminContentRelation represents a directional relation between two admin content nodes via a specific field.
@@ -904,50 +863,6 @@ type UpdateFieldParams = {
   author_id: UserID | null
   date_created: string
   date_modified: string
-}
-```
-
-## Datatype Fields
-
-DatatypeField is a junction record linking a datatype to a field with sort ordering.
-
-### interface DatatypeField
-
-Junction record linking a datatype to a field.
-
-```typescript
-type DatatypeField = {
-  id: string
-  datatype_id: DatatypeID
-  field_id: FieldID
-  sort_order: number
-}
-```
-
-sort_order determines field display order within the datatype.
-
-### interface CreateDatatypeFieldParams
-
-Parameters for creating a junction record via POST to datatypefields.
-
-```typescript
-type CreateDatatypeFieldParams = {
-  datatype_id: DatatypeID
-  field_id: FieldID
-  sort_order: number
-}
-```
-
-### interface UpdateDatatypeFieldParams
-
-Parameters for updating a junction record via PUT to datatypefields.
-
-```typescript
-type UpdateDatatypeFieldParams = {
-  id: string
-  datatype_id: DatatypeID
-  field_id: FieldID
-  sort_order: number
 }
 ```
 

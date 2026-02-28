@@ -25,8 +25,6 @@ var tableListFuncs = map[db.DBTable]tableListFunc{
 	db.Admin_field:             func(d db.DbDriver) (any, error) { return d.ListAdminFields() },
 	db.Route:                   func(d db.DbDriver) (any, error) { return d.ListRoutes() },
 	db.Admin_route:             func(d db.DbDriver) (any, error) { return d.ListAdminRoutes() },
-	db.Datatype_fields:         func(d db.DbDriver) (any, error) { return d.ListDatatypeField() },
-	db.Admin_datatype_fields:   func(d db.DbDriver) (any, error) { return d.ListAdminDatatypeField() },
 	db.Content_data:            func(d db.DbDriver) (any, error) { return d.ListContentData() },
 	db.Admin_content_data:      func(d db.DbDriver) (any, error) { return d.ListAdminContentData() },
 	db.Content_fields:          func(d db.DbDriver) (any, error) { return d.ListContentFields() },

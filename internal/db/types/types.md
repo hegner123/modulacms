@@ -178,18 +178,6 @@ Uniquely identifies an admin content field value. Represents field values for ad
 
 Methods: `NewAdminContentFieldID`, `String`, `IsZero`, `Validate`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
 
-### DatatypeFieldID
-
-Uniquely identifies a datatype-field relationship. Represents the junction table linking datatypes to their field definitions.
-
-Methods: `NewDatatypeFieldID`, `String`, `IsZero`, `Validate`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
-
-### AdminDatatypeFieldID
-
-Uniquely identifies an admin datatype-field relationship. Junction for admin datatypes and admin fields.
-
-Methods: `NewAdminDatatypeFieldID`, `String`, `IsZero`, `Validate`, `Value`, `Scan`, `MarshalJSON`, `UnmarshalJSON`. Identical semantics to DatatypeID.
-
 ### EventID
 
 Uniquely identifies a change event. Represents an entry in the change_events audit log for replication and webhooks.

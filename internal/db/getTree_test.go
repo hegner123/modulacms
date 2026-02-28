@@ -285,7 +285,7 @@ func TestDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) {
 		FieldID:    fieldID,
 		Label:      "headline",
 		Type:       types.FieldType("text"),
-		DatatypeID: datatypeID,
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
 	}
 
 	got := d.MapGetFieldDefinitionsByRouteRow(input)
@@ -299,8 +299,9 @@ func TestDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) {
 	if got.Type != types.FieldType("text") {
 		t.Errorf("Type = %v, want %v", got.Type, types.FieldType("text"))
 	}
-	if got.DatatypeID != datatypeID {
-		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, datatypeID)
+	wantDtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	if got.DatatypeID != wantDtID {
+		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, wantDtID)
 	}
 }
 
@@ -331,7 +332,7 @@ func TestDatabase_MapGetFieldDefinitionsByRouteRow_EmptyDatatypeID(t *testing.T)
 		FieldID:    types.NewFieldID(),
 		Label:      "global_field",
 		Type:       types.FieldType("number"),
-		DatatypeID: types.DatatypeID(""),
+		DatatypeID: types.NullableDatatypeID{},
 	}
 
 	got := d.MapGetFieldDefinitionsByRouteRow(input)
@@ -576,7 +577,7 @@ func TestMysqlDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) 
 		FieldID:    fieldID,
 		Label:      "mysql_field",
 		Type:       types.FieldType("textarea"),
-		DatatypeID: datatypeID,
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
 	}
 
 	got := d.MapGetFieldDefinitionsByRouteRow(input)
@@ -590,8 +591,9 @@ func TestMysqlDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) 
 	if got.Type != types.FieldType("textarea") {
 		t.Errorf("Type = %v, want %v", got.Type, types.FieldType("textarea"))
 	}
-	if got.DatatypeID != datatypeID {
-		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, datatypeID)
+	wantDtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	if got.DatatypeID != wantDtID {
+		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, wantDtID)
 	}
 }
 
@@ -821,7 +823,7 @@ func TestPsqlDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) {
 		FieldID:    fieldID,
 		Label:      "psql_field",
 		Type:       types.FieldType("boolean"),
-		DatatypeID: datatypeID,
+		DatatypeID: types.NullableDatatypeID{ID: datatypeID, Valid: true},
 	}
 
 	got := d.MapGetFieldDefinitionsByRouteRow(input)
@@ -835,8 +837,9 @@ func TestPsqlDatabase_MapGetFieldDefinitionsByRouteRow_AllFields(t *testing.T) {
 	if got.Type != types.FieldType("boolean") {
 		t.Errorf("Type = %v, want %v", got.Type, types.FieldType("boolean"))
 	}
-	if got.DatatypeID != datatypeID {
-		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, datatypeID)
+	wantDtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	if got.DatatypeID != wantDtID {
+		t.Errorf("DatatypeID = %v, want %v", got.DatatypeID, wantDtID)
 	}
 }
 
@@ -992,7 +995,7 @@ func TestCrossDatabase_MapGetContentTreeByRouteRow_Consistency(t *testing.T) {
 func TestCrossDatabase_MapGetFieldDefinitionsByRouteRow_Consistency(t *testing.T) {
 	t.Parallel()
 	fieldID := types.NewFieldID()
-	datatypeID := types.DatatypeID("dt-cross")
+	datatypeID := types.NullableDatatypeID{ID: types.DatatypeID("dt-cross"), Valid: true}
 
 	sqliteInput := mdb.GetFieldDefinitionsByRouteRow{
 		FieldID: fieldID, Label: "cross_field", Type: types.FieldType("date"), DatatypeID: datatypeID,
@@ -1143,7 +1146,7 @@ func TestGetFieldDefinitionsByRouteRow_JSONTags(t *testing.T) {
 		FieldID:    types.NewFieldID(),
 		Label:      "test_label",
 		Type:       types.FieldType("text"),
-		DatatypeID: types.NewDatatypeID(),
+		DatatypeID: types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true},
 	}
 
 	data, err := json.Marshal(row)

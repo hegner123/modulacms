@@ -21,6 +21,7 @@ import (
 type AdminFields struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder    int64                         `json:"sort_order"`
 	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
@@ -35,6 +36,7 @@ type AdminFields struct {
 // CreateAdminFieldParams contains parameters for creating a new adminField.
 type CreateAdminFieldParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder    int64                         `json:"sort_order"`
 	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
@@ -49,6 +51,7 @@ type CreateAdminFieldParams struct {
 // UpdateAdminFieldParams contains parameters for updating an existing adminField.
 type UpdateAdminFieldParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder    int64                         `json:"sort_order"`
 	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
@@ -73,6 +76,7 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 	return StringAdminFields{
 		AdminFieldID: a.AdminFieldID.String(),
 		ParentID:     a.ParentID.String(),
+		SortOrder:    fmt.Sprintf("%d", a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -97,6 +101,7 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -114,6 +119,7 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 	return mdb.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -130,6 +136,7 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.UpdateAdminFieldParams {
 	return mdb.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -234,6 +241,22 @@ func (d Database) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsByPar
 	return &res, nil
 }
 
+// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
+// the given admin datatype ID.
+func (d Database) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdb.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -245,6 +268,7 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -262,6 +286,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 	return mdbm.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -278,6 +303,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.UpdateAdminFieldParams {
 	return mdbm.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -382,6 +408,22 @@ func (d MysqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFields
 	return &res, nil
 }
 
+// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
+// the given admin datatype ID.
+func (d MysqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbm.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -393,6 +435,7 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -410,6 +453,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 	return mdbp.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -426,6 +470,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.UpdateAdminFieldParams {
 	return mdbp.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -530,6 +575,22 @@ func (d PsqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsB
 	return &res, nil
 }
 
+// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
+// the given admin datatype ID.
+func (d PsqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbp.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
+	}
+	res := []AdminFields{}
+	for _, v := range rows {
+		m := d.MapAdminField(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+
 // ========== AUDITED COMMAND TYPES ==========
 
 // ----- SQLite CREATE -----
@@ -570,6 +631,7 @@ func (c NewAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Adm
 	return queries.CreateAdminField(ctx, mdb.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -630,6 +692,7 @@ func (c UpdateAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error
 	queries := mdb.New(tx)
 	return queries.UpdateAdminField(ctx, mdb.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -732,6 +795,7 @@ func (c NewAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 	params := mdbm.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -796,6 +860,7 @@ func (c UpdateAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 	queries := mdbm.New(tx)
 	return queries.UpdateAdminField(ctx, mdbm.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -898,6 +963,7 @@ func (c NewAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	return queries.CreateAdminField(ctx, mdbp.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -958,6 +1024,7 @@ func (c UpdateAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 	queries := mdbp.New(tx)
 	return queries.UpdateAdminField(ctx, mdbp.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,

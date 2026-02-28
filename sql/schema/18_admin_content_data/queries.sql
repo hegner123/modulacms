@@ -96,3 +96,17 @@ SELECT * FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 LIMIT ? OFFSET ?;
+
+-- name: ListAdminContentDataTopLevelPaginated :many
+SELECT acd.*, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label FROM admin_content_data acd
+LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
+LEFT JOIN users u ON acd.author_id = u.user_id
+LEFT JOIN admin_routes ar ON acd.admin_route_id = ar.admin_route_id
+WHERE acd.admin_route_id IS NOT NULL OR adt.type = '_root'
+ORDER BY acd.admin_content_data_id
+LIMIT ? OFFSET ?;
+
+-- name: CountAdminContentDataTopLevel :one
+SELECT COUNT(*) FROM admin_content_data acd
+LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
+WHERE acd.admin_route_id IS NOT NULL OR adt.type = '_root';

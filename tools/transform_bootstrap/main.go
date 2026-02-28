@@ -356,48 +356,6 @@ func main() {
 		}
 		if table.ID == "" {`,
 		},
-		// Datatype field junction
-		{
-			old: `	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{`,
-			new: `	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{`,
-		},
-		// Datatype field zero check
-		{
-			old: `	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 22. Create default admin_datatypes_fields junction record`,
-			new: `	if err != nil {
-		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
-	}
-	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 22. Create default admin_datatypes_fields junction record`,
-		},
-		// Admin datatype field junction
-		{
-			old: `	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{`,
-			new: `	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{`,
-		},
-		// Admin datatype field zero check (before logger)
-		{
-			old: `	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
-	utility.DefaultLogger.Finfo(`,
-			new: `	if err != nil {
-		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
-	}
-	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
-	utility.DefaultLogger.Finfo(`,
-		},
 	}
 
 	for _, r := range replacements {

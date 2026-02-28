@@ -1,5 +1,5 @@
 /**
- * Schema-level entity types: datatypes, fields, and their junction table.
+ * Schema-level entity types: datatypes and fields.
  * Entity types are re-exported from @modulacms/types; param types are local.
  *
  * @module types/schema
@@ -16,7 +16,9 @@ import type {
 } from './common.js'
 
 // Re-export shared entity types
-export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo, DatatypeField } from '@modulacms/types'
+export type { Datatype, FieldTypeInfo, AdminFieldTypeInfo } from '@modulacms/types'
+import type { Field } from '@modulacms/types'
+export type { Field } from '@modulacms/types'
 
 // ---------------------------------------------------------------------------
 // View types (composed responses from /datatype/full)
@@ -36,26 +38,6 @@ export type AuthorView = {
   role: string
 }
 
-/** A field definition with sort order, used in the datatype full view. */
-export type DatatypeFieldView = {
-  /** Unique identifier for the field. */
-  field_id: FieldID
-  /** Machine-readable name used as JSON key. */
-  name: string
-  /** Human-readable label. */
-  label: string
-  /** The data type of this field. */
-  type: FieldType
-  /** Additional metadata (JSON-encoded). */
-  data: string
-  /** Validation rules (JSON-encoded). */
-  validation: string
-  /** UI configuration (JSON-encoded). */
-  ui_config: string
-  /** Display ordering position. */
-  sort_order: number
-}
-
 /** A fully composed datatype response from `GET /datatype/full`. */
 export type DatatypeFullView = {
   /** Unique identifier for this datatype. */
@@ -71,7 +53,7 @@ export type DatatypeFullView = {
   /** Author who created this datatype. */
   author?: AuthorView
   /** All field definitions belonging to this datatype. */
-  fields: DatatypeFieldView[]
+  fields: Field[]
   /** ISO 8601 creation timestamp. */
   date_created: string
   /** ISO 8601 last-modification timestamp. */
@@ -81,16 +63,6 @@ export type DatatypeFullView = {
 // ---------------------------------------------------------------------------
 // Create params
 // ---------------------------------------------------------------------------
-
-/** Parameters for creating a new datatype-field junction record via `POST /datatypefields`. */
-export type CreateDatatypeFieldParams = {
-  /** The datatype in the relationship. */
-  datatype_id: DatatypeID
-  /** The field in the relationship. */
-  field_id: FieldID
-  /** Display ordering position within the datatype. */
-  sort_order: number
-}
 
 /** Parameters for creating a new datatype via `POST /datatype`. */
 export type CreateDatatypeParams = {
@@ -118,6 +90,8 @@ export type CreateFieldParams = {
   field_id: FieldID
   /** Parent datatype ID, or `null`. */
   parent_id: DatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable label. */
@@ -141,18 +115,6 @@ export type CreateFieldParams = {
 // ---------------------------------------------------------------------------
 // Update params
 // ---------------------------------------------------------------------------
-
-/** Parameters for updating a datatype-field junction record via `PUT /datatypefields/`. */
-export type UpdateDatatypeFieldParams = {
-  /** Unique identifier for this junction record. */
-  id: string
-  /** The datatype in the relationship. */
-  datatype_id: DatatypeID
-  /** The field in the relationship. */
-  field_id: FieldID
-  /** Display ordering position within the datatype. */
-  sort_order: number
-}
 
 /** Parameters for updating a datatype via `PUT /datatype/`. */
 export type UpdateDatatypeParams = {
@@ -180,6 +142,8 @@ export type UpdateFieldParams = {
   field_id: FieldID
   /** Updated parent datatype ID, or `null`. */
   parent_id: DatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Updated label. */

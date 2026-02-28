@@ -1,5 +1,5 @@
 /**
- * Schema-level entity types: datatypes, fields, and their junction table.
+ * Schema-level entity types: datatypes and fields.
  * These define the content model structure used by both admin and public content.
  *
  * @module entities/schema
@@ -46,6 +46,8 @@ export type Field = {
   field_id: FieldID
   /** Parent datatype ID this field belongs to, or `null`. */
   parent_id: DatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable field label. */
@@ -90,16 +92,3 @@ export type AdminFieldTypeInfo = {
   label: string
 }
 
-/**
- * Junction record linking a datatype to a field with ordering.
- */
-export type DatatypeField = {
-  /** Unique identifier for this junction record. */
-  id: string
-  /** The datatype in the relationship. */
-  datatype_id: DatatypeID
-  /** The field in the relationship. */
-  field_id: FieldID
-  /** Display ordering position within the datatype. */
-  sort_order: number
-}

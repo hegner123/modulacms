@@ -234,14 +234,23 @@ func TestAssembleContentDataView(t *testing.T) {
 	cdAuthorID := seed.User.UserID // ContentData uses types.UserID (non-nullable)
 	authorID := seed.User.UserID   // ContentFields also uses types.UserID (non-nullable)
 
-	// Link the field to the datatype
-	_, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: seed.Datatype.DatatypeID,
-		FieldID:    seed.Field.FieldID,
-		SortOrder:  1,
+	// Link the field to the datatype by updating its ParentID
+	_, err := d.UpdateField(ctx, ac, UpdateFieldParams{
+		FieldID:      seed.Field.FieldID,
+		ParentID:     types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true},
+		SortOrder:    1,
+		Name:         seed.Field.Name,
+		Label:        seed.Field.Label,
+		Data:         seed.Field.Data,
+		Validation:   seed.Field.Validation,
+		UIConfig:     seed.Field.UIConfig,
+		Type:         seed.Field.Type,
+		AuthorID:     seed.Field.AuthorID,
+		DateCreated:  seed.Field.DateCreated,
+		DateModified: now,
 	})
 	if err != nil {
-		t.Fatalf("CreateDatatypeField: %v", err)
+		t.Fatalf("UpdateField (set ParentID): %v", err)
 	}
 
 	// Create content data
@@ -500,10 +509,30 @@ func TestAssembleDatatypeFullView(t *testing.T) {
 	now := types.TimestampNow()
 	authorID := types.NullableUserID{ID: seed.User.UserID, Valid: true}
 
-	// Create a second field
-	field2, err := d.CreateField(ctx, ac, CreateFieldParams{
+	// Link seed field to the datatype by setting ParentID
+	_, err := d.UpdateField(ctx, ac, UpdateFieldParams{
+		FieldID:      seed.Field.FieldID,
+		ParentID:     types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true},
+		SortOrder:    1,
+		Name:         seed.Field.Name,
+		Label:        seed.Field.Label,
+		Data:         seed.Field.Data,
+		Validation:   seed.Field.Validation,
+		UIConfig:     seed.Field.UIConfig,
+		Type:         seed.Field.Type,
+		AuthorID:     seed.Field.AuthorID,
+		DateCreated:  seed.Field.DateCreated,
+		DateModified: now,
+	})
+	if err != nil {
+		t.Fatalf("UpdateField (set ParentID on seed.Field): %v", err)
+	}
+
+	// Create a second field with ParentID set to the datatype
+	_, err = d.CreateField(ctx, ac, CreateFieldParams{
 		FieldID:      types.NewFieldID(),
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: seed.Datatype.DatatypeID, Valid: true},
+		SortOrder:    2,
 		Label:        "body",
 		Data:         "{}",
 		Validation:   "{}",
@@ -515,24 +544,6 @@ func TestAssembleDatatypeFullView(t *testing.T) {
 	})
 	if err != nil {
 		t.Fatalf("CreateField: %v", err)
-	}
-
-	// Link both fields to the datatype
-	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: seed.Datatype.DatatypeID,
-		FieldID:    seed.Field.FieldID,
-		SortOrder:  1,
-	})
-	if err != nil {
-		t.Fatalf("CreateDatatypeField[0]: %v", err)
-	}
-	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: seed.Datatype.DatatypeID,
-		FieldID:    field2.FieldID,
-		SortOrder:  2,
-	})
-	if err != nil {
-		t.Fatalf("CreateDatatypeField[1]: %v", err)
 	}
 
 	view, err := AssembleDatatypeFullView(d, seed.Datatype.DatatypeID)
@@ -603,7 +614,7 @@ func TestAssembleDatatypeFullView_EmptyFields(t *testing.T) {
 	t.Parallel()
 	d, seed := testSeededDB(t)
 
-	// Datatype exists but has no fields linked via datatypes_fields
+	// Datatype exists but has no fields linked via parent_id
 	view, err := AssembleDatatypeFullView(d, seed.Datatype.DatatypeID)
 	if err != nil {
 		t.Fatalf("AssembleDatatypeFullView: %v", err)

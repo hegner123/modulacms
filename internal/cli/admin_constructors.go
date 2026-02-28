@@ -26,6 +26,7 @@ func CreateAdminRouteFromDialogCmd(title, slug string) tea.Cmd {
 		return CreateAdminRouteFromDialogRequestMsg{Title: title, Slug: slug}
 	}
 }
+
 // UpdateAdminRouteFromDialogCmd creates a command to update an admin route from dialog input.
 func UpdateAdminRouteFromDialogCmd(routeID, title, slug, originalSlug string) tea.Cmd {
 	return func() tea.Msg {
@@ -37,6 +38,7 @@ func UpdateAdminRouteFromDialogCmd(routeID, title, slug, originalSlug string) te
 		}
 	}
 }
+
 // DeleteAdminRouteCmd creates a command to delete an admin route.
 func DeleteAdminRouteCmd(adminRouteID types.AdminRouteID) tea.Cmd {
 	return func() tea.Msg { return DeleteAdminRouteRequestMsg{AdminRouteID: adminRouteID} }
@@ -92,6 +94,7 @@ func UpdateAdminDatatypeFromDialogCmd(adminDatatypeID, name, label, dtype, paren
 		}
 	}
 }
+
 // DeleteAdminDatatypeCmd creates a command to delete an admin datatype.
 func DeleteAdminDatatypeCmd(adminDatatypeID types.AdminDatatypeID) tea.Cmd {
 	return func() tea.Msg { return DeleteAdminDatatypeRequestMsg{AdminDatatypeID: adminDatatypeID} }
@@ -135,6 +138,7 @@ func UpdateAdminFieldFromDialogCmd(adminFieldID, name, label, fieldType string) 
 		}
 	}
 }
+
 // DeleteAdminFieldCmd creates a command to delete an admin field.
 func DeleteAdminFieldCmd(adminFieldID types.AdminFieldID, adminDatatypeID types.AdminDatatypeID) tea.Cmd {
 	return func() tea.Msg {
@@ -163,7 +167,7 @@ func AdminContentDataFetchCmd() tea.Cmd {
 }
 
 // AdminContentDataSetCmd creates a command to set the admin content data list.
-func AdminContentDataSetCmd(data []db.AdminContentData) tea.Cmd {
+func AdminContentDataSetCmd(data []db.AdminContentDataTopLevel) tea.Cmd {
 	return func() tea.Msg { return AdminContentDataSet{AdminContentData: data} }
 }
 

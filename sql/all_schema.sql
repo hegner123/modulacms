@@ -97,7 +97,8 @@ CREATE TABLE admin_fields (
         PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
@@ -379,41 +380,6 @@ CREATE TABLE IF NOT EXISTS roles (
     system_protected INTEGER NOT NULL DEFAULT 0
 );
 
--- ===== 20_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id TEXT PRIMARY KEY NOT NULL CHECK (length(id) = 26),
-    datatype_id TEXT NOT NULL
-        CONSTRAINT fk_df_datatype
-            REFERENCES datatypes
-            ON DELETE CASCADE,
-    field_id TEXT NOT NULL
-        CONSTRAINT fk_df_field
-            REFERENCES fields
-            ON DELETE CASCADE,
-    sort_order INTEGER NOT NULL DEFAULT 0
-);
-
-CREATE INDEX IF NOT EXISTS idx_datatypes_fields_datatype ON datatypes_fields(datatype_id);
-CREATE INDEX IF NOT EXISTS idx_datatypes_fields_field ON datatypes_fields(field_id);
-
--- ===== 21_admin_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
-    id TEXT PRIMARY KEY NOT NULL CHECK (length(id) = 26),
-    admin_datatype_id TEXT NOT NULL
-        CONSTRAINT fk_df_admin_datatype
-            REFERENCES admin_datatypes
-            ON DELETE CASCADE,
-    admin_field_id TEXT NOT NULL
-        CONSTRAINT fk_df_admin_field
-            REFERENCES admin_fields
-            ON DELETE CASCADE
-);
-
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_datatype ON admin_datatypes_fields(admin_datatype_id);
-CREATE INDEX IF NOT EXISTS idx_admin_datatypes_fields_field ON admin_datatypes_fields(admin_field_id);
-
 -- ===== 23_user_ssh_keys =====
 
 -- user_ssh_keys table for storing SSH public keys linked to user accounts
@@ -628,7 +594,8 @@ CREATE TABLE IF NOT EXISTS fields(
     field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,

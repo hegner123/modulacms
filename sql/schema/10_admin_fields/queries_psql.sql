@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id TEXT PRIMARY KEY NOT NULL,
     parent_id TEXT
         REFERENCES admin_datatypes
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
@@ -33,19 +34,20 @@ LIMIT 1;
 -- name: ListAdminField :many
 SELECT *
 FROM admin_fields
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 -- name: ListAdminFieldByParentID :many
 SELECT *
 FROM admin_fields
 WHERE parent_id = $1
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 
 -- name: CreateAdminField :one
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -66,23 +68,25 @@ INSERT INTO admin_fields (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
 )
 RETURNING *;
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET parent_id    = $1,
-    name         = $2,
-    label        = $3,
-    data         = $4,
-    validation   = $5,
-    ui_config    = $6,
-    type         = $7,
-    author_id    = $8,
-    date_created = $9,
-    date_modified= $10
-WHERE admin_field_id = $11;
+    sort_order   = $2,
+    name         = $3,
+    label        = $4,
+    data         = $5,
+    validation   = $6,
+    ui_config    = $7,
+    type         = $8,
+    author_id    = $9,
+    date_created = $10,
+    date_modified= $11
+WHERE admin_field_id = $12;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields
@@ -90,11 +94,21 @@ WHERE admin_field_id = $1;
 
 -- name: ListAdminFieldPaginated :many
 SELECT * FROM admin_fields
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT $1 OFFSET $2;
 
 -- name: ListAdminFieldByParentIDPaginated :many
 SELECT * FROM admin_fields
 WHERE parent_id = $1
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT $2 OFFSET $3;
+
+-- name: UpdateAdminFieldSortOrder :exec
+UPDATE admin_fields
+SET sort_order = $1
+WHERE admin_field_id = $2;
+
+-- name: GetMaxAdminSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM admin_fields
+WHERE parent_id = $1;

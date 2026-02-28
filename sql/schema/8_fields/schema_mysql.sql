@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -13,7 +14,7 @@ CREATE TABLE IF NOT EXISTS fields (
 
     CONSTRAINT fk_fields_datatypes
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_fields_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE SET NULL

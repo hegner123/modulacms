@@ -297,27 +297,27 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 		}
 	}
 
-	// Auto-create empty content fields for every field linked to the datatype
+	// Auto-create empty content fields for every field belonging to the datatype
 	if createdContentData.DatatypeID.Valid {
-		dtFields, dtErr := d.ListDatatypeFieldByDatatypeID(createdContentData.DatatypeID.ID)
+		fieldList, dtErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: createdContentData.DatatypeID.ID, Valid: true})
 		if dtErr != nil {
-			utility.DefaultLogger.Error("create: failed to list datatype fields for auto-creation", dtErr)
-		} else if dtFields != nil {
+			utility.DefaultLogger.Error("create: failed to list fields for auto-creation", dtErr)
+		} else if fieldList != nil {
 			ctx := r.Context()
 			ac := middleware.AuditContextFromRequest(r, c)
 			now := types.TimestampNow()
-			for _, dtf := range *dtFields {
+			for _, field := range *fieldList {
 				_, cfErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 					RouteID:       createdContentData.RouteID,
 					ContentDataID: types.NullableContentID{ID: createdContentData.ContentDataID, Valid: true},
-					FieldID:       types.NullableFieldID{ID: dtf.FieldID, Valid: true},
+					FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
 					FieldValue:    "",
 					AuthorID:      createdContentData.AuthorID,
 					DateCreated:   now,
 					DateModified:  now,
 				})
 				if cfErr != nil {
-					utility.DefaultLogger.Error(fmt.Sprintf("create: failed to auto-create content field for field %s", dtf.FieldID), cfErr)
+					utility.DefaultLogger.Error(fmt.Sprintf("create: failed to auto-create content field for field %s", field.FieldID), cfErr)
 				}
 			}
 		}
@@ -489,21 +489,21 @@ func apiListContentDataPaginated(w http.ResponseWriter, r *http.Request, c confi
 	d := db.ConfigDB(c)
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListContentDataPaginated(params)
+	items, err := d.ListContentDataTopLevelPaginated(params)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	total, err := d.CountContentData()
+	total, err := d.CountContentDataTopLevel()
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	response := db.PaginatedResponse[db.ContentData]{
+	response := db.PaginatedResponse[db.ContentDataTopLevel]{
 		Data:   *items,
 		Total:  *total,
 		Limit:  params.Limit,

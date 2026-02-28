@@ -55,12 +55,6 @@ type AdminDatatypes struct {
 	DateModified    types.Timestamp               `json:"date_modified"`
 }
 
-type AdminDatatypesFields struct {
-	ID              string                `json:"id"`
-	AdminDatatypeID types.AdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    types.AdminFieldID    `json:"admin_field_id"`
-}
-
 type AdminFieldTypes struct {
 	AdminFieldTypeID types.AdminFieldTypeID `json:"admin_field_type_id"`
 	Type             string                 `json:"type"`
@@ -70,6 +64,7 @@ type AdminFieldTypes struct {
 type AdminFields struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	SortOrder    int64                         `json:"sort_order"`
 	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
@@ -198,13 +193,6 @@ type Datatypes struct {
 	DateModified types.Timestamp          `json:"date_modified"`
 }
 
-type DatatypesFields struct {
-	ID         string           `json:"id"`
-	DatatypeID types.DatatypeID `json:"datatype_id"`
-	FieldID    types.FieldID    `json:"field_id"`
-	SortOrder  int64            `json:"sort_order"`
-}
-
 type FieldTypes struct {
 	FieldTypeID types.FieldTypeID `json:"field_type_id"`
 	Type        string            `json:"type"`
@@ -214,6 +202,7 @@ type FieldTypes struct {
 type Fields struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`

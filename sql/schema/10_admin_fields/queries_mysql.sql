@@ -5,6 +5,7 @@ DROP TABLE admin_fields;
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
 
     CONSTRAINT fk_admin_fields_admin_datatypes
         FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_fields_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE
@@ -32,17 +33,18 @@ WHERE admin_field_id = ? LIMIT 1;
 
 -- name: ListAdminField :many
 SELECT * FROM admin_fields
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 -- name: ListAdminFieldByParentID :many
 SELECT * FROM admin_fields
 WHERE parent_id = ?
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 -- name: CreateAdminField :exec
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -63,12 +65,14 @@ INSERT INTO admin_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET  parent_id = ?,
+    sort_order = ?,
     name = ?,
     label = ?,
     data = ?,
@@ -86,11 +90,21 @@ WHERE admin_field_id = ?;
 
 -- name: ListAdminFieldPaginated :many
 SELECT * FROM admin_fields
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?;
 
 -- name: ListAdminFieldByParentIDPaginated :many
 SELECT * FROM admin_fields
 WHERE parent_id = ?
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?;
+
+-- name: UpdateAdminFieldSortOrder :exec
+UPDATE admin_fields
+SET sort_order = ?
+WHERE admin_field_id = ?;
+
+-- name: GetMaxAdminSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM admin_fields
+WHERE parent_id = ?;

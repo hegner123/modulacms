@@ -26,10 +26,8 @@ type Cleaner interface {
 	ListContentData() (*[]db.ContentData, error)
 	ListContentFields() (*[]db.ContentFields, error)
 	ListRoutes() (*[]db.Routes, error)
-	ListDatatypeFieldByDatatypeID(types.DatatypeID) (*[]db.DatatypeFields, error)
 	DeleteContentField(context.Context, audited.AuditContext, types.ContentFieldID) error
 	DeleteContentData(context.Context, audited.AuditContext, types.ContentID) error
-	DeleteDatatypeField(context.Context, audited.AuditContext, string) error
 	DeleteField(context.Context, audited.AuditContext, types.FieldID) error
 	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
 	DeleteRoute(context.Context, audited.AuditContext, types.RouteID) error
@@ -37,12 +35,11 @@ type Cleaner interface {
 
 // CleanupResult reports what was deleted during cleanup.
 type CleanupResult struct {
-	ContentFields  int
-	ContentData    int
-	DatatypeFields int
-	Fields         int
-	Datatypes      int
-	Routes         int
+	ContentFields int
+	ContentData   int
+	Fields        int
+	Datatypes     int
+	Routes        int
 }
 
 // InstallResult reports what was created during installation.
@@ -251,32 +248,7 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 		}
 	}
 
-	// Step 3: Delete datatype_field junction records for datatypes we'll remove.
-	// Collect which non-system datatypes belong to the system user.
-	deletableDatatypeIDs := make(map[types.DatatypeID]bool)
-	if allDatatypes != nil {
-		for _, dt := range *allDatatypes {
-			if dt.AuthorID == systemUserID && !types.IsReservedPrefix(dt.Type) {
-				deletableDatatypeIDs[dt.DatatypeID] = true
-			}
-		}
-	}
-	for dtID := range deletableDatatypeIDs {
-		junctions, listErr := cleaner.ListDatatypeFieldByDatatypeID(dtID)
-		if listErr != nil {
-			return InstallResult{}, fmt.Errorf("definitions: list datatype_fields for %s: %w", dtID, listErr)
-		}
-		if junctions != nil {
-			for _, jn := range *junctions {
-				if delErr := cleaner.DeleteDatatypeField(ctx, ac, jn.ID); delErr != nil {
-					return InstallResult{}, fmt.Errorf("definitions: delete datatype_field %s: %w", jn.ID, delErr)
-				}
-				cleanup.DatatypeFields++
-			}
-		}
-	}
-
-	// Step 4: Delete system-authored fields (skip fields belonging to system datatypes).
+	// Step 3: Delete system-authored fields (skip fields belonging to system datatypes).
 	fields, err := cleaner.ListFields()
 	if err != nil {
 		return InstallResult{}, fmt.Errorf("definitions: list fields: %w", err)

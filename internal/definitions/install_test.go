@@ -232,20 +232,18 @@ func TestInstall_AllRegisteredDefinitions(t *testing.T) {
 // ---------------------------------------------------------------------------
 
 type mockCleaner struct {
-	users          []db.Users
-	datatypes      []db.Datatypes
-	fields         []db.Fields
-	contentData    []db.ContentData
-	contentFields  []db.ContentFields
-	routes         []db.Routes
-	datatypeFields []db.DatatypeFields
+	users         []db.Users
+	datatypes     []db.Datatypes
+	fields        []db.Fields
+	contentData   []db.ContentData
+	contentFields []db.ContentFields
+	routes        []db.Routes
 
-	deletedContentFieldIDs  []types.ContentFieldID
-	deletedContentDataIDs   []types.ContentID
-	deletedDatatypeFieldIDs []string
-	deletedFieldIDs         []types.FieldID
-	deletedDatatypeIDs      []types.DatatypeID
-	deletedRouteIDs         []types.RouteID
+	deletedContentFieldIDs []types.ContentFieldID
+	deletedContentDataIDs  []types.ContentID
+	deletedFieldIDs        []types.FieldID
+	deletedDatatypeIDs     []types.DatatypeID
+	deletedRouteIDs        []types.RouteID
 }
 
 func (m *mockCleaner) GetUserByEmail(email types.Email) (*db.Users, error) {
@@ -277,16 +275,6 @@ func (m *mockCleaner) ListRoutes() (*[]db.Routes, error) {
 	return &m.routes, nil
 }
 
-func (m *mockCleaner) ListDatatypeFieldByDatatypeID(dtID types.DatatypeID) (*[]db.DatatypeFields, error) {
-	var result []db.DatatypeFields
-	for _, df := range m.datatypeFields {
-		if df.DatatypeID == dtID {
-			result = append(result, df)
-		}
-	}
-	return &result, nil
-}
-
 func (m *mockCleaner) DeleteContentField(_ context.Context, _ audited.AuditContext, id types.ContentFieldID) error {
 	m.deletedContentFieldIDs = append(m.deletedContentFieldIDs, id)
 	return nil
@@ -294,11 +282,6 @@ func (m *mockCleaner) DeleteContentField(_ context.Context, _ audited.AuditConte
 
 func (m *mockCleaner) DeleteContentData(_ context.Context, _ audited.AuditContext, id types.ContentID) error {
 	m.deletedContentDataIDs = append(m.deletedContentDataIDs, id)
-	return nil
-}
-
-func (m *mockCleaner) DeleteDatatypeField(_ context.Context, _ audited.AuditContext, id string) error {
-	m.deletedDatatypeFieldIDs = append(m.deletedDatatypeFieldIDs, id)
 	return nil
 }
 
@@ -336,16 +319,14 @@ func TestReinstall_CleansBootstrappedRecords(t *testing.T) {
 	sysContent := db.ContentData{ContentDataID: types.NewContentID(), AuthorID: su.UserID}
 	sysCF := db.ContentFields{ContentFieldID: types.NewContentFieldID(), AuthorID: su.UserID}
 	sysRoute := db.Routes{RouteID: types.NewRouteID(), AuthorID: types.NullableUserID{Valid: true, ID: su.UserID}}
-	sysDTF := db.DatatypeFields{ID: "dtf-1", DatatypeID: sysDt.DatatypeID, FieldID: sysField.FieldID}
 
 	cleaner := &mockCleaner{
-		users:          []db.Users{su},
-		datatypes:      []db.Datatypes{sysDt},
-		fields:         []db.Fields{sysField},
-		contentData:    []db.ContentData{sysContent},
-		contentFields:  []db.ContentFields{sysCF},
-		routes:         []db.Routes{sysRoute},
-		datatypeFields: []db.DatatypeFields{sysDTF},
+		users:         []db.Users{su},
+		datatypes:     []db.Datatypes{sysDt},
+		fields:        []db.Fields{sysField},
+		contentData:   []db.ContentData{sysContent},
+		contentFields: []db.ContentFields{sysCF},
+		routes:        []db.Routes{sysRoute},
 	}
 	installer := &mockInstaller{}
 
@@ -364,9 +345,6 @@ func TestReinstall_CleansBootstrappedRecords(t *testing.T) {
 	}
 	if len(cleaner.deletedContentDataIDs) != 1 {
 		t.Errorf("expected 1 deleted content_data, got %d", len(cleaner.deletedContentDataIDs))
-	}
-	if len(cleaner.deletedDatatypeFieldIDs) != 1 {
-		t.Errorf("expected 1 deleted datatype_field, got %d", len(cleaner.deletedDatatypeFieldIDs))
 	}
 	if len(cleaner.deletedFieldIDs) != 1 {
 		t.Errorf("expected 1 deleted field, got %d", len(cleaner.deletedFieldIDs))

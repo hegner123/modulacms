@@ -9,16 +9,16 @@ import "encoding/json"
 // ContentData represents a content entry in the tree-based content structure.
 type ContentData struct {
 	ContentDataID ContentID     `json:"content_data_id"`
-	ParentID      *ContentID   `json:"parent_id"`
-	FirstChildID  *string      `json:"first_child_id"`
-	NextSiblingID *string      `json:"next_sibling_id"`
-	PrevSiblingID *string      `json:"prev_sibling_id"`
-	RouteID       *RouteID     `json:"route_id"`
-	DatatypeID    *DatatypeID  `json:"datatype_id"`
-	AuthorID      *UserID      `json:"author_id"`
+	ParentID      *ContentID    `json:"parent_id"`
+	FirstChildID  *string       `json:"first_child_id"`
+	NextSiblingID *string       `json:"next_sibling_id"`
+	PrevSiblingID *string       `json:"prev_sibling_id"`
+	RouteID       *RouteID      `json:"route_id"`
+	DatatypeID    *DatatypeID   `json:"datatype_id"`
+	AuthorID      *UserID       `json:"author_id"`
 	Status        ContentStatus `json:"status"`
-	DateCreated   Timestamp    `json:"date_created"`
-	DateModified  Timestamp    `json:"date_modified"`
+	DateCreated   Timestamp     `json:"date_created"`
+	DateModified  Timestamp     `json:"date_modified"`
 }
 
 // CreateContentDataParams holds parameters for creating a new content_data record.
@@ -146,33 +146,6 @@ type UpdateDatatypeParams struct {
 }
 
 // ---------------------------------------------------------------------------
-// Datatype Field
-// ---------------------------------------------------------------------------
-
-// DatatypeField represents the association between a datatype and a field.
-type DatatypeField struct {
-	ID         DatatypeFieldID `json:"id"`
-	DatatypeID DatatypeID      `json:"datatype_id"`
-	FieldID    FieldID         `json:"field_id"`
-	SortOrder  int64           `json:"sort_order"`
-}
-
-// CreateDatatypeFieldParams holds parameters for creating a new datatype field.
-type CreateDatatypeFieldParams struct {
-	DatatypeID DatatypeID `json:"datatype_id"`
-	FieldID    FieldID    `json:"field_id"`
-	SortOrder  int64      `json:"sort_order"`
-}
-
-// UpdateDatatypeFieldParams holds parameters for updating a datatype field.
-type UpdateDatatypeFieldParams struct {
-	ID         DatatypeFieldID `json:"id"`
-	DatatypeID DatatypeID      `json:"datatype_id"`
-	FieldID    FieldID         `json:"field_id"`
-	SortOrder  int64           `json:"sort_order"`
-}
-
-// ---------------------------------------------------------------------------
 // Field
 // ---------------------------------------------------------------------------
 
@@ -180,6 +153,7 @@ type UpdateDatatypeFieldParams struct {
 type Field struct {
 	FieldID      FieldID     `json:"field_id"`
 	ParentID     *DatatypeID `json:"parent_id"`
+	SortOrder    int64       `json:"sort_order"`
 	Name         string      `json:"name"`
 	Label        string      `json:"label"`
 	Data         string      `json:"data"`
@@ -195,6 +169,7 @@ type Field struct {
 type CreateFieldParams struct {
 	FieldID    *FieldID    `json:"field_id,omitempty"`
 	ParentID   *DatatypeID `json:"parent_id"`
+	SortOrder  int64       `json:"sort_order"`
 	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Data       string      `json:"data"`
@@ -208,6 +183,7 @@ type CreateFieldParams struct {
 type UpdateFieldParams struct {
 	FieldID    FieldID     `json:"field_id"`
 	ParentID   *DatatypeID `json:"parent_id"`
+	SortOrder  int64       `json:"sort_order"`
 	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Data       string      `json:"data"`
@@ -223,22 +199,22 @@ type UpdateFieldParams struct {
 
 // Media represents a media asset.
 type Media struct {
-	MediaID      MediaID    `json:"media_id"`
-	Name         *string    `json:"name"`
-	DisplayName  *string    `json:"display_name"`
-	Alt          *string    `json:"alt"`
-	Caption      *string    `json:"caption"`
-	Description  *string    `json:"description"`
-	Class        *string    `json:"class"`
-	Mimetype     *string    `json:"mimetype"`
-	Dimensions   *string    `json:"dimensions"`
-	URL          URL        `json:"url"`
-	Srcset       *string    `json:"srcset"`
-	FocalX       *float64   `json:"focal_x"`
-	FocalY       *float64   `json:"focal_y"`
-	AuthorID     *UserID    `json:"author_id"`
-	DateCreated  Timestamp  `json:"date_created"`
-	DateModified Timestamp  `json:"date_modified"`
+	MediaID      MediaID   `json:"media_id"`
+	Name         *string   `json:"name"`
+	DisplayName  *string   `json:"display_name"`
+	Alt          *string   `json:"alt"`
+	Caption      *string   `json:"caption"`
+	Description  *string   `json:"description"`
+	Class        *string   `json:"class"`
+	Mimetype     *string   `json:"mimetype"`
+	Dimensions   *string   `json:"dimensions"`
+	URL          URL       `json:"url"`
+	Srcset       *string   `json:"srcset"`
+	FocalX       *float64  `json:"focal_x"`
+	FocalY       *float64  `json:"focal_y"`
+	AuthorID     *UserID   `json:"author_id"`
+	DateCreated  Timestamp `json:"date_created"`
+	DateModified Timestamp `json:"date_modified"`
 }
 
 // UpdateMediaParams contains fields for updating an existing media entry.
@@ -442,7 +418,7 @@ type CreateRolePermissionParams struct {
 type Session struct {
 	SessionID   SessionID `json:"session_id"`
 	UserID      *UserID   `json:"user_id"`
-	DateCreated   Timestamp `json:"date_created"`
+	DateCreated Timestamp `json:"date_created"`
 	ExpiresAt   Timestamp `json:"expires_at"`
 	LastAccess  *string   `json:"last_access"`
 	IpAddress   *string   `json:"ip_address"`
@@ -590,17 +566,17 @@ type UpdateTableParams struct {
 
 // AdminContentData represents a content data entry in the admin namespace.
 type AdminContentData struct {
-	AdminContentDataID AdminContentID  `json:"admin_content_data_id"`
-	ParentID           *AdminContentID `json:"parent_id"`
-	FirstChildID       *string         `json:"first_child_id"`
-	NextSiblingID      *string         `json:"next_sibling_id"`
-	PrevSiblingID      *string         `json:"prev_sibling_id"`
-	AdminRouteID       *AdminRouteID   `json:"admin_route_id"`
+	AdminContentDataID AdminContentID   `json:"admin_content_data_id"`
+	ParentID           *AdminContentID  `json:"parent_id"`
+	FirstChildID       *string          `json:"first_child_id"`
+	NextSiblingID      *string          `json:"next_sibling_id"`
+	PrevSiblingID      *string          `json:"prev_sibling_id"`
+	AdminRouteID       *AdminRouteID    `json:"admin_route_id"`
 	AdminDatatypeID    *AdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           *UserID         `json:"author_id"`
-	Status             ContentStatus   `json:"status"`
-	DateCreated        Timestamp       `json:"date_created"`
-	DateModified       Timestamp       `json:"date_modified"`
+	AuthorID           *UserID          `json:"author_id"`
+	Status             ContentStatus    `json:"status"`
+	DateCreated        Timestamp        `json:"date_created"`
+	DateModified       Timestamp        `json:"date_modified"`
 }
 
 // CreateAdminContentDataParams contains fields for creating a new admin content data record.
@@ -713,30 +689,6 @@ type UpdateAdminDatatypeParams struct {
 }
 
 // ---------------------------------------------------------------------------
-// Admin Datatype Field
-// ---------------------------------------------------------------------------
-
-// AdminDatatypeField represents the relationship between an admin datatype and an admin field.
-type AdminDatatypeField struct {
-	ID              AdminDatatypeFieldID `json:"id"`
-	AdminDatatypeID AdminDatatypeID      `json:"admin_datatype_id"`
-	AdminFieldID    AdminFieldID         `json:"admin_field_id"`
-}
-
-// CreateAdminDatatypeFieldParams is the input for creating an admin datatype field.
-type CreateAdminDatatypeFieldParams struct {
-	AdminDatatypeID AdminDatatypeID `json:"admin_datatype_id"`
-	AdminFieldID    AdminFieldID    `json:"admin_field_id"`
-}
-
-// UpdateAdminDatatypeFieldParams is the input for updating an admin datatype field.
-type UpdateAdminDatatypeFieldParams struct {
-	ID              AdminDatatypeFieldID `json:"id"`
-	AdminDatatypeID AdminDatatypeID      `json:"admin_datatype_id"`
-	AdminFieldID    AdminFieldID         `json:"admin_field_id"`
-}
-
-// ---------------------------------------------------------------------------
 // Admin Field
 // ---------------------------------------------------------------------------
 
@@ -744,6 +696,7 @@ type UpdateAdminDatatypeFieldParams struct {
 type AdminField struct {
 	AdminFieldID AdminFieldID     `json:"admin_field_id"`
 	ParentID     *AdminDatatypeID `json:"parent_id"`
+	SortOrder    int64            `json:"sort_order"`
 	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
@@ -758,6 +711,7 @@ type AdminField struct {
 // CreateAdminFieldParams contains parameters for creating a new admin field.
 type CreateAdminFieldParams struct {
 	ParentID   *AdminDatatypeID `json:"parent_id"`
+	SortOrder  int64            `json:"sort_order"`
 	Name       string           `json:"name"`
 	Label      string           `json:"label"`
 	Data       string           `json:"data"`
@@ -771,6 +725,7 @@ type CreateAdminFieldParams struct {
 type UpdateAdminFieldParams struct {
 	AdminFieldID AdminFieldID     `json:"admin_field_id"`
 	ParentID     *AdminDatatypeID `json:"parent_id"`
+	SortOrder    int64            `json:"sort_order"`
 	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
@@ -872,9 +827,9 @@ type LoginParams struct {
 
 // LoginResponse is the response returned after successful authentication.
 type LoginResponse struct {
-	UserID    UserID    `json:"user_id"`
-	Email     Email     `json:"email"`
-	Username  string    `json:"username"`
+	UserID      UserID    `json:"user_id"`
+	Email       Email     `json:"email"`
+	Username    string    `json:"username"`
 	DateCreated Timestamp `json:"date_created"`
 }
 

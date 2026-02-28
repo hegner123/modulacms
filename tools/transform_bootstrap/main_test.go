@@ -260,21 +260,6 @@ func (d Database) CreateBootstrapData() error {
 			return fmt.Errorf("failed to register table")
 		}
 
-	datatypeField := d.CreateDatatypeField(CreateDatatypeFieldParams{
-		Label: "default",
-	})
-	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 22. Create default admin_datatypes_fields junction record
-	adminDatatypeField := d.CreateAdminDatatypeField(CreateAdminDatatypeFieldParams{
-		Label: "default",
-	})
-	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
 	utility.DefaultLogger.Finfo(
 		"Bootstrap complete",
 	)

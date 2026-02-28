@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS fields(
     field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -30,17 +31,18 @@ WHERE field_id = ? LIMIT 1;
 
 -- name: ListField :many
 SELECT * FROM fields
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: ListFieldByDatatypeID :many
 SELECT * FROM fields
 WHERE parent_id = ?
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: CreateField :one
 INSERT INTO fields  (
     field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -61,6 +63,7 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
     ?
     ) RETURNING *;
 
@@ -68,6 +71,7 @@ INSERT INTO fields  (
 -- name: UpdateField :exec
 UPDATE fields
 SET parent_id = ?,
+    sort_order = ?,
     name = ?,
     label = ?,
     data = ?,
@@ -86,5 +90,15 @@ WHERE field_id = ?;
 
 -- name: ListFieldPaginated :many
 SELECT * FROM fields
-ORDER BY field_id
+ORDER BY sort_order, field_id
 LIMIT ? OFFSET ?;
+
+-- name: UpdateFieldSortOrder :exec
+UPDATE fields
+SET sort_order = ?
+WHERE field_id = ?;
+
+-- name: GetMaxSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM fields
+WHERE parent_id = ?;

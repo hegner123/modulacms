@@ -5,6 +5,7 @@ DROP TABLE fields;
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -17,7 +18,7 @@ CREATE TABLE IF NOT EXISTS fields (
 
     CONSTRAINT fk_fields_datatypes
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_fields_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE
@@ -33,17 +34,18 @@ WHERE field_id = ? LIMIT 1;
 
 -- name: ListField :many
 SELECT * FROM fields
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: ListFieldByDatatypeID :many
 SELECT * FROM fields
 WHERE parent_id = ?
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: CreateField :exec
 INSERT INTO fields  (
     field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -64,6 +66,7 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
@@ -71,6 +74,7 @@ INSERT INTO fields  (
 UPDATE fields
 set
     parent_id = ?,
+    sort_order = ?,
     name = ?,
     label = ?,
     data = ?,
@@ -88,5 +92,15 @@ WHERE field_id = ?;
 
 -- name: ListFieldPaginated :many
 SELECT * FROM fields
-ORDER BY field_id
+ORDER BY sort_order, field_id
 LIMIT ? OFFSET ?;
+
+-- name: UpdateFieldSortOrder :exec
+UPDATE fields
+SET sort_order = ?
+WHERE field_id = ?;
+
+-- name: GetMaxSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM fields
+WHERE parent_id = ?;

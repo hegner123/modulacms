@@ -406,7 +406,7 @@ Fetches tree data from database and loads into Root. Returns TreeLoadedMsg with 
 
 ### LoadContentFieldsCmd
 
-Fetches content fields for specific content node. Resolves field labels from datatype field definitions via junction table. Returns fields in sort_order from junction table.
+Fetches content fields for specific content node. Resolves field labels from field definitions using parent_id relationship. Returns fields in sort_order from the fields table.
 
 ### HandleEditSingleField
 
@@ -422,17 +422,17 @@ Creates new content field record for unpopulated field. Returns ContentFieldAdde
 
 ### HandleReorderField
 
-Swaps sort_order between two junction records. Updates both records, returns FieldReorderedMsg or error.
+Swaps sort_order between two field records. Updates both records, returns FieldReorderedMsg or error.
 
 ## Datatype and Field Operations
 
 ### HandleDeleteDatatype
 
-Deletes datatype and its junction records. Checks for child datatypes first, deletes all junction records, then deletes datatype.
+Deletes datatype and its associated fields. Checks for child datatypes first, deletes all fields belonging to the datatype, then deletes datatype.
 
 ### HandleDeleteField
 
-Deletes field and its junction record. Finds junction records linking field to datatype, deletes junction, then deletes field.
+Deletes field record. Deletes the field directly from the fields table.
 
 ## Route Operations
 
@@ -1340,11 +1340,11 @@ Message when user updated from dialog with UserID and Username fields.
 
 ### AdminContentFieldDisplay
 
-Represents admin content field for right panel display. Contains ContentFieldID, DatatypeFieldID, FieldID, Label, Type, Value fields.
+Represents admin content field for right panel display. Contains ContentFieldID, FieldID, Label, Type, Value fields.
 
 ### ContentFieldDisplay
 
-Represents content field for right panel display. Contains ContentFieldID, DatatypeFieldID, FieldID, Label, Type, Value fields.
+Represents content field for right panel display. Contains ContentFieldID, FieldID, Label, Type, Value fields.
 
 ## Command Constructors
 

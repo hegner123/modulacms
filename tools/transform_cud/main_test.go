@@ -10,7 +10,7 @@ import (
 
 // White-box test file: the interesting logic lives in unexported helpers
 // (findFuncEnd, getWrapperType, transformCreate, transformUpdate,
-// transformDelete, transformDatatypeFieldSortOrder, transformUserSshKeyLabel).
+// transformDelete, transformUserSshKeyLabel).
 // Testing through main() alone would require massive fixture files and
 // would not isolate failures to specific transform functions.
 
@@ -147,7 +147,6 @@ func TestGetWrapperType(t *testing.T) {
 		{name: "Table", want: "Tables"},
 		{name: "Field", want: "Fields"},
 		{name: "Datatype", want: "Datatypes"},
-		{name: "DatatypeField", want: "DatatypeFields"},
 		{name: "ContentData", want: "ContentData"},
 		{name: "ContentField", want: "ContentFields"},
 		{name: "Media", want: "Media"},
@@ -155,7 +154,6 @@ func TestGetWrapperType(t *testing.T) {
 		{name: "AdminContentData", want: "AdminContentData"},
 		{name: "AdminContentField", want: "AdminContentFields"},
 		{name: "AdminDatatype", want: "AdminDatatypes"},
-		{name: "AdminDatatypeField", want: "AdminDatatypeFields"},
 		{name: "AdminField", want: "AdminFields"},
 		{name: "AdminRoute", want: "AdminRoutes"},
 		{name: "UserOauth", want: "UserOauth"},
@@ -572,108 +570,6 @@ func TestTransformDelete_AllDrivers(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// transformDatatypeFieldSortOrder
-// ---------------------------------------------------------------------------
-
-func TestTransformDatatypeFieldSortOrder_SQLite(t *testing.T) {
-	t.Parallel()
-	input := `package db
-
-func (d Database) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdb.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: sortOrder,
-		ID:        id,
-	})
-}
-`
-
-	content, modified := transformDatatypeFieldSortOrder(input, false)
-	if !modified {
-		t.Fatal("expected modified=true for SQLite variant")
-	}
-	if !strings.Contains(content, "func (d Database) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {") {
-		t.Error("expected new SQLite signature")
-	}
-	if !strings.Contains(content, "UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)") {
-		t.Error("expected cmd factory call")
-	}
-}
-
-func TestTransformDatatypeFieldSortOrder_MySQL(t *testing.T) {
-	t.Parallel()
-	input := `package db
-
-func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbm.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
-}
-`
-
-	content, modified := transformDatatypeFieldSortOrder(input, false)
-	if !modified {
-		t.Fatal("expected modified=true for MySQL variant")
-	}
-	if !strings.Contains(content, "func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {") {
-		t.Error("expected new MySQL signature")
-	}
-}
-
-func TestTransformDatatypeFieldSortOrder_PostgreSQL(t *testing.T) {
-	t.Parallel()
-	input := `package db
-
-func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbp.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
-}
-`
-
-	content, modified := transformDatatypeFieldSortOrder(input, false)
-	if !modified {
-		t.Fatal("expected modified=true for PostgreSQL variant")
-	}
-	if !strings.Contains(content, "func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {") {
-		t.Error("expected new PostgreSQL signature")
-	}
-}
-
-func TestTransformDatatypeFieldSortOrder_NoMatch(t *testing.T) {
-	t.Parallel()
-	input := `package db
-
-func unrelated() {}
-`
-
-	content, modified := transformDatatypeFieldSortOrder(input, false)
-	if modified {
-		t.Error("expected modified=false when no patterns match")
-	}
-	if content != input {
-		t.Error("expected content unchanged")
-	}
-}
-
-func TestTransformDatatypeFieldSortOrder_PreservesModifiedFlag(t *testing.T) {
-	t.Parallel()
-	input := `package db
-
-func unrelated() {}
-`
-
-	_, modified := transformDatatypeFieldSortOrder(input, true)
-	if !modified {
-		t.Error("expected prevModified=true to be preserved")
-	}
-}
-
-// ---------------------------------------------------------------------------
 // transformUserSshKeyLabel
 // ---------------------------------------------------------------------------
 
@@ -882,10 +778,10 @@ func (d Database) DeleteRoute(id types.RouteID) error {
 	// Create empty files for all other entities the tool expects
 	otherFiles := []string{
 		"role.go", "permission.go", "session.go", "token.go", "table.go",
-		"field.go", "datatype.go", "datatype_field.go", "content_data.go",
+		"field.go", "datatype.go", "content_data.go",
 		"content_field.go", "media.go", "media_dimension.go",
 		"admin_content_data.go", "admin_content_field.go", "admin_datatype.go",
-		"admin_datatype_field.go", "admin_field.go", "admin_route.go",
+		"admin_field.go", "admin_route.go",
 		"user_oauth.go", "user_ssh_keys.go",
 	}
 	for _, f := range otherFiles {
@@ -930,10 +826,10 @@ func TestMainCUD_NoChangesNeeded(t *testing.T) {
 
 	files := []string{
 		"route.go", "role.go", "permission.go", "session.go", "token.go",
-		"table.go", "field.go", "datatype.go", "datatype_field.go",
+		"table.go", "field.go", "datatype.go",
 		"content_data.go", "content_field.go", "media.go", "media_dimension.go",
 		"admin_content_data.go", "admin_content_field.go", "admin_datatype.go",
-		"admin_datatype_field.go", "admin_field.go", "admin_route.go",
+		"admin_field.go", "admin_route.go",
 		"user_oauth.go", "user_ssh_keys.go",
 	}
 	for _, f := range files {

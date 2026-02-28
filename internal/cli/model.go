@@ -64,7 +64,7 @@ type FilePickerPurpose int
 
 // File picker purpose constants define how the file picker will be used.
 const (
-	FILEPICKER_MEDIA   FilePickerPurpose = iota
+	FILEPICKER_MEDIA FilePickerPurpose = iota
 	FILEPICKER_RESTORE
 )
 
@@ -78,79 +78,79 @@ type ModelInterface interface {
 
 // Model is the root Bubbletea model for the ModulaCMS TUI, containing all application state, UI components, and database connections.
 type Model struct {
-	DB           db.DbDriver
-	Config       *config.Config
-	Logger       Logger
-	Status       ApplicationState
-	TitleFont    int
-	Titles       []string
-	Term         string
-	Profile      string
-	Width        int
-	Height       int
-	Bg           string
-	PageRouteId  types.RouteID
-	TxtStyle     lipgloss.Style
-	QuitStyle    lipgloss.Style
-	Loading      bool
-	Cursor       int
-	CursorMax    int
-	FocusIndex   int
-	Paginator    paginator.Model
-	PageMod      int
-	MaxRows      int
-	Page         Page
-	PageMenu     []Page
-	Pages        []Page
-	PageMap      map[PageIndex]Page
-	DatatypeMenu []string
-	Tables       []string
-	FormState    *FormModel
-	TableState   *TableModel
-	Focus        FocusKey
-	Verbose      bool
-	Content      string
-	Ready        bool
-	Err          error
-	Spinner      spinner.Model
-	Viewport     viewport.Model
-	History      []PageHistory
-	QueryResults []sql.Row
-	Time         time.Time
-	Dialog           *DialogModel
-	DialogActive     bool
-	FormDialog              *FormDialogModel
-	FormDialogActive        bool
-	ContentFormDialog       *ContentFormDialogModel
-	ContentFormDialogActive bool
-	Root                    tree.Root
-	PanelFocus        tui.FocusPanel
-	Routes            []db.Routes
-	RootDatatypes          []db.Datatypes
-	AllDatatypes           []db.Datatypes
-	SelectedDatatype       types.DatatypeID
-	SelectedDatatypeFields []db.Fields
-	FieldCursor            int // Cursor for fields panel (datatypes: center, content: right)
-	SelectedContentFields  []ContentFieldDisplay
-	MediaList              []db.Media
-	FilePicker             filepicker.Model
-	FilePickerActive       bool
-	FilePickerPurpose      FilePickerPurpose
-	RootContentSummary     []db.RootContentSummary
-	UsersList              []db.UserWithRoleLabelRow
-	RolesList              []db.Roles
-	UserFormDialog             *UserFormDialogModel
-	UserFormDialogActive       bool
-	DatabaseFormDialog         *DatabaseFormDialogModel
-	DatabaseFormDialogActive   bool
-	UIConfigFormDialog         *UIConfigFormDialogModel
-	UIConfigFormDialogActive   bool
+	DB                       db.DbDriver
+	Config                   *config.Config
+	Logger                   Logger
+	Status                   ApplicationState
+	TitleFont                int
+	Titles                   []string
+	Term                     string
+	Profile                  string
+	Width                    int
+	Height                   int
+	Bg                       string
+	PageRouteId              types.RouteID
+	TxtStyle                 lipgloss.Style
+	QuitStyle                lipgloss.Style
+	Loading                  bool
+	Cursor                   int
+	CursorMax                int
+	FocusIndex               int
+	Paginator                paginator.Model
+	PageMod                  int
+	MaxRows                  int
+	Page                     Page
+	PageMenu                 []Page
+	Pages                    []Page
+	PageMap                  map[PageIndex]Page
+	DatatypeMenu             []string
+	Tables                   []string
+	FormState                *FormModel
+	TableState               *TableModel
+	Focus                    FocusKey
+	Verbose                  bool
+	Content                  string
+	Ready                    bool
+	Err                      error
+	Spinner                  spinner.Model
+	Viewport                 viewport.Model
+	History                  []PageHistory
+	QueryResults             []sql.Row
+	Time                     time.Time
+	Dialog                   *DialogModel
+	DialogActive             bool
+	FormDialog               *FormDialogModel
+	FormDialogActive         bool
+	ContentFormDialog        *ContentFormDialogModel
+	ContentFormDialogActive  bool
+	Root                     tree.Root
+	PanelFocus               tui.FocusPanel
+	Routes                   []db.Routes
+	RootDatatypes            []db.Datatypes
+	AllDatatypes             []db.Datatypes
+	SelectedDatatype         types.DatatypeID
+	SelectedDatatypeFields   []db.Fields
+	FieldCursor              int // Cursor for fields panel (datatypes: center, content: right)
+	SelectedContentFields    []ContentFieldDisplay
+	MediaList                []db.Media
+	FilePicker               filepicker.Model
+	FilePickerActive         bool
+	FilePickerPurpose        FilePickerPurpose
+	RootContentSummary       []db.ContentDataTopLevel
+	UsersList                []db.UserWithRoleLabelRow
+	RolesList                []db.Roles
+	UserFormDialog           *UserFormDialogModel
+	UserFormDialogActive     bool
+	DatabaseFormDialog       *DatabaseFormDialogModel
+	DatabaseFormDialogActive bool
+	UIConfigFormDialog       *UIConfigFormDialogModel
+	UIConfigFormDialogActive bool
 
 	// Admin CMS state
 	AdminRoutes                 []db.AdminRoutes
 	AdminAllDatatypes           []db.AdminDatatypes
 	AdminSelectedDatatypeFields []db.AdminFields
-	AdminRootContentSummary     []db.AdminContentData
+	AdminRootContentSummary     []db.AdminContentDataTopLevel
 	AdminSelectedContentFields  []AdminContentFieldDisplay
 	AdminFieldCursor            int
 
@@ -173,10 +173,10 @@ type Model struct {
 	SelectedPipelineKey string
 
 	// Config management
-	ConfigManager       *config.Manager
-	ConfigCategory      config.FieldCategory
+	ConfigManager        *config.Manager
+	ConfigCategory       config.FieldCategory
 	ConfigCategoryFields []config.FieldMeta
-	ConfigFieldCursor   int
+	ConfigFieldCursor    int
 
 	// Deploy state
 	DeployEnvironments    []config.DeployEnvironmentConfig
@@ -230,7 +230,6 @@ type PipelineEntryDisplay struct {
 // ContentFieldDisplay represents a content field for right panel display.
 type ContentFieldDisplay struct {
 	ContentFieldID types.ContentFieldID
-	DatatypeFieldID string
 	FieldID        types.FieldID
 	Label          string
 	Type           string
@@ -297,28 +296,28 @@ func InitialModel(v *bool, c *config.Config, driver db.DbDriver, logger Logger, 
 	}
 
 	m := Model{
-		DB:          driver,
-		Config:      c,
-		Logger:      logger,
-		Status:      OK,
-		TitleFont:   0,
-		Titles:      LoadTitles(fonts),
-		FocusIndex:  0,
-		Page:        NewPage(HOMEPAGE, "Home"),
-		Paginator:   p,
-		Loading:     false,
-		Spinner:     s,
-		PageMod:     0,
-		CursorMax:   0,
-		MaxRows:     10,
-		Viewport:    viewport.Model{},
-		PageMap:     *InitPages(),
-		FormState:   NewFormModel(),
-		TableState:  NewTableModel(),
-		Focus:       PAGEFOCUS,
-		PanelFocus:  tui.TreePanel,
-		History:     []PageHistory{},
-		Verbose:     verbose,
+		DB:            driver,
+		Config:        c,
+		Logger:        logger,
+		Status:        OK,
+		TitleFont:     0,
+		Titles:        LoadTitles(fonts),
+		FocusIndex:    0,
+		Page:          NewPage(HOMEPAGE, "Home"),
+		Paginator:     p,
+		Loading:       false,
+		Spinner:       s,
+		PageMod:       0,
+		CursorMax:     0,
+		MaxRows:       10,
+		Viewport:      viewport.Model{},
+		PageMap:       *InitPages(),
+		FormState:     NewFormModel(),
+		TableState:    NewTableModel(),
+		Focus:         PAGEFOCUS,
+		PanelFocus:    tui.TreePanel,
+		History:       []PageHistory{},
+		Verbose:       verbose,
 		PageRouteId:   types.RouteID(""), // TODO: Implement route selection UI
 		UserID:        systemAdminID,     // Set system admin for CLI mode
 		AdminUsername: systemAdminUsername,

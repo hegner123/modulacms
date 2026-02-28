@@ -3,8 +3,8 @@ package cli
 import "strings"
 
 // MakeFilter returns the provided arguments as a slice.
-func MakeFilter(args ...string)[]string{
-        return args
+func MakeFilter(args ...string) []string {
+	return args
 }
 
 // GetLine returns the first string in the slice that contains the match string.

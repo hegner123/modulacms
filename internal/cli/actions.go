@@ -66,11 +66,11 @@ func ActionsMenuLabels() []string {
 
 // ActionResultMsg is returned by action commands with the result to display.
 type ActionResultMsg struct {
-	Title              string
-	Message            string
-	IsError            bool
-	Width              int  // optional dialog width override (0 = default)
-	ReloadPermissions  bool // signal serve to reload permission cache and start HTTP
+	Title             string
+	Message           string
+	IsError           bool
+	Width             int  // optional dialog width override (0 = default)
+	ReloadPermissions bool // signal serve to reload permission cache and start HTTP
 }
 
 // ActionConfirmMsg is sent when a destructive action needs confirmation.

@@ -219,6 +219,7 @@ func CreateDatatypeForm(m Model) (*huh.Form, int) {
 
 	return form, 3 // 3 fields
 }
+
 // CreateFieldForm creates a form for adding a field to a datatype.
 func CreateFieldForm(m Model) (*huh.Form, int) {
 	logger := m.Logger
@@ -310,7 +311,6 @@ type NewFormMsg struct {
 	FormMap     []string
 }
 
-
 // BuildContentFieldsForm creates a command to build a dynamic form for content creation.
 func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types.RouteID) tea.Cmd {
 	logger := m.Logger
@@ -322,27 +322,16 @@ func (m Model) BuildContentFieldsForm(datatypeID types.DatatypeID, routeID types
 
 		logger.Finfo(fmt.Sprintf("Building content form for datatype %s, route %s", datatypeID, routeID))
 
-		// Fetch field IDs from the datatypes_fields join table
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
+		// Fetch fields by parent datatype ID
+		fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
 		if err != nil {
-			logger.Ferror("ListDatatypeFieldByDatatypeID error", err)
+			logger.Ferror("ListFieldsByDatatypeID error", err)
 			return FetchErrMsg{Error: err}
 		}
 
-		if dtFields == nil || len(*dtFields) == 0 {
-			logger.Finfo(fmt.Sprintf("No fields found for datatype %s", datatypeID))
-			return FetchErrMsg{Error: fmt.Errorf("no fields found for datatype %s", datatypeID)}
-		}
-
-		// Fetch actual field details for each field ID
 		var fields []db.Fields
-		for _, dtf := range *dtFields {
-			if !dtf.FieldID.IsZero() {
-				field, err := d.GetField(dtf.FieldID)
-				if err == nil && field != nil {
-					fields = append(fields, *field)
-				}
-			}
+		if fieldList != nil {
+			fields = *fieldList
 		}
 
 		if len(fields) == 0 {

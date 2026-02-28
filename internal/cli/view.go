@@ -250,6 +250,7 @@ func (m Model) View() string {
 // Rendering utilities
 
 // TitleFile embeds title graphics from the titles directory.
+//
 //go:embed titles
 var TitleFile embed.FS
 

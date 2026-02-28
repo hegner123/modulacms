@@ -83,14 +83,6 @@ PostgreSQL database connection. Same fields as Database.
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
 
-### AdminDatatypeFields (admin_datatype_field.go)
-
-| Field | Type |
-|-------|------|
-| ID | string |
-| AdminDatatypeID | types.AdminDatatypeID |
-| AdminFieldID | types.AdminFieldID |
-
 ### AdminFields (admin_field.go)
 
 | Field | Type |
@@ -102,6 +94,7 @@ PostgreSQL database connection. Same fields as Database.
 | Validation | string |
 | UIConfig | string |
 | Type | types.FieldType |
+| SortOrder | int64 |
 | AuthorID | types.NullableUserID |
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
@@ -240,15 +233,6 @@ PostgreSQL database connection. Same fields as Database.
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
 
-### DatatypeFields (datatype_field.go)
-
-| Field | Type |
-|-------|------|
-| ID | string |
-| DatatypeID | types.DatatypeID |
-| FieldID | types.FieldID |
-| SortOrder | int64 |
-
 ### Fields (field.go)
 
 | Field | Type |
@@ -260,6 +244,7 @@ PostgreSQL database connection. Same fields as Database.
 | Validation | string |
 | UIConfig | string |
 | Type | types.FieldType |
+| SortOrder | int64 |
 | AuthorID | types.NullableUserID |
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
@@ -446,13 +431,6 @@ PostgreSQL database connection. Same fields as Database.
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
 
-### CreateAdminDatatypeFieldParams
-
-| Field | Type |
-|-------|------|
-| AdminDatatypeID | types.AdminDatatypeID |
-| AdminFieldID | types.AdminFieldID |
-
 ### CreateAdminFieldParams
 
 | Field | Type |
@@ -463,6 +441,7 @@ PostgreSQL database connection. Same fields as Database.
 | Validation | string |
 | UIConfig | string |
 | Type | types.FieldType |
+| SortOrder | int64 |
 | AuthorID | types.NullableUserID |
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
@@ -568,15 +547,6 @@ PostgreSQL database connection. Same fields as Database.
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
 
-### CreateDatatypeFieldParams
-
-| Field | Type |
-|-------|------|
-| ID | string |
-| DatatypeID | types.DatatypeID |
-| FieldID | types.FieldID |
-| SortOrder | int64 |
-
 ### CreateFieldParams
 
 | Field | Type |
@@ -588,6 +558,7 @@ PostgreSQL database connection. Same fields as Database.
 | Validation | string |
 | UIConfig | string |
 | Type | types.FieldType |
+| SortOrder | int64 |
 | AuthorID | types.NullableUserID |
 | DateCreated | types.Timestamp |
 | DateModified | types.Timestamp |
@@ -747,14 +718,6 @@ Same as AdminContentFields entity fields. ID field: `AdminContentFieldID`.
 ### UpdateAdminDatatypeParams
 Same as AdminDatatypes entity fields. ID field: `AdminDatatypeID`.
 
-### UpdateAdminDatatypeFieldParams
-
-| Field | Type |
-|-------|------|
-| AdminDatatypeID | types.AdminDatatypeID |
-| AdminFieldID | types.AdminFieldID |
-| ID | string |
-
 ### UpdateAdminFieldParams
 Same as AdminFields entity fields. ID field: `AdminFieldID`.
 
@@ -789,15 +752,6 @@ Same as ContentFields entity fields. ID field: `ContentFieldID`.
 
 ### UpdateDatatypeParams
 Same as Datatypes entity fields. ID field: `DatatypeID`.
-
-### UpdateDatatypeFieldParams
-
-| Field | Type |
-|-------|------|
-| DatatypeID | types.DatatypeID |
-| FieldID | types.FieldID |
-| SortOrder | int64 |
-| ID | string |
 
 ### UpdateFieldParams
 Same as Fields entity fields. ID field: `FieldID`.

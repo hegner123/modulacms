@@ -65,7 +65,7 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
 
-		items, err := driver.ListContentDataPaginated(db.PaginationParams{
+		items, err := driver.ListContentDataTopLevelPaginated(db.PaginationParams{
 			Limit:  limit,
 			Offset: offset,
 		})
@@ -75,14 +75,14 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		total, err := driver.CountContentData()
+		total, err := driver.CountContentDataTopLevel()
 		if err != nil {
 			utility.DefaultLogger.Error("failed to count content", err)
 			http.Error(w, "Failed to load content", http.StatusInternalServerError)
 			return
 		}
 
-		var rawItems []db.ContentData
+		var rawItems []db.ContentDataTopLevel
 		if items != nil {
 			rawItems = *items
 		}
@@ -90,8 +90,8 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		// Resolve display names: route title+slug if route assigned, else title field value
 		listItems := make([]pages.ContentListItem, len(rawItems))
 		for i, item := range rawItems {
-			listItems[i] = pages.ContentListItem{ContentData: item}
-			listItems[i].DisplayName = resolveContentDisplayName(driver, item)
+			listItems[i] = pages.ContentListItem{ContentDataTopLevel: item}
+			listItems[i].DisplayName = resolveContentDisplayName(driver, item.ContentData)
 			if item.RouteID.Valid {
 				rt, rtErr := driver.GetRoute(item.RouteID.ID)
 				if rtErr == nil && rt != nil {
@@ -137,24 +137,36 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 	}
 }
 
+// blockFieldData is a JSON-serializable representation of a content field
+// for the block editor's side panel. Includes field definition metadata
+// (label, type) alongside the content field value.
+type blockFieldData struct {
+	ContentFieldID string `json:"contentFieldId"`
+	FieldID        string `json:"fieldId"`
+	Label          string `json:"label"`
+	Type           string `json:"type"`
+	Value          string `json:"value"`
+}
+
 // blockNode is a JSON-serializable representation of a content tree node
 // for the block editor web component. Includes all ContentData fields so the
 // JS can send full UpdateContentDataParams to the batch API endpoint.
 // Nullable fields use empty string for no value. Non-nullable fields always have values.
 type blockNode struct {
-	ID            string `json:"id"`
-	ParentID      string `json:"parentId"`
-	FirstChildID  string `json:"firstChildId"`
-	NextSiblingID string `json:"nextSiblingId"`
-	PrevSiblingID string `json:"prevSiblingId"`
-	RouteID       string `json:"routeId"`
-	DatatypeID    string `json:"datatypeId"`
-	AuthorID      string `json:"authorId"`
-	Status        string `json:"status"`
-	DateCreated   string `json:"dateCreated"`
-	DateModified  string `json:"dateModified"`
-	Type          string `json:"type"`
-	Label         string `json:"label"`
+	ID            string           `json:"id"`
+	ParentID      string           `json:"parentId"`
+	FirstChildID  string           `json:"firstChildId"`
+	NextSiblingID string           `json:"nextSiblingId"`
+	PrevSiblingID string           `json:"prevSiblingId"`
+	RouteID       string           `json:"routeId"`
+	DatatypeID    string           `json:"datatypeId"`
+	AuthorID      string           `json:"authorId"`
+	Status        string           `json:"status"`
+	DateCreated   string           `json:"dateCreated"`
+	DateModified  string           `json:"dateModified"`
+	Type          string           `json:"type"`
+	Label         string           `json:"label"`
+	Fields        []blockFieldData `json:"fields"`
 }
 
 // nullableIDStr returns the string value of a NullableContentID, or empty string if not valid.
@@ -195,6 +207,30 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		}
 	}
 
+	// Batch-load content fields per descendant for the side panel
+	blockFields := make(map[string][]blockFieldData)
+	for _, node := range nodes {
+		if node.ContentDataID == contentID {
+			continue
+		}
+		cid := types.NullableContentID{ID: node.ContentDataID, Valid: true}
+		cfRows, cfErr := driver.ListContentFieldsWithFieldByContentData(cid)
+		if cfErr != nil || cfRows == nil {
+			continue
+		}
+		fds := make([]blockFieldData, 0, len(*cfRows))
+		for _, row := range *cfRows {
+			fds = append(fds, blockFieldData{
+				ContentFieldID: row.ContentFieldID.String(),
+				FieldID:        row.FFieldID.String(),
+				Label:          row.FLabel,
+				Type:           string(row.FType),
+				Value:          row.FieldValue,
+			})
+		}
+		blockFields[node.ContentDataID.String()] = fds
+	}
+
 	// Build block nodes — skip the root node itself (first in descendants is the queried node)
 	blocks := make([]blockNode, 0, len(nodes)-1)
 	for _, node := range nodes {
@@ -215,8 +251,13 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		if node.DatatypeID.Valid {
 			datatypeID = node.DatatypeID.ID.String()
 		}
+		nodeIDStr := node.ContentDataID.String()
+		fields := blockFields[nodeIDStr]
+		if fields == nil {
+			fields = []blockFieldData{}
+		}
 		blocks = append(blocks, blockNode{
-			ID:            node.ContentDataID.String(),
+			ID:            nodeIDStr,
 			ParentID:      nullableIDStr(node.ParentID),
 			FirstChildID:  nullableIDStr(node.FirstChildID),
 			NextSiblingID: nullableIDStr(node.NextSiblingID),
@@ -229,6 +270,7 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 			DateModified:  node.DateModified.Time.UTC().Format(time.RFC3339),
 			Type:          "container",
 			Label:         label,
+			Fields:        fields,
 		})
 	}
 
@@ -912,10 +954,18 @@ func ContentMoveHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 // --- Content Tree Save (bulk creates, updates, deletes) ---
 
 type treeSaveRequest struct {
-	ContentID string           `json:"content_id"`
-	Creates   []treeNodeCreate `json:"creates"`
-	Updates   []treeNodeUpdate `json:"updates"`
-	Deletes   []string         `json:"deletes"`
+	ContentID    string            `json:"content_id"`
+	Creates      []treeNodeCreate  `json:"creates"`
+	Updates      []treeNodeUpdate  `json:"updates"`
+	Deletes      []string          `json:"deletes"`
+	FieldUpdates []treeFieldUpdate `json:"field_updates"`
+}
+
+type treeFieldUpdate struct {
+	ContentDataID  string `json:"content_data_id"`
+	ContentFieldID string `json:"content_field_id"`
+	FieldID        string `json:"field_id"`
+	Value          string `json:"value"`
 }
 
 type treeNodeCreate struct {
@@ -936,11 +986,12 @@ type treeNodeUpdate struct {
 }
 
 type treeSaveResponse struct {
-	Created int               `json:"created"`
-	Updated int               `json:"updated"`
-	Deleted int               `json:"deleted"`
-	IDMap   map[string]string `json:"id_map,omitempty"`
-	Errors  []string          `json:"errors,omitempty"`
+	Created       int               `json:"created"`
+	Updated       int               `json:"updated"`
+	Deleted       int               `json:"deleted"`
+	FieldsUpdated int               `json:"fields_updated"`
+	IDMap         map[string]string `json:"id_map,omitempty"`
+	Errors        []string          `json:"errors,omitempty"`
 }
 
 // parseNullableID converts a *string JSON pointer into a NullableContentID.
@@ -989,7 +1040,7 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 			return
 		}
 
-		if len(req.Creates) == 0 && len(req.Updates) == 0 && len(req.Deletes) == 0 {
+		if len(req.Creates) == 0 && len(req.Updates) == 0 && len(req.Deletes) == 0 && len(req.FieldUpdates) == 0 {
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "No changes to save", "type": "info"}}`)
 			w.WriteHeader(http.StatusOK)
 			return
@@ -1206,9 +1257,102 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 			resp.Updated++
 		}
 
+		// --- Phase 4: Field value updates ---
+		for _, fu := range req.FieldUpdates {
+			cdIDStr := fu.ContentDataID
+			if mapped, ok := idMap[cdIDStr]; ok {
+				cdIDStr = mapped
+			}
+
+			if fu.ContentFieldID != "" {
+				// Update existing ContentField
+				cfID := types.ContentFieldID(fu.ContentFieldID)
+				existing, getErr := driver.GetContentField(cfID)
+				if getErr != nil {
+					resp.Errors = append(resp.Errors, fmt.Sprintf("get content field %s: %v", fu.ContentFieldID, getErr))
+					continue
+				}
+				_, updateErr := driver.UpdateContentField(ctx, ac, db.UpdateContentFieldParams{
+					ContentFieldID: cfID,
+					ContentDataID:  existing.ContentDataID,
+					FieldID:        existing.FieldID,
+					FieldValue:     fu.Value,
+					AuthorID:       user.UserID,
+					RouteID:        existing.RouteID,
+					DateCreated:    existing.DateCreated,
+					DateModified:   now,
+				})
+				if updateErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("tree-save: update content field %s failed", fu.ContentFieldID), updateErr)
+					resp.Errors = append(resp.Errors, fmt.Sprintf("update field %s: %v", fu.ContentFieldID, updateErr))
+					continue
+				}
+			} else {
+				// Create new ContentField for newly created blocks
+				_, createErr := driver.CreateContentField(ctx, ac, db.CreateContentFieldParams{
+					ContentDataID: types.NullableContentID{ID: types.ContentID(cdIDStr), Valid: true},
+					FieldID:       types.NullableFieldID{ID: types.FieldID(fu.FieldID), Valid: true},
+					FieldValue:    fu.Value,
+					AuthorID:      user.UserID,
+					RouteID:       parentRouteID,
+					DateCreated:   now,
+					DateModified:  now,
+				})
+				if createErr != nil {
+					utility.DefaultLogger.Error(fmt.Sprintf("tree-save: create content field for %s failed", cdIDStr), createErr)
+					resp.Errors = append(resp.Errors, fmt.Sprintf("create field for %s: %v", cdIDStr, createErr))
+					continue
+				}
+			}
+			resp.FieldsUpdated++
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		// Encode error is non-recoverable (client disconnected); response already partially written.
 		json.NewEncoder(w).Encode(resp)
+	}
+}
+
+// DatatypeFieldsJSONHandler returns the field definitions for a datatype as JSON.
+// Used by the block editor when a new block is created client-side and needs
+// empty field inputs for the side panel.
+// GET /admin/api/datatypes/{id}/fields
+func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Datatype ID required", http.StatusBadRequest)
+			return
+		}
+
+		dtID := types.DatatypeID(id)
+		if validateErr := dtID.Validate(); validateErr != nil {
+			http.Error(w, "Invalid datatype ID", http.StatusBadRequest)
+			return
+		}
+
+		fields, fieldsErr := driver.ListFieldsByDatatypeID(
+			types.NullableDatatypeID{ID: dtID, Valid: true},
+		)
+		if fieldsErr != nil {
+			utility.DefaultLogger.Error("failed to list fields for datatype", fieldsErr)
+			http.Error(w, "Failed to load fields", http.StatusInternalServerError)
+			return
+		}
+
+		result := make([]blockFieldData, 0)
+		if fields != nil {
+			for _, f := range *fields {
+				result = append(result, blockFieldData{
+					FieldID: f.FieldID.String(),
+					Label:   f.Label,
+					Type:    string(f.Type),
+				})
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(result)
 	}
 }

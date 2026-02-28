@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
         PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
@@ -35,19 +36,20 @@ WHERE admin_field_id = ? LIMIT 1;
 
 -- name: ListAdminField :many
 SELECT * FROM admin_fields
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 -- name: ListAdminFieldByParentID :many
 SELECT *
 FROM admin_fields
 WHERE parent_id = ?
-ORDER BY admin_field_id;
+ORDER BY sort_order, admin_field_id;
 
 
 -- name: CreateAdminField :one
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -68,6 +70,7 @@ INSERT INTO admin_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
     ) RETURNING *;
 
@@ -75,6 +78,7 @@ INSERT INTO admin_fields (
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET parent_id = ?,
+    sort_order = ?,
     name = ?,
     label = ?,
     data = ?,
@@ -93,11 +97,21 @@ WHERE admin_field_id = ?;
 
 -- name: ListAdminFieldPaginated :many
 SELECT * FROM admin_fields
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?;
 
 -- name: ListAdminFieldByParentIDPaginated :many
 SELECT * FROM admin_fields
 WHERE parent_id = ?
-ORDER BY admin_field_id
+ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?;
+
+-- name: UpdateAdminFieldSortOrder :exec
+UPDATE admin_fields
+SET sort_order = ?
+WHERE admin_field_id = ?;
+
+-- name: GetMaxAdminSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM admin_fields
+WHERE parent_id = ?;

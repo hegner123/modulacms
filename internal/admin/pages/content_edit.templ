@@ -27,87 +27,43 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 			</a>
 			<h1>Edit Content</h1>
 		</div>
-	</div>
-	<div class="detail-grid">
-		<!-- Fields + Form -->
-		<section class="detail-section">
-			<h2>Content Fields</h2>
-			<div id="content-edit-form">
-				<form
-					hx-post={ "/admin/content/" + content.ContentDataID.String() }
-					hx-target="#content-edit-form"
-					hx-swap="innerHTML"
-				>
-					@partials.CSRFField(csrfToken)
-					if len(fields) == 0 {
-						@partials.EmptyState("No fields configured for this content type")
-					}
-					for _, field := range fields {
-						@ContentFieldEditor(field)
-					}
-					<div class="form-actions">
-						<button type="submit" class="btn btn-primary">Save Changes</button>
-						<button
-							type="submit"
-							name="status"
-							value="published"
-							class="btn btn-success"
-						>
-							Publish
-						</button>
-					</div>
-				</form>
-			</div>
-			<div class="detail-meta">
-				<p><strong>ID:</strong> { content.ContentDataID.String() }</p>
-				<p><strong>Created:</strong> { content.DateCreated.String() }</p>
-				<p><strong>Modified:</strong> { content.DateModified.String() }</p>
-			</div>
-		</section>
-		<!-- Sidebar: metadata + danger zone -->
-		<section class="detail-section">
-			<h2>Details</h2>
-			<div class="detail-meta">
-				<div class="form-field">
-					<label for="status">Status</label>
-					<select
-						id="status"
-						name="status"
-						form={ "status-form-" + content.ContentDataID.String() }
-					>
-						<option value="draft" selected?={ string(content.Status) == "draft" }>Draft</option>
-						<option value="published" selected?={ string(content.Status) == "published" }>Published</option>
-					</select>
-				</div>
+		<div class="page-header-right">
+			<div class="content-meta-inline">
+				<span class="badge">{ string(content.Status) }</span>
 				if meta.DatatypeLabel != "" {
-					<p><strong>Datatype:</strong> { meta.DatatypeLabel }</p>
-				}
-				if meta.RouteTitle != "" {
-					<p><strong>Route:</strong> { meta.RouteTitle }</p>
+					<span class="text-muted">{ meta.DatatypeLabel }</span>
 				}
 				if meta.AuthorName != "" {
-					<p><strong>Author:</strong> { meta.AuthorName }</p>
+					<span class="text-muted">{ meta.AuthorName }</span>
 				}
 			</div>
-			<div class="detail-danger">
-				@partials.DeleteConfirm(
-					"Delete Content",
-					"This will permanently delete this content and all its children.",
-					"/admin/content/"+content.ContentDataID.String(),
-					"#main-content",
-				)
+			@partials.DeleteConfirm(
+				"Delete Content",
+				"This will permanently delete this content and all its children.",
+				"/admin/content/"+content.ContentDataID.String(),
+				"#main-content",
+			)
+		</div>
+	</div>
+	<!-- Block Editor: adaptive 5/7 layout -->
+	<div class="content-editor-layout" id="content-editor-layout">
+		<section class="content-editor-tree">
+			<block-editor
+				id="content-block-editor"
+				data-content-id={ content.ContentDataID.String() }
+				data-state={ treeJSON }
+			></block-editor>
+		</section>
+		<section class="content-editor-panel" id="block-field-panel">
+			<div class="content-editor-panel-header">
+				<h2 id="panel-title">Block Fields</h2>
+				<button type="button" class="panel-close-btn" id="panel-close-btn" aria-label="Close field panel">&times;</button>
+			</div>
+			<div id="panel-content">
+				<!-- Populated by JS when a block is selected -->
 			</div>
 		</section>
 	</div>
-	<!-- Block Editor: full width below the grid -->
-	<section class="detail-section detail-section-full">
-		<h2>Content Structure</h2>
-		<block-editor
-			id="content-block-editor"
-			data-content-id={ content.ContentDataID.String() }
-			data-state={ treeJSON }
-		></block-editor>
-	</section>
 }
 
 templ ContentEdit(layout layouts.AdminData, content db.ContentData, fields []db.ContentFieldWithFieldRow, treeJSON string, meta ContentMeta) {

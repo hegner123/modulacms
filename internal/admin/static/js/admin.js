@@ -451,6 +451,112 @@ document.body.addEventListener('htmx:afterSwap', function(e) {
 });
 
 // ========================================
+// Block Editor: field panel wiring
+// ========================================
+
+function openFieldPanel() {
+    var layout = document.getElementById('content-editor-layout');
+    if (layout) layout.classList.add('panel-open');
+}
+
+function closeFieldPanel() {
+    var layout = document.getElementById('content-editor-layout');
+    if (layout) layout.classList.remove('panel-open');
+    var editor = document.getElementById('content-block-editor');
+    if (editor && editor._state) editor._state.selectedBlockId = null;
+}
+
+// Close button
+document.addEventListener('click', function(e) {
+    if (e.target.id === 'panel-close-btn' || e.target.closest('#panel-close-btn')) {
+        closeFieldPanel();
+    }
+});
+
+// Escape key closes panel
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var layout = document.getElementById('content-editor-layout');
+        if (layout && layout.classList.contains('panel-open')) {
+            closeFieldPanel();
+        }
+    }
+});
+
+// Datatype fields cache for newly created blocks
+var _dtFieldsCache = {};
+
+function fetchDatatypeFields(datatypeId) {
+    if (_dtFieldsCache[datatypeId]) {
+        return Promise.resolve(_dtFieldsCache[datatypeId]);
+    }
+    return fetch('/admin/api/datatypes/' + datatypeId + '/fields', { credentials: 'same-origin' })
+        .then(function(res) {
+            if (!res.ok) throw new Error('Failed to fetch fields: ' + res.status);
+            return res.json();
+        })
+        .then(function(fields) {
+            _dtFieldsCache[datatypeId] = fields;
+            return fields;
+        });
+}
+
+// Block selection listener — opens field panel
+document.addEventListener('block-editor:select', function(e) {
+    var panel = document.getElementById('panel-content');
+    var title = document.getElementById('panel-title');
+    if (!panel) return;
+    var editor = document.getElementById('content-block-editor');
+    if (!editor) return;
+    var blockId = e.detail && e.detail.blockId;
+    if (!blockId) { closeFieldPanel(); return; }
+    var block = editor.getBlock(blockId);
+    if (!block) { closeFieldPanel(); return; }
+    if (title) title.textContent = block.label || 'Block Fields';
+    openFieldPanel();
+    var fields = editor.getFieldData(blockId);
+    if (fields && fields.length > 0) {
+        renderFieldPanel(panel, blockId, block, fields);
+    } else if (block.datatypeId) {
+        fetchDatatypeFields(block.datatypeId).then(function(defs) {
+            var empty = defs.map(function(f) {
+                return { contentFieldId: '', fieldId: f.fieldId, label: f.label, type: f.type, value: '' };
+            });
+            block.fields = empty;
+            editor._state.dirty = true;
+            editor._updateSaveButton();
+            renderFieldPanel(panel, blockId, block, empty);
+        });
+    } else {
+        panel.innerHTML = '<p class="text-muted">No fields for this block type.</p>';
+    }
+});
+
+// Render field inputs into the panel
+function renderFieldPanel(panel, blockId, block, fields) {
+    panel.innerHTML = '';
+    for (var i = 0; i < fields.length; i++) {
+        var f = fields[i];
+        var el = document.createElement('mcms-field-renderer');
+        el.setAttribute('type', f.type);
+        el.setAttribute('name', f.fieldId);
+        el.setAttribute('value', f.value || '');
+        el.setAttribute('label', f.label);
+        el.dataset.blockId = blockId;
+        el.dataset.fieldId = f.fieldId;
+        panel.appendChild(el);
+    }
+}
+
+// Field change listener — updates block state
+document.addEventListener('field-change', function(e) {
+    var renderer = e.target.closest('mcms-field-renderer');
+    if (!renderer || !renderer.dataset.blockId) return;
+    var editor = document.getElementById('content-block-editor');
+    if (editor) editor.setFieldValue(renderer.dataset.blockId, renderer.dataset.fieldId, e.detail.value);
+});
+
+// ========================================
 // Block Editor: save wiring
 // ========================================
 
@@ -537,8 +643,37 @@ document.addEventListener('block-editor:save', function(e) {
         }
     }
 
-    if (creates.length === 0 && updates.length === 0 && deletes.length === 0) {
-        showBlockEditorToast('No structural changes to save', 'info');
+    // Compute field updates: changed or new field values
+    var fieldUpdates = [];
+    for (var fi = 0; fi < currentKeys.length; fi++) {
+        var fid = currentKeys[fi];
+        var fblock = state.blocks[fid];
+        var forig = initial[fid];
+        if (!fblock.fields) continue;
+        for (var fj = 0; fj < fblock.fields.length; fj++) {
+            var f = fblock.fields[fj];
+            var origField = null;
+            if (forig && forig.fields) {
+                for (var fk = 0; fk < forig.fields.length; fk++) {
+                    if (forig.fields[fk].fieldId === f.fieldId) {
+                        origField = forig.fields[fk];
+                        break;
+                    }
+                }
+            }
+            if (!origField || origField.value !== f.value) {
+                fieldUpdates.push({
+                    content_data_id: fblock.id,
+                    content_field_id: f.contentFieldId || '',
+                    field_id: f.fieldId,
+                    value: f.value
+                });
+            }
+        }
+    }
+
+    if (creates.length === 0 && updates.length === 0 && deletes.length === 0 && fieldUpdates.length === 0) {
+        showBlockEditorToast('No changes to save', 'info');
         return;
     }
 
@@ -546,7 +681,8 @@ document.addEventListener('block-editor:save', function(e) {
         content_id: contentId,
         creates: creates,
         updates: updates,
-        deletes: deletes
+        deletes: deletes,
+        field_updates: fieldUpdates
     };
 
     var xhr = new XMLHttpRequest();
@@ -589,7 +725,8 @@ document.addEventListener('block-editor:save', function(e) {
             if (resp.created > 0) parts.push(resp.created + ' created');
             if (resp.updated > 0) parts.push(resp.updated + ' updated');
             if (resp.deleted > 0) parts.push(resp.deleted + ' deleted');
-            showBlockEditorToast(parts.length > 0 ? parts.join(', ') : 'Content structure saved', 'success');
+            if (resp.fields_updated > 0) parts.push(resp.fields_updated + ' field(s) saved');
+            showBlockEditorToast(parts.length > 0 ? parts.join(', ') : 'Content saved', 'success');
         }
         // Update data-state so next save diffs correctly
         editor.setAttribute('data-state', stateStr);

@@ -7,12 +7,12 @@ import (
 
 // nullableIDContract captures the common behavior of all nullable ID types.
 type nullableIDContract struct {
-	name       string
-	newValidFn func() (string, any) // returns (raw ULID string, NullableXxxID{ID: xxx, Valid: true})
-	scanNilFn  func() (bool, error) // scan nil -> returns (Valid, error)
-	scanValFn  func(string) (string, bool, error)
-	valueFn    func(string, bool) (any, error)
-	marshalFn  func(string, bool) ([]byte, error)
+	name        string
+	newValidFn  func() (string, any) // returns (raw ULID string, NullableXxxID{ID: xxx, Valid: true})
+	scanNilFn   func() (bool, error) // scan nil -> returns (Valid, error)
+	scanValFn   func(string) (string, bool, error)
+	valueFn     func(string, bool) (any, error)
+	marshalFn   func(string, bool) ([]byte, error)
 	unmarshalFn func([]byte) (string, bool, error)
 }
 

@@ -46,16 +46,16 @@ func validateULID(s string, typeName string) error {
 type DatatypeID string
 
 // NewDatatypeID generates a new ULID-based DatatypeID.
-func NewDatatypeID() DatatypeID              { return DatatypeID(NewULID().String()) }
+func NewDatatypeID() DatatypeID { return DatatypeID(NewULID().String()) }
 
 // String returns the string representation of the DatatypeID.
-func (id DatatypeID) String() string         { return string(id) }
+func (id DatatypeID) String() string { return string(id) }
 
 // IsZero returns true if the DatatypeID is empty.
-func (id DatatypeID) IsZero() bool           { return id == "" }
+func (id DatatypeID) IsZero() bool { return id == "" }
 
 // Validate checks if the DatatypeID is a valid ULID.
-func (id DatatypeID) Validate() error        { return validateULID(string(id), "DatatypeID") }
+func (id DatatypeID) Validate() error { return validateULID(string(id), "DatatypeID") }
 
 // ULID parses the DatatypeID as a ulid.ULID.
 func (id DatatypeID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
@@ -94,7 +94,7 @@ func (id *DatatypeID) Scan(value any) error {
 }
 
 // MarshalJSON implements json.Marshaler.
-func (id DatatypeID) MarshalJSON() ([]byte, error)  { return json.Marshal(string(id)) }
+func (id DatatypeID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (id *DatatypeID) UnmarshalJSON(data []byte) error {
@@ -119,16 +119,16 @@ func ParseDatatypeID(s string) (DatatypeID, error) {
 type UserID string
 
 // NewUserID generates a new ULID-based UserID.
-func NewUserID() UserID              { return UserID(NewULID().String()) }
+func NewUserID() UserID { return UserID(NewULID().String()) }
 
 // String returns the string representation of the UserID.
-func (id UserID) String() string     { return string(id) }
+func (id UserID) String() string { return string(id) }
 
 // IsZero returns true if the UserID is empty.
-func (id UserID) IsZero() bool       { return id == "" }
+func (id UserID) IsZero() bool { return id == "" }
 
 // Validate checks if the UserID is a valid ULID.
-func (id UserID) Validate() error    { return validateULID(string(id), "UserID") }
+func (id UserID) Validate() error { return validateULID(string(id), "UserID") }
 
 // ULID parses the UserID as a ulid.ULID.
 func (id UserID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
@@ -183,16 +183,16 @@ func ParseUserID(s string) (UserID, error) {
 type RoleID string
 
 // NewRoleID generates a new ULID-based RoleID.
-func NewRoleID() RoleID              { return RoleID(NewULID().String()) }
+func NewRoleID() RoleID { return RoleID(NewULID().String()) }
 
 // String returns the string representation of the RoleID.
-func (id RoleID) String() string     { return string(id) }
+func (id RoleID) String() string { return string(id) }
 
 // IsZero returns true if the RoleID is empty.
-func (id RoleID) IsZero() bool       { return id == "" }
+func (id RoleID) IsZero() bool { return id == "" }
 
 // Validate checks if the RoleID is a valid ULID.
-func (id RoleID) Validate() error    { return validateULID(string(id), "RoleID") }
+func (id RoleID) Validate() error { return validateULID(string(id), "RoleID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id RoleID) Value() (driver.Value, error) {
@@ -235,16 +235,16 @@ func (id *RoleID) UnmarshalJSON(data []byte) error {
 type PermissionID string
 
 // NewPermissionID generates a new ULID-based PermissionID.
-func NewPermissionID() PermissionID      { return PermissionID(NewULID().String()) }
+func NewPermissionID() PermissionID { return PermissionID(NewULID().String()) }
 
 // String returns the string representation of the PermissionID.
-func (id PermissionID) String() string   { return string(id) }
+func (id PermissionID) String() string { return string(id) }
 
 // IsZero returns true if the PermissionID is empty.
-func (id PermissionID) IsZero() bool     { return id == "" }
+func (id PermissionID) IsZero() bool { return id == "" }
 
 // Validate checks if the PermissionID is a valid ULID.
-func (id PermissionID) Validate() error  { return validateULID(string(id), "PermissionID") }
+func (id PermissionID) Validate() error { return validateULID(string(id), "PermissionID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id PermissionID) Value() (driver.Value, error) {
@@ -287,16 +287,16 @@ func (id *PermissionID) UnmarshalJSON(data []byte) error {
 type FieldID string
 
 // NewFieldID generates a new ULID-based FieldID.
-func NewFieldID() FieldID            { return FieldID(NewULID().String()) }
+func NewFieldID() FieldID { return FieldID(NewULID().String()) }
 
 // String returns the string representation of the FieldID.
-func (id FieldID) String() string    { return string(id) }
+func (id FieldID) String() string { return string(id) }
 
 // IsZero returns true if the FieldID is empty.
-func (id FieldID) IsZero() bool      { return id == "" }
+func (id FieldID) IsZero() bool { return id == "" }
 
 // Validate checks if the FieldID is a valid ULID.
-func (id FieldID) Validate() error   { return validateULID(string(id), "FieldID") }
+func (id FieldID) Validate() error { return validateULID(string(id), "FieldID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id FieldID) Value() (driver.Value, error) {
@@ -339,13 +339,13 @@ func (id *FieldID) UnmarshalJSON(data []byte) error {
 type ContentID string
 
 // NewContentID generates a new ULID-based ContentID.
-func NewContentID() ContentID        { return ContentID(NewULID().String()) }
+func NewContentID() ContentID { return ContentID(NewULID().String()) }
 
 // String returns the string representation of the ContentID.
-func (id ContentID) String() string  { return string(id) }
+func (id ContentID) String() string { return string(id) }
 
 // IsZero returns true if the ContentID is empty.
-func (id ContentID) IsZero() bool    { return id == "" }
+func (id ContentID) IsZero() bool { return id == "" }
 
 // Validate checks if the ContentID is a valid ULID.
 func (id ContentID) Validate() error { return validateULID(string(id), "ContentID") }
@@ -391,16 +391,16 @@ func (id *ContentID) UnmarshalJSON(data []byte) error {
 type ContentFieldID string
 
 // NewContentFieldID generates a new ULID-based ContentFieldID.
-func NewContentFieldID() ContentFieldID    { return ContentFieldID(NewULID().String()) }
+func NewContentFieldID() ContentFieldID { return ContentFieldID(NewULID().String()) }
 
 // String returns the string representation of the ContentFieldID.
-func (id ContentFieldID) String() string   { return string(id) }
+func (id ContentFieldID) String() string { return string(id) }
 
 // IsZero returns true if the ContentFieldID is empty.
-func (id ContentFieldID) IsZero() bool     { return id == "" }
+func (id ContentFieldID) IsZero() bool { return id == "" }
 
 // Validate checks if the ContentFieldID is a valid ULID.
-func (id ContentFieldID) Validate() error  { return validateULID(string(id), "ContentFieldID") }
+func (id ContentFieldID) Validate() error { return validateULID(string(id), "ContentFieldID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id ContentFieldID) Value() (driver.Value, error) {
@@ -443,16 +443,16 @@ func (id *ContentFieldID) UnmarshalJSON(data []byte) error {
 type MediaID string
 
 // NewMediaID generates a new ULID-based MediaID.
-func NewMediaID() MediaID            { return MediaID(NewULID().String()) }
+func NewMediaID() MediaID { return MediaID(NewULID().String()) }
 
 // String returns the string representation of the MediaID.
-func (id MediaID) String() string    { return string(id) }
+func (id MediaID) String() string { return string(id) }
 
 // IsZero returns true if the MediaID is empty.
-func (id MediaID) IsZero() bool      { return id == "" }
+func (id MediaID) IsZero() bool { return id == "" }
 
 // Validate checks if the MediaID is a valid ULID.
-func (id MediaID) Validate() error   { return validateULID(string(id), "MediaID") }
+func (id MediaID) Validate() error { return validateULID(string(id), "MediaID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id MediaID) Value() (driver.Value, error) {
@@ -495,16 +495,16 @@ func (id *MediaID) UnmarshalJSON(data []byte) error {
 type MediaDimensionID string
 
 // NewMediaDimensionID generates a new ULID-based MediaDimensionID.
-func NewMediaDimensionID() MediaDimensionID    { return MediaDimensionID(NewULID().String()) }
+func NewMediaDimensionID() MediaDimensionID { return MediaDimensionID(NewULID().String()) }
 
 // String returns the string representation of the MediaDimensionID.
-func (id MediaDimensionID) String() string     { return string(id) }
+func (id MediaDimensionID) String() string { return string(id) }
 
 // IsZero returns true if the MediaDimensionID is empty.
-func (id MediaDimensionID) IsZero() bool       { return id == "" }
+func (id MediaDimensionID) IsZero() bool { return id == "" }
 
 // Validate checks if the MediaDimensionID is a valid ULID.
-func (id MediaDimensionID) Validate() error    { return validateULID(string(id), "MediaDimensionID") }
+func (id MediaDimensionID) Validate() error { return validateULID(string(id), "MediaDimensionID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id MediaDimensionID) Value() (driver.Value, error) {
@@ -547,13 +547,13 @@ func (id *MediaDimensionID) UnmarshalJSON(data []byte) error {
 type SessionID string
 
 // NewSessionID generates a new ULID-based SessionID.
-func NewSessionID() SessionID        { return SessionID(NewULID().String()) }
+func NewSessionID() SessionID { return SessionID(NewULID().String()) }
 
 // String returns the string representation of the SessionID.
-func (id SessionID) String() string  { return string(id) }
+func (id SessionID) String() string { return string(id) }
 
 // IsZero returns true if the SessionID is empty.
-func (id SessionID) IsZero() bool    { return id == "" }
+func (id SessionID) IsZero() bool { return id == "" }
 
 // Validate checks if the SessionID is a valid ULID.
 func (id SessionID) Validate() error { return validateULID(string(id), "SessionID") }
@@ -599,16 +599,16 @@ func (id *SessionID) UnmarshalJSON(data []byte) error {
 type TokenID string
 
 // NewTokenID generates a new ULID-based TokenID.
-func NewTokenID() TokenID            { return TokenID(NewULID().String()) }
+func NewTokenID() TokenID { return TokenID(NewULID().String()) }
 
 // String returns the string representation of the TokenID.
-func (id TokenID) String() string    { return string(id) }
+func (id TokenID) String() string { return string(id) }
 
 // IsZero returns true if the TokenID is empty.
-func (id TokenID) IsZero() bool      { return id == "" }
+func (id TokenID) IsZero() bool { return id == "" }
 
 // Validate checks if the TokenID is a valid ULID.
-func (id TokenID) Validate() error   { return validateULID(string(id), "TokenID") }
+func (id TokenID) Validate() error { return validateULID(string(id), "TokenID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id TokenID) Value() (driver.Value, error) {
@@ -651,16 +651,16 @@ func (id *TokenID) UnmarshalJSON(data []byte) error {
 type RouteID string
 
 // NewRouteID generates a new ULID-based RouteID.
-func NewRouteID() RouteID            { return RouteID(NewULID().String()) }
+func NewRouteID() RouteID { return RouteID(NewULID().String()) }
 
 // String returns the string representation of the RouteID.
-func (id RouteID) String() string    { return string(id) }
+func (id RouteID) String() string { return string(id) }
 
 // IsZero returns true if the RouteID is empty.
-func (id RouteID) IsZero() bool      { return id == "" }
+func (id RouteID) IsZero() bool { return id == "" }
 
 // Validate checks if the RouteID is a valid ULID.
-func (id RouteID) Validate() error   { return validateULID(string(id), "RouteID") }
+func (id RouteID) Validate() error { return validateULID(string(id), "RouteID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id RouteID) Value() (driver.Value, error) {
@@ -703,16 +703,16 @@ func (id *RouteID) UnmarshalJSON(data []byte) error {
 type AdminRouteID string
 
 // NewAdminRouteID generates a new ULID-based AdminRouteID.
-func NewAdminRouteID() AdminRouteID      { return AdminRouteID(NewULID().String()) }
+func NewAdminRouteID() AdminRouteID { return AdminRouteID(NewULID().String()) }
 
 // String returns the string representation of the AdminRouteID.
-func (id AdminRouteID) String() string   { return string(id) }
+func (id AdminRouteID) String() string { return string(id) }
 
 // IsZero returns true if the AdminRouteID is empty.
-func (id AdminRouteID) IsZero() bool     { return id == "" }
+func (id AdminRouteID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminRouteID is a valid ULID.
-func (id AdminRouteID) Validate() error  { return validateULID(string(id), "AdminRouteID") }
+func (id AdminRouteID) Validate() error { return validateULID(string(id), "AdminRouteID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id AdminRouteID) Value() (driver.Value, error) {
@@ -755,16 +755,16 @@ func (id *AdminRouteID) UnmarshalJSON(data []byte) error {
 type TableID string
 
 // NewTableID generates a new ULID-based TableID.
-func NewTableID() TableID            { return TableID(NewULID().String()) }
+func NewTableID() TableID { return TableID(NewULID().String()) }
 
 // String returns the string representation of the TableID.
-func (id TableID) String() string    { return string(id) }
+func (id TableID) String() string { return string(id) }
 
 // IsZero returns true if the TableID is empty.
-func (id TableID) IsZero() bool      { return id == "" }
+func (id TableID) IsZero() bool { return id == "" }
 
 // Validate checks if the TableID is a valid ULID.
-func (id TableID) Validate() error   { return validateULID(string(id), "TableID") }
+func (id TableID) Validate() error { return validateULID(string(id), "TableID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id TableID) Value() (driver.Value, error) {
@@ -807,13 +807,13 @@ func (id *TableID) UnmarshalJSON(data []byte) error {
 type UserOauthID string
 
 // NewUserOauthID generates a new ULID-based UserOauthID.
-func NewUserOauthID() UserOauthID      { return UserOauthID(NewULID().String()) }
+func NewUserOauthID() UserOauthID { return UserOauthID(NewULID().String()) }
 
 // String returns the string representation of the UserOauthID.
-func (id UserOauthID) String() string  { return string(id) }
+func (id UserOauthID) String() string { return string(id) }
 
 // IsZero returns true if the UserOauthID is empty.
-func (id UserOauthID) IsZero() bool    { return id == "" }
+func (id UserOauthID) IsZero() bool { return id == "" }
 
 // Validate checks if the UserOauthID is a valid ULID.
 func (id UserOauthID) Validate() error { return validateULID(string(id), "UserOauthID") }
@@ -859,16 +859,16 @@ func (id *UserOauthID) UnmarshalJSON(data []byte) error {
 type UserSshKeyID string
 
 // NewUserSshKeyID generates a new ULID-based UserSshKeyID.
-func NewUserSshKeyID() UserSshKeyID      { return UserSshKeyID(NewULID().String()) }
+func NewUserSshKeyID() UserSshKeyID { return UserSshKeyID(NewULID().String()) }
 
 // String returns the string representation of the UserSshKeyID.
-func (id UserSshKeyID) String() string   { return string(id) }
+func (id UserSshKeyID) String() string { return string(id) }
 
 // IsZero returns true if the UserSshKeyID is empty.
-func (id UserSshKeyID) IsZero() bool     { return id == "" }
+func (id UserSshKeyID) IsZero() bool { return id == "" }
 
 // Validate checks if the UserSshKeyID is a valid ULID.
-func (id UserSshKeyID) Validate() error  { return validateULID(string(id), "UserSshKeyID") }
+func (id UserSshKeyID) Validate() error { return validateULID(string(id), "UserSshKeyID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id UserSshKeyID) Value() (driver.Value, error) {
@@ -911,16 +911,16 @@ func (id *UserSshKeyID) UnmarshalJSON(data []byte) error {
 type AdminDatatypeID string
 
 // NewAdminDatatypeID generates a new ULID-based AdminDatatypeID.
-func NewAdminDatatypeID() AdminDatatypeID    { return AdminDatatypeID(NewULID().String()) }
+func NewAdminDatatypeID() AdminDatatypeID { return AdminDatatypeID(NewULID().String()) }
 
 // String returns the string representation of the AdminDatatypeID.
-func (id AdminDatatypeID) String() string    { return string(id) }
+func (id AdminDatatypeID) String() string { return string(id) }
 
 // IsZero returns true if the AdminDatatypeID is empty.
-func (id AdminDatatypeID) IsZero() bool      { return id == "" }
+func (id AdminDatatypeID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminDatatypeID is a valid ULID.
-func (id AdminDatatypeID) Validate() error   { return validateULID(string(id), "AdminDatatypeID") }
+func (id AdminDatatypeID) Validate() error { return validateULID(string(id), "AdminDatatypeID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id AdminDatatypeID) Value() (driver.Value, error) {
@@ -963,16 +963,16 @@ func (id *AdminDatatypeID) UnmarshalJSON(data []byte) error {
 type AdminFieldID string
 
 // NewAdminFieldID generates a new ULID-based AdminFieldID.
-func NewAdminFieldID() AdminFieldID      { return AdminFieldID(NewULID().String()) }
+func NewAdminFieldID() AdminFieldID { return AdminFieldID(NewULID().String()) }
 
 // String returns the string representation of the AdminFieldID.
-func (id AdminFieldID) String() string   { return string(id) }
+func (id AdminFieldID) String() string { return string(id) }
 
 // IsZero returns true if the AdminFieldID is empty.
-func (id AdminFieldID) IsZero() bool     { return id == "" }
+func (id AdminFieldID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminFieldID is a valid ULID.
-func (id AdminFieldID) Validate() error  { return validateULID(string(id), "AdminFieldID") }
+func (id AdminFieldID) Validate() error { return validateULID(string(id), "AdminFieldID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id AdminFieldID) Value() (driver.Value, error) {
@@ -1015,16 +1015,16 @@ func (id *AdminFieldID) UnmarshalJSON(data []byte) error {
 type AdminContentID string
 
 // NewAdminContentID generates a new ULID-based AdminContentID.
-func NewAdminContentID() AdminContentID    { return AdminContentID(NewULID().String()) }
+func NewAdminContentID() AdminContentID { return AdminContentID(NewULID().String()) }
 
 // String returns the string representation of the AdminContentID.
-func (id AdminContentID) String() string   { return string(id) }
+func (id AdminContentID) String() string { return string(id) }
 
 // IsZero returns true if the AdminContentID is empty.
-func (id AdminContentID) IsZero() bool     { return id == "" }
+func (id AdminContentID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminContentID is a valid ULID.
-func (id AdminContentID) Validate() error  { return validateULID(string(id), "AdminContentID") }
+func (id AdminContentID) Validate() error { return validateULID(string(id), "AdminContentID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id AdminContentID) Value() (driver.Value, error) {
@@ -1067,16 +1067,18 @@ func (id *AdminContentID) UnmarshalJSON(data []byte) error {
 type AdminContentFieldID string
 
 // NewAdminContentFieldID generates a new ULID-based AdminContentFieldID.
-func NewAdminContentFieldID() AdminContentFieldID    { return AdminContentFieldID(NewULID().String()) }
+func NewAdminContentFieldID() AdminContentFieldID { return AdminContentFieldID(NewULID().String()) }
 
 // String returns the string representation of the AdminContentFieldID.
-func (id AdminContentFieldID) String() string        { return string(id) }
+func (id AdminContentFieldID) String() string { return string(id) }
 
 // IsZero returns true if the AdminContentFieldID is empty.
-func (id AdminContentFieldID) IsZero() bool          { return id == "" }
+func (id AdminContentFieldID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminContentFieldID is a valid ULID.
-func (id AdminContentFieldID) Validate() error       { return validateULID(string(id), "AdminContentFieldID") }
+func (id AdminContentFieldID) Validate() error {
+	return validateULID(string(id), "AdminContentFieldID")
+}
 
 // Value implements driver.Valuer for database serialization.
 func (id AdminContentFieldID) Value() (driver.Value, error) {
@@ -1115,124 +1117,20 @@ func (id *AdminContentFieldID) UnmarshalJSON(data []byte) error {
 	return id.Validate()
 }
 
-// DatatypeFieldID uniquely identifies a datatype-field relationship.
-type DatatypeFieldID string
-
-// NewDatatypeFieldID generates a new ULID-based DatatypeFieldID.
-func NewDatatypeFieldID() DatatypeFieldID    { return DatatypeFieldID(NewULID().String()) }
-
-// String returns the string representation of the DatatypeFieldID.
-func (id DatatypeFieldID) String() string    { return string(id) }
-
-// IsZero returns true if the DatatypeFieldID is empty.
-func (id DatatypeFieldID) IsZero() bool      { return id == "" }
-
-// Validate checks if the DatatypeFieldID is a valid ULID.
-func (id DatatypeFieldID) Validate() error   { return validateULID(string(id), "DatatypeFieldID") }
-
-// Value implements driver.Valuer for database serialization.
-func (id DatatypeFieldID) Value() (driver.Value, error) {
-	if id == "" {
-		return nil, fmt.Errorf("DatatypeFieldID: cannot be empty")
-	}
-	return string(id), nil
-}
-
-// Scan implements sql.Scanner for database deserialization.
-func (id *DatatypeFieldID) Scan(value any) error {
-	if value == nil {
-		return fmt.Errorf("DatatypeFieldID: cannot be null")
-	}
-	switch v := value.(type) {
-	case string:
-		*id = DatatypeFieldID(v)
-	case []byte:
-		*id = DatatypeFieldID(string(v))
-	default:
-		return fmt.Errorf("DatatypeFieldID: cannot scan %T", value)
-	}
-	return id.Validate()
-}
-
-// MarshalJSON implements json.Marshaler.
-func (id DatatypeFieldID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (id *DatatypeFieldID) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("DatatypeFieldID: %w", err)
-	}
-	*id = DatatypeFieldID(s)
-	return id.Validate()
-}
-
-// AdminDatatypeFieldID uniquely identifies an admin datatype-field relationship.
-type AdminDatatypeFieldID string
-
-// NewAdminDatatypeFieldID generates a new ULID-based AdminDatatypeFieldID.
-func NewAdminDatatypeFieldID() AdminDatatypeFieldID    { return AdminDatatypeFieldID(NewULID().String()) }
-
-// String returns the string representation of the AdminDatatypeFieldID.
-func (id AdminDatatypeFieldID) String() string         { return string(id) }
-
-// IsZero returns true if the AdminDatatypeFieldID is empty.
-func (id AdminDatatypeFieldID) IsZero() bool           { return id == "" }
-
-// Validate checks if the AdminDatatypeFieldID is a valid ULID.
-func (id AdminDatatypeFieldID) Validate() error        { return validateULID(string(id), "AdminDatatypeFieldID") }
-
-// Value implements driver.Valuer for database serialization.
-func (id AdminDatatypeFieldID) Value() (driver.Value, error) {
-	if id == "" {
-		return nil, fmt.Errorf("AdminDatatypeFieldID: cannot be empty")
-	}
-	return string(id), nil
-}
-
-// Scan implements sql.Scanner for database deserialization.
-func (id *AdminDatatypeFieldID) Scan(value any) error {
-	if value == nil {
-		return fmt.Errorf("AdminDatatypeFieldID: cannot be null")
-	}
-	switch v := value.(type) {
-	case string:
-		*id = AdminDatatypeFieldID(v)
-	case []byte:
-		*id = AdminDatatypeFieldID(string(v))
-	default:
-		return fmt.Errorf("AdminDatatypeFieldID: cannot scan %T", value)
-	}
-	return id.Validate()
-}
-
-// MarshalJSON implements json.Marshaler.
-func (id AdminDatatypeFieldID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
-
-// UnmarshalJSON implements json.Unmarshaler.
-func (id *AdminDatatypeFieldID) UnmarshalJSON(data []byte) error {
-	var s string
-	if err := json.Unmarshal(data, &s); err != nil {
-		return fmt.Errorf("AdminDatatypeFieldID: %w", err)
-	}
-	*id = AdminDatatypeFieldID(s)
-	return id.Validate()
-}
-
 // EventID uniquely identifies a change event.
 type EventID string
 
 // NewEventID generates a new ULID-based EventID.
-func NewEventID() EventID            { return EventID(NewULID().String()) }
+func NewEventID() EventID { return EventID(NewULID().String()) }
 
 // String returns the string representation of the EventID.
-func (id EventID) String() string    { return string(id) }
+func (id EventID) String() string { return string(id) }
 
 // IsZero returns true if the EventID is empty.
-func (id EventID) IsZero() bool      { return id == "" }
+func (id EventID) IsZero() bool { return id == "" }
 
 // Validate checks if the EventID is a valid ULID.
-func (id EventID) Validate() error   { return validateULID(string(id), "EventID") }
+func (id EventID) Validate() error { return validateULID(string(id), "EventID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id EventID) Value() (driver.Value, error) {
@@ -1275,16 +1173,16 @@ func (id *EventID) UnmarshalJSON(data []byte) error {
 type NodeID string
 
 // NewNodeID generates a new ULID-based NodeID.
-func NewNodeID() NodeID              { return NodeID(NewULID().String()) }
+func NewNodeID() NodeID { return NodeID(NewULID().String()) }
 
 // String returns the string representation of the NodeID.
-func (id NodeID) String() string     { return string(id) }
+func (id NodeID) String() string { return string(id) }
 
 // IsZero returns true if the NodeID is empty.
-func (id NodeID) IsZero() bool       { return id == "" }
+func (id NodeID) IsZero() bool { return id == "" }
 
 // Validate checks if the NodeID is a valid ULID.
-func (id NodeID) Validate() error    { return validateULID(string(id), "NodeID") }
+func (id NodeID) Validate() error { return validateULID(string(id), "NodeID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id NodeID) Value() (driver.Value, error) {
@@ -1327,16 +1225,16 @@ func (id *NodeID) UnmarshalJSON(data []byte) error {
 type BackupID string
 
 // NewBackupID generates a new ULID-based BackupID.
-func NewBackupID() BackupID          { return BackupID(NewULID().String()) }
+func NewBackupID() BackupID { return BackupID(NewULID().String()) }
 
 // String returns the string representation of the BackupID.
-func (id BackupID) String() string   { return string(id) }
+func (id BackupID) String() string { return string(id) }
 
 // IsZero returns true if the BackupID is empty.
-func (id BackupID) IsZero() bool     { return id == "" }
+func (id BackupID) IsZero() bool { return id == "" }
 
 // Validate checks if the BackupID is a valid ULID.
-func (id BackupID) Validate() error  { return validateULID(string(id), "BackupID") }
+func (id BackupID) Validate() error { return validateULID(string(id), "BackupID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id BackupID) Value() (driver.Value, error) {
@@ -1379,16 +1277,16 @@ func (id *BackupID) UnmarshalJSON(data []byte) error {
 type VerificationID string
 
 // NewVerificationID generates a new ULID-based VerificationID.
-func NewVerificationID() VerificationID    { return VerificationID(NewULID().String()) }
+func NewVerificationID() VerificationID { return VerificationID(NewULID().String()) }
 
 // String returns the string representation of the VerificationID.
-func (id VerificationID) String() string   { return string(id) }
+func (id VerificationID) String() string { return string(id) }
 
 // IsZero returns true if the VerificationID is empty.
-func (id VerificationID) IsZero() bool     { return id == "" }
+func (id VerificationID) IsZero() bool { return id == "" }
 
 // Validate checks if the VerificationID is a valid ULID.
-func (id VerificationID) Validate() error  { return validateULID(string(id), "VerificationID") }
+func (id VerificationID) Validate() error { return validateULID(string(id), "VerificationID") }
 
 // Value implements driver.Valuer for database serialization.
 func (id VerificationID) Value() (driver.Value, error) {
@@ -1431,13 +1329,13 @@ func (id *VerificationID) UnmarshalJSON(data []byte) error {
 type BackupSetID string
 
 // NewBackupSetID generates a new ULID-based BackupSetID.
-func NewBackupSetID() BackupSetID      { return BackupSetID(NewULID().String()) }
+func NewBackupSetID() BackupSetID { return BackupSetID(NewULID().String()) }
 
 // String returns the string representation of the BackupSetID.
-func (id BackupSetID) String() string  { return string(id) }
+func (id BackupSetID) String() string { return string(id) }
 
 // IsZero returns true if the BackupSetID is empty.
-func (id BackupSetID) IsZero() bool    { return id == "" }
+func (id BackupSetID) IsZero() bool { return id == "" }
 
 // Validate checks if the BackupSetID is a valid ULID.
 func (id BackupSetID) Validate() error { return validateULID(string(id), "BackupSetID") }
@@ -1483,16 +1381,16 @@ func (id *BackupSetID) UnmarshalJSON(data []byte) error {
 type ContentRelationID string
 
 // NewContentRelationID generates a new ULID-based ContentRelationID.
-func NewContentRelationID() ContentRelationID    { return ContentRelationID(NewULID().String()) }
+func NewContentRelationID() ContentRelationID { return ContentRelationID(NewULID().String()) }
 
 // String returns the string representation of the ContentRelationID.
-func (id ContentRelationID) String() string      { return string(id) }
+func (id ContentRelationID) String() string { return string(id) }
 
 // IsZero returns true if the ContentRelationID is empty.
-func (id ContentRelationID) IsZero() bool        { return id == "" }
+func (id ContentRelationID) IsZero() bool { return id == "" }
 
 // Validate checks if the ContentRelationID is a valid ULID.
-func (id ContentRelationID) Validate() error     { return validateULID(string(id), "ContentRelationID") }
+func (id ContentRelationID) Validate() error { return validateULID(string(id), "ContentRelationID") }
 
 // ULID parses the ContentRelationID as a ulid.ULID.
 func (id ContentRelationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
@@ -1556,16 +1454,20 @@ func (id *ContentRelationID) UnmarshalJSON(data []byte) error {
 type AdminContentRelationID string
 
 // NewAdminContentRelationID generates a new ULID-based AdminContentRelationID.
-func NewAdminContentRelationID() AdminContentRelationID { return AdminContentRelationID(NewULID().String()) }
+func NewAdminContentRelationID() AdminContentRelationID {
+	return AdminContentRelationID(NewULID().String())
+}
 
 // String returns the string representation of the AdminContentRelationID.
-func (id AdminContentRelationID) String() string        { return string(id) }
+func (id AdminContentRelationID) String() string { return string(id) }
 
 // IsZero returns true if the AdminContentRelationID is empty.
-func (id AdminContentRelationID) IsZero() bool          { return id == "" }
+func (id AdminContentRelationID) IsZero() bool { return id == "" }
 
 // Validate checks if the AdminContentRelationID is a valid ULID.
-func (id AdminContentRelationID) Validate() error       { return validateULID(string(id), "AdminContentRelationID") }
+func (id AdminContentRelationID) Validate() error {
+	return validateULID(string(id), "AdminContentRelationID")
+}
 
 // ULID parses the AdminContentRelationID as a ulid.ULID.
 func (id AdminContentRelationID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }

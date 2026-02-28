@@ -1857,10 +1857,19 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			Valid: true,
 		}
 
-		// Create the field
+		// Determine sort order for new field
+		parentID := types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true}
+		maxSort, sortErr := d.GetMaxSortOrderByParentID(parentID)
+		if sortErr != nil {
+			maxSort = -1
+		}
+
+		// Create the field with parent_id and sort_order set directly
 		fieldID := types.NewFieldID()
 		fieldParams := db.CreateFieldParams{
 			FieldID:      fieldID,
+			ParentID:     parentID,
+			SortOrder:    maxSort + 1,
 			Name:         msg.Name,
 			Label:        msg.Label,
 			Data:         "",
@@ -1881,27 +1890,6 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 			return ActionResultMsg{
 				Title:   "Error",
 				Message: errMsg,
-			}
-		}
-
-		// Link field to datatype via datatypes_fields join table
-		dtFieldID := string(types.NewDatatypeFieldID())
-		maxSort, sortErr := d.GetMaxSortOrderByDatatypeID(msg.DatatypeID)
-		if sortErr != nil {
-			maxSort = -1
-		}
-		dtFieldParams := db.CreateDatatypeFieldParams{
-			ID:         dtFieldID,
-			DatatypeID: msg.DatatypeID,
-			FieldID:    field.FieldID,
-			SortOrder:  maxSort + 1,
-		}
-
-		_, dtfErr := d.CreateDatatypeField(ctx, ac, dtFieldParams)
-		if dtfErr != nil {
-			return ActionResultMsg{
-				Title:   "Warning",
-				Message: fmt.Sprintf("Field created but failed to link to datatype: %v", dtfErr),
 			}
 		}
 

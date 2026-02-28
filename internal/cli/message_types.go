@@ -235,6 +235,7 @@ type DatabaseListRowsMsg struct {
 	Table  db.DBTable
 	Rows   any
 }
+
 // ColumnsFetched returns database column names and types after a fetch operation.
 type ColumnsFetched struct {
 	Columns     *[]string
@@ -563,12 +564,12 @@ type RootContentSummaryFetchMsg struct{}
 
 // RootContentSummaryFetchResultsMsg returns fetched root content summary.
 type RootContentSummaryFetchResultsMsg struct {
-	Data []db.RootContentSummary
+	Data []db.ContentDataTopLevel
 }
 
 // RootContentSummarySet sets the root content summary data.
 type RootContentSummarySet struct {
-	RootContentSummary []db.RootContentSummary
+	RootContentSummary []db.ContentDataTopLevel
 }
 
 // MediaUploadStartMsg triggers the async upload pipeline

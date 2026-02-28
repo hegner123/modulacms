@@ -7,7 +7,8 @@ CREATE TABLE IF NOT EXISTS fields (
     parent_id TEXT
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
@@ -36,17 +37,18 @@ WHERE field_id = $1 LIMIT 1;
 
 -- name: ListField :many
 SELECT * FROM fields
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: ListFieldByDatatypeID :many
 SELECT * FROM fields
 WHERE parent_id = $1
-ORDER BY field_id;
+ORDER BY sort_order, field_id;
 
 -- name: CreateField :one
 INSERT INTO fields  (
     field_id,
     parent_id,
+    sort_order,
     name,
     label,
     data,
@@ -67,23 +69,25 @@ INSERT INTO fields  (
     $8,
     $9,
     $10,
-    $11
+    $11,
+    $12
     ) RETURNING *;
 
 
 -- name: UpdateField :exec
 UPDATE fields
 SET parent_id = $1,
-    name = $2,
-    label = $3,
-    data = $4,
-    validation = $5,
-    ui_config = $6,
-    type = $7,
-    author_id = $8,
-    date_created = $9,
-    date_modified = $10
-    WHERE field_id = $11
+    sort_order = $2,
+    name = $3,
+    label = $4,
+    data = $5,
+    validation = $6,
+    ui_config = $7,
+    type = $8,
+    author_id = $9,
+    date_created = $10,
+    date_modified = $11
+    WHERE field_id = $12
     RETURNING *;
 
 -- name: DeleteField :exec
@@ -92,5 +96,15 @@ WHERE field_id = $1;
 
 -- name: ListFieldPaginated :many
 SELECT * FROM fields
-ORDER BY field_id
+ORDER BY sort_order, field_id
 LIMIT $1 OFFSET $2;
+
+-- name: UpdateFieldSortOrder :exec
+UPDATE fields
+SET sort_order = $1
+WHERE field_id = $2;
+
+-- name: GetMaxSortOrderByParentID :one
+SELECT COALESCE(MAX(sort_order), -1)
+FROM fields
+WHERE parent_id = $1;

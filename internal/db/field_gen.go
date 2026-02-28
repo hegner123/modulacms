@@ -21,6 +21,7 @@ import (
 type Fields struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
@@ -36,6 +37,7 @@ type Fields struct {
 type CreateFieldParams struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
@@ -50,6 +52,7 @@ type CreateFieldParams struct {
 // UpdateFieldParams contains parameters for updating an existing field.
 type UpdateFieldParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	SortOrder    int64                    `json:"sort_order"`
 	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
@@ -67,6 +70,7 @@ func MapStringField(a Fields) StringFields {
 	return StringFields{
 		FieldID:      a.FieldID.String(),
 		ParentID:     a.ParentID.String(),
+		SortOrder:    fmt.Sprintf("%d", a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -91,6 +95,7 @@ func (d Database) MapField(a mdb.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -112,6 +117,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 	return mdb.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -128,6 +134,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParams {
 	return mdb.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    a.SortOrder,
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -239,6 +246,7 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -260,6 +268,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 	return mdbm.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -276,6 +285,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -387,6 +397,7 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		SortOrder:    int64(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -408,6 +419,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 	return mdbp.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -424,6 +436,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateFieldParams {
 	return mdbp.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		SortOrder:    int32(a.SortOrder),
 		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
@@ -568,6 +581,7 @@ func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, 
 	return queries.CreateField(ctx, mdb.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -628,6 +642,7 @@ func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateField(ctx, mdb.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    c.params.SortOrder,
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -734,6 +749,7 @@ func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fi
 	params := mdbm.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -798,6 +814,7 @@ func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 	queries := mdbm.New(tx)
 	return queries.UpdateField(ctx, mdbm.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -904,6 +921,7 @@ func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fie
 	return queries.CreateField(ctx, mdbp.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
@@ -964,6 +982,7 @@ func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 	queries := mdbp.New(tx)
 	return queries.UpdateField(ctx, mdbp.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		SortOrder:    int32(c.params.SortOrder),
 		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,

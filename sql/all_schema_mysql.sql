@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS permissions (
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -116,7 +117,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
 
     CONSTRAINT fk_admin_fields_admin_datatypes
         FOREIGN KEY (parent_id) REFERENCES admin_datatypes (admin_datatype_id)
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_admin_fields_users_user_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE SET NULL
@@ -379,43 +380,6 @@ CREATE TABLE IF NOT EXISTS roles (
         UNIQUE (label)
 );
 
--- ===== 20_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS datatypes_fields (
-    id VARCHAR(26) NOT NULL
-        PRIMARY KEY,
-    datatype_id VARCHAR(26) NOT NULL,
-    field_id VARCHAR(26) NOT NULL,
-    sort_order INT NOT NULL DEFAULT 0,
-    CONSTRAINT fk_df_datatype
-        FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_df_field
-        FOREIGN KEY (field_id) REFERENCES fields (field_id)
-            ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_datatypes_fields_datatype ON datatypes_fields(datatype_id);
-CREATE INDEX idx_datatypes_fields_field ON datatypes_fields(field_id);
-
--- ===== 21_admin_datatypes_fields =====
-
-CREATE TABLE IF NOT EXISTS admin_datatypes_fields (
-    id VARCHAR(26) NOT NULL
-        PRIMARY KEY,
-    admin_datatype_id VARCHAR(26) NOT NULL,
-    admin_field_id VARCHAR(26) NOT NULL,
-    CONSTRAINT fk_df_admin_datatype
-        FOREIGN KEY (admin_datatype_id) REFERENCES admin_datatypes (admin_datatype_id)
-            ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_df_admin_field
-        FOREIGN KEY (admin_field_id) REFERENCES admin_fields (admin_field_id)
-            ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_admin_datatypes_fields_datatype ON admin_datatypes_fields(admin_datatype_id);
-CREATE INDEX idx_admin_datatypes_fields_field ON admin_datatypes_fields(admin_field_id);
-
 -- ===== 23_user_ssh_keys =====
 
 -- user_ssh_keys table for storing SSH public keys linked to user accounts
@@ -602,6 +566,7 @@ CREATE INDEX idx_datatypes_author ON datatypes(author_id);
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    sort_order INT NOT NULL DEFAULT 0,
     name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
@@ -614,7 +579,7 @@ CREATE TABLE IF NOT EXISTS fields (
 
     CONSTRAINT fk_fields_datatypes
         FOREIGN KEY (parent_id) REFERENCES datatypes (datatype_id)
-            ON UPDATE CASCADE ON DELETE SET NULL,
+            ON UPDATE CASCADE ON DELETE CASCADE,
     CONSTRAINT fk_fields_users_author_id
         FOREIGN KEY (author_id) REFERENCES users (user_id)
             ON UPDATE CASCADE ON DELETE SET NULL

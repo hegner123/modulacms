@@ -48,7 +48,7 @@ Methods for managing database connections and executing raw queries.
 
 ### CreateAllTables
 
-Creates all 26 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Tier 6: junction tables. Returns error if any table creation fails.
+Creates all 26 database tables in dependency order. Tier 0: permissions, roles, media_dimensions. Tier 1: users. Tier 2: tokens, oauth, ssh_keys, sessions, tables, media, routes, datatypes. Tier 3: fields. Tier 4: content_data. Tier 5: content_fields, content_relations. Returns error if any table creation fails.
 
 ### CreateBootstrapData
 
@@ -104,7 +104,7 @@ Determines table creation order based on foreign key dependencies. Returns error
 
 String type representing table names. Used for type-safe table references.
 
-Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_datatype`, `Admin_datatype_fields`, `Admin_field`, `Admin_route`, `Content_data`, `Content_fields`, `Datatype_fields`, `Datatype`, `Field`, `MediaT`, `Media_dimension`, `Permission`, `Role`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`.
+Constants: `Admin_content_data`, `Admin_content_fields`, `Admin_datatype`, `Admin_field`, `Admin_route`, `Content_data`, `Content_fields`, `Datatype`, `Field`, `MediaT`, `Media_dimension`, `Permission`, `Role`, `Route`, `Session`, `Table`, `Token`, `User`, `User_oauth`.
 
 ### TableStructMap
 
@@ -286,57 +286,9 @@ Retrieves child admin datatypes with pagination. Accepts ListAdminDatatypeChildr
 
 Updates admin datatype with audit trail. Accepts context, audit context, and UpdateAdminDatatypeParams. Returns updated ID string pointer or error. Records change event.
 
-## AdminDatatypeField Methods
-
-CRUD operations for admin datatype field junction table. Links admin datatypes to admin field definitions with sort ordering.
-
-### CountAdminDatatypeFields
-
-Returns total count of admin datatype field records. Returns pointer to int64 or error.
-
-### CreateAdminDatatypeField
-
-Inserts new admin datatype field link with audit context. Accepts context, audit context, and CreateAdminDatatypeFieldParams. Returns created AdminDatatypeFields pointer or error. Records change event.
-
-### CreateAdminDatatypeFieldTable
-
-Creates admin_datatypes_fields table with schema. Returns error if creation fails.
-
-### DeleteAdminDatatypeField
-
-Deletes admin datatype field link by composite ID with audit trail. Accepts context, audit context, and string ID. Returns error if deletion fails. Records change event.
-
-### ListAdminDatatypeField
-
-Retrieves all admin datatype field links. Returns slice pointer or error.
-
-### ListAdminDatatypeFieldByDatatypeID
-
-Retrieves field links for specific admin datatype. Accepts admin datatype ID. Returns slice pointer or error. Use to get all fields for a datatype.
-
-### ListAdminDatatypeFieldByFieldID
-
-Retrieves datatype links for specific admin field. Accepts admin field ID. Returns slice pointer or error. Use to find which datatypes use a field.
-
-### ListAdminDatatypeFieldPaginated
-
-Retrieves admin datatype field links with pagination. Accepts PaginationParams. Returns slice pointer or error.
-
-### ListAdminDatatypeFieldByDatatypeIDPaginated
-
-Retrieves field links by datatype with pagination. Accepts ListAdminDatatypeFieldByDatatypeIDPaginatedParams. Returns slice pointer or error.
-
-### ListAdminDatatypeFieldByFieldIDPaginated
-
-Retrieves datatype links by field with pagination. Accepts ListAdminDatatypeFieldByFieldIDPaginatedParams. Returns slice pointer or error.
-
-### UpdateAdminDatatypeField
-
-Updates admin datatype field link with audit trail. Accepts context, audit context, and UpdateAdminDatatypeFieldParams. Returns updated ID string pointer or error. Records change event.
-
 ## AdminField Methods
 
-CRUD operations for admin field definitions. Defines field configurations for admin content with validation and UI config.
+CRUD operations for admin field definitions. Defines field configurations for admin content with validation and UI config. Fields belong to a datatype via `parent_id` (with ON DELETE CASCADE) and have a `sort_order` column for ordering within a datatype.
 
 ### CountAdminFields
 
@@ -373,6 +325,14 @@ Retrieves child admin fields with pagination. Accepts ListAdminFieldsByParentIDP
 ### UpdateAdminField
 
 Updates admin field with audit trail. Accepts context, audit context, and UpdateAdminFieldParams. Returns updated ID string pointer or error. Records change event.
+
+### UpdateAdminFieldSortOrder
+
+Updates sort order for admin field. Accepts context, audit context, admin field ID, and int64 sort order. Returns error if update fails. Records change event.
+
+### GetMaxAdminSortOrderByParentID
+
+Retrieves highest sort_order value for admin fields under a parent datatype. Accepts admin datatype ID. Returns int64 max value or error. Use for appending new fields to a datatype.
 
 ## AdminRoute Methods
 
@@ -738,65 +698,9 @@ Retrieves child datatypes with pagination. Accepts ListDatatypeChildrenPaginated
 
 Updates datatype with audit trail. Accepts context, audit context, and UpdateDatatypeParams. Returns updated ID string pointer or error. Records change event.
 
-## DatatypeField Methods
-
-CRUD operations for datatypes_fields junction table. Links datatypes to field definitions with sort ordering.
-
-### CountDatatypeFields
-
-Returns total count of datatype field records. Returns pointer to int64 or error.
-
-### CreateDatatypeField
-
-Inserts new datatype field link with audit context. Accepts context, audit context, and CreateDatatypeFieldParams. Returns created DatatypeFields pointer or error. Records change event.
-
-### CreateDatatypeFieldTable
-
-Creates datatypes_fields table with schema. Returns error if creation fails.
-
-### DeleteDatatypeField
-
-Deletes datatype field link by composite ID with audit trail. Accepts context, audit context, and string ID. Returns error if deletion fails. Records change event.
-
-### GetMaxSortOrderByDatatypeID
-
-Retrieves highest sort_order value for datatype. Accepts datatype ID. Returns int64 max value or error. Use for appending new fields.
-
-### ListDatatypeField
-
-Retrieves all datatype field links. Returns slice pointer or error.
-
-### ListDatatypeFieldByDatatypeID
-
-Retrieves field links for specific datatype. Accepts datatype ID. Returns slice pointer or error.
-
-### ListDatatypeFieldByFieldID
-
-Retrieves datatype links for specific field. Accepts field ID. Returns slice pointer or error.
-
-### ListDatatypeFieldPaginated
-
-Retrieves datatype field links with pagination. Accepts PaginationParams. Returns slice pointer or error.
-
-### ListDatatypeFieldByDatatypeIDPaginated
-
-Retrieves field links by datatype with pagination. Accepts ListDatatypeFieldByDatatypeIDPaginatedParams. Returns slice pointer or error.
-
-### ListDatatypeFieldByFieldIDPaginated
-
-Retrieves datatype links by field with pagination. Accepts ListDatatypeFieldByFieldIDPaginatedParams. Returns slice pointer or error.
-
-### UpdateDatatypeField
-
-Updates datatype field link with audit trail. Accepts context, audit context, and UpdateDatatypeFieldParams. Returns updated ID string pointer or error. Records change event.
-
-### UpdateDatatypeFieldSortOrder
-
-Updates sort order for datatype field link. Accepts context, audit context, string ID, and int64 sort order. Returns error if update fails. Records change event.
-
 ## Field Methods
 
-CRUD operations for fields table. Client-facing field definitions with validation and UI config.
+CRUD operations for fields table. Client-facing field definitions with validation and UI config. Fields belong to a datatype via `parent_id` (with ON DELETE CASCADE) and have a `sort_order` column for ordering within a datatype.
 
 ### CountFields
 
@@ -820,7 +724,7 @@ Retrieves single field by ID. Accepts field ID. Returns Fields pointer or error.
 
 ### GetFieldDefinitionsByRoute
 
-Retrieves field definitions for route with joined data. Accepts nullable route ID. Returns slice of GetFieldDefinitionsByRouteRow or error. Includes joined datatype and junction data.
+Retrieves field definitions for route with joined data. Accepts nullable route ID. Returns slice of GetFieldDefinitionsByRouteRow or error. Includes joined datatype data.
 
 ### ListFields
 
@@ -837,6 +741,14 @@ Retrieves fields with pagination. Accepts PaginationParams. Returns slice pointe
 ### UpdateField
 
 Updates field with audit trail. Accepts context, audit context, and UpdateFieldParams. Returns updated ID string pointer or error. Records change event.
+
+### UpdateFieldSortOrder
+
+Updates sort order for field. Accepts context, audit context, field ID, and int64 sort order. Returns error if update fails. Records change event.
+
+### GetMaxSortOrderByParentID
+
+Retrieves highest sort_order value for fields under a parent datatype. Accepts datatype ID. Returns int64 max value or error. Use for appending new fields to a datatype.
 
 ## Media Methods
 

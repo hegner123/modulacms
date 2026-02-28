@@ -6,13 +6,13 @@ import "database/sql"
 // This groups database table viewing and navigation fields together,
 // following the FormModel pattern established in Phase 1.
 type TableModel struct {
-	Table       string                 // Current table name
-	Headers     []string               // Table column headers for display
-	Rows        [][]string             // Table data rows
-	Columns     *[]string              // Column names from database
-	ColumnTypes *[]*sql.ColumnType     // Column type metadata from database
-	Selected    map[int]struct{}       // Selected rows (for multi-select operations)
-	Row         *[]string              // Currently selected single row data
+	Table       string             // Current table name
+	Headers     []string           // Table column headers for display
+	Rows        [][]string         // Table data rows
+	Columns     *[]string          // Column names from database
+	ColumnTypes *[]*sql.ColumnType // Column type metadata from database
+	Selected    map[int]struct{}   // Selected rows (for multi-select operations)
+	Row         *[]string          // Currently selected single row data
 }
 
 // NewTableModel creates a new TableModel with safe defaults.

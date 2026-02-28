@@ -10,9 +10,7 @@ Key terms and concepts in ModulaCMS.
 
 **Datatype** -- A content type definition, analogous to a "model" or "content type" in other CMS platforms. A datatype defines the structure of content by specifying which fields it contains. Examples: "Blog Post", "Product", "Page".
 
-**Field** -- A field definition that describes a single property of a datatype. Fields have a label (e.g., "Title"), a data type (e.g., "string"), and a field type (e.g., "text", "rich_text", "number"). Fields exist independently of datatypes and are linked to them through a junction table.
-
-**Datatype Field** -- The junction record that links a field to a datatype. This many-to-many relationship allows the same field definition to be reused across multiple datatypes.
+**Field** -- A field definition that describes a single property of a datatype. Fields have a label (e.g., "Title"), a data type (e.g., "string"), and a field type (e.g., "text", "rich_text", "number"). Each field belongs to a datatype via its `parent_id` foreign key referencing the datatypes table.
 
 **Content Tree** -- The hierarchical structure of content within a route. Content data records use sibling pointers for efficient navigation and reordering:
 - `parent_id` -- the parent node

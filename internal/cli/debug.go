@@ -190,7 +190,6 @@ func (m Model) Stringify() string {
 	formFieldsDebug := HuhFieldSliceDebugString(m.FormState.FormFields)
 	out = append(out, formFieldsDebug)
 
-
 	//Verbose      bool
 	verb := fmt.Sprintf("Verbose: %v", m.Verbose)
 	out = append(out, verb)

@@ -5,6 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // UpdateAdminFetch handles fetch messages for admin CMS entities.
@@ -74,26 +75,15 @@ func (m Model) UpdateAdminFetch(msg tea.Msg) (Model, tea.Cmd) {
 		d := m.DB
 		datatypeID := msg.AdminDatatypeID
 		return m, func() tea.Msg {
-			// Get field IDs from the admin join table
-			dtFields, err := d.ListAdminDatatypeFieldByDatatypeID(datatypeID)
+			// List admin fields by parent datatype ID
+			fields, err := d.ListAdminFieldsByDatatypeID(types.NullableAdminDatatypeID{ID: datatypeID, Valid: true})
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
-			if dtFields == nil || len(*dtFields) == 0 {
+			if fields == nil || len(*fields) == 0 {
 				return AdminDatatypeFieldsFetchResultsMsg{Fields: []db.AdminFields{}}
 			}
-
-			// Fetch actual field details for each field ID
-			var fields []db.AdminFields
-			for _, dtf := range *dtFields {
-				if !dtf.AdminFieldID.IsZero() {
-					field, err := d.GetAdminField(dtf.AdminFieldID)
-					if err == nil && field != nil {
-						fields = append(fields, *field)
-					}
-				}
-			}
-			return AdminDatatypeFieldsFetchResultsMsg{Fields: fields}
+			return AdminDatatypeFieldsFetchResultsMsg{Fields: *fields}
 		}
 
 	case AdminDatatypeFieldsFetchResultsMsg:
@@ -110,12 +100,15 @@ func (m Model) UpdateAdminFetch(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 		return m, func() tea.Msg {
-			contentData, err := d.ListAdminContentData()
+			contentData, err := d.ListAdminContentDataTopLevelPaginated(db.PaginationParams{
+				Limit:  10000,
+				Offset: 0,
+			})
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
 			if contentData == nil {
-				return AdminContentDataFetchResultsMsg{Data: []db.AdminContentData{}}
+				return AdminContentDataFetchResultsMsg{Data: []db.AdminContentDataTopLevel{}}
 			}
 			return AdminContentDataFetchResultsMsg{Data: *contentData}
 		}

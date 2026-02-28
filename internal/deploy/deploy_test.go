@@ -32,9 +32,9 @@ import (
 func TestCoerceRows_Float64ToInt64(t *testing.T) {
 	t.Parallel()
 
-	// DatatypeFields has SortOrder int64 -- the canonical coercion target.
+	// Fields has SortOrder int64 -- the canonical coercion target.
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01", "F01", float64(42)},
 			{"def", "DT02", "F02", float64(0)},
@@ -42,7 +42,7 @@ func TestCoerceRows_Float64ToInt64(t *testing.T) {
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -65,13 +65,13 @@ func TestCoerceRows_NilInIntegerColumn(t *testing.T) {
 
 	// nil values in an integer column should pass through unchanged.
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01", "F01", nil},
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -85,7 +85,7 @@ func TestCoerceRows_MixedTypes(t *testing.T) {
 
 	// Row with a mix of float64 (needs coercion), string, and nil.
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01", "F01", float64(100)},
 			{"def", nil, "F02", float64(200)},
@@ -93,7 +93,7 @@ func TestCoerceRows_MixedTypes(t *testing.T) {
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -103,9 +103,9 @@ func TestCoerceRows_MixedTypes(t *testing.T) {
 		t.Errorf("row 0 sort_order = %v (%T), want int64(100)", rows[0][3], rows[0][3])
 	}
 
-	// Second row: datatype_id is nil (non-integer column), sort_order coerced
+	// Second row: parent_id is nil (non-integer column), sort_order coerced
 	if rows[1][1] != nil {
-		t.Errorf("row 1 datatype_id = %v, want nil", rows[1][1])
+		t.Errorf("row 1 parent_id = %v, want nil", rows[1][1])
 	}
 	if v, ok := rows[1][3].(int64); !ok || v != 200 {
 		t.Errorf("row 1 sort_order = %v (%T), want int64(200)", rows[1][3], rows[1][3])
@@ -122,13 +122,13 @@ func TestCoerceRows_StringInIntegerColumn(t *testing.T) {
 
 	// A string value in an integer column should NOT be coerced (only float64 is).
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01", "F01", "not-a-number"},
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -141,16 +141,16 @@ func TestCoerceRows_StringInIntegerColumn(t *testing.T) {
 func TestCoerceRows_NoIntegerColumns(t *testing.T) {
 	t.Parallel()
 
-	// AdminDatatypeFields has no int fields -- coerceRows should return rows as-is.
+	// Permissions has no int fields -- coerceRows should return rows as-is.
 	td := TableData{
-		Columns: []string{"id", "admin_datatype_id", "admin_field_id"},
+		Columns: []string{"permission_id", "label"},
 		Rows: [][]any{
-			{"abc", "ADT01", "AF01"},
-			{"def", "ADT02", "AF02"},
+			{"abc", "content:read"},
+			{"def", "content:write"},
 		},
 	}
 
-	rows, err := coerceRows(db.Admin_datatype_fields, td)
+	rows, err := coerceRows(db.Permission, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -193,13 +193,13 @@ func TestCoerceRows_ShortRow(t *testing.T) {
 	// A row shorter than the column list. The integer column is past the
 	// end of the row -- coerceRows must not panic.
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01"}, // only 2 elements, sort_order index (3) out of range
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -212,11 +212,11 @@ func TestCoerceRows_EmptyRows(t *testing.T) {
 	t.Parallel()
 
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows:    [][]any{},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}
@@ -230,13 +230,13 @@ func TestCoerceRows_IntAlreadyInt64(t *testing.T) {
 
 	// If the value is already int64, it should remain int64.
 	td := TableData{
-		Columns: []string{"id", "datatype_id", "field_id", "sort_order"},
+		Columns: []string{"field_id", "parent_id", "name", "sort_order"},
 		Rows: [][]any{
 			{"abc", "DT01", "F01", int64(99)},
 		},
 	}
 
-	rows, err := coerceRows(db.Datatype_fields, td)
+	rows, err := coerceRows(db.Field, td)
 	if err != nil {
 		t.Fatalf("coerceRows error: %v", err)
 	}

@@ -115,12 +115,10 @@ Each resource provides `list()`, `get(id)`, `create(params)`, `update(params)`, 
 | `adminContentFields` | Admin content field values | `AdminContentFieldID` |
 | `adminDatatypes` | Admin datatype definitions | `AdminDatatypeID` |
 | `adminFields` | Admin field definitions | `AdminFieldID` |
-| `adminDatatypeFields` | Admin datatype-field mappings | `string` |
 | `contentData` | Public content nodes | `ContentID` |
 | `contentFields` | Public content field values | `ContentFieldID` |
 | `datatypes` | Datatype schemas | `DatatypeID` |
 | `fields` | Field schemas | `FieldID` |
-| `datatypeFields` | Datatype-field mappings | `string` |
 | `routes` | Public routes | `RouteID` |
 | `media` | Media assets | `MediaID` |
 | `mediaDimensions` | Media dimension presets | `string` |

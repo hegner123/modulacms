@@ -370,66 +370,12 @@ public struct UpdateDatatypeParams: Encodable, Sendable {
     }
 }
 
-// MARK: - Datatype Field
-
-public struct DatatypeField: Codable, Sendable {
-    public let id: DatatypeFieldID
-    public let datatypeID: DatatypeID
-    public let fieldID: FieldID
-    public let sortOrder: Int64
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case datatypeID = "datatype_id"
-        case fieldID = "field_id"
-        case sortOrder = "sort_order"
-    }
-}
-
-public struct CreateDatatypeFieldParams: Encodable, Sendable {
-    public let datatypeID: DatatypeID
-    public let fieldID: FieldID
-    public let sortOrder: Int64
-
-    public init(datatypeID: DatatypeID, fieldID: FieldID, sortOrder: Int64) {
-        self.datatypeID = datatypeID
-        self.fieldID = fieldID
-        self.sortOrder = sortOrder
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case datatypeID = "datatype_id"
-        case fieldID = "field_id"
-        case sortOrder = "sort_order"
-    }
-}
-
-public struct UpdateDatatypeFieldParams: Encodable, Sendable {
-    public let id: DatatypeFieldID
-    public let datatypeID: DatatypeID
-    public let fieldID: FieldID
-    public let sortOrder: Int64
-
-    public init(id: DatatypeFieldID, datatypeID: DatatypeID, fieldID: FieldID, sortOrder: Int64) {
-        self.id = id
-        self.datatypeID = datatypeID
-        self.fieldID = fieldID
-        self.sortOrder = sortOrder
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case datatypeID = "datatype_id"
-        case fieldID = "field_id"
-        case sortOrder = "sort_order"
-    }
-}
-
 // MARK: - Field
 
 public struct Field: Codable, Sendable {
     public let fieldID: FieldID
     public let parentID: DatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -443,6 +389,7 @@ public struct Field: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data
@@ -458,6 +405,7 @@ public struct Field: Codable, Sendable {
 public struct CreateFieldParams: Encodable, Sendable {
     public let fieldID: FieldID?
     public let parentID: DatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -469,6 +417,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     public init(
         fieldID: FieldID? = nil,
         parentID: DatatypeID? = nil,
+        sortOrder: Int64 = 0,
         name: String = "",
         label: String,
         data: String,
@@ -479,6 +428,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     ) {
         self.fieldID = fieldID
         self.parentID = parentID
+        self.sortOrder = sortOrder
         self.name = name
         self.label = label
         self.data = data
@@ -491,6 +441,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data
@@ -504,6 +455,7 @@ public struct CreateFieldParams: Encodable, Sendable {
 public struct UpdateFieldParams: Encodable, Sendable {
     public let fieldID: FieldID
     public let parentID: DatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -515,6 +467,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     public init(
         fieldID: FieldID,
         parentID: DatatypeID? = nil,
+        sortOrder: Int64 = 0,
         name: String = "",
         label: String,
         data: String,
@@ -525,6 +478,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     ) {
         self.fieldID = fieldID
         self.parentID = parentID
+        self.sortOrder = sortOrder
         self.name = name
         self.label = label
         self.data = data
@@ -537,6 +491,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data
@@ -1660,58 +1615,12 @@ public struct UpdateAdminDatatypeParams: Encodable, Sendable {
     }
 }
 
-// MARK: - Admin Datatype Field
-
-public struct AdminDatatypeField: Codable, Sendable {
-    public let id: AdminDatatypeFieldID
-    public let adminDatatypeID: AdminDatatypeID
-    public let adminFieldID: AdminFieldID
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case adminDatatypeID = "admin_datatype_id"
-        case adminFieldID = "admin_field_id"
-    }
-}
-
-public struct CreateAdminDatatypeFieldParams: Encodable, Sendable {
-    public let adminDatatypeID: AdminDatatypeID
-    public let adminFieldID: AdminFieldID
-
-    public init(adminDatatypeID: AdminDatatypeID, adminFieldID: AdminFieldID) {
-        self.adminDatatypeID = adminDatatypeID
-        self.adminFieldID = adminFieldID
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case adminDatatypeID = "admin_datatype_id"
-        case adminFieldID = "admin_field_id"
-    }
-}
-
-public struct UpdateAdminDatatypeFieldParams: Encodable, Sendable {
-    public let id: AdminDatatypeFieldID
-    public let adminDatatypeID: AdminDatatypeID
-    public let adminFieldID: AdminFieldID
-
-    public init(id: AdminDatatypeFieldID, adminDatatypeID: AdminDatatypeID, adminFieldID: AdminFieldID) {
-        self.id = id
-        self.adminDatatypeID = adminDatatypeID
-        self.adminFieldID = adminFieldID
-    }
-
-    enum CodingKeys: String, CodingKey {
-        case id
-        case adminDatatypeID = "admin_datatype_id"
-        case adminFieldID = "admin_field_id"
-    }
-}
-
 // MARK: - Admin Field
 
 public struct AdminField: Codable, Sendable {
     public let adminFieldID: AdminFieldID
     public let parentID: AdminDatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -1725,6 +1634,7 @@ public struct AdminField: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminFieldID = "admin_field_id"
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data
@@ -1739,6 +1649,7 @@ public struct AdminField: Codable, Sendable {
 
 public struct CreateAdminFieldParams: Encodable, Sendable {
     public let parentID: AdminDatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -1749,6 +1660,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 
     public init(
         parentID: AdminDatatypeID? = nil,
+        sortOrder: Int64 = 0,
         name: String = "",
         label: String,
         data: String,
@@ -1758,6 +1670,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         authorID: UserID
     ) {
         self.parentID = parentID
+        self.sortOrder = sortOrder
         self.name = name
         self.label = label
         self.data = data
@@ -1769,6 +1682,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data
@@ -1782,6 +1696,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 public struct UpdateAdminFieldParams: Encodable, Sendable {
     public let adminFieldID: AdminFieldID
     public let parentID: AdminDatatypeID?
+    public let sortOrder: Int64
     public let name: String
     public let label: String
     public let data: String
@@ -1793,6 +1708,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     public init(
         adminFieldID: AdminFieldID,
         parentID: AdminDatatypeID? = nil,
+        sortOrder: Int64 = 0,
         name: String = "",
         label: String,
         data: String,
@@ -1803,6 +1719,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     ) {
         self.adminFieldID = adminFieldID
         self.parentID = parentID
+        self.sortOrder = sortOrder
         self.name = name
         self.label = label
         self.data = data
@@ -1815,6 +1732,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminFieldID = "admin_field_id"
         case parentID = "parent_id"
+        case sortOrder = "sort_order"
         case name
         case label
         case data

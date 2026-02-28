@@ -28,13 +28,12 @@ JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id = $1
 ORDER BY cd.parent_id NULLS FIRST, cd.content_data_id;
 
--- name: GetFieldDefinitionsByRoute :many  
-SELECT DISTINCT f.field_id, f.label, f.type, df.datatype_id
+-- name: GetFieldDefinitionsByRoute :many
+SELECT DISTINCT f.field_id, f.label, f.type, f.parent_id AS datatype_id
 FROM content_data cd
-JOIN datatypes_fields df ON cd.datatype_id = df.datatype_id
-JOIN fields f ON df.field_id = f.field_id  
+JOIN fields f ON cd.datatype_id = f.parent_id
 WHERE cd.route_id = $1
-ORDER BY df.datatype_id, f.field_id;
+ORDER BY f.parent_id, f.field_id;
 
 -- name: GetContentFieldsByRoute :many
 SELECT cf.content_data_id, cf.field_id, cf.field_value
@@ -51,7 +50,7 @@ WHERE cd.datatype_id = $1
 ORDER BY r.title;
 
 -- name: GetRouteTreeByRouteID :many
-SELECT 
+SELECT
     cd.content_data_id,
     cd.parent_id,
     cd.first_child_id,
@@ -64,9 +63,8 @@ SELECT
     cf.field_value
 FROM content_data cd
     INNER JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
-    INNER JOIN datatypes_fields df ON dt.datatype_id = df.datatype_id
-    INNER JOIN fields f ON df.field_id = f.field_id
-    LEFT JOIN content_fields cf ON cd.content_data_id = cf.content_data_id 
+    INNER JOIN fields f ON dt.datatype_id = f.parent_id
+    LEFT JOIN content_fields cf ON cd.content_data_id = cf.content_data_id
         AND f.field_id = cf.field_id
 WHERE cd.route_id = $1
 ORDER BY cd.content_data_id, f.field_id;
@@ -143,17 +141,16 @@ ORDER BY cf.field_id;
 
 -- name: ListFieldsWithSortOrderByDatatypeID :many
 SELECT
-    df.sort_order,
+    f.sort_order,
     f.field_id,
     f.label,
     f.type,
     f.data,
     f.validation,
     f.ui_config
-FROM datatypes_fields df
-JOIN fields f ON df.field_id = f.field_id
-WHERE df.datatype_id = $1
-ORDER BY df.sort_order, df.id;
+FROM fields f
+WHERE f.parent_id = $1
+ORDER BY f.sort_order, f.field_id;
 
 -- name: ListUsersWithRoleLabel :many
 SELECT

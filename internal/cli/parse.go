@@ -41,10 +41,6 @@ func Parse(rows *sql.Rows, table db.DBTable) (any, error) {
 		return parseDatatypes(rows)
 	case db.Admin_datatype:
 		return parseAdminDatatypes(rows)
-	case db.Datatype_fields:
-		return parseDatatypeFields(rows)
-	case db.Admin_datatype_fields:
-		return parseAdminDatatypeFields(rows)
 	case db.Content_data:
 		return parseContentData(rows)
 	case db.Admin_content_data:
@@ -387,54 +383,6 @@ func parseAdminDatatypes(rows *sql.Rows) ([]db.AdminDatatypes, error) {
 			return nil, fmt.Errorf("failed to scan admin datatype: %v", err)
 		}
 		results = append(results, datatype)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %v", err)
-	}
-
-	return results, nil
-}
-
-// parseDatatypeFields scans rows into DatatypeFields structs
-func parseDatatypeFields(rows *sql.Rows) ([]db.DatatypeFields, error) {
-	var results []db.DatatypeFields
-
-	for rows.Next() {
-		var dtField db.DatatypeFields
-		err := rows.Scan(
-			&dtField.ID,
-			&dtField.DatatypeID,
-			&dtField.FieldID,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan datatype field: %v", err)
-		}
-		results = append(results, dtField)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %v", err)
-	}
-
-	return results, nil
-}
-
-// parseAdminDatatypeFields scans rows into AdminDatatypeFields structs
-func parseAdminDatatypeFields(rows *sql.Rows) ([]db.AdminDatatypeFields, error) {
-	var results []db.AdminDatatypeFields
-
-	for rows.Next() {
-		var dtField db.AdminDatatypeFields
-		err := rows.Scan(
-			&dtField.ID,
-			&dtField.AdminDatatypeID,
-			&dtField.AdminFieldID,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan admin datatype field: %v", err)
-		}
-		results = append(results, dtField)
 	}
 
 	if err := rows.Err(); err != nil {

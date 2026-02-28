@@ -311,8 +311,8 @@ func (ctx *importContext) findOrCreateDatatype(node *model.Node) types.DatatypeI
 	return created.DatatypeID
 }
 
-// createFieldAndContentField creates a field definition, a content_field linking
-// it to the content_data, and a datatype_field linking the field to the datatype.
+// createFieldAndContentField creates a field definition with parent_id set to the
+// datatype, then creates a content_field linking it to the content_data.
 func (ctx *importContext) createFieldAndContentField(field model.Field, contentDataID types.ContentID, datatypeID types.DatatypeID) {
 	now := types.TimestampNow()
 
@@ -358,16 +358,6 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 	if cfErr != nil {
 		ctx.result.Errors = append(ctx.result.Errors,
 			fmt.Sprintf("failed to create content_field for field=%s content_data=%s: %v", createdField.FieldID, contentDataID, cfErr))
-	}
-
-	// Create the datatype_field linking the datatype to the field
-	_, dtfErr := ctx.driver.CreateDatatypeField(ctx.ctx, ctx.ac, db.CreateDatatypeFieldParams{
-		DatatypeID: datatypeID,
-		FieldID:    createdField.FieldID,
-	})
-	if dtfErr != nil {
-		ctx.result.Errors = append(ctx.result.Errors,
-			fmt.Sprintf("failed to create datatype_field for field=%s datatype=%s: %v", createdField.FieldID, datatypeID, dtfErr))
 	}
 
 	ctx.result.FieldsCreated++

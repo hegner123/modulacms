@@ -24,31 +24,29 @@ type ClientConfig struct {
 // Client is the Modula API client. It provides typed access to all API resources.
 type Client struct {
 	// Standard CRUD resources
-	ContentData     *Resource[ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID]
-	ContentFields   *Resource[ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID]
+	ContentData      *Resource[ContentData, CreateContentDataParams, UpdateContentDataParams, ContentID]
+	ContentFields    *Resource[ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID]
 	ContentRelations *Resource[ContentRelation, CreateContentRelationParams, UpdateContentRelationParams, ContentRelationID]
-	Datatypes       *Resource[Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID]
-	DatatypeFields  *Resource[DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams, DatatypeFieldID]
-	Fields          *Resource[Field, CreateFieldParams, UpdateFieldParams, FieldID]
-	FieldTypes      *Resource[FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID]
-	Media           *Resource[Media, any, UpdateMediaParams, MediaID]
-	MediaDimensions *Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]
-	Routes          *Resource[Route, CreateRouteParams, UpdateRouteParams, RouteID]
-	Roles           *Resource[Role, CreateRoleParams, UpdateRoleParams, RoleID]
-	Permissions     *Resource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID]
-	Users           *Resource[User, CreateUserParams, UpdateUserParams, UserID]
-	Tokens          *Resource[Token, CreateTokenParams, UpdateTokenParams, TokenID]
-	UsersOauth      *Resource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID]
-	Tables          *Resource[Table, CreateTableParams, UpdateTableParams, TableID]
+	Datatypes        *Resource[Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID]
+	Fields           *Resource[Field, CreateFieldParams, UpdateFieldParams, FieldID]
+	FieldTypes       *Resource[FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID]
+	Media            *Resource[Media, any, UpdateMediaParams, MediaID]
+	MediaDimensions  *Resource[MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID]
+	Routes           *Resource[Route, CreateRouteParams, UpdateRouteParams, RouteID]
+	Roles            *Resource[Role, CreateRoleParams, UpdateRoleParams, RoleID]
+	Permissions      *Resource[Permission, CreatePermissionParams, UpdatePermissionParams, PermissionID]
+	Users            *Resource[User, CreateUserParams, UpdateUserParams, UserID]
+	Tokens           *Resource[Token, CreateTokenParams, UpdateTokenParams, TokenID]
+	UsersOauth       *Resource[UserOauth, CreateUserOauthParams, UpdateUserOauthParams, UserOauthID]
+	Tables           *Resource[Table, CreateTableParams, UpdateTableParams, TableID]
 
 	// Admin CRUD resources
-	AdminContentData    *Resource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID]
-	AdminContentFields  *Resource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID]
-	AdminDatatypes      *Resource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID]
-	AdminDatatypeFields *Resource[AdminDatatypeField, CreateAdminDatatypeFieldParams, UpdateAdminDatatypeFieldParams, AdminDatatypeFieldID]
-	AdminFields         *Resource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID]
-	AdminFieldTypes     *Resource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID]
-	AdminRoutes         *Resource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID]
+	AdminContentData   *Resource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID]
+	AdminContentFields *Resource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID]
+	AdminDatatypes     *Resource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID]
+	AdminFields        *Resource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID]
+	AdminFieldTypes    *Resource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID]
+	AdminRoutes        *Resource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID]
 
 	// Specialized resources
 	Auth         *AuthResource
@@ -113,7 +111,6 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		ContentFields:    newResource[ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID](h, "/api/v1/contentfields"),
 		ContentRelations: newResource[ContentRelation, CreateContentRelationParams, UpdateContentRelationParams, ContentRelationID](h, "/api/v1/contentrelations"),
 		Datatypes:        newResource[Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID](h, "/api/v1/datatype"),
-		DatatypeFields:   newResource[DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams, DatatypeFieldID](h, "/api/v1/datatypefields"),
 		Fields:           newResource[Field, CreateFieldParams, UpdateFieldParams, FieldID](h, "/api/v1/fields"),
 		FieldTypes:       newResource[FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID](h, "/api/v1/fieldtypes"),
 		Media:            newResource[Media, any, UpdateMediaParams, MediaID](h, "/api/v1/media"),
@@ -127,13 +124,12 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		Tables:           newResource[Table, CreateTableParams, UpdateTableParams, TableID](h, "/api/v1/tables"),
 
 		// Admin CRUD
-		AdminContentData:    newResource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID](h, "/api/v1/admincontentdatas"),
-		AdminContentFields:  newResource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID](h, "/api/v1/admincontentfields"),
-		AdminDatatypes:      newResource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID](h, "/api/v1/admindatatypes"),
-		AdminDatatypeFields: newResource[AdminDatatypeField, CreateAdminDatatypeFieldParams, UpdateAdminDatatypeFieldParams, AdminDatatypeFieldID](h, "/api/v1/admindatatypefields"),
-		AdminFields:         newResource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID](h, "/api/v1/adminfields"),
-		AdminFieldTypes:     newResource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID](h, "/api/v1/adminfieldtypes"),
-		AdminRoutes:         newResource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID](h, "/api/v1/adminroutes"),
+		AdminContentData:   newResource[AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID](h, "/api/v1/admincontentdatas"),
+		AdminContentFields: newResource[AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID](h, "/api/v1/admincontentfields"),
+		AdminDatatypes:     newResource[AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID](h, "/api/v1/admindatatypes"),
+		AdminFields:        newResource[AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID](h, "/api/v1/adminfields"),
+		AdminFieldTypes:    newResource[AdminFieldTypeInfo, CreateAdminFieldTypeParams, UpdateAdminFieldTypeParams, AdminFieldTypeID](h, "/api/v1/adminfieldtypes"),
+		AdminRoutes:        newResource[AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID](h, "/api/v1/adminroutes"),
 
 		// Specialized
 		Auth:         &AuthResource{http: h},

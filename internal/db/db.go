@@ -97,8 +97,10 @@ type DbDriver interface {
 	ListAdminContentData() (*[]AdminContentData, error)
 	ListAdminContentDataByRoute(types.NullableAdminRouteID) (*[]AdminContentData, error)
 	ListAdminContentDataPaginated(PaginationParams) (*[]AdminContentData, error)
+	ListAdminContentDataTopLevelPaginated(PaginationParams) (*[]AdminContentDataTopLevel, error)
 	ListAdminContentDataByRoutePaginated(ListAdminContentDataByRoutePaginatedParams) (*[]AdminContentData, error)
 	ListAdminContentDataWithDatatypeByRoute(types.NullableAdminRouteID) (*[]AdminContentDataWithDatatypeRow, error)
+	CountAdminContentDataTopLevel() (*int64, error)
 	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
 
 	// AdminContentFields
@@ -138,19 +140,6 @@ type DbDriver interface {
 	ListAdminDatatypeChildrenPaginated(ListAdminDatatypeChildrenPaginatedParams) (*[]AdminDatatypes, error)
 	UpdateAdminDatatype(context.Context, audited.AuditContext, UpdateAdminDatatypeParams) (*string, error)
 
-	// AdminDatatypeFields
-	CountAdminDatatypeFields() (*int64, error)
-	CreateAdminDatatypeField(context.Context, audited.AuditContext, CreateAdminDatatypeFieldParams) (*AdminDatatypeFields, error)
-	CreateAdminDatatypeFieldTable() error
-	DeleteAdminDatatypeField(context.Context, audited.AuditContext, string) error
-	ListAdminDatatypeField() (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByDatatypeID(types.AdminDatatypeID) (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByFieldID(types.AdminFieldID) (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldPaginated(PaginationParams) (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByDatatypeIDPaginated(ListAdminDatatypeFieldByDatatypeIDPaginatedParams) (*[]AdminDatatypeFields, error)
-	ListAdminDatatypeFieldByFieldIDPaginated(ListAdminDatatypeFieldByFieldIDPaginatedParams) (*[]AdminDatatypeFields, error)
-	UpdateAdminDatatypeField(context.Context, audited.AuditContext, UpdateAdminDatatypeFieldParams) (*string, error)
-
 	// AdminFields
 	CountAdminFields() (*int64, error)
 	CreateAdminField(context.Context, audited.AuditContext, CreateAdminFieldParams) (*AdminFields, error)
@@ -160,7 +149,10 @@ type DbDriver interface {
 	ListAdminFields() (*[]AdminFields, error)
 	ListAdminFieldsPaginated(PaginationParams) (*[]AdminFields, error)
 	ListAdminFieldsByParentIDPaginated(ListAdminFieldsByParentIDPaginatedParams) (*[]AdminFields, error)
+	ListAdminFieldsByDatatypeID(types.NullableAdminDatatypeID) (*[]AdminFields, error)
 	UpdateAdminField(context.Context, audited.AuditContext, UpdateAdminFieldParams) (*string, error)
+	UpdateAdminFieldSortOrder(context.Context, audited.AuditContext, UpdateAdminFieldSortOrderParams) error
+	GetMaxAdminSortOrderByParentID(types.NullableAdminDatatypeID) (int64, error)
 
 	// AdminFieldTypes
 	CountAdminFieldTypes() (*int64, error)
@@ -228,7 +220,9 @@ type DbDriver interface {
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
 	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
+	ListContentDataTopLevelPaginated(PaginationParams) (*[]ContentDataTopLevel, error)
 	ListContentDataByRoutePaginated(ListContentDataByRoutePaginatedParams) (*[]ContentData, error)
+	CountContentDataTopLevel() (*int64, error)
 	GetContentDataDescendants(context.Context, types.ContentID) (*[]ContentData, error)
 	ListRootContentSummary() (*[]RootContentSummary, error)
 	UpdateContentData(context.Context, audited.AuditContext, UpdateContentDataParams) (*string, error)
@@ -276,23 +270,8 @@ type DbDriver interface {
 	ListDatatypeChildrenPaginated(ListDatatypeChildrenPaginatedParams) (*[]Datatypes, error)
 	UpdateDatatype(context.Context, audited.AuditContext, UpdateDatatypeParams) (*string, error)
 
-	// DatatypeFields
-	CountDatatypeFields() (*int64, error)
-	CreateDatatypeField(context.Context, audited.AuditContext, CreateDatatypeFieldParams) (*DatatypeFields, error)
-	CreateDatatypeFieldTable() error
-	DeleteDatatypeField(context.Context, audited.AuditContext, string) error
-	GetMaxSortOrderByDatatypeID(types.DatatypeID) (int64, error)
-	ListDatatypeField() (*[]DatatypeFields, error)
-	ListDatatypeFieldByDatatypeID(types.DatatypeID) (*[]DatatypeFields, error)
-	ListDatatypeFieldByFieldID(types.FieldID) (*[]DatatypeFields, error)
-	ListDatatypeFieldPaginated(PaginationParams) (*[]DatatypeFields, error)
-	ListDatatypeFieldByDatatypeIDPaginated(ListDatatypeFieldByDatatypeIDPaginatedParams) (*[]DatatypeFields, error)
-	ListDatatypeFieldByFieldIDPaginated(ListDatatypeFieldByFieldIDPaginatedParams) (*[]DatatypeFields, error)
-	UpdateDatatypeField(context.Context, audited.AuditContext, UpdateDatatypeFieldParams) (*string, error)
-	UpdateDatatypeFieldSortOrder(context.Context, audited.AuditContext, string, int64) error
-	ListFieldsWithSortOrderByDatatypeID(types.DatatypeID) (*[]FieldWithSortOrderRow, error)
-
 	// Fields
+	ListFieldsWithSortOrderByDatatypeID(types.NullableDatatypeID) (*[]FieldWithSortOrderRow, error)
 	CountFields() (*int64, error)
 	CreateField(context.Context, audited.AuditContext, CreateFieldParams) (*Fields, error)
 	CreateFieldTable() error
@@ -303,6 +282,8 @@ type DbDriver interface {
 	ListFieldsByDatatypeID(types.NullableDatatypeID) (*[]Fields, error)
 	ListFieldsPaginated(PaginationParams) (*[]Fields, error)
 	UpdateField(context.Context, audited.AuditContext, UpdateFieldParams) (*string, error)
+	UpdateFieldSortOrder(context.Context, audited.AuditContext, UpdateFieldSortOrderParams) error
+	GetMaxSortOrderByParentID(types.NullableDatatypeID) (int64, error)
 
 	// FieldTypes
 	CountFieldTypes() (*int64, error)
@@ -674,16 +655,6 @@ func (d Database) CreateAllTables() error {
 	}
 
 	// Tier 6: Junction tables (depend on both sides)
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
 		return err
@@ -917,9 +888,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create _reference datatype")
 	}
 
-	// 6c. Create "Target" field for _reference datatype
+	// 6c. Create "Target" field for _reference datatype (linked via parent_id)
 	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: refDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -934,17 +906,6 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	}
 	if refField.FieldID.IsZero() {
 		return fmt.Errorf("failed to create _reference Target field")
-	}
-
-	// 6d. Link Target field to _reference datatype
-	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
-		DatatypeID: refDatatype.DatatypeID,
-		FieldID:    refField.FieldID,
-		SortOrder:  0,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
@@ -979,9 +940,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
-	// 9. Create default admin field (admin_field_id = 1)
+	// 9. Create default admin field (admin_field_id = 1) -- linked to admin datatype via parent_id
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableAdminDatatypeID{},
+		ParentID:     types.NullableAdminDatatypeID{ID: adminDatatype.AdminDatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -998,9 +960,10 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
-	// 10. Create default field (field_id = 1)
+	// 10. Create default field (field_id = 1) -- linked to page datatype via parent_id
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: pageDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -1247,8 +1210,6 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"admin_content_data",
 		"content_fields",
 		"admin_content_fields",
-		"datatypes_fields",
-		"admin_datatypes_fields",
 		"admin_routes",
 		"admin_datatypes",
 		"user_oauth",
@@ -1265,31 +1226,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: pageDatatype.DatatypeID,
-		FieldID:    field.FieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
-	}
-	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 23. Create default admin_datatypes_fields junction record (id = 1) - Links admin datatype to admin field
-	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: adminDatatype.AdminDatatypeID,
-		AdminFieldID:    adminField.AdminFieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
-	}
-	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -1425,26 +1362,14 @@ func (d Database) ValidateBootstrapData() error {
 		errors = append(errors, "admin_field_types table: expected ≥1 records, validation failed")
 	}
 
-	// Validate tables table (should have EXACTLY 28 records - all core tables)
+	// Validate tables table (should have EXACTLY 26 records - all core tables)
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 28 {
+	if err != nil || tableCount == nil || *tableCount != 26 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
-	}
-
-	// Validate datatypes_fields junction table (should have at least 1 record)
-	datatypeFieldCount, err := d.CountDatatypeFields()
-	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
-		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
-	}
-
-	// Validate admin_datatypes_fields junction table (should have at least 1 record)
-	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
-	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
-		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	// If any validation failed, return combined error
@@ -1602,16 +1527,6 @@ func (d MysqlDatabase) CreateAllTables() error {
 	}
 
 	// Tier 6: Junction tables (depend on both sides)
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
 		return err
@@ -1844,9 +1759,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create _reference datatype")
 	}
 
-	// 6c. Create "Target" field for _reference datatype
+	// 6c. Create "Target" field for _reference datatype (linked via parent_id)
 	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: refDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -1861,17 +1777,6 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	}
 	if refField.FieldID.IsZero() {
 		return fmt.Errorf("failed to create _reference Target field")
-	}
-
-	// 6d. Link Target field to _reference datatype
-	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
-		DatatypeID: refDatatype.DatatypeID,
-		FieldID:    refField.FieldID,
-		SortOrder:  0,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
@@ -1906,9 +1811,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
-	// 9. Create default admin field (admin_field_id = 1)
+	// 9. Create default admin field (admin_field_id = 1) -- linked to admin datatype via parent_id
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableAdminDatatypeID{},
+		ParentID:     types.NullableAdminDatatypeID{ID: adminDatatype.AdminDatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -1925,9 +1831,10 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
-	// 10. Create default field (field_id = 1)
+	// 10. Create default field (field_id = 1) -- linked to page datatype via parent_id
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: pageDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -2174,8 +2081,6 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"admin_content_data",
 		"content_fields",
 		"admin_content_fields",
-		"datatypes_fields",
-		"admin_datatypes_fields",
 		"admin_routes",
 		"admin_datatypes",
 		"user_oauth",
@@ -2192,31 +2097,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: pageDatatype.DatatypeID,
-		FieldID:    field.FieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
-	}
-	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 23. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
-	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: adminDatatype.AdminDatatypeID,
-		AdminFieldID:    adminField.AdminFieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
-	}
-	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -2328,22 +2209,12 @@ func (d MysqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 28 {
+	if err != nil || tableCount == nil || *tableCount != 26 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
-	}
-
-	datatypeFieldCount, err := d.CountDatatypeFields()
-	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
-		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
-	}
-
-	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
-	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
-		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	if len(errors) > 0 {
@@ -2500,16 +2371,6 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 
 	// Tier 6: Junction tables (depend on both sides)
-	err = d.CreateDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
-	err = d.CreateAdminDatatypeFieldTable()
-	if err != nil {
-		return err
-	}
-
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
 		return err
@@ -2742,9 +2603,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create _reference datatype")
 	}
 
-	// 6c. Create "Target" field for _reference datatype
+	// 6c. Create "Target" field for _reference datatype (linked via parent_id)
 	refField, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: refDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Target",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -2759,17 +2621,6 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	}
 	if refField.FieldID.IsZero() {
 		return fmt.Errorf("failed to create _reference Target field")
-	}
-
-	// 6d. Link Target field to _reference datatype
-	_, err = d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		ID:         string(types.NewDatatypeFieldID()),
-		DatatypeID: refDatatype.DatatypeID,
-		FieldID:    refField.FieldID,
-		SortOrder:  0,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to link Target field to _reference datatype: %w", err)
 	}
 
 	// 7. Create default admin route (admin_route_id = 1)
@@ -2804,9 +2655,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin datatype")
 	}
 
-	// 9. Create default admin field (admin_field_id = 1)
+	// 9. Create default admin field (admin_field_id = 1) -- linked to admin datatype via parent_id
 	adminField, err := d.CreateAdminField(ctx, ac, CreateAdminFieldParams{
-		ParentID:     types.NullableAdminDatatypeID{},
+		ParentID:     types.NullableAdminDatatypeID{ID: adminDatatype.AdminDatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -2823,9 +2675,10 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		return fmt.Errorf("failed to create default admin field")
 	}
 
-	// 10. Create default field (field_id = 1)
+	// 10. Create default field (field_id = 1) -- linked to page datatype via parent_id
 	field, err := d.CreateField(ctx, ac, CreateFieldParams{
-		ParentID:     types.NullableDatatypeID{},
+		ParentID:     types.NullableDatatypeID{ID: pageDatatype.DatatypeID, Valid: true},
+		SortOrder:    0,
 		Label:        "Content",
 		Data:         "",
 		Validation:   types.EmptyJSON,
@@ -3072,8 +2925,6 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"admin_content_data",
 		"content_fields",
 		"admin_content_fields",
-		"datatypes_fields",
-		"admin_datatypes_fields",
 		"admin_routes",
 		"admin_datatypes",
 		"user_oauth",
@@ -3090,31 +2941,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		}
 	}
 
-	// 22. Create default datatypes_fields junction record (id = 1) - Links datatype to field
-	datatypeField, err := d.CreateDatatypeField(ctx, ac, CreateDatatypeFieldParams{
-		DatatypeID: pageDatatype.DatatypeID,
-		FieldID:    field.FieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default datatypes_fields: %w", err)
-	}
-	if datatypeField.ID == "" {
-		return fmt.Errorf("failed to create default datatypes_fields")
-	}
-
-	// 23. Create default admin_datatypes_fields junction record - Links admin datatype to admin field
-	adminDatatypeField, err := d.CreateAdminDatatypeField(ctx, ac, CreateAdminDatatypeFieldParams{
-		AdminDatatypeID: adminDatatype.AdminDatatypeID,
-		AdminFieldID:    adminField.AdminFieldID,
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create default admin_datatypes_fields: %w", err)
-	}
-	if adminDatatypeField.ID == "" {
-		return fmt.Errorf("failed to create default admin_datatypes_fields")
-	}
-
-	utility.DefaultLogger.Finfo("Bootstrap data created successfully: ALL 28 tables validated with bootstrap records + complete table registry populated")
+	utility.DefaultLogger.Finfo("Bootstrap data created successfully: all tables validated with bootstrap records + complete table registry populated")
 	return nil
 }
 
@@ -3226,22 +3053,12 @@ func (d PsqlDatabase) ValidateBootstrapData() error {
 	}
 
 	tableCount, err := d.CountTables()
-	if err != nil || tableCount == nil || *tableCount != 28 {
+	if err != nil || tableCount == nil || *tableCount != 26 {
 		actual := int64(0)
 		if tableCount != nil {
 			actual = *tableCount
 		}
-		errors = append(errors, fmt.Sprintf("tables table: expected exactly 28 records (table registry), got %d", actual))
-	}
-
-	datatypeFieldCount, err := d.CountDatatypeFields()
-	if err != nil || datatypeFieldCount == nil || *datatypeFieldCount < 1 {
-		errors = append(errors, "datatypes_fields table: expected ≥1 records, validation failed")
-	}
-
-	adminDatatypeFieldCount, err := d.CountAdminDatatypeFields()
-	if err != nil || adminDatatypeFieldCount == nil || *adminDatatypeFieldCount < 1 {
-		errors = append(errors, "admin_datatypes_fields table: expected ≥1 records, validation failed")
+		errors = append(errors, fmt.Sprintf("tables table: expected exactly 26 records (table registry), got %d", actual))
 	}
 
 	if len(errors) > 0 {

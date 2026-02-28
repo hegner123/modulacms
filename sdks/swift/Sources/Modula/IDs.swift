@@ -68,11 +68,6 @@ public struct DatatypeID: ResourceID {
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }
 
-public struct DatatypeFieldID: ResourceID {
-    public let rawValue: String
-    public init(_ rawValue: String) { self.rawValue = rawValue }
-}
-
 public struct FieldID: ResourceID {
     public let rawValue: String
     public init(_ rawValue: String) { self.rawValue = rawValue }
@@ -81,11 +76,6 @@ public struct FieldID: ResourceID {
 // MARK: - Admin Schema IDs
 
 public struct AdminDatatypeID: ResourceID {
-    public let rawValue: String
-    public init(_ rawValue: String) { self.rawValue = rawValue }
-}
-
-public struct AdminDatatypeFieldID: ResourceID {
     public let rawValue: String
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }

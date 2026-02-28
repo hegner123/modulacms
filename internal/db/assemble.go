@@ -99,7 +99,7 @@ func AssembleDatatypeFullView(d DbDriver, datatypeID types.DatatypeID) (*Datatyp
 	av := MapAuthorView(*user)
 	view.Author = &av
 
-	rows, err := d.ListFieldsWithSortOrderByDatatypeID(datatypeID)
+	rows, err := d.ListFieldsWithSortOrderByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
 	if err != nil {
 		return nil, fmt.Errorf("list fields with sort order: %w", err)
 	}

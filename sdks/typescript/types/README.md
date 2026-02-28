@@ -89,9 +89,9 @@ import { CONTENT_FORMATS } from '@modulacms/types'
 
 Content nodes form a linked-list tree using `parent_id`, `first_child_id`, `next_sibling_id`, and `prev_sibling_id` pointers for O(1) navigation and reordering.
 
-**Schema** -- `Datatype`, `Field`, `DatatypeField`
+**Schema** -- `Datatype`, `Field`
 
-Datatypes define content categories. Fields define individual data entries within a datatype. `DatatypeField` is the junction record linking them with sort order.
+Datatypes define content categories. Fields define individual data entries within a datatype, linked via `parent_id` with `sort_order` for ordering.
 
 **Media** -- `Media`, `MediaDimension`
 

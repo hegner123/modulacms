@@ -3,7 +3,8 @@ CREATE TABLE admin_fields (
         PRIMARY KEY NOT NULL CHECK (length(admin_field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,

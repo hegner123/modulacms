@@ -124,6 +124,7 @@ func (m Model) DatabaseUpdate(c *config.Config, table db.DBTable, rowID int64, v
 	m.Logger.Finfo("CLI Update successful", nil)
 	return DbResultCmd(res, string(table))
 }
+
 // DatabaseGet creates a command to fetch a single row by ID from the specified table.
 func (m Model) DatabaseGet(c *config.Config, source FetchSource, table db.DBTable, id int64) tea.Cmd {
 	d := db.ConfigDB(*c)
@@ -289,9 +290,9 @@ func (m Model) CreateContentWithFields(
 			DateCreated:   types.TimestampNow(),
 			DateModified:  types.TimestampNow(),
 			ParentID:      types.NullableContentID{}, // NULL - no parent initially
-			FirstChildID:  types.NullableContentID{},          // NULL - no children initially
-			NextSiblingID: types.NullableContentID{},          // NULL - no siblings initially
-			PrevSiblingID: types.NullableContentID{},          // NULL - no siblings initially
+			FirstChildID:  types.NullableContentID{}, // NULL - no children initially
+			NextSiblingID: types.NullableContentID{}, // NULL - no siblings initially
+			PrevSiblingID: types.NullableContentID{}, // NULL - no siblings initially
 		})
 		if err != nil {
 			return DbErrMsg{
@@ -467,8 +468,8 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 			}
 		}
 
-		// Get field definitions for this datatype via junction table (ordered by id)
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(msg.DatatypeID)
+		// Get field definitions for this datatype by parent_id
+		fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: msg.DatatypeID, Valid: true})
 		if err != nil {
 			logger.Ferror("Failed to fetch datatype fields", err)
 			return ActionResultMsg{
@@ -487,18 +488,10 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 			}
 		}
 
-		// Build the existing fields list in order from junction table
-		// dtFields is already ordered by id (ULID = creation order)
+		// Build the existing fields list ordered by sort_order
 		existingFields := make([]ExistingContentField, 0)
-		if dtFields != nil {
-			for _, dtf := range *dtFields {
-				if dtf.FieldID.IsZero() {
-					continue
-				}
-				field, err := d.GetField(dtf.FieldID)
-				if err != nil || field == nil {
-					continue
-				}
+		if fieldList != nil {
+			for _, field := range *fieldList {
 				// Parse UIConfig for widget override
 				var widget string
 				if uc, ucErr := types.ParseUIConfig(field.UIConfig); ucErr == nil {
@@ -948,8 +941,8 @@ func (m Model) HandleMoveContent(msg MoveContentRequestMsg) tea.Cmd {
 			ContentDataID: source.ContentDataID,
 			RouteID:       source.RouteID,
 			ParentID:      types.NullableContentID{ID: msg.TargetContentID, Valid: true},
-			FirstChildID:  source.FirstChildID, // preserve children
-			NextSiblingID: types.NullableContentID{},     // last child, no next
+			FirstChildID:  source.FirstChildID,       // preserve children
+			NextSiblingID: types.NullableContentID{}, // last child, no next
 			PrevSiblingID: newPrevSiblingID,
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      source.AuthorID,
@@ -1150,38 +1143,12 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 			return LoadContentFieldsMsg{Fields: nil}
 		}
 
-		// Fetch field definitions for labels via junction table (sorted by sort_order, id)
-		var dtFields *[]db.DatatypeFields
+		// Fetch field definitions by parent datatype ID
+		var fieldDefs *[]db.Fields
 		if datatypeID.Valid {
-			dtFields, err = d.ListDatatypeFieldByDatatypeID(datatypeID.ID)
+			fieldDefs, err = d.ListFieldsByDatatypeID(datatypeID)
 			if err != nil {
-				dtFields = nil
-			}
-		}
-
-		// Build field definition map: field_id -> (label, type, junction_id)
-		type fieldInfo struct {
-			Label           string
-			Type            string
-			DatatypeFieldID string
-		}
-		fieldDefMap := make(map[string]fieldInfo)
-		var orderedFieldIDs []string
-		if dtFields != nil {
-			for _, dtf := range *dtFields {
-				if dtf.FieldID.IsZero() {
-					continue
-				}
-				field, fErr := d.GetField(dtf.FieldID)
-				if fErr != nil || field == nil {
-					continue
-				}
-				fieldDefMap[string(dtf.FieldID)] = fieldInfo{
-					Label:           field.Label,
-					Type:            string(field.Type),
-					DatatypeFieldID: dtf.ID,
-				}
-				orderedFieldIDs = append(orderedFieldIDs, string(dtf.FieldID))
+				fieldDefs = nil
 			}
 		}
 
@@ -1195,21 +1162,22 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 			}
 		}
 
-		// Build result in sort_order from junction table
-		result := make([]ContentFieldDisplay, 0, len(orderedFieldIDs))
-		for _, fid := range orderedFieldIDs {
-			info := fieldDefMap[fid]
-			display := ContentFieldDisplay{
-				DatatypeFieldID: info.DatatypeFieldID,
-				FieldID:         types.FieldID(fid),
-				Label:           info.Label,
-				Type:            info.Type,
+		// Build result ordered by sort_order from field definitions
+		var result []ContentFieldDisplay
+		if fieldDefs != nil {
+			result = make([]ContentFieldDisplay, 0, len(*fieldDefs))
+			for _, field := range *fieldDefs {
+				display := ContentFieldDisplay{
+					FieldID: field.FieldID,
+					Label:   field.Label,
+					Type:    string(field.Type),
+				}
+				if cf, ok := cfMap[string(field.FieldID)]; ok {
+					display.ContentFieldID = cf.ContentFieldID
+					display.Value = cf.FieldValue
+				}
+				result = append(result, display)
 			}
-			if cf, ok := cfMap[fid]; ok {
-				display.ContentFieldID = cf.ContentFieldID
-				display.Value = cf.FieldValue
-			}
-			result = append(result, display)
 		}
 
 		return LoadContentFieldsMsg{Fields: result}
@@ -1334,7 +1302,7 @@ func (m Model) HandleAddContentField(contentID types.ContentID, fieldID types.Fi
 	}
 }
 
-// HandleReorderField swaps sort_order between two junction records.
+// HandleReorderField swaps sort_order between two fields.
 func (m Model) HandleReorderField(aID string, bID string, aOrder int64, bOrder int64, datatypeID types.NullableDatatypeID, contentID types.ContentID, routeID types.RouteID, direction string) tea.Cmd {
 	cfg := m.Config
 	userID := m.UserID
@@ -1343,10 +1311,16 @@ func (m Model) HandleReorderField(aID string, bID string, aOrder int64, bOrder i
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 
-		if err := d.UpdateDatatypeFieldSortOrder(ctx, ac, aID, bOrder); err != nil {
+		if err := d.UpdateFieldSortOrder(ctx, ac, db.UpdateFieldSortOrderParams{
+			FieldID:   types.FieldID(aID),
+			SortOrder: bOrder,
+		}); err != nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
 		}
-		if err := d.UpdateDatatypeFieldSortOrder(ctx, ac, bID, aOrder); err != nil {
+		if err := d.UpdateFieldSortOrder(ctx, ac, db.UpdateFieldSortOrderParams{
+			FieldID:   types.FieldID(bID),
+			SortOrder: aOrder,
+		}); err != nil {
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to reorder: %v", err)}
 		}
 
@@ -1410,24 +1384,7 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 			}
 		}
 
-		// Delete all junction records (datatypes_fields) for this datatype
-		dtFields, err := d.ListDatatypeFieldByDatatypeID(msg.DatatypeID)
-		if err != nil {
-			logger.Ferror("Failed to list junction records", err)
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: fmt.Sprintf("Failed to list field associations: %v", err),
-			}
-		}
-		if dtFields != nil {
-			for _, dtf := range *dtFields {
-				if err := d.DeleteDatatypeField(ctx, ac, dtf.ID); err != nil {
-					logger.Ferror(fmt.Sprintf("Failed to delete junction record %s", dtf.ID), err)
-				}
-			}
-		}
-
-		// Delete the datatype
+		// Delete the datatype (fields with parent_id referencing it are set to NULL by FK cascade)
 		if err := d.DeleteDatatype(ctx, ac, msg.DatatypeID); err != nil {
 			logger.Ferror("Failed to delete datatype", err)
 			return ActionResultMsg{
@@ -1441,7 +1398,7 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 	}
 }
 
-// HandleDeleteField deletes a field and its junction record linking it to the datatype
+// HandleDeleteField deletes a field
 func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 	logger := m.Logger
 	if logger == nil {
@@ -1456,27 +1413,7 @@ func (m Model) HandleDeleteField(msg DeleteFieldRequestMsg) tea.Cmd {
 
 		logger.Finfo(fmt.Sprintf("Deleting field: %s from datatype: %s", msg.FieldID, msg.DatatypeID))
 
-		// Delete junction record linking this field to the datatype
-		fieldJunctions, err := d.ListDatatypeFieldByFieldID(msg.FieldID)
-		if err != nil {
-			logger.Ferror("Failed to list junction records for field", err)
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: fmt.Sprintf("Failed to list field associations: %v", err),
-			}
-		}
-
-		if fieldJunctions != nil {
-			for _, dtf := range *fieldJunctions {
-				if !dtf.DatatypeID.IsZero() && dtf.DatatypeID == msg.DatatypeID {
-					if err := d.DeleteDatatypeField(ctx, ac, dtf.ID); err != nil {
-						logger.Ferror(fmt.Sprintf("Failed to delete junction record %s", dtf.ID), err)
-					}
-				}
-			}
-		}
-
-		// Delete the field itself
+		// Delete the field
 		if err := d.DeleteField(ctx, ac, msg.FieldID); err != nil {
 			logger.Ferror("Failed to delete field", err)
 			return ActionResultMsg{
@@ -1977,8 +1914,8 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 		newContent, createErr := d.CreateContentData(ctx, ac, db.CreateContentDataParams{
 			RouteID:       source.RouteID,
 			ParentID:      source.ParentID,
-			FirstChildID:  types.NullableContentID{},                                                // no children (flat copy)
-			NextSiblingID: source.NextSiblingID,                                             // take source's next
+			FirstChildID:  types.NullableContentID{},                                      // no children (flat copy)
+			NextSiblingID: source.NextSiblingID,                                           // take source's next
 			PrevSiblingID: types.NullableContentID{ID: source.ContentDataID, Valid: true}, // prev = source
 			DatatypeID:    source.DatatypeID,
 			AuthorID:      userID,

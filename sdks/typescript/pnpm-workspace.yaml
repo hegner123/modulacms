@@ -1,4 +1,5 @@
 packages:
   - 'types'
+  - 'tree'
   - 'modulacms-sdk'
   - 'modulacms-admin-sdk'

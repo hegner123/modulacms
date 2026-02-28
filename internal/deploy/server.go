@@ -115,7 +115,7 @@ func DeployImportHandler(w http.ResponseWriter, r *http.Request, c config.Config
 		gr, gErr := gzip.NewReader(r.Body)
 		if gErr != nil {
 			utility.DefaultLogger.Error("deploy import: invalid gzip body", gErr)
-		writeDeployError(w, http.StatusBadRequest, "invalid gzip encoding in request body", nil)
+			writeDeployError(w, http.StatusBadRequest, "invalid gzip encoding in request body", nil)
 			return
 		}
 		defer gr.Close()

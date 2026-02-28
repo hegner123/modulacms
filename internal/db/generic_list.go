@@ -49,12 +49,6 @@ func GenericHeaders(t DBTable) []string {
 			"date_modified",
 			"history",
 		}
-	case Admin_datatype_fields:
-		return []string{
-			"id",
-			"admin_datatype_id",
-			"admin_field_id",
-		}
 	case Admin_route:
 		return []string{
 			"admin_route_id",
@@ -87,12 +81,6 @@ func GenericHeaders(t DBTable) []string {
 			"date_created",
 			"date_modified",
 			"history",
-		}
-	case Datatype_fields:
-		return []string{
-			"id",
-			"datatype_id",
-			"field_id",
 		}
 	case Datatype:
 		return []string{
@@ -316,24 +304,6 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 			collection = append(collection, r)
 		}
 		return collection, nil
-	case Admin_datatype_fields:
-		a, err := d.ListAdminDatatypeField()
-		if err != nil {
-			return nil, err
-		}
-		var collection [][]string
-		for i := range len(*a) {
-			rows := *a
-			row := rows[i]
-			s := MapStringAdminDatatypeField(row)
-			r := []string{
-				s.ID,
-				s.AdminDatatypeID,
-				s.AdminFieldID,
-			}
-			collection = append(collection, r)
-		}
-		return collection, nil
 	case Admin_route:
 		a, err := d.ListAdminRoutes()
 		if err != nil {
@@ -399,24 +369,6 @@ func GenericList(t DBTable, d DbDriver) ([][]string, error) {
 				s.DateCreated,
 				s.DateModified,
 				s.History,
-			}
-			collection = append(collection, r)
-		}
-		return collection, nil
-	case Datatype_fields:
-		a, err := d.ListDatatypeField()
-		if err != nil {
-			return nil, err
-		}
-		var collection [][]string
-		for i := range len(*a) {
-			rows := *a
-			row := rows[i]
-			s := MapStringDatatypeField(row)
-			r := []string{
-				s.ID,
-				s.DatatypeID,
-				s.FieldID,
 			}
 			collection = append(collection, r)
 		}

@@ -46,25 +46,22 @@ func TestEnsureSystemData_CreatesReferenceDatatype(t *testing.T) {
 		t.Errorf("type = %q, want %q", ref.Type, string(types.DatatypeTypeReference))
 	}
 
-	// Verify Target field is linked
-	links, err := d.ListDatatypeFieldByDatatypeID(ref.DatatypeID)
+	// Verify Target field is linked via parent_id
+	fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: ref.DatatypeID, Valid: true})
 	if err != nil {
-		t.Fatalf("ListDatatypeFieldByDatatypeID: %v", err)
+		t.Fatalf("ListFieldsByDatatypeID: %v", err)
 	}
-	if links == nil || len(*links) != 1 {
+	if fieldList == nil || len(*fieldList) != 1 {
 		t.Fatalf("expected 1 linked field, got %d", func() int {
-			if links == nil {
+			if fieldList == nil {
 				return 0
 			}
-			return len(*links)
+			return len(*fieldList)
 		}())
 	}
 
 	// Verify the linked field is content_tree_ref type
-	linkedField, err := d.GetField((*links)[0].FieldID)
-	if err != nil {
-		t.Fatalf("GetField for linked field: %v", err)
-	}
+	linkedField := (*fieldList)[0]
 	if linkedField.Type != types.FieldTypeContentTreeRef {
 		t.Errorf("linked field type = %q, want %q", linkedField.Type, types.FieldTypeContentTreeRef)
 	}

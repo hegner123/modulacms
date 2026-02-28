@@ -7,6 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -167,26 +168,15 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		d := m.DB
 		datatypeID := msg.DatatypeID
 		return m, func() tea.Msg {
-			// Get field IDs from the join table
-			dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
+			// List fields by parent datatype ID
+			fields, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
-			if dtFields == nil || len(*dtFields) == 0 {
+			if fields == nil || len(*fields) == 0 {
 				return DatatypeFieldsFetchResultsMsg{Fields: []db.Fields{}}
 			}
-
-			// Fetch actual field details for each field ID
-			var fields []db.Fields
-			for _, dtf := range *dtFields {
-				if !dtf.FieldID.IsZero() {
-					field, err := d.GetField(dtf.FieldID)
-					if err == nil && field != nil {
-						fields = append(fields, *field)
-					}
-				}
-			}
-			return DatatypeFieldsFetchResultsMsg{Fields: fields}
+			return DatatypeFieldsFetchResultsMsg{Fields: *fields}
 		}
 
 	case DatatypeFieldsFetchResultsMsg:
@@ -263,12 +253,12 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 	case RootContentSummaryFetchMsg:
 		d := m.DB
 		return m, func() tea.Msg {
-			summary, err := d.ListRootContentSummary()
+			summary, err := d.ListContentDataTopLevelPaginated(db.PaginationParams{Limit: 10000, Offset: 0})
 			if err != nil {
 				return FetchErrMsg{Error: err}
 			}
 			if summary == nil {
-				return RootContentSummaryFetchResultsMsg{Data: []db.RootContentSummary{}}
+				return RootContentSummaryFetchResultsMsg{Data: []db.ContentDataTopLevel{}}
 			}
 			return RootContentSummaryFetchResultsMsg{Data: *summary}
 		}
@@ -308,39 +298,23 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		utility.DefaultLogger.Finfo(fmt.Sprintf("FetchContentFieldsMsg received: DatatypeID=%s, RouteID=%s", datatypeID, routeID))
 		return m, func() tea.Msg {
 			utility.DefaultLogger.Finfo("FetchContentFieldsMsg command executing...")
-			// Fetch field IDs from the datatypes_fields join table
-			dtFields, err := d.ListDatatypeFieldByDatatypeID(datatypeID)
+			// Fetch fields by parent datatype ID
+			fieldList, err := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: datatypeID, Valid: true})
 			if err != nil {
-				utility.DefaultLogger.Ferror("ListDatatypeFieldByDatatypeID error", err)
+				utility.DefaultLogger.Ferror("ListFieldsByDatatypeID error", err)
 				return FetchErrMsg{Error: err}
 			}
 
-			if dtFields == nil || len(*dtFields) == 0 {
-				utility.DefaultLogger.Finfo("No datatype fields found")
-				return ActionResultMsg{
-					Title:   "No Fields",
-					Message: "This datatype has no fields defined.",
-				}
-			}
-
-			utility.DefaultLogger.Finfo(fmt.Sprintf("Found %d datatype fields", len(*dtFields)))
-
-			// Fetch actual field details for each field ID
 			var fields []db.Fields
-			for _, dtf := range *dtFields {
-				if !dtf.FieldID.IsZero() {
-					field, err := d.GetField(dtf.FieldID)
-					if err == nil && field != nil {
-						fields = append(fields, *field)
-					}
-				}
+			if fieldList != nil {
+				fields = *fieldList
 			}
 
 			if len(fields) == 0 {
-				utility.DefaultLogger.Finfo("No valid fields found after fetching")
+				utility.DefaultLogger.Finfo("No fields found for datatype")
 				return ActionResultMsg{
 					Title:   "No Fields",
-					Message: "No valid fields found for this datatype.",
+					Message: "This datatype has no fields defined.",
 				}
 			}
 

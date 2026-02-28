@@ -2,7 +2,8 @@ CREATE TABLE IF NOT EXISTS fields(
     field_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_id) = 26),
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
+    sort_order INTEGER NOT NULL DEFAULT 0,
     name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,

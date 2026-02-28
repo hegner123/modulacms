@@ -2,7 +2,7 @@
 //
 // Methods in this object are assigned to BlockEditor.prototype via Object.assign.
 // They access the class instance via `this` (e.g., this._state, this._drag,
-// this._wrapperRegistry, this._elementRegistry, this.shadowRoot,
+// this._wrapperRegistry, this._elementRegistry,
 // this._updateDescendantDepths, this._cleanupEmptyChildrenContainer,
 // this._updateChildCountBadge, this._selectBlock, this._devValidate,
 // this._updateSaveButton, this._renderBlockWrapper, this._renderChildrenInto).
@@ -140,7 +140,7 @@ export const dragMethods = {
                 overlay.style.transform = 'translate(' + (clientX - grabOffsetX) + 'px, ' + (clientY - grabOffsetY) + 'px)';
 
                 // Append to shadow root so it renders above everything
-                this.shadowRoot.appendChild(overlay);
+                this.appendChild(overlay);
                 return overlay;
         },
 
@@ -186,7 +186,7 @@ export const dragMethods = {
                 if (!this._drag) return null;
 
                 // Get ALL block-item headers in the shadow DOM
-                const allBlockItems = this.shadowRoot.querySelectorAll('.block-item');
+                const allBlockItems = this.querySelectorAll('.block-item');
                 let closestTarget = null;
                 let closestDistance = Infinity;
 
@@ -277,7 +277,7 @@ export const dragMethods = {
                 // "before" or "after" — show line indicator, remove inside highlight
                 this._removeDropInsideHighlight();
 
-                const blockList = this.shadowRoot.querySelector('.block-list');
+                const blockList = this.querySelector('.block-list');
                 if (!blockList) return;
 
                 // Create indicator if it does not exist
@@ -309,7 +309,7 @@ export const dragMethods = {
         },
 
         _removeDropInsideHighlight() {
-                const highlighted = this.shadowRoot.querySelector('.drop-inside');
+                const highlighted = this.querySelector('.drop-inside');
                 if (highlighted) {
                         highlighted.classList.remove('drop-inside');
                 }
@@ -426,7 +426,7 @@ export const dragMethods = {
         _startAutoScroll() {
                 if (this._autoScrollRaf !== null) return; // Already running
 
-                const editorContainer = this.shadowRoot.querySelector('.editor-container');
+                const editorContainer = this.querySelector('.editor-container');
                 if (!editorContainer) return;
 
                 const EDGE_ZONE = 40; // pixels from edge that triggers scrolling

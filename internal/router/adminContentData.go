@@ -391,21 +391,21 @@ func apiListAdminContentDataPaginated(w http.ResponseWriter, r *http.Request, c 
 	d := db.ConfigDB(c)
 	params := ParsePaginationParams(r)
 
-	items, err := d.ListAdminContentDataPaginated(params)
+	items, err := d.ListAdminContentDataTopLevelPaginated(params)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	total, err := d.CountAdminContentData()
+	total, err := d.CountAdminContentDataTopLevel()
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
 
-	response := db.PaginatedResponse[db.AdminContentData]{
+	response := db.PaginatedResponse[db.AdminContentDataTopLevel]{
 		Data:   *items,
 		Total:  *total,
 		Limit:  params.Limit,

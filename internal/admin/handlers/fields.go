@@ -85,20 +85,11 @@ func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		// Fetch linked datatypes via junction table
-		links, err := driver.ListDatatypeFieldByFieldID(types.FieldID(id))
-		if err != nil {
-			utility.DefaultLogger.Error("failed to list field datatypes", err)
-			links = &[]db.DatatypeFields{}
-		}
-
+		// Fetch parent datatype if the field has one
 		linkedDatatypes := make([]db.Datatypes, 0)
-		if links != nil {
-			for _, link := range *links {
-				dt, dtErr := driver.GetDatatype(link.DatatypeID)
-				if dtErr != nil {
-					continue
-				}
+		if field.ParentID.Valid {
+			dt, dtErr := driver.GetDatatype(field.ParentID.ID)
+			if dtErr == nil {
 				linkedDatatypes = append(linkedDatatypes, *dt)
 			}
 		}

@@ -32,8 +32,7 @@ func (m Model) RenderStatusTable() string {
 	//tables := fmt.Sprintf("Tables\n%v\n", m.Tables)
 	table := fmt.Sprintf("Table\n%s\n", m.TableState.Table)
 	history := fmt.Sprintf("History\nLength:\n %v", len(m.History))
-	
-	
+
 	doc.WriteString(lipgloss.JoinHorizontal(
 		lipgloss.Top,
 		RenderBorderBlock(

@@ -1224,4 +1224,3 @@ func lenOrZero(events *[]db.ChangeEvent) int {
 	}
 	return len(*events)
 }
-

@@ -222,16 +222,6 @@ Create and update handlers set Validation and UIConfig to EmptyJSON if not provi
 
 Individual resource endpoint at /api/v1/adminfields/ supporting GET, PUT, DELETE for specific item identified by query parameter q containing AdminFieldID.
 
-### AdminDatatypeFieldsHandler
-
-Collection endpoint at /api/v1/admindatatypefields supporting GET with optional pagination, POST to create, DELETE to remove.
-
-GET supports query filters: admin_datatype_id to filter by datatype, admin_field_id to filter by field, or no filter for all records.
-
-### AdminDatatypeFieldHandler
-
-Individual resource endpoint at /api/v1/admindatatypefields/ supporting PUT to update. Identified by composite key in request body.
-
 ### AdminRoutesHandler
 
 Collection endpoint at /api/v1/adminroutes supporting GET with optional pagination or ordering, POST to create.
@@ -273,18 +263,6 @@ Create handler generates new DatatypeID if not provided, sets date_created and d
 ### DatatypeHandler
 
 Individual resource endpoint at /api/v1/datatype/ supporting GET and PUT for specific item identified by query parameter q containing DatatypeID.
-
-### DatatypeFieldsHandler
-
-Collection endpoint at /api/v1/datatypefields supporting GET with optional pagination, POST to create, DELETE to remove.
-
-GET supports query filters: datatype_id to filter by datatype, field_id to filter by field, or no filter for all records.
-
-Create handler generates new DatatypeFieldID if ID field empty in request.
-
-### DatatypeFieldHandler
-
-Individual resource endpoint at /api/v1/datatypefields/ supporting PUT to update. Identified by composite key in request body.
 
 ## Field Handlers
 
@@ -446,9 +424,9 @@ Creates datatype with null parent_id. Caches created ID. Increments result.Datat
 
 ### createFieldAndContentField
 
-Creates field definition, content_field linking to content_data, datatype_field linking to datatype. Single field creation creates three database records.
+Creates field definition and content_field linking to content_data. Single field creation creates two database records.
 
-Creates field with parent_id set to datatype, type from field info, empty validation and ui_config. Creates content_field with route_id, content_data_id, field_id, field_value from parsed data. Creates datatype_field with datatype_id and field_id.
+Creates field with parent_id set to datatype, type from field info, empty validation and ui_config. Creates content_field with route_id, content_data_id, field_id, field_value from parsed data.
 
 Increments result.FieldsCreated on success. Appends errors to result.Errors on any failure.
 

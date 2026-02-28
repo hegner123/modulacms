@@ -50,12 +50,6 @@ type DatatypeID string
 func (id DatatypeID) String() string { return string(id) }
 func (id DatatypeID) IsZero() bool   { return id == "" }
 
-// DatatypeFieldID identifies a datatype-field mapping.
-type DatatypeFieldID string
-
-func (id DatatypeFieldID) String() string { return string(id) }
-func (id DatatypeFieldID) IsZero() bool   { return id == "" }
-
 // FieldID identifies a field definition.
 type FieldID string
 
@@ -75,12 +69,6 @@ type AdminDatatypeID string
 
 func (id AdminDatatypeID) String() string { return string(id) }
 func (id AdminDatatypeID) IsZero() bool   { return id == "" }
-
-// AdminDatatypeFieldID identifies an admin datatype-field mapping.
-type AdminDatatypeFieldID string
-
-func (id AdminDatatypeFieldID) String() string { return string(id) }
-func (id AdminDatatypeFieldID) IsZero() bool   { return id == "" }
 
 // AdminFieldID identifies an admin field definition.
 type AdminFieldID string

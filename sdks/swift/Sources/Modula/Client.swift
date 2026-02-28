@@ -18,7 +18,6 @@ public final class ModulaClient: Sendable {
     public let contentFields: Resource<ContentField, CreateContentFieldParams, UpdateContentFieldParams, ContentFieldID>
     public let contentRelations: Resource<ContentRelation, CreateContentRelationParams, UpdateContentRelationParams, ContentRelationID>
     public let datatypes: Resource<Datatype, CreateDatatypeParams, UpdateDatatypeParams, DatatypeID>
-    public let datatypeFields: Resource<DatatypeField, CreateDatatypeFieldParams, UpdateDatatypeFieldParams, DatatypeFieldID>
     public let fields: Resource<Field, CreateFieldParams, UpdateFieldParams, FieldID>
     public let media: Resource<Media, NoCreate, UpdateMediaParams, MediaID>
     public let mediaDimensions: Resource<MediaDimension, CreateMediaDimensionParams, UpdateMediaDimensionParams, MediaDimensionID>
@@ -34,7 +33,6 @@ public final class ModulaClient: Sendable {
     public let adminContentData: Resource<AdminContentData, CreateAdminContentDataParams, UpdateAdminContentDataParams, AdminContentID>
     public let adminContentFields: Resource<AdminContentField, CreateAdminContentFieldParams, UpdateAdminContentFieldParams, AdminContentFieldID>
     public let adminDatatypes: Resource<AdminDatatype, CreateAdminDatatypeParams, UpdateAdminDatatypeParams, AdminDatatypeID>
-    public let adminDatatypeFields: Resource<AdminDatatypeField, CreateAdminDatatypeFieldParams, UpdateAdminDatatypeFieldParams, AdminDatatypeFieldID>
     public let adminFields: Resource<AdminField, CreateAdminFieldParams, UpdateAdminFieldParams, AdminFieldID>
     public let adminRoutes: Resource<AdminRoute, CreateAdminRouteParams, UpdateAdminRouteParams, AdminRouteID>
     public let fieldTypes: Resource<FieldTypeInfo, CreateFieldTypeParams, UpdateFieldTypeParams, FieldTypeID>
@@ -94,7 +92,6 @@ public final class ModulaClient: Sendable {
         contentFields = Resource(path: "/api/v1/contentfields", http: http)
         contentRelations = Resource(path: "/api/v1/contentrelations", http: http)
         datatypes = Resource(path: "/api/v1/datatype", http: http)
-        datatypeFields = Resource(path: "/api/v1/datatypefields", http: http)
         fields = Resource(path: "/api/v1/fields", http: http)
         media = Resource(path: "/api/v1/media", http: http)
         mediaDimensions = Resource(path: "/api/v1/mediadimensions", http: http)
@@ -110,7 +107,6 @@ public final class ModulaClient: Sendable {
         adminContentData = Resource(path: "/api/v1/admincontentdatas", http: http)
         adminContentFields = Resource(path: "/api/v1/admincontentfields", http: http)
         adminDatatypes = Resource(path: "/api/v1/admindatatypes", http: http)
-        adminDatatypeFields = Resource(path: "/api/v1/admindatatypefields", http: http)
         adminFields = Resource(path: "/api/v1/adminfields", http: http)
         adminRoutes = Resource(path: "/api/v1/adminroutes", http: http)
         fieldTypes = Resource(path: "/api/v1/fieldtypes", http: http)

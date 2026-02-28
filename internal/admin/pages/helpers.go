@@ -15,10 +15,10 @@ func truncateID(id string) string {
 	return id[:8] + "..."
 }
 
-// ContentListItem wraps ContentData with human-readable display fields
+// ContentListItem wraps ContentDataTopLevel with human-readable display fields
 // resolved from the associated route or title content field.
 type ContentListItem struct {
-	db.ContentData
+	db.ContentDataTopLevel
 	DisplayName string
 	Slug        string
 }

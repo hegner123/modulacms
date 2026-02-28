@@ -13,12 +13,12 @@ import (
 
 // HealReport is the JSON response from the content heal endpoint.
 type HealReport struct {
-	DryRun              bool                 `json:"dry_run"`
-	ContentDataScanned  int                  `json:"content_data_scanned"`
-	ContentDataRepairs  []HealRepair         `json:"content_data_repairs"`
-	ContentFieldScanned int                  `json:"content_field_scanned"`
-	ContentFieldRepairs []HealRepair         `json:"content_field_repairs"`
-	MissingFields       []MissingFieldReport `json:"missing_fields"`
+	DryRun              bool                   `json:"dry_run"`
+	ContentDataScanned  int                    `json:"content_data_scanned"`
+	ContentDataRepairs  []HealRepair           `json:"content_data_repairs"`
+	ContentFieldScanned int                    `json:"content_field_scanned"`
+	ContentFieldRepairs []HealRepair           `json:"content_field_repairs"`
+	MissingFields       []MissingFieldReport   `json:"missing_fields"`
 	DuplicateFields     []DuplicateFieldReport `json:"duplicate_fields"`
 }
 
@@ -203,18 +203,18 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 
 	// --- Detect and create missing content_field rows ---
 	// For each content_data row with a valid datatype, check that a content_field
-	// exists for every field linked to that datatype via datatypes_fields.
+	// exists for every field belonging to that datatype via parent_id.
 	if contentRows != nil {
 		for _, row := range *contentRows {
 			if !row.DatatypeID.Valid {
 				continue
 			}
-			dtFields, dtErr := d.ListDatatypeFieldByDatatypeID(row.DatatypeID.ID)
+			fieldList, dtErr := d.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: row.DatatypeID.ID, Valid: true})
 			if dtErr != nil {
-				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to list datatype fields for %s", row.DatatypeID.ID), dtErr)
+				utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to list fields for %s", row.DatatypeID.ID), dtErr)
 				continue
 			}
-			if dtFields == nil || len(*dtFields) == 0 {
+			if fieldList == nil || len(*fieldList) == 0 {
 				continue
 			}
 
@@ -234,27 +234,27 @@ func apiHealContent(w http.ResponseWriter, r *http.Request, c config.Config) {
 			}
 
 			now := types.TimestampNow()
-			for _, dtf := range *dtFields {
-				if existingFieldIDs[dtf.FieldID] {
+			for _, field := range *fieldList {
+				if existingFieldIDs[field.FieldID] {
 					continue
 				}
 				entry := MissingFieldReport{
 					ContentDataID: string(row.ContentDataID),
-					FieldID:       string(dtf.FieldID),
+					FieldID:       string(field.FieldID),
 					Created:       !dryRun,
 				}
 				if !dryRun {
 					_, cfErr := d.CreateContentField(ctx, ac, db.CreateContentFieldParams{
 						RouteID:       row.RouteID,
 						ContentDataID: types.NullableContentID{ID: row.ContentDataID, Valid: true},
-						FieldID:       types.NullableFieldID{ID: dtf.FieldID, Valid: true},
+						FieldID:       types.NullableFieldID{ID: field.FieldID, Valid: true},
 						FieldValue:    "",
 						AuthorID:      row.AuthorID,
 						DateCreated:   now,
 						DateModified:  now,
 					})
 					if cfErr != nil {
-						utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to create missing content field for %s field %s", row.ContentDataID, dtf.FieldID), cfErr)
+						utility.DefaultLogger.Error(fmt.Sprintf("heal: failed to create missing content field for %s field %s", row.ContentDataID, field.FieldID), cfErr)
 						entry.Created = false
 					}
 				}

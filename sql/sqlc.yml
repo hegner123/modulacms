@@ -30,7 +30,6 @@ sql:
           admin_content_field_id: "AdminContentFieldID"
           admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
-          admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
           admin_route_id: "AdminRouteID"
           author_id: "AuthorID"
@@ -40,7 +39,6 @@ sql:
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
-          datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
           field_type_id: "FieldTypeID"
@@ -74,14 +72,12 @@ sql:
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
-          admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
           datatype: Datatypes
-          datatypes_field: DatatypesFields
           field: Fields
           field_type: FieldTypes
           admin_field_type: AdminFieldTypes
@@ -140,10 +136,6 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
-          - column: "datatypes_fields.datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -167,14 +159,6 @@ sql:
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
-          - column: "datatypes_fields.datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
-          - column: "datatypes_fields.field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
-          - column: "admin_datatypes_fields.admin_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           - column: "content_relations.field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"
@@ -476,7 +460,6 @@ sql:
           admin_content_field_id: "AdminContentFieldID"
           admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
-          admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
           admin_route_id: "AdminRouteID"
           author_id: "AuthorID"
@@ -486,7 +469,6 @@ sql:
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
-          datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
           field_type_id: "FieldTypeID"
@@ -520,14 +502,12 @@ sql:
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
-          admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
           datatype: Datatypes
-          datatypes_field: DatatypesFields
           field: Fields
           field_type: FieldTypes
           admin_field_type: AdminFieldTypes
@@ -586,10 +566,6 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
-          - column: "datatypes_fields.datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -613,14 +589,6 @@ sql:
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
-          - column: "datatypes_fields.datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
-          - column: "datatypes_fields.field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
-          - column: "admin_datatypes_fields.admin_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           - column: "content_relations.field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"
@@ -922,7 +890,6 @@ sql:
           admin_content_field_id: "AdminContentFieldID"
           admin_content_relation_id: "AdminContentRelationID"
           admin_datatype_id: "AdminDatatypeID"
-          admin_datatype_field_id: "AdminDatatypeFieldID"
           admin_field_id: "AdminFieldID"
           admin_route_id: "AdminRouteID"
           author_id: "AuthorID"
@@ -932,7 +899,6 @@ sql:
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
           datatype_id: "DatatypeID"
-          datatype_field_id: "DatatypeFieldID"
           event_id: "EventID"
           field_id: "FieldID"
           field_type_id: "FieldTypeID"
@@ -966,14 +932,12 @@ sql:
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
           admin_datatype: AdminDatatypes
-          admin_datatypes_field: AdminDatatypesFields
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
           datatype: Datatypes
-          datatypes_field: DatatypesFields
           field: Fields
           field_type: FieldTypes
           admin_field_type: AdminFieldTypes
@@ -1032,10 +996,6 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
-          - column: "datatypes_fields.datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeFieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeFieldID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -1059,14 +1019,6 @@ sql:
           - column: "admin_content_relations.target_content_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # TABLE-SPECIFIC FK OVERRIDES (override wildcards for NOT NULL columns)
-          - column: "datatypes_fields.datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "DatatypeID"}
-          - column: "datatypes_fields.field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
-          - column: "admin_datatypes_fields.admin_datatype_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminDatatypeID"}
-          - column: "admin_datatypes_fields.admin_field_id"
-            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminFieldID"}
           - column: "content_relations.field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldID"}
           - column: "admin_content_relations.admin_field_id"

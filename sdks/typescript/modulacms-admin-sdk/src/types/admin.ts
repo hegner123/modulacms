@@ -126,6 +126,8 @@ export type AdminField = {
   admin_field_id: AdminFieldID
   /** Parent datatype ID this field belongs to, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable field label. */
@@ -144,37 +146,6 @@ export type AdminField = {
   date_created: string
   /** ISO 8601 last-modification timestamp. */
   date_modified: string
-}
-
-/**
- * Junction record linking an admin datatype to an admin field.
- * Read-only; no dedicated API endpoint exists for this entity.
- */
-export type AdminDatatypeField = {
-  /** Unique identifier for this junction record. */
-  id: string
-  /** The datatype in the relationship. */
-  admin_datatype_id: AdminDatatypeID
-  /** The field in the relationship. */
-  admin_field_id: AdminFieldID
-}
-
-/** Parameters for creating a new admin datatype-field junction record via `POST /admindatatypefields`. */
-export type CreateAdminDatatypeFieldParams = {
-  /** The admin datatype in the relationship. */
-  admin_datatype_id: AdminDatatypeID
-  /** The admin field in the relationship. */
-  admin_field_id: AdminFieldID
-}
-
-/** Parameters for updating an admin datatype-field junction record via `PUT /admindatatypefields/`. */
-export type UpdateAdminDatatypeFieldParams = {
-  /** Unique identifier for this junction record. */
-  id: string
-  /** The admin datatype in the relationship. */
-  admin_datatype_id: AdminDatatypeID
-  /** The admin field in the relationship. */
-  admin_field_id: AdminFieldID
 }
 
 /**
@@ -279,6 +250,8 @@ export type CreateAdminDatatypeParams = {
 export type CreateAdminFieldParams = {
   /** Parent datatype ID, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Human-readable field label. */
@@ -397,6 +370,8 @@ export type UpdateAdminFieldParams = {
   admin_field_id: AdminFieldID
   /** Updated parent datatype ID, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Display ordering position within the datatype. */
+  sort_order: number
   /** Machine-readable name used as JSON key. If empty, derived from label. */
   name: string
   /** Updated label. */

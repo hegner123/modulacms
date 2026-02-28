@@ -111,7 +111,7 @@ templ ContentTableRows(items []ContentListItem) {
 			<td>
 				@components.StatusBadge(string(item.Status))
 			</td>
-			<td>{ truncateID(item.AuthorID.String()) }</td>
+			<td>{ item.AuthorName }</td>
 			<td>{ item.DateModified.String() }</td>
 			<td>
 				<div class="table-actions">

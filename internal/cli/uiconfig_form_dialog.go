@@ -60,8 +60,8 @@ type UIConfigFormDialogModel struct {
 	Width   int
 	FieldID string
 
-	WidgetOptions []WidgetOption // available widgets
-	WidgetIndex   int            // currently selected widget
+	WidgetOptions    []WidgetOption  // available widgets
+	WidgetIndex      int             // currently selected widget
 	PlaceholderInput textinput.Model // placeholder text
 	HelpTextInput    textinput.Model // help text
 	HiddenToggle     bool            // boolean toggle

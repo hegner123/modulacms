@@ -86,23 +86,15 @@ func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
-		// Fetch linked fields via datatype-field junction
-		links, err := driver.ListDatatypeFieldByDatatypeID(types.DatatypeID(id))
+		// Fetch linked fields by parent_id (fields belong to datatype directly)
+		fieldList, err := driver.ListFieldsByDatatypeID(types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list datatype fields", err)
-			links = &[]db.DatatypeFields{}
+			fieldList = &[]db.Fields{}
 		}
-
-		// Resolve field details for each link
 		linkedFields := make([]db.Fields, 0)
-		if links != nil {
-			for _, link := range *links {
-				f, fErr := driver.GetField(link.FieldID)
-				if fErr != nil {
-					continue
-				}
-				linkedFields = append(linkedFields, *f)
-			}
+		if fieldList != nil {
+			linkedFields = *fieldList
 		}
 
 		csrfToken := CSRFTokenFromContext(r.Context())
@@ -337,7 +329,7 @@ func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 }
 
 // DatatypeCreateFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
-// Creates a new field owned by this datatype and links it via the junction table.
+// Creates a new field with parent_id set to this datatype.
 func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, cfgErr := mgr.Config()
@@ -386,9 +378,10 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		now := types.NewTimestamp(time.Now())
-		field, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
+		_, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
 			FieldID:      types.NewFieldID(),
 			ParentID:     types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true},
+			SortOrder:    0,
 			Name:         name,
 			Label:        label,
 			Type:         types.FieldType(fieldType),
@@ -404,21 +397,6 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", map[string]string{"_": "Failed to create field"}, csrfToken))
-			return
-		}
-
-		// Link the new field to the datatype via junction table
-		_, junctionErr := driver.CreateDatatypeField(r.Context(), ac, db.CreateDatatypeFieldParams{
-			ID:         string(types.NewDatatypeFieldID()),
-			DatatypeID: types.DatatypeID(id),
-			FieldID:    field.FieldID,
-			SortOrder:  0,
-		})
-		if junctionErr != nil {
-			utility.DefaultLogger.Error("failed to link new field to datatype", junctionErr)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", map[string]string{"_": "Field created but failed to link to datatype"}, csrfToken))
 			return
 		}
 

@@ -353,31 +353,6 @@ Staging content field values mirroring content_fields table structure.
 
 Staging content relations mirroring content_relations table structure.
 
-## Join Tables
-
-### datatypes_fields
-
-Junction table associating fields with datatypes.
-
-```sql
-CREATE TABLE datatypes_fields (
-    datatype_field_id TEXT PRIMARY KEY CHECK (length(datatype_field_id) = 26),
-    datatype_id TEXT NOT NULL REFERENCES datatypes ON DELETE CASCADE,
-    field_id TEXT NOT NULL REFERENCES fields ON DELETE CASCADE,
-    display_order INTEGER DEFAULT 0,
-    date_created TEXT DEFAULT CURRENT_TIMESTAMP,
-    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-Columns: datatype_field_id is ULID primary key, datatype_id references datatype, field_id references field, display_order controls field ordering in UI.
-
-Foreign keys: both foreign keys CASCADE on delete.
-
-### admin_datatypes_fields
-
-Junction table for admin datatypes and fields.
-
 ## Distributed System Tables
 
 ### change_events

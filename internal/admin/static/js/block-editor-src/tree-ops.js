@@ -143,6 +143,7 @@ export function addBlockFromDatatype(state, datatype, position, targetId) {
                 status: 'draft',
                 dateCreated: new Date().toISOString(),
                 dateModified: new Date().toISOString(),
+                fields: [],
         };
         state.blocks[id] = block;
 

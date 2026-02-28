@@ -280,7 +280,9 @@ func renderAdminContentList(m Model) string {
 			cursor = " ->"
 		}
 		label := string(content.AdminContentDataID)
-		if content.AdminDatatypeID.Valid {
+		if content.DatatypeLabel != "" {
+			label = fmt.Sprintf("[%s] %s", content.DatatypeLabel, content.RouteSlug)
+		} else if content.AdminDatatypeID.Valid {
 			label = fmt.Sprintf("[%s] %s", content.AdminDatatypeID.ID, label)
 		}
 		lines = append(lines, fmt.Sprintf("%s %s", cursor, label))
@@ -297,15 +299,18 @@ func renderAdminContentDetail(m Model) string {
 	content := m.AdminRootContentSummary[m.Cursor]
 	lines := []string{
 		fmt.Sprintf("ID:        %s", content.AdminContentDataID),
-		fmt.Sprintf("Route:     %s", content.AdminRouteID),
+		fmt.Sprintf("Route:     %s", content.RouteSlug),
+		fmt.Sprintf("Title:     %s", content.RouteTitle),
 		fmt.Sprintf("Status:    %s", content.Status),
-		fmt.Sprintf("Author:    %s", content.AuthorID.String()),
+		fmt.Sprintf("Author:    %s", content.AuthorName),
 		"",
 		fmt.Sprintf("Created:   %s", content.DateCreated.String()),
 		fmt.Sprintf("Modified:  %s", content.DateModified.String()),
 	}
 
-	if content.AdminDatatypeID.Valid {
+	if content.DatatypeLabel != "" {
+		lines = append([]string{fmt.Sprintf("Datatype:  %s", content.DatatypeLabel)}, lines...)
+	} else if content.AdminDatatypeID.Valid {
 		lines = append([]string{fmt.Sprintf("Datatype:  %s", content.AdminDatatypeID.ID)}, lines...)
 	}
 

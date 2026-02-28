@@ -153,3 +153,169 @@ func (d PsqlDatabase) ListRootContentSummary() (*[]RootContentSummary, error) {
 	}
 	return &res, nil
 }
+
+///////////////////////////////
+// TOP-LEVEL CONTENT DATA
+//////////////////////////////
+
+// ContentDataTopLevel extends ContentData with resolved display names from JOINs.
+type ContentDataTopLevel struct {
+	ContentData
+	AuthorName    string     `json:"author_name"`
+	RouteSlug     types.Slug `json:"route_slug"`
+	RouteTitle    string     `json:"route_title"`
+	DatatypeLabel string     `json:"datatype_label"`
+}
+
+// SQLITE
+
+func (d Database) mapContentDataTopLevel(a mdb.ListContentDataTopLevelPaginatedRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdb.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginated returns paginated content entries that have a route or _root datatype.
+func (d Database) ListContentDataTopLevelPaginated(params PaginationParams) (*[]ContentDataTopLevel, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginated(d.Context, mdb.ListContentDataTopLevelPaginatedParams{
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevel(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevel returns the count of content entries that have a route or _root datatype.
+func (d Database) CountContentDataTopLevel() (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountContentDataTopLevel(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData: %v", err)
+	}
+	return &c, nil
+}
+
+// MYSQL
+
+func (d MysqlDatabase) mapContentDataTopLevel(a mdbm.ListContentDataTopLevelPaginatedRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdbm.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginated returns paginated content entries that have a route or _root datatype.
+func (d MysqlDatabase) ListContentDataTopLevelPaginated(params PaginationParams) (*[]ContentDataTopLevel, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginated(d.Context, mdbm.ListContentDataTopLevelPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevel(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevel returns the count of content entries that have a route or _root datatype.
+func (d MysqlDatabase) CountContentDataTopLevel() (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountContentDataTopLevel(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData: %v", err)
+	}
+	return &c, nil
+}
+
+// PSQL
+
+func (d PsqlDatabase) mapContentDataTopLevel(a mdbp.ListContentDataTopLevelPaginatedRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdbp.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginated returns paginated content entries that have a route or _root datatype.
+func (d PsqlDatabase) ListContentDataTopLevelPaginated(params PaginationParams) (*[]ContentDataTopLevel, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginated(d.Context, mdbp.ListContentDataTopLevelPaginatedParams{
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevel(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevel returns the count of content entries that have a route or _root datatype.
+func (d PsqlDatabase) CountContentDataTopLevel() (*int64, error) {
+	queries := mdbp.New(d.Connection)
+	c, err := queries.CountContentDataTopLevel(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData: %v", err)
+	}
+	return &c, nil
+}

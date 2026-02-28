@@ -14,7 +14,6 @@ const (
 	Admin_content_fields    DBTable = "admin_content_fields"
 	Admin_content_relations DBTable = "admin_content_relations"
 	Admin_datatype          DBTable = "admin_datatypes"
-	Admin_datatype_fields   DBTable = "admin_datatypes_fields"
 	Admin_field             DBTable = "admin_fields"
 	Admin_field_types       DBTable = "admin_field_types"
 	Admin_route             DBTable = "admin_routes"
@@ -25,7 +24,6 @@ const (
 	Content_data            DBTable = "content_data"
 	Content_fields          DBTable = "content_fields"
 	Content_relations       DBTable = "content_relations"
-	Datatype_fields         DBTable = "datatypes_fields"
 	Datatype                DBTable = "datatypes"
 	Field                   DBTable = "fields"
 	Field_types             DBTable = "field_types"
@@ -49,7 +47,6 @@ var allTables = map[DBTable]struct{}{
 	Admin_content_fields:    {},
 	Admin_content_relations: {},
 	Admin_datatype:          {},
-	Admin_datatype_fields:   {},
 	Admin_field:             {},
 	Admin_field_types:       {},
 	Admin_route:             {},
@@ -60,7 +57,6 @@ var allTables = map[DBTable]struct{}{
 	Content_data:            {},
 	Content_fields:          {},
 	Content_relations:       {},
-	Datatype_fields:         {},
 	Datatype:                {},
 	Field:                   {},
 	Field_types:             {},
@@ -99,14 +95,12 @@ var TableStructMap = map[DBTable]reflect.Type{
 	Admin_content_data:      reflect.TypeFor[AdminContentData](),
 	Admin_content_fields:    reflect.TypeFor[AdminContentFields](),
 	Admin_datatype:          reflect.TypeFor[AdminDatatypes](),
-	Admin_datatype_fields:   reflect.TypeFor[AdminDatatypeFields](),
 	Admin_field:             reflect.TypeFor[AdminFields](),
 	Admin_route:             reflect.TypeFor[AdminRoutes](),
 	Content_data:            reflect.TypeFor[ContentData](),
 	Content_fields:          reflect.TypeFor[ContentFields](),
 	Content_relations:       reflect.TypeFor[ContentRelations](),
 	Admin_content_relations: reflect.TypeFor[AdminContentRelations](),
-	Datatype_fields:         reflect.TypeFor[DatatypeFields](),
 	Datatype:                reflect.TypeFor[Datatypes](),
 	Field:                   reflect.TypeFor[Fields](),
 	MediaT:                  reflect.TypeFor[Media](),
@@ -140,10 +134,6 @@ func CastToTypedSlice(result any, table DBTable) any {
 		if slice, ok := result.([]AdminDatatypes); ok {
 			return slice
 		}
-	case Admin_datatype_fields:
-		if slice, ok := result.([]AdminDatatypeFields); ok {
-			return slice
-		}
 	case Admin_field:
 		if slice, ok := result.([]AdminFields); ok {
 			return slice
@@ -166,10 +156,6 @@ func CastToTypedSlice(result any, table DBTable) any {
 		}
 	case Admin_content_relations:
 		if slice, ok := result.([]AdminContentRelations); ok {
-			return slice
-		}
-	case Datatype_fields:
-		if slice, ok := result.([]DatatypeFields); ok {
 			return slice
 		}
 	case Datatype:

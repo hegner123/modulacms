@@ -36,22 +36,22 @@ func (b *TextBubble) Update(msg tea.Msg) (FieldBubble, tea.Cmd) {
 }
 
 // View returns the rendered representation of the text bubble.
-func (b *TextBubble) View() string     { return b.input.View() }
+func (b *TextBubble) View() string { return b.input.View() }
 
 // Value returns the current value of the text input.
-func (b *TextBubble) Value() string    { return b.input.Value() }
+func (b *TextBubble) Value() string { return b.input.Value() }
 
 // SetValue sets the value of the text input.
 func (b *TextBubble) SetValue(v string) { b.input.SetValue(v) }
 
 // Focus sets focus to the text input.
-func (b *TextBubble) Focus() tea.Cmd   { return b.input.Focus() }
+func (b *TextBubble) Focus() tea.Cmd { return b.input.Focus() }
 
 // Blur removes focus from the text input.
-func (b *TextBubble) Blur()            { b.input.Blur() }
+func (b *TextBubble) Blur() { b.input.Blur() }
 
 // Focused returns whether the text input is currently focused.
-func (b *TextBubble) Focused() bool    { return b.input.Focused() }
+func (b *TextBubble) Focused() bool { return b.input.Focused() }
 
 // SetWidth sets the text input width for layout.
-func (b *TextBubble) SetWidth(w int)   { b.input.Width = w }
+func (b *TextBubble) SetWidth(w int) { b.input.Width = w }

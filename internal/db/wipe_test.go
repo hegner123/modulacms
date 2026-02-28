@@ -111,8 +111,6 @@ func tableExists(t *testing.T, conn *sql.DB, tableName string) bool {
 // Tables that use "DROP TABLE" (strict -- error if missing).
 // These are the tables we can use for error-path testing.
 var strictDropTables = []string{
-	"admin_datatypes_fields",
-	"datatypes_fields",
 	"admin_content_fields",
 	"content_fields",
 	"admin_content_data",
@@ -186,8 +184,6 @@ func TestDatabase_DropAllTables_SpecificTablesGone(t *testing.T) {
 	createdTables := []string{
 		"pipelines",
 		"plugins",
-		"admin_datatypes_fields",
-		"datatypes_fields",
 		"role_permissions",
 		"admin_content_relations",
 		"content_relations",
@@ -228,24 +224,25 @@ func TestDatabase_DropAllTables_SpecificTablesGone(t *testing.T) {
 
 func TestDatabase_DropAllTables_ErrorOnFirstTable(t *testing.T) {
 	// The first strict table (DROP TABLE without IF EXISTS) in the drop
-	// sequence is admin_datatypes_fields. Pre-dropping it should cause
+	// sequence is admin_content_fields. Pre-dropping it should cause
 	// DropAllTables to fail with an error mentioning that table.
-	// Note: pipelines and plugins use DROP TABLE IF EXISTS, so they
+	// Note: pipelines, plugins, role_permissions, admin_content_relations,
+	// and content_relations use DROP TABLE IF EXISTS, so they
 	// silently succeed even when already dropped.
 	d := newWipeTestDB(t)
 
 	// Pre-drop the first strict table in the sequence
-	_, err := d.Connection.Exec("DROP TABLE admin_datatypes_fields;")
+	_, err := d.Connection.Exec("DROP TABLE admin_content_fields;")
 	if err != nil {
-		t.Fatalf("pre-drop admin_datatypes_fields: %v", err)
+		t.Fatalf("pre-drop admin_content_fields: %v", err)
 	}
 
 	err = d.DropAllTables()
 	if err == nil {
 		t.Fatal("expected error when first strict table is already dropped, got nil")
 	}
-	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
-		t.Errorf("error = %q, want it to contain %q", err.Error(), "drop admin_datatypes_fields")
+	if !strings.Contains(err.Error(), "drop admin_content_fields") {
+		t.Errorf("error = %q, want it to contain %q", err.Error(), "drop admin_content_fields")
 	}
 }
 
@@ -268,12 +265,12 @@ func TestDatabase_DropAllTables_ErrorOnMidTierTable(t *testing.T) {
 	}
 
 	// Tables before 'users' in the drop order should have been dropped successfully.
-	// Tier 6 tables should be gone:
-	tier6Tables := []string{
-		"admin_datatypes_fields",
-		"datatypes_fields",
+	// Tier 5 tables should be gone:
+	tier5Tables := []string{
+		"admin_content_fields",
+		"content_fields",
 	}
-	for _, table := range tier6Tables {
+	for _, table := range tier5Tables {
 		if tableExists(t, d.Connection, table) {
 			t.Errorf("table %q should have been dropped before the error, but still exists", table)
 		}
@@ -448,8 +445,9 @@ func TestDatabase_DropAllTables_ErrorMessages_StrictTables(t *testing.T) {
 func TestDatabase_DropAllTables_DoubleDrop(t *testing.T) {
 	// Calling DropAllTables twice should fail on the second call because
 	// strict tables no longer exist (DROP TABLE without IF EXISTS).
-	// Pipelines and plugins use IF EXISTS and silently succeed, so the
-	// first error comes from admin_datatypes_fields (first strict table).
+	// Pipelines, plugins, role_permissions, admin_content_relations,
+	// and content_relations use IF EXISTS and silently succeed, so the
+	// first error comes from admin_content_fields (first strict table).
 	d := newWipeTestDB(t)
 
 	// First drop: should succeed
@@ -463,7 +461,7 @@ func TestDatabase_DropAllTables_DoubleDrop(t *testing.T) {
 		t.Fatal("expected error on second DropAllTables, got nil")
 	}
 	// The error should reference the first strict table in the sequence
-	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
+	if !strings.Contains(err.Error(), "drop admin_content_fields") {
 		t.Errorf("error = %q, want it to mention the first strict table in drop order", err.Error())
 	}
 }
@@ -577,14 +575,14 @@ func TestDatabase_DropAllTables_DependencyOrder(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 
-		// All Tier 6 tables should be gone (they're dropped first)
-		tier6 := []string{
-			"admin_datatypes_fields",
-			"datatypes_fields",
+		// All Tier 5 content field tables should be gone (they're dropped first)
+		tier5 := []string{
+			"admin_content_fields",
+			"content_fields",
 		}
-		for _, table := range tier6 {
+		for _, table := range tier5 {
 			if tableExists(t, d.Connection, table) {
-				t.Errorf("Tier 6 table %q should have been dropped before Tier 0 failure", table)
+				t.Errorf("Tier 5 table %q should have been dropped before Tier 0 failure", table)
 			}
 		}
 	})
@@ -645,8 +643,8 @@ func TestDatabase_DropAllTables_DependencyOrder(t *testing.T) {
 		}
 	})
 
-	t.Run("junction_before_content", func(t *testing.T) {
-		// Verify junction tables (Tier 6) are dropped before content data (Tier 4)
+	t.Run("content_fields_before_content_data", func(t *testing.T) {
+		// Verify content_fields (Tier 5) are dropped before content_data (Tier 4)
 		d := newWipeTestDB(t)
 
 		// Pre-drop content_data (Tier 4)
@@ -660,12 +658,12 @@ func TestDatabase_DropAllTables_DependencyOrder(t *testing.T) {
 			t.Fatal("expected error, got nil")
 		}
 
-		// Junction tables should be gone
-		if tableExists(t, d.Connection, "admin_datatypes_fields") {
-			t.Error("admin_datatypes_fields (Tier 6) should be dropped before content_data (Tier 4)")
+		// Content field tables (Tier 5) should be gone -- they're dropped before content_data (Tier 4)
+		if tableExists(t, d.Connection, "admin_content_fields") {
+			t.Error("admin_content_fields (Tier 5) should be dropped before content_data (Tier 4)")
 		}
-		if tableExists(t, d.Connection, "datatypes_fields") {
-			t.Error("datatypes_fields (Tier 6) should be dropped before content_data (Tier 4)")
+		if tableExists(t, d.Connection, "content_fields") {
+			t.Error("content_fields (Tier 5) should be dropped before content_data (Tier 4)")
 		}
 	})
 }
@@ -878,8 +876,6 @@ func TestDropAllTables_ErrorMessageFormat(t *testing.T) {
 		table      string
 		wantPrefix string
 	}{
-		{"admin_datatypes_fields", "drop admin_datatypes_fields:"},
-		{"datatypes_fields", "drop datatypes_fields:"},
 		{"admin_content_fields", "drop admin_content_fields:"},
 		{"content_fields", "drop content_fields:"},
 		{"admin_content_data", "drop admin_content_data:"},
@@ -1120,46 +1116,44 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (33 drops total):
+	// Drop order (31 drops total):
 	//  0: pipelines (IF EXISTS)
 	//  1: plugins (IF EXISTS)
-	//  2: admin_datatypes_fields
-	//  3: datatypes_fields
-	//  4: role_permissions (IF EXISTS)
-	//  5: admin_content_relations (IF EXISTS)
-	//  6: content_relations (IF EXISTS)
-	//  7: admin_content_fields
-	//  8: content_fields
-	//  9: admin_content_data
-	// 10: content_data
-	// 11: admin_fields
-	// 12: fields
-	// 13: admin_datatypes
-	// 14: datatypes
-	// 15: routes
-	// 16: admin_routes
-	// 17: media
-	// 18: tables
-	// 19: sessions
-	// 20: user_ssh_keys
-	// 21: user_oauth
-	// 22: tokens
-	// 23: users
-	// 24: media_dimensions
-	// 25: field_types
-	// 26: admin_field_types
-	// 27: roles
-	// 28: permissions
-	// 29: backup_sets (IF EXISTS)
-	// 30: backup_verifications (IF EXISTS)
-	// 31: backups (IF EXISTS)
-	// 32: change_events (IF EXISTS)
+	//  2: role_permissions (IF EXISTS)
+	//  3: admin_content_relations (IF EXISTS)
+	//  4: content_relations (IF EXISTS)
+	//  5: admin_content_fields
+	//  6: content_fields
+	//  7: admin_content_data
+	//  8: content_data
+	//  9: admin_fields
+	// 10: fields
+	// 11: admin_datatypes
+	// 12: datatypes
+	// 13: routes
+	// 14: admin_routes
+	// 15: media
+	// 16: tables
+	// 17: sessions
+	// 18: user_ssh_keys
+	// 19: user_oauth
+	// 20: tokens
+	// 21: users
+	// 22: media_dimensions
+	// 23: field_types
+	// 24: admin_field_types
+	// 25: roles
+	// 26: permissions
+	// 27: backup_sets (IF EXISTS)
+	// 28: backup_verifications (IF EXISTS)
+	// 29: backups (IF EXISTS)
+	// 30: change_events (IF EXISTS)
 
-	// CreateAllTables creates 31 tables. DropAllTables tries to drop 33
+	// CreateAllTables creates 29 tables. DropAllTables tries to drop 31
 	// (9 IF EXISTS drops: pipelines, plugins, role_permissions,
 	// admin_content_relations, content_relations, backup_sets,
 	// backup_verifications, backups, change_events -- so they never error).
-	// The 31 created tables minus the pre-dropped one minus the ones
+	// The 29 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
 
 	tests := []struct {
@@ -1169,30 +1163,31 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 		wantRemaining int // tables remaining in DB after partial failure
 	}{
 		{
-			// Pre-drop first strict table (admin_datatypes_fields).
-			// Pipelines and plugins (IF EXISTS) drop silently first (2 tables).
-			// Error fires at admin_datatypes_fields.
-			// Remaining = 31 created - 1 pre-dropped - 2 IF EXISTS dropped = 28
+			// Pre-drop first strict table (admin_content_fields).
+			// Pipelines, plugins, role_permissions, admin_content_relations,
+			// and content_relations (IF EXISTS) drop silently first (5 tables).
+			// Error fires at admin_content_fields.
+			// Remaining = 29 created - 1 pre-dropped - 5 IF EXISTS dropped = 23
 			name:          "fail_at_first_table",
-			preDropTable:  "admin_datatypes_fields",
+			preDropTable:  "admin_content_fields",
 			dropIndex:     0,
-			wantRemaining: 28,
+			wantRemaining: 23,
 		},
 		{
-			// Pre-drop users (position 23 in drop order). Positions 0-22
-			// dropped successfully (23 tables: 5 IF EXISTS + 18 strict).
-			// Remaining = 31 created - 1 pre-dropped - 23 dropped = 7
+			// Pre-drop users (position 21 in drop order). Positions 0-20
+			// dropped successfully (21 tables: 5 IF EXISTS + 16 strict).
+			// Remaining = 29 created - 1 pre-dropped - 21 dropped = 7
 			name:          "fail_at_users",
 			preDropTable:  "users",
-			dropIndex:     23,
+			dropIndex:     21,
 			wantRemaining: 7,
 		},
 		{
 			// Pre-drop change_events. But it uses DROP TABLE IF EXISTS, so no error.
-			// All 31 created tables get dropped successfully. Remaining = 0
+			// All 29 created tables get dropped successfully. Remaining = 0
 			name:          "fail_at_last_table",
 			preDropTable:  "change_events",
-			dropIndex:     32,
+			dropIndex:     30,
 			wantRemaining: 0,
 		},
 	}
@@ -1303,9 +1298,6 @@ func TestDatabase_DropAllTables_MultiplePreDrops(t *testing.T) {
 	}
 
 	// Tables before content_fields in drop order should be gone
-	if tableExists(t, d.Connection, "admin_datatypes_fields") {
-		t.Error("admin_datatypes_fields should have been dropped before the error")
-	}
 	if tableExists(t, d.Connection, "admin_content_fields") {
 		t.Error("admin_content_fields should have been dropped before the error")
 	}

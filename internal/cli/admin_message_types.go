@@ -228,12 +228,12 @@ type AdminContentDataFetchMsg struct{}
 
 // AdminContentDataFetchResultsMsg returns fetched admin content data.
 type AdminContentDataFetchResultsMsg struct {
-	Data []db.AdminContentData
+	Data []db.AdminContentDataTopLevel
 }
 
 // AdminContentDataSet sets the admin content data list.
 type AdminContentDataSet struct {
-	AdminContentData []db.AdminContentData
+	AdminContentData []db.AdminContentDataTopLevel
 }
 
 // AdminContentCreatedMsg signals successful admin content creation.

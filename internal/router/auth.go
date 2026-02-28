@@ -539,8 +539,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	}
 	ac := audited.Ctx(types.NodeID(c.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 	_, err = dbc.CreateSession(r.Context(), ac, db.CreateSessionParams{
-		UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
-		ExpiresAt: expiresAt,
+		UserID:      types.NullableUserID{ID: user.UserID, Valid: true},
+		ExpiresAt:   expiresAt,
 		SessionData: db.NewNullString(sessionToken),
 		IpAddress:   db.NewNullString(r.RemoteAddr),
 		UserAgent:   db.NewNullString(r.UserAgent()),

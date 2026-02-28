@@ -54,10 +54,10 @@ type GetContentFieldsByRouteRow struct {
 
 // GetFieldDefinitionsByRouteRow represents a field definition with its associated datatype.
 type GetFieldDefinitionsByRouteRow struct {
-	FieldID    types.FieldID    `json:"field_id"`
-	Label      string           `json:"label"`
-	Type       types.FieldType  `json:"type"`
-	DatatypeID types.DatatypeID `json:"datatype_id"`
+	FieldID    types.FieldID            `json:"field_id"`
+	Label      string                   `json:"label"`
+	Type       types.FieldType          `json:"type"`
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
 }
 
 // AdminContentDataWithDatatypeRow represents an admin content data row joined with its datatype.
@@ -109,7 +109,7 @@ type UserWithRoleLabelRow struct {
 	DateModified types.Timestamp `json:"date_modified"`
 }
 
-// FieldWithSortOrderRow represents a field definition joined with its sort order from datatypes_fields.
+// FieldWithSortOrderRow represents a field definition with its sort order.
 type FieldWithSortOrderRow struct {
 	SortOrder  int64           `json:"sort_order"`
 	FieldID    types.FieldID   `json:"field_id"`
@@ -409,9 +409,9 @@ func (d Database) MapFieldWithSortOrderRow(a mdb.ListFieldsWithSortOrderByDataty
 }
 
 // ListFieldsWithSortOrderByDatatypeID retrieves field definitions with sort order for a datatype.
-func (d Database) ListFieldsWithSortOrderByDatatypeID(datatypeID types.DatatypeID) (*[]FieldWithSortOrderRow, error) {
+func (d Database) ListFieldsWithSortOrderByDatatypeID(parentID types.NullableDatatypeID) (*[]FieldWithSortOrderRow, error) {
 	queries := mdb.New(d.Connection)
-	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdb.ListFieldsWithSortOrderByDatatypeIDParams{DatatypeID: datatypeID})
+	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdb.ListFieldsWithSortOrderByDatatypeIDParams{ParentID: parentID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list fields with sort order: %w", err)
 	}
@@ -689,9 +689,9 @@ func (d MysqlDatabase) MapFieldWithSortOrderRow(a mdbm.ListFieldsWithSortOrderBy
 }
 
 // ListFieldsWithSortOrderByDatatypeID retrieves field definitions with sort order for a datatype.
-func (d MysqlDatabase) ListFieldsWithSortOrderByDatatypeID(datatypeID types.DatatypeID) (*[]FieldWithSortOrderRow, error) {
+func (d MysqlDatabase) ListFieldsWithSortOrderByDatatypeID(parentID types.NullableDatatypeID) (*[]FieldWithSortOrderRow, error) {
 	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdbm.ListFieldsWithSortOrderByDatatypeIDParams{DatatypeID: datatypeID})
+	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdbm.ListFieldsWithSortOrderByDatatypeIDParams{ParentID: parentID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list fields with sort order: %w", err)
 	}
@@ -969,9 +969,9 @@ func (d PsqlDatabase) MapFieldWithSortOrderRow(a mdbp.ListFieldsWithSortOrderByD
 }
 
 // ListFieldsWithSortOrderByDatatypeID retrieves field definitions with sort order for a datatype.
-func (d PsqlDatabase) ListFieldsWithSortOrderByDatatypeID(datatypeID types.DatatypeID) (*[]FieldWithSortOrderRow, error) {
+func (d PsqlDatabase) ListFieldsWithSortOrderByDatatypeID(parentID types.NullableDatatypeID) (*[]FieldWithSortOrderRow, error) {
 	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdbp.ListFieldsWithSortOrderByDatatypeIDParams{DatatypeID: datatypeID})
+	rows, err := queries.ListFieldsWithSortOrderByDatatypeID(d.Context, mdbp.ListFieldsWithSortOrderByDatatypeIDParams{ParentID: parentID})
 	if err != nil {
 		return nil, fmt.Errorf("failed to list fields with sort order: %w", err)
 	}

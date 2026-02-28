@@ -11,12 +11,10 @@ func TestGenericHeaders_AllKnownTables(t *testing.T) {
 		Admin_content_data,
 		Admin_content_fields,
 		Admin_datatype,
-		Admin_datatype_fields,
 		Admin_field,
 		Admin_route,
 		Content_data,
 		Content_fields,
-		Datatype_fields,
 		Datatype,
 		Field,
 		MediaT,
@@ -65,17 +63,15 @@ func TestGenericHeaders_SpecificCounts(t *testing.T) {
 		table     DBTable
 		wantCount int
 	}{
-		{Route, 8},                 // route_id, slug, title, status, author_id, date_created, date_modified, history
-		{User, 8},                  // user_id, username, name, email, hash, role, date_created, date_modified
-		{Permission, 4},            // permission_id, table_id, mode, label
-		{Role, 3},                  // role_id, label, permissions
-		{Session, 8},               // session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data
-		{MediaT, 14},               // 14 media fields
-		{Media_dimension, 5},       // md_id, label, width, height, aspect_ratio
-		{Table, 3},                 // id, label, author_id
-		{Token, 7},                 // id, user_id, token_type, token, issued_at, expires_at, revoked
-		{Admin_datatype_fields, 3}, // id, admin_datatype_id, admin_field_id
-		{Datatype_fields, 3},       // id, datatype_id, field_id
+		{Route, 8},           // route_id, slug, title, status, author_id, date_created, date_modified, history
+		{User, 8},            // user_id, username, name, email, hash, role, date_created, date_modified
+		{Permission, 4},      // permission_id, table_id, mode, label
+		{Role, 3},            // role_id, label, permissions
+		{Session, 8},         // session_id, user_id, date_created, expires_at, last_access, ip_address, user_agent, session_data
+		{MediaT, 14},         // 14 media fields
+		{Media_dimension, 5}, // md_id, label, width, height, aspect_ratio
+		{Table, 3},           // id, label, author_id
+		{Token, 7},           // id, user_id, token_type, token, issued_at, expires_at, revoked
 	}
 	for _, tt := range tests {
 		t.Run(string(tt.table), func(t *testing.T) {

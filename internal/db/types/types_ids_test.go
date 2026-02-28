@@ -297,7 +297,7 @@ func TestDatatypeID_Parse(t *testing.T) {
 // idContract defines the common operations every ID type must support.
 type idContract struct {
 	name       string
-	newFn      func() string            // generates a new valid ID string
+	newFn      func() string             // generates a new valid ID string
 	validateFn func(string) error        // validates a string
 	valueFn    func(string) (any, error) // driver.Value
 }
@@ -423,18 +423,6 @@ func allIDContracts() []idContract {
 			newFn:      func() string { return string(NewAdminContentFieldID()) },
 			validateFn: func(s string) error { return AdminContentFieldID(s).Validate() },
 			valueFn:    func(s string) (any, error) { return AdminContentFieldID(s).Value() },
-		},
-		{
-			name:       "DatatypeFieldID",
-			newFn:      func() string { return string(NewDatatypeFieldID()) },
-			validateFn: func(s string) error { return DatatypeFieldID(s).Validate() },
-			valueFn:    func(s string) (any, error) { return DatatypeFieldID(s).Value() },
-		},
-		{
-			name:       "AdminDatatypeFieldID",
-			newFn:      func() string { return string(NewAdminDatatypeFieldID()) },
-			validateFn: func(s string) error { return AdminDatatypeFieldID(s).Validate() },
-			valueFn:    func(s string) (any, error) { return AdminDatatypeFieldID(s).Value() },
 		},
 		{
 			name:       "EventID",

@@ -17,7 +17,6 @@ import {
         getBlockTraversalOrder, collectDescendants, getDescendantCount,
 } from './tree-queries.js';
 import { validateState } from './validate.js';
-import { EDITOR_CSS } from './styles.js';
 import { fetchDatatypes } from './cache.js';
 import { domPatchMethods } from './dom-patches.js';
 import { dragMethods } from './drag.js';
@@ -43,12 +42,9 @@ export {
 // ============================================================
 
 // Guard browser-only code for testability in Node/vitest
-const isBrowser = typeof window !== 'undefined' && typeof CSSStyleSheet !== 'undefined';
+const isBrowser = typeof window !== 'undefined';
 
 if (isBrowser) {
-        const sheet = new CSSStyleSheet();
-        sheet.replaceSync(EDITOR_CSS);
-
         class BlockEditor extends HTMLElement {
                 static get observedAttributes() {
                         return ['data-state'];
@@ -56,8 +52,6 @@ if (isBrowser) {
 
                 constructor() {
                         super();
-                        this.attachShadow({ mode: 'open' });
-                        this.shadowRoot.adoptedStyleSheets = [sheet];
 
                         this._state = null;
                         this._elementRegistry = new Map(); // blockId -> block-item element
@@ -105,6 +99,21 @@ if (isBrowser) {
 
                 getBlock(id) {
                         return this._state?.blocks[id] ?? null;
+                }
+
+                getFieldData(blockId) {
+                        return this._state?.blocks[blockId]?.fields || [];
+                }
+
+                setFieldValue(blockId, fieldId, value) {
+                        const block = this._state?.blocks[blockId];
+                        if (!block?.fields) return;
+                        const field = block.fields.find(f => f.fieldId === fieldId);
+                        if (field) {
+                                field.value = value;
+                                this._state.dirty = true;
+                                this._updateSaveButton();
+                        }
                 }
 
                 save() {
@@ -194,7 +203,7 @@ if (isBrowser) {
                 // ---- Rendering ----
 
                 _render() {
-                        this.shadowRoot.innerHTML = '';
+                        this.innerHTML = '';
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
 
@@ -223,7 +232,7 @@ if (isBrowser) {
                         // Keyboard shortcuts (scoped to editor container)
                         container.addEventListener('keydown', this._keydownHandler);
 
-                        this.shadowRoot.appendChild(container);
+                        this.appendChild(container);
                 }
 
                 _renderHeader() {
@@ -560,7 +569,7 @@ if (isBrowser) {
                         window.addEventListener('keydown', this._dialogEscHandler);
 
                         this._dialogBackdrop = backdrop;
-                        this.shadowRoot.appendChild(backdrop);
+                        this.appendChild(backdrop);
                 }
 
                 _closeDialog() {
@@ -594,7 +603,7 @@ if (isBrowser) {
                 }
 
                 _renderError(message, detail) {
-                        this.shadowRoot.innerHTML = '';
+                        this.innerHTML = '';
                         const container = document.createElement('div');
                         container.className = 'editor-container';
 
@@ -614,7 +623,7 @@ if (isBrowser) {
                         }
 
                         container.appendChild(errorDiv);
-                        this.shadowRoot.appendChild(container);
+                        this.appendChild(container);
                 }
 
                 // ---- Event Handling ----
@@ -656,7 +665,7 @@ if (isBrowser) {
                         // Patch DOM — append new block wrapper to block list (root level, depth 0)
                         const block = this._state.blocks[id];
                         const wrapper = this._renderBlockWrapper(block, 0);
-                        const blockList = this.shadowRoot.querySelector('.block-list');
+                        const blockList = this.querySelector('.block-list');
                         blockList.appendChild(wrapper);
 
                         this._updateSaveButton();
@@ -687,6 +696,10 @@ if (isBrowser) {
                         // Clear selection if the selected block was among those removed
                         if (this._state.selectedBlockId && removedIds.includes(this._state.selectedBlockId)) {
                                 this._state.selectedBlockId = null;
+                                this.dispatchEvent(new CustomEvent('block-editor:select', {
+                                        bubbles: true, composed: true,
+                                        detail: { blockId: null },
+                                }));
                         }
 
                         // Patch DOM — remove wrapper elements (wrapper contains both header and children)
@@ -729,9 +742,13 @@ if (isBrowser) {
                                 }
                         }
 
-                        // Select new (or deselect if clicking the same block)
+                        // Deselect if clicking the same block
                         if (this._state.selectedBlockId === blockId) {
                                 this._state.selectedBlockId = null;
+                                this.dispatchEvent(new CustomEvent('block-editor:select', {
+                                        bubbles: true, composed: true,
+                                        detail: { blockId: null },
+                                }));
                                 return;
                         }
 
@@ -828,7 +845,7 @@ if (isBrowser) {
                 }
 
                 _updateSaveButton() {
-                        const saveBtn = this.shadowRoot.querySelector('[data-action="save"]');
+                        const saveBtn = this.querySelector('[data-action="save"]');
                         if (saveBtn) {
                                 saveBtn.disabled = !this._state?.dirty;
                         }

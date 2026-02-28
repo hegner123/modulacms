@@ -9,12 +9,12 @@ import (
 
 // Entity definitions for CUD method transformation
 type entity struct {
-	file     string
-	name     string // e.g. "Route", "Role"
-	mapName  string // e.g. "MapRoute", "MapRole" - what to call on result
-	idType   string // e.g. "types.RouteID", "types.RoleID", "string"
-	idField  string // e.g. "RouteID", "RoleID", "ID"
-	table    string // e.g. "routes", "roles"
+	file    string
+	name    string // e.g. "Route", "Role"
+	mapName string // e.g. "MapRoute", "MapRole" - what to call on result
+	idType  string // e.g. "types.RouteID", "types.RoleID", "string"
+	idField string // e.g. "RouteID", "RoleID", "ID"
+	table   string // e.g. "routes", "roles"
 	// For Creates that currently return value (not pointer):
 	createReturnsBare bool
 	// For Update success messages:
@@ -35,7 +35,6 @@ func main() {
 		{file: "table.go", name: "Table", mapName: "MapTable", idType: "string", idField: "ID", table: "tables", createReturnsBare: true, updateSuccessField: `s.ID`},
 		{file: "field.go", name: "Field", mapName: "MapField", idType: "types.FieldID", idField: "FieldID", table: "fields", createReturnsBare: true, updateSuccessField: `s.Label`},
 		{file: "datatype.go", name: "Datatype", mapName: "MapDatatype", idType: "types.DatatypeID", idField: "DatatypeID", table: "datatypes", createReturnsBare: true, updateSuccessField: `s.Label`},
-		{file: "datatype_field.go", name: "DatatypeField", mapName: "MapDatatypeField", idType: "string", idField: "ID", table: "datatypes_fields", createReturnsBare: true, updateSuccessField: `s.ID`},
 		{file: "content_data.go", name: "ContentData", mapName: "MapContentData", idType: "types.ContentID", idField: "ContentDataID", table: "content_data", createReturnsBare: true, updateSuccessField: `s.ContentDataID`},
 		{file: "content_field.go", name: "ContentField", mapName: "MapContentField", idType: "types.ContentFieldID", idField: "ContentFieldID", table: "content_fields", createReturnsBare: true, updateSuccessField: `s.ContentFieldID`},
 		{file: "media.go", name: "Media", mapName: "MapMedia", idType: "types.MediaID", idField: "MediaID", table: "media", createReturnsBare: true, updateSuccessField: `s.MediaID`},
@@ -43,7 +42,6 @@ func main() {
 		{file: "admin_content_data.go", name: "AdminContentData", mapName: "MapAdminContentData", idType: "types.AdminContentID", idField: "AdminContentDataID", table: "admin_content_data", createReturnsBare: true, updateSuccessField: `s.AdminContentDataID`},
 		{file: "admin_content_field.go", name: "AdminContentField", mapName: "MapAdminContentField", idType: "types.AdminContentFieldID", idField: "AdminContentFieldID", table: "admin_content_fields", createReturnsBare: true, updateSuccessField: `s.AdminContentFieldID`},
 		{file: "admin_datatype.go", name: "AdminDatatype", mapName: "MapAdminDatatype", idType: "types.AdminDatatypeID", idField: "AdminDatatypeID", table: "admin_datatypes", createReturnsBare: true, updateSuccessField: `s.Label`},
-		{file: "admin_datatype_field.go", name: "AdminDatatypeField", mapName: "MapAdminDatatypeField", idType: "string", idField: "ID", table: "admin_datatypes_fields", createReturnsBare: true, updateSuccessField: `s.ID`},
 		{file: "admin_field.go", name: "AdminField", mapName: "MapAdminField", idType: "types.AdminFieldID", idField: "AdminFieldID", table: "admin_fields", createReturnsBare: true, updateSuccessField: `s.Label`},
 		{file: "admin_route.go", name: "AdminRoute", mapName: "MapAdminRoute", idType: "types.AdminRouteID", idField: "AdminRouteID", table: "admin_routes", createReturnsBare: true, updateSuccessField: `s.Slug`},
 		{file: "user_oauth.go", name: "UserOauth", mapName: "MapUserOauth", idType: "types.UserOauthID", idField: "UserOauthID", table: "user_oauth", createReturnsBare: false, updateSuccessField: `s.UserOauthID`},
@@ -65,11 +63,6 @@ func main() {
 			content, modified = transformCreate(content, e, driver, modified)
 			content, modified = transformUpdate(content, e, driver, modified)
 			content, modified = transformDelete(content, e, driver, modified)
-		}
-
-		// Special: UpdateDatatypeFieldSortOrder
-		if e.file == "datatype_field.go" {
-			content, modified = transformDatatypeFieldSortOrder(content, modified)
 		}
 
 		// Special: UpdateUserSshKeyLabel
@@ -227,66 +220,6 @@ func transformDelete(content string, e entity, driver string, prevModified bool)
 	return content, modified
 }
 
-func transformDatatypeFieldSortOrder(content string, prevModified bool) (string, bool) {
-	modified := prevModified
-
-	// SQLite
-	old1 := `func (d Database) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdb.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: sortOrder,
-		ID:        id,
-	})
-}`
-	new1 := `func (d Database) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
-	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
-	return audited.Update(cmd)
-}`
-
-	if strings.Contains(content, old1) {
-		content = strings.Replace(content, old1, new1, 1)
-		modified = true
-	}
-
-	// MySQL
-	old2 := `func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbm.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
-}`
-	new2 := `func (d MysqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
-	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
-	return audited.Update(cmd)
-}`
-
-	if strings.Contains(content, old2) {
-		content = strings.Replace(content, old2, new2, 1)
-		modified = true
-	}
-
-	// PostgreSQL
-	old3 := `func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(id string, sortOrder int64) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateDatatypeFieldSortOrder(d.Context, mdbp.UpdateDatatypeFieldSortOrderParams{
-		SortOrder: int32(sortOrder),
-		ID:        id,
-	})
-}`
-	new3 := `func (d PsqlDatabase) UpdateDatatypeFieldSortOrder(ctx context.Context, ac audited.AuditContext, id string, sortOrder int64) error {
-	cmd := d.UpdateDatatypeFieldSortOrderCmd(ctx, ac, id, sortOrder)
-	return audited.Update(cmd)
-}`
-
-	if strings.Contains(content, old3) {
-		content = strings.Replace(content, old3, new3, 1)
-		modified = true
-	}
-
-	return content, modified
-}
-
 func transformUserSshKeyLabel(content string, prevModified bool) (string, bool) {
 	modified := prevModified
 
@@ -377,8 +310,6 @@ func getWrapperType(e entity) string {
 		return "Fields"
 	case "Datatype":
 		return "Datatypes"
-	case "DatatypeField":
-		return "DatatypeFields"
 	case "ContentData":
 		return "ContentData"
 	case "ContentField":
@@ -393,8 +324,6 @@ func getWrapperType(e entity) string {
 		return "AdminContentFields"
 	case "AdminDatatype":
 		return "AdminDatatypes"
-	case "AdminDatatypeField":
-		return "AdminDatatypeFields"
 	case "AdminField":
 		return "AdminFields"
 	case "AdminRoute":

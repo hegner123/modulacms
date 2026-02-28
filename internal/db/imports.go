@@ -4,13 +4,6 @@ package db
 
 // Resource types
 
-// StringAdminDatatypeFields represents admin datatype field data as strings for TUI display.
-type StringAdminDatatypeFields struct {
-	ID              string `json:"id"`
-	AdminDatatypeID string `json:"admin_datatype_id"`
-	AdminFieldID    string `json:"admin_field_id"`
-}
-
 // StringUsers represents user data as strings for TUI display.
 type StringUsers struct {
 	UserID       string `json:"user_id"`
@@ -39,6 +32,7 @@ type StringRoutes struct {
 type StringFields struct {
 	FieldID      string `json:"field_id"`
 	ParentID     string `json:"parent_id"`
+	SortOrder    string `json:"sort_order"`
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
@@ -102,14 +96,6 @@ type StringDatatypes struct {
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
 	History      string `json:"history"`
-}
-
-// StringDatatypeFields represents datatype field junction data as strings for TUI display.
-type StringDatatypeFields struct {
-	ID         string `json:"id"`
-	DatatypeID string `json:"datatype_id"`
-	FieldID    string `json:"field_id"`
-	SortOrder  string `json:"sort_order"`
 }
 
 // StringSessions represents session data as strings for TUI display.
@@ -195,6 +181,7 @@ type StringAdminRoutes struct {
 type StringAdminFields struct {
 	AdminFieldID string `json:"admin_field_id"`
 	ParentID     string `json:"parent_id"`
+	SortOrder    string `json:"sort_order"`
 	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`

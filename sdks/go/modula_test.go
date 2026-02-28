@@ -106,7 +106,6 @@ func TestNewClient_AllResourcesInitialized(t *testing.T) {
 		{"ContentFields", client.ContentFields == nil},
 		{"ContentRelations", client.ContentRelations == nil},
 		{"Datatypes", client.Datatypes == nil},
-		{"DatatypeFields", client.DatatypeFields == nil},
 		{"Fields", client.Fields == nil},
 		{"Media", client.Media == nil},
 		{"MediaDimensions", client.MediaDimensions == nil},
@@ -121,7 +120,6 @@ func TestNewClient_AllResourcesInitialized(t *testing.T) {
 		{"AdminContentData", client.AdminContentData == nil},
 		{"AdminContentFields", client.AdminContentFields == nil},
 		{"AdminDatatypes", client.AdminDatatypes == nil},
-		{"AdminDatatypeFields", client.AdminDatatypeFields == nil},
 		{"AdminFields", client.AdminFields == nil},
 		{"AdminRoutes", client.AdminRoutes == nil},
 
