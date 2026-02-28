@@ -178,6 +178,13 @@ type Config struct {
 	// Tree composition depth limit
 	Composition_Max_Depth int `json:"composition_max_depth"`
 
+	// Publishing configuration
+	Publish_Schedule_Interval int `json:"publish_schedule_interval"` // seconds between scheduler ticks, default 60
+	Version_Max_Per_Content   int `json:"version_max_per_content"`   // max versions per content item, 0 = unlimited, default 50
+
+	// Richtext editor toolbar configuration
+	Richtext_Toolbar []string `json:"richtext_toolbar"`
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 
@@ -224,6 +231,36 @@ func (c Config) CompositionMaxDepth() int {
 		return 10
 	}
 	return c.Composition_Max_Depth
+}
+
+// PublishScheduleInterval returns the configured interval in seconds between
+// scheduler ticks for scheduled publishing. Falls back to 60 if not configured.
+func (c Config) PublishScheduleInterval() int {
+	if c.Publish_Schedule_Interval <= 0 {
+		return 60
+	}
+	return c.Publish_Schedule_Interval
+}
+
+// VersionMaxPerContent returns the maximum number of versions to retain per
+// content item. Falls back to 50 if not configured. 0 means unlimited.
+func (c Config) VersionMaxPerContent() int {
+	if c.Version_Max_Per_Content < 0 {
+		return 50
+	}
+	if c.Version_Max_Per_Content == 0 {
+		return 50
+	}
+	return c.Version_Max_Per_Content
+}
+
+// RichtextToolbar returns the configured default toolbar buttons for richtext fields.
+// Falls back to a sensible default set if not configured.
+func (c Config) RichtextToolbar() []string {
+	if len(c.Richtext_Toolbar) == 0 {
+		return []string{"bold", "italic", "h1", "h2", "h3", "link", "ul", "ol", "preview"}
+	}
+	return c.Richtext_Toolbar
 }
 
 // MaxUploadSize returns the configured maximum upload size in bytes.

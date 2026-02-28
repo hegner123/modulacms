@@ -24,6 +24,16 @@ function toggleTheme() {
 }
 
 // ========================================
+// Richtext: fetch global toolbar config
+// ========================================
+(function() {
+    fetch('/admin/api/config/richtext-toolbar', { credentials: 'same-origin' })
+        .then(function(res) { return res.ok ? res.json() : null; })
+        .then(function(toolbar) { if (toolbar) window.__mcmsRichtextToolbar = toolbar; })
+        .catch(function() {});
+})();
+
+// ========================================
 // CSRF: inject token into all HTMX requests
 // ========================================
 document.body.addEventListener('htmx:configRequest', (e) => {
@@ -520,7 +530,7 @@ document.addEventListener('block-editor:select', function(e) {
     } else if (block.datatypeId) {
         fetchDatatypeFields(block.datatypeId).then(function(defs) {
             var empty = defs.map(function(f) {
-                return { contentFieldId: '', fieldId: f.fieldId, label: f.label, type: f.type, value: '' };
+                return { contentFieldId: '', fieldId: f.fieldId, label: f.label, type: f.type, value: '', toolbar: f.toolbar || null };
             });
             block.fields = empty;
             editor._state.dirty = true;
@@ -544,6 +554,19 @@ function renderFieldPanel(panel, blockId, block, fields) {
         el.setAttribute('label', f.label);
         el.dataset.blockId = blockId;
         el.dataset.fieldId = f.fieldId;
+        if (f.type === 'richtext') {
+            var tb = f.toolbar;
+            if (!tb && block.datatypeId && _dtFieldsCache[block.datatypeId]) {
+                var cached = _dtFieldsCache[block.datatypeId];
+                for (var j = 0; j < cached.length; j++) {
+                    if (cached[j].fieldId === f.fieldId && cached[j].toolbar) {
+                        tb = cached[j].toolbar;
+                        break;
+                    }
+                }
+            }
+            if (tb) el.setAttribute('toolbar', JSON.stringify(tb));
+        }
         panel.appendChild(el);
     }
 }

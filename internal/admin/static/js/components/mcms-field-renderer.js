@@ -1,3 +1,20 @@
+// Toolbar action definitions for richtext fields.
+// Each entry maps an action name to its label, title, and markdown insertion config.
+// Actions with a "handler" key use special logic (link, preview).
+var TOOLBAR_ACTIONS = {
+    bold:    { label: 'B',       title: 'Bold',           prefix: '**', suffix: '**', placeholder: 'bold text' },
+    italic:  { label: 'I',       title: 'Italic',          prefix: '*',  suffix: '*',  placeholder: 'italic text' },
+    h1:      { label: 'H1',      title: 'Heading 1',       prefix: '# ', suffix: '',   placeholder: 'Heading', line: true },
+    h2:      { label: 'H2',      title: 'Heading 2',       prefix: '## ', suffix: '',  placeholder: 'Heading', line: true },
+    h3:      { label: 'H3',      title: 'Heading 3',       prefix: '### ', suffix: '', placeholder: 'Heading', line: true },
+    link:    { label: 'Link',    title: 'Insert Link',     handler: 'link' },
+    ul:      { label: 'UL',      title: 'Unordered List',  prefix: '- ',  suffix: '',  placeholder: 'list item', line: true },
+    ol:      { label: 'OL',      title: 'Ordered List',    prefix: '1. ', suffix: '',  placeholder: 'list item', line: true },
+    preview: { label: 'Preview', title: 'Toggle Preview',  handler: 'preview' }
+};
+
+var TOOLBAR_FALLBACK = ['bold', 'italic', 'h1', 'h2', 'h3', 'link', 'ul', 'ol', 'preview'];
+
 // <mcms-field-renderer> -- Field type input widgets (Light DOM)
 // Supports types: text, textarea, richtext, boolean, number, date, select, media, reference
 // Dispatches: field-change custom event with {name, value}
@@ -77,15 +94,22 @@ class McmsFieldRenderer extends HTMLElement {
     _buildRichtext(wrapper, name, value) {
         var self = this;
 
-        // Toolbar with preview toggle
+        // Resolve toolbar: per-field attribute > global config > hardcoded fallback
+        var toolbarItems = null;
+        var tbAttr = this.getAttribute('toolbar');
+        if (tbAttr) {
+            try { toolbarItems = JSON.parse(tbAttr); } catch (e) { toolbarItems = null; }
+        }
+        if (!toolbarItems && window.__mcmsRichtextToolbar) {
+            toolbarItems = window.__mcmsRichtextToolbar;
+        }
+        if (!toolbarItems) {
+            toolbarItems = TOOLBAR_FALLBACK;
+        }
+
+        // Toolbar container
         var toolbar = document.createElement('div');
         toolbar.className = 'field-renderer-richtext-toolbar';
-
-        var toggleBtn = document.createElement('button');
-        toggleBtn.type = 'button';
-        toggleBtn.className = 'btn btn-sm btn-ghost';
-        toggleBtn.textContent = 'Preview';
-        toolbar.appendChild(toggleBtn);
         wrapper.appendChild(toolbar);
 
         // Textarea for editing
@@ -103,22 +127,113 @@ class McmsFieldRenderer extends HTMLElement {
         preview.style.display = 'none';
         wrapper.appendChild(preview);
 
-        toggleBtn.addEventListener('click', function() {
-            self._previewMode = !self._previewMode;
-            if (self._previewMode) {
-                preview.innerHTML = self._markdownToHtml(textarea.value);
-                preview.style.display = '';
-                textarea.style.display = 'none';
-                toggleBtn.textContent = 'Edit';
+        // Build toolbar buttons from resolved action list
+        var previewBtn = null;
+        for (var i = 0; i < toolbarItems.length; i++) {
+            var actionName = toolbarItems[i];
+            var action = TOOLBAR_ACTIONS[actionName];
+            if (!action) continue;
+
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-ghost richtext-toolbar-btn';
+            btn.setAttribute('data-action', actionName);
+            btn.textContent = action.label;
+            btn.title = action.title;
+            toolbar.appendChild(btn);
+
+            if (action.handler === 'preview') {
+                previewBtn = btn;
+            } else if (action.handler === 'link') {
+                (function(a) {
+                    btn.addEventListener('click', function() {
+                        self._insertLink(textarea, name);
+                    });
+                })(action);
             } else {
-                preview.style.display = 'none';
-                textarea.style.display = '';
-                toggleBtn.textContent = 'Preview';
+                (function(a) {
+                    btn.addEventListener('click', function() {
+                        self._insertMarkdown(textarea, name, a.prefix, a.suffix, a.placeholder, a.line);
+                    });
+                })(action);
             }
-        });
+        }
+
+        // Preview toggle
+        if (previewBtn) {
+            previewBtn.addEventListener('click', function() {
+                self._previewMode = !self._previewMode;
+                if (self._previewMode) {
+                    preview.innerHTML = self._markdownToHtml(textarea.value);
+                    preview.style.display = '';
+                    textarea.style.display = 'none';
+                    previewBtn.textContent = 'Edit';
+                } else {
+                    preview.style.display = 'none';
+                    textarea.style.display = '';
+                    previewBtn.textContent = 'Preview';
+                }
+            });
+        }
 
         this._autoResize(textarea);
         this._attachChangeListener(textarea, name);
+    }
+
+    _insertMarkdown(textarea, name, prefix, suffix, placeholder, lineStart) {
+        textarea.focus();
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var text = textarea.value;
+        var selected = text.substring(start, end);
+
+        if (lineStart) {
+            // Line-start actions: find the beginning of the current line
+            var lineBegin = text.lastIndexOf('\n', start - 1) + 1;
+            if (selected) {
+                textarea.value = text.substring(0, lineBegin) + prefix + text.substring(lineBegin);
+                textarea.selectionStart = start + prefix.length;
+                textarea.selectionEnd = end + prefix.length;
+            } else {
+                var insert = prefix + placeholder;
+                textarea.value = text.substring(0, lineBegin) + insert + text.substring(lineBegin);
+                textarea.selectionStart = lineBegin + prefix.length;
+                textarea.selectionEnd = lineBegin + insert.length;
+            }
+        } else {
+            if (selected) {
+                var wrapped = prefix + selected + suffix;
+                textarea.value = text.substring(0, start) + wrapped + text.substring(end);
+                textarea.selectionStart = start + prefix.length;
+                textarea.selectionEnd = start + prefix.length + selected.length;
+            } else {
+                var insert = prefix + placeholder + suffix;
+                textarea.value = text.substring(0, start) + insert + text.substring(end);
+                textarea.selectionStart = start + prefix.length;
+                textarea.selectionEnd = start + prefix.length + placeholder.length;
+            }
+        }
+
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    _insertLink(textarea, name) {
+        textarea.focus();
+        var start = textarea.selectionStart;
+        var end = textarea.selectionEnd;
+        var text = textarea.value;
+        var selected = text.substring(start, end);
+
+        var linkText = selected || 'link text';
+        var insert = '[' + linkText + '](url)';
+        textarea.value = text.substring(0, start) + insert + text.substring(end);
+
+        // Position cursor on "url"
+        var urlStart = start + 1 + linkText.length + 2; // [linkText](
+        textarea.selectionStart = urlStart;
+        textarea.selectionEnd = urlStart + 3; // "url"
+
+        textarea.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
     _buildBoolean(wrapper, name, value) {

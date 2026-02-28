@@ -141,11 +141,12 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 // for the block editor's side panel. Includes field definition metadata
 // (label, type) alongside the content field value.
 type blockFieldData struct {
-	ContentFieldID string `json:"contentFieldId"`
-	FieldID        string `json:"fieldId"`
-	Label          string `json:"label"`
-	Type           string `json:"type"`
-	Value          string `json:"value"`
+	ContentFieldID string   `json:"contentFieldId"`
+	FieldID        string   `json:"fieldId"`
+	Label          string   `json:"label"`
+	Type           string   `json:"type"`
+	Value          string   `json:"value"`
+	Toolbar        []string `json:"toolbar,omitempty"`
 }
 
 // blockNode is a JSON-serializable representation of a content tree node
@@ -1344,11 +1345,18 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 		result := make([]blockFieldData, 0)
 		if fields != nil {
 			for _, f := range *fields {
-				result = append(result, blockFieldData{
+				bfd := blockFieldData{
 					FieldID: f.FieldID.String(),
 					Label:   f.Label,
 					Type:    string(f.Type),
-				})
+				}
+				if f.Type == types.FieldTypeRichText {
+					rtCfg, parseErr := types.ParseRichTextConfig(f.Data)
+					if parseErr == nil && len(rtCfg.Toolbar) > 0 {
+						bfd.Toolbar = rtCfg.Toolbar
+					}
+				}
+				result = append(result, bfd)
 			}
 		}
 

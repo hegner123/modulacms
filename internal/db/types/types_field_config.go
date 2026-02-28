@@ -79,6 +79,25 @@ func ParseUIConfig(s string) (UIConfig, error) {
 	return uc, nil
 }
 
+// RichTextConfig is the parsed form of a richtext field's data JSON column.
+// An empty or zero-value config means "use global default toolbar".
+type RichTextConfig struct {
+	Toolbar []string `json:"toolbar,omitempty"`
+}
+
+// ParseRichTextConfig parses a JSON string into a RichTextConfig.
+// Returns a zero-value config for empty or "{}" input (meaning "use global default").
+func ParseRichTextConfig(s string) (RichTextConfig, error) {
+	if s == "" || s == EmptyJSON {
+		return RichTextConfig{}, nil
+	}
+	var rc RichTextConfig
+	if err := json.Unmarshal([]byte(s), &rc); err != nil {
+		return RichTextConfig{}, fmt.Errorf("ParseRichTextConfig: %w", err)
+	}
+	return rc, nil
+}
+
 // ParseRelationConfig parses a JSON string into a RelationConfig.
 // Unlike the other parse functions, this returns an error for empty or "{}" input
 // because relation fields require a non-empty data config.

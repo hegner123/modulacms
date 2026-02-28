@@ -1556,9 +1556,20 @@ th.sort-desc::after {
 
 .field-renderer-richtext-toolbar {
   display: flex;
-  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.25rem;
   margin-bottom: 0.25rem;
 }
+
+.richtext-toolbar-btn {
+  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 0.125rem 0.5rem;
+  min-width: 1.75rem;
+  text-align: center;
+}
+.richtext-toolbar-btn[data-action="bold"] { font-weight: 700; }
+.richtext-toolbar-btn[data-action="italic"] { font-style: italic; }
 
 .field-renderer-richtext-input {
   width: 100%;

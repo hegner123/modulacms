@@ -318,3 +318,52 @@ func TestOutputFormatConstants(t *testing.T) {
 	}
 }
 
+func TestRichtextToolbar(t *testing.T) {
+	t.Parallel()
+
+	t.Run("returns default when empty", func(t *testing.T) {
+		t.Parallel()
+		c := config.Config{}
+		got := c.RichtextToolbar()
+		if len(got) == 0 {
+			t.Fatal("RichtextToolbar() returned empty slice, want default")
+		}
+		// Verify default contains expected items
+		expected := []string{"bold", "italic", "h1", "h2", "h3", "link", "ul", "ol", "preview"}
+		if len(got) != len(expected) {
+			t.Fatalf("RichtextToolbar() length = %d, want %d", len(got), len(expected))
+		}
+		for i, v := range expected {
+			if got[i] != v {
+				t.Errorf("RichtextToolbar()[%d] = %q, want %q", i, got[i], v)
+			}
+		}
+	})
+
+	t.Run("returns configured when set", func(t *testing.T) {
+		t.Parallel()
+		c := config.Config{
+			Richtext_Toolbar: []string{"bold", "italic", "preview"},
+		}
+		got := c.RichtextToolbar()
+		if len(got) != 3 {
+			t.Fatalf("RichtextToolbar() length = %d, want 3", len(got))
+		}
+		expected := []string{"bold", "italic", "preview"}
+		for i, v := range expected {
+			if got[i] != v {
+				t.Errorf("RichtextToolbar()[%d] = %q, want %q", i, got[i], v)
+			}
+		}
+	})
+
+	t.Run("returns nil slice as default", func(t *testing.T) {
+		t.Parallel()
+		c := config.Config{Richtext_Toolbar: nil}
+		got := c.RichtextToolbar()
+		if len(got) == 0 {
+			t.Fatal("RichtextToolbar() returned empty for nil, want default")
+		}
+	})
+}
+

@@ -265,3 +265,96 @@ func TestParseRelationConfig(t *testing.T) {
 		})
 	}
 }
+
+// ============================================================
+// ParseRichTextConfig
+// ============================================================
+
+func TestParseRichTextConfig(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		input   string
+		wantErr bool
+		checkFn func(t *testing.T, rc RichTextConfig)
+	}{
+		{
+			name:    "empty string returns zero value",
+			input:   "",
+			wantErr: false,
+			checkFn: func(t *testing.T, rc RichTextConfig) {
+				t.Helper()
+				if len(rc.Toolbar) != 0 {
+					t.Errorf("empty: Toolbar = %v, want nil/empty", rc.Toolbar)
+				}
+			},
+		},
+		{
+			name:    "empty JSON object returns zero value",
+			input:   "{}",
+			wantErr: false,
+			checkFn: func(t *testing.T, rc RichTextConfig) {
+				t.Helper()
+				if len(rc.Toolbar) != 0 {
+					t.Errorf("{}: Toolbar = %v, want nil/empty", rc.Toolbar)
+				}
+			},
+		},
+		{
+			name:    "valid toolbar config",
+			input:   `{"toolbar":["bold","italic","link"]}`,
+			wantErr: false,
+			checkFn: func(t *testing.T, rc RichTextConfig) {
+				t.Helper()
+				want := []string{"bold", "italic", "link"}
+				if len(rc.Toolbar) != len(want) {
+					t.Fatalf("Toolbar length = %d, want %d", len(rc.Toolbar), len(want))
+				}
+				for i, v := range want {
+					if rc.Toolbar[i] != v {
+						t.Errorf("Toolbar[%d] = %q, want %q", i, rc.Toolbar[i], v)
+					}
+				}
+			},
+		},
+		{
+			name:    "empty toolbar array",
+			input:   `{"toolbar":[]}`,
+			wantErr: false,
+			checkFn: func(t *testing.T, rc RichTextConfig) {
+				t.Helper()
+				if len(rc.Toolbar) != 0 {
+					t.Errorf("Toolbar = %v, want empty", rc.Toolbar)
+				}
+			},
+		},
+		{
+			name:    "extra fields are ignored",
+			input:   `{"toolbar":["bold"],"other":"ignored"}`,
+			wantErr: false,
+			checkFn: func(t *testing.T, rc RichTextConfig) {
+				t.Helper()
+				if len(rc.Toolbar) != 1 || rc.Toolbar[0] != "bold" {
+					t.Errorf("Toolbar = %v, want [bold]", rc.Toolbar)
+				}
+			},
+		},
+		{
+			name:    "invalid JSON",
+			input:   "{bad",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			rc, err := ParseRichTextConfig(tt.input)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("ParseRichTextConfig(%q) error = %v, wantErr %v", tt.input, err, tt.wantErr)
+			}
+			if !tt.wantErr && tt.checkFn != nil {
+				tt.checkFn(t, rc)
+			}
+		})
+	}
+}

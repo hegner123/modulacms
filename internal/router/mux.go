@@ -522,6 +522,9 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/tree", mutating("content:update", adminhandlers.ContentTreeSaveHandler(driver, mgr)))
 
+	// Admin API — config endpoints
+	mux.Handle("GET /admin/api/config/richtext-toolbar", viewing("config", adminhandlers.RichtextToolbarHandler(mgr)))
+
 	// Schema — datatypes (JSON API for block editor)
 	mux.Handle("GET /admin/api/datatypes", viewing("datatypes", adminhandlers.DatatypesJSONHandler(driver)))
 	mux.Handle("GET /admin/api/datatypes/{id}/fields", viewing("datatypes", adminhandlers.DatatypeFieldsJSONHandler(driver)))

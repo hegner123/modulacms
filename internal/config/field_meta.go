@@ -178,6 +178,9 @@ var FieldRegistry = []FieldMeta{
 	{JSONKey: "plugin_max_request_body", Label: "Max Request Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max request body size (bytes)"},
 	{JSONKey: "plugin_max_response_body", Label: "Max Response Body", Category: CategoryPlugin, HotReloadable: true, Description: "Max response body size (bytes)"},
 
+	// Misc
+	{JSONKey: "richtext_toolbar", Label: "Richtext Toolbar", Category: CategoryMisc, HotReloadable: true, Description: "Default toolbar buttons for richtext fields"},
+
 	// Update
 	{JSONKey: "update_auto_enabled", Label: "Auto Update", Category: CategoryUpdate, HotReloadable: true, Description: "Enable automatic updates"},
 	{JSONKey: "update_check_interval", Label: "Check Interval", Category: CategoryUpdate, HotReloadable: true, Description: "Update check interval (e.g. startup, 24h)"},
