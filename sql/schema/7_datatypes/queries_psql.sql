@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
         CONSTRAINT fk_datatypes_parent
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -49,6 +50,7 @@ ORDER BY label;
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -61,18 +63,20 @@ INSERT INTO datatypes (
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8
     ) RETURNING *;
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = $1,
-    label = $2,
-    type = $3,
-    author_id = $4,
-    date_created = $5,
-    date_modified = $6
-    WHERE datatype_id = $7
+    name = $2,
+    label = $3,
+    type = $4,
+    author_id = $5,
+    date_created = $6,
+    date_modified = $7
+    WHERE datatype_id = $8
     RETURNING *;
 
 -- name: DeleteDatatype :exec

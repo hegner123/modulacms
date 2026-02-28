@@ -48,6 +48,7 @@ type AdminContentRelations struct {
 type AdminDatatypes struct {
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
 	AuthorID        types.UserID                  `json:"author_id"`
@@ -70,6 +71,7 @@ type AdminFieldTypes struct {
 type AdminFields struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -189,6 +191,7 @@ type ContentRelations struct {
 type Datatypes struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
 	AuthorID     types.UserID             `json:"author_id"`
@@ -212,6 +215,7 @@ type FieldTypes struct {
 type Fields struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -253,6 +257,34 @@ type Permissions struct {
 	PermissionID    types.PermissionID `json:"permission_id"`
 	Label           string             `json:"label"`
 	SystemProtected bool               `json:"system_protected"`
+}
+
+type Pipelines struct {
+	PipelineID   types.PipelineID `json:"pipeline_id"`
+	PluginID     types.PluginID   `json:"plugin_id"`
+	TableName    string           `json:"table_name"`
+	Operation    string           `json:"operation"`
+	PluginName   string           `json:"plugin_name"`
+	Handler      string           `json:"handler"`
+	Priority     int32            `json:"priority"`
+	Enabled      int8             `json:"enabled"`
+	Config       types.JSONData   `json:"config"`
+	DateCreated  types.Timestamp  `json:"date_created"`
+	DateModified types.Timestamp  `json:"date_modified"`
+}
+
+type Plugins struct {
+	PluginID       types.PluginID     `json:"plugin_id"`
+	Name           string             `json:"name"`
+	Version        string             `json:"version"`
+	Description    string             `json:"description"`
+	Author         string             `json:"author"`
+	Status         types.PluginStatus `json:"status"`
+	Capabilities   types.JSONData     `json:"capabilities"`
+	ApprovedAccess types.JSONData     `json:"approved_access"`
+	ManifestHash   string             `json:"manifest_hash"`
+	DateInstalled  types.Timestamp    `json:"date_installed"`
+	DateModified   types.Timestamp    `json:"date_modified"`
 }
 
 type RolePermissions struct {

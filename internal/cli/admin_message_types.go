@@ -105,6 +105,7 @@ type AdminDatatypeFieldsSet struct {
 
 // CreateAdminDatatypeFromDialogRequestMsg requests creating an admin datatype from dialog input.
 type CreateAdminDatatypeFromDialogRequestMsg struct {
+	Name     string
 	Label    string
 	Type     string
 	ParentID string
@@ -113,6 +114,7 @@ type CreateAdminDatatypeFromDialogRequestMsg struct {
 // UpdateAdminDatatypeFromDialogRequestMsg requests updating an admin datatype from dialog input.
 type UpdateAdminDatatypeFromDialogRequestMsg struct {
 	AdminDatatypeID string
+	Name            string
 	Label           string
 	Type            string
 	ParentID        string
@@ -166,6 +168,7 @@ type ShowEditAdminDatatypeDialogMsg struct {
 
 // CreateAdminFieldFromDialogRequestMsg requests creating an admin field from dialog input.
 type CreateAdminFieldFromDialogRequestMsg struct {
+	Name            string
 	Label           string
 	Type            string
 	AdminDatatypeID types.AdminDatatypeID
@@ -174,6 +177,7 @@ type CreateAdminFieldFromDialogRequestMsg struct {
 // UpdateAdminFieldFromDialogRequestMsg requests updating an admin field from dialog input.
 type UpdateAdminFieldFromDialogRequestMsg struct {
 	AdminFieldID string
+	Name         string
 	Label        string
 	Type         string
 }

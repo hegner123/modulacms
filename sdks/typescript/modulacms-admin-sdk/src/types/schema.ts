@@ -40,6 +40,8 @@ export type AuthorView = {
 export type DatatypeFieldView = {
   /** Unique identifier for the field. */
   field_id: FieldID
+  /** Machine-readable name used as JSON key. */
+  name: string
   /** Human-readable label. */
   label: string
   /** The data type of this field. */
@@ -58,6 +60,8 @@ export type DatatypeFieldView = {
 export type DatatypeFullView = {
   /** Unique identifier for this datatype. */
   datatype_id: DatatypeID
+  /** Machine-readable name used as JSON key. */
+  name: string
   /** Human-readable label. */
   label: string
   /** Datatype category. */
@@ -94,6 +98,8 @@ export type CreateDatatypeParams = {
   datatype_id: DatatypeID
   /** Parent content ID, or `null`. */
   parent_id: ContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable label. */
   label: string
   /** Datatype category. */
@@ -112,6 +118,8 @@ export type CreateFieldParams = {
   field_id: FieldID
   /** Parent datatype ID, or `null`. */
   parent_id: DatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable label. */
   label: string
   /** Additional metadata (JSON-encoded). */
@@ -152,6 +160,8 @@ export type UpdateDatatypeParams = {
   datatype_id: DatatypeID
   /** Updated parent content ID, or `null`. */
   parent_id: ContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Updated label. */
   label: string
   /** Updated category type. */
@@ -170,6 +180,8 @@ export type UpdateFieldParams = {
   field_id: FieldID
   /** Updated parent datatype ID, or `null`. */
   parent_id: DatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Updated label. */
   label: string
   /** Updated metadata (JSON-encoded). */

@@ -384,6 +384,28 @@ func (q *Queries) CountPermission(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countPipelines = `-- name: CountPipelines :one
+SELECT COUNT(*) FROM pipelines
+`
+
+func (q *Queries) CountPipelines(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPipelines)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countPlugins = `-- name: CountPlugins :one
+SELECT COUNT(*) FROM plugins
+`
+
+func (q *Queries) CountPlugins(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPlugins)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countRole = `-- name: CountRole :one
 SELECT COUNT(*)
 FROM roles
@@ -781,6 +803,7 @@ const createAdminDatatype = `-- name: CreateAdminDatatype :one
 INSERT INTO admin_datatypes (
     admin_datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -793,14 +816,16 @@ INSERT INTO admin_datatypes (
     $4,
     $5,
     $6,
-    $7
+    $7,
+    $8
 )
-RETURNING admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified
+RETURNING admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
 `
 
 type CreateAdminDatatypeParams struct {
 	AdminDatatypeID types.AdminDatatypeID         `json:"admin_datatype_id"`
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
 	AuthorID        types.UserID                  `json:"author_id"`
@@ -812,6 +837,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	row := q.db.QueryRowContext(ctx, createAdminDatatype,
 		arg.AdminDatatypeID,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
@@ -822,6 +848,7 @@ func (q *Queries) CreateAdminDatatype(ctx context.Context, arg CreateAdminDataty
 	err := row.Scan(
 		&i.AdminDatatypeID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Type,
 		&i.AuthorID,
@@ -863,6 +890,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
         CONSTRAINT fk_parent_id
             REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -902,6 +930,7 @@ const createAdminField = `-- name: CreateAdminField :one
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -920,14 +949,16 @@ INSERT INTO admin_fields (
     $7,
     $8,
     $9,
-    $10
+    $10,
+    $11
 )
-RETURNING admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+RETURNING admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 `
 
 type CreateAdminFieldParams struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -942,6 +973,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 	row := q.db.QueryRowContext(ctx, createAdminField,
 		arg.AdminFieldID,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Data,
 		arg.Validation,
@@ -955,6 +987,7 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 	err := row.Scan(
 		&i.AdminFieldID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Data,
 		&i.Validation,
@@ -973,6 +1006,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     parent_id TEXT
         REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -1548,6 +1582,7 @@ const createDatatype = `-- name: CreateDatatype :one
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -1560,13 +1595,15 @@ INSERT INTO datatypes (
     $4,
     $5,
     $6,
-    $7
-    ) RETURNING datatype_id, parent_id, label, type, author_id, date_created, date_modified
+    $7,
+    $8
+    ) RETURNING datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
 `
 
 type CreateDatatypeParams struct {
 	DatatypeID   types.DatatypeID         `json:"datatype_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
 	AuthorID     types.UserID             `json:"author_id"`
@@ -1578,6 +1615,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	row := q.db.QueryRowContext(ctx, createDatatype,
 		arg.DatatypeID,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
@@ -1588,6 +1626,7 @@ func (q *Queries) CreateDatatype(ctx context.Context, arg CreateDatatypeParams) 
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Type,
 		&i.AuthorID,
@@ -1642,6 +1681,7 @@ CREATE TABLE IF NOT EXISTS datatypes (
         CONSTRAINT fk_datatypes_parent
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -1682,6 +1722,7 @@ const createField = `-- name: CreateField :one
 INSERT INTO fields  (
     field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -1700,13 +1741,15 @@ INSERT INTO fields  (
     $7,
     $8,
     $9,
-    $10
-    ) RETURNING field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    $10,
+    $11
+    ) RETURNING field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 `
 
 type CreateFieldParams struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -1721,6 +1764,7 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 	row := q.db.QueryRowContext(ctx, createField,
 		arg.FieldID,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Data,
 		arg.Validation,
@@ -1734,6 +1778,7 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 	err := row.Scan(
 		&i.FieldID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Data,
 		&i.Validation,
@@ -1753,6 +1798,7 @@ CREATE TABLE IF NOT EXISTS fields (
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -2055,6 +2101,193 @@ CREATE TABLE IF NOT EXISTS permissions (
 
 func (q *Queries) CreatePermissionTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createPermissionTable)
+	return err
+}
+
+const createPipeline = `-- name: CreatePipeline :one
+INSERT INTO pipelines (pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified
+`
+
+type CreatePipelineParams struct {
+	PipelineID   types.PipelineID `json:"pipeline_id"`
+	PluginID     types.PluginID   `json:"plugin_id"`
+	TableName    string           `json:"table_name"`
+	Operation    string           `json:"operation"`
+	PluginName   string           `json:"plugin_name"`
+	Handler      string           `json:"handler"`
+	Priority     int32            `json:"priority"`
+	Enabled      bool             `json:"enabled"`
+	Config       types.JSONData   `json:"config"`
+	DateCreated  types.Timestamp  `json:"date_created"`
+	DateModified types.Timestamp  `json:"date_modified"`
+}
+
+func (q *Queries) CreatePipeline(ctx context.Context, arg CreatePipelineParams) (Pipelines, error) {
+	row := q.db.QueryRowContext(ctx, createPipeline,
+		arg.PipelineID,
+		arg.PluginID,
+		arg.TableName,
+		arg.Operation,
+		arg.PluginName,
+		arg.Handler,
+		arg.Priority,
+		arg.Enabled,
+		arg.Config,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i Pipelines
+	err := row.Scan(
+		&i.PipelineID,
+		&i.PluginID,
+		&i.TableName,
+		&i.Operation,
+		&i.PluginName,
+		&i.Handler,
+		&i.Priority,
+		&i.Enabled,
+		&i.Config,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createPipelinesIndexPlugin = `-- name: CreatePipelinesIndexPlugin :exec
+CREATE INDEX IF NOT EXISTS idx_pipelines_plugin ON pipelines(plugin_id)
+`
+
+func (q *Queries) CreatePipelinesIndexPlugin(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPipelinesIndexPlugin)
+	return err
+}
+
+const createPipelinesIndexTable = `-- name: CreatePipelinesIndexTable :exec
+CREATE INDEX IF NOT EXISTS idx_pipelines_table ON pipelines(table_name)
+`
+
+func (q *Queries) CreatePipelinesIndexTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPipelinesIndexTable)
+	return err
+}
+
+const createPipelinesIndexUnique = `-- name: CreatePipelinesIndexUnique :exec
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pipeline_unique ON pipelines(table_name, operation, plugin_id)
+`
+
+func (q *Queries) CreatePipelinesIndexUnique(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPipelinesIndexUnique)
+	return err
+}
+
+const createPipelinesTable = `-- name: CreatePipelinesTable :exec
+CREATE TABLE IF NOT EXISTS pipelines (
+    pipeline_id TEXT PRIMARY KEY NOT NULL CHECK (length(pipeline_id) = 26),
+    plugin_id TEXT NOT NULL REFERENCES plugins(plugin_id) ON UPDATE CASCADE ON DELETE CASCADE,
+    table_name TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    plugin_name TEXT NOT NULL,
+    handler TEXT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 50,
+    enabled BOOLEAN NOT NULL DEFAULT true,
+    config JSONB NOT NULL DEFAULT '{}',
+    date_created TIMESTAMPTZ NOT NULL,
+    date_modified TIMESTAMPTZ NOT NULL
+)
+`
+
+func (q *Queries) CreatePipelinesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPipelinesTable)
+	return err
+}
+
+const createPlugin = `-- name: CreatePlugin :one
+INSERT INTO plugins (plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified
+`
+
+type CreatePluginParams struct {
+	PluginID       types.PluginID     `json:"plugin_id"`
+	Name           string             `json:"name"`
+	Version        string             `json:"version"`
+	Description    string             `json:"description"`
+	Author         string             `json:"author"`
+	Status         types.PluginStatus `json:"status"`
+	Capabilities   types.JSONData     `json:"capabilities"`
+	ApprovedAccess types.JSONData     `json:"approved_access"`
+	ManifestHash   string             `json:"manifest_hash"`
+	DateInstalled  types.Timestamp    `json:"date_installed"`
+	DateModified   types.Timestamp    `json:"date_modified"`
+}
+
+func (q *Queries) CreatePlugin(ctx context.Context, arg CreatePluginParams) (Plugins, error) {
+	row := q.db.QueryRowContext(ctx, createPlugin,
+		arg.PluginID,
+		arg.Name,
+		arg.Version,
+		arg.Description,
+		arg.Author,
+		arg.Status,
+		arg.Capabilities,
+		arg.ApprovedAccess,
+		arg.ManifestHash,
+		arg.DateInstalled,
+		arg.DateModified,
+	)
+	var i Plugins
+	err := row.Scan(
+		&i.PluginID,
+		&i.Name,
+		&i.Version,
+		&i.Description,
+		&i.Author,
+		&i.Status,
+		&i.Capabilities,
+		&i.ApprovedAccess,
+		&i.ManifestHash,
+		&i.DateInstalled,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createPluginsIndexName = `-- name: CreatePluginsIndexName :exec
+CREATE INDEX IF NOT EXISTS idx_plugins_name ON plugins(name)
+`
+
+func (q *Queries) CreatePluginsIndexName(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPluginsIndexName)
+	return err
+}
+
+const createPluginsIndexStatus = `-- name: CreatePluginsIndexStatus :exec
+CREATE INDEX IF NOT EXISTS idx_plugins_status ON plugins(status)
+`
+
+func (q *Queries) CreatePluginsIndexStatus(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPluginsIndexStatus)
+	return err
+}
+
+const createPluginsTable = `-- name: CreatePluginsTable :exec
+CREATE TABLE IF NOT EXISTS plugins (
+    plugin_id TEXT PRIMARY KEY NOT NULL CHECK (length(plugin_id) = 26),
+    name TEXT NOT NULL UNIQUE,
+    version TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    author TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'installed',
+    capabilities JSONB NOT NULL DEFAULT '[]',
+    approved_access JSONB NOT NULL DEFAULT '{}',
+    manifest_hash TEXT NOT NULL DEFAULT '',
+    date_installed TIMESTAMPTZ NOT NULL,
+    date_modified TIMESTAMPTZ NOT NULL
+)
+`
+
+func (q *Queries) CreatePluginsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createPluginsTable)
 	return err
 }
 
@@ -3027,6 +3260,45 @@ func (q *Queries) DeletePermission(ctx context.Context, arg DeletePermissionPara
 	return err
 }
 
+const deletePipeline = `-- name: DeletePipeline :exec
+DELETE FROM pipelines WHERE pipeline_id = $1
+`
+
+type DeletePipelineParams struct {
+	PipelineID types.PipelineID `json:"pipeline_id"`
+}
+
+func (q *Queries) DeletePipeline(ctx context.Context, arg DeletePipelineParams) error {
+	_, err := q.db.ExecContext(ctx, deletePipeline, arg.PipelineID)
+	return err
+}
+
+const deletePipelinesByPluginID = `-- name: DeletePipelinesByPluginID :exec
+DELETE FROM pipelines WHERE plugin_id = $1
+`
+
+type DeletePipelinesByPluginIDParams struct {
+	PluginID types.PluginID `json:"plugin_id"`
+}
+
+func (q *Queries) DeletePipelinesByPluginID(ctx context.Context, arg DeletePipelinesByPluginIDParams) error {
+	_, err := q.db.ExecContext(ctx, deletePipelinesByPluginID, arg.PluginID)
+	return err
+}
+
+const deletePlugin = `-- name: DeletePlugin :exec
+DELETE FROM plugins WHERE plugin_id = $1
+`
+
+type DeletePluginParams struct {
+	PluginID types.PluginID `json:"plugin_id"`
+}
+
+func (q *Queries) DeletePlugin(ctx context.Context, arg DeletePluginParams) error {
+	_, err := q.db.ExecContext(ctx, deletePlugin, arg.PluginID)
+	return err
+}
+
 const deleteRole = `-- name: DeleteRole :exec
 DELETE FROM roles
 WHERE role_id = $1
@@ -3395,6 +3667,24 @@ func (q *Queries) DropPermissionTable(ctx context.Context) error {
 	return err
 }
 
+const dropPipelinesTable = `-- name: DropPipelinesTable :exec
+DROP TABLE IF EXISTS pipelines
+`
+
+func (q *Queries) DropPipelinesTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropPipelinesTable)
+	return err
+}
+
+const dropPluginsTable = `-- name: DropPluginsTable :exec
+DROP TABLE IF EXISTS plugins
+`
+
+func (q *Queries) DropPluginsTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropPluginsTable)
+	return err
+}
+
 const dropRolePermissionsTable = `-- name: DropRolePermissionsTable :exec
 DROP TABLE IF EXISTS role_permissions
 `
@@ -3553,7 +3843,7 @@ func (q *Queries) GetAdminContentRelation(ctx context.Context, arg GetAdminConte
 }
 
 const getAdminDatatype = `-- name: GetAdminDatatype :one
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE admin_datatype_id = $1
 LIMIT 1
 `
@@ -3568,6 +3858,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 	err := row.Scan(
 		&i.AdminDatatypeID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Type,
 		&i.AuthorID,
@@ -3578,7 +3869,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 }
 
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 FROM admin_fields
 WHERE admin_field_id = $1
 LIMIT 1
@@ -3594,6 +3885,7 @@ func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (A
 	err := row.Scan(
 		&i.AdminFieldID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Data,
 		&i.Validation,
@@ -4331,7 +4623,7 @@ func (q *Queries) GetContentTreeByRoute(ctx context.Context, arg GetContentTreeB
 }
 
 const getDatatype = `-- name: GetDatatype :one
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE datatype_id = $1 LIMIT 1
 `
 
@@ -4345,6 +4637,7 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Type,
 		&i.AuthorID,
@@ -4355,7 +4648,7 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 }
 
 const getDatatypeByType = `-- name: GetDatatypeByType :one
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = $1 LIMIT 1
 `
 
@@ -4369,6 +4662,7 @@ func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypePa
 	err := row.Scan(
 		&i.DatatypeID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Type,
 		&i.AuthorID,
@@ -4379,7 +4673,7 @@ func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypePa
 }
 
 const getField = `-- name: GetField :one
-SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
 WHERE field_id = $1 LIMIT 1
 `
 
@@ -4393,6 +4687,7 @@ func (q *Queries) GetField(ctx context.Context, arg GetFieldParams) (Fields, err
 	err := row.Scan(
 		&i.FieldID,
 		&i.ParentID,
+		&i.Name,
 		&i.Label,
 		&i.Data,
 		&i.Validation,
@@ -4789,6 +5084,87 @@ func (q *Queries) GetPermissionByLabel(ctx context.Context, arg GetPermissionByL
 	row := q.db.QueryRowContext(ctx, getPermissionByLabel, arg.Label)
 	var i Permissions
 	err := row.Scan(&i.PermissionID, &i.Label, &i.SystemProtected)
+	return i, err
+}
+
+const getPipeline = `-- name: GetPipeline :one
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE pipeline_id = $1 LIMIT 1
+`
+
+type GetPipelineParams struct {
+	PipelineID types.PipelineID `json:"pipeline_id"`
+}
+
+func (q *Queries) GetPipeline(ctx context.Context, arg GetPipelineParams) (Pipelines, error) {
+	row := q.db.QueryRowContext(ctx, getPipeline, arg.PipelineID)
+	var i Pipelines
+	err := row.Scan(
+		&i.PipelineID,
+		&i.PluginID,
+		&i.TableName,
+		&i.Operation,
+		&i.PluginName,
+		&i.Handler,
+		&i.Priority,
+		&i.Enabled,
+		&i.Config,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getPlugin = `-- name: GetPlugin :one
+SELECT plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified FROM plugins WHERE plugin_id = $1 LIMIT 1
+`
+
+type GetPluginParams struct {
+	PluginID types.PluginID `json:"plugin_id"`
+}
+
+func (q *Queries) GetPlugin(ctx context.Context, arg GetPluginParams) (Plugins, error) {
+	row := q.db.QueryRowContext(ctx, getPlugin, arg.PluginID)
+	var i Plugins
+	err := row.Scan(
+		&i.PluginID,
+		&i.Name,
+		&i.Version,
+		&i.Description,
+		&i.Author,
+		&i.Status,
+		&i.Capabilities,
+		&i.ApprovedAccess,
+		&i.ManifestHash,
+		&i.DateInstalled,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getPluginByName = `-- name: GetPluginByName :one
+SELECT plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified FROM plugins WHERE name = $1 LIMIT 1
+`
+
+type GetPluginByNameParams struct {
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetPluginByName(ctx context.Context, arg GetPluginByNameParams) (Plugins, error) {
+	row := q.db.QueryRowContext(ctx, getPluginByName, arg.Name)
+	var i Plugins
+	err := row.Scan(
+		&i.PluginID,
+		&i.Name,
+		&i.Version,
+		&i.Description,
+		&i.Author,
+		&i.Status,
+		&i.Capabilities,
+		&i.ApprovedAccess,
+		&i.ManifestHash,
+		&i.DateInstalled,
+		&i.DateModified,
+	)
 	return i, err
 }
 
@@ -6392,7 +6768,7 @@ func (q *Queries) ListAdminContentRelationsByTarget(ctx context.Context, arg Lis
 }
 
 const listAdminDatatype = `-- name: ListAdminDatatype :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 ORDER BY admin_datatype_id
 `
 
@@ -6408,6 +6784,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6428,7 +6805,7 @@ func (q *Queries) ListAdminDatatype(ctx context.Context) ([]AdminDatatypes, erro
 }
 
 const listAdminDatatypeChildren = `-- name: ListAdminDatatypeChildren :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE parent_id = $1
 `
 
@@ -6448,6 +6825,7 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDa
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6468,7 +6846,7 @@ func (q *Queries) ListAdminDatatypeChildren(ctx context.Context, arg ListAdminDa
 }
 
 const listAdminDatatypeChildrenPaginated = `-- name: ListAdminDatatypeChildrenPaginated :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE parent_id = $1
 ORDER BY admin_datatype_id
 LIMIT $2 OFFSET $3
@@ -6492,6 +6870,7 @@ func (q *Queries) ListAdminDatatypeChildrenPaginated(ctx context.Context, arg Li
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6709,7 +7088,7 @@ func (q *Queries) ListAdminDatatypeFieldPaginated(ctx context.Context, arg ListA
 }
 
 const listAdminDatatypeGlobal = `-- name: ListAdminDatatypeGlobal :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE type = 'GLOBAL' LIMIT 1
 `
 
@@ -6725,6 +7104,7 @@ func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6745,7 +7125,7 @@ func (q *Queries) ListAdminDatatypeGlobal(ctx context.Context) ([]AdminDatatypes
 }
 
 const listAdminDatatypePaginated = `-- name: ListAdminDatatypePaginated :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 ORDER BY admin_datatype_id
 LIMIT $1 OFFSET $2
 `
@@ -6767,6 +7147,7 @@ func (q *Queries) ListAdminDatatypePaginated(ctx context.Context, arg ListAdminD
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6787,7 +7168,7 @@ func (q *Queries) ListAdminDatatypePaginated(ctx context.Context, arg ListAdminD
 }
 
 const listAdminDatatypeRoot = `-- name: ListAdminDatatypeRoot :many
-SELECT admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM admin_datatypes
+SELECT admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM admin_datatypes
 WHERE type = '_root' LIMIT 1
 `
 
@@ -6803,6 +7184,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 		if err := rows.Scan(
 			&i.AdminDatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -6823,7 +7205,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 FROM admin_fields
 ORDER BY admin_field_id
 `
@@ -6840,6 +7222,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -6863,7 +7246,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 }
 
 const listAdminFieldByParentID = `-- name: ListAdminFieldByParentID :many
-SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 FROM admin_fields
 WHERE parent_id = $1
 ORDER BY admin_field_id
@@ -6885,6 +7268,7 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -6908,7 +7292,7 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 }
 
 const listAdminFieldByParentIDPaginated = `-- name: ListAdminFieldByParentIDPaginated :many
-SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
 WHERE parent_id = $1
 ORDER BY admin_field_id
 LIMIT $2 OFFSET $3
@@ -6932,6 +7316,7 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -6955,7 +7340,7 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 }
 
 const listAdminFieldPaginated = `-- name: ListAdminFieldPaginated :many
-SELECT admin_field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
 ORDER BY admin_field_id
 LIMIT $1 OFFSET $2
 `
@@ -6977,6 +7362,7 @@ func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFiel
 		if err := rows.Scan(
 			&i.AdminFieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -8014,7 +8400,7 @@ func (q *Queries) ListContentRelationsByTarget(ctx context.Context, arg ListCont
 }
 
 const listDatatype = `-- name: ListDatatype :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 ORDER BY datatype_id
 `
 
@@ -8030,6 +8416,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8050,7 +8437,7 @@ func (q *Queries) ListDatatype(ctx context.Context) ([]Datatypes, error) {
 }
 
 const listDatatypeChildren = `-- name: ListDatatypeChildren :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE parent_id = $1
 ORDER BY label
 `
@@ -8071,6 +8458,7 @@ func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChil
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8091,7 +8479,7 @@ func (q *Queries) ListDatatypeChildren(ctx context.Context, arg ListDatatypeChil
 }
 
 const listDatatypeChildrenPaginated = `-- name: ListDatatypeChildrenPaginated :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE parent_id = $1
 ORDER BY label
 LIMIT $2 OFFSET $3
@@ -8115,6 +8503,7 @@ func (q *Queries) ListDatatypeChildrenPaginated(ctx context.Context, arg ListDat
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8365,7 +8754,7 @@ func (q *Queries) ListDatatypeFieldPaginated(ctx context.Context, arg ListDataty
 }
 
 const listDatatypeGlobal = `-- name: ListDatatypeGlobal :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = 'GLOBAL'
 ORDER BY datatype_id
 `
@@ -8382,6 +8771,7 @@ func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8402,7 +8792,7 @@ func (q *Queries) ListDatatypeGlobal(ctx context.Context) ([]Datatypes, error) {
 }
 
 const listDatatypePaginated = `-- name: ListDatatypePaginated :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 ORDER BY datatype_id
 LIMIT $1 OFFSET $2
 `
@@ -8424,6 +8814,7 @@ func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePag
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8444,7 +8835,7 @@ func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePag
 }
 
 const listDatatypeRoot = `-- name: ListDatatypeRoot :many
-SELECT datatype_id, parent_id, label, type, author_id, date_created, date_modified FROM datatypes
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = '_root'
 ORDER BY datatype_id
 `
@@ -8461,6 +8852,7 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 		if err := rows.Scan(
 			&i.DatatypeID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Type,
 			&i.AuthorID,
@@ -8480,8 +8872,47 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 	return items, nil
 }
 
+const listEnabledPipelines = `-- name: ListEnabledPipelines :many
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE enabled = true ORDER BY table_name, operation, priority
+`
+
+func (q *Queries) ListEnabledPipelines(ctx context.Context) ([]Pipelines, error) {
+	rows, err := q.db.QueryContext(ctx, listEnabledPipelines)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Pipelines{}
+	for rows.Next() {
+		var i Pipelines
+		if err := rows.Scan(
+			&i.PipelineID,
+			&i.PluginID,
+			&i.TableName,
+			&i.Operation,
+			&i.PluginName,
+			&i.Handler,
+			&i.Priority,
+			&i.Enabled,
+			&i.Config,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listField = `-- name: ListField :many
-SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
 ORDER BY field_id
 `
 
@@ -8497,6 +8928,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 		if err := rows.Scan(
 			&i.FieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -8520,7 +8952,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 }
 
 const listFieldByDatatypeID = `-- name: ListFieldByDatatypeID :many
-SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
 WHERE parent_id = $1
 ORDER BY field_id
 `
@@ -8541,6 +8973,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 		if err := rows.Scan(
 			&i.FieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -8564,7 +8997,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 }
 
 const listFieldPaginated = `-- name: ListFieldPaginated :many
-SELECT field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
 ORDER BY field_id
 LIMIT $1 OFFSET $2
 `
@@ -8586,6 +9019,7 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 		if err := rows.Scan(
 			&i.FieldID,
 			&i.ParentID,
+			&i.Name,
 			&i.Label,
 			&i.Data,
 			&i.Validation,
@@ -8877,6 +9311,257 @@ func (q *Queries) ListPermissionLabelsByRoleID(ctx context.Context, arg ListPerm
 			return nil, err
 		}
 		items = append(items, label)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPipelines = `-- name: ListPipelines :many
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines ORDER BY table_name, operation, priority
+`
+
+func (q *Queries) ListPipelines(ctx context.Context) ([]Pipelines, error) {
+	rows, err := q.db.QueryContext(ctx, listPipelines)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Pipelines{}
+	for rows.Next() {
+		var i Pipelines
+		if err := rows.Scan(
+			&i.PipelineID,
+			&i.PluginID,
+			&i.TableName,
+			&i.Operation,
+			&i.PluginName,
+			&i.Handler,
+			&i.Priority,
+			&i.Enabled,
+			&i.Config,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPipelinesByPluginID = `-- name: ListPipelinesByPluginID :many
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE plugin_id = $1 ORDER BY table_name, operation, priority
+`
+
+type ListPipelinesByPluginIDParams struct {
+	PluginID types.PluginID `json:"plugin_id"`
+}
+
+func (q *Queries) ListPipelinesByPluginID(ctx context.Context, arg ListPipelinesByPluginIDParams) ([]Pipelines, error) {
+	rows, err := q.db.QueryContext(ctx, listPipelinesByPluginID, arg.PluginID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Pipelines{}
+	for rows.Next() {
+		var i Pipelines
+		if err := rows.Scan(
+			&i.PipelineID,
+			&i.PluginID,
+			&i.TableName,
+			&i.Operation,
+			&i.PluginName,
+			&i.Handler,
+			&i.Priority,
+			&i.Enabled,
+			&i.Config,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPipelinesByTable = `-- name: ListPipelinesByTable :many
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE table_name = $1 ORDER BY operation, priority
+`
+
+type ListPipelinesByTableParams struct {
+	TableName string `json:"table_name"`
+}
+
+func (q *Queries) ListPipelinesByTable(ctx context.Context, arg ListPipelinesByTableParams) ([]Pipelines, error) {
+	rows, err := q.db.QueryContext(ctx, listPipelinesByTable, arg.TableName)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Pipelines{}
+	for rows.Next() {
+		var i Pipelines
+		if err := rows.Scan(
+			&i.PipelineID,
+			&i.PluginID,
+			&i.TableName,
+			&i.Operation,
+			&i.PluginName,
+			&i.Handler,
+			&i.Priority,
+			&i.Enabled,
+			&i.Config,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPipelinesByTableOperation = `-- name: ListPipelinesByTableOperation :many
+SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE table_name = $1 AND operation = $2 ORDER BY priority, plugin_name
+`
+
+type ListPipelinesByTableOperationParams struct {
+	TableName string `json:"table_name"`
+	Operation string `json:"operation"`
+}
+
+func (q *Queries) ListPipelinesByTableOperation(ctx context.Context, arg ListPipelinesByTableOperationParams) ([]Pipelines, error) {
+	rows, err := q.db.QueryContext(ctx, listPipelinesByTableOperation, arg.TableName, arg.Operation)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Pipelines{}
+	for rows.Next() {
+		var i Pipelines
+		if err := rows.Scan(
+			&i.PipelineID,
+			&i.PluginID,
+			&i.TableName,
+			&i.Operation,
+			&i.PluginName,
+			&i.Handler,
+			&i.Priority,
+			&i.Enabled,
+			&i.Config,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPlugins = `-- name: ListPlugins :many
+SELECT plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified FROM plugins ORDER BY name
+`
+
+func (q *Queries) ListPlugins(ctx context.Context) ([]Plugins, error) {
+	rows, err := q.db.QueryContext(ctx, listPlugins)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Plugins{}
+	for rows.Next() {
+		var i Plugins
+		if err := rows.Scan(
+			&i.PluginID,
+			&i.Name,
+			&i.Version,
+			&i.Description,
+			&i.Author,
+			&i.Status,
+			&i.Capabilities,
+			&i.ApprovedAccess,
+			&i.ManifestHash,
+			&i.DateInstalled,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPluginsByStatus = `-- name: ListPluginsByStatus :many
+SELECT plugin_id, name, version, description, author, status, capabilities, approved_access, manifest_hash, date_installed, date_modified FROM plugins WHERE status = $1 ORDER BY name
+`
+
+type ListPluginsByStatusParams struct {
+	Status types.PluginStatus `json:"status"`
+}
+
+func (q *Queries) ListPluginsByStatus(ctx context.Context, arg ListPluginsByStatusParams) ([]Plugins, error) {
+	rows, err := q.db.QueryContext(ctx, listPluginsByStatus, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Plugins{}
+	for rows.Next() {
+		var i Plugins
+		if err := rows.Scan(
+			&i.PluginID,
+			&i.Name,
+			&i.Version,
+			&i.Description,
+			&i.Author,
+			&i.Status,
+			&i.Capabilities,
+			&i.ApprovedAccess,
+			&i.ManifestHash,
+			&i.DateInstalled,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -9744,17 +10429,19 @@ func (q *Queries) UpdateAdminContentRelationSortOrder(ctx context.Context, arg U
 const updateAdminDatatype = `-- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = $1,
-    label = $2,
-    type = $3,
-    author_id = $4,
-    date_created = $5,
-    date_modified = $6
-WHERE admin_datatype_id = $7
-RETURNING admin_datatype_id, parent_id, label, type, author_id, date_created, date_modified
+    name = $2,
+    label = $3,
+    type = $4,
+    author_id = $5,
+    date_created = $6,
+    date_modified = $7
+WHERE admin_datatype_id = $8
+RETURNING admin_datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
 `
 
 type UpdateAdminDatatypeParams struct {
 	ParentID        types.NullableAdminDatatypeID `json:"parent_id"`
+	Name            string                        `json:"name"`
 	Label           string                        `json:"label"`
 	Type            string                        `json:"type"`
 	AuthorID        types.UserID                  `json:"author_id"`
@@ -9766,6 +10453,7 @@ type UpdateAdminDatatypeParams struct {
 func (q *Queries) UpdateAdminDatatype(ctx context.Context, arg UpdateAdminDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminDatatype,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
@@ -9797,19 +10485,21 @@ func (q *Queries) UpdateAdminDatatypeField(ctx context.Context, arg UpdateAdminD
 const updateAdminField = `-- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET parent_id    = $1,
-    label        = $2,
-    data         = $3,
-    validation   = $4,
-    ui_config    = $5,
-    type         = $6,
-    author_id    = $7,
-    date_created = $8,
-    date_modified= $9
-WHERE admin_field_id = $10
+    name         = $2,
+    label        = $3,
+    data         = $4,
+    validation   = $5,
+    ui_config    = $6,
+    type         = $7,
+    author_id    = $8,
+    date_created = $9,
+    date_modified= $10
+WHERE admin_field_id = $11
 `
 
 type UpdateAdminFieldParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -9824,6 +10514,7 @@ type UpdateAdminFieldParams struct {
 func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateAdminField,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Data,
 		arg.Validation,
@@ -10069,17 +10760,19 @@ func (q *Queries) UpdateContentRelationSortOrder(ctx context.Context, arg Update
 const updateDatatype = `-- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = $1,
-    label = $2,
-    type = $3,
-    author_id = $4,
-    date_created = $5,
-    date_modified = $6
-    WHERE datatype_id = $7
-    RETURNING datatype_id, parent_id, label, type, author_id, date_created, date_modified
+    name = $2,
+    label = $3,
+    type = $4,
+    author_id = $5,
+    date_created = $6,
+    date_modified = $7
+    WHERE datatype_id = $8
+    RETURNING datatype_id, parent_id, name, label, type, author_id, date_created, date_modified
 `
 
 type UpdateDatatypeParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Type         string                   `json:"type"`
 	AuthorID     types.UserID             `json:"author_id"`
@@ -10091,6 +10784,7 @@ type UpdateDatatypeParams struct {
 func (q *Queries) UpdateDatatype(ctx context.Context, arg UpdateDatatypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateDatatype,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Type,
 		arg.AuthorID,
@@ -10145,20 +10839,22 @@ func (q *Queries) UpdateDatatypeFieldSortOrder(ctx context.Context, arg UpdateDa
 const updateField = `-- name: UpdateField :exec
 UPDATE fields
 SET parent_id = $1,
-    label = $2,
-    data = $3,
-    validation = $4,
-    ui_config = $5,
-    type = $6,
-    author_id = $7,
-    date_created = $8,
-    date_modified = $9
-    WHERE field_id = $10
-    RETURNING field_id, parent_id, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    name = $2,
+    label = $3,
+    data = $4,
+    validation = $5,
+    ui_config = $6,
+    type = $7,
+    author_id = $8,
+    date_created = $9,
+    date_modified = $10
+    WHERE field_id = $11
+    RETURNING field_id, parent_id, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
 `
 
 type UpdateFieldParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -10173,6 +10869,7 @@ type UpdateFieldParams struct {
 func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error {
 	_, err := q.db.ExecContext(ctx, updateField,
 		arg.ParentID,
+		arg.Name,
 		arg.Label,
 		arg.Data,
 		arg.Validation,
@@ -10308,6 +11005,96 @@ type UpdatePermissionParams struct {
 
 func (q *Queries) UpdatePermission(ctx context.Context, arg UpdatePermissionParams) error {
 	_, err := q.db.ExecContext(ctx, updatePermission, arg.Label, arg.SystemProtected, arg.PermissionID)
+	return err
+}
+
+const updatePipeline = `-- name: UpdatePipeline :exec
+UPDATE pipelines SET table_name = $2, operation = $3, handler = $4, priority = $5, enabled = $6, config = $7, date_modified = $8 WHERE pipeline_id = $1
+`
+
+type UpdatePipelineParams struct {
+	PipelineID   types.PipelineID `json:"pipeline_id"`
+	TableName    string           `json:"table_name"`
+	Operation    string           `json:"operation"`
+	Handler      string           `json:"handler"`
+	Priority     int32            `json:"priority"`
+	Enabled      bool             `json:"enabled"`
+	Config       types.JSONData   `json:"config"`
+	DateModified types.Timestamp  `json:"date_modified"`
+}
+
+func (q *Queries) UpdatePipeline(ctx context.Context, arg UpdatePipelineParams) error {
+	_, err := q.db.ExecContext(ctx, updatePipeline,
+		arg.PipelineID,
+		arg.TableName,
+		arg.Operation,
+		arg.Handler,
+		arg.Priority,
+		arg.Enabled,
+		arg.Config,
+		arg.DateModified,
+	)
+	return err
+}
+
+const updatePipelineEnabled = `-- name: UpdatePipelineEnabled :exec
+UPDATE pipelines SET enabled = $2, date_modified = $3 WHERE pipeline_id = $1
+`
+
+type UpdatePipelineEnabledParams struct {
+	PipelineID   types.PipelineID `json:"pipeline_id"`
+	Enabled      bool             `json:"enabled"`
+	DateModified types.Timestamp  `json:"date_modified"`
+}
+
+func (q *Queries) UpdatePipelineEnabled(ctx context.Context, arg UpdatePipelineEnabledParams) error {
+	_, err := q.db.ExecContext(ctx, updatePipelineEnabled, arg.PipelineID, arg.Enabled, arg.DateModified)
+	return err
+}
+
+const updatePlugin = `-- name: UpdatePlugin :exec
+UPDATE plugins SET version = $2, description = $3, author = $4, status = $5, capabilities = $6, approved_access = $7, manifest_hash = $8, date_modified = $9 WHERE plugin_id = $1
+`
+
+type UpdatePluginParams struct {
+	PluginID       types.PluginID     `json:"plugin_id"`
+	Version        string             `json:"version"`
+	Description    string             `json:"description"`
+	Author         string             `json:"author"`
+	Status         types.PluginStatus `json:"status"`
+	Capabilities   types.JSONData     `json:"capabilities"`
+	ApprovedAccess types.JSONData     `json:"approved_access"`
+	ManifestHash   string             `json:"manifest_hash"`
+	DateModified   types.Timestamp    `json:"date_modified"`
+}
+
+func (q *Queries) UpdatePlugin(ctx context.Context, arg UpdatePluginParams) error {
+	_, err := q.db.ExecContext(ctx, updatePlugin,
+		arg.PluginID,
+		arg.Version,
+		arg.Description,
+		arg.Author,
+		arg.Status,
+		arg.Capabilities,
+		arg.ApprovedAccess,
+		arg.ManifestHash,
+		arg.DateModified,
+	)
+	return err
+}
+
+const updatePluginStatus = `-- name: UpdatePluginStatus :exec
+UPDATE plugins SET status = $2, date_modified = $3 WHERE plugin_id = $1
+`
+
+type UpdatePluginStatusParams struct {
+	PluginID     types.PluginID     `json:"plugin_id"`
+	Status       types.PluginStatus `json:"status"`
+	DateModified types.Timestamp    `json:"date_modified"`
+}
+
+func (q *Queries) UpdatePluginStatus(ctx context.Context, arg UpdatePluginStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updatePluginStatus, arg.PluginID, arg.Status, arg.DateModified)
 	return err
 }
 

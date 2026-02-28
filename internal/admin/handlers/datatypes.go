@@ -9,6 +9,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -120,13 +121,20 @@ func DatatypeDetailHandler(driver db.DbDriver) http.HandlerFunc {
 
 // DatatypeCreateHandler handles POST /admin/schema/datatypes.
 // Validates label and type are required, creates via audited context.
-func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
 		}
 
+		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
 
@@ -143,7 +151,7 @@ func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeForm(label, dtype, errs, csrfToken))
+			Render(w, r, partials.DatatypeForm(name, label, dtype, errs, csrfToken))
 			return
 		}
 
@@ -152,11 +160,12 @@ func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		now := types.NewTimestamp(time.Now())
 		_, err := driver.CreateDatatype(r.Context(), ac, db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
+			Name:         name,
 			Label:        label,
 			Type:         dtype,
 			AuthorID:     user.UserID,
@@ -165,9 +174,9 @@ func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create datatype", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeForm(label, dtype, map[string]string{"_": "Failed to create datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeForm(name, label, dtype, map[string]string{"_": "Failed to create datatype"}, csrfToken))
 			return
 		}
 
@@ -183,8 +192,14 @@ func DatatypeCreateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // DatatypeUpdateHandler handles POST /admin/schema/datatypes/{id}.
 // Updates label and type via audited context.
-func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
@@ -196,6 +211,7 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		dtype := strings.TrimSpace(r.FormValue("type"))
 
@@ -212,7 +228,7 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, label, dtype, errs, csrfToken))
+			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, errs, csrfToken))
 			return
 		}
 
@@ -226,7 +242,7 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if types.IsReservedPrefix(existing.Type) && dtype != existing.Type {
 			w.WriteHeader(http.StatusForbidden)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, label, dtype, map[string]string{"type": "Cannot change type of system datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, map[string]string{"type": "Cannot change type of system datatype"}, csrfToken))
 			return
 		}
 
@@ -235,11 +251,12 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		_, err = driver.UpdateDatatype(r.Context(), ac, db.UpdateDatatypeParams{
 			DatatypeID:   types.DatatypeID(id),
 			ParentID:     existing.ParentID,
+			Name:         name,
 			Label:        label,
 			Type:         dtype,
 			AuthorID:     existing.AuthorID,
@@ -248,9 +265,9 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to update datatype", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, label, dtype, map[string]string{"_": "Failed to update datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, map[string]string{"_": "Failed to update datatype"}, csrfToken))
 			return
 		}
 
@@ -266,8 +283,14 @@ func DatatypeUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // DatatypeDeleteHandler handles DELETE /admin/schema/datatypes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func DatatypeDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -298,7 +321,7 @@ func DatatypeDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		err := driver.DeleteDatatype(r.Context(), ac, types.DatatypeID(id))
 		if err != nil {
@@ -315,8 +338,14 @@ func DatatypeDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 
 // DatatypeCreateFieldHandler handles POST /admin/schema/datatypes/{id}/fields.
 // Creates a new field owned by this datatype and links it via the junction table.
-func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
+func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing datatype ID", http.StatusBadRequest)
@@ -328,6 +357,7 @@ func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 
@@ -344,7 +374,7 @@ func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", errs, csrfToken))
+			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", errs, csrfToken))
 			return
 		}
 
@@ -353,12 +383,13 @@ func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		now := types.NewTimestamp(time.Now())
 		field, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
 			FieldID:      types.NewFieldID(),
 			ParentID:     types.NullableDatatypeID{ID: types.DatatypeID(id), Valid: true},
+			Name:         name,
 			Label:        label,
 			Type:         types.FieldType(fieldType),
 			Data:         "{}",
@@ -370,9 +401,9 @@ func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create field for datatype", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", map[string]string{"_": "Failed to create field"}, csrfToken))
+			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", map[string]string{"_": "Failed to create field"}, csrfToken))
 			return
 		}
 
@@ -385,9 +416,9 @@ func DatatypeCreateFieldHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if junctionErr != nil {
 			utility.DefaultLogger.Error("failed to link new field to datatype", junctionErr)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, label, fieldType, "", "", "", map[string]string{"_": "Field created but failed to link to datatype"}, csrfToken))
+			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", map[string]string{"_": "Field created but failed to link to datatype"}, csrfToken))
 			return
 		}
 

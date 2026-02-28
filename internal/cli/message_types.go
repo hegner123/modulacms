@@ -417,6 +417,7 @@ type CmsEditDatatypeFormMsg struct {
 type DatatypeUpdateSaveMsg struct {
 	DatatypeID types.DatatypeID
 	Parent     string
+	Name       string
 	Label      string
 	Type       string
 }
@@ -775,6 +776,47 @@ type ConfigFieldUpdateMsg struct {
 type ConfigUpdateResultMsg struct {
 	RestartRequired []string
 	Err             error
+}
+
+// --- Pipeline management messages ---
+
+// PipelinesFetchMsg requests fetching the pipeline chains from the registry.
+type PipelinesFetchMsg struct{}
+
+// PipelinesFetchResultsMsg returns the fetched pipeline display list.
+type PipelinesFetchResultsMsg struct {
+	Data []PipelineDisplay
+}
+
+// PipelinesListSet sets the pipeline display list on the model.
+type PipelinesListSet struct {
+	PipelinesList []PipelineDisplay
+}
+
+// PipelineEntriesFetchMsg requests fetching entries for a specific pipeline chain.
+type PipelineEntriesFetchMsg struct {
+	Key string
+}
+
+// PipelineEntriesFetchResultsMsg returns entries for a pipeline chain.
+type PipelineEntriesFetchResultsMsg struct {
+	Entries []PipelineEntryDisplay
+}
+
+// PipelineEntriesSet sets the pipeline entries on the model.
+type PipelineEntriesSet struct {
+	PipelineEntries []PipelineEntryDisplay
+}
+
+// PluginSyncCapabilitiesRequestMsg requests a capability sync for a plugin.
+type PluginSyncCapabilitiesRequestMsg struct {
+	Name string
+}
+
+// PluginSyncCapabilitiesResultMsg carries the result of a capability sync.
+type PluginSyncCapabilitiesResultMsg struct {
+	Name string
+	Err  error
 }
 
 // ShowDialogMsg is defined in dialog.go

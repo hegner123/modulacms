@@ -544,17 +544,23 @@ type NewAdminContentRelationCmd struct {
 }
 
 // Context returns the context.
-func (c NewAdminContentRelationCmd) Context() context.Context              { return c.ctx }
+func (c NewAdminContentRelationCmd) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c NewAdminContentRelationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentRelationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c NewAdminContentRelationCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentRelationCmd) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c NewAdminContentRelationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c NewAdminContentRelationCmd) TableName() string { return "admin_content_relations" }
+
 // Params returns the command parameters.
-func (c NewAdminContentRelationCmd) Params() any       { return c.params }
+func (c NewAdminContentRelationCmd) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c NewAdminContentRelationCmd) GetID(r mdb.AdminContentRelations) string {
 	return string(r.AdminContentRelationID)
@@ -591,22 +597,28 @@ type UpdateAdminContentRelationSortOrderCmd struct {
 
 // Context returns the context.
 func (c UpdateAdminContentRelationSortOrderCmd) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
 func (c UpdateAdminContentRelationSortOrderCmd) AuditContext() audited.AuditContext {
 	return c.auditCtx
 }
+
 // Connection returns the database connection.
 func (c UpdateAdminContentRelationSortOrderCmd) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c UpdateAdminContentRelationSortOrderCmd) Recorder() audited.ChangeEventRecorder {
 	return c.recorder
 }
+
 // TableName returns the table name.
 func (c UpdateAdminContentRelationSortOrderCmd) TableName() string {
 	return "admin_content_relations"
 }
+
 // Params returns the command parameters.
 func (c UpdateAdminContentRelationSortOrderCmd) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c UpdateAdminContentRelationSortOrderCmd) GetID() string {
 	return string(c.params.AdminContentRelationID)
@@ -644,17 +656,22 @@ type DeleteAdminContentRelationCmd struct {
 }
 
 // Context returns the context.
-func (c DeleteAdminContentRelationCmd) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentRelationCmd) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c DeleteAdminContentRelationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentRelationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c DeleteAdminContentRelationCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentRelationCmd) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c DeleteAdminContentRelationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c DeleteAdminContentRelationCmd) TableName() string { return "admin_content_relations" }
+
 // GetID returns the record ID.
-func (c DeleteAdminContentRelationCmd) GetID() string     { return string(c.id) }
+func (c DeleteAdminContentRelationCmd) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the record before deletion.
 func (c DeleteAdminContentRelationCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.AdminContentRelations, error) {
@@ -685,17 +702,23 @@ type NewAdminContentRelationCmdMysql struct {
 }
 
 // Context returns the context.
-func (c NewAdminContentRelationCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewAdminContentRelationCmdMysql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c NewAdminContentRelationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentRelationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c NewAdminContentRelationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentRelationCmdMysql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c NewAdminContentRelationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c NewAdminContentRelationCmdMysql) TableName() string { return "admin_content_relations" }
+
 // Params returns the command parameters.
-func (c NewAdminContentRelationCmdMysql) Params() any       { return c.params }
+func (c NewAdminContentRelationCmdMysql) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c NewAdminContentRelationCmdMysql) GetID(r mdbm.AdminContentRelations) string {
 	return string(r.AdminContentRelationID)
@@ -737,22 +760,28 @@ type UpdateAdminContentRelationSortOrderCmdMysql struct {
 
 // Context returns the context.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) AuditContext() audited.AuditContext {
 	return c.auditCtx
 }
+
 // Connection returns the database connection.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) Recorder() audited.ChangeEventRecorder {
 	return c.recorder
 }
+
 // TableName returns the table name.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) TableName() string {
 	return "admin_content_relations"
 }
+
 // Params returns the command parameters.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c UpdateAdminContentRelationSortOrderCmdMysql) GetID() string {
 	return string(c.params.AdminContentRelationID)
@@ -790,17 +819,22 @@ type DeleteAdminContentRelationCmdMysql struct {
 }
 
 // Context returns the context.
-func (c DeleteAdminContentRelationCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentRelationCmdMysql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c DeleteAdminContentRelationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentRelationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c DeleteAdminContentRelationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentRelationCmdMysql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c DeleteAdminContentRelationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c DeleteAdminContentRelationCmdMysql) TableName() string { return "admin_content_relations" }
+
 // GetID returns the record ID.
-func (c DeleteAdminContentRelationCmdMysql) GetID() string     { return string(c.id) }
+func (c DeleteAdminContentRelationCmdMysql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the record before deletion.
 func (c DeleteAdminContentRelationCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.AdminContentRelations, error) {
@@ -831,17 +865,23 @@ type NewAdminContentRelationCmdPsql struct {
 }
 
 // Context returns the context.
-func (c NewAdminContentRelationCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewAdminContentRelationCmdPsql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c NewAdminContentRelationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminContentRelationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c NewAdminContentRelationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewAdminContentRelationCmdPsql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c NewAdminContentRelationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c NewAdminContentRelationCmdPsql) TableName() string { return "admin_content_relations" }
+
 // Params returns the command parameters.
-func (c NewAdminContentRelationCmdPsql) Params() any       { return c.params }
+func (c NewAdminContentRelationCmdPsql) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c NewAdminContentRelationCmdPsql) GetID(r mdbp.AdminContentRelations) string {
 	return string(r.AdminContentRelationID)
@@ -878,22 +918,28 @@ type UpdateAdminContentRelationSortOrderCmdPsql struct {
 
 // Context returns the context.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) AuditContext() audited.AuditContext {
 	return c.auditCtx
 }
+
 // Connection returns the database connection.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) Recorder() audited.ChangeEventRecorder {
 	return c.recorder
 }
+
 // TableName returns the table name.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) TableName() string {
 	return "admin_content_relations"
 }
+
 // Params returns the command parameters.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) Params() any { return c.params }
+
 // GetID returns the record ID.
 func (c UpdateAdminContentRelationSortOrderCmdPsql) GetID() string {
 	return string(c.params.AdminContentRelationID)
@@ -931,17 +977,22 @@ type DeleteAdminContentRelationCmdPsql struct {
 }
 
 // Context returns the context.
-func (c DeleteAdminContentRelationCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteAdminContentRelationCmdPsql) Context() context.Context { return c.ctx }
+
 // AuditContext returns the audit context.
-func (c DeleteAdminContentRelationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminContentRelationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
 // Connection returns the database connection.
-func (c DeleteAdminContentRelationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteAdminContentRelationCmdPsql) Connection() *sql.DB { return c.conn }
+
 // Recorder returns the change event recorder.
 func (c DeleteAdminContentRelationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
 // TableName returns the table name.
 func (c DeleteAdminContentRelationCmdPsql) TableName() string { return "admin_content_relations" }
+
 // GetID returns the record ID.
-func (c DeleteAdminContentRelationCmdPsql) GetID() string     { return string(c.id) }
+func (c DeleteAdminContentRelationCmdPsql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the record before deletion.
 func (c DeleteAdminContentRelationCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.AdminContentRelations, error) {

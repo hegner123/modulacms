@@ -1771,6 +1771,152 @@ func (id *FieldTypeID) UnmarshalJSON(data []byte) error {
 	return id.Validate()
 }
 
+// PluginID uniquely identifies a plugin in the persistent registry.
+type PluginID string
+
+// NewPluginID generates a new ULID-based PluginID.
+func NewPluginID() PluginID { return PluginID(NewULID().String()) }
+
+// String returns the string representation of the PluginID.
+func (id PluginID) String() string { return string(id) }
+
+// IsZero returns true if the PluginID is empty.
+func (id PluginID) IsZero() bool { return id == "" }
+
+// Validate checks if the PluginID is a valid ULID.
+func (id PluginID) Validate() error { return validateULID(string(id), "PluginID") }
+
+// ULID parses the PluginID as a ulid.ULID.
+func (id PluginID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the PluginID.
+func (id PluginID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParsePluginID parses and validates a string as a PluginID.
+func ParsePluginID(s string) (PluginID, error) {
+	id := PluginID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id PluginID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("PluginID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *PluginID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("PluginID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = PluginID(v)
+	case []byte:
+		*id = PluginID(string(v))
+	default:
+		return fmt.Errorf("PluginID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id PluginID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *PluginID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("PluginID: %w", err)
+	}
+	*id = PluginID(s)
+	return id.Validate()
+}
+
+// PipelineID uniquely identifies a pipeline entry.
+type PipelineID string
+
+// NewPipelineID generates a new ULID-based PipelineID.
+func NewPipelineID() PipelineID { return PipelineID(NewULID().String()) }
+
+// String returns the string representation of the PipelineID.
+func (id PipelineID) String() string { return string(id) }
+
+// IsZero returns true if the PipelineID is empty.
+func (id PipelineID) IsZero() bool { return id == "" }
+
+// Validate checks if the PipelineID is a valid ULID.
+func (id PipelineID) Validate() error { return validateULID(string(id), "PipelineID") }
+
+// ULID parses the PipelineID as a ulid.ULID.
+func (id PipelineID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the PipelineID.
+func (id PipelineID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParsePipelineID parses and validates a string as a PipelineID.
+func ParsePipelineID(s string) (PipelineID, error) {
+	id := PipelineID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id PipelineID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("PipelineID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *PipelineID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("PipelineID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = PipelineID(v)
+	case []byte:
+		*id = PipelineID(string(v))
+	default:
+		return fmt.Errorf("PipelineID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id PipelineID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *PipelineID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("PipelineID: %w", err)
+	}
+	*id = PipelineID(s)
+	return id.Validate()
+}
+
 // AdminFieldTypeID uniquely identifies an admin field type.
 type AdminFieldTypeID string
 

@@ -26,6 +26,7 @@ templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, csrfTo
 				      hx-target="#field-edit-form"
 				      hx-swap="innerHTML">
 					@partials.CSRFField(csrfToken)
+					@partials.FormField("name", "Name", field.Name, "")
 					@partials.FormField("label", "Label", field.Label, "")
 					<div class="form-field">
 						<label for="type">Type</label>

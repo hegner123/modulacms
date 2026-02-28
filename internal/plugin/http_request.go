@@ -63,11 +63,11 @@ var blockedResponseHeaders = map[string]bool{
 	"access-control-allow-headers":     true,
 	"access-control-expose-headers":    true,
 	"set-cookie":                       true,
-	"transfer-encoding":               true,
-	"content-length":                  true,
-	"host":                            true,
-	"connection":                      true,
-	"cache-control":                   true,
+	"transfer-encoding":                true,
+	"content-length":                   true,
+	"host":                             true,
+	"connection":                       true,
+	"cache-control":                    true,
 }
 
 // writePluginError writes a JSON error response using the PluginErrorResponse

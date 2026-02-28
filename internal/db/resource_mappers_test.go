@@ -158,7 +158,7 @@ func TestMapStringSession(t *testing.T) {
 	session := Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  NewNullString("2024-06-15T13:00:00Z"),
 		IpAddress:   NewNullString("192.168.1.1"),
@@ -567,7 +567,7 @@ func TestDatabase_MapSession(t *testing.T) {
 	input := mdb.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2024-06-15T12:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "10.0.0.1", Valid: true},
@@ -969,7 +969,7 @@ func TestDatabase_MapCreateSessionParams(t *testing.T) {
 
 	input := CreateSessionParams{
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  NewNullString("2024-06-15T12:00:00Z"),
 		IpAddress:   NewNullString("127.0.0.1"),

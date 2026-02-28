@@ -13,24 +13,24 @@ type WordPressTransformer struct {
 
 // WordPressPost represents a WordPress post/page
 type WordPressPost struct {
-	ID            string                 `json:"id"`
-	Date          string                 `json:"date"`
-	DateGMT       string                 `json:"date_gmt"`
-	Modified      string                 `json:"modified"`
-	ModifiedGMT   string                 `json:"modified_gmt"`
-	Slug          string                 `json:"slug"`
-	Status        string                 `json:"status"`
-	Type          string                 `json:"type"`
-	Link          string                 `json:"link"`
-	Title         WordPressRendered      `json:"title"`
-	Content       WordPressContent       `json:"content"`
-	Excerpt       WordPressContent       `json:"excerpt"`
-	Author        string                 `json:"author"`
-	FeaturedMedia int64                  `json:"featured_media"`
-	CommentStatus string                 `json:"comment_status"`
-	PingStatus    string                 `json:"ping_status"`
-	Meta          map[string]any         `json:"meta"`
-	ACF           map[string]any         `json:"acf,omitempty"`
+	ID            string            `json:"id"`
+	Date          string            `json:"date"`
+	DateGMT       string            `json:"date_gmt"`
+	Modified      string            `json:"modified"`
+	ModifiedGMT   string            `json:"modified_gmt"`
+	Slug          string            `json:"slug"`
+	Status        string            `json:"status"`
+	Type          string            `json:"type"`
+	Link          string            `json:"link"`
+	Title         WordPressRendered `json:"title"`
+	Content       WordPressContent  `json:"content"`
+	Excerpt       WordPressContent  `json:"excerpt"`
+	Author        string            `json:"author"`
+	FeaturedMedia int64             `json:"featured_media"`
+	CommentStatus string            `json:"comment_status"`
+	PingStatus    string            `json:"ping_status"`
+	Meta          map[string]any    `json:"meta"`
+	ACF           map[string]any    `json:"acf,omitempty"`
 }
 
 type WordPressRendered struct {
@@ -125,7 +125,7 @@ func (w *WordPressTransformer) extractFields(node *model.Node) map[string]any {
 	fields := make(map[string]any)
 
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label)
+		key := fieldKey(field.Info)
 		value := w.parseFieldValue(field.Content.FieldValue, field.Info.Type)
 		fields[key] = value
 	}

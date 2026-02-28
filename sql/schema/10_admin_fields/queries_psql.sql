@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     parent_id TEXT
         REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -45,6 +46,7 @@ ORDER BY admin_field_id;
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -63,22 +65,24 @@ INSERT INTO admin_fields (
     $7,
     $8,
     $9,
-    $10
+    $10,
+    $11
 )
 RETURNING *;
 
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET parent_id    = $1,
-    label        = $2,
-    data         = $3,
-    validation   = $4,
-    ui_config    = $5,
-    type         = $6,
-    author_id    = $7,
-    date_created = $8,
-    date_modified= $9
-WHERE admin_field_id = $10;
+    name         = $2,
+    label        = $3,
+    data         = $4,
+    validation   = $5,
+    ui_config    = $6,
+    type         = $7,
+    author_id    = $8,
+    date_created = $9,
+    date_modified= $10
+WHERE admin_field_id = $11;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields

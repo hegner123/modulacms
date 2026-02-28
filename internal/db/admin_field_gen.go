@@ -21,6 +21,7 @@ import (
 type AdminFields struct {
 	AdminFieldID types.AdminFieldID            `json:"admin_field_id"`
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -34,6 +35,7 @@ type AdminFields struct {
 // CreateAdminFieldParams contains parameters for creating a new adminField.
 type CreateAdminFieldParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -47,6 +49,7 @@ type CreateAdminFieldParams struct {
 // UpdateAdminFieldParams contains parameters for updating an existing adminField.
 type UpdateAdminFieldParams struct {
 	ParentID     types.NullableAdminDatatypeID `json:"parent_id"`
+	Name         string                        `json:"name"`
 	Label        string                        `json:"label"`
 	Data         string                        `json:"data"`
 	Validation   string                        `json:"validation"`
@@ -70,6 +73,7 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 	return StringAdminFields{
 		AdminFieldID: a.AdminFieldID.String(),
 		ParentID:     a.ParentID.String(),
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -93,6 +97,7 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -109,6 +114,7 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 	return mdb.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -124,6 +130,7 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.UpdateAdminFieldParams {
 	return mdb.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -238,6 +245,7 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -254,6 +262,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 	return mdbm.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -269,6 +278,7 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.UpdateAdminFieldParams {
 	return mdbm.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -383,6 +393,7 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 	return AdminFields{
 		AdminFieldID: a.AdminFieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -399,6 +410,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 	return mdbp.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -414,6 +426,7 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.UpdateAdminFieldParams {
 	return mdbp.UpdateAdminFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -557,6 +570,7 @@ func (c NewAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Adm
 	return queries.CreateAdminField(ctx, mdb.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -616,6 +630,7 @@ func (c UpdateAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error
 	queries := mdb.New(tx)
 	return queries.UpdateAdminField(ctx, mdb.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -717,6 +732,7 @@ func (c NewAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 	params := mdbm.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -780,6 +796,7 @@ func (c UpdateAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 	queries := mdbm.New(tx)
 	return queries.UpdateAdminField(ctx, mdbm.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -881,6 +898,7 @@ func (c NewAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	return queries.CreateAdminField(ctx, mdbp.CreateAdminFieldParams{
 		AdminFieldID: types.NewAdminFieldID(),
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -940,6 +958,7 @@ func (c UpdateAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 	queries := mdbp.New(tx)
 	return queries.UpdateAdminField(ctx, mdbp.UpdateAdminFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,

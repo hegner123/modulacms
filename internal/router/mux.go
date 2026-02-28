@@ -66,8 +66,19 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	mux.Handle("GET /api/v1/auth/oauth/callback", corsMiddleware(authLimiter.Middleware(OauthCallbackHandler(*c))))
 
 	// Health check (PUBLIC - no auth required)
+	var pluginHealthFn PluginHealthChecker
+	if bridge != nil {
+		pluginHealthFn = func() PluginHealthResult {
+			s := bridge.PluginHealth()
+			return PluginHealthResult{
+				Healthy:             s.Healthy,
+				FailedPlugins:       s.FailedPlugins,
+				OpenCircuitBreakers: s.OpenCircuitBreakers,
+			}
+		}
+	}
 	mux.Handle("GET /api/v1/health", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		HealthHandler(w, r, *c)
+		HealthHandler(w, r, *c, pluginHealthFn)
 	})))
 
 	// Admin tree
@@ -391,7 +402,7 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 	})
 
 	// HTMX admin panel
-	registerAdminRoutes(mux, mgr, driver, pc)
+	registerAdminRoutes(mux, mgr, driver, pc, emailSvc)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -481,7 +492,7 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 }
 
 // registerAdminRoutes registers all HTMX-based admin panel routes.
-func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache) {
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service) {
 	// Static assets (no auth, no CSRF)
 	staticFS, staticErr := htmxadmin.StaticFS()
 	if staticErr == nil {
@@ -494,6 +505,10 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("GET /admin/login", loginCSRF(http.HandlerFunc(adminhandlers.LoginPageHandler())))
 	mux.Handle("POST /admin/login", loginLimiter.Middleware(loginCSRF(http.HandlerFunc(adminhandlers.LoginSubmitHandler(mgr)))))
 	mux.HandleFunc("POST /admin/logout", adminhandlers.LogoutHandler(mgr))
+	mux.Handle("GET /admin/forgot-password", loginCSRF(http.HandlerFunc(adminhandlers.ForgotPasswordPageHandler())))
+	mux.Handle("POST /admin/forgot-password", loginLimiter.Middleware(loginCSRF(http.HandlerFunc(adminhandlers.ForgotPasswordSubmitHandler(mgr, emailSvc, driver)))))
+	mux.Handle("GET /admin/reset-password", loginCSRF(http.HandlerFunc(adminhandlers.ResetPasswordPageHandler(driver))))
+	mux.Handle("POST /admin/reset-password", loginLimiter.Middleware(loginCSRF(http.HandlerFunc(adminhandlers.ResetPasswordSubmitHandler(mgr, driver)))))
 
 	adminAuth := htmxadmin.AdminAuthMiddleware(mgr)
 	csrf := htmxadmin.CSRFMiddleware()
@@ -529,20 +544,20 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Schema — datatypes
 	mux.Handle("GET /admin/schema/datatypes", viewing("datatypes", adminhandlers.DatatypesListHandler(driver)))
 	mux.Handle("GET /admin/schema/datatypes/{id}", viewing("datatypes", adminhandlers.DatatypeDetailHandler(driver)))
-	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(driver)))
-	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(driver)))
-	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver)))
+	mux.Handle("POST /admin/schema/datatypes", mutating("datatypes:create", adminhandlers.DatatypeCreateHandler(driver, mgr)))
+	mux.Handle("POST /admin/schema/datatypes/{id}", mutating("datatypes:update", adminhandlers.DatatypeUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver, mgr)))
 
 	// Schema — fields (detail, update, delete only — no standalone list or create)
 	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver)))
-	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver)))
-	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver)))
+	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver, mgr)))
 
 	// Schema — field types
 	mux.Handle("GET /admin/schema/field-types", viewing("field_types", adminhandlers.FieldTypesListHandler()))
 
 	// Schema — datatype field creation
-	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(driver)))
+	mux.Handle("POST /admin/schema/datatypes/{id}/fields", mutating("fields:create", adminhandlers.DatatypeCreateFieldHandler(driver, mgr)))
 
 	// Media
 	mux.Handle("GET /admin/media", viewing("media", adminhandlers.MediaListHandler(driver)))
@@ -554,33 +569,33 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Routes
 	mux.Handle("GET /admin/routes", viewing("routes", adminhandlers.RoutesListHandler(driver)))
 	mux.Handle("GET /admin/routes/admin", viewing("routes", adminhandlers.AdminRoutesListHandler(driver)))
-	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(driver)))
-	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(driver)))
-	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(driver)))
+	mux.Handle("POST /admin/routes", mutating("routes:create", adminhandlers.RouteCreateHandler(driver, mgr)))
+	mux.Handle("POST /admin/routes/{id}", mutating("routes:update", adminhandlers.RouteUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/routes/{id}", mutating("routes:delete", adminhandlers.RouteDeleteHandler(driver, mgr)))
 
 	// Users
 	mux.Handle("GET /admin/users", viewing("users", adminhandlers.UsersListHandler(driver)))
 	mux.Handle("GET /admin/users/{id}", viewing("users", adminhandlers.UserDetailHandler(driver)))
-	mux.Handle("POST /admin/users", mutating("users:create", adminhandlers.UserCreateHandler(driver)))
-	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(driver)))
-	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(driver)))
+	mux.Handle("POST /admin/users", mutating("users:create", adminhandlers.UserCreateHandler(driver, mgr)))
+	mux.Handle("POST /admin/users/{id}", mutating("users:update", adminhandlers.UserUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/users/{id}", mutating("users:delete", adminhandlers.UserDeleteHandler(driver, mgr)))
 
 	// Roles
 	mux.Handle("GET /admin/users/roles", viewing("roles", adminhandlers.RolesListHandler(driver, pc)))
 	mux.Handle("GET /admin/users/roles/new", viewing("roles", adminhandlers.RoleNewFormHandler(driver, pc)))
 	mux.Handle("GET /admin/users/roles/{id}", viewing("roles", adminhandlers.RoleDetailHandler(driver, pc)))
-	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(driver, pc)))
-	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(driver, pc)))
-	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(driver, pc)))
+	mux.Handle("POST /admin/users/roles", mutating("roles:create", adminhandlers.RoleCreateHandler(driver, pc, mgr)))
+	mux.Handle("POST /admin/users/roles/{id}", mutating("roles:update", adminhandlers.RoleUpdateHandler(driver, pc, mgr)))
+	mux.Handle("DELETE /admin/users/roles/{id}", mutating("roles:delete", adminhandlers.RoleDeleteHandler(driver, pc, mgr)))
 
 	// Tokens
 	mux.Handle("GET /admin/users/tokens", viewing("tokens", adminhandlers.TokensListHandler(driver)))
-	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(driver)))
-	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(driver)))
+	mux.Handle("POST /admin/users/tokens", mutating("tokens:create", adminhandlers.TokenCreateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/users/tokens/{id}", mutating("tokens:delete", adminhandlers.TokenDeleteHandler(driver, mgr)))
 
 	// Sessions
 	mux.Handle("GET /admin/sessions", viewing("sessions", adminhandlers.SessionsListHandler(driver)))
-	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(driver)))
+	mux.Handle("DELETE /admin/sessions/{id}", mutating("sessions:delete", adminhandlers.SessionDeleteHandler(driver, mgr)))
 
 	// Plugins
 	mux.Handle("GET /admin/plugins", viewing("plugins", adminhandlers.PluginsListHandler(driver)))

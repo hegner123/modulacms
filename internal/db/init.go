@@ -19,10 +19,9 @@ import (
 // dbInstance, dbOnce, and dbInitErr manage the singleton database connection pool.
 var (
 	dbInstance DbDriver
-	dbOnce    sync.Once
-	dbInitErr error
+	dbOnce     sync.Once
+	dbInitErr  error
 )
-
 
 // GetDb initializes a SQLite database connection and configures connection pooling.
 func (d Database) GetDb(verbose *bool) DbDriver {
@@ -73,6 +72,7 @@ func (d Database) GetDb(verbose *bool) DbDriver {
 	d.Err = nil
 	return d
 }
+
 // GetDb initializes a MySQL database connection and configures connection pooling.
 func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
@@ -115,6 +115,7 @@ func (d MysqlDatabase) GetDb(verbose *bool) DbDriver {
 	d.Err = nil
 	return d
 }
+
 // GetDb initializes a PostgreSQL database connection and configures connection pooling.
 func (d PsqlDatabase) GetDb(verbose *bool) DbDriver {
 	if *verbose {
@@ -243,8 +244,6 @@ func CloseDB() error {
 	utility.DefaultLogger.Info("Closing database connection pool")
 	return con.Close()
 }
-
-
 
 // buildDSN returns the Go sql driver name and data source name for the
 // configured database driver without opening a connection.

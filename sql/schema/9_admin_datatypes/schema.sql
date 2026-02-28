@@ -4,6 +4,7 @@ CREATE TABLE admin_datatypes (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL

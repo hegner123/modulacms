@@ -8,6 +8,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -50,8 +51,14 @@ func TokensListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // TokenCreateHandler generates a random API token and stores it.
 // Returns an HTMX response with the new token table rows.
-func TokenCreateHandler(driver db.DbDriver) http.HandlerFunc {
+func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -81,7 +88,7 @@ func TokenCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		expiresAt := types.NewTimestamp(now.Add(365 * 24 * time.Hour))
 
 		ac := audited.Ctx(
-			types.NodeID("0"),
+			types.NodeID(cfg.Node_ID),
 			user.UserID,
 			middleware.RequestIDFromContext(r.Context()),
 			clientIP(r),
@@ -130,8 +137,14 @@ func TokenCreateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // TokenDeleteHandler deletes (revokes) an API token by ID.
 // Only HTMX DELETE requests are supported.
-func TokenDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func TokenDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -150,7 +163,7 @@ func TokenDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		ac := audited.Ctx(
-			types.NodeID("0"),
+			types.NodeID(cfg.Node_ID),
 			user.UserID,
 			middleware.RequestIDFromContext(r.Context()),
 			clientIP(r),

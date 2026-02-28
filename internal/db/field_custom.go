@@ -66,6 +66,7 @@ func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, e
 type FieldsJSON struct {
 	FieldID      string `json:"field_id"`
 	ParentID     string `json:"parent_id"`
+	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Validation   string `json:"validation"`
@@ -81,6 +82,7 @@ func MapFieldJSON(a Fields) FieldsJSON {
 	return FieldsJSON{
 		FieldID:      a.FieldID.String(),
 		ParentID:     a.ParentID.String(),
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,

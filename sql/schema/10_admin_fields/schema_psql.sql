@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     parent_id TEXT
         REFERENCES admin_datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT DEFAULT ''::TEXT NOT NULL,
     validation TEXT NOT NULL,

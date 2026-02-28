@@ -243,7 +243,7 @@ type NewTokenCmd struct {
 }
 
 func (c NewTokenCmd) Context() context.Context              { return c.ctx }
-func (c NewTokenCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewTokenCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewTokenCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewTokenCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c NewTokenCmd) TableName() string                     { return "tokens" }
@@ -279,7 +279,7 @@ type UpdateTokenCmd struct {
 }
 
 func (c UpdateTokenCmd) Context() context.Context              { return c.ctx }
-func (c UpdateTokenCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateTokenCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateTokenCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateTokenCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c UpdateTokenCmd) TableName() string                     { return "tokens" }
@@ -315,7 +315,7 @@ type DeleteTokenCmd struct {
 }
 
 func (c DeleteTokenCmd) Context() context.Context              { return c.ctx }
-func (c DeleteTokenCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteTokenCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteTokenCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteTokenCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c DeleteTokenCmd) TableName() string                     { return "tokens" }
@@ -346,7 +346,7 @@ type NewTokenCmdMysql struct {
 }
 
 func (c NewTokenCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewTokenCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewTokenCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewTokenCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c NewTokenCmdMysql) TableName() string                     { return "tokens" }
@@ -387,7 +387,7 @@ type UpdateTokenCmdMysql struct {
 }
 
 func (c UpdateTokenCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateTokenCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateTokenCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateTokenCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c UpdateTokenCmdMysql) TableName() string                     { return "tokens" }
@@ -423,7 +423,7 @@ type DeleteTokenCmdMysql struct {
 }
 
 func (c DeleteTokenCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteTokenCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteTokenCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteTokenCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c DeleteTokenCmdMysql) TableName() string                     { return "tokens" }
@@ -454,7 +454,7 @@ type NewTokenCmdPsql struct {
 }
 
 func (c NewTokenCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewTokenCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewTokenCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewTokenCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c NewTokenCmdPsql) TableName() string                     { return "tokens" }
@@ -490,7 +490,7 @@ type UpdateTokenCmdPsql struct {
 }
 
 func (c UpdateTokenCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateTokenCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateTokenCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateTokenCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c UpdateTokenCmdPsql) TableName() string                     { return "tokens" }
@@ -526,7 +526,7 @@ type DeleteTokenCmdPsql struct {
 }
 
 func (c DeleteTokenCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteTokenCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteTokenCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteTokenCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c DeleteTokenCmdPsql) TableName() string                     { return "tokens" }

@@ -97,6 +97,7 @@ func MapAdminFieldJSON(a AdminFields) FieldsJSON {
 	return FieldsJSON{
 		FieldID:      a.AdminFieldID.String(),
 		ParentID:     a.ParentID.String(),
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,

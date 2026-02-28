@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"time"
-
 )
 
 // NullInt32 wraps sql.NullInt32 with JSON marshaling support.

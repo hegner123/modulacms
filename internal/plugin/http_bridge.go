@@ -21,10 +21,10 @@ import (
 
 // Constants for plugin HTTP request/response limits and route prefixing.
 const (
-	MaxPluginRequestBody  = 1 << 20 // 1 MB default for request bodies
-	MaxPluginResponseBody = 5 << 20 // 5 MB default for response bodies
-	DefaultPluginRateLimit = 100    // requests per second per IP
-	PluginRoutePrefix     = "/api/v1/plugins/"
+	MaxPluginRequestBody   = 1 << 20 // 1 MB default for request bodies
+	MaxPluginResponseBody  = 5 << 20 // 5 MB default for response bodies
+	DefaultPluginRateLimit = 100     // requests per second per IP
+	PluginRoutePrefix      = "/api/v1/plugins/"
 )
 
 // RouteRegistration holds the metadata for a single plugin-registered HTTP route.
@@ -964,6 +964,11 @@ func (b *HTTPBridge) Close(ctx context.Context) {
 	close(b.cleanupDone)
 }
 
+// PluginHealth returns the aggregate health of all loaded plugins via the Manager.
+func (b *HTTPBridge) PluginHealth() PluginHealthStatus {
+	return b.manager.PluginHealth()
+}
+
 // UnregisterPlugin removes all in-memory route registrations for the given plugin.
 // DB rows are kept for approval persistence. The mux patterns are never removed
 // (Go's http.ServeMux does not support it) -- ServeHTTP already returns 404 for
@@ -1010,6 +1015,12 @@ func (b *HTTPBridge) MountAdminEndpoints(
 	mux.Handle("POST /api/v1/admin/plugins/hooks/revoke",
 		authChain(adminPerm(PluginHooksRevokeHandler(mgr))))
 
+	// Pipeline endpoints (literal paths before wildcard):
+	mux.Handle("GET /api/v1/admin/pipelines",
+		authChain(readPerm(PipelineListHandler(mgr))))
+	mux.Handle("GET /api/v1/admin/pipelines/dry-run",
+		authChain(readPerm(PipelineDryRunHandler(mgr))))
+
 	// 2. Register wildcard {name} endpoints:
 	mux.Handle("GET /api/v1/admin/plugins/{name}",
 		authChain(readPerm(PluginInfoHandler(mgr))))
@@ -1019,4 +1030,6 @@ func (b *HTTPBridge) MountAdminEndpoints(
 		authChain(adminPerm(PluginEnableHandler(mgr))))
 	mux.Handle("POST /api/v1/admin/plugins/{name}/disable",
 		authChain(adminPerm(PluginDisableHandler(mgr))))
+	mux.Handle("POST /api/v1/admin/plugins/{name}/sync-capabilities",
+		authChain(adminPerm(PluginSyncCapabilitiesHandler(mgr))))
 }

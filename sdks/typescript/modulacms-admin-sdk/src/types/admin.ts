@@ -103,6 +103,8 @@ export type AdminDatatype = {
   admin_datatype_id: AdminDatatypeID
   /** Parent content ID for hierarchical datatypes, or `null`. */
   parent_id: AdminContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable label for this datatype. */
   label: string
   /** Datatype category (e.g. `'page'`, `'component'`). */
@@ -124,6 +126,8 @@ export type AdminField = {
   admin_field_id: AdminFieldID
   /** Parent datatype ID this field belongs to, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable field label. */
   label: string
   /** Additional field data (JSON-encoded metadata). */
@@ -257,6 +261,8 @@ export type CreateAdminContentFieldParams = {
 export type CreateAdminDatatypeParams = {
   /** Parent content ID, or `null`. */
   parent_id: AdminContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable label. */
   label: string
   /** Datatype category. */
@@ -273,6 +279,8 @@ export type CreateAdminDatatypeParams = {
 export type CreateAdminFieldParams = {
   /** Parent datatype ID, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable field label. */
   label: string
   /** Additional field metadata (JSON-encoded). */
@@ -369,6 +377,8 @@ export type UpdateAdminDatatypeParams = {
   admin_datatype_id: AdminDatatypeID
   /** Updated parent content ID, or `null`. */
   parent_id: AdminContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Updated label. */
   label: string
   /** Updated category type. */
@@ -387,6 +397,8 @@ export type UpdateAdminFieldParams = {
   admin_field_id: AdminFieldID
   /** Updated parent datatype ID, or `null`. */
   parent_id: AdminDatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Updated label. */
   label: string
   /** Updated metadata (JSON-encoded). */

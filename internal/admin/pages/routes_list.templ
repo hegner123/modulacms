@@ -47,11 +47,11 @@ templ RoutesListContent(items []db.Routes, pagination partials.PaginationPageDat
 }
 
 templ RouteCreateDialog(csrfToken string) {
-	<dialog id="create-route-dialog" class="dialog">
+	<dialog id="create-route-dialog" class="dialog" aria-labelledby="create-route-dialog-title">
 		<div class="dialog-content">
 			<div class="dialog-header">
-				<h2>Create Route</h2>
-				<button class="dialog-close" onclick="document.getElementById('create-route-dialog').close()">&times;</button>
+				<h2 id="create-route-dialog-title">Create Route</h2>
+				<button class="dialog-close" aria-label="Close dialog" onclick="document.getElementById('create-route-dialog').close()">&times;</button>
 			</div>
 			<form
 				hx-post="/admin/routes"

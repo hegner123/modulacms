@@ -54,11 +54,11 @@ templ RoutesTableRowsInner(items []db.Routes) {
 						Delete
 					</button>
 				</div>
-				<dialog id={ "edit-route-" + item.RouteID.String() } class="dialog">
+				<dialog id={ "edit-route-" + item.RouteID.String() } class="dialog" aria-labelledby={ "edit-route-title-" + item.RouteID.String() }>
 					<div class="dialog-content">
 						<div class="dialog-header">
-							<h2>Edit Route</h2>
-							<button class="dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+							<h2 id={ "edit-route-title-" + item.RouteID.String() }>Edit Route</h2>
+							<button class="dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
 						</div>
 						<form
 							hx-post={ "/admin/routes/" + item.RouteID.String() }

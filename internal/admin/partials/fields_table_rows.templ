@@ -7,13 +7,14 @@ import "github.com/hegner123/modulacms/internal/db"
 templ FieldsTableRows(items []db.Fields, pg PaginationPageData) {
 	if len(items) == 0 {
 		<tr>
-			<td colspan="4">
+			<td colspan="5">
 				@EmptyState("No fields found.")
 			</td>
 		</tr>
 	} else {
 		for _, f := range items {
 			<tr>
+				<td>{ f.Name }</td>
 				<td>
 					<a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }>
 						{ f.Label }
@@ -38,7 +39,7 @@ templ FieldsTableRows(items []db.Fields, pg PaginationPageData) {
 		}
 	}
 	<tr>
-		<td colspan="4">
+		<td colspan="5">
 			@Pagination(pg.Current, pg.TotalPages, "#fields-table-body", "/admin/schema/fields", pg.Limit)
 		</td>
 	</tr>

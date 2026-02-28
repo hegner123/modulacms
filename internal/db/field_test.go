@@ -1576,7 +1576,7 @@ func TestFieldsStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"field_id", "parent_id", "label", "data",
+		"field_id", "parent_id", "name", "label", "data",
 		"validation", "ui_config", "type", "author_id",
 		"date_created", "date_modified",
 	}
@@ -1596,6 +1596,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 	p := CreateFieldParams{
 		FieldID:      types.NewFieldID(),
 		ParentID:     types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true},
+		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
 		Validation:   "test-validation",
@@ -1617,7 +1618,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"field_id", "parent_id", "label", "data",
+		"field_id", "parent_id", "name", "label", "data",
 		"validation", "ui_config", "type", "author_id",
 		"date_created", "date_modified",
 	}
@@ -1637,6 +1638,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 	fID := types.NewFieldID()
 	p := UpdateFieldParams{
 		ParentID:     types.NullableDatatypeID{ID: types.NewDatatypeID(), Valid: true},
+		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
 		Validation:   "test-validation",
@@ -1659,7 +1661,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"parent_id", "label", "data",
+		"parent_id", "name", "label", "data",
 		"validation", "ui_config", "type", "author_id",
 		"date_created", "date_modified",
 		"field_id",
@@ -1679,6 +1681,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 	fj := FieldsJSON{
 		FieldID:      "test-field-id",
 		ParentID:     "test-parent-id",
+		Name:         "json-name",
 		Label:        "json-label",
 		Data:         "json-data",
 		Validation:   "json-validation",
@@ -1700,7 +1703,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"field_id", "parent_id", "label", "data",
+		"field_id", "parent_id", "name", "label", "data",
 		"validation", "ui_config", "type", "author_id",
 		"date_created", "date_modified",
 	}
@@ -1761,6 +1764,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 	sf := StringFields{
 		FieldID:      "test-id",
 		ParentID:     "test-parent",
+		Name:         "test-name",
 		Label:        "test-label",
 		Data:         "test-data",
 		Validation:   "test-validation",
@@ -1783,7 +1787,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"field_id", "parent_id", "label", "data",
+		"field_id", "parent_id", "name", "label", "data",
 		"validation", "ui_config", "type", "author_id",
 		"date_created", "date_modified", "history",
 	}

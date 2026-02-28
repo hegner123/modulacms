@@ -13,12 +13,12 @@ type SanityTransformer struct {
 
 // SanityDocument represents a Sanity document
 type SanityDocument struct {
-	ID         string         `json:"_id"`
-	Type       string         `json:"_type"`
-	CreatedAt  string         `json:"_createdAt"`
-	UpdatedAt  string         `json:"_updatedAt"`
-	Rev        string         `json:"_rev,omitempty"`
-	Fields     map[string]any `json:"-"` // Flattened into document
+	ID        string         `json:"_id"`
+	Type      string         `json:"_type"`
+	CreatedAt string         `json:"_createdAt"`
+	UpdatedAt string         `json:"_updatedAt"`
+	Rev       string         `json:"_rev,omitempty"`
+	Fields    map[string]any `json:"-"` // Flattened into document
 }
 
 type SanitySlug struct {
@@ -27,8 +27,8 @@ type SanitySlug struct {
 }
 
 type SanityImage struct {
-	Type  string           `json:"_type"`
-	Asset SanityReference  `json:"asset"`
+	Type  string          `json:"_type"`
+	Asset SanityReference `json:"asset"`
 }
 
 type SanityReference struct {
@@ -37,8 +37,8 @@ type SanityReference struct {
 }
 
 type SanityBlock struct {
-	Type     string              `json:"_type"`
-	Children []SanityBlockChild  `json:"children"`
+	Type     string             `json:"_type"`
+	Children []SanityBlockChild `json:"children"`
 }
 
 type SanityBlockChild struct {
@@ -75,7 +75,7 @@ func (s *SanityTransformer) transformNode(node *model.Node) map[string]any {
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label)
+		key := fieldKey(field.Info)
 		value := s.transformField(field)
 		doc[key] = value
 	}

@@ -10,13 +10,19 @@
 //	       -> ApplySandbox (safe stdlib subset, stripped globals)
 //	       -> RegisterPluginRequire (sandboxed module loader)
 //	       -> RegisterDBAPI (db.* Lua module via query builder)
+//	       -> RegisterCoreAPI (core.* Lua module for gated core table access)
 //	       -> RegisterLogAPI (log.* Lua module)
-//	       -> FreezeModule (read-only proxy for db/log)
+//	       -> FreezeModule (read-only proxy for db/log/core)
 //
 // Entry point: NewManager() creates the manager; LoadAll() discovers and loads
 // plugins; Shutdown() gracefully stops all plugins.
 //
-// All plugin tables are prefixed with plugin_<plugin_name>_ and validated via
-// the query builder's identifier validation. Plugins cannot access core CMS
-// tables or other plugins' tables.
+// Plugin-owned tables are prefixed with plugin_<plugin_name>_ and validated via
+// the query builder's identifier validation. Plugins cannot access other
+// plugins' tables.
+//
+// Core CMS tables (content_data, users, media, etc.) are accessible via the
+// core.* Lua module, gated by three layers: a hardcoded table whitelist,
+// per-table read/write policies, and the plugin's approved_access stored in
+// the plugins DB table. See CoreTableAPI for details.
 package plugin

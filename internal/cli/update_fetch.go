@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
@@ -370,11 +371,14 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 					cbState = inst.CB.State().String()
 				}
 				displays = append(displays, PluginDisplay{
-					Name:        inst.Info.Name,
-					Version:     inst.Info.Version,
-					State:       inst.State.String(),
-					CBState:     cbState,
-					Description: inst.Info.Description,
+					Name:             inst.Info.Name,
+					Version:          inst.Info.Version,
+					State:            inst.State.String(),
+					CBState:          cbState,
+					Description:      inst.Info.Description,
+					ManifestDrift:    inst.ManifestDrift,
+					CapabilityDrifts: len(inst.CapabilityDrift),
+					SchemaDrifts:     len(inst.SchemaDrift),
 				})
 			}
 			return PluginsFetchResultsMsg{Data: displays}
@@ -384,6 +388,98 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			PluginsListSetCmd(msg.Data),
 			LoadingStopCmd(),
+		)
+
+	case PipelinesFetchMsg:
+		mgr := m.PluginManager
+		if mgr == nil {
+			return m, func() tea.Msg {
+				return PipelinesFetchResultsMsg{Data: []PipelineDisplay{}}
+			}
+		}
+		return m, func() tea.Msg {
+			results := mgr.DryRunAllPipelines()
+			displays := make([]PipelineDisplay, 0, len(results))
+			for _, r := range results {
+				displays = append(displays, PipelineDisplay{
+					Key:       r.Table + "." + r.Phase + "_" + r.Operation,
+					Table:     r.Table,
+					Operation: r.Operation,
+					Phase:     r.Phase,
+					Count:     len(r.Entries),
+				})
+			}
+			return PipelinesFetchResultsMsg{Data: displays}
+		}
+
+	case PipelinesFetchResultsMsg:
+		return m, tea.Batch(
+			PipelinesListSetCmd(msg.Data),
+			LoadingStopCmd(),
+		)
+
+	case PipelinesListSet:
+		m.PipelinesList = msg.PipelinesList
+		return m, nil
+
+	case PipelineEntriesFetchMsg:
+		mgr := m.PluginManager
+		if mgr == nil {
+			return m, func() tea.Msg {
+				return PipelineEntriesFetchResultsMsg{Entries: []PipelineEntryDisplay{}}
+			}
+		}
+		key := msg.Key
+		return m, func() tea.Msg {
+			results := mgr.DryRunAllPipelines()
+			var matchedEntries []PipelineEntryDisplay
+			for _, r := range results {
+				rKey := r.Table + "." + r.Phase + "_" + r.Operation
+				if rKey == key {
+					for _, e := range r.Entries {
+						matchedEntries = append(matchedEntries, PipelineEntryDisplay{
+							PipelineID: e.PipelineID,
+							PluginName: e.PluginName,
+							Handler:    e.Handler,
+							Priority:   e.Priority,
+							Enabled:    e.Enabled,
+						})
+					}
+					break
+				}
+			}
+			return PipelineEntriesFetchResultsMsg{Entries: matchedEntries}
+		}
+
+	case PipelineEntriesFetchResultsMsg:
+		return m, PipelineEntriesSetCmd(msg.Entries)
+
+	case PipelineEntriesSet:
+		m.PipelineEntries = msg.PipelineEntries
+		return m, nil
+
+	case PluginSyncCapabilitiesRequestMsg:
+		mgr := m.PluginManager
+		name := msg.Name
+		adminUser := m.AdminUsername
+		if mgr == nil {
+			return m, func() tea.Msg {
+				return PluginSyncCapabilitiesResultMsg{Name: name, Err: fmt.Errorf("plugin manager not available")}
+			}
+		}
+		return m, func() tea.Msg {
+			ctx := context.Background()
+			err := mgr.SyncCapabilities(ctx, name, adminUser)
+			return PluginSyncCapabilitiesResultMsg{Name: name, Err: err}
+		}
+
+	case PluginSyncCapabilitiesResultMsg:
+		if msg.Err != nil {
+			return m, ShowDialog("Sync Failed", fmt.Sprintf("Failed to sync capabilities for %q: %s", msg.Name, msg.Err.Error()), false)
+		}
+		return m, tea.Batch(
+			ShowDialog("Sync Complete", fmt.Sprintf("Capabilities synced for plugin %q", msg.Name), false),
+			PluginsFetchCmd(),
 		)
 
 	case FetchErrMsg:

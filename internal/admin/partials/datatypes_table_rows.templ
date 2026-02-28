@@ -9,13 +9,14 @@ import (
 templ DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) {
 	if len(items) == 0 {
 		<tr>
-			<td colspan="4">
+			<td colspan="5">
 				@EmptyState("No datatypes found.")
 			</td>
 		</tr>
 	} else {
 		for _, dt := range items {
 			<tr>
+				<td>{ dt.Name }</td>
 				<td>
 					<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }>
 						{ dt.Label }
@@ -40,7 +41,7 @@ templ DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) {
 		}
 	}
 	<tr>
-		<td colspan="4">
+		<td colspan="5">
 			@Pagination(pg.Current, pg.TotalPages, "#datatypes-table-body", "/admin/schema/datatypes", pg.Limit)
 		</td>
 	</tr>

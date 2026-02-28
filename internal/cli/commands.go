@@ -2149,7 +2149,7 @@ func (m Model) HandlePluginEnable(msg PluginEnableRequestMsg) tea.Cmd {
 		}
 	}
 	return func() tea.Msg {
-		if err := mgr.EnablePlugin(context.Background(), msg.Name, adminUser); err != nil {
+		if err := mgr.ActivatePlugin(context.Background(), msg.Name, adminUser); err != nil {
 			return PluginActionResultMsg{
 				Title:   "Error",
 				Message: fmt.Sprintf("Failed to enable plugin %q: %v", msg.Name, err),
@@ -2168,7 +2168,7 @@ func (m Model) HandlePluginDisable(msg PluginDisableRequestMsg) tea.Cmd {
 		}
 	}
 	return func() tea.Msg {
-		if err := mgr.DisablePlugin(context.Background(), msg.Name); err != nil {
+		if err := mgr.DeactivatePlugin(context.Background(), msg.Name); err != nil {
 			return PluginActionResultMsg{
 				Title:   "Error",
 				Message: fmt.Sprintf("Failed to disable plugin %q: %v", msg.Name, err),

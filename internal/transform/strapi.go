@@ -27,8 +27,8 @@ type StrapiMedia struct {
 }
 
 type StrapiMediaData struct {
-	ID         int64                  `json:"id"`
-	Attributes StrapiMediaAttributes  `json:"attributes"`
+	ID         int64                 `json:"id"`
+	Attributes StrapiMediaAttributes `json:"attributes"`
 }
 
 type StrapiMediaAttributes struct {
@@ -76,7 +76,7 @@ func (s *StrapiTransformer) transformNode(node *model.Node) StrapiEntry {
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label)
+		key := fieldKey(field.Info)
 		value := s.transformField(field)
 		entry.Attributes[key] = value
 	}

@@ -18,6 +18,7 @@ func (m Model) HomepageMenuInit() []Page {
 		m.PageMap[CONFIGPAGE],
 		m.PageMap[ACTIONSPAGE],
 		m.PageMap[PLUGINSPAGE],
+		m.PageMap[PIPELINESPAGE],
 		m.PageMap[DEPLOYPAGE],
 	}
 

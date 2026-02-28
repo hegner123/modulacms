@@ -86,6 +86,10 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.AdminFieldTypesControls(msg)
 	case DEPLOYPAGE:
 		return m.DeployControls(msg)
+	case PIPELINESPAGE:
+		return m.PipelinesControls(msg)
+	case PIPELINEDETAILPAGE:
+		return m.PipelineDetailControls2(msg)
 
 	}
 	return m, nil
@@ -1722,8 +1726,8 @@ func (m Model) PluginDetailControls(msg tea.Msg) (Model, tea.Cmd) {
 			}
 		}
 		if km.Matches(key, config.ActionDown) {
-			// 5 action items: Enable, Disable, Reload, Approve Routes, Approve Hooks
-			if m.Cursor < 4 {
+			// 6 action items: Enable, Disable, Reload, Approve Routes, Approve Hooks, Sync Capabilities
+			if m.Cursor < 5 {
 				return m, CursorDownCmd()
 			}
 		}
@@ -1754,7 +1758,97 @@ func (m Model) PluginDetailControls(msg tea.Msg) (Model, tea.Cmd) {
 			case 4:
 				// Approve All Hooks -- fetch pending hooks and show confirmation dialog
 				return m, m.FetchPendingHooksForApprovalCmd(name)
+			case 5:
+				// Sync Capabilities -- update DB pipeline entries from current manifest
+				return m, func() tea.Msg {
+					return PluginSyncCapabilitiesRequestMsg{Name: name}
+				}
 			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// PipelinesControls handles keyboard navigation for the pipelines list page.
+func (m Model) PipelinesControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.PipelinesList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionSelect) {
+			// Select pipeline: fetch entries for selected key
+			if len(m.PipelinesList) > 0 && m.Cursor < len(m.PipelinesList) {
+				m.SelectedPipelineKey = m.PipelinesList[m.Cursor].Key
+				return m, PipelineEntriesFetchCmd(m.SelectedPipelineKey)
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
+			}
+		}
+	}
+	return m, nil
+}
+
+// PipelineDetailControls2 handles keyboard navigation for the pipeline detail page.
+// Reserved for future per-entry management actions.
+func (m Model) PipelineDetailControls2(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionBack) || km.Matches(key, config.ActionDismiss) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+			return m, tea.Quit
 		}
 		if km.Matches(key, config.ActionTitlePrev) {
 			if m.TitleFont > 0 {

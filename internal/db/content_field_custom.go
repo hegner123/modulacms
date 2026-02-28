@@ -27,12 +27,12 @@ type ContentFieldsJSON struct {
 // Deprecated: Will be removed in future version
 func MapContentFieldJSON(a ContentFields) ContentFieldsJSON {
 	return ContentFieldsJSON{
-		ContentFieldID: 0,                       // Type conversion not available, set to 0
-		RouteID:        0,                       // Type conversion not available, set to 0
-		ContentDataID:  0,                       // Type conversion not available, set to 0
-		FieldID:        0,                       // Type conversion not available, set to 0
+		ContentFieldID: 0, // Type conversion not available, set to 0
+		RouteID:        0, // Type conversion not available, set to 0
+		ContentDataID:  0, // Type conversion not available, set to 0
+		FieldID:        0, // Type conversion not available, set to 0
 		FieldValue:     a.FieldValue,
-		AuthorID:       0,                       // Type conversion not available, set to 0
+		AuthorID:       0, // Type conversion not available, set to 0
 		DateCreated:    a.DateCreated.String(),
 		DateModified:   a.DateModified.String(),
 	}

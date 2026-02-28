@@ -138,6 +138,8 @@ var strictDropTables = []string{
 // Tables that use "DROP TABLE IF EXISTS" (tolerant -- no error if missing).
 // Pre-dropping these won't cause DropAllTables to fail.
 var ifExistsDropTables = []string{
+	"pipelines",
+	"plugins",
 	"role_permissions",
 	"admin_content_relations",
 	"content_relations",
@@ -182,6 +184,8 @@ func TestDatabase_DropAllTables_SpecificTablesGone(t *testing.T) {
 
 	// Tables actually created by CreateAllTables (excludes backup_sets, backup_verifications)
 	createdTables := []string{
+		"pipelines",
+		"plugins",
 		"admin_datatypes_fields",
 		"datatypes_fields",
 		"role_permissions",
@@ -223,11 +227,14 @@ func TestDatabase_DropAllTables_SpecificTablesGone(t *testing.T) {
 // --- DropAllTables: error early-return behavior ---
 
 func TestDatabase_DropAllTables_ErrorOnFirstTable(t *testing.T) {
-	// If the very first table (admin_datatypes_fields) is already missing,
-	// DropAllTables should fail immediately with an error mentioning that table.
+	// The first strict table (DROP TABLE without IF EXISTS) in the drop
+	// sequence is admin_datatypes_fields. Pre-dropping it should cause
+	// DropAllTables to fail with an error mentioning that table.
+	// Note: pipelines and plugins use DROP TABLE IF EXISTS, so they
+	// silently succeed even when already dropped.
 	d := newWipeTestDB(t)
 
-	// Pre-drop the first table in the sequence
+	// Pre-drop the first strict table in the sequence
 	_, err := d.Connection.Exec("DROP TABLE admin_datatypes_fields;")
 	if err != nil {
 		t.Fatalf("pre-drop admin_datatypes_fields: %v", err)
@@ -235,7 +242,7 @@ func TestDatabase_DropAllTables_ErrorOnFirstTable(t *testing.T) {
 
 	err = d.DropAllTables()
 	if err == nil {
-		t.Fatal("expected error when first table is already dropped, got nil")
+		t.Fatal("expected error when first strict table is already dropped, got nil")
 	}
 	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
 		t.Errorf("error = %q, want it to contain %q", err.Error(), "drop admin_datatypes_fields")
@@ -327,6 +334,8 @@ func TestDatabase_DropAllTables_IfExistsTables_NoError(t *testing.T) {
 	// Note: backup_sets and backup_verifications are never created by
 	// CreateAllTables, so they don't need pre-dropping -- they never existed.
 	ifExistsCreated := []string{
+		"pipelines",
+		"plugins",
 		"role_permissions",
 		"admin_content_relations",
 		"content_relations",
@@ -439,6 +448,8 @@ func TestDatabase_DropAllTables_ErrorMessages_StrictTables(t *testing.T) {
 func TestDatabase_DropAllTables_DoubleDrop(t *testing.T) {
 	// Calling DropAllTables twice should fail on the second call because
 	// strict tables no longer exist (DROP TABLE without IF EXISTS).
+	// Pipelines and plugins use IF EXISTS and silently succeed, so the
+	// first error comes from admin_datatypes_fields (first strict table).
 	d := newWipeTestDB(t)
 
 	// First drop: should succeed
@@ -446,14 +457,14 @@ func TestDatabase_DropAllTables_DoubleDrop(t *testing.T) {
 		t.Fatalf("first DropAllTables: %v", err)
 	}
 
-	// Second drop: should fail on the very first table (which is strict)
+	// Second drop: should fail on the first strict table
 	err := d.DropAllTables()
 	if err == nil {
 		t.Fatal("expected error on second DropAllTables, got nil")
 	}
-	// The error should reference the first table in the sequence
+	// The error should reference the first strict table in the sequence
 	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
-		t.Errorf("error = %q, want it to mention the first table in drop order", err.Error())
+		t.Errorf("error = %q, want it to mention the first strict table in drop order", err.Error())
 	}
 }
 
@@ -705,7 +716,7 @@ func TestDatabase_DropAllTables_ClosedConnection(t *testing.T) {
 		t.Fatal("expected error from DropAllTables on closed connection, got nil")
 	}
 	// The error should reference the first table in the drop sequence
-	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
+	if !strings.Contains(err.Error(), "drop pipelines") {
 		t.Errorf("error = %q, want it to reference first table in drop order", err.Error())
 	}
 }
@@ -938,7 +949,7 @@ func TestDatabase_DropAllTables_CanceledContext(t *testing.T) {
 	}
 
 	// The error should reference the first table in the drop sequence
-	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
+	if !strings.Contains(err.Error(), "drop pipelines") {
 		t.Errorf("error = %q, want it to reference the first table in drop order", err.Error())
 	}
 }
@@ -1031,7 +1042,7 @@ func TestDatabase_DropAllTables_ReadOnlyConnection(t *testing.T) {
 		t.Fatal("expected error from DropAllTables on read-only connection, got nil")
 	}
 	// The error should reference the first table
-	if !strings.Contains(err.Error(), "drop admin_datatypes_fields") {
+	if !strings.Contains(err.Error(), "drop pipelines") {
 		t.Errorf("error = %q, want it to reference the first table", err.Error())
 	}
 }
@@ -1109,60 +1120,47 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (31 tables total):
-	//  0: admin_datatypes_fields
-	//  1: datatypes_fields
-	//  2: role_permissions
-	//  3: admin_content_relations
-	//  4: content_relations
-	//  5: admin_content_fields
-	//  6: content_fields
-	//  7: admin_content_data
-	//  8: content_data
-	//  9: admin_fields
-	// 10: fields
-	// 11: admin_datatypes
-	// 12: datatypes
-	// 13: routes
-	// 14: admin_routes
-	// 15: media
-	// 16: tables
-	// 17: sessions
-	// 18: user_ssh_keys
-	// 19: user_oauth
-	// 20: tokens
-	// 21: users
-	// 22: media_dimensions
-	// 23: field_types
-	// 24: admin_field_types
-	// 25: roles
-	// 26: permissions
-	// 27: backup_sets
-	// 28: backup_verifications
-	// 29: backups
-	// 30: change_events
+	// Drop order (33 drops total):
+	//  0: pipelines (IF EXISTS)
+	//  1: plugins (IF EXISTS)
+	//  2: admin_datatypes_fields
+	//  3: datatypes_fields
+	//  4: role_permissions (IF EXISTS)
+	//  5: admin_content_relations (IF EXISTS)
+	//  6: content_relations (IF EXISTS)
+	//  7: admin_content_fields
+	//  8: content_fields
+	//  9: admin_content_data
+	// 10: content_data
+	// 11: admin_fields
+	// 12: fields
+	// 13: admin_datatypes
+	// 14: datatypes
+	// 15: routes
+	// 16: admin_routes
+	// 17: media
+	// 18: tables
+	// 19: sessions
+	// 20: user_ssh_keys
+	// 21: user_oauth
+	// 22: tokens
+	// 23: users
+	// 24: media_dimensions
+	// 25: field_types
+	// 26: admin_field_types
+	// 27: roles
+	// 28: permissions
+	// 29: backup_sets (IF EXISTS)
+	// 30: backup_verifications (IF EXISTS)
+	// 31: backups (IF EXISTS)
+	// 32: change_events (IF EXISTS)
 
-	// CreateAllTables creates 29 tables. DropAllTables tries to drop 31
-	// (4 infrastructure tables use DROP TABLE IF EXISTS, so they never error).
-	// The 29 created tables minus the pre-dropped one minus the ones
+	// CreateAllTables creates 31 tables. DropAllTables tries to drop 33
+	// (9 IF EXISTS drops: pipelines, plugins, role_permissions,
+	// admin_content_relations, content_relations, backup_sets,
+	// backup_verifications, backups, change_events -- so they never error).
+	// The 31 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
-	//
-	// Drop order positions (0-based) for the 27 non-IF-EXISTS tables:
-	//  0: admin_datatypes_fields   14: admin_routes
-	//  1: datatypes_fields         15: media
-	//  2: role_permissions         16: tables
-	//  3: admin_content_relations  17: sessions
-	//  4: content_relations        18: user_ssh_keys
-	//  5: admin_content_fields     19: user_oauth
-	//  6: content_fields           20: tokens
-	//  7: admin_content_data       21: users
-	//  8: content_data             22: media_dimensions
-	//  9: admin_fields             23: field_types
-	// 10: fields                   24: admin_field_types
-	// 11: admin_datatypes          25: roles
-	// 12: datatypes                26: permissions
-	// 13: routes
-	// Then 4 IF EXISTS drops: backup_sets, backup_verifications, backups, change_events
 
 	tests := []struct {
 		name          string
@@ -1171,27 +1169,30 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 		wantRemaining int // tables remaining in DB after partial failure
 	}{
 		{
-			// Pre-drop first table. Error fires immediately. No tables dropped.
-			// Remaining = 29 created - 1 pre-dropped = 28
+			// Pre-drop first strict table (admin_datatypes_fields).
+			// Pipelines and plugins (IF EXISTS) drop silently first (2 tables).
+			// Error fires at admin_datatypes_fields.
+			// Remaining = 31 created - 1 pre-dropped - 2 IF EXISTS dropped = 28
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_datatypes_fields",
 			dropIndex:     0,
 			wantRemaining: 28,
 		},
 		{
-			// Pre-drop users (position 21). Tables 0-20 dropped successfully (21 tables).
-			// Remaining = 29 created - 1 pre-dropped - 21 dropped = 7
+			// Pre-drop users (position 23 in drop order). Positions 0-22
+			// dropped successfully (23 tables: 5 IF EXISTS + 18 strict).
+			// Remaining = 31 created - 1 pre-dropped - 23 dropped = 7
 			name:          "fail_at_users",
 			preDropTable:  "users",
-			dropIndex:     21,
+			dropIndex:     23,
 			wantRemaining: 7,
 		},
 		{
 			// Pre-drop change_events. But it uses DROP TABLE IF EXISTS, so no error.
-			// All 29 tables get dropped successfully. Remaining = 0
+			// All 31 created tables get dropped successfully. Remaining = 0
 			name:          "fail_at_last_table",
 			preDropTable:  "change_events",
-			dropIndex:     30,
+			dropIndex:     32,
 			wantRemaining: 0,
 		},
 	}

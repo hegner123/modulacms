@@ -98,6 +98,7 @@ CREATE TABLE admin_fields (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
     validation TEXT NOT NULL,
@@ -600,6 +601,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -627,6 +629,7 @@ CREATE TABLE IF NOT EXISTS fields(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -658,6 +661,7 @@ CREATE TABLE admin_datatypes (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL

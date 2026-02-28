@@ -2,11 +2,12 @@ package partials
 
 // DatatypeForm renders the create datatype form fields.
 // Used as an HTMX partial for validation error responses.
-templ DatatypeForm(label string, dtype string, errs map[string]string, csrfToken string) {
+templ DatatypeForm(name string, label string, dtype string, errs map[string]string, csrfToken string) {
 	@CSRFField(csrfToken)
 	if errs["_"] != "" {
 		<div class="form-error">{ errs["_"] }</div>
 	}
+	@FormField("name", "Name", name, errs["name"])
 	@FormField("label", "Label", label, errs["label"])
 	@FormField("type", "Type", dtype, errs["type"])
 	<div class="dialog-actions">
@@ -17,7 +18,7 @@ templ DatatypeForm(label string, dtype string, errs map[string]string, csrfToken
 
 // DatatypeEditForm renders the edit datatype form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
-templ DatatypeEditForm(id string, label string, dtype string, errs map[string]string, csrfToken string) {
+templ DatatypeEditForm(id string, name string, label string, dtype string, errs map[string]string, csrfToken string) {
 	<form hx-post={ "/admin/schema/datatypes/" + id }
 	      hx-target="#datatype-edit-form"
 	      hx-swap="innerHTML">
@@ -25,6 +26,7 @@ templ DatatypeEditForm(id string, label string, dtype string, errs map[string]st
 		if errs["_"] != "" {
 			<div class="form-error">{ errs["_"] }</div>
 		}
+		@FormField("name", "Name", name, errs["name"])
 		@FormField("label", "Label", label, errs["label"])
 		@FormField("type", "Type", dtype, errs["type"])
 		<div class="form-actions">

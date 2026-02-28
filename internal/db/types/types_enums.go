@@ -73,6 +73,85 @@ func (s *ContentStatus) UnmarshalJSON(data []byte) error {
 	return s.Validate()
 }
 
+// PluginStatus represents the lifecycle status of a plugin in the persistent registry.
+type PluginStatus string
+
+// Valid PluginStatus values.
+const (
+	PluginStatusInstalled PluginStatus = "installed"
+	PluginStatusEnabled   PluginStatus = "enabled"
+)
+
+// Validate checks that the PluginStatus is one of the allowed values.
+func (s PluginStatus) Validate() error {
+	switch s {
+	case PluginStatusInstalled, PluginStatusEnabled:
+		return nil
+	case "":
+		return fmt.Errorf("PluginStatus: cannot be empty")
+	default:
+		return fmt.Errorf("PluginStatus: invalid value %q (valid: installed, enabled)", s)
+	}
+}
+
+// String returns the string representation of PluginStatus.
+func (s PluginStatus) String() string {
+	return string(s)
+}
+
+// IsValid returns true if the PluginStatus is one of the allowed values.
+func (s PluginStatus) IsValid() bool {
+	return s.Validate() == nil
+}
+
+// ParsePluginStatus parses a string into a PluginStatus, returning an error if invalid.
+func ParsePluginStatus(str string) (PluginStatus, error) {
+	ps := PluginStatus(str)
+	if err := ps.Validate(); err != nil {
+		return "", err
+	}
+	return ps, nil
+}
+
+// Value returns the database driver value for PluginStatus.
+func (s PluginStatus) Value() (driver.Value, error) {
+	if err := s.Validate(); err != nil {
+		return nil, err
+	}
+	return string(s), nil
+}
+
+// Scan reads a PluginStatus from a database value.
+func (s *PluginStatus) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("PluginStatus: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*s = PluginStatus(v)
+	case []byte:
+		*s = PluginStatus(string(v))
+	default:
+		return fmt.Errorf("PluginStatus: cannot scan %T", value)
+	}
+	return s.Validate()
+}
+
+// MarshalJSON marshals PluginStatus to JSON.
+func (s PluginStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(string(s))
+}
+
+// UnmarshalJSON unmarshals PluginStatus from JSON.
+func (s *PluginStatus) UnmarshalJSON(data []byte) error {
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return fmt.Errorf("PluginStatus: %w", err)
+	}
+	*s = PluginStatus(str)
+	return s.Validate()
+}
+
 // FieldType represents the type of a content field
 type FieldType string
 

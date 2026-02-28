@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE, PIPELINESPAGE, PIPELINEDETAILPAGE:
 		return true
 	default:
 		return false
@@ -133,6 +133,10 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Admin Field Types", "Details", "Actions"
 	case DEPLOYPAGE:
 		return "Environments", "Details", "Actions"
+	case PIPELINESPAGE:
+		return "Pipelines", "Entries", "Info"
+	case PIPELINEDETAILPAGE:
+		return "Pipelines", "Configuration", "Status"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -215,6 +219,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		left = renderDeployEnvsList(m)
 		center = renderDeployDetail(m)
 		right = renderDeployActions(m)
+
+	case PIPELINESPAGE:
+		left = renderPipelinesList(m)
+		center = renderPipelineDetail(m)
+		right = renderPipelineInfo(m)
 
 	default:
 		left = ""
@@ -407,6 +416,9 @@ func getContextControls(m Model) string {
 
 	case DEPLOYPAGE:
 		return nav + " │ t:test │ p:pull │ s:push │ P:dry pull │ S:dry push │ " + common
+
+	case PIPELINESPAGE:
+		return nav + " │ enter:view │ " + common
 
 	default:
 		return common
@@ -823,7 +835,11 @@ func renderPluginsList(m Model) string {
 		if p.CBState == "open" {
 			stateIndicator = "tripped"
 		}
-		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, p.Name, stateIndicator))
+		drift := ""
+		if p.ManifestDrift || p.CapabilityDrifts > 0 || p.SchemaDrifts > 0 {
+			drift = " [drift]"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]%s", cursor, p.Name, stateIndicator, drift))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -844,6 +860,20 @@ func renderPluginDetail(m Model) string {
 	}
 	if p.Description != "" {
 		lines = append(lines, fmt.Sprintf("Description: %s", p.Description))
+	}
+
+	// Drift warnings
+	if p.ManifestDrift || p.CapabilityDrifts > 0 || p.SchemaDrifts > 0 {
+		lines = append(lines, "", "--- Drift Detected ---")
+		if p.ManifestDrift {
+			lines = append(lines, "  Manifest changed (hash differs from installed)")
+		}
+		if p.CapabilityDrifts > 0 {
+			lines = append(lines, fmt.Sprintf("  %d capability change(s) (run sync to update)", p.CapabilityDrifts))
+		}
+		if p.SchemaDrifts > 0 {
+			lines = append(lines, fmt.Sprintf("  %d schema drift entr(ies)", p.SchemaDrifts))
+		}
 	}
 
 	return strings.Join(lines, "\n")
@@ -880,6 +910,78 @@ func renderPluginInfo(m Model) string {
 	if stopped > 0 {
 		lines = append(lines, fmt.Sprintf("  Stopped: %d", stopped))
 	}
+
+	return strings.Join(lines, "\n")
+}
+
+// renderPipelinesList renders the pipeline chain list for the left panel on PIPELINESPAGE.
+func renderPipelinesList(m Model) string {
+	if len(m.PipelinesList) == 0 {
+		return "(no pipeline chains)"
+	}
+
+	lines := make([]string, 0, len(m.PipelinesList))
+	for i, p := range m.PipelinesList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s.%s_%s (%d)", cursor, p.Table, p.Phase, p.Operation, p.Count))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderPipelineDetail renders the entries for the selected pipeline chain (center panel).
+func renderPipelineDetail(m Model) string {
+	if len(m.PipelinesList) == 0 || m.Cursor >= len(m.PipelinesList) {
+		return "No pipeline selected"
+	}
+
+	if len(m.PipelineEntries) == 0 {
+		return "No entries (select a chain to view)"
+	}
+
+	lines := make([]string, 0, len(m.PipelineEntries)+2)
+	lines = append(lines, "Pipeline entries (priority order):")
+	lines = append(lines, "")
+	for i, e := range m.PipelineEntries {
+		enabled := "on"
+		if !e.Enabled {
+			enabled = "off"
+		}
+		lines = append(lines, fmt.Sprintf("  %d. %s -> %s (pri:%d, %s)", i+1, e.PluginName, e.Handler, e.Priority, enabled))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderPipelineInfo renders the pipeline summary for the right panel on PIPELINESPAGE.
+func renderPipelineInfo(m Model) string {
+	totalEntries := 0
+	for _, p := range m.PipelinesList {
+		totalEntries += p.Count
+	}
+
+	lines := []string{
+		"Pipeline Registry",
+		"",
+		fmt.Sprintf("  Chains: %d", len(m.PipelinesList)),
+		fmt.Sprintf("  Total entries: %d", totalEntries),
+	}
+
+	// Count by phase
+	before := 0
+	after := 0
+	for _, p := range m.PipelinesList {
+		switch p.Phase {
+		case "before":
+			before++
+		case "after":
+			after++
+		}
+	}
+	lines = append(lines, "")
+	lines = append(lines, fmt.Sprintf("  Before chains: %d", before))
+	lines = append(lines, fmt.Sprintf("  After chains:  %d", after))
 
 	return strings.Join(lines, "\n")
 }

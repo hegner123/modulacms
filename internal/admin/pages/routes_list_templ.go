@@ -80,7 +80,7 @@ func RouteCreateDialog(csrfToken string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"create-route-dialog\" class=\"dialog\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2>Create Route</h2><button class=\"dialog-close\" onclick=\"document.getElementById('create-route-dialog').close()\">&times;</button></div><form hx-post=\"/admin/routes\" hx-target=\"#create-route-form-container\" hx-swap=\"innerHTML\" class=\"admin-form\" id=\"create-route-form\"><div id=\"create-route-form-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"create-route-dialog\" class=\"dialog\" aria-labelledby=\"create-route-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"create-route-dialog-title\">Create Route</h2><button class=\"dialog-close\" aria-label=\"Close dialog\" onclick=\"document.getElementById('create-route-dialog').close()\">&times;</button></div><form hx-post=\"/admin/routes\" hx-target=\"#create-route-form-container\" hx-swap=\"innerHTML\" class=\"admin-form\" id=\"create-route-form\"><div id=\"create-route-form-container\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

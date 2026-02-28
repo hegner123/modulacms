@@ -21,6 +21,7 @@ import (
 type Fields struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -35,6 +36,7 @@ type Fields struct {
 type CreateFieldParams struct {
 	FieldID      types.FieldID            `json:"field_id"`
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -48,6 +50,7 @@ type CreateFieldParams struct {
 // UpdateFieldParams contains parameters for updating an existing field.
 type UpdateFieldParams struct {
 	ParentID     types.NullableDatatypeID `json:"parent_id"`
+	Name         string                   `json:"name"`
 	Label        string                   `json:"label"`
 	Data         string                   `json:"data"`
 	Validation   string                   `json:"validation"`
@@ -64,6 +67,7 @@ func MapStringField(a Fields) StringFields {
 	return StringFields{
 		FieldID:      a.FieldID.String(),
 		ParentID:     a.ParentID.String(),
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -87,6 +91,7 @@ func (d Database) MapField(a mdb.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -107,6 +112,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 	return mdb.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -122,6 +128,7 @@ func (d Database) MapCreateFieldParams(a CreateFieldParams) mdb.CreateFieldParam
 func (d Database) MapUpdateFieldParams(a UpdateFieldParams) mdb.UpdateFieldParams {
 	return mdb.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -232,6 +239,7 @@ func (d MysqlDatabase) MapField(a mdbm.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -252,6 +260,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 	return mdbm.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -267,6 +276,7 @@ func (d MysqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbm.CreateFiel
 func (d MysqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbm.UpdateFieldParams {
 	return mdbm.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -377,6 +387,7 @@ func (d PsqlDatabase) MapField(a mdbp.Fields) Fields {
 	return Fields{
 		FieldID:      a.FieldID,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -397,6 +408,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 	return mdbp.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -412,6 +424,7 @@ func (d PsqlDatabase) MapCreateFieldParams(a CreateFieldParams) mdbp.CreateField
 func (d PsqlDatabase) MapUpdateFieldParams(a UpdateFieldParams) mdbp.UpdateFieldParams {
 	return mdbp.UpdateFieldParams{
 		ParentID:     a.ParentID,
+		Name:         a.Name,
 		Label:        a.Label,
 		Data:         a.Data,
 		Validation:   a.Validation,
@@ -555,6 +568,7 @@ func (c NewFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Fields, 
 	return queries.CreateField(ctx, mdb.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -614,6 +628,7 @@ func (c UpdateFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := mdb.New(tx)
 	return queries.UpdateField(ctx, mdb.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -719,6 +734,7 @@ func (c NewFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Fi
 	params := mdbm.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -782,6 +798,7 @@ func (c UpdateFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error
 	queries := mdbm.New(tx)
 	return queries.UpdateField(ctx, mdbm.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -887,6 +904,7 @@ func (c NewFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Fie
 	return queries.CreateField(ctx, mdbp.CreateFieldParams{
 		FieldID:      id,
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,
@@ -946,6 +964,7 @@ func (c UpdateFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error 
 	queries := mdbp.New(tx)
 	return queries.UpdateField(ctx, mdbp.UpdateFieldParams{
 		ParentID:     c.params.ParentID,
+		Name:         c.params.Name,
 		Label:        c.params.Label,
 		Data:         c.params.Data,
 		Validation:   c.params.Validation,

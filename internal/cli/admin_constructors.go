@@ -74,16 +74,18 @@ func AdminDatatypeFieldsSetCmd(fields []db.AdminFields) tea.Cmd {
 }
 
 // CreateAdminDatatypeFromDialogCmd creates a command to create an admin datatype from dialog input.
-func CreateAdminDatatypeFromDialogCmd(label, dtype, parentID string) tea.Cmd {
+func CreateAdminDatatypeFromDialogCmd(name, label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
-		return CreateAdminDatatypeFromDialogRequestMsg{Label: label, Type: dtype, ParentID: parentID}
+		return CreateAdminDatatypeFromDialogRequestMsg{Name: name, Label: label, Type: dtype, ParentID: parentID}
 	}
 }
+
 // UpdateAdminDatatypeFromDialogCmd creates a command to update an admin datatype from dialog input.
-func UpdateAdminDatatypeFromDialogCmd(adminDatatypeID, label, dtype, parentID string) tea.Cmd {
+func UpdateAdminDatatypeFromDialogCmd(adminDatatypeID, name, label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateAdminDatatypeFromDialogRequestMsg{
 			AdminDatatypeID: adminDatatypeID,
+			Name:            name,
 			Label:           label,
 			Type:            dtype,
 			ParentID:        parentID,
@@ -111,20 +113,23 @@ func ShowDeleteAdminDatatypeDialogCmd(adminDatatypeID types.AdminDatatypeID, lab
 // =============================================================================
 
 // CreateAdminFieldFromDialogCmd creates a command to create an admin field from dialog input.
-func CreateAdminFieldFromDialogCmd(label, fieldType string, adminDatatypeID types.AdminDatatypeID) tea.Cmd {
+func CreateAdminFieldFromDialogCmd(name, label, fieldType string, adminDatatypeID types.AdminDatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return CreateAdminFieldFromDialogRequestMsg{
+			Name:            name,
 			Label:           label,
 			Type:            fieldType,
 			AdminDatatypeID: adminDatatypeID,
 		}
 	}
 }
+
 // UpdateAdminFieldFromDialogCmd creates a command to update an admin field from dialog input.
-func UpdateAdminFieldFromDialogCmd(adminFieldID, label, fieldType string) tea.Cmd {
+func UpdateAdminFieldFromDialogCmd(adminFieldID, name, label, fieldType string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateAdminFieldFromDialogRequestMsg{
 			AdminFieldID: adminFieldID,
+			Name:         name,
 			Label:        label,
 			Type:         fieldType,
 		}

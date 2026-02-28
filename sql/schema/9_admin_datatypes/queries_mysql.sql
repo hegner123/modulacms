@@ -5,6 +5,7 @@ DROP TABLE admin_datatypes;
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
@@ -48,6 +49,7 @@ WHERE parent_id = ?;
 INSERT INTO admin_datatypes (
     admin_datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -60,12 +62,14 @@ INSERT INTO admin_datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = ?,
+    name = ?,
     label = ?,
     type = ?,
     author_id = ?,

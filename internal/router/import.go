@@ -294,6 +294,7 @@ func (ctx *importContext) findOrCreateDatatype(node *model.Node) types.DatatypeI
 	now := types.TimestampNow()
 	created, createErr := ctx.driver.CreateDatatype(ctx.ctx, ctx.ac, db.CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{Valid: false},
+		Name:         node.Datatype.Info.Name,
 		Label:        label,
 		Type:         typeStr,
 		AuthorID:     ctx.authorID,
@@ -321,6 +322,7 @@ func (ctx *importContext) createFieldAndContentField(field model.Field, contentD
 			ID:    datatypeID,
 			Valid: true,
 		},
+		Name:         field.Info.Name,
 		Label:        field.Info.Label,
 		Data:         "",
 		Validation:   types.EmptyJSON,

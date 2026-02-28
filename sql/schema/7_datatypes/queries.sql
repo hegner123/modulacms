@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS datatypes
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -52,6 +53,7 @@ ORDER BY label;
 INSERT INTO datatypes (
     datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -64,12 +66,14 @@ INSERT INTO datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
 ) RETURNING *;
 
 -- name: UpdateDatatype :exec
 UPDATE datatypes
 SET parent_id = ?,
+    name = ?,
     label = ?,
     type = ?,
     author_id = ?,

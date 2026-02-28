@@ -12,11 +12,11 @@ templ UsersListContent(items []db.UserWithRoleLabelRow, roles []db.Roles, csrfTo
 			Create User
 		</button>
 	</div>
-	<dialog id="create-user-dialog" class="dialog">
+	<dialog id="create-user-dialog" class="dialog" aria-labelledby="create-user-dialog-title">
 		<div class="dialog-content">
 			<div class="dialog-header">
-				<h2>Create User</h2>
-				<button class="dialog-close" onclick="document.getElementById('create-user-dialog').close()">&times;</button>
+				<h2 id="create-user-dialog-title">Create User</h2>
+				<button class="dialog-close" aria-label="Close dialog" onclick="document.getElementById('create-user-dialog').close()">&times;</button>
 			</div>
 			<form
 				hx-post="/admin/users"

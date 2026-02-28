@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS fields(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,

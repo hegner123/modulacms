@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,

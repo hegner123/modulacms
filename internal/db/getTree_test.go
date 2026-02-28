@@ -1177,15 +1177,15 @@ func TestDatabase_MapGetRouteTreeByRouteIDRow_MixedNullStrings(t *testing.T) {
 	d := Database{}
 
 	tests := []struct {
-		name          string
-		firstChild    types.NullableContentID
-		nextSibling   types.NullableContentID
-		prevSibling   types.NullableContentID
-		fieldValue    sql.NullString
-		wantFCValid   bool
-		wantNSValid   bool
-		wantPSValid   bool
-		wantFVValid   bool
+		name        string
+		firstChild  types.NullableContentID
+		nextSibling types.NullableContentID
+		prevSibling types.NullableContentID
+		fieldValue  sql.NullString
+		wantFCValid bool
+		wantNSValid bool
+		wantPSValid bool
+		wantFVValid bool
 	}{
 		{
 			name:        "all valid",

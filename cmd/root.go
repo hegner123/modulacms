@@ -31,6 +31,7 @@ func init() {
 	rootCmd.AddCommand(configParentCmd)
 	rootCmd.AddCommand(backupCmd)
 	rootCmd.AddCommand(pluginCmd)
+	rootCmd.AddCommand(pipelineCmd)
 	rootCmd.AddCommand(deployCmd)
 }
 

@@ -221,7 +221,7 @@ type NewPermissionCmd struct {
 }
 
 func (c NewPermissionCmd) Context() context.Context              { return c.ctx }
-func (c NewPermissionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewPermissionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewPermissionCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewPermissionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c NewPermissionCmd) TableName() string                     { return "permissions" }
@@ -257,7 +257,7 @@ type UpdatePermissionCmd struct {
 }
 
 func (c UpdatePermissionCmd) Context() context.Context              { return c.ctx }
-func (c UpdatePermissionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdatePermissionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdatePermissionCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdatePermissionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c UpdatePermissionCmd) TableName() string                     { return "permissions" }
@@ -295,7 +295,7 @@ type DeletePermissionCmd struct {
 }
 
 func (c DeletePermissionCmd) Context() context.Context              { return c.ctx }
-func (c DeletePermissionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeletePermissionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeletePermissionCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeletePermissionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c DeletePermissionCmd) TableName() string                     { return "permissions" }
@@ -326,7 +326,7 @@ type NewPermissionCmdMysql struct {
 }
 
 func (c NewPermissionCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewPermissionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewPermissionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewPermissionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewPermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c NewPermissionCmdMysql) TableName() string                     { return "permissions" }
@@ -363,7 +363,7 @@ type UpdatePermissionCmdMysql struct {
 }
 
 func (c UpdatePermissionCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdatePermissionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdatePermissionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdatePermissionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdatePermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c UpdatePermissionCmdMysql) TableName() string                     { return "permissions" }
@@ -397,7 +397,7 @@ type DeletePermissionCmdMysql struct {
 }
 
 func (c DeletePermissionCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeletePermissionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeletePermissionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeletePermissionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeletePermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c DeletePermissionCmdMysql) TableName() string                     { return "permissions" }
@@ -428,7 +428,7 @@ type NewPermissionCmdPsql struct {
 }
 
 func (c NewPermissionCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewPermissionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewPermissionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewPermissionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewPermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c NewPermissionCmdPsql) TableName() string                     { return "permissions" }
@@ -460,7 +460,7 @@ type UpdatePermissionCmdPsql struct {
 }
 
 func (c UpdatePermissionCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdatePermissionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdatePermissionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdatePermissionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdatePermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c UpdatePermissionCmdPsql) TableName() string                     { return "permissions" }
@@ -494,7 +494,7 @@ type DeletePermissionCmdPsql struct {
 }
 
 func (c DeletePermissionCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeletePermissionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeletePermissionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeletePermissionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeletePermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c DeletePermissionCmdPsql) TableName() string                     { return "permissions" }

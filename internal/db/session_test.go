@@ -41,7 +41,7 @@ func sessionTestFixture() (Sessions, types.SessionID, types.NullableUserID, type
 	s := Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  NewNullString("2025-08-15T10:30:00Z"),
 		IpAddress:   NewNullString("192.168.1.100"),
@@ -57,7 +57,7 @@ func sessionCreateParams() CreateSessionParams {
 	ts := types.NewTimestamp(time.Date(2025, 9, 1, 12, 0, 0, 0, time.UTC))
 	return CreateSessionParams{
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  NewNullString("2025-09-01T12:00:00Z"),
 		IpAddress:   NewNullString("10.0.0.1"),
@@ -73,7 +73,7 @@ func sessionUpdateParams() UpdateSessionParams {
 	ts := types.NewTimestamp(time.Date(2025, 10, 20, 8, 45, 0, 0, time.UTC))
 	return UpdateSessionParams{
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  NewNullString("2025-10-20T08:45:00Z"),
 		IpAddress:   NewNullString("172.16.0.50"),
@@ -213,7 +213,7 @@ func TestDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdb.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  sql.NullString{String: "2025-03-10T09:00:00Z", Valid: true},
 		IpAddress:   sql.NullString{String: "10.0.0.5", Valid: true},
@@ -424,7 +424,7 @@ func TestMysqlDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdbm.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  lastAccess,
 		IpAddress:   sql.NullString{String: "192.168.1.200", Valid: true},
@@ -581,7 +581,7 @@ func TestPsqlDatabase_MapSession_AllFields(t *testing.T) {
 	input := mdbp.Sessions{
 		SessionID:   sessionID,
 		UserID:      userID,
-		DateCreated:   ts,
+		DateCreated: ts,
 		ExpiresAt:   ts,
 		LastAccess:  lastAccess,
 		IpAddress:   sql.NullString{String: "172.16.0.1", Valid: true},

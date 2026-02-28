@@ -23,6 +23,8 @@ export type Datatype = {
   datatype_id: DatatypeID
   /** Parent content ID for hierarchical datatypes, or `null`. */
   parent_id: ContentID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable label for this datatype. */
   label: string
   /** Datatype category (e.g. `'page'`, `'component'`). */
@@ -44,6 +46,8 @@ export type Field = {
   field_id: FieldID
   /** Parent datatype ID this field belongs to, or `null`. */
   parent_id: DatatypeID | null
+  /** Machine-readable name used as JSON key. If empty, derived from label. */
+  name: string
   /** Human-readable field label. */
   label: string
   /** Additional field metadata (JSON-encoded). */

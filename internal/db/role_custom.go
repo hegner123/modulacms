@@ -221,7 +221,7 @@ type NewRoleCmd struct {
 }
 
 func (c NewRoleCmd) Context() context.Context              { return c.ctx }
-func (c NewRoleCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRoleCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRoleCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewRoleCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c NewRoleCmd) TableName() string                     { return "roles" }
@@ -257,7 +257,7 @@ type UpdateRoleCmd struct {
 }
 
 func (c UpdateRoleCmd) Context() context.Context              { return c.ctx }
-func (c UpdateRoleCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRoleCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRoleCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRoleCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c UpdateRoleCmd) TableName() string                     { return "roles" }
@@ -295,7 +295,7 @@ type DeleteRoleCmd struct {
 }
 
 func (c DeleteRoleCmd) Context() context.Context              { return c.ctx }
-func (c DeleteRoleCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRoleCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRoleCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRoleCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c DeleteRoleCmd) TableName() string                     { return "roles" }
@@ -326,7 +326,7 @@ type NewRoleCmdMysql struct {
 }
 
 func (c NewRoleCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewRoleCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRoleCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRoleCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c NewRoleCmdMysql) TableName() string                     { return "roles" }
@@ -363,7 +363,7 @@ type UpdateRoleCmdMysql struct {
 }
 
 func (c UpdateRoleCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateRoleCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRoleCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRoleCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c UpdateRoleCmdMysql) TableName() string                     { return "roles" }
@@ -397,7 +397,7 @@ type DeleteRoleCmdMysql struct {
 }
 
 func (c DeleteRoleCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteRoleCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRoleCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRoleCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c DeleteRoleCmdMysql) TableName() string                     { return "roles" }
@@ -428,7 +428,7 @@ type NewRoleCmdPsql struct {
 }
 
 func (c NewRoleCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewRoleCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRoleCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRoleCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c NewRoleCmdPsql) TableName() string                     { return "roles" }
@@ -460,7 +460,7 @@ type UpdateRoleCmdPsql struct {
 }
 
 func (c UpdateRoleCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateRoleCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRoleCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRoleCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c UpdateRoleCmdPsql) TableName() string                     { return "roles" }
@@ -494,7 +494,7 @@ type DeleteRoleCmdPsql struct {
 }
 
 func (c DeleteRoleCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteRoleCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRoleCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRoleCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c DeleteRoleCmdPsql) TableName() string                     { return "roles" }

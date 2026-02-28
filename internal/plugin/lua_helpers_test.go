@@ -16,9 +16,9 @@ func TestGoValueToLua(t *testing.T) {
 	defer L.Close()
 
 	tests := []struct {
-		name     string
-		input    any
-		checkFn  func(t *testing.T, v lua.LValue)
+		name    string
+		input   any
+		checkFn func(t *testing.T, v lua.LValue)
 	}{
 		{
 			name:  "string",

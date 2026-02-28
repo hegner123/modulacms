@@ -117,6 +117,7 @@ type UpdateContentRelationParams struct {
 type Datatype struct {
 	DatatypeID   DatatypeID  `json:"datatype_id"`
 	ParentID     *DatatypeID `json:"parent_id"`
+	Name         string      `json:"name"`
 	Label        string      `json:"label"`
 	Type         string      `json:"type"`
 	AuthorID     *UserID     `json:"author_id"`
@@ -128,6 +129,7 @@ type Datatype struct {
 type CreateDatatypeParams struct {
 	DatatypeID *DatatypeID `json:"datatype_id,omitempty"`
 	ParentID   *DatatypeID `json:"parent_id"`
+	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Type       string      `json:"type"`
 	AuthorID   *UserID     `json:"author_id"`
@@ -137,6 +139,7 @@ type CreateDatatypeParams struct {
 type UpdateDatatypeParams struct {
 	DatatypeID DatatypeID  `json:"datatype_id"`
 	ParentID   *DatatypeID `json:"parent_id"`
+	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Type       string      `json:"type"`
 	AuthorID   *UserID     `json:"author_id"`
@@ -177,6 +180,7 @@ type UpdateDatatypeFieldParams struct {
 type Field struct {
 	FieldID      FieldID     `json:"field_id"`
 	ParentID     *DatatypeID `json:"parent_id"`
+	Name         string      `json:"name"`
 	Label        string      `json:"label"`
 	Data         string      `json:"data"`
 	Validation   string      `json:"validation"`
@@ -189,20 +193,22 @@ type Field struct {
 
 // CreateFieldParams contains parameters for creating a field.
 type CreateFieldParams struct {
-	FieldID  *FieldID    `json:"field_id,omitempty"`
-	ParentID *DatatypeID `json:"parent_id"`
-	Label    string      `json:"label"`
-	Data     string      `json:"data"`
-	Validation string   `json:"validation"`
-	UIConfig string      `json:"ui_config"`
-	Type     FieldType   `json:"type"`
-	AuthorID *UserID     `json:"author_id"`
+	FieldID    *FieldID    `json:"field_id,omitempty"`
+	ParentID   *DatatypeID `json:"parent_id"`
+	Name       string      `json:"name"`
+	Label      string      `json:"label"`
+	Data       string      `json:"data"`
+	Validation string      `json:"validation"`
+	UIConfig   string      `json:"ui_config"`
+	Type       FieldType   `json:"type"`
+	AuthorID   *UserID     `json:"author_id"`
 }
 
 // UpdateFieldParams contains parameters for updating a field.
 type UpdateFieldParams struct {
 	FieldID    FieldID     `json:"field_id"`
 	ParentID   *DatatypeID `json:"parent_id"`
+	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Data       string      `json:"data"`
 	Validation string      `json:"validation"`
@@ -679,6 +685,7 @@ type AdminContentRelation struct {
 type AdminDatatype struct {
 	AdminDatatypeID AdminDatatypeID  `json:"admin_datatype_id"`
 	ParentID        *AdminDatatypeID `json:"parent_id"`
+	Name            string           `json:"name"`
 	Label           string           `json:"label"`
 	Type            string           `json:"type"`
 	AuthorID        *UserID          `json:"author_id"`
@@ -689,6 +696,7 @@ type AdminDatatype struct {
 // CreateAdminDatatypeParams contains the parameters for creating an admin datatype.
 type CreateAdminDatatypeParams struct {
 	ParentID *AdminDatatypeID `json:"parent_id"`
+	Name     string           `json:"name"`
 	Label    string           `json:"label"`
 	Type     string           `json:"type"`
 	AuthorID *UserID          `json:"author_id"`
@@ -698,6 +706,7 @@ type CreateAdminDatatypeParams struct {
 type UpdateAdminDatatypeParams struct {
 	AdminDatatypeID AdminDatatypeID  `json:"admin_datatype_id"`
 	ParentID        *AdminDatatypeID `json:"parent_id"`
+	Name            string           `json:"name"`
 	Label           string           `json:"label"`
 	Type            string           `json:"type"`
 	AuthorID        *UserID          `json:"author_id"`
@@ -735,6 +744,7 @@ type UpdateAdminDatatypeFieldParams struct {
 type AdminField struct {
 	AdminFieldID AdminFieldID     `json:"admin_field_id"`
 	ParentID     *AdminDatatypeID `json:"parent_id"`
+	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
 	Validation   string           `json:"validation"`
@@ -748,6 +758,7 @@ type AdminField struct {
 // CreateAdminFieldParams contains parameters for creating a new admin field.
 type CreateAdminFieldParams struct {
 	ParentID   *AdminDatatypeID `json:"parent_id"`
+	Name       string           `json:"name"`
 	Label      string           `json:"label"`
 	Data       string           `json:"data"`
 	Validation string           `json:"validation"`
@@ -760,6 +771,7 @@ type CreateAdminFieldParams struct {
 type UpdateAdminFieldParams struct {
 	AdminFieldID AdminFieldID     `json:"admin_field_id"`
 	ParentID     *AdminDatatypeID `json:"parent_id"`
+	Name         string           `json:"name"`
 	Label        string           `json:"label"`
 	Data         string           `json:"data"`
 	Validation   string           `json:"validation"`

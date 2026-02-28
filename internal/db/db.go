@@ -444,6 +444,33 @@ type DbDriver interface {
 	ListUserSshKeys(types.NullableUserID) (*[]UserSshKeys, error)
 	UpdateUserSshKeyLabel(context.Context, audited.AuditContext, string, string) error
 	UpdateUserSshKeyLastUsed(string, string) error
+
+	// Plugins
+	CountPlugins() (*int64, error)
+	CreatePlugin(context.Context, audited.AuditContext, CreatePluginParams) (*Plugin, error)
+	CreatePluginTable() error
+	DeletePlugin(context.Context, audited.AuditContext, types.PluginID) error
+	GetPlugin(types.PluginID) (*Plugin, error)
+	GetPluginByName(string) (*Plugin, error)
+	ListPlugins() (*[]Plugin, error)
+	ListPluginsByStatus(types.PluginStatus) (*[]Plugin, error)
+	UpdatePlugin(context.Context, audited.AuditContext, UpdatePluginParams) error
+	UpdatePluginStatus(context.Context, audited.AuditContext, types.PluginID, types.PluginStatus) error
+
+	// Pipelines
+	CountPipelines() (*int64, error)
+	CreatePipeline(context.Context, audited.AuditContext, CreatePipelineParams) (*Pipeline, error)
+	CreatePipelineTable() error
+	DeletePipeline(context.Context, audited.AuditContext, types.PipelineID) error
+	DeletePipelinesByPluginID(context.Context, audited.AuditContext, types.PluginID) error
+	GetPipeline(types.PipelineID) (*Pipeline, error)
+	ListPipelines() (*[]Pipeline, error)
+	ListPipelinesByTable(string) (*[]Pipeline, error)
+	ListPipelinesByPluginID(types.PluginID) (*[]Pipeline, error)
+	ListPipelinesByTableOperation(string, string) (*[]Pipeline, error)
+	ListEnabledPipelines() (*[]Pipeline, error)
+	UpdatePipeline(context.Context, audited.AuditContext, UpdatePipelineParams) error
+	UpdatePipelineEnabled(context.Context, audited.AuditContext, types.PipelineID, bool) error
 }
 
 // GetConnection returns the database connection and context
@@ -658,6 +685,17 @@ func (d Database) CreateAllTables() error {
 	}
 
 	err = d.CreateRolePermissionsTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 7: Plugin system tables (plugins before pipelines for FK)
+	err = d.CreatePluginTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreatePipelineTable()
 	if err != nil {
 		return err
 	}
@@ -1579,6 +1617,17 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 7: Plugin system tables (plugins before pipelines for FK)
+	err = d.CreatePluginTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreatePipelineTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -2462,6 +2511,17 @@ func (d PsqlDatabase) CreateAllTables() error {
 	}
 
 	err = d.CreateRolePermissionsTable()
+	if err != nil {
+		return err
+	}
+
+	// Tier 7: Plugin system tables (plugins before pipelines for FK)
+	err = d.CreatePluginTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreatePipelineTable()
 	if err != nil {
 		return err
 	}

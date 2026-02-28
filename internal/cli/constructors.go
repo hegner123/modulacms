@@ -687,3 +687,21 @@ func PluginsFetchCmd() tea.Cmd { return func() tea.Msg { return PluginsFetchMsg{
 func PluginsListSetCmd(plugins []PluginDisplay) tea.Cmd {
 	return func() tea.Msg { return PluginsListSet{PluginsList: plugins} }
 }
+
+// PipelinesFetchCmd creates a command to fetch the pipeline chains from the registry.
+func PipelinesFetchCmd() tea.Cmd { return func() tea.Msg { return PipelinesFetchMsg{} } }
+
+// PipelinesListSetCmd creates a command to set the pipeline display list on the model.
+func PipelinesListSetCmd(pipelines []PipelineDisplay) tea.Cmd {
+	return func() tea.Msg { return PipelinesListSet{PipelinesList: pipelines} }
+}
+
+// PipelineEntriesFetchCmd creates a command to fetch entries for a pipeline chain key.
+func PipelineEntriesFetchCmd(key string) tea.Cmd {
+	return func() tea.Msg { return PipelineEntriesFetchMsg{Key: key} }
+}
+
+// PipelineEntriesSetCmd creates a command to set pipeline entries on the model.
+func PipelineEntriesSetCmd(entries []PipelineEntryDisplay) tea.Cmd {
+	return func() tea.Msg { return PipelineEntriesSet{PipelineEntries: entries} }
+}

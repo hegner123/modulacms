@@ -5,6 +5,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -46,8 +47,14 @@ func SessionsListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // SessionDeleteHandler revokes a session by ID.
 // Only HTMX DELETE requests are supported.
-func SessionDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func SessionDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -66,7 +73,7 @@ func SessionDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		ac := audited.Ctx(
-			types.NodeID("0"),
+			types.NodeID(cfg.Node_ID),
 			user.UserID,
 			middleware.RequestIDFromContext(r.Context()),
 			clientIP(r),

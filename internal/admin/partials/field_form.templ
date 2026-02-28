@@ -2,11 +2,12 @@ package partials
 
 // FieldForm renders the create field form fields.
 // Used as an HTMX partial for validation error responses.
-templ FieldForm(label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+templ FieldForm(name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
 	@CSRFField(csrfToken)
 	if errs["_"] != "" {
 		<div class="form-error">{ errs["_"] }</div>
 	}
+	@FormField("name", "Name", name, errs["name"])
 	@FormField("label", "Label", label, errs["label"])
 	<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
 		<label for="type">Type</label>
@@ -39,7 +40,7 @@ templ FieldForm(label string, fieldType string, data string, validation string, 
 
 // FieldEditForm renders the edit field form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
-templ FieldEditForm(id string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+templ FieldEditForm(id string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
 	<form hx-post={ "/admin/schema/fields/" + id }
 	      hx-target="#field-edit-form"
 	      hx-swap="innerHTML">
@@ -47,6 +48,7 @@ templ FieldEditForm(id string, label string, fieldType string, data string, vali
 		if errs["_"] != "" {
 			<div class="form-error">{ errs["_"] }</div>
 		}
+		@FormField("name", "Name", name, errs["name"])
 		@FormField("label", "Label", label, errs["label"])
 		<div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
 			<label for="type">Type</label>

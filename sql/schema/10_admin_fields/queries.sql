@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
     validation TEXT NOT NULL,
@@ -47,6 +48,7 @@ ORDER BY admin_field_id;
 INSERT INTO admin_fields (
     admin_field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -65,6 +67,7 @@ INSERT INTO admin_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
     ) RETURNING *;
 
@@ -72,6 +75,7 @@ INSERT INTO admin_fields (
 -- name: UpdateAdminField :exec
 UPDATE admin_fields
 SET parent_id = ?,
+    name = ?,
     label = ?,
     data = ?,
     validation = ?,

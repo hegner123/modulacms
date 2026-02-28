@@ -163,7 +163,7 @@ func (cb *CircuitBreaker) ConsecutiveErrors() int {
 // Security fix S5: emits slog.Warn audit event with the admin user who performed
 // the reset, the plugin name, the prior CB state, and the consecutive failure
 // count at the time of reset. The adminUser string is extracted from the request
-// context by the caller (EnablePlugin handler) and passed in directly -- Reset
+// context by the caller (ActivatePlugin handler) and passed in directly -- Reset
 // does not accept context.Context because it is a pure state transition with no I/O.
 func (cb *CircuitBreaker) Reset(adminUser string) {
 	cb.mu.Lock()

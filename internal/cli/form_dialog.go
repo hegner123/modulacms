@@ -56,7 +56,8 @@ const (
 
 // FormDialogField constants define focus indices for dialog fields.
 const (
-	FormDialogFieldLabel = iota
+	FormDialogFieldName = iota
+	FormDialogFieldLabel
 	FormDialogFieldType
 	FormDialogFieldParent
 	FormDialogButtonCancel
@@ -161,6 +162,7 @@ type FormDialogModel struct {
 	EntityID string
 
 	// Text input fields
+	NameInput  textinput.Model
 	LabelInput textinput.Model
 	TypeInput  textinput.Model
 
@@ -178,12 +180,18 @@ type FormDialogModel struct {
 
 // NewFormDialog creates a new form dialog for datatype creation
 func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes) FormDialogModel {
+	// Create name input
+	nameInput := textinput.New()
+	nameInput.Placeholder = "Machine name"
+	nameInput.CharLimit = 64
+	nameInput.Width = 40
+	nameInput.Focus()
+
 	// Create label input
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
 	labelInput.Width = 40
-	labelInput.Focus()
 
 	// Create type input
 	typeInput := textinput.New()
@@ -207,32 +215,40 @@ func NewFormDialog(title string, action FormDialogAction, parents []db.Datatypes
 		Title:         title,
 		Width:         60,
 		Action:        action,
+		NameInput:     nameInput,
 		LabelInput:    labelInput,
 		TypeInput:     typeInput,
 		ParentOptions: parentOptions,
 		ParentIndex:   0,
-		focusIndex:    FormDialogFieldLabel,
+		focusIndex:    FormDialogFieldName,
 	}
 }
 
 // NewFieldFormDialog creates a form dialog for field creation (no parent selector)
 func NewFieldFormDialog(title string, action FormDialogAction) FormDialogModel {
+	// Create name input
+	nameInput := textinput.New()
+	nameInput.Placeholder = "Machine name"
+	nameInput.CharLimit = 64
+	nameInput.Width = 40
+	nameInput.Focus()
+
 	// Create label input
 	labelInput := textinput.New()
-	labelInput.Placeholder = "Field name"
+	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
 	labelInput.Width = 40
-	labelInput.Focus()
 
 	return FormDialogModel{
 		dialogStyles: newDialogStyles(),
 		Title:        title,
 		Width:        60,
 		Action:       action,
+		NameInput:    nameInput,
 		LabelInput:   labelInput,
 		TypeOptions:  TypeOptionsFromRegistry(),
 		TypeIndex:    0,
-		focusIndex:   FormDialogFieldLabel,
+		focusIndex:   FormDialogFieldName,
 	}
 }
 
@@ -258,7 +274,7 @@ func NewRouteFormDialog(title string, action FormDialogAction) FormDialogModel {
 		Action:       action,
 		LabelInput:   titleInput,
 		TypeInput:    slugInput,
-		focusIndex:   FormDialogFieldLabel,
+		focusIndex:   FormDialogFieldLabel, // Skip name field for routes
 	}
 }
 
@@ -270,6 +286,19 @@ func (d *FormDialogModel) HasParentSelector() bool {
 // HasTypeSelector returns true if the dialog has a type selector carousel
 func (d *FormDialogModel) HasTypeSelector() bool {
 	return len(d.TypeOptions) > 0
+}
+
+// HasNameField returns true if the dialog should render the Name input field.
+// Datatype and field dialogs include Name; route, config, and other dialogs do not.
+func (d *FormDialogModel) HasNameField() bool {
+	switch d.Action {
+	case FORMDIALOGCREATEDATATYPE, FORMDIALOGEDITDATATYPE,
+		FORMDIALOGCREATEFIELD, FORMDIALOGEDITFIELD,
+		FORMDIALOGCREATEADMINDATATYPE, FORMDIALOGEDITADMINDATATYPE,
+		FORMDIALOGCREATEADMINFIELD, FORMDIALOGEDITADMINFIELD:
+		return true
+	}
+	return false
 }
 
 // HasSecondField returns true if the dialog should render the second (Type/Slug) field.
@@ -348,6 +377,7 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 					return FormDialogAcceptMsg{
 						Action:   d.Action,
 						EntityID: d.EntityID,
+						Name:     d.NameInput.Value(),
 						Label:    d.LabelInput.Value(),
 						Type:     typeValue,
 						ParentID: parentID,
@@ -364,6 +394,8 @@ func (d *FormDialogModel) Update(msg tea.Msg) (FormDialogModel, tea.Cmd) {
 		// Update the focused text input
 		var cmd tea.Cmd
 		switch d.focusIndex {
+		case FormDialogFieldName:
+			d.NameInput, cmd = d.NameInput.Update(msg)
 		case FormDialogFieldLabel:
 			d.LabelInput, cmd = d.LabelInput.Update(msg)
 		case FormDialogFieldType:
@@ -412,6 +444,10 @@ func (d *FormDialogModel) updateChildDatatypeSelection(msg tea.KeyMsg) (FormDial
 // focusNext advances focus to the next focusable element, wrapping at the end.
 func (d *FormDialogModel) focusNext() {
 	d.focusIndex++
+	// Skip name field if not applicable
+	if d.focusIndex == FormDialogFieldName && !d.HasNameField() {
+		d.focusIndex = FormDialogFieldLabel
+	}
 	// Skip type field if not applicable
 	if d.focusIndex == FormDialogFieldType && !d.HasSecondField() {
 		d.focusIndex = FormDialogButtonCancel
@@ -421,7 +457,11 @@ func (d *FormDialogModel) focusNext() {
 		d.focusIndex = FormDialogButtonCancel
 	}
 	if d.focusIndex > FormDialogButtonConfirm {
-		d.focusIndex = FormDialogFieldLabel
+		if d.HasNameField() {
+			d.focusIndex = FormDialogFieldName
+		} else {
+			d.focusIndex = FormDialogFieldLabel
+		}
 	}
 	d.updateFocus()
 }
@@ -437,7 +477,11 @@ func (d *FormDialogModel) focusPrev() {
 	if d.focusIndex == FormDialogFieldType && !d.HasSecondField() {
 		d.focusIndex = FormDialogFieldLabel
 	}
-	if d.focusIndex < FormDialogFieldLabel {
+	// Skip name field if not applicable
+	if d.focusIndex == FormDialogFieldName && !d.HasNameField() {
+		d.focusIndex = FormDialogButtonConfirm
+	}
+	if d.focusIndex < FormDialogFieldName {
 		d.focusIndex = FormDialogButtonConfirm
 	}
 	d.updateFocus()
@@ -445,12 +489,15 @@ func (d *FormDialogModel) focusPrev() {
 
 // updateFocus applies focus styling to the currently focused element.
 func (d *FormDialogModel) updateFocus() {
+	d.NameInput.Blur()
 	d.LabelInput.Blur()
 	if !d.HasTypeSelector() {
 		d.TypeInput.Blur()
 	}
 
 	switch d.focusIndex {
+	case FormDialogFieldName:
+		d.NameInput.Focus()
 	case FormDialogFieldLabel:
 		d.LabelInput.Focus()
 	case FormDialogFieldType:
@@ -486,6 +533,19 @@ func (d FormDialogModel) Render(windowWidth, windowHeight int) string {
 	}
 	if d.Action == FORMDIALOGCONFIGEDIT {
 		firstFieldLabel = "Value"
+	}
+
+	// Name field (only for datatype and field dialogs)
+	if d.HasNameField() {
+		nameLabel := d.labelStyle.Render("Name")
+		content.WriteString(nameLabel)
+		content.WriteString("\n")
+		if d.focusIndex == FormDialogFieldName {
+			content.WriteString(d.focusedInputStyle.Width(innerW).Render(d.NameInput.View()))
+		} else {
+			content.WriteString(d.inputStyle.Width(innerW).Render(d.NameInput.View()))
+		}
+		content.WriteString("\n")
 	}
 
 	// First field (Label, Title, or Value)
@@ -665,6 +725,7 @@ func FormDialogOverlay(content string, dialog FormDialogModel, width, height int
 type FormDialogAcceptMsg struct {
 	Action   FormDialogAction
 	EntityID string // ID of entity being edited (empty for create)
+	Name     string
 	Label    string
 	Type     string
 	ParentID string
@@ -748,13 +809,20 @@ func FormDialogActiveSetCmd(active bool) tea.Cmd {
 
 // NewEditDatatypeDialog creates a form dialog for editing a datatype with pre-populated values
 func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.Datatypes, datatype db.Datatypes) FormDialogModel {
+	// Create name input with current value
+	nameInput := textinput.New()
+	nameInput.Placeholder = "Machine name"
+	nameInput.CharLimit = 64
+	nameInput.Width = 40
+	nameInput.SetValue(datatype.Name)
+	nameInput.Focus()
+
 	// Create label input with current value
 	labelInput := textinput.New()
 	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
 	labelInput.Width = 40
 	labelInput.SetValue(datatype.Label)
-	labelInput.Focus()
 
 	// Create type input with current value
 	typeInput := textinput.New()
@@ -789,23 +857,31 @@ func NewEditDatatypeDialog(title string, action FormDialogAction, parents []db.D
 		Width:         60,
 		Action:        action,
 		EntityID:      string(datatype.DatatypeID),
+		NameInput:     nameInput,
 		LabelInput:    labelInput,
 		TypeInput:     typeInput,
 		ParentOptions: parentOptions,
 		ParentIndex:   selectedParentIndex,
-		focusIndex:    FormDialogFieldLabel,
+		focusIndex:    FormDialogFieldName,
 	}
 }
 
 // NewEditFieldDialog creates a form dialog for editing a field with pre-populated values
 func NewEditFieldDialog(title string, action FormDialogAction, field db.Fields) FormDialogModel {
+	// Create name input with current value
+	nameInput := textinput.New()
+	nameInput.Placeholder = "Machine name"
+	nameInput.CharLimit = 64
+	nameInput.Width = 40
+	nameInput.SetValue(field.Name)
+	nameInput.Focus()
+
 	// Create label input with current value
 	labelInput := textinput.New()
-	labelInput.Placeholder = "Field name"
+	labelInput.Placeholder = "Display name"
 	labelInput.CharLimit = 64
 	labelInput.Width = 40
 	labelInput.SetValue(field.Label)
-	labelInput.Focus()
 
 	return FormDialogModel{
 		dialogStyles: newDialogStyles(),
@@ -813,10 +889,11 @@ func NewEditFieldDialog(title string, action FormDialogAction, field db.Fields) 
 		Width:        60,
 		Action:       action,
 		EntityID:     string(field.FieldID),
+		NameInput:    nameInput,
 		LabelInput:   labelInput,
 		TypeOptions:  TypeOptionsFromRegistry(),
 		TypeIndex:    FieldInputTypeIndex(string(field.Type)),
-		focusIndex:   FormDialogFieldLabel,
+		focusIndex:   FormDialogFieldName,
 	}
 }
 

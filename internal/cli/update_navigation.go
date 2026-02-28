@@ -260,6 +260,22 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, CursorResetCmd())
 
 			return m, tea.Batch(cmds...)
+		case PIPELINESPAGE:
+			page := m.PageMap[PIPELINESPAGE]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, PipelinesFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
+		case PIPELINEDETAILPAGE:
+			page := m.PageMap[PIPELINEDETAILPAGE]
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, CursorResetCmd())
+
+			return m, tea.Batch(cmds...)
 		}
 
 		return m, nil

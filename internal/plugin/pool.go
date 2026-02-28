@@ -58,8 +58,8 @@ type VMPool struct {
 	initPath    string
 	pluginName  string
 	closed      atomic.Bool
-	draining    atomic.Bool    // Phase 4: true during Drain() -- rejects Get but accepts Put returns
-	checkedOut  atomic.Int32   // Phase 4 A2: tracks VMs currently checked out (incremented in Get, decremented in Put)
+	draining    atomic.Bool     // Phase 4: true during Drain() -- rejects Get but accepts Put returns
+	checkedOut  atomic.Int32    // Phase 4 A2: tracks VMs currently checked out (incremented in Get, decremented in Put)
 	initGlobals map[string]bool // snapshot of global names after on_init; nil until SnapshotGlobals called
 
 	// onReplace is called when Put() detects an unhealthy VM and needs to replace it.
@@ -71,8 +71,8 @@ type VMPool struct {
 
 // VMPoolConfig configures the VM pool at creation time.
 type VMPoolConfig struct {
-	Size        int                   // total VMs (general + reserved)
-	ReserveSize int                   // VMs reserved for hooks (default 1)
+	Size        int // total VMs (general + reserved)
+	ReserveSize int // VMs reserved for hooks (default 1)
 	Factory     func() *lua.LState
 	InitPath    string
 	PluginName  string
@@ -491,6 +491,20 @@ func (p *VMPool) validateVM(L *lua.LState) bool {
 
 	if !isGoBoundFunction(L.GetField(hooksTable, "on")) {
 		return false
+	}
+
+	// Validate core module (Phase 2D).
+	coreVal := L.GetGlobal("core")
+	coreTable, ok := coreVal.(*lua.LTable)
+	if !ok {
+		return false
+	}
+
+	coreFuncs := []string{"query", "query_one", "count", "exists", "insert", "update", "delete"}
+	for _, fname := range coreFuncs {
+		if !isGoBoundFunction(L.GetField(coreTable, fname)) {
+			return false
+		}
 	}
 
 	return true

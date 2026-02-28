@@ -987,6 +987,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		dialog := NewFormDialog("Edit Admin Datatype", FORMDIALOGEDITADMINDATATYPE, nil)
 		dialog.ParentOptions = parentOpts
+		dialog.NameInput.SetValue(msg.Datatype.Name)
 		dialog.LabelInput.SetValue(msg.Datatype.Label)
 		dialog.TypeInput.SetValue(msg.Datatype.Type)
 		dialog.EntityID = string(msg.Datatype.AdminDatatypeID)
@@ -1006,6 +1007,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 	case ShowEditAdminFieldDialogMsg:
 		// Edit admin field dialog with pre-populated values
 		dialog := NewFieldFormDialog("Edit Admin Field", FORMDIALOGEDITADMINFIELD)
+		dialog.NameInput.SetValue(msg.Field.Name)
 		dialog.LabelInput.SetValue(msg.Field.Label)
 		dialog.TypeIndex = FieldInputTypeIndex(string(msg.Field.Type))
 		dialog.EntityID = string(msg.Field.AdminFieldID)
@@ -1062,7 +1064,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				CreateDatatypeFromDialogCmd(msg.Label, msg.Type, msg.ParentID),
+				CreateDatatypeFromDialogCmd(msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCREATEFIELD:
 			// Create a field and link it to the selected datatype
@@ -1072,7 +1074,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FormDialogActiveSetCmd(false),
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
-					CreateFieldFromDialogCmd(msg.Label, msg.Type, dt.DatatypeID),
+					CreateFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, dt.DatatypeID),
 				)
 			}
 			return m, tea.Batch(
@@ -1093,7 +1095,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				UpdateDatatypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type, msg.ParentID),
+				UpdateDatatypeFromDialogCmd(msg.EntityID, msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGEDITFIELD:
 			// Update an existing field
@@ -1101,7 +1103,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				UpdateFieldFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+				UpdateFieldFromDialogCmd(msg.EntityID, msg.Name, msg.Label, msg.Type),
 			)
 		case FORMDIALOGEDITROUTE:
 			// Update an existing route (Label=Title, Type=Slug)
@@ -1191,14 +1193,14 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				CreateAdminDatatypeFromDialogCmd(msg.Label, msg.Type, msg.ParentID),
+				CreateAdminDatatypeFromDialogCmd(msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGEDITADMINDATATYPE:
 			return m, tea.Batch(
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				UpdateAdminDatatypeFromDialogCmd(msg.EntityID, msg.Label, msg.Type, msg.ParentID),
+				UpdateAdminDatatypeFromDialogCmd(msg.EntityID, msg.Name, msg.Label, msg.Type, msg.ParentID),
 			)
 		case FORMDIALOGCREATEADMINFIELD:
 			// Create a field and link it to the selected admin datatype
@@ -1208,7 +1210,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FormDialogActiveSetCmd(false),
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
-					CreateAdminFieldFromDialogCmd(msg.Label, msg.Type, dt.AdminDatatypeID),
+					CreateAdminFieldFromDialogCmd(msg.Name, msg.Label, msg.Type, dt.AdminDatatypeID),
 				)
 			}
 			return m, tea.Batch(
@@ -1220,7 +1222,7 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 				FormDialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
 				LoadingStartCmd(),
-				UpdateAdminFieldFromDialogCmd(msg.EntityID, msg.Label, msg.Type),
+				UpdateAdminFieldFromDialogCmd(msg.EntityID, msg.Name, msg.Label, msg.Type),
 			)
 		case FORMDIALOGCREATEFIELDTYPE:
 			// Create a new field type (Label=Type value, Type=Label value)
@@ -1688,9 +1690,10 @@ type DatatypeCreatedFromDialogMsg struct {
 }
 
 // CreateDatatypeFromDialogCmd creates a command to create a datatype from dialog input.
-func CreateDatatypeFromDialogCmd(label, dtype, parentID string) tea.Cmd {
+func CreateDatatypeFromDialogCmd(name, label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
 		return CreateDatatypeFromDialogRequestMsg{
+			Name:     name,
 			Label:    label,
 			Type:     dtype,
 			ParentID: parentID,
@@ -1700,6 +1703,7 @@ func CreateDatatypeFromDialogCmd(label, dtype, parentID string) tea.Cmd {
 
 // CreateDatatypeFromDialogRequestMsg triggers datatype creation from dialog.
 type CreateDatatypeFromDialogRequestMsg struct {
+	Name     string
 	Label    string
 	Type     string
 	ParentID string
@@ -1751,6 +1755,7 @@ func (m Model) HandleCreateDatatypeFromDialog(msg CreateDatatypeFromDialogReques
 		params := db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
 			ParentID:     parentID,
+			Name:         msg.Name,
 			Label:        msg.Label,
 			Type:         dtype,
 			AuthorID:     authorID,
@@ -1780,9 +1785,10 @@ type FieldCreatedFromDialogMsg struct {
 }
 
 // CreateFieldFromDialogCmd creates a command to create a field and link it to a datatype.
-func CreateFieldFromDialogCmd(label, fieldType string, datatypeID types.DatatypeID) tea.Cmd {
+func CreateFieldFromDialogCmd(name, label, fieldType string, datatypeID types.DatatypeID) tea.Cmd {
 	return func() tea.Msg {
 		return CreateFieldFromDialogRequestMsg{
+			Name:       name,
 			Label:      label,
 			Type:       fieldType,
 			DatatypeID: datatypeID,
@@ -1792,6 +1798,7 @@ func CreateFieldFromDialogCmd(label, fieldType string, datatypeID types.Datatype
 
 // CreateFieldFromDialogRequestMsg triggers field creation from dialog.
 type CreateFieldFromDialogRequestMsg struct {
+	Name       string
 	Label      string
 	Type       string
 	DatatypeID types.DatatypeID
@@ -1854,6 +1861,7 @@ func (m Model) HandleCreateFieldFromDialog(msg CreateFieldFromDialogRequestMsg) 
 		fieldID := types.NewFieldID()
 		fieldParams := db.CreateFieldParams{
 			FieldID:      fieldID,
+			Name:         msg.Name,
 			Label:        msg.Label,
 			Data:         "",
 			Validation:   types.EmptyJSON,
@@ -2032,16 +2040,18 @@ type DatatypeUpdatedFromDialogMsg struct {
 // UpdateDatatypeFromDialogRequestMsg triggers datatype update from dialog.
 type UpdateDatatypeFromDialogRequestMsg struct {
 	DatatypeID string
+	Name       string
 	Label      string
 	Type       string
 	ParentID   string
 }
 
 // UpdateDatatypeFromDialogCmd creates a command to update a datatype from dialog input.
-func UpdateDatatypeFromDialogCmd(datatypeID, label, dtype, parentID string) tea.Cmd {
+func UpdateDatatypeFromDialogCmd(datatypeID, name, label, dtype, parentID string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateDatatypeFromDialogRequestMsg{
 			DatatypeID: datatypeID,
+			Name:       name,
 			Label:      label,
 			Type:       dtype,
 			ParentID:   parentID,
@@ -2098,6 +2108,7 @@ func (m Model) HandleUpdateDatatypeFromDialog(msg UpdateDatatypeFromDialogReques
 		params := db.UpdateDatatypeParams{
 			DatatypeID:   datatypeID,
 			ParentID:     parentID,
+			Name:         msg.Name,
 			Label:        msg.Label,
 			Type:         dtype,
 			AuthorID:     existing.AuthorID,
@@ -2134,15 +2145,17 @@ type FieldUpdatedFromDialogMsg struct {
 // UpdateFieldFromDialogRequestMsg triggers field update from dialog.
 type UpdateFieldFromDialogRequestMsg struct {
 	FieldID string
+	Name    string
 	Label   string
 	Type    string
 }
 
 // UpdateFieldFromDialogCmd creates a command to update a field from dialog input.
-func UpdateFieldFromDialogCmd(fieldID, label, fieldType string) tea.Cmd {
+func UpdateFieldFromDialogCmd(fieldID, name, label, fieldType string) tea.Cmd {
 	return func() tea.Msg {
 		return UpdateFieldFromDialogRequestMsg{
 			FieldID: fieldID,
+			Name:    name,
 			Label:   label,
 			Type:    fieldType,
 		}
@@ -2191,10 +2204,11 @@ func (m Model) HandleUpdateFieldFromDialog(msg UpdateFieldFromDialogRequestMsg) 
 		}
 		fieldType := types.FieldType(fieldTypeStr)
 
-		// Update only label, type, and date_modified; preserve everything else
+		// Update only name, label, type, and date_modified; preserve everything else
 		params := db.UpdateFieldParams{
 			FieldID:      fieldID,
 			ParentID:     existing.ParentID,
+			Name:         msg.Name,
 			Label:        msg.Label,
 			Data:         existing.Data,
 			Validation:   existing.Validation,

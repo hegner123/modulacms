@@ -2,11 +2,12 @@ package partials
 
 // DatatypeCreateFieldForm renders the create-field form fields inside the datatype detail dialog.
 // Used as an HTMX partial for validation error responses.
-templ DatatypeCreateFieldForm(datatypeID string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
+templ DatatypeCreateFieldForm(datatypeID string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) {
     @CSRFField(csrfToken)
     if errs["_"] != "" {
         <div class="form-error">{ errs["_"] }</div>
     }
+    @FormField("name", "Name", name, errs["name"])
     @FormField("label", "Label", label, errs["label"])
     <div class={ "form-field", templ.KV("has-error", errs["type"] != "") }>
         <label for="field_type">Type</label>

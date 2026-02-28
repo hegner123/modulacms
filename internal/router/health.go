@@ -3,6 +3,7 @@ package router
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,14 +15,26 @@ import (
 )
 
 type healthResponse struct {
-	Status  string          `json:"status"`
-	Checks  map[string]bool `json:"checks"`
+	Status  string            `json:"status"`
+	Checks  map[string]bool   `json:"checks"`
 	Details map[string]string `json:"details,omitempty"`
 }
 
-// HealthHandler reports the health of critical dependencies (database, S3 storage).
+// PluginHealthChecker is a function that returns plugin subsystem health.
+// Nil when the plugin system is disabled.
+type PluginHealthChecker func() PluginHealthResult
+
+// PluginHealthResult mirrors plugin.PluginHealthStatus without importing the plugin package.
+// This avoids tight coupling between the health endpoint and the plugin package.
+type PluginHealthResult struct {
+	Healthy             bool
+	FailedPlugins       []string
+	OpenCircuitBreakers []string
+}
+
+// HealthHandler reports the health of critical dependencies (database, S3 storage, plugins).
 // Returns 200 when all checks pass, 503 when any critical check fails.
-func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config, pluginHealthFn PluginHealthChecker) {
 	ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
 	defer cancel()
 
@@ -37,6 +50,15 @@ func HealthHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	// S3 storage check (skip if not configured)
 	if c.Bucket_Endpoint != "" {
 		resp.Checks["storage"] = checkStorage(ctx, c, resp.Details)
+	}
+
+	// Plugin health check (skip if plugin system is disabled)
+	if pluginHealthFn != nil {
+		status := pluginHealthFn()
+		resp.Checks["plugins"] = status.Healthy
+		if !status.Healthy {
+			resp.Details["plugins"] = fmt.Sprintf("failed: %v, open_cb: %v", status.FailedPlugins, status.OpenCircuitBreakers)
+		}
 	}
 
 	// Determine overall status

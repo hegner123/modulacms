@@ -34,7 +34,7 @@ func newTestManager(t *testing.T) (*Manager, func()) {
 		MaxOpsPerExec:   100,
 		MaxFailures:     3,
 		ResetInterval:   60 * time.Second,
-	}, pool, db.DialectSQLite, nil)
+	}, pool, db.DialectSQLite, nil, nil)
 
 	cleanup := func() {
 		mgr.Shutdown(context.Background())
@@ -251,9 +251,9 @@ func TestPluginDisableHandler_AlreadyStopped(t *testing.T) {
 
 	PluginDisableHandler(mgr).ServeHTTP(w, req)
 
-	// Should return error because plugin is already stopped.
-	if w.Code != http.StatusInternalServerError {
-		t.Fatalf("expected 500 (already stopped), got %d", w.Code)
+	// DeactivatePlugin is idempotent: returns nil on already-stopped plugins.
+	if w.Code != http.StatusOK {
+		t.Fatalf("expected 200 (idempotent no-op), got %d", w.Code)
 	}
 }
 
@@ -366,7 +366,7 @@ func TestPluginCleanupDrop_DropsOrphanedTable(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, pool, db.DialectSQLite, nil)
+	}, pool, db.DialectSQLite, nil, nil)
 	defer mgr.Shutdown(context.Background())
 
 	// Create an orphaned table (no plugin claims it).

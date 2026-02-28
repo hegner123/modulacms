@@ -7,6 +7,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -131,8 +132,14 @@ func RoleNewFormHandler(driver db.DbDriver, pc *middleware.PermissionCache) http
 
 // RoleCreateHandler handles POST /admin/users/roles.
 // Creates a new role and refreshes the permission cache.
-func RoleCreateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
+func RoleCreateHandler(driver db.DbDriver, pc *middleware.PermissionCache, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -157,7 +164,7 @@ func RoleCreateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		_, err := driver.CreateRole(r.Context(), ac, db.CreateRoleParams{
 			Label:           label,
@@ -165,7 +172,7 @@ func RoleCreateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create role", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			Render(w, r, partials.RoleForm(label, map[string]string{"_": "Failed to create role"}, csrfToken))
 			return
@@ -187,8 +194,14 @@ func RoleCreateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 // RoleUpdateHandler handles POST /admin/users/roles/{id}.
 // Updates a role label and manages permission assignments.
 // System-protected roles cannot be renamed.
-func RoleUpdateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
+func RoleUpdateHandler(driver db.DbDriver, pc *middleware.PermissionCache, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing role ID", http.StatusBadRequest)
@@ -233,7 +246,7 @@ func RoleUpdateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		// Update role label
 		_, err = driver.UpdateRole(r.Context(), ac, db.UpdateRoleParams{
@@ -286,8 +299,14 @@ func RoleUpdateHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 
 // RoleDeleteHandler handles DELETE /admin/users/roles/{id}.
 // HTMX-only endpoint. Cannot delete system-protected roles.
-func RoleDeleteHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.HandlerFunc {
+func RoleDeleteHandler(driver db.DbDriver, pc *middleware.PermissionCache, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -319,7 +338,7 @@ func RoleDeleteHandler(driver db.DbDriver, pc *middleware.PermissionCache) http.
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		// Delete role-permission links first
 		if deleteErr := driver.DeleteRolePermissionsByRoleID(r.Context(), ac, types.RoleID(id)); deleteErr != nil {

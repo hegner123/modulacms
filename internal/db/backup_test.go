@@ -62,7 +62,7 @@ func fullBackupSqlite() mdb.Backup {
 func fullBackupSetSqlite() mdb.BackupSet {
 	return mdb.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"id1", "id2"}),
@@ -353,13 +353,13 @@ func TestDatabase_MapBackupVerification_BoolCombinations(t *testing.T) {
 	d := Database{}
 
 	tests := []struct {
-		name                string
-		restoreTestedValid  bool
-		checksumValidValid  bool
-		recordCountValid    bool
-		restoreTestedValue  bool
-		checksumValidValue  bool
-		recordCountValue    bool
+		name               string
+		restoreTestedValid bool
+		checksumValidValid bool
+		recordCountValid   bool
+		restoreTestedValue bool
+		checksumValidValue bool
+		recordCountValue   bool
 	}{
 		{"all null", false, false, false, false, false, false},
 		{"all valid true", true, true, true, true, true, true},
@@ -465,7 +465,7 @@ func TestDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := Database{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"a", "b"}),
@@ -662,7 +662,7 @@ func TestMysqlDatabase_MapBackupSet_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	input := mdbm.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusComplete,
 		BackupIds:      types.NewJSONData([]string{"x"}),
@@ -805,7 +805,7 @@ func TestMysqlDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := MysqlDatabase{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{"a"}),
@@ -966,7 +966,7 @@ func TestPsqlDatabase_MapBackupSet_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	input := mdbp.BackupSet{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusPartial,
 		BackupIds:      types.NewJSONData([]string{"p1", "p2", "p3"}),
@@ -1100,7 +1100,7 @@ func TestPsqlDatabase_MapCreateBackupSetParams_AllFields(t *testing.T) {
 	d := PsqlDatabase{}
 	input := CreateBackupSetParams{
 		BackupSetID:    types.NewBackupSetID(),
-		DateCreated:      types.TimestampNow(),
+		DateCreated:    types.TimestampNow(),
 		HlcTimestamp:   types.HLCNow(),
 		Status:         types.BackupSetStatusComplete,
 		BackupIds:      types.NewJSONData([]string{"q"}),
@@ -1189,36 +1189,36 @@ func TestCrossDatabaseMapBackup_Consistency(t *testing.T) {
 	sqliteInput := mdb.Backup{
 		BackupID: backupID, NodeID: nodeID, BackupType: types.BackupTypeFull,
 		Status: types.BackupStatusCompleted, StartedAt: ts, CompletedAt: ts,
-		DurationMs: types.NullableInt64{Int64: 500, Valid: true},
-		RecordCount: types.NullableInt64{Int64: 10, Valid: true},
-		SizeBytes: types.NullableInt64{Int64: 2048, Valid: true},
+		DurationMs:     types.NullableInt64{Int64: 500, Valid: true},
+		RecordCount:    types.NullableInt64{Int64: 10, Valid: true},
+		SizeBytes:      types.NullableInt64{Int64: 2048, Valid: true},
 		ReplicationLsn: types.NullableString{String: "lsn", Valid: true},
-		HlcTimestamp: hlc, StoragePath: "/path",
-		Checksum: types.NullableString{String: "sum", Valid: true},
+		HlcTimestamp:   hlc, StoragePath: "/path",
+		Checksum:    types.NullableString{String: "sum", Valid: true},
 		TriggeredBy: triggeredBy, ErrorMessage: types.NullableString{Valid: false},
 		Metadata: metadata,
 	}
 	mysqlInput := mdbm.Backup{
 		BackupID: backupID, NodeID: nodeID, BackupType: types.BackupTypeFull,
 		Status: types.BackupStatusCompleted, StartedAt: ts, CompletedAt: ts,
-		DurationMs: types.NullableInt64{Int64: 500, Valid: true},
-		RecordCount: types.NullableInt64{Int64: 10, Valid: true},
-		SizeBytes: types.NullableInt64{Int64: 2048, Valid: true},
+		DurationMs:     types.NullableInt64{Int64: 500, Valid: true},
+		RecordCount:    types.NullableInt64{Int64: 10, Valid: true},
+		SizeBytes:      types.NullableInt64{Int64: 2048, Valid: true},
 		ReplicationLsn: types.NullableString{String: "lsn", Valid: true},
-		HlcTimestamp: hlc, StoragePath: "/path",
-		Checksum: types.NullableString{String: "sum", Valid: true},
+		HlcTimestamp:   hlc, StoragePath: "/path",
+		Checksum:    types.NullableString{String: "sum", Valid: true},
 		TriggeredBy: triggeredBy, ErrorMessage: types.NullableString{Valid: false},
 		Metadata: metadata,
 	}
 	psqlInput := mdbp.Backup{
 		BackupID: backupID, NodeID: nodeID, BackupType: types.BackupTypeFull,
 		Status: types.BackupStatusCompleted, StartedAt: ts, CompletedAt: ts,
-		DurationMs: types.NullableInt64{Int64: 500, Valid: true},
-		RecordCount: types.NullableInt64{Int64: 10, Valid: true},
-		SizeBytes: types.NullableInt64{Int64: 2048, Valid: true},
+		DurationMs:     types.NullableInt64{Int64: 500, Valid: true},
+		RecordCount:    types.NullableInt64{Int64: 10, Valid: true},
+		SizeBytes:      types.NullableInt64{Int64: 2048, Valid: true},
 		ReplicationLsn: types.NullableString{String: "lsn", Valid: true},
-		HlcTimestamp: hlc, StoragePath: "/path",
-		Checksum: types.NullableString{String: "sum", Valid: true},
+		HlcTimestamp:   hlc, StoragePath: "/path",
+		Checksum:    types.NullableString{String: "sum", Valid: true},
 		TriggeredBy: triggeredBy, ErrorMessage: types.NullableString{Valid: false},
 		Metadata: metadata,
 	}
@@ -1320,33 +1320,33 @@ func TestCrossDatabaseMapBackupVerification_Consistency(t *testing.T) {
 
 	sqliteInput := mdb.BackupVerification{
 		VerificationID: vID, BackupID: bID, VerifiedAt: ts,
-		VerifiedBy: types.NullableString{String: "test", Valid: true},
-		RestoreTested: types.NullableBool{Bool: true, Valid: true},
-		ChecksumValid: types.NullableBool{Bool: true, Valid: true},
+		VerifiedBy:       types.NullableString{String: "test", Valid: true},
+		RestoreTested:    types.NullableBool{Bool: true, Valid: true},
+		ChecksumValid:    types.NullableBool{Bool: true, Valid: true},
 		RecordCountMatch: types.NullableBool{Bool: true, Valid: true},
-		Status: types.VerificationStatusVerified,
-		ErrorMessage: types.NullableString{Valid: false},
-		DurationMs: types.NullableInt64{Int64: 100, Valid: true},
+		Status:           types.VerificationStatusVerified,
+		ErrorMessage:     types.NullableString{Valid: false},
+		DurationMs:       types.NullableInt64{Int64: 100, Valid: true},
 	}
 	mysqlInput := mdbm.BackupVerification{
 		VerificationID: vID, BackupID: bID, VerifiedAt: ts,
-		VerifiedBy: types.NullableString{String: "test", Valid: true},
-		RestoreTested: types.NullableBool{Bool: true, Valid: true},
-		ChecksumValid: types.NullableBool{Bool: true, Valid: true},
+		VerifiedBy:       types.NullableString{String: "test", Valid: true},
+		RestoreTested:    types.NullableBool{Bool: true, Valid: true},
+		ChecksumValid:    types.NullableBool{Bool: true, Valid: true},
 		RecordCountMatch: types.NullableBool{Bool: true, Valid: true},
-		Status: types.VerificationStatusVerified,
-		ErrorMessage: types.NullableString{Valid: false},
-		DurationMs: types.NullableInt64{Int64: 100, Valid: true},
+		Status:           types.VerificationStatusVerified,
+		ErrorMessage:     types.NullableString{Valid: false},
+		DurationMs:       types.NullableInt64{Int64: 100, Valid: true},
 	}
 	psqlInput := mdbp.BackupVerification{
 		VerificationID: vID, BackupID: bID, VerifiedAt: ts,
-		VerifiedBy: types.NullableString{String: "test", Valid: true},
-		RestoreTested: types.NullableBool{Bool: true, Valid: true},
-		ChecksumValid: types.NullableBool{Bool: true, Valid: true},
+		VerifiedBy:       types.NullableString{String: "test", Valid: true},
+		RestoreTested:    types.NullableBool{Bool: true, Valid: true},
+		ChecksumValid:    types.NullableBool{Bool: true, Valid: true},
 		RecordCountMatch: types.NullableBool{Bool: true, Valid: true},
-		Status: types.VerificationStatusVerified,
-		ErrorMessage: types.NullableString{Valid: false},
-		DurationMs: types.NullableInt64{Int64: 100, Valid: true},
+		Status:           types.VerificationStatusVerified,
+		ErrorMessage:     types.NullableString{Valid: false},
+		DurationMs:       types.NullableInt64{Int64: 100, Valid: true},
 	}
 
 	sqliteResult := Database{}.MapBackupVerification(sqliteInput)

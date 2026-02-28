@@ -257,9 +257,10 @@ func (m Model) HandleCreateAdminDatatypeFromDialog(msg CreateAdminDatatypeFromDi
 		}
 
 		params := db.CreateAdminDatatypeParams{
-			ParentID: parentID,
-			Label:    msg.Label,
-			Type:     dtype,
+			ParentID:     parentID,
+			Name:         msg.Name,
+			Label:        msg.Label,
+			Type:         dtype,
 			AuthorID:     authorID,
 			DateCreated:  types.TimestampNow(),
 			DateModified: types.TimestampNow(),
@@ -323,6 +324,7 @@ func (m Model) HandleUpdateAdminDatatypeFromDialog(msg UpdateAdminDatatypeFromDi
 
 		params := db.UpdateAdminDatatypeParams{
 			ParentID:        parentID,
+			Name:            msg.Name,
 			Label:           msg.Label,
 			Type:            dtype,
 			AuthorID:        existing.AuthorID,
@@ -441,6 +443,7 @@ func (m Model) HandleCreateAdminFieldFromDialog(msg CreateAdminFieldFromDialogRe
 		fieldType := types.FieldType(fieldTypeStr)
 
 		fieldParams := db.CreateAdminFieldParams{
+			Name:       msg.Name,
 			Label:      msg.Label,
 			Data:       "",
 			Validation: types.EmptyJSON,
@@ -530,6 +533,7 @@ func (m Model) HandleUpdateAdminFieldFromDialog(msg UpdateAdminFieldFromDialogRe
 
 		params := db.UpdateAdminFieldParams{
 			ParentID:     existing.ParentID,
+			Name:         msg.Name,
 			Label:        msg.Label,
 			Data:         existing.Data,
 			Validation:   existing.Validation,

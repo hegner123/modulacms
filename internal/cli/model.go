@@ -167,6 +167,11 @@ type Model struct {
 	SelectedPlugin string
 	AdminUsername  string
 
+	// Pipeline management
+	PipelinesList       []PipelineDisplay
+	PipelineEntries     []PipelineEntryDisplay
+	SelectedPipelineKey string
+
 	// Config management
 	ConfigManager       *config.Manager
 	ConfigCategory      config.FieldCategory
@@ -194,11 +199,32 @@ type Model struct {
 
 // PluginDisplay holds the display-ready fields for a plugin in the TUI list.
 type PluginDisplay struct {
-	Name        string
-	Version     string
-	State       string
-	CBState     string
-	Description string
+	Name             string
+	Version          string
+	State            string
+	CBState          string
+	Description      string
+	ManifestDrift    bool
+	CapabilityDrifts int
+	SchemaDrifts     int
+}
+
+// PipelineDisplay holds the display-ready fields for a pipeline chain in the TUI list.
+type PipelineDisplay struct {
+	Key       string // "table.phase_operation"
+	Table     string
+	Operation string
+	Phase     string // "before" or "after"
+	Count     int    // entries in this chain
+}
+
+// PipelineEntryDisplay holds the display-ready fields for a single pipeline entry.
+type PipelineEntryDisplay struct {
+	PipelineID string
+	PluginName string
+	Handler    string
+	Priority   int
+	Enabled    bool
 }
 
 // ContentFieldDisplay represents a content field for right panel display.

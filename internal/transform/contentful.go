@@ -16,18 +16,18 @@ type ContentfulTransformer struct {
 
 // ContentfulEntry represents a Contentful entry
 type ContentfulEntry struct {
-	Sys    ContentfulSys      `json:"sys"`
-	Fields map[string]any     `json:"fields"`
+	Sys    ContentfulSys  `json:"sys"`
+	Fields map[string]any `json:"fields"`
 }
 
 type ContentfulSys struct {
-	ID          string                 `json:"id"`
-	Type        string                 `json:"type"`
-	ContentType ContentfulContentType  `json:"contentType"`
-	Space       *ContentfulSpace       `json:"space,omitempty"`
-	CreatedAt   string                 `json:"createdAt"`
-	UpdatedAt   string                 `json:"updatedAt"`
-	Revision    int                    `json:"revision,omitempty"`
+	ID          string                `json:"id"`
+	Type        string                `json:"type"`
+	ContentType ContentfulContentType `json:"contentType"`
+	Space       *ContentfulSpace      `json:"space,omitempty"`
+	CreatedAt   string                `json:"createdAt"`
+	UpdatedAt   string                `json:"updatedAt"`
+	Revision    int                   `json:"revision,omitempty"`
 }
 
 type ContentfulContentType struct {
@@ -97,7 +97,7 @@ func (c *ContentfulTransformer) transformNode(node *model.Node) ContentfulEntry 
 
 	// Transform fields
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label)
+		key := fieldKey(field.Info)
 		value := c.transformField(field)
 		entry.Fields[key] = value
 	}

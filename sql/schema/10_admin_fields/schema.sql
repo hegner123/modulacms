@@ -4,6 +4,7 @@ CREATE TABLE admin_fields (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT DEFAULT '' NOT NULL,
     validation TEXT NOT NULL,

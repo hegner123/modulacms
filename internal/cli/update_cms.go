@@ -55,6 +55,7 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		userID := m.UserID
 		datatypeID := msg.DatatypeID
 		parentStr := msg.Parent
+		name := msg.Name
 		label := msg.Label
 		dtType := msg.Type
 		return m, func() tea.Msg {
@@ -74,9 +75,15 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 					Valid: true,
 				}
 			}
+			// Preserve existing Name when not provided (legacy huh.Form path has no Name input)
+			updatedName := name
+			if updatedName == "" {
+				updatedName = existing.Name
+			}
 			params := db.UpdateDatatypeParams{
 				DatatypeID:   datatypeID,
 				ParentID:     parentID,
+				Name:         updatedName,
 				Label:        label,
 				Type:         dtType,
 				AuthorID:     existing.AuthorID,

@@ -478,7 +478,6 @@ func TestDatabase_MapMediaDimension_AllFields(t *testing.T) {
 		AspectRatio: sql.NullString{String: "4:3", Valid: true},
 	}
 
-
 	got := d.MapMediaDimension(input)
 
 	if got.MdID != "sqlite-md-001" {

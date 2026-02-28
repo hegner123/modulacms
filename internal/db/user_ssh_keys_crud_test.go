@@ -2,10 +2,10 @@
 // Uses testSeededDB (Tier 1a: SSH keys reference users via NullableUserID).
 //
 // Special notes:
-// - No standard UpdateUserSshKey method; uses UpdateUserSshKeyLastUsed (non-audited)
-//   and UpdateUserSshKeyLabel (audited) as separate update operations.
-// - SshKeyID is raw string, not a typed ID.
-// - Label and LastUsed are mapped from sql.NullString to plain string.
+//   - No standard UpdateUserSshKey method; uses UpdateUserSshKeyLastUsed (non-audited)
+//     and UpdateUserSshKeyLabel (audited) as separate update operations.
+//   - SshKeyID is raw string, not a typed ID.
+//   - Label and LastUsed are mapped from sql.NullString to plain string.
 package db
 
 import (

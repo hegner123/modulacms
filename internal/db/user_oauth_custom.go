@@ -280,7 +280,7 @@ type NewUserOauthCmd struct {
 }
 
 func (c NewUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserOauthCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserOauthCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserOauthCmd) TableName() string                     { return "user_oauth" }
@@ -315,7 +315,7 @@ type UpdateUserOauthCmd struct {
 }
 
 func (c UpdateUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserOauthCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserOauthCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserOauthCmd) TableName() string                     { return "user_oauth" }
@@ -351,7 +351,7 @@ type DeleteUserOauthCmd struct {
 }
 
 func (c DeleteUserOauthCmd) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserOauthCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserOauthCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserOauthCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserOauthCmd) TableName() string                     { return "user_oauth" }
@@ -383,7 +383,7 @@ type NewUserOauthCmdMysql struct {
 }
 
 func (c NewUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserOauthCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
@@ -423,7 +423,7 @@ type UpdateUserOauthCmdMysql struct {
 }
 
 func (c UpdateUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserOauthCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
@@ -459,7 +459,7 @@ type DeleteUserOauthCmdMysql struct {
 }
 
 func (c DeleteUserOauthCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserOauthCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserOauthCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserOauthCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserOauthCmdMysql) TableName() string                     { return "user_oauth" }
@@ -491,7 +491,7 @@ type NewUserOauthCmdPsql struct {
 }
 
 func (c NewUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserOauthCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserOauthCmdPsql) TableName() string                     { return "user_oauth" }
@@ -526,7 +526,7 @@ type UpdateUserOauthCmdPsql struct {
 }
 
 func (c UpdateUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserOauthCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserOauthCmdPsql) TableName() string                     { return "user_oauth" }
@@ -562,7 +562,7 @@ type DeleteUserOauthCmdPsql struct {
 }
 
 func (c DeleteUserOauthCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteUserOauthCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserOauthCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserOauthCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserOauthCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserOauthCmdPsql) TableName() string                     { return "user_oauth" }

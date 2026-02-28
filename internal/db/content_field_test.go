@@ -823,10 +823,10 @@ func TestCrossDatabaseMapCreateContentFieldParams_AutoIDGeneration(t *testing.T)
 	ts := types.NewTimestamp(time.Date(2025, 6, 1, 12, 0, 0, 0, time.UTC))
 
 	input := CreateContentFieldParams{
-		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
-		FieldValue:    "auto-id-test",
-		DateCreated:   ts,
-		DateModified:  ts,
+		RouteID:      types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
+		FieldValue:   "auto-id-test",
+		DateCreated:  ts,
+		DateModified: ts,
 	}
 
 	sqliteResult := Database{}.MapCreateContentFieldParams(input)
@@ -923,11 +923,11 @@ func TestNewContentFieldCmd_AllAccessors(t *testing.T) {
 		IP:        "10.0.0.1",
 	}
 	params := CreateContentFieldParams{
-		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
-		FieldValue:    "cmd-value",
-		AuthorID:      userID,
-		DateCreated:   ts,
-		DateModified:  ts,
+		RouteID:      types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
+		FieldValue:   "cmd-value",
+		AuthorID:     userID,
+		DateCreated:  ts,
+		DateModified: ts,
 	}
 
 	cmd := Database{}.NewContentFieldCmd(ctx, ac, params)
@@ -1063,10 +1063,10 @@ func TestNewContentFieldCmdMysql_AllAccessors(t *testing.T) {
 		IP:        "192.168.1.1",
 	}
 	params := CreateContentFieldParams{
-		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
-		FieldValue:    "mysql-cmd-value",
-		DateCreated:   ts,
-		DateModified:  ts,
+		RouteID:      types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
+		FieldValue:   "mysql-cmd-value",
+		DateCreated:  ts,
+		DateModified: ts,
 	}
 
 	cmd := MysqlDatabase{}.NewContentFieldCmd(ctx, ac, params)
@@ -1188,10 +1188,10 @@ func TestNewContentFieldCmdPsql_AllAccessors(t *testing.T) {
 		IP:        "172.16.0.1",
 	}
 	params := CreateContentFieldParams{
-		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
-		FieldValue:    "psql-cmd-value",
-		DateCreated:   ts,
-		DateModified:  ts,
+		RouteID:      types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
+		FieldValue:   "psql-cmd-value",
+		DateCreated:  ts,
+		DateModified: ts,
 	}
 
 	cmd := PsqlDatabase{}.NewContentFieldCmd(ctx, ac, params)

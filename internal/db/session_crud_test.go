@@ -30,7 +30,7 @@ func TestDatabase_CRUD_Session(t *testing.T) {
 	// --- Create ---
 	created, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      userID,
-		DateCreated:   now,
+		DateCreated: now,
 		ExpiresAt:   later,
 		LastAccess:  NewNullString("2026-01-01T00:00:00Z"),
 		IpAddress:   NewNullString("192.168.1.1"),
@@ -115,7 +115,7 @@ func TestDatabase_CRUD_Session(t *testing.T) {
 	_, err = d.UpdateSession(ctx, ac, UpdateSessionParams{
 		SessionID:   created.SessionID,
 		UserID:      userID,
-		DateCreated:   created.DateCreated,
+		DateCreated: created.DateCreated,
 		ExpiresAt:   updatedNow,
 		LastAccess:  NewNullString("2026-02-01T00:00:00Z"),
 		IpAddress:   NewNullString("10.0.0.1"),
@@ -176,7 +176,7 @@ func TestDatabase_CRUD_Session_NullOptionalFields(t *testing.T) {
 
 	created, err := d.CreateSession(ctx, ac, CreateSessionParams{
 		UserID:      userID,
-		DateCreated:   now,
+		DateCreated: now,
 		ExpiresAt:   now,
 		LastAccess:  NullString{},
 		IpAddress:   NullString{},

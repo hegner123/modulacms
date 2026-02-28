@@ -11,7 +11,11 @@ import (
 	"time"
 	"unicode"
 
+	"encoding/json"
+
 	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/audited"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -46,6 +50,24 @@ func (s PluginState) String() string {
 	}
 }
 
+// PluginCapability represents a single declared pipeline capability from the manifest.
+type PluginCapability struct {
+	Table    string `json:"table"`
+	Op       string `json:"op"`
+	Handler  string `json:"handler"`
+	Priority int    `json:"priority"`
+}
+
+// CapabilityDriftEntry represents a single difference between filesystem and DB capabilities.
+type CapabilityDriftEntry struct {
+	Kind     string            `json:"kind"`               // "added", "removed", "changed"
+	Current  *PluginCapability `json:"current,omitempty"`  // from filesystem (nil if removed)
+	Previous *PluginCapability `json:"previous,omitempty"` // from DB (nil if added)
+}
+
+// PluginCoreAccess maps table names to allowed operations.
+type PluginCoreAccess map[string][]string
+
 // PluginInfo holds the metadata extracted from a plugin's plugin_info global.
 type PluginInfo struct {
 	Name          string
@@ -55,6 +77,14 @@ type PluginInfo struct {
 	License       string
 	MinCMSVersion string
 	Dependencies  []string
+
+	// Capabilities lists the pipeline hooks this plugin declares.
+	// Parsed from plugin_info.capabilities during ExtractManifest.
+	Capabilities []PluginCapability
+
+	// CoreAccess maps core CMS table names to allowed operations.
+	// Parsed from plugin_info.core_access during ExtractManifest.
+	CoreAccess PluginCoreAccess
 
 	// HasOnInit indicates whether the plugin defines an on_init() function.
 	// Set during ExtractManifest() by checking the global before the VM is closed.
@@ -79,6 +109,19 @@ type PluginInstance struct {
 	// Surfaced via PluginInfoHandler admin response (S7).
 	SchemaDrift []DriftEntry
 
+	// ManifestDrift is true when the filesystem Lua hash differs from the
+	// stored manifest_hash at load time. Surfaced via plugin info/list.
+	ManifestDrift bool
+
+	// CapabilityDrift lists the differences between filesystem capabilities
+	// and DB-stored capabilities detected during LoadAll. Empty means no drift.
+	CapabilityDrift []CapabilityDriftEntry
+
+	// ApprovedAccess is the set of core table operations approved for this plugin.
+	// Loaded from the plugins.approved_access DB column during LoadAll().
+	// Nil means no core table access (discovered-only or legacy plugins).
+	ApprovedAccess PluginCoreAccess
+
 	// mu protects dbAPIs from concurrent access. Required because the onReplace
 	// callback (called from Put on a VM-returning goroutine) deletes entries while
 	// executeBefore/executeAfter read entries on different goroutines (S5).
@@ -98,12 +141,12 @@ type ManagerConfig struct {
 	MaxOpsPerExec   int // default 1000, per VM checkout
 
 	// Hook engine configuration (Phase 3).
-	HookReserveVMs          int // VMs reserved for hook execution; default 1
+	HookReserveVMs           int // VMs reserved for hook execution; default 1
 	HookMaxConsecutiveAborts int // circuit breaker threshold; default 10
-	HookMaxOps              int // reduced op budget for after-hooks; default 100
-	HookMaxConcurrentAfter  int // max concurrent after-hook goroutines; default 10
-	HookTimeoutMs           int // per-hook timeout in before-hooks (ms); default 2000
-	HookEventTimeoutMs      int // per-event total timeout for before-hook chain (ms); default 5000
+	HookMaxOps               int // reduced op budget for after-hooks; default 100
+	HookMaxConcurrentAfter   int // max concurrent after-hook goroutines; default 10
+	HookTimeoutMs            int // per-hook timeout in before-hooks (ms); default 2000
+	HookEventTimeoutMs       int // per-event total timeout for before-hook chain (ms); default 5000
 
 	// Phase 4: Production hardening configuration.
 	HotReload     bool          // default false (zero value) -- production opt-in only (S10)
@@ -128,9 +171,14 @@ type Manager struct {
 	cfg      ManagerConfig
 	db       *sql.DB // separate plugin pool via db.OpenPool()
 	dialect  db.Dialect
+	driver   db.DbDriver    // for reading plugins/pipelines tables; may be nil for tests
 	tableReg TableRegistrar // registers plugin tables in the CMS tables registry; may be nil
 	plugins  map[string]*PluginInstance
 	mu       sync.RWMutex
+
+	// registry is the in-memory pipeline cache loaded from the pipelines table.
+	// Always non-nil when the Manager is non-nil.
+	registry *PipelineRegistry
 
 	// loadOrder preserves the topologically sorted order of successfully loaded plugins.
 	// Used for reverse-order shutdown.
@@ -146,8 +194,13 @@ type Manager struct {
 
 	// watcher is the file-polling hot reload watcher (Phase 4). Nil when hot
 	// reload is disabled. Started via StartWatcher() after LoadAll().
-	watcher      *Watcher
+	watcher       *Watcher
 	watcherCancel context.CancelFunc
+
+	// coordinator is the DB state polling coordinator for multi-instance sync.
+	// Nil when disabled (Plugin_Sync_Interval == "0" or driver == nil).
+	coordinator       *Coordinator
+	coordinatorCancel context.CancelFunc
 
 	// shutdownOnce ensures Shutdown is idempotent -- calling it multiple times
 	// (e.g., signal handler + deferred call) does not double-close resources.
@@ -157,8 +210,9 @@ type Manager struct {
 // NewManager creates a new plugin Manager with the given configuration.
 // Zero-value config fields are replaced with defaults.
 // The db pool must be a separate *sql.DB opened via db.OpenPool() for isolation.
+// driver may be nil for tests; when nil, lifecycle methods that require DB access return errors.
 // tableReg may be nil; when nil, plugin tables are not registered in the CMS tables registry.
-func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, tableReg TableRegistrar) *Manager {
+func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, driver db.DbDriver, tableReg TableRegistrar) *Manager {
 	if cfg.MaxVMsPerPlugin <= 0 {
 		cfg.MaxVMsPerPlugin = 4
 	}
@@ -182,8 +236,10 @@ func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, tableReg Ta
 		cfg:      cfg,
 		db:       pool,
 		dialect:  dialect,
+		driver:   driver,
 		tableReg: tableReg,
 		plugins:  make(map[string]*PluginInstance),
+		registry: NewPipelineRegistry(),
 	}
 
 	// Create hook engine unconditionally. The engine is inert when no hooks
@@ -192,9 +248,9 @@ func NewManager(cfg ManagerConfig, pool *sql.DB, dialect db.Dialect, tableReg Ta
 		HookTimeoutMs:        cfg.HookTimeoutMs,
 		EventTimeoutMs:       cfg.HookEventTimeoutMs,
 		MaxConsecutiveAborts: cfg.HookMaxConsecutiveAborts,
-		MaxConcurrentAfter:  cfg.HookMaxConcurrentAfter,
-		HookMaxOps:          cfg.HookMaxOps,
-		ExecTimeoutMs:       cfg.ExecTimeoutSec * 1000, // reuse exec timeout for after-hooks
+		MaxConcurrentAfter:   cfg.HookMaxConcurrentAfter,
+		HookMaxOps:           cfg.HookMaxOps,
+		ExecTimeoutMs:        cfg.ExecTimeoutSec * 1000, // reuse exec timeout for after-hooks
 	})
 
 	return mgr
@@ -215,6 +271,66 @@ func (m *Manager) Bridge() *HTTPBridge {
 // Always non-nil when the Manager is non-nil.
 func (m *Manager) HookEngine() *HookEngine {
 	return m.hookEngine
+}
+
+// Registry returns the in-memory pipeline registry.
+// Always non-nil when the Manager is non-nil.
+func (m *Manager) Registry() *PipelineRegistry {
+	return m.registry
+}
+
+// Driver returns the DbDriver, or nil if not set.
+func (m *Manager) Driver() db.DbDriver {
+	return m.driver
+}
+
+// LoadRegistry queries enabled pipelines from the database and rebuilds the
+// in-memory PipelineRegistry. Safe to call multiple times (build-then-swap).
+// Returns nil if the driver is not set (test mode).
+func (m *Manager) LoadRegistry(ctx context.Context) error {
+	if m.driver == nil {
+		return nil
+	}
+
+	pipelines, err := m.driver.ListEnabledPipelines()
+	if err != nil {
+		return fmt.Errorf("loading enabled pipelines: %w", err)
+	}
+
+	if pipelines == nil {
+		m.registry.Build(nil)
+		return nil
+	}
+
+	rows := make([]PipelineRow, 0, len(*pipelines))
+	for _, p := range *pipelines {
+		configStr := ""
+		if p.Config.Valid {
+			if s, ok := p.Config.Data.(string); ok {
+				configStr = s
+			} else {
+				// Config.Data may already be a parsed type; marshal it back.
+				if b, mErr := json.Marshal(p.Config.Data); mErr == nil {
+					configStr = string(b)
+				}
+			}
+		}
+
+		rows = append(rows, PipelineRow{
+			PipelineID: p.PipelineID.String(),
+			PluginID:   p.PluginID.String(),
+			TableName:  p.TableName,
+			Operation:  p.Operation,
+			PluginName: p.PluginName,
+			Handler:    p.Handler,
+			Priority:   p.Priority,
+			Enabled:    p.Enabled,
+			Config:     configStr,
+		})
+	}
+
+	m.registry.Build(rows)
+	return nil
 }
 
 // LoadAll discovers plugins in the configured directory, validates manifests,
@@ -282,6 +398,69 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 		}
 	}
 
+	// Step 2.5: Load approved_access from the plugins DB table and detect drift.
+	// This enriches discovered PluginInstances with their DB-stored permissions
+	// and compares filesystem state against stored DB records.
+	if m.driver != nil {
+		dbPlugins, err := m.driver.ListPlugins()
+		if err != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("failed to query plugins table for approved_access: %s", err.Error()),
+				nil,
+			)
+		} else if dbPlugins != nil {
+			dbByName := make(map[string]*db.Plugin, len(*dbPlugins))
+			for i := range *dbPlugins {
+				dbByName[(*dbPlugins)[i].Name] = &(*dbPlugins)[i]
+			}
+			for name, inst := range discovered {
+				dbRow, ok := dbByName[name]
+				if !ok {
+					continue
+				}
+
+				// Enrich with approved_access.
+				if dbRow.ApprovedAccess.Valid {
+					var access PluginCoreAccess
+					if jsonErr := json.Unmarshal([]byte(dbRow.ApprovedAccess.String()), &access); jsonErr != nil {
+						utility.DefaultLogger.Warn(
+							fmt.Sprintf("plugin %q: invalid approved_access JSON: %s", name, jsonErr.Error()),
+							nil,
+						)
+					} else {
+						inst.ApprovedAccess = access
+					}
+				}
+
+				// Step 2.6: Manifest hash drift (skip if no baseline stored).
+				if dbRow.ManifestHash != "" {
+					fsHash, hashErr := computeChecksum(inst.Dir)
+					if hashErr != nil {
+						utility.DefaultLogger.Warn(
+							fmt.Sprintf("plugin %q: checksum error during drift detection: %s", name, hashErr.Error()),
+							nil,
+						)
+					} else if fsHash != dbRow.ManifestHash {
+						inst.ManifestDrift = true
+					}
+				}
+
+				// Capability drift: compare filesystem capabilities against DB capabilities.
+				var storedCaps []PluginCapability
+				capStr := dbRow.Capabilities.String()
+				if capStr != "" && capStr != "null" {
+					if unmarshalErr := json.Unmarshal([]byte(capStr), &storedCaps); unmarshalErr != nil {
+						utility.DefaultLogger.Warn(
+							fmt.Sprintf("plugin %q: invalid capabilities JSON in DB: %s", name, unmarshalErr.Error()),
+							nil,
+						)
+					}
+				}
+				inst.CapabilityDrift = compareCapabilities(inst.Info.Capabilities, storedCaps)
+			}
+		}
+	}
+
 	// Step 3: Topologically sort by dependencies.
 	sorted, sortErr := topologicalSort(discovered)
 	if sortErr != nil {
@@ -340,11 +519,18 @@ func (m *Manager) LoadAll(ctx context.Context) error {
 
 	// Step 4: Load each plugin in dependency order.
 	m.mu.Lock()
-	defer m.mu.Unlock()
-
 	for _, inst := range sorted {
 		m.plugins[inst.Info.Name] = inst
 		m.loadPlugin(ctx, inst)
+	}
+	m.mu.Unlock()
+
+	// Step 5: Load the pipeline registry from the database.
+	if regErr := m.LoadRegistry(ctx); regErr != nil {
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("failed to load pipeline registry: %s", regErr.Error()),
+			nil,
+		)
 	}
 
 	return nil
@@ -399,10 +585,13 @@ func (m *Manager) loadPlugin(ctx context.Context, inst *PluginInstance) {
 		RegisterLogAPI(L, pluginName)
 		RegisterHTTPAPI(L, pluginName)
 		RegisterHooksAPI(L, pluginName)
+		coreAPI := NewCoreTableAPI(dbAPI, pluginName, m.dialect, inst.ApprovedAccess)
+		RegisterCoreAPI(L, coreAPI)
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
 		FreezeModule(L, "http")
 		FreezeModule(L, "hooks")
+		FreezeModule(L, "core")
 
 		// Execute init.lua to define globals (plugin_info, on_init, on_shutdown).
 		// Use a context with timeout for the execution.
@@ -755,6 +944,50 @@ func ExtractManifest(initPath string) (*PluginInfo, error) {
 		})
 	}
 
+	// Extract capabilities (optional list of {table, op, handler, priority}).
+	capsVal := L.GetField(infoTbl, "capabilities")
+	if capsTbl, ok := capsVal.(*lua.LTable); ok {
+		capsTbl.ForEach(func(_, v lua.LValue) {
+			entry, ok := v.(*lua.LTable)
+			if !ok {
+				return
+			}
+			cap := PluginCapability{
+				Table:   luaTableString(L, entry, "table"),
+				Op:      luaTableString(L, entry, "op"),
+				Handler: luaTableString(L, entry, "handler"),
+			}
+			priVal := L.GetField(entry, "priority")
+			if num, ok := priVal.(lua.LNumber); ok {
+				cap.Priority = int(num)
+			}
+			info.Capabilities = append(info.Capabilities, cap)
+		})
+	}
+
+	// Extract core_access (optional table of string arrays).
+	accessVal := L.GetField(infoTbl, "core_access")
+	if accessTbl, ok := accessVal.(*lua.LTable); ok {
+		info.CoreAccess = make(PluginCoreAccess)
+		accessTbl.ForEach(func(key, val lua.LValue) {
+			tableName, ok := key.(lua.LString)
+			if !ok {
+				return
+			}
+			opsTbl, ok := val.(*lua.LTable)
+			if !ok {
+				return
+			}
+			var ops []string
+			opsTbl.ForEach(func(_, opVal lua.LValue) {
+				if s, ok := opVal.(lua.LString); ok {
+					ops = append(ops, string(s))
+				}
+			})
+			info.CoreAccess[string(tableName)] = ops
+		})
+	}
+
 	// Check whether on_init() is defined before the deferred L.Close() runs.
 	if L.GetGlobal("on_init").Type() == lua.LTFunction {
 		info.HasOnInit = true
@@ -903,7 +1136,7 @@ func registerManifestStubs(L *lua.LState) {
 		return 1
 	}))
 
-	for _, name := range []string{"db", "log", "http", "hooks"} {
+	for _, name := range []string{"db", "log", "http", "hooks", "core"} {
 		stub := L.NewTable()
 		L.SetMetatable(stub, mt)
 		L.SetGlobal(name, stub)
@@ -917,6 +1150,65 @@ func sortStringSlice(s []string) {
 			s[j], s[j-1] = s[j-1], s[j]
 		}
 	}
+}
+
+// compareCapabilities detects differences between filesystem capabilities (current)
+// and DB-stored capabilities (stored). Returns nil if they are identical or both empty.
+func compareCapabilities(current, stored []PluginCapability) []CapabilityDriftEntry {
+	type capKey struct {
+		Table string
+		Op    string
+	}
+
+	currentMap := make(map[capKey]PluginCapability, len(current))
+	for _, c := range current {
+		currentMap[capKey{c.Table, c.Op}] = c
+	}
+
+	storedMap := make(map[capKey]PluginCapability, len(stored))
+	for _, s := range stored {
+		storedMap[capKey{s.Table, s.Op}] = s
+	}
+
+	var drifts []CapabilityDriftEntry
+
+	// Check for added or changed capabilities.
+	for key, cur := range currentMap {
+		prev, exists := storedMap[key]
+		if !exists {
+			c := cur
+			drifts = append(drifts, CapabilityDriftEntry{
+				Kind:    "added",
+				Current: &c,
+			})
+			continue
+		}
+		if cur.Handler != prev.Handler || cur.Priority != prev.Priority {
+			c := cur
+			p := prev
+			drifts = append(drifts, CapabilityDriftEntry{
+				Kind:     "changed",
+				Current:  &c,
+				Previous: &p,
+			})
+		}
+	}
+
+	// Check for removed capabilities.
+	for key, prev := range storedMap {
+		if _, exists := currentMap[key]; !exists {
+			p := prev
+			drifts = append(drifts, CapabilityDriftEntry{
+				Kind:     "removed",
+				Previous: &p,
+			})
+		}
+	}
+
+	if len(drifts) == 0 {
+		return nil
+	}
+	return drifts
 }
 
 // StartWatcher creates and starts the file-polling hot reload watcher.
@@ -1041,9 +1333,10 @@ func (m *Manager) ReloadPlugin(ctx context.Context, name string) error {
 	return nil
 }
 
-// DisablePlugin stops a plugin and trips its circuit breaker.
-// The plugin can be re-enabled via EnablePlugin.
-func (m *Manager) DisablePlugin(ctx context.Context, name string) error {
+// DeactivatePlugin stops a plugin and trips its circuit breaker.
+// The plugin can be re-activated via ActivatePlugin.
+// Idempotent: returns nil if the plugin is already stopped.
+func (m *Manager) DeactivatePlugin(ctx context.Context, name string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
@@ -1053,7 +1346,7 @@ func (m *Manager) DisablePlugin(ctx context.Context, name string) error {
 	}
 
 	if inst.State == StateStopped {
-		return fmt.Errorf("plugin %q is already stopped", name)
+		return nil // idempotent: already stopped
 	}
 
 	// Run on_shutdown if the plugin was running.
@@ -1070,13 +1363,32 @@ func (m *Manager) DisablePlugin(ctx context.Context, name string) error {
 		fmt.Sprintf("plugin %q disabled by admin", name),
 	)
 
+	// Update DB status to installed so other instances see the change.
+	if m.driver != nil {
+		record, getErr := m.driver.GetPluginByName(name)
+		if getErr != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("plugin %q: failed to look up DB record for status update: %s", name, getErr.Error()),
+				nil,
+			)
+		} else {
+			ac := audited.Ctx(types.NodeID("system"), types.UserID(""), "plugin-deactivate", "127.0.0.1")
+			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); updateErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("plugin %q: failed to update DB status to installed: %s", name, updateErr.Error()),
+					nil,
+				)
+			}
+		}
+	}
+
 	return nil
 }
 
-// EnablePlugin resets the circuit breaker and reloads the plugin.
+// ActivatePlugin resets the circuit breaker and reloads the plugin.
 // S5: Emits slog.Warn audit event with admin user, plugin name, prior CB state,
 // and failure count before reset.
-func (m *Manager) EnablePlugin(ctx context.Context, name string, adminUser string) error {
+func (m *Manager) ActivatePlugin(ctx context.Context, name string, adminUser string) error {
 	m.mu.RLock()
 	inst, exists := m.plugins[name]
 	m.mu.RUnlock()
@@ -1091,7 +1403,411 @@ func (m *Manager) EnablePlugin(ctx context.Context, name string, adminUser strin
 	}
 
 	// Reload the plugin to get it running again.
-	return m.ReloadPlugin(ctx, name)
+	if err := m.ReloadPlugin(ctx, name); err != nil {
+		return err
+	}
+
+	// Update DB status to enabled so other instances see the change.
+	if m.driver != nil {
+		record, getErr := m.driver.GetPluginByName(name)
+		if getErr != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("plugin %q: failed to look up DB record for status update: %s", name, getErr.Error()),
+				nil,
+			)
+		} else {
+			ac := audited.Ctx(types.NodeID("system"), types.UserID(adminUser), "plugin-activate", "127.0.0.1")
+			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusEnabled); updateErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("plugin %q: failed to update DB status to enabled: %s", name, updateErr.Error()),
+					nil,
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// EvictPlugin stops a running plugin, marks it as failed in-memory, and updates
+// the DB status to installed. Called when plugin files disappear from disk or
+// when a plugin is removed from the database by another instance.
+// Idempotent: returns nil if the plugin is not found.
+func (m *Manager) EvictPlugin(ctx context.Context, name string, reason string) error {
+	m.mu.Lock()
+
+	inst, exists := m.plugins[name]
+	if !exists {
+		m.mu.Unlock()
+		return nil // idempotent
+	}
+
+	// If running, shut it down.
+	if inst.State == StateRunning {
+		m.shutdownPlugin(ctx, inst)
+	}
+
+	inst.State = StateFailed
+	inst.FailedReason = reason
+	if inst.CB != nil {
+		inst.CB.Trip(reason)
+	}
+
+	m.mu.Unlock()
+
+	utility.DefaultLogger.Warn(
+		fmt.Sprintf("plugin %q evicted: %s", name, reason),
+		nil,
+	)
+
+	// Update DB status to installed.
+	if m.driver != nil {
+		record, getErr := m.driver.GetPluginByName(name)
+		if getErr != nil {
+			utility.DefaultLogger.Warn(
+				fmt.Sprintf("plugin %q: failed to look up DB record for eviction: %s", name, getErr.Error()),
+				nil,
+			)
+		} else {
+			ac := audited.Ctx(types.NodeID("system"), types.UserID(""), "plugin-eviction", "127.0.0.1")
+			if updateErr := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); updateErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("plugin %q: failed to update DB status after eviction: %s", name, updateErr.Error()),
+					nil,
+				)
+			}
+		}
+	}
+
+	return nil
+}
+
+// GetPluginState returns the current state of a plugin and whether it exists.
+// Thread-safe via read lock.
+func (m *Manager) GetPluginState(name string) (PluginState, bool) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	inst, exists := m.plugins[name]
+	if !exists {
+		return 0, false
+	}
+	return inst.State, true
+}
+
+// PluginHealthStatus reports the aggregate health of the plugin subsystem.
+type PluginHealthStatus struct {
+	Healthy             bool
+	TotalPlugins        int
+	RunningPlugins      int
+	FailedPlugins       []string
+	StoppedPlugins      []string
+	OpenCircuitBreakers []string
+}
+
+// PluginHealth returns the aggregate health of all loaded plugins.
+// Healthy is true when no enabled plugins are failed and no circuit breakers are open.
+func (m *Manager) PluginHealth() PluginHealthStatus {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	status := PluginHealthStatus{
+		Healthy: true,
+	}
+
+	for name, inst := range m.plugins {
+		status.TotalPlugins++
+
+		switch inst.State {
+		case StateRunning:
+			status.RunningPlugins++
+		case StateFailed:
+			status.FailedPlugins = append(status.FailedPlugins, name)
+			status.Healthy = false
+		case StateStopped:
+			status.StoppedPlugins = append(status.StoppedPlugins, name)
+		}
+
+		if inst.CB != nil && inst.CB.State() == CircuitOpen {
+			status.OpenCircuitBreakers = append(status.OpenCircuitBreakers, name)
+			status.Healthy = false
+		}
+	}
+
+	return status
+}
+
+// StartCoordinator starts the DB state polling coordinator for multi-instance sync.
+// Only starts if the driver is non-nil. If seed fails (DB unreachable), logs a warning
+// and returns without starting the poll loop.
+func (m *Manager) StartCoordinator(ctx context.Context, syncInterval time.Duration) {
+	if m.driver == nil {
+		utility.DefaultLogger.Warn("coordinator not started: no database driver", nil)
+		return
+	}
+
+	coord := NewCoordinator(m, syncInterval)
+
+	if err := coord.seed(ctx); err != nil {
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("coordinator seed failed, multi-instance sync disabled: %s", err.Error()),
+			nil,
+		)
+		return
+	}
+
+	coordCtx, cancel := context.WithCancel(ctx)
+	m.coordinator = coord
+	m.coordinatorCancel = cancel
+
+	go coord.Run(coordCtx)
+
+	utility.DefaultLogger.Info("Plugin coordinator started",
+		"poll_interval", syncInterval.String(),
+	)
+}
+
+// StopCoordinator stops the DB state polling coordinator if running. Idempotent.
+func (m *Manager) StopCoordinator() {
+	if m.coordinatorCancel != nil {
+		m.coordinatorCancel()
+		m.coordinatorCancel = nil
+	}
+}
+
+// InstallPlugin extracts the manifest for a discovered filesystem plugin, computes
+// the manifest hash, and creates the plugin row and pipeline entries in a single
+// database transaction. Returns the created db.Plugin record.
+func (m *Manager) InstallPlugin(ctx context.Context, name string) (*db.Plugin, error) {
+	if m.driver == nil {
+		return nil, fmt.Errorf("plugin lifecycle requires a database driver")
+	}
+
+	// Find the plugin directory on the filesystem.
+	pluginDir := filepath.Join(m.cfg.Directory, name)
+	initPath := filepath.Join(pluginDir, "init.lua")
+
+	if _, err := os.Stat(initPath); err != nil {
+		return nil, fmt.Errorf("plugin %q not found on filesystem (no init.lua at %s)", name, initPath)
+	}
+
+	// Extract manifest.
+	info, err := ExtractManifest(initPath)
+	if err != nil {
+		return nil, fmt.Errorf("extracting manifest for %q: %w", name, err)
+	}
+
+	// Check if already installed.
+	existing, _ := m.driver.GetPluginByName(info.Name)
+	if existing != nil {
+		return nil, fmt.Errorf("plugin %q is already installed (id: %s)", info.Name, existing.PluginID)
+	}
+
+	// Compute manifest hash.
+	hash, err := computeChecksum(pluginDir)
+	if err != nil {
+		return nil, fmt.Errorf("computing manifest hash for %q: %w", name, err)
+	}
+
+	// Serialize capabilities and core access.
+	capJSON, err := json.Marshal(info.Capabilities)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling capabilities: %w", err)
+	}
+	accessJSON, err := json.Marshal(info.CoreAccess)
+	if err != nil {
+		return nil, fmt.Errorf("marshaling core access: %w", err)
+	}
+
+	// Create the plugin record via driver (audited).
+	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "install", "cli")
+	pluginRecord, err := m.driver.CreatePlugin(ctx, ac, db.CreatePluginParams{
+		Name:           info.Name,
+		Version:        info.Version,
+		Description:    info.Description,
+		Author:         info.Author,
+		Status:         types.PluginStatusInstalled,
+		Capabilities:   string(capJSON),
+		ApprovedAccess: string(accessJSON),
+		ManifestHash:   hash,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating plugin record for %q: %w", name, err)
+	}
+
+	// Create pipeline entries from the manifest capabilities.
+	for _, cap := range info.Capabilities {
+		_, pipeErr := m.driver.CreatePipeline(ctx, ac, db.CreatePipelineParams{
+			PluginID:   pluginRecord.PluginID,
+			TableName:  cap.Table,
+			Operation:  cap.Op,
+			PluginName: info.Name,
+			Handler:    cap.Handler,
+			Priority:   cap.Priority,
+			Enabled:    true,
+			Config:     types.NewJSONData("{}"),
+		})
+		if pipeErr != nil {
+			// Best-effort cleanup: delete the plugin record if pipeline creation fails.
+			_ = m.driver.DeletePlugin(ctx, ac, pluginRecord.PluginID)
+			return nil, fmt.Errorf("creating pipeline entry for %q (%s.%s): %w",
+				name, cap.Table, cap.Op, pipeErr)
+		}
+	}
+
+	utility.DefaultLogger.Info(
+		fmt.Sprintf("plugin %q installed (version: %s, capabilities: %d)",
+			info.Name, info.Version, len(info.Capabilities)),
+	)
+
+	return pluginRecord, nil
+}
+
+// EnablePlugin updates the database status to "enabled" and loads the plugin into
+// the runtime. If the plugin is not installed in the database, returns an error.
+func (m *Manager) EnablePlugin(ctx context.Context, name string) error {
+	if m.driver == nil {
+		return fmt.Errorf("plugin lifecycle requires a database driver")
+	}
+
+	record, err := m.driver.GetPluginByName(name)
+	if err != nil {
+		return fmt.Errorf("plugin %q not found in database: %w", name, err)
+	}
+
+	if record.Status == types.PluginStatusEnabled {
+		return fmt.Errorf("plugin %q is already enabled", name)
+	}
+
+	// Update DB status to enabled.
+	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "enable", "cli")
+	if err := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusEnabled); err != nil {
+		return fmt.Errorf("updating plugin status for %q: %w", name, err)
+	}
+
+	// Load the plugin into the runtime.
+	pluginDir := filepath.Join(m.cfg.Directory, name)
+	initPath := filepath.Join(pluginDir, "init.lua")
+
+	info, err := ExtractManifest(initPath)
+	if err != nil {
+		return fmt.Errorf("extracting manifest for %q: %w", name, err)
+	}
+
+	inst := &PluginInstance{
+		Info:     *info,
+		State:    StateDiscovered,
+		Dir:      pluginDir,
+		InitPath: initPath,
+		dbAPIs:   make(map[*lua.LState]*DatabaseAPI),
+	}
+
+	m.mu.Lock()
+	m.plugins[info.Name] = inst
+	m.loadPlugin(ctx, inst)
+	m.mu.Unlock()
+
+	// Reload the pipeline registry to pick up the newly enabled pipelines.
+	if regErr := m.LoadRegistry(ctx); regErr != nil {
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("failed to reload pipeline registry after enabling %q: %s", name, regErr.Error()),
+			nil,
+		)
+	}
+
+	if inst.State == StateFailed {
+		return fmt.Errorf("plugin %q enabled in DB but failed to load: %s", name, inst.FailedReason)
+	}
+
+	utility.DefaultLogger.Info(
+		fmt.Sprintf("plugin %q enabled and loaded (version: %s)", name, info.Version),
+	)
+
+	return nil
+}
+
+// DisablePlugin updates the database status to "installed" and unloads the plugin
+// from the runtime. The plugin's pipelines are deactivated.
+func (m *Manager) DisablePlugin(ctx context.Context, name string) error {
+	if m.driver == nil {
+		return fmt.Errorf("plugin lifecycle requires a database driver")
+	}
+
+	record, err := m.driver.GetPluginByName(name)
+	if err != nil {
+		return fmt.Errorf("plugin %q not found in database: %w", name, err)
+	}
+
+	if record.Status == types.PluginStatusInstalled {
+		return fmt.Errorf("plugin %q is already disabled (status: installed)", name)
+	}
+
+	// Update DB status to installed.
+	ac := audited.Ctx(types.NodeID(""), types.UserID(""), "disable", "cli")
+	if err := m.driver.UpdatePluginStatus(ctx, ac, record.PluginID, types.PluginStatusInstalled); err != nil {
+		return fmt.Errorf("updating plugin status for %q: %w", name, err)
+	}
+
+	// Unload the plugin from the runtime.
+	m.mu.Lock()
+	inst, exists := m.plugins[name]
+	if exists {
+		if inst.State == StateRunning {
+			m.shutdownPlugin(ctx, inst)
+		}
+		inst.State = StateStopped
+		if inst.CB != nil {
+			inst.CB.Trip("disabled via lifecycle")
+		}
+		delete(m.plugins, name)
+	}
+	m.mu.Unlock()
+
+	// Reload the pipeline registry to remove the disabled plugin's pipelines.
+	if regErr := m.LoadRegistry(ctx); regErr != nil {
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("failed to reload pipeline registry after disabling %q: %s", name, regErr.Error()),
+			nil,
+		)
+	}
+
+	utility.DefaultLogger.Info(
+		fmt.Sprintf("plugin %q disabled and unloaded", name),
+	)
+
+	return nil
+}
+
+// ListDiscovered returns the names of filesystem plugins that are not yet
+// installed in the database. Returns nil if the driver is not set.
+func (m *Manager) ListDiscovered() []string {
+	if m.driver == nil || m.cfg.Directory == "" {
+		return nil
+	}
+
+	entries, err := os.ReadDir(m.cfg.Directory)
+	if err != nil {
+		return nil
+	}
+
+	var discovered []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+
+		initPath := filepath.Join(m.cfg.Directory, entry.Name(), "init.lua")
+		if _, statErr := os.Stat(initPath); statErr != nil {
+			continue
+		}
+
+		// Check if this plugin is already in the database.
+		existing, _ := m.driver.GetPluginByName(entry.Name())
+		if existing == nil {
+			discovered = append(discovered, entry.Name())
+		}
+	}
+
+	return discovered
 }
 
 // ListOrphanedTables returns table names that have the plugin_ prefix but do
@@ -1233,6 +1949,148 @@ func (m *Manager) DropOrphanedTables(ctx context.Context, requestedTables []stri
 	}
 
 	return dropped, nil
+}
+
+// SyncCapabilities re-reads the current filesystem capabilities and updates the
+// DB record and pipeline entries for the named plugin. Clears the drift indicators
+// on the in-memory instance after a successful sync.
+//
+// Split-lock strategy: DB I/O runs without holding m.mu; in-memory state mutation
+// uses a brief write lock. Steps 5-7 are not transactional (same limitation as
+// InstallPlugin); LoadRegistry self-heals on the next successful call.
+func (m *Manager) SyncCapabilities(ctx context.Context, name string, adminUser string) error {
+	if m.driver == nil {
+		return fmt.Errorf("sync capabilities requires a database driver")
+	}
+
+	// Phase A: Read in-memory state under read lock.
+	m.mu.RLock()
+	inst, exists := m.plugins[name]
+	if !exists {
+		m.mu.RUnlock()
+		return fmt.Errorf("plugin %q not found in memory", name)
+	}
+	caps := inst.Info.Capabilities
+	dir := inst.Dir
+	m.mu.RUnlock()
+
+	// Get DB record (must be installed).
+	record, err := m.driver.GetPluginByName(name)
+	if err != nil {
+		return fmt.Errorf("plugin %q not found in database: %w", name, err)
+	}
+
+	// Compute fresh manifest hash.
+	hash, err := computeChecksum(dir)
+	if err != nil {
+		return fmt.Errorf("computing checksum for %q: %w", name, err)
+	}
+
+	// Marshal current capabilities.
+	capJSON, err := json.Marshal(caps)
+	if err != nil {
+		return fmt.Errorf("marshaling capabilities for %q: %w", name, err)
+	}
+
+	// Construct audit context.
+	ac := audited.Ctx(types.NodeID("system"), types.UserID(adminUser), "sync-capabilities", "api")
+
+	// Update the plugin record with new hash and capabilities.
+	if updateErr := m.driver.UpdatePlugin(ctx, ac, db.UpdatePluginParams{
+		PluginID:       record.PluginID,
+		Version:        record.Version,
+		Description:    record.Description,
+		Author:         record.Author,
+		Status:         record.Status,
+		Capabilities:   string(capJSON),
+		ApprovedAccess: record.ApprovedAccess.String(),
+		ManifestHash:   hash,
+	}); updateErr != nil {
+		return fmt.Errorf("updating plugin record for %q: %w", name, updateErr)
+	}
+
+	// Delete old pipeline entries and create new ones.
+	if delErr := m.driver.DeletePipelinesByPluginID(ctx, ac, record.PluginID); delErr != nil {
+		return fmt.Errorf("deleting old pipelines for %q: %w", name, delErr)
+	}
+
+	for _, cap := range caps {
+		if _, createErr := m.driver.CreatePipeline(ctx, ac, db.CreatePipelineParams{
+			PluginID:   record.PluginID,
+			TableName:  cap.Table,
+			Operation:  cap.Op,
+			PluginName: name,
+			Handler:    cap.Handler,
+			Priority:   cap.Priority,
+			Enabled:    true,
+			Config:     types.NewJSONData("{}"),
+		}); createErr != nil {
+			return fmt.Errorf("creating pipeline for %q (%s.%s): %w", name, cap.Table, cap.Op, createErr)
+		}
+	}
+
+	// Reload the pipeline registry.
+	if regErr := m.LoadRegistry(ctx); regErr != nil {
+		utility.DefaultLogger.Warn(
+			fmt.Sprintf("failed to reload pipeline registry after sync for %q: %s", name, regErr.Error()),
+			nil,
+		)
+	}
+
+	// Phase B: Clear drift indicators under write lock.
+	m.mu.Lock()
+	if inst, ok := m.plugins[name]; ok {
+		inst.ManifestDrift = false
+		inst.CapabilityDrift = nil
+	}
+	m.mu.Unlock()
+
+	// Notify coordinator to prevent redundant reload on local instance.
+	if m.coordinator != nil {
+		refreshed, getErr := m.driver.GetPluginByName(name)
+		if getErr == nil {
+			m.NotifyCoordinatorSync(name, refreshed.DateModified.String())
+		}
+	}
+
+	utility.DefaultLogger.Info(
+		fmt.Sprintf("plugin %q capabilities synced (hash: %s, capabilities: %d)", name, hash[:8], len(caps)),
+	)
+
+	return nil
+}
+
+// NotifyCoordinatorSync updates the coordinator's lastSeen timestamp for a plugin
+// to prevent redundant registry reloads after a local SyncCapabilities call.
+func (m *Manager) NotifyCoordinatorSync(name string, dateModified string) {
+	if m.coordinator == nil {
+		return
+	}
+	prev, ok := m.coordinator.lastSeen[name]
+	if ok {
+		prev.DateModified = dateModified
+		m.coordinator.lastSeen[name] = prev
+	}
+}
+
+// DryRunPipeline returns the ordered pipeline entries that would execute for a
+// given table and operation. Thin delegation to the registry.
+func (m *Manager) DryRunPipeline(table, op string) []DryRunResult {
+	return m.registry.DryRun(table, op)
+}
+
+// DryRunAllPipelines returns all pipeline chains from the in-memory registry.
+func (m *Manager) DryRunAllPipelines() []DryRunResult {
+	return m.registry.DryRunAll()
+}
+
+// ListAllPipelines returns all pipeline records from the database (includes disabled).
+// Returns nil if the driver is not set.
+func (m *Manager) ListAllPipelines() (*[]db.Pipeline, error) {
+	if m.driver == nil {
+		return nil, nil
+	}
+	return m.driver.ListPipelines()
 }
 
 // Config returns the manager configuration. Used by the watcher and other

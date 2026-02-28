@@ -39,7 +39,7 @@ type Backup struct {
 // BackupSet represents a collection of backups.
 type BackupSet struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	DateCreated      types.Timestamp       `json:"date_created"`
+	DateCreated    types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -77,7 +77,7 @@ type CreateBackupParams struct {
 // CreateBackupSetParams contains fields for creating a new backup set.
 type CreateBackupSetParams struct {
 	BackupSetID    types.BackupSetID     `json:"backup_set_id"`
-	DateCreated      types.Timestamp       `json:"date_created"`
+	DateCreated    types.Timestamp       `json:"date_created"`
 	HlcTimestamp   types.HLC             `json:"hlc_timestamp"`
 	Status         types.BackupSetStatus `json:"status"`
 	BackupIds      types.JSONData        `json:"backup_ids"`
@@ -150,7 +150,7 @@ func (d Database) MapBackup(a mdb.Backup) Backup {
 func (d Database) MapBackupSet(a mdb.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -194,7 +194,7 @@ func (d Database) MapCreateBackupParams(a CreateBackupParams) mdb.CreateBackupPa
 func (d Database) MapCreateBackupSetParams(a CreateBackupSetParams) mdb.CreateBackupSetParams {
 	return mdb.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -440,7 +440,7 @@ func (d MysqlDatabase) MapBackup(a mdbm.Backup) Backup {
 func (d MysqlDatabase) MapBackupSet(a mdbm.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -484,7 +484,7 @@ func (d MysqlDatabase) MapCreateBackupParams(a CreateBackupParams) mdbm.CreateBa
 func (d MysqlDatabase) MapCreateBackupSetParams(a CreateBackupSetParams) mdbm.CreateBackupSetParams {
 	return mdbm.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -742,7 +742,7 @@ func (d PsqlDatabase) MapBackup(a mdbp.Backup) Backup {
 func (d PsqlDatabase) MapBackupSet(a mdbp.BackupSet) BackupSet {
 	return BackupSet{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -786,7 +786,7 @@ func (d PsqlDatabase) MapCreateBackupParams(a CreateBackupParams) mdbp.CreateBac
 func (d PsqlDatabase) MapCreateBackupSetParams(a CreateBackupSetParams) mdbp.CreateBackupSetParams {
 	return mdbp.CreateBackupSetParams{
 		BackupSetID:    a.BackupSetID,
-		DateCreated:      a.DateCreated,
+		DateCreated:    a.DateCreated,
 		HlcTimestamp:   a.HlcTimestamp,
 		Status:         a.Status,
 		BackupIds:      a.BackupIds,
@@ -1020,25 +1020,25 @@ type NewBackupCmd struct {
 }
 
 // Context returns the context.
-func (c NewBackupCmd) Context() context.Context              { return c.ctx }
+func (c NewBackupCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupCmd) TableName() string                     { return "backups" }
+func (c NewBackupCmd) TableName() string { return "backups" }
 
 // Params returns the command parameters.
-func (c NewBackupCmd) Params() any                           { return c.params }
+func (c NewBackupCmd) Params() any { return c.params }
 
 // GetID returns the ID from a backup record.
-func (c NewBackupCmd) GetID(r mdb.Backup) string             { return string(r.BackupID) }
+func (c NewBackupCmd) GetID(r mdb.Backup) string { return string(r.BackupID) }
 
 // Execute creates the backup and returns the result.
 func (c NewBackupCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Backup, error) {
@@ -1076,22 +1076,22 @@ type DeleteBackupCmd struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupCmd) Context() context.Context              { return c.ctx }
+func (c DeleteBackupCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupCmd) TableName() string                     { return "backups" }
+func (c DeleteBackupCmd) TableName() string { return "backups" }
 
 // GetID returns the backup ID.
-func (c DeleteBackupCmd) GetID() string                         { return string(c.id) }
+func (c DeleteBackupCmd) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup before deletion.
 func (c DeleteBackupCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Backup, error) {
@@ -1126,25 +1126,25 @@ type NewBackupCmdMysql struct {
 }
 
 // Context returns the context.
-func (c NewBackupCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewBackupCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupCmdMysql) TableName() string                     { return "backups" }
+func (c NewBackupCmdMysql) TableName() string { return "backups" }
 
 // Params returns the command parameters.
-func (c NewBackupCmdMysql) Params() any                           { return c.params }
+func (c NewBackupCmdMysql) Params() any { return c.params }
 
 // GetID returns the ID from a backup record.
-func (c NewBackupCmdMysql) GetID(r mdbm.Backup) string            { return string(r.BackupID) }
+func (c NewBackupCmdMysql) GetID(r mdbm.Backup) string { return string(r.BackupID) }
 
 // Execute creates the backup and returns the result.
 func (c NewBackupCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Backup, error) {
@@ -1186,22 +1186,22 @@ type DeleteBackupCmdMysql struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteBackupCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupCmdMysql) TableName() string                     { return "backups" }
+func (c DeleteBackupCmdMysql) TableName() string { return "backups" }
 
 // GetID returns the backup ID.
-func (c DeleteBackupCmdMysql) GetID() string                         { return string(c.id) }
+func (c DeleteBackupCmdMysql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup before deletion.
 func (c DeleteBackupCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Backup, error) {
@@ -1236,25 +1236,25 @@ type NewBackupCmdPsql struct {
 }
 
 // Context returns the context.
-func (c NewBackupCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewBackupCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupCmdPsql) TableName() string                     { return "backups" }
+func (c NewBackupCmdPsql) TableName() string { return "backups" }
 
 // Params returns the command parameters.
-func (c NewBackupCmdPsql) Params() any                           { return c.params }
+func (c NewBackupCmdPsql) Params() any { return c.params }
 
 // GetID returns the ID from a backup record.
-func (c NewBackupCmdPsql) GetID(r mdbp.Backup) string            { return string(r.BackupID) }
+func (c NewBackupCmdPsql) GetID(r mdbp.Backup) string { return string(r.BackupID) }
 
 // Execute creates the backup and returns the result.
 func (c NewBackupCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Backup, error) {
@@ -1292,22 +1292,22 @@ type DeleteBackupCmdPsql struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteBackupCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupCmdPsql) TableName() string                     { return "backups" }
+func (c DeleteBackupCmdPsql) TableName() string { return "backups" }
 
 // GetID returns the backup ID.
-func (c DeleteBackupCmdPsql) GetID() string                         { return string(c.id) }
+func (c DeleteBackupCmdPsql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup before deletion.
 func (c DeleteBackupCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Backup, error) {
@@ -1342,25 +1342,25 @@ type NewBackupSetCmd struct {
 }
 
 // Context returns the context.
-func (c NewBackupSetCmd) Context() context.Context              { return c.ctx }
+func (c NewBackupSetCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupSetCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupSetCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupSetCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupSetCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupSetCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupSetCmd) TableName() string                     { return "backup_sets" }
+func (c NewBackupSetCmd) TableName() string { return "backup_sets" }
 
 // Params returns the command parameters.
-func (c NewBackupSetCmd) Params() any                           { return c.params }
+func (c NewBackupSetCmd) Params() any { return c.params }
 
 // GetID returns the ID from a backup set record.
-func (c NewBackupSetCmd) GetID(r mdb.BackupSet) string          { return string(r.BackupSetID) }
+func (c NewBackupSetCmd) GetID(r mdb.BackupSet) string { return string(r.BackupSetID) }
 
 // Execute creates the backup set and returns the result.
 func (c NewBackupSetCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.BackupSet, error) {
@@ -1371,7 +1371,7 @@ func (c NewBackupSetCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Back
 	queries := mdb.New(tx)
 	return queries.CreateBackupSet(ctx, mdb.CreateBackupSetParams{
 		BackupSetID:    id,
-		DateCreated:      c.params.DateCreated,
+		DateCreated:    c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,
@@ -1398,22 +1398,22 @@ type DeleteBackupSetCmd struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupSetCmd) Context() context.Context              { return c.ctx }
+func (c DeleteBackupSetCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupSetCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupSetCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupSetCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupSetCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupSetCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupSetCmd) TableName() string                     { return "backup_sets" }
+func (c DeleteBackupSetCmd) TableName() string { return "backup_sets" }
 
 // GetID returns the backup set ID.
-func (c DeleteBackupSetCmd) GetID() string                         { return string(c.id) }
+func (c DeleteBackupSetCmd) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup set before deletion.
 func (c DeleteBackupSetCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.BackupSet, error) {
@@ -1448,25 +1448,25 @@ type NewBackupSetCmdMysql struct {
 }
 
 // Context returns the context.
-func (c NewBackupSetCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewBackupSetCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupSetCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupSetCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupSetCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupSetCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupSetCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupSetCmdMysql) TableName() string                     { return "backup_sets" }
+func (c NewBackupSetCmdMysql) TableName() string { return "backup_sets" }
 
 // Params returns the command parameters.
-func (c NewBackupSetCmdMysql) Params() any                           { return c.params }
+func (c NewBackupSetCmdMysql) Params() any { return c.params }
 
 // GetID returns the ID from a backup set record.
-func (c NewBackupSetCmdMysql) GetID(r mdbm.BackupSet) string         { return string(r.BackupSetID) }
+func (c NewBackupSetCmdMysql) GetID(r mdbm.BackupSet) string { return string(r.BackupSetID) }
 
 // Execute creates the backup set and returns the result.
 func (c NewBackupSetCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.BackupSet, error) {
@@ -1477,7 +1477,7 @@ func (c NewBackupSetCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 	queries := mdbm.New(tx)
 	params := mdbm.CreateBackupSetParams{
 		BackupSetID:    id,
-		DateCreated:      c.params.DateCreated,
+		DateCreated:    c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,
@@ -1508,22 +1508,22 @@ type DeleteBackupSetCmdMysql struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupSetCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteBackupSetCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupSetCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupSetCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupSetCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupSetCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupSetCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupSetCmdMysql) TableName() string                     { return "backup_sets" }
+func (c DeleteBackupSetCmdMysql) TableName() string { return "backup_sets" }
 
 // GetID returns the backup set ID.
-func (c DeleteBackupSetCmdMysql) GetID() string                         { return string(c.id) }
+func (c DeleteBackupSetCmdMysql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup set before deletion.
 func (c DeleteBackupSetCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.BackupSet, error) {
@@ -1558,25 +1558,25 @@ type NewBackupSetCmdPsql struct {
 }
 
 // Context returns the context.
-func (c NewBackupSetCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewBackupSetCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewBackupSetCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewBackupSetCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewBackupSetCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewBackupSetCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewBackupSetCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewBackupSetCmdPsql) TableName() string                     { return "backup_sets" }
+func (c NewBackupSetCmdPsql) TableName() string { return "backup_sets" }
 
 // Params returns the command parameters.
-func (c NewBackupSetCmdPsql) Params() any                           { return c.params }
+func (c NewBackupSetCmdPsql) Params() any { return c.params }
 
 // GetID returns the ID from a backup set record.
-func (c NewBackupSetCmdPsql) GetID(r mdbp.BackupSet) string         { return string(r.BackupSetID) }
+func (c NewBackupSetCmdPsql) GetID(r mdbp.BackupSet) string { return string(r.BackupSetID) }
 
 // Execute creates the backup set and returns the result.
 func (c NewBackupSetCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.BackupSet, error) {
@@ -1587,7 +1587,7 @@ func (c NewBackupSetCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp
 	queries := mdbp.New(tx)
 	return queries.CreateBackupSet(ctx, mdbp.CreateBackupSetParams{
 		BackupSetID:    id,
-		DateCreated:      c.params.DateCreated,
+		DateCreated:    c.params.DateCreated,
 		HlcTimestamp:   c.params.HlcTimestamp,
 		Status:         c.params.Status,
 		BackupIds:      c.params.BackupIds,
@@ -1614,22 +1614,22 @@ type DeleteBackupSetCmdPsql struct {
 }
 
 // Context returns the context.
-func (c DeleteBackupSetCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteBackupSetCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteBackupSetCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteBackupSetCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteBackupSetCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteBackupSetCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteBackupSetCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteBackupSetCmdPsql) TableName() string                     { return "backup_sets" }
+func (c DeleteBackupSetCmdPsql) TableName() string { return "backup_sets" }
 
 // GetID returns the backup set ID.
-func (c DeleteBackupSetCmdPsql) GetID() string                         { return string(c.id) }
+func (c DeleteBackupSetCmdPsql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup set before deletion.
 func (c DeleteBackupSetCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.BackupSet, error) {
@@ -1664,22 +1664,22 @@ type NewVerificationCmd struct {
 }
 
 // Context returns the context.
-func (c NewVerificationCmd) Context() context.Context              { return c.ctx }
+func (c NewVerificationCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewVerificationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewVerificationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewVerificationCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewVerificationCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewVerificationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewVerificationCmd) TableName() string                     { return "backup_verifications" }
+func (c NewVerificationCmd) TableName() string { return "backup_verifications" }
 
 // Params returns the command parameters.
-func (c NewVerificationCmd) Params() any                           { return c.params }
+func (c NewVerificationCmd) Params() any { return c.params }
 
 // GetID returns the ID from a backup verification record.
 func (c NewVerificationCmd) GetID(r mdb.BackupVerification) string { return string(r.VerificationID) }
@@ -1722,22 +1722,22 @@ type DeleteVerificationCmd struct {
 }
 
 // Context returns the context.
-func (c DeleteVerificationCmd) Context() context.Context              { return c.ctx }
+func (c DeleteVerificationCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteVerificationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteVerificationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteVerificationCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteVerificationCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteVerificationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteVerificationCmd) TableName() string                     { return "backup_verifications" }
+func (c DeleteVerificationCmd) TableName() string { return "backup_verifications" }
 
 // GetID returns the verification ID.
-func (c DeleteVerificationCmd) GetID() string                         { return string(c.id) }
+func (c DeleteVerificationCmd) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup verification before deletion.
 func (c DeleteVerificationCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.BackupVerification, error) {
@@ -1772,22 +1772,22 @@ type NewVerificationCmdMysql struct {
 }
 
 // Context returns the context.
-func (c NewVerificationCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewVerificationCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewVerificationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewVerificationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewVerificationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewVerificationCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewVerificationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewVerificationCmdMysql) TableName() string                     { return "backup_verifications" }
+func (c NewVerificationCmdMysql) TableName() string { return "backup_verifications" }
 
 // Params returns the command parameters.
-func (c NewVerificationCmdMysql) Params() any                           { return c.params }
+func (c NewVerificationCmdMysql) Params() any { return c.params }
 
 // GetID returns the ID from a backup verification record.
 func (c NewVerificationCmdMysql) GetID(r mdbm.BackupVerification) string {
@@ -1836,22 +1836,22 @@ type DeleteVerificationCmdMysql struct {
 }
 
 // Context returns the context.
-func (c DeleteVerificationCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteVerificationCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteVerificationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteVerificationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteVerificationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteVerificationCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteVerificationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteVerificationCmdMysql) TableName() string                     { return "backup_verifications" }
+func (c DeleteVerificationCmdMysql) TableName() string { return "backup_verifications" }
 
 // GetID returns the verification ID.
-func (c DeleteVerificationCmdMysql) GetID() string                         { return string(c.id) }
+func (c DeleteVerificationCmdMysql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup verification before deletion.
 func (c DeleteVerificationCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.BackupVerification, error) {
@@ -1886,22 +1886,22 @@ type NewVerificationCmdPsql struct {
 }
 
 // Context returns the context.
-func (c NewVerificationCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewVerificationCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewVerificationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewVerificationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewVerificationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewVerificationCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewVerificationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewVerificationCmdPsql) TableName() string                     { return "backup_verifications" }
+func (c NewVerificationCmdPsql) TableName() string { return "backup_verifications" }
 
 // Params returns the command parameters.
-func (c NewVerificationCmdPsql) Params() any                           { return c.params }
+func (c NewVerificationCmdPsql) Params() any { return c.params }
 
 // GetID returns the ID from a backup verification record.
 func (c NewVerificationCmdPsql) GetID(r mdbp.BackupVerification) string {
@@ -1946,22 +1946,22 @@ type DeleteVerificationCmdPsql struct {
 }
 
 // Context returns the context.
-func (c DeleteVerificationCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteVerificationCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteVerificationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteVerificationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteVerificationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteVerificationCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteVerificationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteVerificationCmdPsql) TableName() string                     { return "backup_verifications" }
+func (c DeleteVerificationCmdPsql) TableName() string { return "backup_verifications" }
 
 // GetID returns the verification ID.
-func (c DeleteVerificationCmdPsql) GetID() string                         { return string(c.id) }
+func (c DeleteVerificationCmdPsql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the backup verification before deletion.
 func (c DeleteVerificationCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.BackupVerification, error) {

@@ -1336,7 +1336,7 @@ func TestAdminDatatypesStruct_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"admin_datatype_id", "parent_id", "label",
+		"admin_datatype_id", "parent_id", "name", "label",
 		"type", "author_id", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1353,6 +1353,7 @@ func TestCreateAdminDatatypeParams_JSONTags(t *testing.T) {
 	t.Parallel()
 	ts := types.NewTimestamp(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	p := CreateAdminDatatypeParams{
+		Name:         "json-test",
 		Label:        "JSON Test",
 		Type:         "collection",
 		DateCreated:  ts,
@@ -1370,7 +1371,7 @@ func TestCreateAdminDatatypeParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"parent_id", "label", "type",
+		"parent_id", "name", "label", "type",
 		"author_id", "date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1388,6 +1389,7 @@ func TestUpdateAdminDatatypeParams_JSONTags(t *testing.T) {
 	ts := types.NewTimestamp(time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC))
 	datatypeID := types.NewAdminDatatypeID()
 	p := UpdateAdminDatatypeParams{
+		Name:            "json-update-test",
 		Label:           "JSON Update Test",
 		Type:            "single",
 		DateCreated:     ts,
@@ -1406,7 +1408,7 @@ func TestUpdateAdminDatatypeParams_JSONTags(t *testing.T) {
 	}
 
 	expectedFields := []string{
-		"parent_id", "label", "type",
+		"parent_id", "name", "label", "type",
 		"author_id", "date_created", "date_modified",
 		"admin_datatype_id",
 	}

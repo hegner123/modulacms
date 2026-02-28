@@ -253,6 +253,28 @@ a:hover {
   font-weight: 600;
 }
 
+.auth-description {
+  text-align: center;
+  color: var(--text-secondary, #6b7280);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.auth-links {
+  text-align: center;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+}
+
+.auth-links a {
+  color: var(--color-primary, #3b82f6);
+  text-decoration: none;
+}
+
+.auth-links a:hover {
+  text-decoration: underline;
+}
+
 /* ========================================
    SECTION: Components (shared: tables, forms, buttons, badges, pagination)
    ======================================== */

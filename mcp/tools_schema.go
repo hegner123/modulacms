@@ -32,6 +32,7 @@ func registerSchemaTools(srv *server.MCPServer, client *modulacms.Client) {
 	srv.AddTool(
 		mcp.NewTool("create_datatype",
 			mcp.WithDescription("Create a new datatype. The type field is freeform (e.g. 'page', 'component', 'block')."),
+			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Datatype label")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Datatype type (freeform, e.g. 'page', 'component', 'block')")),
 			mcp.WithString("parent_id", mcp.Description("Parent datatype ID for hierarchical datatypes")),
@@ -44,6 +45,7 @@ func registerSchemaTools(srv *server.MCPServer, client *modulacms.Client) {
 		mcp.NewTool("update_datatype",
 			mcp.WithDescription("Update an existing datatype. This is a full replacement."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Datatype ID (ULID)")),
+			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Datatype label")),
 			mcp.WithString("type", mcp.Required(), mcp.Description("Datatype type (freeform)")),
 			mcp.WithString("parent_id", mcp.Description("Parent datatype ID")),
@@ -80,6 +82,7 @@ func registerSchemaTools(srv *server.MCPServer, client *modulacms.Client) {
 	srv.AddTool(
 		mcp.NewTool("create_field",
 			mcp.WithDescription("Create a new field definition. The field_type parameter specifies the data type."),
+			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Field label")),
 			mcp.WithString("field_type", mcp.Required(), mcp.Description("Field data type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")),
 			mcp.WithString("parent_id", mcp.Description("Parent datatype ID")),
@@ -95,6 +98,7 @@ func registerSchemaTools(srv *server.MCPServer, client *modulacms.Client) {
 		mcp.NewTool("update_field",
 			mcp.WithDescription("Update an existing field definition. This is a full replacement."),
 			mcp.WithString("id", mcp.Required(), mcp.Description("Field ID (ULID)")),
+			mcp.WithString("name", mcp.Description("Machine-readable name (used as JSON key). If omitted, derived from label.")),
 			mcp.WithString("label", mcp.Required(), mcp.Description("Field label")),
 			mcp.WithString("field_type", mcp.Required(), mcp.Description("Field data type"), mcp.Enum("text", "textarea", "number", "date", "datetime", "boolean", "select", "media", "relation", "json", "richtext", "slug", "email", "url")),
 			mcp.WithString("parent_id", mcp.Description("Parent datatype ID")),
@@ -266,6 +270,7 @@ func handleCreateDatatype(client *modulacms.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("type is required"), nil
 		}
 		params := modulacms.CreateDatatypeParams{
+			Name:     req.GetString("name", ""),
 			Label:    label,
 			Type:     typ,
 			ParentID: optionalIDPtr[modulacms.DatatypeID](req, "parent_id"),
@@ -295,6 +300,7 @@ func handleUpdateDatatype(client *modulacms.Client) server.ToolHandlerFunc {
 		}
 		params := modulacms.UpdateDatatypeParams{
 			DatatypeID: modulacms.DatatypeID(id),
+			Name:       req.GetString("name", ""),
 			Label:      label,
 			Type:       typ,
 			ParentID:   optionalIDPtr[modulacms.DatatypeID](req, "parent_id"),
@@ -359,6 +365,7 @@ func handleCreateField(client *modulacms.Client) server.ToolHandlerFunc {
 			return mcp.NewToolResultError("field_type is required"), nil
 		}
 		params := modulacms.CreateFieldParams{
+			Name:       req.GetString("name", ""),
 			Label:      label,
 			Type:       modulacms.FieldType(ft),
 			ParentID:   optionalIDPtr[modulacms.DatatypeID](req, "parent_id"),
@@ -391,6 +398,7 @@ func handleUpdateField(client *modulacms.Client) server.ToolHandlerFunc {
 		}
 		params := modulacms.UpdateFieldParams{
 			FieldID:    modulacms.FieldID(id),
+			Name:       req.GetString("name", ""),
 			Label:      label,
 			Type:       modulacms.FieldType(ft),
 			ParentID:   optionalIDPtr[modulacms.DatatypeID](req, "parent_id"),

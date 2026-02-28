@@ -25,7 +25,7 @@ type RolePermissions struct {
 
 // CreateRolePermissionParams contains parameters for creating a role-permission association.
 type CreateRolePermissionParams struct {
-	RoleID       types.RoleID      `json:"role_id"`
+	RoleID       types.RoleID       `json:"role_id"`
 	PermissionID types.PermissionID `json:"permission_id"`
 }
 

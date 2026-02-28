@@ -15,10 +15,10 @@ type CleanTransformer struct {
 
 // CleanDocument represents a clean ModulaCMS document
 type CleanDocument struct {
-	ID   string                 `json:"id"`
-	Type string                 `json:"type"`
-	Meta CleanMeta              `json:"_meta"`
-	Data map[string]any         `json:"-"` // Flattened fields
+	ID   string         `json:"id"`
+	Type string         `json:"type"`
+	Meta CleanMeta      `json:"_meta"`
+	Data map[string]any `json:"-"` // Flattened fields
 }
 
 type CleanMeta struct {
@@ -69,7 +69,7 @@ func (c *CleanTransformer) transformNode(node *model.Node) map[string]any {
 
 	// Transform fields to flat properties
 	for _, field := range node.Fields {
-		key := fieldLabelToKey(field.Info.Label)
+		key := fieldKey(field.Info)
 		value := c.parseFieldValue(field.Content.FieldValue, field.Info.Type)
 		doc[key] = value
 	}
@@ -142,7 +142,7 @@ func (c *CleanTransformer) ParseToNode(data []byte) (*model.Node, error) {
 func (c *CleanTransformer) parseDocument(doc map[string]any) *model.Node {
 	node := &model.Node{
 		Datatype: model.Datatype{
-			Info: db.DatatypeJSON{},
+			Info:    db.DatatypeJSON{},
 			Content: db.ContentDataJSON{},
 		},
 		Fields: []model.Field{},

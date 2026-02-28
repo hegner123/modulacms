@@ -412,10 +412,12 @@ var serveCmd = &cobra.Command{
 
 		// Shut down plugin subsystems after HTTP servers are drained so
 		// in-flight plugin requests can complete.
-		// S11 shutdown order: StopWatcher (stop file polling) -> bridge
-		// (stop accepting new plugin HTTP requests) -> hook engine (drain
-		// after-hooks) -> manager (close VM pools and DB).
+		// Shutdown order: StopCoordinator (stop DB polling) -> StopWatcher
+		// (stop file polling) -> bridge (stop accepting new plugin HTTP
+		// requests) -> hook engine (drain after-hooks) -> manager (close
+		// VM pools and DB).
 		if pluginManager != nil {
+			pluginManager.StopCoordinator()
 			pluginManager.StopWatcher()
 		}
 		if bridge != nil {

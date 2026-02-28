@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -17,6 +18,7 @@ import (
 	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/plugin"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -375,6 +377,99 @@ var pluginValidateCmd = &cobra.Command{
 	},
 }
 
+// pluginInstallCmd installs a discovered plugin into the CMS database.
+// Offline: opens a direct database connection via loadConfigAndDB().
+var pluginInstallCmd = &cobra.Command{
+	Use:   "install <name>",
+	Short: "Install a discovered plugin",
+	Long: `Install a discovered plugin into the CMS database. This extracts the manifest,
+creates a plugin record, and sets up pipeline entries.
+
+If the CMS server is running, prefer the admin API for plugin management.
+SQLite concurrent writes may briefly block.`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		configureLogger()
+
+		cfg, err := loadConfigPtr()
+		if err != nil {
+			return fmt.Errorf("loading configuration: %w", err)
+		}
+
+		_, driver, err := loadConfigAndDB()
+		if err != nil {
+			return fmt.Errorf("opening database: %w", err)
+		}
+		defer db.CloseDB()
+
+		dir := cfg.Plugin_Directory
+		if dir == "" {
+			dir = "./plugins/"
+		}
+
+		name := args[0]
+		pluginDir := filepath.Join(dir, name)
+		initPath := filepath.Join(pluginDir, "init.lua")
+
+		if _, statErr := os.Stat(initPath); statErr != nil {
+			return fmt.Errorf("plugin %q not found (no init.lua at %s)", name, initPath)
+		}
+
+		// Extract the manifest to display approval information.
+		info, err := plugin.ExtractManifest(initPath)
+		if err != nil {
+			return fmt.Errorf("extracting manifest for %q: %w", name, err)
+		}
+
+		// Display the approval screen.
+		out := cmd.OutOrStdout()
+		fmt.Fprintf(out, "Plugin: %s\n", info.Name)
+		fmt.Fprintf(out, "Version: %s\n", info.Version)
+		fmt.Fprintf(out, "Description: %s\n", info.Description)
+		if info.Author != "" {
+			fmt.Fprintf(out, "Author: %s\n", info.Author)
+		}
+		fmt.Fprintf(out, "Capabilities: %d\n", len(info.Capabilities))
+		for _, cap := range info.Capabilities {
+			fmt.Fprintf(out, "  - %s.%s -> %s (priority: %d)\n", cap.Table, cap.Op, cap.Handler, cap.Priority)
+		}
+		fmt.Fprintf(out, "Core Access: %d tables\n", len(info.CoreAccess))
+		for table, ops := range info.CoreAccess {
+			fmt.Fprintf(out, "  - %s: %s\n", table, strings.Join(ops, ", "))
+		}
+
+		if !confirmAction(cmd, pluginInstallYes, "Install this plugin?") {
+			fmt.Fprintln(cmd.ErrOrStderr(), "Cancelled.")
+			return nil
+		}
+
+		// Create a minimal plugin.Manager with just enough config for InstallPlugin.
+		dialect := db.DialectFromString(string(cfg.Db_Driver))
+		pool, err := db.OpenPool(*cfg, db.DefaultPluginPoolConfig())
+		if err != nil {
+			return fmt.Errorf("opening plugin pool: %w", err)
+		}
+		defer func() {
+			if cerr := pool.Close(); cerr != nil {
+				utility.DefaultLogger.Error("plugin pool close error", cerr)
+			}
+		}()
+
+		mgr := plugin.NewManager(plugin.ManagerConfig{
+			Directory: dir,
+		}, pool, dialect, driver, nil)
+
+		ctx := context.Background()
+		record, err := mgr.InstallPlugin(ctx, name)
+		if err != nil {
+			return fmt.Errorf("installing plugin %q: %w", name, err)
+		}
+
+		fmt.Fprintf(out, "Plugin %q installed successfully (id: %s).\n", info.Name, record.PluginID)
+		return nil
+	},
+}
+
 // pluginInfoCmd retrieves detailed information about a plugin from the running server.
 // Online: sends GET to /api/v1/admin/plugins/{name}.
 var pluginInfoCmd = &cobra.Command{
@@ -410,17 +505,17 @@ var pluginInfoCmd = &cobra.Command{
 
 		// Decode the response matching PluginInfoHandler's infoJSON structure.
 		var info struct {
-			Name         string `json:"name"`
-			Version      string `json:"version"`
-			Description  string `json:"description"`
-			Author       string `json:"author"`
-			License      string `json:"license"`
-			State        string `json:"state"`
-			FailedReason string `json:"failed_reason"`
-			CBState      string `json:"circuit_breaker_state"`
-			CBErrors     int    `json:"circuit_breaker_errors"`
-			VMsAvailable int    `json:"vms_available"`
-			VMsTotal     int    `json:"vms_total"`
+			Name         string   `json:"name"`
+			Version      string   `json:"version"`
+			Description  string   `json:"description"`
+			Author       string   `json:"author"`
+			License      string   `json:"license"`
+			State        string   `json:"state"`
+			FailedReason string   `json:"failed_reason"`
+			CBState      string   `json:"circuit_breaker_state"`
+			CBErrors     int      `json:"circuit_breaker_errors"`
+			VMsAvailable int      `json:"vms_available"`
+			VMsTotal     int      `json:"vms_total"`
 			Dependencies []string `json:"dependencies"`
 			SchemaDrift  []struct {
 				Table  string `json:"table"`
@@ -566,6 +661,9 @@ func handleSimpleResponse(cmd *cobra.Command, resp *http.Response, name, action 
 	fmt.Fprintf(cmd.OutOrStdout(), "Plugin %q %s successfully.\n", name, action)
 	return nil
 }
+
+// Flag for plugin install.
+var pluginInstallYes bool
 
 // Flags for plugin approve/revoke.
 var (
@@ -1108,10 +1206,14 @@ func init() {
 	pluginRevokeCmd.Flags().BoolVar(&pluginRevokeAllHooks, "all-hooks", false, "Revoke all approved hooks")
 	pluginRevokeCmd.Flags().BoolVar(&pluginRevokeYes, "yes", false, "Skip confirmation prompt")
 
+	// Non-interactive flag for plugin install.
+	pluginInstallCmd.Flags().BoolVar(&pluginInstallYes, "yes", false, "Skip confirmation prompt")
+
 	// Register all subcommands.
 	pluginCmd.AddCommand(pluginListCmd)
 	pluginCmd.AddCommand(pluginInitCmd)
 	pluginCmd.AddCommand(pluginValidateCmd)
+	pluginCmd.AddCommand(pluginInstallCmd)
 	pluginCmd.AddCommand(pluginInfoCmd)
 	pluginCmd.AddCommand(pluginReloadCmd)
 	pluginCmd.AddCommand(pluginEnableCmd)

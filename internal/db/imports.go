@@ -39,6 +39,7 @@ type StringRoutes struct {
 type StringFields struct {
 	FieldID      string `json:"field_id"`
 	ParentID     string `json:"parent_id"`
+	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Validation   string `json:"validation"`
@@ -94,6 +95,7 @@ type StringTokens struct {
 type StringDatatypes struct {
 	DatatypeID   string `json:"datatype_id"`
 	ParentID     string `json:"parent_id"`
+	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Type         string `json:"type"`
 	AuthorID     string `json:"author_id"`
@@ -114,7 +116,7 @@ type StringDatatypeFields struct {
 type StringSessions struct {
 	SessionID   string `json:"session_id"`
 	UserID      string `json:"user_id"`
-	DateCreated   string `json:"date_created"`
+	DateCreated string `json:"date_created"`
 	ExpiresAt   string `json:"expires_at"`
 	LastAccess  string `json:"last_access"`
 	IpAddress   string `json:"ip_address"`
@@ -193,6 +195,7 @@ type StringAdminRoutes struct {
 type StringAdminFields struct {
 	AdminFieldID string `json:"admin_field_id"`
 	ParentID     string `json:"parent_id"`
+	Name         string `json:"name"`
 	Label        string `json:"label"`
 	Data         string `json:"data"`
 	Validation   string `json:"validation"`
@@ -208,6 +211,7 @@ type StringAdminFields struct {
 type StringAdminDatatypes struct {
 	AdminDatatypeID string `json:"admin_datatype_id"`
 	ParentID        string `json:"parent_id"`
+	Name            string `json:"name"`
 	Label           string `json:"label"`
 	Type            string `json:"type"`
 	AuthorID        string `json:"author_id"`

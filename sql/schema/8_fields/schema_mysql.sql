@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,

@@ -9,6 +9,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -71,8 +72,14 @@ func RoutesListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // RouteCreateHandler handles POST /admin/routes.
 // Validates slug (must start with /) and title are required, creates via audited context.
-func RouteCreateHandler(driver db.DbDriver) http.HandlerFunc {
+func RouteCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -114,7 +121,7 @@ func RouteCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		now := types.NewTimestamp(time.Now())
 		_, err := driver.CreateRoute(r.Context(), ac, db.CreateRouteParams{
@@ -127,7 +134,7 @@ func RouteCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create route", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			Render(w, r, partials.RouteForm(slug, title, statusStr, map[string]string{"_": "Failed to create route"}, csrfToken))
 			return
@@ -145,8 +152,14 @@ func RouteCreateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // RouteUpdateHandler handles POST /admin/routes/{id}.
 // Updates an existing route via audited context.
-func RouteUpdateHandler(driver db.DbDriver) http.HandlerFunc {
+func RouteUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing route ID", http.StatusBadRequest)
@@ -200,7 +213,7 @@ func RouteUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		_, err = driver.UpdateRoute(r.Context(), ac, db.UpdateRouteParams{
 			Slug:         types.Slug(slug),
@@ -213,7 +226,7 @@ func RouteUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to update route", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			Render(w, r, partials.RouteEditForm(id, slug, title, statusStr, map[string]string{"_": "Failed to update route"}, csrfToken))
 			return
@@ -231,8 +244,14 @@ func RouteUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // RouteDeleteHandler handles DELETE /admin/routes/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func RouteDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func RouteDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -249,7 +268,7 @@ func RouteDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		err := driver.DeleteRoute(r.Context(), ac, types.RouteID(id))
 		if err != nil {

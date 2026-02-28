@@ -96,12 +96,12 @@ type UserSshKeyView struct {
 
 // SessionView is a safe subset of Sessions (excludes session_data).
 type SessionView struct {
-	SessionID  types.SessionID `json:"session_id"`
-	DateCreated  types.Timestamp `json:"date_created"`
-	ExpiresAt  types.Timestamp `json:"expires_at"`
-	LastAccess string          `json:"last_access"`
-	IpAddress  string          `json:"ip_address"`
-	UserAgent  string          `json:"user_agent"`
+	SessionID   types.SessionID `json:"session_id"`
+	DateCreated types.Timestamp `json:"date_created"`
+	ExpiresAt   types.Timestamp `json:"expires_at"`
+	LastAccess  string          `json:"last_access"`
+	IpAddress   string          `json:"ip_address"`
+	UserAgent   string          `json:"user_agent"`
 }
 
 // TokenView is a safe subset of Tokens (excludes token value).
@@ -155,12 +155,12 @@ func MapUserSshKeyView(k UserSshKeys) UserSshKeyView {
 // MapSessionView converts a Sessions to a safe view (strips session_data).
 func MapSessionView(s Sessions) SessionView {
 	return SessionView{
-		SessionID:  s.SessionID,
-		DateCreated:  s.DateCreated,
-		ExpiresAt:  s.ExpiresAt,
-		LastAccess: nullStringValue(s.LastAccess),
-		IpAddress:  nullStringValue(s.IpAddress),
-		UserAgent:  nullStringValue(s.UserAgent),
+		SessionID:   s.SessionID,
+		DateCreated: s.DateCreated,
+		ExpiresAt:   s.ExpiresAt,
+		LastAccess:  nullStringValue(s.LastAccess),
+		IpAddress:   nullStringValue(s.IpAddress),
+		UserAgent:   nullStringValue(s.UserAgent),
 	}
 }
 

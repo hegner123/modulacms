@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_datatypes (
     parent_id TEXT DEFAULT NULL
         REFERENCES admin_datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id TEXT NOT NULL
@@ -49,6 +50,7 @@ WHERE parent_id = ?;
 INSERT INTO admin_datatypes (
     admin_datatype_id,
     parent_id,
+    name,
     label,
     type,
     author_id,
@@ -61,12 +63,14 @@ INSERT INTO admin_datatypes (
     ?,
     ?,
     ?,
+    ?,
     ?
     ) RETURNING *;
 
 -- name: UpdateAdminDatatype :exec
 UPDATE admin_datatypes
 SET parent_id = ?,
+    name = ?,
     label = ?,
     type = ?,
     author_id = ?,

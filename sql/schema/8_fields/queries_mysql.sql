@@ -5,6 +5,7 @@ DROP TABLE fields;
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -43,6 +44,7 @@ ORDER BY field_id;
 INSERT INTO fields  (
     field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -61,6 +63,7 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
     ?
 );
 
@@ -68,6 +71,7 @@ INSERT INTO fields  (
 UPDATE fields
 set
     parent_id = ?,
+    name = ?,
     label = ?,
     data = ?,
     validation = ?,

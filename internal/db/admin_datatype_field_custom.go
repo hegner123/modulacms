@@ -28,7 +28,7 @@ type NewAdminDatatypeFieldCmd struct {
 }
 
 func (c NewAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c NewAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
@@ -61,7 +61,7 @@ type UpdateAdminDatatypeFieldCmd struct {
 }
 
 func (c UpdateAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c UpdateAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
@@ -107,7 +107,7 @@ type DeleteAdminDatatypeFieldCmd struct {
 }
 
 func (c DeleteAdminDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c DeleteAdminDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteAdminDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteAdminDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteAdminDatatypeFieldCmd) TableName() string                     { return "admin_datatypes_fields" }
@@ -199,7 +199,7 @@ type NewAdminDatatypeFieldCmdMysql struct {
 }
 
 func (c NewAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
@@ -237,7 +237,7 @@ type UpdateAdminDatatypeFieldCmdMysql struct {
 }
 
 func (c UpdateAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
@@ -274,7 +274,7 @@ type DeleteAdminDatatypeFieldCmdMysql struct {
 }
 
 func (c DeleteAdminDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteAdminDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteAdminDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteAdminDatatypeFieldCmdMysql) TableName() string                     { return "admin_datatypes_fields" }
@@ -357,7 +357,7 @@ type NewAdminDatatypeFieldCmdPsql struct {
 }
 
 func (c NewAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }
@@ -390,7 +390,7 @@ type UpdateAdminDatatypeFieldCmdPsql struct {
 }
 
 func (c UpdateAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }
@@ -436,7 +436,7 @@ type DeleteAdminDatatypeFieldCmdPsql struct {
 }
 
 func (c DeleteAdminDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteAdminDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteAdminDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteAdminDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteAdminDatatypeFieldCmdPsql) TableName() string                     { return "admin_datatypes_fields" }

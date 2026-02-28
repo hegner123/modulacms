@@ -163,7 +163,7 @@ func setupTestBridge(t *testing.T, pluginDir string) (*HTTPBridge, *Manager, *sq
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 
@@ -306,7 +306,7 @@ func TestCreatePluginRoutesTable(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil)
+	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil, nil)
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
 
@@ -339,7 +339,7 @@ func TestCreatePluginRoutesTable_Idempotent(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil)
+	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil, nil)
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
 
@@ -358,7 +358,7 @@ func TestCleanupOrphanedRoutes(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil)
+	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil, nil)
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
 
@@ -406,7 +406,7 @@ func TestCleanupOrphanedRoutes_EmptyDiscovered(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil)
+	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil, nil)
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
 
@@ -499,7 +499,7 @@ func TestRegisterRoutes_CrossPluginCollision(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -568,7 +568,7 @@ func TestRegisterRoutes_DifferentPluginsNoCollision(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -758,7 +758,7 @@ func TestServeHTTP_503_PoolExhaustion(t *testing.T) {
 		MaxVMsPerPlugin: 1, // Only 1 VM
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -1088,7 +1088,7 @@ func TestServeHTTP_BodyTooLarge(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	// Set a small body limit for testing.
@@ -1291,7 +1291,7 @@ func TestVersionChange_RevokesAllApprovals(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -1509,7 +1509,7 @@ func TestServeHTTP_MiddlewareChain(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -1587,7 +1587,7 @@ func TestServeHTTP_MiddlewareEarlyResponse(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
@@ -1666,7 +1666,7 @@ func TestServeHTTP_ResponseTooLarge(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	bridge.maxRespSize = 100 // Very small limit for testing.
@@ -1726,7 +1726,7 @@ func TestAllowIP_RateLimiting(t *testing.T) {
 	conn := newTestDB(t)
 	defer conn.Close()
 
-	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil)
+	mgr := NewManager(ManagerConfig{ExecTimeoutSec: 5}, conn, db.DialectSQLite, nil, nil)
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())
 
@@ -1764,7 +1764,7 @@ func TestServeHTTP_HandlerError(t *testing.T) {
 		MaxVMsPerPlugin: 2,
 		ExecTimeoutSec:  5,
 		MaxOpsPerExec:   100,
-	}, conn, db.DialectSQLite, nil)
+	}, conn, db.DialectSQLite, nil, nil)
 
 	bridge := NewHTTPBridge(mgr, conn, db.DialectSQLite)
 	defer bridge.Close(context.Background())

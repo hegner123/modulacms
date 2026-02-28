@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 // DatatypeForm renders the create datatype form fields.
 // Used as an HTMX partial for validation error responses.
-func DatatypeForm(label string, dtype string, errs map[string]string, csrfToken string) templ.Component {
+func DatatypeForm(name string, label string, dtype string, errs map[string]string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -54,6 +54,10 @@ func DatatypeForm(label string, dtype string, errs map[string]string, csrfToken 
 				return templ_7745c5c3_Err
 			}
 		}
+		templ_7745c5c3_Err = FormField("name", "Name", name, errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = FormField("label", "Label", label, errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -72,7 +76,7 @@ func DatatypeForm(label string, dtype string, errs map[string]string, csrfToken 
 
 // DatatypeEditForm renders the edit datatype form fields.
 // Used as an HTMX partial for validation error responses on the detail page.
-func DatatypeEditForm(id string, label string, dtype string, errs map[string]string, csrfToken string) templ.Component {
+func DatatypeEditForm(id string, name string, label string, dtype string, errs map[string]string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -100,7 +104,7 @@ func DatatypeEditForm(id string, label string, dtype string, errs map[string]str
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_form.templ`, Line: 21, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_form.templ`, Line: 22, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -122,7 +126,7 @@ func DatatypeEditForm(id string, label string, dtype string, errs map[string]str
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(errs["_"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_form.templ`, Line: 26, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_form.templ`, Line: 27, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -132,6 +136,10 @@ func DatatypeEditForm(id string, label string, dtype string, errs map[string]str
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+		}
+		templ_7745c5c3_Err = FormField("name", "Name", name, errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = FormField("label", "Label", label, errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {

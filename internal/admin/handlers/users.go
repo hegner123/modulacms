@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/auth"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -102,8 +103,14 @@ func UserDetailHandler(driver db.DbDriver) http.HandlerFunc {
 // UserCreateHandler handles POST /admin/users.
 // Validates username, name, email (required + unique), password (min 8 chars).
 // Hashes password with auth.HashPassword before storing.
-func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
+func UserCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
@@ -134,6 +141,19 @@ func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
 			role = "viewer"
 		}
 
+		// Check username uniqueness
+		if username != "" {
+			users, _ := driver.ListUsers()
+			if users != nil {
+				for _, u := range *users {
+					if u.Username == username {
+						errs["username"] = "A user with this username already exists"
+						break
+					}
+				}
+			}
+		}
+
 		// Check email uniqueness
 		if email != "" {
 			existing, _ := driver.GetUserByEmail(types.Email(email))
@@ -156,7 +176,7 @@ func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		hash, hashErr := auth.HashPassword(password)
 		if hashErr != nil {
 			utility.DefaultLogger.Error("failed to hash password", hashErr)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			roles, rolesErr := driver.ListRoles()
 			if rolesErr != nil {
@@ -171,7 +191,7 @@ func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		now := types.NewTimestamp(time.Now())
 		_, err := driver.CreateUser(r.Context(), ac, db.CreateUserParams{
@@ -185,7 +205,7 @@ func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create user", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			roles, rolesErr := driver.ListRoles()
 			if rolesErr != nil {
@@ -207,8 +227,14 @@ func UserCreateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // UserUpdateHandler handles POST /admin/users/{id}.
 // Can update name, email, role. Password is updated only if provided (not required).
-func UserUpdateHandler(driver db.DbDriver) http.HandlerFunc {
+func UserUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing user ID", http.StatusBadRequest)
@@ -274,7 +300,7 @@ func UserUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 			newHash, hashErr := auth.HashPassword(password)
 			if hashErr != nil {
 				utility.DefaultLogger.Error("failed to hash password", hashErr)
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHeader(http.StatusUnprocessableEntity)
 				csrfToken := CSRFTokenFromContext(r.Context())
 				roles, rolesErr := driver.ListRoles()
 				if rolesErr != nil {
@@ -291,7 +317,7 @@ func UserUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		_, err = driver.UpdateUser(r.Context(), ac, db.UpdateUserParams{
 			UserID:       types.UserID(id),
@@ -305,7 +331,7 @@ func UserUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to update user", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
 			roles, rolesErr := driver.ListRoles()
 			if rolesErr != nil {
@@ -327,8 +353,14 @@ func UserUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // UserDeleteHandler handles DELETE /admin/users/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func UserDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func UserDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -345,7 +377,7 @@ func UserDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			ip = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), currentUser.UserID, middleware.RequestIDFromContext(r.Context()), ip)
 
 		err := driver.DeleteUser(r.Context(), ac, types.UserID(id))
 		if err != nil {

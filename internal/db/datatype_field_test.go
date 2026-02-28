@@ -1389,19 +1389,19 @@ func TestDeleteDatatypeFieldCmd_GetID_EmptyID(t *testing.T) {
 var (
 	// SQLite
 	_ audited.CreateCommand[mdb.DatatypesFields] = NewDatatypeFieldCmd{}
-	_ audited.UpdateCommand[mdb.DatatypesFields]  = UpdateDatatypeFieldCmd{}
-	_ audited.UpdateCommand[mdb.DatatypesFields]  = UpdateDatatypeFieldSortOrderCmd{}
-	_ audited.DeleteCommand[mdb.DatatypesFields]  = DeleteDatatypeFieldCmd{}
+	_ audited.UpdateCommand[mdb.DatatypesFields] = UpdateDatatypeFieldCmd{}
+	_ audited.UpdateCommand[mdb.DatatypesFields] = UpdateDatatypeFieldSortOrderCmd{}
+	_ audited.DeleteCommand[mdb.DatatypesFields] = DeleteDatatypeFieldCmd{}
 
 	// MySQL
 	_ audited.CreateCommand[mdbm.DatatypesFields] = NewDatatypeFieldCmdMysql{}
-	_ audited.UpdateCommand[mdbm.DatatypesFields]  = UpdateDatatypeFieldCmdMysql{}
-	_ audited.UpdateCommand[mdbm.DatatypesFields]  = UpdateDatatypeFieldSortOrderCmdMysql{}
-	_ audited.DeleteCommand[mdbm.DatatypesFields]  = DeleteDatatypeFieldCmdMysql{}
+	_ audited.UpdateCommand[mdbm.DatatypesFields] = UpdateDatatypeFieldCmdMysql{}
+	_ audited.UpdateCommand[mdbm.DatatypesFields] = UpdateDatatypeFieldSortOrderCmdMysql{}
+	_ audited.DeleteCommand[mdbm.DatatypesFields] = DeleteDatatypeFieldCmdMysql{}
 
 	// PostgreSQL
 	_ audited.CreateCommand[mdbp.DatatypesFields] = NewDatatypeFieldCmdPsql{}
-	_ audited.UpdateCommand[mdbp.DatatypesFields]  = UpdateDatatypeFieldCmdPsql{}
-	_ audited.UpdateCommand[mdbp.DatatypesFields]  = UpdateDatatypeFieldSortOrderCmdPsql{}
-	_ audited.DeleteCommand[mdbp.DatatypesFields]  = DeleteDatatypeFieldCmdPsql{}
+	_ audited.UpdateCommand[mdbp.DatatypesFields] = UpdateDatatypeFieldCmdPsql{}
+	_ audited.UpdateCommand[mdbp.DatatypesFields] = UpdateDatatypeFieldSortOrderCmdPsql{}
+	_ audited.DeleteCommand[mdbp.DatatypesFields] = DeleteDatatypeFieldCmdPsql{}
 )

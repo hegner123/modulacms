@@ -307,31 +307,31 @@ func TestIntegration_ContentTree_SiblingOrdering(t *testing.T) {
 	// Step 2: Update with sibling pointers to enforce order C -> A -> B
 	// Root's first_child_id = C
 	updateContentNode(t, s, root.ContentDataID, s.DtRootID,
-		noID(),                         // parent
-		nid(nodeC.ContentDataID),       // first_child
-		noID(),                         // next_sibling
-		noID(),                         // prev_sibling
+		noID(),                   // parent
+		nid(nodeC.ContentDataID), // first_child
+		noID(),                   // next_sibling
+		noID(),                   // prev_sibling
 	)
 	// C: prev=nil, next=A
 	updateContentNode(t, s, nodeC.ContentDataID, s.DtPageID,
-		nid(root.ContentDataID),        // parent
-		noID(),                         // first_child
-		nid(nodeA.ContentDataID),       // next_sibling
-		noID(),                         // prev_sibling
+		nid(root.ContentDataID),  // parent
+		noID(),                   // first_child
+		nid(nodeA.ContentDataID), // next_sibling
+		noID(),                   // prev_sibling
 	)
 	// A: prev=C, next=B
 	updateContentNode(t, s, nodeA.ContentDataID, s.DtPageID,
-		nid(root.ContentDataID),        // parent
-		noID(),                         // first_child
-		nid(nodeB.ContentDataID),       // next_sibling
-		nid(nodeC.ContentDataID),       // prev_sibling
+		nid(root.ContentDataID),  // parent
+		noID(),                   // first_child
+		nid(nodeB.ContentDataID), // next_sibling
+		nid(nodeC.ContentDataID), // prev_sibling
 	)
 	// B: prev=A, next=nil
 	updateContentNode(t, s, nodeB.ContentDataID, s.DtPageID,
-		nid(root.ContentDataID),        // parent
-		noID(),                         // first_child
-		noID(),                         // next_sibling
-		nid(nodeA.ContentDataID),       // prev_sibling
+		nid(root.ContentDataID),  // parent
+		noID(),                   // first_child
+		noID(),                   // next_sibling
+		nid(nodeA.ContentDataID), // prev_sibling
 	)
 
 	rows, err := s.DB.GetContentTreeByRoute(s.RouteID)

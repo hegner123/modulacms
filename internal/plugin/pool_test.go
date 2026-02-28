@@ -61,11 +61,19 @@ func newTestVMFactory() func() *lua.LState {
 		hooksTable.RawSetString("on", L.NewFunction(func(L *lua.LState) int { return 0 }))
 		L.SetGlobal("hooks", hooksTable)
 
+		// Register minimal core module with Go-bound stubs (Phase 2D).
+		coreTable := L.NewTable()
+		for _, name := range []string{"query", "query_one", "count", "exists", "insert", "update", "delete"} {
+			coreTable.RawSetString(name, L.NewFunction(func(L *lua.LState) int { return 0 }))
+		}
+		L.SetGlobal("core", coreTable)
+
 		// Freeze modules to match production behavior.
 		FreezeModule(L, "db")
 		FreezeModule(L, "log")
 		FreezeModule(L, "http")
 		FreezeModule(L, "hooks")
+		FreezeModule(L, "core")
 
 		return L
 	}

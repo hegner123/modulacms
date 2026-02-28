@@ -200,6 +200,7 @@ func (m Model) View() string {
 			"Reload Plugin",
 			"Approve Routes",
 			"Approve Hooks",
+			"Sync Capabilities",
 		}
 		header := "Plugin Detail"
 		if m.SelectedPlugin != "" {

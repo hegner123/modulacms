@@ -222,7 +222,7 @@ func TestDatabase_CRUD_BackupSet(t *testing.T) {
 	bsID := types.NewBackupSetID()
 	created, err := d.CreateBackupSet(CreateBackupSetParams{
 		BackupSetID:    bsID,
-		DateCreated:      now,
+		DateCreated:    now,
 		HlcTimestamp:   hlc,
 		Status:         types.BackupSetStatusPending,
 		BackupIds:      types.NewJSONData([]string{}),

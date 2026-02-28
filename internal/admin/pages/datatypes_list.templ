@@ -18,6 +18,7 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData)
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Name</th>
                     <th>Label</th>
                     <th>Type</th>
                     <th>Modified</th>
@@ -30,13 +31,14 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData)
                    hx-swap="innerHTML">
                 if len(items) == 0 {
                     <tr>
-                        <td colspan="4">
+                        <td colspan="5">
                             @partials.EmptyState("No datatypes found. Create your first datatype to define content structure.")
                         </td>
                     </tr>
                 } else {
                     for _, dt := range items {
                         <tr>
+                            <td>{ dt.Name }</td>
                             <td>
                                 <a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
                                    hx-get={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
@@ -73,17 +75,18 @@ templ DatatypesListContent(items []db.Datatypes, pg partials.PaginationPageData)
 }
 
 templ DatatypeCreateDialog(csrfToken string) {
-    <dialog id="create-datatype-dialog" class="admin-dialog">
+    <dialog id="create-datatype-dialog" class="admin-dialog" aria-labelledby="create-datatype-dialog-title">
         <div class="dialog-content">
             <div class="dialog-header">
-                <h2>New Datatype</h2>
-                <button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+                <h2 id="create-datatype-dialog-title">New Datatype</h2>
+                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
             </div>
             <form hx-post="/admin/schema/datatypes"
                   hx-target="#create-datatype-form"
                   hx-swap="innerHTML"
                   id="create-datatype-form">
                 @partials.CSRFField(csrfToken)
+                @partials.FormField("name", "Name", "", "")
                 @partials.FormField("label", "Label", "", "")
                 @partials.FormField("type", "Type", "", "")
                 <div class="dialog-actions">

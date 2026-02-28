@@ -235,9 +235,9 @@ func TestAllChildrenSameType(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name   string
-		nodes  []*model.Node
-		want   bool
+		name  string
+		nodes []*model.Node
+		want  bool
 	}{
 		{name: "nil slice", nodes: nil, want: true},
 		{name: "empty slice", nodes: []*model.Node{}, want: true},
@@ -611,10 +611,10 @@ func TestGetTransformer(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		format     OutputFormat
-		wantType   string // type name to check via sprint
-		wantErr    string
+		name     string
+		format   OutputFormat
+		wantType string // type name to check via sprint
+		wantErr  string
 	}{
 		{name: "contentful", format: FormatContentful, wantType: "*transform.ContentfulTransformer"},
 		{name: "sanity", format: FormatSanity, wantType: "*transform.SanityTransformer"},
@@ -667,7 +667,7 @@ func typeNameOf(v any) string {
 				return typeNameReflectFree(v)
 			}(), " ", "", -1),
 		"\n", "", -1),
-	"")
+		"")
 }
 
 // typeNameReflectFree produces a type assertion based type name

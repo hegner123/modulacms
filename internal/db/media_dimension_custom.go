@@ -324,7 +324,7 @@ type NewMediaDimensionCmd struct {
 }
 
 func (c NewMediaDimensionCmd) Context() context.Context              { return c.ctx }
-func (c NewMediaDimensionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaDimensionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewMediaDimensionCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewMediaDimensionCmd) TableName() string                     { return "media_dimensions" }
@@ -356,7 +356,7 @@ type UpdateMediaDimensionCmd struct {
 }
 
 func (c UpdateMediaDimensionCmd) Context() context.Context              { return c.ctx }
-func (c UpdateMediaDimensionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaDimensionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateMediaDimensionCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateMediaDimensionCmd) TableName() string                     { return "media_dimensions" }
@@ -393,7 +393,7 @@ type DeleteMediaDimensionCmd struct {
 }
 
 func (c DeleteMediaDimensionCmd) Context() context.Context              { return c.ctx }
-func (c DeleteMediaDimensionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaDimensionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteMediaDimensionCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteMediaDimensionCmd) TableName() string                     { return "media_dimensions" }
@@ -427,7 +427,7 @@ type NewMediaDimensionCmdMysql struct {
 }
 
 func (c NewMediaDimensionCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewMediaDimensionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaDimensionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewMediaDimensionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewMediaDimensionCmdMysql) TableName() string                     { return "media_dimensions" }
@@ -464,7 +464,7 @@ type UpdateMediaDimensionCmdMysql struct {
 }
 
 func (c UpdateMediaDimensionCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateMediaDimensionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaDimensionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateMediaDimensionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateMediaDimensionCmdMysql) TableName() string                     { return "media_dimensions" }
@@ -501,7 +501,7 @@ type DeleteMediaDimensionCmdMysql struct {
 }
 
 func (c DeleteMediaDimensionCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteMediaDimensionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaDimensionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteMediaDimensionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteMediaDimensionCmdMysql) TableName() string                     { return "media_dimensions" }
@@ -535,7 +535,7 @@ type NewMediaDimensionCmdPsql struct {
 }
 
 func (c NewMediaDimensionCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewMediaDimensionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewMediaDimensionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewMediaDimensionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewMediaDimensionCmdPsql) TableName() string                     { return "media_dimensions" }
@@ -567,7 +567,7 @@ type UpdateMediaDimensionCmdPsql struct {
 }
 
 func (c UpdateMediaDimensionCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateMediaDimensionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateMediaDimensionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateMediaDimensionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateMediaDimensionCmdPsql) TableName() string                     { return "media_dimensions" }
@@ -604,7 +604,7 @@ type DeleteMediaDimensionCmdPsql struct {
 }
 
 func (c DeleteMediaDimensionCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteMediaDimensionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteMediaDimensionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteMediaDimensionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteMediaDimensionCmdPsql) TableName() string                     { return "media_dimensions" }

@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS fields (
         CONSTRAINT fk_datatypes
             REFERENCES datatypes
             ON UPDATE CASCADE ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled'::TEXT NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,

@@ -80,7 +80,7 @@ func MediaUploadDialog(csrfToken string) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"upload-dialog\" class=\"dialog\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2>Upload Media</h2><button class=\"dialog-close\" onclick=\"document.getElementById('upload-dialog').close()\">&times;</button></div><form hx-post=\"/admin/media\" hx-target=\"#upload-result\" hx-encoding=\"multipart/form-data\" hx-swap=\"innerHTML\" class=\"upload-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"upload-dialog\" class=\"dialog\" aria-labelledby=\"upload-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"upload-dialog-title\">Upload Media</h2><button class=\"dialog-close\" aria-label=\"Close dialog\" onclick=\"document.getElementById('upload-dialog').close()\">&times;</button></div><form hx-post=\"/admin/media\" hx-target=\"#upload-result\" hx-encoding=\"multipart/form-data\" hx-swap=\"innerHTML\" class=\"upload-form\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

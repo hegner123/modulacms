@@ -67,6 +67,8 @@ sql:
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
           verification_id: "VerificationID"
+          plugin_id: "PluginID"
+          pipeline_id: "PipelineID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -86,6 +88,8 @@ sql:
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
+          pipeline: Pipelines
+          plugin: Plugins
           role: Roles
           role_permission: RolePermissions
           route: Routes
@@ -430,6 +434,24 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
           - column: "media.focal_y"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          # PLUGINS
+          - column: "plugins.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "plugins.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginStatus"}
+          - column: "plugins.capabilities"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.approved_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.date_installed"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PIPELINES
+          - column: "pipelines.pipeline_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}
+          - column: "pipelines.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "pipelines.config"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
 
   # ---------- MySQL ----------
   - engine: "mysql"
@@ -491,6 +513,8 @@ sql:
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
           verification_id: "VerificationID"
+          plugin_id: "PluginID"
+          pipeline_id: "PipelineID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -510,6 +534,8 @@ sql:
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
+          pipeline: Pipelines
+          plugin: Plugins
           role: Roles
           role_permission: RolePermissions
           route: Routes
@@ -854,6 +880,24 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
           - column: "media.focal_y"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          # PLUGINS
+          - column: "plugins.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "plugins.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginStatus"}
+          - column: "plugins.capabilities"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.approved_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.date_installed"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PIPELINES
+          - column: "pipelines.pipeline_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}
+          - column: "pipelines.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "pipelines.config"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
 
   # ---------- PostgreSQL ----------
   - engine: "postgresql"
@@ -915,6 +959,8 @@ sql:
           user_oauth_id: "UserOAuthID"
           user_ssh_key_id: "UserSSHKeyID"
           verification_id: "VerificationID"
+          plugin_id: "PluginID"
+          pipeline_id: "PipelineID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -934,6 +980,8 @@ sql:
           medium: Media
           media_dimension: MediaDimensions
           permission: Permissions
+          pipeline: Pipelines
+          plugin: Plugins
           role: Roles
           role_permission: RolePermissions
           route: Routes
@@ -1278,3 +1326,21 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
           - column: "media.focal_y"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableFloat64"}
+          # PLUGINS
+          - column: "plugins.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "plugins.status"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginStatus"}
+          - column: "plugins.capabilities"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.approved_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          - column: "plugins.date_installed"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PIPELINES
+          - column: "pipelines.pipeline_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}
+          - column: "pipelines.plugin_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
+          - column: "pipelines.config"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}

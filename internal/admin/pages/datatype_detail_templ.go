@@ -82,6 +82,10 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = partials.FormField("name", "Name", dt.Name, "").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		templ_7745c5c3_Err = partials.FormField("label", "Label", dt.Label, "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -97,7 +101,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken 
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DatatypeID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 37, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 38, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -110,7 +114,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken 
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateCreated.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 38, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 39, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -123,7 +127,7 @@ func DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken 
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(dt.DateModified.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 39, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 40, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -166,14 +170,14 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<dialog id=\"add-field-dialog\" class=\"admin-dialog\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2>Add Field</h2><button class=\"btn btn-ghost dialog-close\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<dialog id=\"add-field-dialog\" class=\"admin-dialog\" aria-labelledby=\"add-field-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"add-field-dialog-title\">Add Field</h2><button class=\"btn btn-ghost dialog-close\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/schema/datatypes/" + datatypeID + "/fields")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 65, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/datatype_detail.templ`, Line: 66, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -183,7 +187,7 @@ func DatatypeAddFieldDialog(datatypeID string, csrfToken string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", nil, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", "", nil, csrfToken).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

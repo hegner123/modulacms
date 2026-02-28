@@ -854,13 +854,13 @@ func TestDatabase_MapChangeEvent_NullableFieldVariants(t *testing.T) {
 	d := Database{}
 
 	tests := []struct {
-		name      string
-		input     mdb.ChangeEvent
-		wantUser  bool
-		wantReq   bool
-		wantIP    bool
-		wantReqS  string
-		wantIPS   string
+		name     string
+		input    mdb.ChangeEvent
+		wantUser bool
+		wantReq  bool
+		wantIP   bool
+		wantReqS string
+		wantIPS  string
 	}{
 		{
 			name: "all nullable fields valid",
@@ -1418,10 +1418,10 @@ func TestCrossDatabaseMapRecordChangeEventParams_FieldConsistency(t *testing.T) 
 	// All three should have identical field values
 	// (they all use the same types for RecordChangeEventParams fields)
 	tests := []struct {
-		name    string
-		sqlite  string
-		mysql   string
-		psql    string
+		name   string
+		sqlite string
+		mysql  string
+		psql   string
 	}{
 		{"EventID", string(sqliteGot.EventID), string(mysqlGot.EventID), string(psqlGot.EventID)},
 		{"NodeID", string(sqliteGot.NodeID), string(mysqlGot.NodeID), string(psqlGot.NodeID)},

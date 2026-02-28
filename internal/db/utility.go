@@ -152,4 +152,3 @@ func GetColumnRowsString(dbc *sql.DB, ctx context.Context, tableName string, col
 
 	return rowValues, nil
 }
-

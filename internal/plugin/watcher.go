@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -16,9 +17,9 @@ import (
 
 // Watcher limits for security (S4).
 const (
-	maxLuaFilesPerPlugin = 100          // max .lua files per plugin directory
-	maxBytesPerChecksum  = 10 << 20     // 10 MB total bytes per checksumming pass
-	maxSlowReloads       = 3            // consecutive slow reloads before pausing watcher
+	maxLuaFilesPerPlugin = 100      // max .lua files per plugin directory
+	maxBytesPerChecksum  = 10 << 20 // 10 MB total bytes per checksumming pass
+	maxSlowReloads       = 3        // consecutive slow reloads before pausing watcher
 	slowReloadThreshold  = 10 * time.Second
 )
 
@@ -34,14 +35,15 @@ type Watcher struct {
 	pollInterval  time.Duration // default 2s
 	debounceDelay time.Duration // default 1s -- wait for file stability before reload
 
-	mu             sync.Mutex
-	reloadMu       sync.Mutex // serialize reloads (one at a time)
-	checksums      map[string]string         // pluginName -> SHA-256 of all .lua files
-	pendingReloads map[string]pendingReload   // pluginName -> checksum + first seen time
-	slowCounts     map[string]int             // pluginName -> consecutive slow reload count
-	pausedPlugins  map[string]bool            // pluginName -> true if watcher paused for this plugin
-	reloadCooldowns map[string]time.Time      // pluginName -> last reload time (S9: 10s cooldown)
-	logger         *utility.Logger
+	mu              sync.Mutex
+	reloadMu        sync.Mutex               // serialize reloads (one at a time)
+	checksums       map[string]string        // pluginName -> SHA-256 of all .lua files
+	pendingReloads  map[string]pendingReload // pluginName -> checksum + first seen time
+	slowCounts      map[string]int           // pluginName -> consecutive slow reload count
+	pausedPlugins   map[string]bool          // pluginName -> true if watcher paused for this plugin
+	reloadCooldowns map[string]time.Time     // pluginName -> last reload time (S9: 10s cooldown)
+	evictedPlugins  map[string]bool          // pluginName -> true if evicted (prevent repeat evictions)
+	logger          *utility.Logger
 }
 
 // NewWatcher creates a new file-polling watcher for the given manager.
@@ -58,6 +60,7 @@ func NewWatcher(manager *Manager, pollInterval time.Duration) *Watcher {
 		slowCounts:      make(map[string]int),
 		pausedPlugins:   make(map[string]bool),
 		reloadCooldowns: make(map[string]time.Time),
+		evictedPlugins:  make(map[string]bool),
 		logger:          utility.DefaultLogger,
 	}
 }
@@ -120,6 +123,21 @@ func (w *Watcher) pollTick(ctx context.Context) {
 
 		checksum, err := computeChecksum(inst.Dir)
 		if err != nil {
+			// Self-eviction: if plugin directory is gone, evict the plugin.
+			if errors.Is(err, os.ErrNotExist) {
+				if !w.evictedPlugins[name] {
+					w.evictedPlugins[name] = true
+					w.mu.Unlock()
+					if evictErr := w.manager.EvictPlugin(ctx, name, "plugin files missing from disk"); evictErr != nil {
+						w.logger.Warn(
+							fmt.Sprintf("watcher: eviction failed for %q: %s", name, evictErr.Error()),
+							nil,
+						)
+					}
+					w.mu.Lock()
+				}
+				continue
+			}
 			w.logger.Warn(
 				fmt.Sprintf("watcher: checksum error for plugin %q: %s", name, err.Error()),
 				nil,
@@ -223,6 +241,9 @@ func (w *Watcher) triggerReload(ctx context.Context, pluginName string) {
 		w.mu.Unlock()
 		return
 	}
+
+	// Clear eviction flag on successful reload (plugin dir reappeared).
+	delete(w.evictedPlugins, pluginName)
 
 	// S3: Track consecutive slow reloads.
 	if duration > slowReloadThreshold {

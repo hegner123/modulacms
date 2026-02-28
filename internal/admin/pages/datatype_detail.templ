@@ -26,6 +26,7 @@ templ DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken
                       hx-target="#datatype-edit-form"
                       hx-swap="innerHTML">
                     @partials.CSRFField(csrfToken)
+                    @partials.FormField("name", "Name", dt.Name, "")
                     @partials.FormField("label", "Label", dt.Label, "")
                     @partials.FormField("type", "Type", dt.Type, "")
                     <div class="form-actions">
@@ -56,17 +57,17 @@ templ DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken
 }
 
 templ DatatypeAddFieldDialog(datatypeID string, csrfToken string) {
-    <dialog id="add-field-dialog" class="admin-dialog">
+    <dialog id="add-field-dialog" class="admin-dialog" aria-labelledby="add-field-dialog-title">
         <div class="dialog-content">
             <div class="dialog-header">
-                <h2>Add Field</h2>
-                <button class="btn btn-ghost dialog-close" onclick="this.closest('dialog').close()">&times;</button>
+                <h2 id="add-field-dialog-title">Add Field</h2>
+                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
             </div>
             <form hx-post={ "/admin/schema/datatypes/" + datatypeID + "/fields" }
                   hx-target="#add-field-form"
                   hx-swap="innerHTML"
                   id="add-field-form">
-                @partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", nil, csrfToken)
+                @partials.DatatypeCreateFieldForm(datatypeID, "", "", "", "", "", "", nil, csrfToken)
             </form>
         </div>
     </dialog>

@@ -283,6 +283,7 @@ public struct UpdateContentRelationParams: Encodable, Sendable {
 public struct Datatype: Codable, Sendable {
     public let datatypeID: DatatypeID
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID?
@@ -292,6 +293,7 @@ public struct Datatype: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case datatypeID = "datatype_id"
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -303,6 +305,7 @@ public struct Datatype: Codable, Sendable {
 public struct CreateDatatypeParams: Encodable, Sendable {
     public let datatypeID: DatatypeID?
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID
@@ -310,12 +313,14 @@ public struct CreateDatatypeParams: Encodable, Sendable {
     public init(
         datatypeID: DatatypeID? = nil,
         parentID: DatatypeID? = nil,
+        name: String = "",
         label: String,
         type: String,
         authorID: UserID
     ) {
         self.datatypeID = datatypeID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.type = type
         self.authorID = authorID
@@ -324,6 +329,7 @@ public struct CreateDatatypeParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case datatypeID = "datatype_id"
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -333,6 +339,7 @@ public struct CreateDatatypeParams: Encodable, Sendable {
 public struct UpdateDatatypeParams: Encodable, Sendable {
     public let datatypeID: DatatypeID
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID
@@ -340,12 +347,14 @@ public struct UpdateDatatypeParams: Encodable, Sendable {
     public init(
         datatypeID: DatatypeID,
         parentID: DatatypeID? = nil,
+        name: String = "",
         label: String,
         type: String,
         authorID: UserID
     ) {
         self.datatypeID = datatypeID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.type = type
         self.authorID = authorID
@@ -354,6 +363,7 @@ public struct UpdateDatatypeParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case datatypeID = "datatype_id"
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -420,6 +430,7 @@ public struct UpdateDatatypeFieldParams: Encodable, Sendable {
 public struct Field: Codable, Sendable {
     public let fieldID: FieldID
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -432,6 +443,7 @@ public struct Field: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation
@@ -446,6 +458,7 @@ public struct Field: Codable, Sendable {
 public struct CreateFieldParams: Encodable, Sendable {
     public let fieldID: FieldID?
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -456,6 +469,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     public init(
         fieldID: FieldID? = nil,
         parentID: DatatypeID? = nil,
+        name: String = "",
         label: String,
         data: String,
         validation: String,
@@ -465,6 +479,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     ) {
         self.fieldID = fieldID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.data = data
         self.validation = validation
@@ -476,6 +491,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation
@@ -488,6 +504,7 @@ public struct CreateFieldParams: Encodable, Sendable {
 public struct UpdateFieldParams: Encodable, Sendable {
     public let fieldID: FieldID
     public let parentID: DatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -498,6 +515,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     public init(
         fieldID: FieldID,
         parentID: DatatypeID? = nil,
+        name: String = "",
         label: String,
         data: String,
         validation: String,
@@ -507,6 +525,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     ) {
         self.fieldID = fieldID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.data = data
         self.validation = validation
@@ -518,6 +537,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case fieldID = "field_id"
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation
@@ -1557,6 +1577,7 @@ public struct AdminContentRelation: Codable, Sendable {
 public struct AdminDatatype: Codable, Sendable {
     public let adminDatatypeID: AdminDatatypeID
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID?
@@ -1566,6 +1587,7 @@ public struct AdminDatatype: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminDatatypeID = "admin_datatype_id"
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -1576,17 +1598,20 @@ public struct AdminDatatype: Codable, Sendable {
 
 public struct CreateAdminDatatypeParams: Encodable, Sendable {
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID
 
     public init(
         parentID: AdminDatatypeID? = nil,
+        name: String = "",
         label: String,
         type: String,
         authorID: UserID
     ) {
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.type = type
         self.authorID = authorID
@@ -1594,6 +1619,7 @@ public struct CreateAdminDatatypeParams: Encodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -1603,6 +1629,7 @@ public struct CreateAdminDatatypeParams: Encodable, Sendable {
 public struct UpdateAdminDatatypeParams: Encodable, Sendable {
     public let adminDatatypeID: AdminDatatypeID
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let type: String
     public let authorID: UserID
@@ -1610,12 +1637,14 @@ public struct UpdateAdminDatatypeParams: Encodable, Sendable {
     public init(
         adminDatatypeID: AdminDatatypeID,
         parentID: AdminDatatypeID? = nil,
+        name: String = "",
         label: String,
         type: String,
         authorID: UserID
     ) {
         self.adminDatatypeID = adminDatatypeID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.type = type
         self.authorID = authorID
@@ -1624,6 +1653,7 @@ public struct UpdateAdminDatatypeParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminDatatypeID = "admin_datatype_id"
         case parentID = "parent_id"
+        case name
         case label
         case type
         case authorID = "author_id"
@@ -1682,6 +1712,7 @@ public struct UpdateAdminDatatypeFieldParams: Encodable, Sendable {
 public struct AdminField: Codable, Sendable {
     public let adminFieldID: AdminFieldID
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -1694,6 +1725,7 @@ public struct AdminField: Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminFieldID = "admin_field_id"
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation
@@ -1707,6 +1739,7 @@ public struct AdminField: Codable, Sendable {
 
 public struct CreateAdminFieldParams: Encodable, Sendable {
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -1716,6 +1749,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 
     public init(
         parentID: AdminDatatypeID? = nil,
+        name: String = "",
         label: String,
         data: String,
         validation: String,
@@ -1724,6 +1758,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         authorID: UserID
     ) {
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.data = data
         self.validation = validation
@@ -1734,6 +1769,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation
@@ -1746,6 +1782,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
 public struct UpdateAdminFieldParams: Encodable, Sendable {
     public let adminFieldID: AdminFieldID
     public let parentID: AdminDatatypeID?
+    public let name: String
     public let label: String
     public let data: String
     public let validation: String
@@ -1756,6 +1793,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     public init(
         adminFieldID: AdminFieldID,
         parentID: AdminDatatypeID? = nil,
+        name: String = "",
         label: String,
         data: String,
         validation: String,
@@ -1765,6 +1803,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     ) {
         self.adminFieldID = adminFieldID
         self.parentID = parentID
+        self.name = name
         self.label = label
         self.data = data
         self.validation = validation
@@ -1776,6 +1815,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case adminFieldID = "admin_field_id"
         case parentID = "parent_id"
+        case name
         case label
         case data
         case validation

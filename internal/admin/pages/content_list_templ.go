@@ -81,7 +81,7 @@ func ContentCreateDialog(datatypes []db.Datatypes, csrfToken string) templ.Compo
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"create-content-dialog\" class=\"admin-dialog\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2>Create Content</h2><button class=\"btn btn-ghost dialog-close\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/content\" hx-target=\"#create-content-form\" hx-swap=\"innerHTML\" id=\"create-content-form\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<dialog id=\"create-content-dialog\" class=\"admin-dialog\" aria-labelledby=\"create-content-dialog-title\"><div class=\"dialog-content\"><div class=\"dialog-header\"><h2 id=\"create-content-dialog-title\">Create Content</h2><button class=\"btn btn-ghost dialog-close\" aria-label=\"Close dialog\" onclick=\"this.closest('dialog').close()\">&times;</button></div><form hx-post=\"/admin/content\" hx-target=\"#create-content-form\" hx-swap=\"innerHTML\" id=\"create-content-form\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

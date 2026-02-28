@@ -262,18 +262,18 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 		MaxOpsPerExec:   cfg.Plugin_Max_Ops,
 
 		// Phase 3: Hook engine configuration.
-		HookReserveVMs:          cfg.Plugin_Hook_Reserve_VMs,
+		HookReserveVMs:           cfg.Plugin_Hook_Reserve_VMs,
 		HookMaxConsecutiveAborts: cfg.Plugin_Hook_Max_Consecutive_Aborts,
-		HookMaxOps:              cfg.Plugin_Hook_Max_Ops,
-		HookMaxConcurrentAfter:  cfg.Plugin_Hook_Max_Concurrent_After,
-		HookTimeoutMs:           cfg.Plugin_Hook_Timeout_Ms,
-		HookEventTimeoutMs:      cfg.Plugin_Hook_Event_Timeout_Ms,
+		HookMaxOps:               cfg.Plugin_Hook_Max_Ops,
+		HookMaxConcurrentAfter:   cfg.Plugin_Hook_Max_Concurrent_After,
+		HookTimeoutMs:            cfg.Plugin_Hook_Timeout_Ms,
+		HookEventTimeoutMs:       cfg.Plugin_Hook_Event_Timeout_Ms,
 
 		// Phase 4: Production hardening.
 		HotReload:     cfg.Plugin_Hot_Reload,
 		MaxFailures:   maxFailures,
 		ResetInterval: resetInterval,
-	}, pool, dialect, tableReg)
+	}, pool, dialect, driver, tableReg)
 
 	// Create HTTP bridge and wire it before LoadAll so that LoadAll can
 	// register plugin routes and manage the plugin_routes table.
@@ -287,6 +287,33 @@ func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, dr
 	// Phase 4: Start hot reload watcher if enabled.
 	if cfg.Plugin_Hot_Reload {
 		mgr.StartWatcher(ctx)
+	}
+
+	// Start DB state coordinator for multi-instance sync.
+	syncInterval := 10 * time.Second
+	if cfg.Plugin_Sync_Interval != "" {
+		if cfg.Plugin_Sync_Interval == "0" {
+			syncInterval = 0 // explicitly disabled
+		} else {
+			parsed, parseErr := time.ParseDuration(cfg.Plugin_Sync_Interval)
+			if parseErr != nil {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("invalid plugin_sync_interval %q, using 10s", cfg.Plugin_Sync_Interval),
+					nil,
+				)
+			} else if parsed < time.Second {
+				utility.DefaultLogger.Warn(
+					fmt.Sprintf("plugin_sync_interval %q too low, clamping to 1s", cfg.Plugin_Sync_Interval),
+					nil,
+				)
+				syncInterval = time.Second
+			} else {
+				syncInterval = parsed
+			}
+		}
+	}
+	if syncInterval > 0 {
+		mgr.StartCoordinator(ctx, syncInterval)
 	}
 
 	return mgr

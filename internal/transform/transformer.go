@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/model"
 )
 
@@ -62,6 +63,15 @@ func (b *BaseTransformer) TransformToJSON(transformer Transformer, root model.Ro
 	}
 
 	return json.Marshal(result)
+}
+
+// fieldKey returns the JSON key for a field. If the field has a non-empty Name,
+// it is used directly; otherwise falls back to converting the Label to camelCase.
+func fieldKey(info db.FieldsJSON) string {
+	if info.Name != "" {
+		return info.Name
+	}
+	return fieldLabelToKey(info.Label)
 }
 
 // fieldLabelToKey converts field labels to camelCase keys

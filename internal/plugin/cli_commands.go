@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
+	db "github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -16,20 +17,22 @@ func PluginListHandler(mgr *Manager) http.Handler {
 		plugins := mgr.ListPlugins()
 
 		type pluginJSON struct {
-			Name        string `json:"name"`
-			Version     string `json:"version"`
-			Description string `json:"description"`
-			State       string `json:"state"`
-			CBState     string `json:"circuit_breaker_state,omitempty"`
+			Name          string `json:"name"`
+			Version       string `json:"version"`
+			Description   string `json:"description"`
+			State         string `json:"state"`
+			CBState       string `json:"circuit_breaker_state,omitempty"`
+			ManifestDrift bool   `json:"manifest_drift,omitempty"`
 		}
 
 		result := make([]pluginJSON, 0, len(plugins))
 		for _, inst := range plugins {
 			p := pluginJSON{
-				Name:        inst.Info.Name,
-				Version:     inst.Info.Version,
-				Description: inst.Info.Description,
-				State:       inst.State.String(),
+				Name:          inst.Info.Name,
+				Version:       inst.Info.Version,
+				Description:   inst.Info.Description,
+				State:         inst.State.String(),
+				ManifestDrift: inst.ManifestDrift,
 			}
 			if inst.CB != nil {
 				p.CBState = inst.CB.State().String()
@@ -61,31 +64,35 @@ func PluginInfoHandler(mgr *Manager) http.Handler {
 		}
 
 		type infoJSON struct {
-			Name          string       `json:"name"`
-			Version       string       `json:"version"`
-			Description   string       `json:"description"`
-			Author        string       `json:"author,omitempty"`
-			License       string       `json:"license,omitempty"`
-			State         string       `json:"state"`
-			FailedReason  string       `json:"failed_reason,omitempty"`
-			CBState       string       `json:"circuit_breaker_state,omitempty"`
-			CBErrors      int          `json:"circuit_breaker_errors,omitempty"`
-			VMsAvailable  int          `json:"vms_available"`
-			VMsTotal      int          `json:"vms_total"`
-			Dependencies  []string     `json:"dependencies,omitempty"`
-			SchemaDrift   []DriftEntry `json:"schema_drift,omitempty"`
+			Name            string                 `json:"name"`
+			Version         string                 `json:"version"`
+			Description     string                 `json:"description"`
+			Author          string                 `json:"author,omitempty"`
+			License         string                 `json:"license,omitempty"`
+			State           string                 `json:"state"`
+			FailedReason    string                 `json:"failed_reason,omitempty"`
+			CBState         string                 `json:"circuit_breaker_state,omitempty"`
+			CBErrors        int                    `json:"circuit_breaker_errors,omitempty"`
+			VMsAvailable    int                    `json:"vms_available"`
+			VMsTotal        int                    `json:"vms_total"`
+			Dependencies    []string               `json:"dependencies,omitempty"`
+			SchemaDrift     []DriftEntry           `json:"schema_drift,omitempty"`
+			ManifestDrift   bool                   `json:"manifest_drift,omitempty"`
+			CapabilityDrift []CapabilityDriftEntry `json:"capability_drift,omitempty"`
 		}
 
 		info := infoJSON{
-			Name:         inst.Info.Name,
-			Version:      inst.Info.Version,
-			Description:  inst.Info.Description,
-			Author:       inst.Info.Author,
-			License:      inst.Info.License,
-			State:        inst.State.String(),
-			FailedReason: inst.FailedReason,
-			Dependencies: inst.Info.Dependencies,
-			SchemaDrift:  inst.SchemaDrift, // S7: surfaced in admin response
+			Name:            inst.Info.Name,
+			Version:         inst.Info.Version,
+			Description:     inst.Info.Description,
+			Author:          inst.Info.Author,
+			License:         inst.Info.License,
+			State:           inst.State.String(),
+			FailedReason:    inst.FailedReason,
+			Dependencies:    inst.Info.Dependencies,
+			SchemaDrift:     inst.SchemaDrift, // S7: surfaced in admin response
+			ManifestDrift:   inst.ManifestDrift,
+			CapabilityDrift: inst.CapabilityDrift,
 		}
 
 		if inst.CB != nil {
@@ -168,7 +175,7 @@ func PluginEnableHandler(mgr *Manager) http.Handler {
 			adminUser = user.Username
 		}
 
-		err := mgr.EnablePlugin(r.Context(), name, adminUser)
+		err := mgr.ActivatePlugin(r.Context(), name, adminUser)
 		if err != nil {
 			utility.DefaultLogger.Error(
 				fmt.Sprintf("admin enable for plugin %q failed: %s", name, err.Error()), nil)
@@ -191,7 +198,7 @@ func PluginDisableHandler(mgr *Manager) http.Handler {
 			return
 		}
 
-		err := mgr.DisablePlugin(r.Context(), name)
+		err := mgr.DeactivatePlugin(r.Context(), name)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -260,6 +267,105 @@ func PluginCleanupDropHandler(mgr *Manager) http.Handler {
 		json.NewEncoder(w).Encode(map[string]any{
 			"dropped": dropped,
 			"count":   len(dropped),
+		})
+	})
+}
+
+// PluginSyncCapabilitiesHandler syncs a plugin's capabilities from filesystem to DB.
+// POST /api/v1/admin/plugins/{name}/sync-capabilities -- adminOnly.
+// Reuses the watcher's per-plugin cooldown (10s) to prevent overlapping heavy ops.
+func PluginSyncCapabilitiesHandler(mgr *Manager) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		name := r.PathValue("name")
+		if name == "" {
+			http.Error(w, "plugin name required", http.StatusBadRequest)
+			return
+		}
+
+		inst := mgr.GetPlugin(name)
+		if inst == nil {
+			http.Error(w, "plugin not found", http.StatusNotFound)
+			return
+		}
+
+		// Reuse watcher cooldown for unified rate limiting.
+		if mgr.watcher != nil && mgr.watcher.IsPluginCooldownActive(name) {
+			w.Header().Set("Retry-After", "10")
+			http.Error(w, "operation cooldown active (10s)", http.StatusTooManyRequests)
+			return
+		}
+
+		adminUser := ""
+		user := middleware.AuthenticatedUser(r.Context())
+		if user != nil {
+			adminUser = user.Username
+		}
+
+		err := mgr.SyncCapabilities(r.Context(), name, adminUser)
+		if err != nil {
+			utility.DefaultLogger.Error(
+				fmt.Sprintf("admin sync-capabilities for plugin %q failed: %s", name, err.Error()), nil)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Record cooldown.
+		if mgr.watcher != nil {
+			mgr.watcher.SetReloadCooldown(name)
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{"ok": true, "plugin": name})
+	})
+}
+
+// PipelineListHandler returns all pipeline records from the database (includes disabled).
+// GET /api/v1/admin/pipelines -- readPerm.
+func PipelineListHandler(mgr *Manager) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pipelines, err := mgr.ListAllPipelines()
+		if err != nil {
+			utility.DefaultLogger.Error(
+				fmt.Sprintf("listing pipelines failed: %s", err.Error()), nil)
+			http.Error(w, "failed to list pipelines", http.StatusInternalServerError)
+			return
+		}
+
+		var result []db.Pipeline
+		if pipelines != nil {
+			result = *pipelines
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"pipelines": result,
+			"count":     len(result),
+			"source":    "database",
+		})
+	})
+}
+
+// PipelineDryRunHandler returns the in-memory pipeline chains that would execute.
+// GET /api/v1/admin/pipelines/dry-run -- readPerm.
+// Optional query params: table, op (for specific dry-run).
+func PipelineDryRunHandler(mgr *Manager) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		table := r.URL.Query().Get("table")
+		op := r.URL.Query().Get("op")
+
+		var results []DryRunResult
+
+		if table != "" && op != "" {
+			results = mgr.DryRunPipeline(table, op)
+		} else {
+			results = mgr.DryRunAllPipelines()
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"chains": results,
+			"count":  len(results),
+			"source": "registry",
 		})
 	})
 }

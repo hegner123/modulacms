@@ -258,7 +258,7 @@ type NewSessionCmd struct {
 }
 
 func (c NewSessionCmd) Context() context.Context              { return c.ctx }
-func (c NewSessionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewSessionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewSessionCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c NewSessionCmd) TableName() string                     { return "sessions" }
@@ -295,7 +295,7 @@ type UpdateSessionCmd struct {
 }
 
 func (c UpdateSessionCmd) Context() context.Context              { return c.ctx }
-func (c UpdateSessionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateSessionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateSessionCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c UpdateSessionCmd) TableName() string                     { return "sessions" }
@@ -334,7 +334,7 @@ type DeleteSessionCmd struct {
 }
 
 func (c DeleteSessionCmd) Context() context.Context              { return c.ctx }
-func (c DeleteSessionCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteSessionCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteSessionCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteSessionCmd) Recorder() audited.ChangeEventRecorder { return SQLiteRecorder }
 func (c DeleteSessionCmd) TableName() string                     { return "sessions" }
@@ -365,7 +365,7 @@ type NewSessionCmdMysql struct {
 }
 
 func (c NewSessionCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewSessionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewSessionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewSessionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c NewSessionCmdMysql) TableName() string                     { return "sessions" }
@@ -407,7 +407,7 @@ type UpdateSessionCmdMysql struct {
 }
 
 func (c UpdateSessionCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateSessionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateSessionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateSessionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c UpdateSessionCmdMysql) TableName() string                     { return "sessions" }
@@ -446,7 +446,7 @@ type DeleteSessionCmdMysql struct {
 }
 
 func (c DeleteSessionCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteSessionCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteSessionCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteSessionCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteSessionCmdMysql) Recorder() audited.ChangeEventRecorder { return MysqlRecorder }
 func (c DeleteSessionCmdMysql) TableName() string                     { return "sessions" }
@@ -477,7 +477,7 @@ type NewSessionCmdPsql struct {
 }
 
 func (c NewSessionCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewSessionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewSessionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewSessionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c NewSessionCmdPsql) TableName() string                     { return "sessions" }
@@ -514,7 +514,7 @@ type UpdateSessionCmdPsql struct {
 }
 
 func (c UpdateSessionCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateSessionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateSessionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateSessionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c UpdateSessionCmdPsql) TableName() string                     { return "sessions" }
@@ -553,7 +553,7 @@ type DeleteSessionCmdPsql struct {
 }
 
 func (c DeleteSessionCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteSessionCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteSessionCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteSessionCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteSessionCmdPsql) Recorder() audited.ChangeEventRecorder { return PsqlRecorder }
 func (c DeleteSessionCmdPsql) TableName() string                     { return "sessions" }

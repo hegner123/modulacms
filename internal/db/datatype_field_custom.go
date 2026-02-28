@@ -66,7 +66,7 @@ type NewDatatypeFieldCmd struct {
 }
 
 func (c NewDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c NewDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
@@ -103,7 +103,7 @@ type UpdateDatatypeFieldCmd struct {
 }
 
 func (c UpdateDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
@@ -151,7 +151,7 @@ type UpdateDatatypeFieldSortOrderCmd struct {
 }
 
 func (c UpdateDatatypeFieldSortOrderCmd) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldSortOrderCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateDatatypeFieldSortOrderCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateDatatypeFieldSortOrderCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateDatatypeFieldSortOrderCmd) TableName() string                     { return "datatypes_fields" }
@@ -199,7 +199,7 @@ type DeleteDatatypeFieldCmd struct {
 }
 
 func (c DeleteDatatypeFieldCmd) Context() context.Context              { return c.ctx }
-func (c DeleteDatatypeFieldCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteDatatypeFieldCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteDatatypeFieldCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteDatatypeFieldCmd) TableName() string                     { return "datatypes_fields" }
@@ -338,7 +338,7 @@ type NewDatatypeFieldCmdMysql struct {
 }
 
 func (c NewDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
@@ -379,7 +379,7 @@ type UpdateDatatypeFieldCmdMysql struct {
 }
 
 func (c UpdateDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
@@ -417,12 +417,14 @@ type UpdateDatatypeFieldSortOrderCmdMysql struct {
 	recorder  audited.ChangeEventRecorder
 }
 
-func (c UpdateDatatypeFieldSortOrderCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldSortOrderCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c UpdateDatatypeFieldSortOrderCmdMysql) Connection() *sql.DB                   { return c.conn }
-func (c UpdateDatatypeFieldSortOrderCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c UpdateDatatypeFieldSortOrderCmdMysql) TableName() string                     { return "datatypes_fields" }
-func (c UpdateDatatypeFieldSortOrderCmdMysql) GetID() string                         { return c.id }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Context() context.Context           { return c.ctx }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Connection() *sql.DB                { return c.conn }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) Recorder() audited.ChangeEventRecorder {
+	return c.recorder
+}
+func (c UpdateDatatypeFieldSortOrderCmdMysql) TableName() string { return "datatypes_fields" }
+func (c UpdateDatatypeFieldSortOrderCmdMysql) GetID() string     { return c.id }
 
 func (c UpdateDatatypeFieldSortOrderCmdMysql) Params() any {
 	return map[string]any{"id": c.id, "sort_order": c.sortOrder}
@@ -457,7 +459,7 @@ type DeleteDatatypeFieldCmdMysql struct {
 }
 
 func (c DeleteDatatypeFieldCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteDatatypeFieldCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteDatatypeFieldCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteDatatypeFieldCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteDatatypeFieldCmdMysql) TableName() string                     { return "datatypes_fields" }
@@ -589,7 +591,7 @@ type NewDatatypeFieldCmdPsql struct {
 }
 
 func (c NewDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }
@@ -626,7 +628,7 @@ type UpdateDatatypeFieldCmdPsql struct {
 }
 
 func (c UpdateDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }
@@ -673,12 +675,14 @@ type UpdateDatatypeFieldSortOrderCmdPsql struct {
 	recorder  audited.ChangeEventRecorder
 }
 
-func (c UpdateDatatypeFieldSortOrderCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateDatatypeFieldSortOrderCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
-func (c UpdateDatatypeFieldSortOrderCmdPsql) Connection() *sql.DB                   { return c.conn }
-func (c UpdateDatatypeFieldSortOrderCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
-func (c UpdateDatatypeFieldSortOrderCmdPsql) TableName() string                     { return "datatypes_fields" }
-func (c UpdateDatatypeFieldSortOrderCmdPsql) GetID() string                         { return c.id }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Context() context.Context           { return c.ctx }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Connection() *sql.DB                { return c.conn }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) Recorder() audited.ChangeEventRecorder {
+	return c.recorder
+}
+func (c UpdateDatatypeFieldSortOrderCmdPsql) TableName() string { return "datatypes_fields" }
+func (c UpdateDatatypeFieldSortOrderCmdPsql) GetID() string     { return c.id }
 
 func (c UpdateDatatypeFieldSortOrderCmdPsql) Params() any {
 	return map[string]any{"id": c.id, "sort_order": c.sortOrder}
@@ -722,7 +726,7 @@ type DeleteDatatypeFieldCmdPsql struct {
 }
 
 func (c DeleteDatatypeFieldCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteDatatypeFieldCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteDatatypeFieldCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteDatatypeFieldCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteDatatypeFieldCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteDatatypeFieldCmdPsql) TableName() string                     { return "datatypes_fields" }

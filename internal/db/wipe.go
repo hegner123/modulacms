@@ -3,15 +3,23 @@ package db
 import (
 	"fmt"
 
-	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 )
 
 // DropAllTables drops all database tables in reverse dependency order (SQLite).
 // Each table is dropped individually because sqlc :exec only executes one statement.
 func (d Database) DropAllTables() error {
 	queries := mdb.New(d.Connection)
+
+	// Tier 7: Plugin system tables (pipelines before plugins for FK)
+	if err := queries.DropPipelinesTable(d.Context); err != nil {
+		return fmt.Errorf("drop pipelines: %w", err)
+	}
+	if err := queries.DropPluginsTable(d.Context); err != nil {
+		return fmt.Errorf("drop plugins: %w", err)
+	}
 
 	// Tier 6: Junction tables
 	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {
@@ -132,6 +140,14 @@ func (d Database) DropAllTables() error {
 func (d MysqlDatabase) DropAllTables() error {
 	queries := mdbm.New(d.Connection)
 
+	// Tier 7: Plugin system tables (pipelines before plugins for FK)
+	if err := queries.DropPipelinesTable(d.Context); err != nil {
+		return fmt.Errorf("drop pipelines: %w", err)
+	}
+	if err := queries.DropPluginsTable(d.Context); err != nil {
+		return fmt.Errorf("drop plugins: %w", err)
+	}
+
 	// Tier 6: Junction tables
 	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_datatypes_fields: %w", err)
@@ -250,6 +266,14 @@ func (d MysqlDatabase) DropAllTables() error {
 // Each table is dropped individually because sqlc :exec only executes one statement.
 func (d PsqlDatabase) DropAllTables() error {
 	queries := mdbp.New(d.Connection)
+
+	// Tier 7: Plugin system tables (pipelines before plugins for FK)
+	if err := queries.DropPipelinesTable(d.Context); err != nil {
+		return fmt.Errorf("drop pipelines: %w", err)
+	}
+	if err := queries.DropPluginsTable(d.Context); err != nil {
+		return fmt.Errorf("drop plugins: %w", err)
+	}
 
 	// Tier 6: Junction tables
 	if err := queries.DropAdminDatatypesFieldsTable(d.Context); err != nil {

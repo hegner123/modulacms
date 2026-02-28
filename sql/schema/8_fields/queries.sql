@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS fields(
     parent_id TEXT DEFAULT NULL
         REFERENCES datatypes
             ON DELETE SET NULL,
+    name TEXT NOT NULL DEFAULT '',
     label TEXT DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -40,6 +41,7 @@ ORDER BY field_id;
 INSERT INTO fields  (
     field_id,
     parent_id,
+    name,
     label,
     data,
     validation,
@@ -58,6 +60,7 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
     ?
     ) RETURNING *;
 
@@ -65,6 +68,7 @@ INSERT INTO fields  (
 -- name: UpdateField :exec
 UPDATE fields
 SET parent_id = ?,
+    name = ?,
     label = ?,
     data = ?,
     validation = ?,

@@ -93,6 +93,7 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	// Create _reference datatype
 	refDatatype, err := driver.CreateDatatype(ctx, ac, CreateDatatypeParams{
 		ParentID:     types.NullableDatatypeID{},
+		Name:         "reference",
 		Label:        "Reference",
 		Type:         string(types.DatatypeTypeReference),
 		AuthorID:     systemUserID,
@@ -107,6 +108,7 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	// Create "Target" field
 	refField, err := driver.CreateField(ctx, ac, CreateFieldParams{
 		ParentID:     types.NullableDatatypeID{},
+		Name:         "target",
 		Label:        "Target",
 		Data:         "",
 		Validation:   types.EmptyJSON,

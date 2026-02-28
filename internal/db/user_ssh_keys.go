@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
+	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
@@ -452,7 +452,7 @@ type NewUserSshKeyCmd struct {
 }
 
 func (c NewUserSshKeyCmd) Context() context.Context              { return c.ctx }
-func (c NewUserSshKeyCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserSshKeyCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewUserSshKeyCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserSshKeyCmd) TableName() string                     { return "user_ssh_keys" }
@@ -489,7 +489,7 @@ type DeleteUserSshKeyCmd struct {
 }
 
 func (c DeleteUserSshKeyCmd) Context() context.Context              { return c.ctx }
-func (c DeleteUserSshKeyCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserSshKeyCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserSshKeyCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserSshKeyCmd) TableName() string                     { return "user_ssh_keys" }
@@ -523,7 +523,7 @@ type UpdateUserSshKeyLabelCmd struct {
 }
 
 func (c UpdateUserSshKeyLabelCmd) Context() context.Context              { return c.ctx }
-func (c UpdateUserSshKeyLabelCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserSshKeyLabelCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserSshKeyLabelCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserSshKeyLabelCmd) TableName() string                     { return "user_ssh_keys" }
@@ -562,12 +562,12 @@ type NewUserSshKeyCmdMysql struct {
 }
 
 func (c NewUserSshKeyCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewUserSshKeyCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserSshKeyCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewUserSshKeyCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserSshKeyCmdMysql) TableName() string                     { return "user_ssh_keys" }
 func (c NewUserSshKeyCmdMysql) Params() any                           { return c.params }
-func (c NewUserSshKeyCmdMysql) GetID(u mdbm.UserSshKeys) string      { return u.SSHKeyID }
+func (c NewUserSshKeyCmdMysql) GetID(u mdbm.UserSshKeys) string       { return u.SSHKeyID }
 
 func (c NewUserSshKeyCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.UserSshKeys, error) {
 	queries := mdbm.New(tx)
@@ -604,7 +604,7 @@ type DeleteUserSshKeyCmdMysql struct {
 }
 
 func (c DeleteUserSshKeyCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteUserSshKeyCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserSshKeyCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserSshKeyCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserSshKeyCmdMysql) TableName() string                     { return "user_ssh_keys" }
@@ -638,7 +638,7 @@ type UpdateUserSshKeyLabelCmdMysql struct {
 }
 
 func (c UpdateUserSshKeyLabelCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateUserSshKeyLabelCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserSshKeyLabelCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserSshKeyLabelCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserSshKeyLabelCmdMysql) TableName() string                     { return "user_ssh_keys" }
@@ -677,12 +677,12 @@ type NewUserSshKeyCmdPsql struct {
 }
 
 func (c NewUserSshKeyCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewUserSshKeyCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewUserSshKeyCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewUserSshKeyCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewUserSshKeyCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewUserSshKeyCmdPsql) TableName() string                     { return "user_ssh_keys" }
 func (c NewUserSshKeyCmdPsql) Params() any                           { return c.params }
-func (c NewUserSshKeyCmdPsql) GetID(u mdbp.UserSshKeys) string      { return u.SSHKeyID }
+func (c NewUserSshKeyCmdPsql) GetID(u mdbp.UserSshKeys) string       { return u.SSHKeyID }
 
 func (c NewUserSshKeyCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.UserSshKeys, error) {
 	queries := mdbp.New(tx)
@@ -714,7 +714,7 @@ type DeleteUserSshKeyCmdPsql struct {
 }
 
 func (c DeleteUserSshKeyCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteUserSshKeyCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteUserSshKeyCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteUserSshKeyCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteUserSshKeyCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteUserSshKeyCmdPsql) TableName() string                     { return "user_ssh_keys" }
@@ -748,7 +748,7 @@ type UpdateUserSshKeyLabelCmdPsql struct {
 }
 
 func (c UpdateUserSshKeyLabelCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateUserSshKeyLabelCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateUserSshKeyLabelCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateUserSshKeyLabelCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateUserSshKeyLabelCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateUserSshKeyLabelCmdPsql) TableName() string                     { return "user_ssh_keys" }

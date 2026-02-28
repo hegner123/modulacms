@@ -382,7 +382,7 @@ type NewRouteCmd struct {
 }
 
 func (c NewRouteCmd) Context() context.Context              { return c.ctx }
-func (c NewRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRouteCmd) Connection() *sql.DB                   { return c.conn }
 func (c NewRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewRouteCmd) TableName() string                     { return "routes" }
@@ -419,7 +419,7 @@ type UpdateRouteCmd struct {
 }
 
 func (c UpdateRouteCmd) Context() context.Context              { return c.ctx }
-func (c UpdateRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRouteCmd) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateRouteCmd) TableName() string                     { return "routes" }
@@ -465,7 +465,7 @@ type DeleteRouteCmd struct {
 }
 
 func (c DeleteRouteCmd) Context() context.Context              { return c.ctx }
-func (c DeleteRouteCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmd) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRouteCmd) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRouteCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteRouteCmd) TableName() string                     { return "routes" }
@@ -498,7 +498,7 @@ type NewRouteCmdMysql struct {
 }
 
 func (c NewRouteCmdMysql) Context() context.Context              { return c.ctx }
-func (c NewRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c NewRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewRouteCmdMysql) TableName() string                     { return "routes" }
@@ -539,7 +539,7 @@ type UpdateRouteCmdMysql struct {
 }
 
 func (c UpdateRouteCmdMysql) Context() context.Context              { return c.ctx }
-func (c UpdateRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateRouteCmdMysql) TableName() string                     { return "routes" }
@@ -585,7 +585,7 @@ type DeleteRouteCmdMysql struct {
 }
 
 func (c DeleteRouteCmdMysql) Context() context.Context              { return c.ctx }
-func (c DeleteRouteCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmdMysql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRouteCmdMysql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRouteCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteRouteCmdMysql) TableName() string                     { return "routes" }
@@ -618,7 +618,7 @@ type NewRouteCmdPsql struct {
 }
 
 func (c NewRouteCmdPsql) Context() context.Context              { return c.ctx }
-func (c NewRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewRouteCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c NewRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c NewRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c NewRouteCmdPsql) TableName() string                     { return "routes" }
@@ -655,7 +655,7 @@ type UpdateRouteCmdPsql struct {
 }
 
 func (c UpdateRouteCmdPsql) Context() context.Context              { return c.ctx }
-func (c UpdateRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c UpdateRouteCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c UpdateRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c UpdateRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c UpdateRouteCmdPsql) TableName() string                     { return "routes" }
@@ -701,7 +701,7 @@ type DeleteRouteCmdPsql struct {
 }
 
 func (c DeleteRouteCmdPsql) Context() context.Context              { return c.ctx }
-func (c DeleteRouteCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteRouteCmdPsql) AuditContext() audited.AuditContext    { return c.auditCtx }
 func (c DeleteRouteCmdPsql) Connection() *sql.DB                   { return c.conn }
 func (c DeleteRouteCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 func (c DeleteRouteCmdPsql) TableName() string                     { return "routes" }

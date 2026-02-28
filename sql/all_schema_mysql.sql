@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS permissions (
 CREATE TABLE IF NOT EXISTS admin_fields (
     admin_field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -578,6 +579,7 @@ CREATE INDEX idx_routes_author ON routes(author_id);
 CREATE TABLE IF NOT EXISTS datatypes (
     datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,
@@ -600,6 +602,7 @@ CREATE INDEX idx_datatypes_author ON datatypes(author_id);
 CREATE TABLE IF NOT EXISTS fields (
     field_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label VARCHAR(255) DEFAULT 'unlabeled' NOT NULL,
     data TEXT NOT NULL,
     validation TEXT NOT NULL,
@@ -625,6 +628,7 @@ CREATE INDEX idx_fields_author ON fields(author_id);
 CREATE TABLE IF NOT EXISTS admin_datatypes (
     admin_datatype_id VARCHAR(26) PRIMARY KEY NOT NULL,
     parent_id VARCHAR(26) NULL,
+    name VARCHAR(255) NOT NULL DEFAULT '',
     label TEXT NOT NULL,
     type TEXT NOT NULL,
     author_id VARCHAR(26) NOT NULL,

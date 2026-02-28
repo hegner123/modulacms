@@ -53,97 +53,97 @@ const (
 // database credentials, OAuth providers, S3-compatible storage, CORS policies,
 // plugin runtime limits, and observability integration.
 type Config struct {
-	Environment         string              `json:"environment"`
-	OS                  string              `json:"os"`
-	Environment_Hosts   map[string]string   `json:"environment_hosts"`
-	Port                string              `json:"port"`
-	SSL_Port            string              `json:"ssl_port"`
-	Cert_Dir            string              `json:"cert_dir"`
-	Client_Site         string              `json:"client_site"`
-	Admin_Site          string              `json:"admin_site"`
-	SSH_Host            string              `json:"ssh_host"`
-	SSH_Port            string              `json:"ssh_port"`
-	Options             map[string][]any    `json:"options"`
-	Log_Path            string              `json:"log_path"`
-	Auth_Salt           string              `json:"auth_salt"`
-	Cookie_Name         string              `json:"cookie_name"`
-	Cookie_Duration     string              `json:"cookie_duration"`
-	Cookie_Secure       bool                `json:"cookie_secure"`
-	Cookie_SameSite     string              `json:"cookie_samesite"`
-	Db_Driver           DbDriver            `json:"db_driver"`
-	Db_URL              string              `json:"db_url"`
-	Db_Name             string              `json:"db_name"`
-	Db_User             string              `json:"db_username"`
-	Db_Password         string              `json:"db_password"`
-	Bucket_Region       string              `json:"bucket_region"`
-	Bucket_Media        string              `json:"bucket_media"`
-	Bucket_Backup       string              `json:"bucket_backup"`
-	Bucket_Endpoint     string              `json:"bucket_endpoint"`
-	Bucket_Access_Key   string              `json:"bucket_access_key"`
-	Bucket_Secret_Key   string              `json:"bucket_secret_key"`
-	Bucket_Public_URL        string `json:"bucket_public_url"`
-	Bucket_Default_ACL       string `json:"bucket_default_acl"`
-	Bucket_Force_Path_Style  bool   `json:"bucket_force_path_style"`
-	Max_Upload_Size          int64  `json:"max_upload_size"` // bytes, default 10MB (10485760)
-	Backup_Option       string              `json:"backup_option"`
-	Backup_Paths        []string            `json:"backup_paths"`
-	Oauth_Client_Id        string              `json:"oauth_client_id"`
-	Oauth_Client_Secret    string              `json:"oauth_client_secret"`
-	Oauth_Scopes           []string            `json:"oauth_scopes"`
-	Oauth_Endpoint         map[Endpoint]string `json:"oauth_endpoint"`
-	Oauth_Provider_Name    string              `json:"oauth_provider_name"`
-	Oauth_Redirect_URL     string              `json:"oauth_redirect_url"`
-	Oauth_Success_Redirect string              `json:"oauth_success_redirect"`
-	Cors_Origins        []string            `json:"cors_origins"`
-	Cors_Methods        []string            `json:"cors_methods"`
-	Cors_Headers        []string            `json:"cors_headers"`
-	Cors_Credentials    bool                `json:"cors_credentials"`
-	Custom_Style_Path   string              `json:"custom_style_path"`
-	Update_Auto_Enabled   bool         `json:"update_auto_enabled"`
-	Update_Check_Interval string       `json:"update_check_interval"`
-	Update_Channel        string       `json:"update_channel"`
-	Update_Notify_Only    bool         `json:"update_notify_only"`
-	Output_Format         OutputFormat `json:"output_format"`
-	Space_ID              string       `json:"space_id"`
-	Node_ID               string       `json:"node_id"`
+	Environment             string              `json:"environment"`
+	OS                      string              `json:"os"`
+	Environment_Hosts       map[string]string   `json:"environment_hosts"`
+	Port                    string              `json:"port"`
+	SSL_Port                string              `json:"ssl_port"`
+	Cert_Dir                string              `json:"cert_dir"`
+	Client_Site             string              `json:"client_site"`
+	Admin_Site              string              `json:"admin_site"`
+	SSH_Host                string              `json:"ssh_host"`
+	SSH_Port                string              `json:"ssh_port"`
+	Options                 map[string][]any    `json:"options"`
+	Log_Path                string              `json:"log_path"`
+	Auth_Salt               string              `json:"auth_salt"`
+	Cookie_Name             string              `json:"cookie_name"`
+	Cookie_Duration         string              `json:"cookie_duration"`
+	Cookie_Secure           bool                `json:"cookie_secure"`
+	Cookie_SameSite         string              `json:"cookie_samesite"`
+	Db_Driver               DbDriver            `json:"db_driver"`
+	Db_URL                  string              `json:"db_url"`
+	Db_Name                 string              `json:"db_name"`
+	Db_User                 string              `json:"db_username"`
+	Db_Password             string              `json:"db_password"`
+	Bucket_Region           string              `json:"bucket_region"`
+	Bucket_Media            string              `json:"bucket_media"`
+	Bucket_Backup           string              `json:"bucket_backup"`
+	Bucket_Endpoint         string              `json:"bucket_endpoint"`
+	Bucket_Access_Key       string              `json:"bucket_access_key"`
+	Bucket_Secret_Key       string              `json:"bucket_secret_key"`
+	Bucket_Public_URL       string              `json:"bucket_public_url"`
+	Bucket_Default_ACL      string              `json:"bucket_default_acl"`
+	Bucket_Force_Path_Style bool                `json:"bucket_force_path_style"`
+	Max_Upload_Size         int64               `json:"max_upload_size"` // bytes, default 10MB (10485760)
+	Backup_Option           string              `json:"backup_option"`
+	Backup_Paths            []string            `json:"backup_paths"`
+	Oauth_Client_Id         string              `json:"oauth_client_id"`
+	Oauth_Client_Secret     string              `json:"oauth_client_secret"`
+	Oauth_Scopes            []string            `json:"oauth_scopes"`
+	Oauth_Endpoint          map[Endpoint]string `json:"oauth_endpoint"`
+	Oauth_Provider_Name     string              `json:"oauth_provider_name"`
+	Oauth_Redirect_URL      string              `json:"oauth_redirect_url"`
+	Oauth_Success_Redirect  string              `json:"oauth_success_redirect"`
+	Cors_Origins            []string            `json:"cors_origins"`
+	Cors_Methods            []string            `json:"cors_methods"`
+	Cors_Headers            []string            `json:"cors_headers"`
+	Cors_Credentials        bool                `json:"cors_credentials"`
+	Custom_Style_Path       string              `json:"custom_style_path"`
+	Update_Auto_Enabled     bool                `json:"update_auto_enabled"`
+	Update_Check_Interval   string              `json:"update_check_interval"`
+	Update_Channel          string              `json:"update_channel"`
+	Update_Notify_Only      bool                `json:"update_notify_only"`
+	Output_Format           OutputFormat        `json:"output_format"`
+	Space_ID                string              `json:"space_id"`
+	Node_ID                 string              `json:"node_id"`
 
 	// Observability - Metrics and Error Tracking
-	Observability_Enabled        bool    `json:"observability_enabled"`
-	Observability_Provider       string  `json:"observability_provider"`        // "sentry", "datadog", "newrelic", etc.
-	Observability_DSN            string  `json:"observability_dsn"`             // Sentry DSN or equivalent connection string
-	Observability_Environment    string  `json:"observability_environment"`     // "production", "staging", "development"
-	Observability_Release        string  `json:"observability_release"`         // Version/release identifier
-	Observability_Sample_Rate    float64 `json:"observability_sample_rate"`     // 0.0 to 1.0 - percentage of events to send
-	Observability_Traces_Rate    float64 `json:"observability_traces_rate"`     // 0.0 to 1.0 - percentage of traces to send
-	Observability_Send_PII       bool    `json:"observability_send_pii"`        // Whether to send personally identifiable info
-	Observability_Debug          bool    `json:"observability_debug"`           // Enable debug logging for observability client
-	Observability_Server_Name    string  `json:"observability_server_name"`     // Server/instance name
-	Observability_Flush_Interval string  `json:"observability_flush_interval"`  // How often to flush metrics (e.g., "30s", "1m")
-	Observability_Tags           map[string]string `json:"observability_tags"` // Global tags for all metrics/events
+	Observability_Enabled        bool              `json:"observability_enabled"`
+	Observability_Provider       string            `json:"observability_provider"`       // "sentry", "datadog", "newrelic", etc.
+	Observability_DSN            string            `json:"observability_dsn"`            // Sentry DSN or equivalent connection string
+	Observability_Environment    string            `json:"observability_environment"`    // "production", "staging", "development"
+	Observability_Release        string            `json:"observability_release"`        // Version/release identifier
+	Observability_Sample_Rate    float64           `json:"observability_sample_rate"`    // 0.0 to 1.0 - percentage of events to send
+	Observability_Traces_Rate    float64           `json:"observability_traces_rate"`    // 0.0 to 1.0 - percentage of traces to send
+	Observability_Send_PII       bool              `json:"observability_send_pii"`       // Whether to send personally identifiable info
+	Observability_Debug          bool              `json:"observability_debug"`          // Enable debug logging for observability client
+	Observability_Server_Name    string            `json:"observability_server_name"`    // Server/instance name
+	Observability_Flush_Interval string            `json:"observability_flush_interval"` // How often to flush metrics (e.g., "30s", "1m")
+	Observability_Tags           map[string]string `json:"observability_tags"`           // Global tags for all metrics/events
 
 	// Email provider configuration
-	Email_Enabled      bool          `json:"email_enabled"`
-	Email_Provider     EmailProvider `json:"email_provider"`
-	Email_From_Address string        `json:"email_from_address"`
-	Email_From_Name    string        `json:"email_from_name"`
-	Email_Host         string        `json:"email_host"`
-	Email_Port         int           `json:"email_port"`
-	Email_Username     string        `json:"email_username"`
-	Email_Password     string        `json:"email_password"`
-	Email_TLS          bool          `json:"email_tls"`
-	Email_API_Key              string        `json:"email_api_key"`
-	Email_API_Endpoint         string        `json:"email_api_endpoint"`
-	Email_Reply_To             string        `json:"email_reply_to"`
-	Email_AWS_Access_Key_ID    string        `json:"email_aws_access_key_id"`
-	Email_AWS_Secret_Access_Key string       `json:"email_aws_secret_access_key"`
-	Password_Reset_URL         string        `json:"password_reset_url"`
+	Email_Enabled               bool          `json:"email_enabled"`
+	Email_Provider              EmailProvider `json:"email_provider"`
+	Email_From_Address          string        `json:"email_from_address"`
+	Email_From_Name             string        `json:"email_from_name"`
+	Email_Host                  string        `json:"email_host"`
+	Email_Port                  int           `json:"email_port"`
+	Email_Username              string        `json:"email_username"`
+	Email_Password              string        `json:"email_password"`
+	Email_TLS                   bool          `json:"email_tls"`
+	Email_API_Key               string        `json:"email_api_key"`
+	Email_API_Endpoint          string        `json:"email_api_endpoint"`
+	Email_Reply_To              string        `json:"email_reply_to"`
+	Email_AWS_Access_Key_ID     string        `json:"email_aws_access_key_id"`
+	Email_AWS_Secret_Access_Key string        `json:"email_aws_secret_access_key"`
+	Password_Reset_URL          string        `json:"password_reset_url"`
 
 	// Plugin runtime configuration
 	Plugin_Enabled   bool   `json:"plugin_enabled"`
-	Plugin_Directory string `json:"plugin_directory"`  // path to plugins dir, e.g. "./plugins/"
-	Plugin_Max_VMs   int    `json:"plugin_max_vms"`    // per plugin, default 4
-	Plugin_Timeout   int    `json:"plugin_timeout"`    // seconds, default 5
-	Plugin_Max_Ops   int    `json:"plugin_max_ops"`    // per VM checkout, default 1000
+	Plugin_Directory string `json:"plugin_directory"` // path to plugins dir, e.g. "./plugins/"
+	Plugin_Max_VMs   int    `json:"plugin_max_vms"`   // per plugin, default 4
+	Plugin_Timeout   int    `json:"plugin_timeout"`   // seconds, default 5
+	Plugin_Max_Ops   int    `json:"plugin_max_ops"`   // per VM checkout, default 1000
 
 	// Plugin database pool limits (zero values use defaults from db.DefaultPluginPoolConfig)
 	Plugin_DB_MaxOpenConns    int    `json:"plugin_db_max_open_conns"`
@@ -158,17 +158,18 @@ type Config struct {
 	Plugin_Trusted_Proxies   []string `json:"plugin_trusted_proxies"`   // CIDR list, empty = use RemoteAddr only
 
 	// Plugin content hook configuration (Phase 3)
-	Plugin_Hook_Reserve_VMs          int `json:"plugin_hook_reserve_vms"`           // VMs reserved for hooks per plugin, default 1
+	Plugin_Hook_Reserve_VMs            int `json:"plugin_hook_reserve_vms"`            // VMs reserved for hooks per plugin, default 1
 	Plugin_Hook_Max_Consecutive_Aborts int `json:"plugin_hook_max_consecutive_aborts"` // circuit breaker threshold, default 10
-	Plugin_Hook_Max_Ops              int `json:"plugin_hook_max_ops"`               // reduced op budget for after-hooks, default 100
-	Plugin_Hook_Max_Concurrent_After int `json:"plugin_hook_max_concurrent_after"`  // max concurrent after-hook goroutines, default 10
-	Plugin_Hook_Timeout_Ms           int `json:"plugin_hook_timeout_ms"`            // per-hook timeout in before-hooks (ms), default 2000
-	Plugin_Hook_Event_Timeout_Ms     int `json:"plugin_hook_event_timeout_ms"`      // per-event total timeout for before-hook chain (ms), default 5000
+	Plugin_Hook_Max_Ops                int `json:"plugin_hook_max_ops"`                // reduced op budget for after-hooks, default 100
+	Plugin_Hook_Max_Concurrent_After   int `json:"plugin_hook_max_concurrent_after"`   // max concurrent after-hook goroutines, default 10
+	Plugin_Hook_Timeout_Ms             int `json:"plugin_hook_timeout_ms"`             // per-hook timeout in before-hooks (ms), default 2000
+	Plugin_Hook_Event_Timeout_Ms       int `json:"plugin_hook_event_timeout_ms"`       // per-event total timeout for before-hook chain (ms), default 5000
 
 	// Plugin production hardening (Phase 4)
-	Plugin_Hot_Reload     bool   `json:"plugin_hot_reload"`      // default false (zero value) -- production opt-in only (S10)
-	Plugin_Max_Failures   int    `json:"plugin_max_failures"`    // circuit breaker threshold, default 5
-	Plugin_Reset_Interval string `json:"plugin_reset_interval"`  // circuit breaker reset interval, default "60s"
+	Plugin_Hot_Reload     bool   `json:"plugin_hot_reload"`     // default false (zero value) -- production opt-in only (S10)
+	Plugin_Max_Failures   int    `json:"plugin_max_failures"`   // circuit breaker threshold, default 5
+	Plugin_Reset_Interval string `json:"plugin_reset_interval"` // circuit breaker reset interval, default "60s"
+	Plugin_Sync_Interval  string `json:"plugin_sync_interval"`  // DB state polling interval for multi-instance sync, default "10s"; "0" disables
 
 	// Deploy sync configuration
 	Deploy_Environments []DeployEnvironmentConfig `json:"deploy_environments"`

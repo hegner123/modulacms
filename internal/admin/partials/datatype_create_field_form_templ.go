@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 // DatatypeCreateFieldForm renders the create-field form fields inside the datatype detail dialog.
 // Used as an HTMX partial for validation error responses.
-func DatatypeCreateFieldForm(datatypeID string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) templ.Component {
+func DatatypeCreateFieldForm(datatypeID string, name string, label string, fieldType string, data string, validation string, uiConfig string, errs map[string]string, csrfToken string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -53,6 +53,10 @@ func DatatypeCreateFieldForm(datatypeID string, label string, fieldType string, 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+		}
+		templ_7745c5c3_Err = FormField("name", "Name", name, errs["name"]).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = FormField("label", "Label", label, errs["label"]).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
@@ -228,7 +232,7 @@ func DatatypeCreateFieldForm(datatypeID string, label string, fieldType string, 
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(errs["type"])
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_create_field_form.templ`, Line: 31, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/datatype_create_field_form.templ`, Line: 32, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {

@@ -166,6 +166,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 			return DatatypeUpdateSaveMsg{
 				DatatypeID: datatypeID,
 				Parent:     *values[1],
+				Name:       "", // Legacy form has no Name input; handler preserves existing value
 				Label:      *values[2],
 				Type:       *values[3],
 			}

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hegner123/modulacms/internal/admin/pages"
 	"github.com/hegner123/modulacms/internal/admin/partials"
+	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
@@ -110,13 +111,20 @@ func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
 
 // FieldCreateHandler handles POST /admin/schema/fields.
 // Validates label and type are required, creates via audited context.
-func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
+func FieldCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if parseErr := r.ParseForm(); parseErr != nil {
 			http.Error(w, "Invalid form data", http.StatusBadRequest)
 			return
 		}
 
+		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
@@ -147,7 +155,7 @@ func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldForm(label, fieldType, data, validation, uiConfig, errs, csrfToken))
+			Render(w, r, partials.FieldForm(name, label, fieldType, data, validation, uiConfig, errs, csrfToken))
 			return
 		}
 
@@ -156,11 +164,12 @@ func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		now := types.NewTimestamp(time.Now())
 		_, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
 			FieldID:      types.NewFieldID(),
+			Name:         name,
 			Label:        label,
 			Type:         types.FieldType(fieldType),
 			Data:         data,
@@ -172,9 +181,9 @@ func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to create field", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldForm(label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken))
+			Render(w, r, partials.FieldForm(name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken))
 			return
 		}
 
@@ -190,8 +199,14 @@ func FieldCreateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // FieldUpdateHandler handles POST /admin/schema/fields/{id}.
 // Updates field properties via audited context.
-func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
+func FieldUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		id := r.PathValue("id")
 		if id == "" {
 			http.Error(w, "Missing field ID", http.StatusBadRequest)
@@ -203,6 +218,7 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
 		data := strings.TrimSpace(r.FormValue("data"))
@@ -232,7 +248,7 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldEditForm(id, label, fieldType, data, validation, uiConfig, errs, csrfToken))
+			Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validation, uiConfig, errs, csrfToken))
 			return
 		}
 
@@ -247,11 +263,12 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		_, err = driver.UpdateField(r.Context(), ac, db.UpdateFieldParams{
 			FieldID:      types.FieldID(id),
 			ParentID:     existing.ParentID,
+			Name:         name,
 			Label:        label,
 			Type:         types.FieldType(fieldType),
 			Data:         data,
@@ -263,9 +280,9 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 		})
 		if err != nil {
 			utility.DefaultLogger.Error("failed to update field", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.FieldEditForm(id, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken))
+			Render(w, r, partials.FieldEditForm(id, name, label, fieldType, data, validation, uiConfig, map[string]string{"_": "Failed to update field"}, csrfToken))
 			return
 		}
 
@@ -281,8 +298,14 @@ func FieldUpdateHandler(driver db.DbDriver) http.HandlerFunc {
 
 // FieldDeleteHandler handles DELETE /admin/schema/fields/{id}.
 // HTMX-only endpoint. Non-HTMX requests receive 405.
-func FieldDeleteHandler(driver db.DbDriver) http.HandlerFunc {
+func FieldDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		cfg, cfgErr := mgr.Config()
+		if cfgErr != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
 		if !IsHTMX(r) {
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			return
@@ -299,7 +322,7 @@ func FieldDeleteHandler(driver db.DbDriver) http.HandlerFunc {
 		if splitErr != nil {
 			clientIP = r.RemoteAddr
 		}
-		ac := audited.Ctx(types.NodeID("0"), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
+		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
 		err := driver.DeleteField(r.Context(), ac, types.FieldID(id))
 		if err != nil {

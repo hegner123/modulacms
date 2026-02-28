@@ -11,6 +11,7 @@ templ DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string)
         <table class="data-table">
             <thead>
                 <tr>
+                    <th>Name</th>
                     <th>Label</th>
                     <th>Type</th>
                     <th>Actions</th>
@@ -19,6 +20,7 @@ templ DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string)
             <tbody>
                 for _, f := range fields {
                     <tr>
+                        <td>{ f.Name }</td>
                         <td>
                             <a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }>
                                 { f.Label }

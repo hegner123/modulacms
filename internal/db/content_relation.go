@@ -544,22 +544,22 @@ type NewContentRelationCmd struct {
 }
 
 // Context returns the command's context.
-func (c NewContentRelationCmd) Context() context.Context              { return c.ctx }
+func (c NewContentRelationCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewContentRelationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentRelationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewContentRelationCmd) Connection() *sql.DB                   { return c.conn }
+func (c NewContentRelationCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewContentRelationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewContentRelationCmd) TableName() string                     { return "content_relations" }
+func (c NewContentRelationCmd) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c NewContentRelationCmd) Params() any                           { return c.params }
+func (c NewContentRelationCmd) Params() any { return c.params }
 
 // GetID returns the ID from a content relation.
 func (c NewContentRelationCmd) GetID(r mdb.ContentRelations) string {
@@ -596,7 +596,7 @@ type UpdateContentRelationSortOrderCmd struct {
 }
 
 // Context returns the command's context.
-func (c UpdateContentRelationSortOrderCmd) Context() context.Context  { return c.ctx }
+func (c UpdateContentRelationSortOrderCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
 func (c UpdateContentRelationSortOrderCmd) AuditContext() audited.AuditContext {
@@ -615,7 +615,7 @@ func (c UpdateContentRelationSortOrderCmd) Recorder() audited.ChangeEventRecorde
 func (c UpdateContentRelationSortOrderCmd) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c UpdateContentRelationSortOrderCmd) Params() any       { return c.params }
+func (c UpdateContentRelationSortOrderCmd) Params() any { return c.params }
 
 // GetID returns the content relation ID.
 func (c UpdateContentRelationSortOrderCmd) GetID() string {
@@ -654,22 +654,22 @@ type DeleteContentRelationCmd struct {
 }
 
 // Context returns the command's context.
-func (c DeleteContentRelationCmd) Context() context.Context              { return c.ctx }
+func (c DeleteContentRelationCmd) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteContentRelationCmd) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentRelationCmd) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteContentRelationCmd) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentRelationCmd) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteContentRelationCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c DeleteContentRelationCmd) TableName() string                     { return "content_relations" }
+func (c DeleteContentRelationCmd) TableName() string { return "content_relations" }
 
 // GetID returns the content relation ID.
-func (c DeleteContentRelationCmd) GetID() string                         { return string(c.id) }
+func (c DeleteContentRelationCmd) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the content relation before deletion.
 func (c DeleteContentRelationCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.ContentRelations, error) {
@@ -700,22 +700,22 @@ type NewContentRelationCmdMysql struct {
 }
 
 // Context returns the command's context.
-func (c NewContentRelationCmdMysql) Context() context.Context              { return c.ctx }
+func (c NewContentRelationCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewContentRelationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentRelationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewContentRelationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentRelationCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewContentRelationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewContentRelationCmdMysql) TableName() string                     { return "content_relations" }
+func (c NewContentRelationCmdMysql) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c NewContentRelationCmdMysql) Params() any                           { return c.params }
+func (c NewContentRelationCmdMysql) Params() any { return c.params }
 
 // GetID returns the ID from a content relation.
 func (c NewContentRelationCmdMysql) GetID(r mdbm.ContentRelations) string {
@@ -776,7 +776,7 @@ func (c UpdateContentRelationSortOrderCmdMysql) Recorder() audited.ChangeEventRe
 func (c UpdateContentRelationSortOrderCmdMysql) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c UpdateContentRelationSortOrderCmdMysql) Params() any       { return c.params }
+func (c UpdateContentRelationSortOrderCmdMysql) Params() any { return c.params }
 
 // GetID returns the content relation ID.
 func (c UpdateContentRelationSortOrderCmdMysql) GetID() string {
@@ -815,13 +815,13 @@ type DeleteContentRelationCmdMysql struct {
 }
 
 // Context returns the command's context.
-func (c DeleteContentRelationCmdMysql) Context() context.Context              { return c.ctx }
+func (c DeleteContentRelationCmdMysql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteContentRelationCmdMysql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentRelationCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteContentRelationCmdMysql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentRelationCmdMysql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteContentRelationCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
@@ -830,7 +830,7 @@ func (c DeleteContentRelationCmdMysql) Recorder() audited.ChangeEventRecorder { 
 func (c DeleteContentRelationCmdMysql) TableName() string { return "content_relations" }
 
 // GetID returns the content relation ID.
-func (c DeleteContentRelationCmdMysql) GetID() string     { return string(c.id) }
+func (c DeleteContentRelationCmdMysql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the content relation before deletion.
 func (c DeleteContentRelationCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.ContentRelations, error) {
@@ -861,22 +861,22 @@ type NewContentRelationCmdPsql struct {
 }
 
 // Context returns the command's context.
-func (c NewContentRelationCmdPsql) Context() context.Context              { return c.ctx }
+func (c NewContentRelationCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c NewContentRelationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c NewContentRelationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c NewContentRelationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c NewContentRelationCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c NewContentRelationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
 
 // TableName returns the table name.
-func (c NewContentRelationCmdPsql) TableName() string                     { return "content_relations" }
+func (c NewContentRelationCmdPsql) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c NewContentRelationCmdPsql) Params() any                           { return c.params }
+func (c NewContentRelationCmdPsql) Params() any { return c.params }
 
 // GetID returns the ID from a content relation.
 func (c NewContentRelationCmdPsql) GetID(r mdbp.ContentRelations) string {
@@ -932,7 +932,7 @@ func (c UpdateContentRelationSortOrderCmdPsql) Recorder() audited.ChangeEventRec
 func (c UpdateContentRelationSortOrderCmdPsql) TableName() string { return "content_relations" }
 
 // Params returns the command parameters.
-func (c UpdateContentRelationSortOrderCmdPsql) Params() any       { return c.params }
+func (c UpdateContentRelationSortOrderCmdPsql) Params() any { return c.params }
 
 // GetID returns the content relation ID.
 func (c UpdateContentRelationSortOrderCmdPsql) GetID() string {
@@ -971,13 +971,13 @@ type DeleteContentRelationCmdPsql struct {
 }
 
 // Context returns the command's context.
-func (c DeleteContentRelationCmdPsql) Context() context.Context              { return c.ctx }
+func (c DeleteContentRelationCmdPsql) Context() context.Context { return c.ctx }
 
 // AuditContext returns the audit context.
-func (c DeleteContentRelationCmdPsql) AuditContext() audited.AuditContext     { return c.auditCtx }
+func (c DeleteContentRelationCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
 
 // Connection returns the database connection.
-func (c DeleteContentRelationCmdPsql) Connection() *sql.DB                   { return c.conn }
+func (c DeleteContentRelationCmdPsql) Connection() *sql.DB { return c.conn }
 
 // Recorder returns the change event recorder.
 func (c DeleteContentRelationCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
@@ -986,7 +986,7 @@ func (c DeleteContentRelationCmdPsql) Recorder() audited.ChangeEventRecorder { r
 func (c DeleteContentRelationCmdPsql) TableName() string { return "content_relations" }
 
 // GetID returns the content relation ID.
-func (c DeleteContentRelationCmdPsql) GetID() string     { return string(c.id) }
+func (c DeleteContentRelationCmdPsql) GetID() string { return string(c.id) }
 
 // GetBefore retrieves the content relation before deletion.
 func (c DeleteContentRelationCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.ContentRelations, error) {
