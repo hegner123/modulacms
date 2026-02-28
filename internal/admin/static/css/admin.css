@@ -3122,6 +3122,123 @@ block-editor .insert-dialog-empty {
   gap: 0.75rem;
 }
 
+/* Version panel */
+.version-panel {
+  margin-top: 1.5rem;
+}
+
+.version-list {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.version-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.version-list-header h3 {
+  margin: 0;
+}
+
+.version-create-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.version-label-input {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  width: 180px;
+}
+
+.version-items {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.version-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  flex-wrap: wrap;
+}
+
+.version-item-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.version-number {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.version-item-label {
+  font-size: 0.875rem;
+}
+
+.version-item-meta {
+  font-size: 0.75rem;
+}
+
+.version-item-actions {
+  margin-left: auto;
+}
+
+.badge-published {
+  background-color: var(--success, #16a34a);
+  color: #fff;
+}
+
+/* Version diff */
+.version-diff {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.version-diff-header h3 {
+  margin: 0 0 1rem 0;
+}
+
+.version-diff-table td {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.diff-changed {
+  background-color: var(--warning-bg, #fef3c7);
+}
+
+/* Select input (status filter) */
+.select-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  background: var(--bg);
+  color: var(--text);
+}
+
 @media (max-width: 1024px) {
   .content-editor-layout.panel-open {
     grid-template-columns: 1fr;

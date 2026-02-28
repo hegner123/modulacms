@@ -28,6 +28,17 @@ templ ContentListContent(items []ContentListItem, pg partials.PaginationPageData
 			hx-push-url="false"
 			class="search-input"
 		/>
+		<select
+			name="status"
+			hx-get="/admin/content"
+			hx-target="#content-table-body"
+			hx-trigger="change"
+			class="select-input"
+		>
+			<option value="">All Statuses</option>
+			<option value="draft">Draft</option>
+			<option value="published">Published</option>
+		</select>
 	</div>
 	<table class="table">
 		<thead>

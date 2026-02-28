@@ -494,7 +494,9 @@ func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) stri
 	statusMark := ""
 	if node.Instance != nil {
 		if node.Instance.Status == types.ContentStatusPublished {
-			statusMark = "* "
+			statusMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#16a34a")).Render("● ")
+		} else {
+			statusMark = lipgloss.NewStyle().Foreground(lipgloss.Color("#ca8a04")).Render("○ ")
 		}
 	}
 

@@ -192,6 +192,13 @@ type Model struct {
 	SSHPublicKey      string
 	UserID            types.UserID
 
+	// Version list state
+	Versions         []db.ContentVersion
+	ShowVersionList  bool
+	VersionContentID types.ContentID
+	VersionRouteID   types.RouteID
+	VersionCursor    int
+
 	// DBReadyCh is signalled after DB init/redeploy so serve can reload
 	// the permission cache and start HTTP/HTTPS servers.
 	DBReadyCh chan struct{}

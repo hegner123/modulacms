@@ -16,6 +16,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -64,33 +65,59 @@ func resolveContentDisplayName(driver db.DbDriver, item db.ContentData) string {
 func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		limit, offset := ParsePagination(r)
-
-		items, err := driver.ListContentDataTopLevelPaginated(db.PaginationParams{
-			Limit:  limit,
-			Offset: offset,
-		})
-		if err != nil {
-			utility.DefaultLogger.Error("failed to list content", err)
-			http.Error(w, "Failed to load content", http.StatusInternalServerError)
-			return
-		}
-
-		total, err := driver.CountContentDataTopLevel()
-		if err != nil {
-			utility.DefaultLogger.Error("failed to count content", err)
-			http.Error(w, "Failed to load content", http.StatusInternalServerError)
-			return
-		}
+		statusFilter := r.URL.Query().Get("status")
 
 		var rawItems []db.ContentDataTopLevel
-		if items != nil {
-			rawItems = *items
+		var total *int64
+
+		if statusFilter != "" {
+			items, err := driver.ListContentDataTopLevelPaginatedByStatus(db.PaginationParams{
+				Limit:  limit,
+				Offset: offset,
+			}, types.ContentStatus(statusFilter))
+			if err != nil {
+				utility.DefaultLogger.Error("failed to list content by status", err)
+				http.Error(w, "Failed to load content", http.StatusInternalServerError)
+				return
+			}
+			if items != nil {
+				rawItems = *items
+			}
+			cnt, cntErr := driver.CountContentDataTopLevelByStatus(types.ContentStatus(statusFilter))
+			if cntErr != nil {
+				utility.DefaultLogger.Error("failed to count content by status", cntErr)
+				http.Error(w, "Failed to load content", http.StatusInternalServerError)
+				return
+			}
+			total = cnt
+		} else {
+			items, err := driver.ListContentDataTopLevelPaginated(db.PaginationParams{
+				Limit:  limit,
+				Offset: offset,
+			})
+			if err != nil {
+				utility.DefaultLogger.Error("failed to list content", err)
+				http.Error(w, "Failed to load content", http.StatusInternalServerError)
+				return
+			}
+			if items != nil {
+				rawItems = *items
+			}
+			cnt, cntErr := driver.CountContentDataTopLevel()
+			if cntErr != nil {
+				utility.DefaultLogger.Error("failed to count content", cntErr)
+				http.Error(w, "Failed to load content", http.StatusInternalServerError)
+				return
+			}
+			total = cnt
 		}
+
+		hasPublishPerm := HasPermission(r, "content:publish")
 
 		// Resolve display names: route title+slug if route assigned, else title field value
 		listItems := make([]pages.ContentListItem, len(rawItems))
 		for i, item := range rawItems {
-			listItems[i] = pages.ContentListItem{ContentDataTopLevel: item}
+			listItems[i] = pages.ContentListItem{ContentDataTopLevel: item, HasPublishPerm: hasPublishPerm}
 			listItems[i].DisplayName = resolveContentDisplayName(driver, item.ContentData)
 			if item.RouteID.Valid {
 				rt, rtErr := driver.GetRoute(item.RouteID.ID)
@@ -353,6 +380,13 @@ func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
 		author, authorErr := driver.GetUser(content.AuthorID)
 		if authorErr == nil && author != nil {
 			meta.AuthorName = author.Username
+		}
+		meta.HasPublishPerm = HasPermission(r, "content:publish")
+		if content.PublishedBy.Valid {
+			pubUser, pubErr := driver.GetUser(content.PublishedBy.ID)
+			if pubErr == nil && pubUser != nil {
+				meta.PublishedByName = pubUser.Username
+			}
 		}
 
 		treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID)
@@ -1363,4 +1397,370 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(result)
 	}
+}
+
+// ContentPublishHandler publishes content by creating a snapshot version.
+// On success, re-renders the content edit page with updated status.
+func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		ac := audited.Ctx(
+			types.NodeID(cfg.Node_ID),
+			user.UserID,
+			middleware.RequestIDFromContext(r.Context()),
+			clientIP(r),
+		)
+
+		contentID := types.ContentID(id)
+		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, user.UserID, ac, cfg.VersionMaxPerContent())
+		if pubErr != nil {
+			utility.DefaultLogger.Error("admin publish content failed", pubErr)
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Publish failed: %s", "type": "error"}}`, pubErr.Error())
+			w.Header().Set("HX-Trigger", toastMsg)
+			// Re-render the edit page to show current state
+			renderContentEditPage(w, r, driver, contentID)
+			return
+		}
+
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content published", "type": "success"}}`)
+		renderContentEditPage(w, r, driver, contentID)
+	}
+}
+
+// ContentUnpublishHandler unpublishes content by clearing the published flag.
+// On success, re-renders the content edit page with updated status.
+func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		ac := audited.Ctx(
+			types.NodeID(cfg.Node_ID),
+			user.UserID,
+			middleware.RequestIDFromContext(r.Context()),
+			clientIP(r),
+		)
+
+		contentID := types.ContentID(id)
+		unpubErr := publishing.UnpublishContent(r.Context(), driver, contentID, user.UserID, ac)
+		if unpubErr != nil {
+			utility.DefaultLogger.Error("admin unpublish content failed", unpubErr)
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Unpublish failed: %s", "type": "error"}}`, unpubErr.Error())
+			w.Header().Set("HX-Trigger", toastMsg)
+			renderContentEditPage(w, r, driver, contentID)
+			return
+		}
+
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Content unpublished", "type": "success"}}`)
+		renderContentEditPage(w, r, driver, contentID)
+	}
+}
+
+// ContentVersionsHandler returns the version list partial for a content item.
+func ContentVersionsHandler(driver db.DbDriver) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		contentID := types.ContentID(id)
+		versions, err := driver.ListContentVersionsByContent(contentID)
+		if err != nil {
+			utility.DefaultLogger.Error("failed to list versions", err)
+			http.Error(w, "Failed to load versions", http.StatusInternalServerError)
+			return
+		}
+
+		var versionList []db.ContentVersion
+		if versions != nil {
+			versionList = *versions
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		Render(w, r, partials.VersionList(versionList, id, csrfToken))
+	}
+}
+
+// ContentCreateVersionHandler creates a manual snapshot version for a content item.
+func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		contentID := types.ContentID(id)
+		label := r.FormValue("label")
+
+		// Build snapshot from live tables
+		snapshot, snapErr := publishing.BuildSnapshot(driver, r.Context(), contentID)
+		if snapErr != nil {
+			utility.DefaultLogger.Error("failed to build snapshot for manual version", snapErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		snapshotBytes, marshalErr := json.Marshal(snapshot)
+		if marshalErr != nil {
+			utility.DefaultLogger.Error("failed to marshal snapshot", marshalErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		maxVersion, maxErr := driver.GetMaxVersionNumber(contentID, "")
+		if maxErr != nil {
+			utility.DefaultLogger.Error("failed to get max version number", maxErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		ac := audited.Ctx(
+			types.NodeID(cfg.Node_ID),
+			user.UserID,
+			middleware.RequestIDFromContext(r.Context()),
+			clientIP(r),
+		)
+		now := types.TimestampNow()
+
+		_, createErr := driver.CreateContentVersion(r.Context(), ac, db.CreateContentVersionParams{
+			ContentDataID: contentID,
+			VersionNumber: maxVersion + 1,
+			Locale:        "",
+			Snapshot:      string(snapshotBytes),
+			Trigger:       "manual",
+			Label:         label,
+			Published:     false,
+			PublishedBy:   types.NullableUserID{ID: user.UserID, Valid: true},
+			DateCreated:   now,
+		})
+		if createErr != nil {
+			utility.DefaultLogger.Error("failed to create manual version", createErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Async prune
+		retentionCap := cfg.VersionMaxPerContent()
+		go publishing.PruneExcessVersions(driver, contentID, "", retentionCap)
+
+		// Re-render the version list
+		versions, listErr := driver.ListContentVersionsByContent(contentID)
+		if listErr != nil {
+			utility.DefaultLogger.Error("failed to re-list versions after create", listErr)
+			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Version created", "type": "success"}}`)
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		var versionList []db.ContentVersion
+		if versions != nil {
+			versionList = *versions
+		}
+
+		csrfToken := CSRFTokenFromContext(r.Context())
+		w.Header().Set("HX-Trigger", `{"showToast": {"message": "Version created", "type": "success"}}`)
+		Render(w, r, partials.VersionList(versionList, id, csrfToken))
+	}
+}
+
+// ContentRestoreVersionHandler restores content from a saved version snapshot.
+func ContentRestoreVersionHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		if parseErr := r.ParseForm(); parseErr != nil {
+			http.Error(w, "Invalid form data", http.StatusBadRequest)
+			return
+		}
+
+		user := middleware.AuthenticatedUser(r.Context())
+		if user == nil {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		cfg, err := mgr.Config()
+		if err != nil {
+			http.Error(w, "Configuration unavailable", http.StatusInternalServerError)
+			return
+		}
+
+		versionID := r.FormValue("version_id")
+		if versionID == "" {
+			http.Error(w, "version_id required", http.StatusBadRequest)
+			return
+		}
+
+		contentID := types.ContentID(id)
+		cvID := types.ContentVersionID(versionID)
+
+		ac := audited.Ctx(
+			types.NodeID(cfg.Node_ID),
+			user.UserID,
+			middleware.RequestIDFromContext(r.Context()),
+			clientIP(r),
+		)
+
+		result, restoreErr := publishing.RestoreContent(r.Context(), driver, contentID, cvID, user.UserID, ac)
+		if restoreErr != nil {
+			utility.DefaultLogger.Error("admin restore content failed", restoreErr)
+			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Restore failed: %s", "type": "error"}}`, restoreErr.Error())
+			w.Header().Set("HX-Trigger", toastMsg)
+			renderContentEditPage(w, r, driver, contentID)
+			return
+		}
+
+		toastMsg := fmt.Sprintf(`{"showToast": {"message": "Restored %d fields from version", "type": "success"}}`, result.FieldsRestored)
+		w.Header().Set("HX-Trigger", toastMsg)
+		renderContentEditPage(w, r, driver, contentID)
+	}
+}
+
+// ContentVersionCompareHandler returns a side-by-side diff of two version snapshots.
+func ContentVersionCompareHandler(driver db.DbDriver) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id := r.PathValue("id")
+		if id == "" {
+			http.Error(w, "Content ID required", http.StatusBadRequest)
+			return
+		}
+
+		aID := r.URL.Query().Get("a")
+		bID := r.URL.Query().Get("b")
+		if aID == "" || bID == "" {
+			http.Error(w, "Both version IDs (a and b) are required", http.StatusBadRequest)
+			return
+		}
+
+		versionA, errA := driver.GetContentVersion(types.ContentVersionID(aID))
+		if errA != nil {
+			utility.DefaultLogger.Error("failed to get version A", errA)
+			http.Error(w, "Failed to load version A", http.StatusInternalServerError)
+			return
+		}
+
+		versionB, errB := driver.GetContentVersion(types.ContentVersionID(bID))
+		if errB != nil {
+			utility.DefaultLogger.Error("failed to get version B", errB)
+			http.Error(w, "Failed to load version B", http.StatusInternalServerError)
+			return
+		}
+
+		Render(w, r, partials.VersionDiff(*versionA, *versionB))
+	}
+}
+
+// renderContentEditPage is a shared helper that re-renders the content edit page.
+// Used by publish/unpublish/restore handlers to refresh the page after mutations.
+func renderContentEditPage(w http.ResponseWriter, r *http.Request, driver db.DbDriver, contentID types.ContentID) {
+	content, err := driver.GetContentData(contentID)
+	if err != nil {
+		utility.DefaultLogger.Error("failed to get content for re-render", err)
+		http.Error(w, "Failed to load content", http.StatusInternalServerError)
+		return
+	}
+
+	fields, fieldsErr := driver.ListContentFieldsWithFieldByContentData(
+		types.NullableContentID{ID: content.ContentDataID, Valid: true},
+	)
+	if fieldsErr != nil {
+		utility.DefaultLogger.Error("failed to get content fields for re-render", fieldsErr)
+		http.Error(w, "Failed to load content fields", http.StatusInternalServerError)
+		return
+	}
+
+	var contentFields []db.ContentFieldWithFieldRow
+	if fields != nil {
+		contentFields = *fields
+	}
+
+	meta := pages.ContentMeta{}
+	if content.DatatypeID.Valid {
+		dt, dtErr := driver.GetDatatype(content.DatatypeID.ID)
+		if dtErr == nil && dt != nil {
+			meta.DatatypeLabel = dt.Label
+		}
+	}
+	if content.RouteID.Valid {
+		rt, rtErr := driver.GetRoute(content.RouteID.ID)
+		if rtErr == nil && rt != nil {
+			meta.RouteTitle = rt.Title
+		}
+	}
+	author, authorErr := driver.GetUser(content.AuthorID)
+	if authorErr == nil && author != nil {
+		meta.AuthorName = author.Username
+	}
+	meta.HasPublishPerm = HasPermission(r, "content:publish")
+	if content.PublishedBy.Valid {
+		pubUser, pubErr := driver.GetUser(content.PublishedBy.ID)
+		if pubErr == nil && pubUser != nil {
+			meta.PublishedByName = pubUser.Username
+		}
+	}
+
+	treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID)
+	csrfToken := CSRFTokenFromContext(r.Context())
+
+	Render(w, r, pages.ContentEditContent(*content, contentFields, csrfToken, treeJSON, meta))
 }

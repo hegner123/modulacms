@@ -19,6 +19,8 @@ export type {
   ContentID,
   ContentFieldID,
   ContentRelationID,
+  ContentVersionID,
+  AdminContentVersionID,
   DatatypeID,
   FieldID,
   MediaID,
@@ -53,7 +55,7 @@ export { isApiError } from './errors.js'
 export type { RequestOptions } from './request.js'
 
 // Entity types
-export type { ContentData, ContentField, ContentRelation } from './entities/content.js'
+export type { ContentData, ContentField, ContentRelation, ContentVersion, AdminContentVersion } from './entities/content.js'
 export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo } from './entities/schema.js'
 export type { Media, MediaDimension } from './entities/media.js'
 export type { Route } from './entities/routing.js'

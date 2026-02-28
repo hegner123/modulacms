@@ -23,6 +23,10 @@ public struct ContentData: Codable, Sendable {
     public let datatypeID: DatatypeID?
     public let authorID: UserID?
     public let status: ContentStatus
+    public let publishedAt: Timestamp?
+    public let publishedBy: UserID?
+    public let publishAt: Timestamp?
+    public let revision: Int64
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
 
@@ -36,6 +40,10 @@ public struct ContentData: Codable, Sendable {
         case datatypeID = "datatype_id"
         case authorID = "author_id"
         case status
+        case publishedAt = "published_at"
+        case publishedBy = "published_by"
+        case publishAt = "publish_at"
+        case revision
         case dateCreated = "date_created"
         case dateModified = "date_modified"
     }
@@ -1313,6 +1321,10 @@ public struct AdminContentData: Codable, Sendable {
     public let adminDatatypeID: AdminDatatypeID?
     public let authorID: UserID?
     public let status: ContentStatus
+    public let publishedAt: Timestamp?
+    public let publishedBy: UserID?
+    public let publishAt: Timestamp?
+    public let revision: Int64
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
 
@@ -1326,6 +1338,10 @@ public struct AdminContentData: Codable, Sendable {
         case adminDatatypeID = "admin_datatype_id"
         case authorID = "author_id"
         case status
+        case publishedAt = "published_at"
+        case publishedBy = "published_by"
+        case publishAt = "publish_at"
+        case revision
         case dateCreated = "date_created"
         case dateModified = "date_modified"
     }
@@ -2190,5 +2206,275 @@ public struct HookApprovalItem: Codable, Sendable {
         self.plugin = plugin
         self.event = event
         self.table = table
+    }
+}
+
+// MARK: - Content Version
+
+/// A snapshot version of a content data node at a point in time.
+public struct ContentVersion: Codable, Sendable {
+    public let contentVersionID: ContentVersionID
+    public let contentDataID: ContentID
+    public let versionNumber: Int64
+    public let locale: String
+    public let snapshot: String
+    public let trigger: String
+    public let label: String
+    public let published: Bool
+    public let publishedBy: UserID?
+    public let dateCreated: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case contentVersionID = "content_version_id"
+        case contentDataID = "content_data_id"
+        case versionNumber = "version_number"
+        case locale
+        case snapshot
+        case trigger
+        case label
+        case published
+        case publishedBy = "published_by"
+        case dateCreated = "date_created"
+    }
+}
+
+/// A snapshot version of an admin content data node at a point in time.
+public struct AdminContentVersion: Codable, Sendable {
+    public let adminContentVersionID: AdminContentVersionID
+    public let adminContentDataID: AdminContentID
+    public let versionNumber: Int64
+    public let locale: String
+    public let snapshot: String
+    public let trigger: String
+    public let label: String
+    public let published: Bool
+    public let publishedBy: UserID?
+    public let dateCreated: Timestamp
+
+    enum CodingKeys: String, CodingKey {
+        case adminContentVersionID = "admin_content_version_id"
+        case adminContentDataID = "admin_content_data_id"
+        case versionNumber = "version_number"
+        case locale
+        case snapshot
+        case trigger
+        case label
+        case published
+        case publishedBy = "published_by"
+        case dateCreated = "date_created"
+    }
+}
+
+// MARK: - Publishing Request/Response Types
+
+/// Request body for publishing content.
+public struct PublishRequest: Encodable, Sendable {
+    public let contentDataID: ContentID
+
+    public init(contentDataID: ContentID) {
+        self.contentDataID = contentDataID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case contentDataID = "content_data_id"
+    }
+}
+
+/// Request body for publishing admin content.
+public struct AdminPublishRequest: Encodable, Sendable {
+    public let adminContentDataID: AdminContentID
+
+    public init(adminContentDataID: AdminContentID) {
+        self.adminContentDataID = adminContentDataID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminContentDataID = "admin_content_data_id"
+    }
+}
+
+/// Response from a publish or unpublish operation.
+public struct PublishResponse: Decodable, Sendable {
+    public let status: String
+    public let versionNumber: Int64?
+    public let contentVersionID: String?
+    public let contentDataID: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case versionNumber = "version_number"
+        case contentVersionID = "content_version_id"
+        case contentDataID = "content_data_id"
+    }
+}
+
+/// Response from an admin publish or unpublish operation.
+public struct AdminPublishResponse: Decodable, Sendable {
+    public let status: String
+    public let versionNumber: Int64?
+    public let adminContentVersionID: String?
+    public let adminContentDataID: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case versionNumber = "version_number"
+        case adminContentVersionID = "admin_content_version_id"
+        case adminContentDataID = "admin_content_data_id"
+    }
+}
+
+/// Request body for scheduling content publication.
+public struct ScheduleRequest: Encodable, Sendable {
+    public let contentDataID: ContentID
+    public let publishAt: String
+
+    public init(contentDataID: ContentID, publishAt: String) {
+        self.contentDataID = contentDataID
+        self.publishAt = publishAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case contentDataID = "content_data_id"
+        case publishAt = "publish_at"
+    }
+}
+
+/// Request body for scheduling admin content publication.
+public struct AdminScheduleRequest: Encodable, Sendable {
+    public let adminContentDataID: AdminContentID
+    public let publishAt: String
+
+    public init(adminContentDataID: AdminContentID, publishAt: String) {
+        self.adminContentDataID = adminContentDataID
+        self.publishAt = publishAt
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminContentDataID = "admin_content_data_id"
+        case publishAt = "publish_at"
+    }
+}
+
+/// Response from a schedule operation.
+public struct ScheduleResponse: Decodable, Sendable {
+    public let status: String
+    public let contentDataID: String
+    public let publishAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case contentDataID = "content_data_id"
+        case publishAt = "publish_at"
+    }
+}
+
+/// Response from an admin schedule operation.
+public struct AdminScheduleResponse: Decodable, Sendable {
+    public let status: String
+    public let adminContentDataID: String
+    public let publishAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case adminContentDataID = "admin_content_data_id"
+        case publishAt = "publish_at"
+    }
+}
+
+/// Request body for manually creating a content version.
+public struct CreateVersionRequest: Encodable, Sendable {
+    public let contentDataID: ContentID
+    public let label: String?
+
+    public init(contentDataID: ContentID, label: String? = nil) {
+        self.contentDataID = contentDataID
+        self.label = label
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case contentDataID = "content_data_id"
+        case label
+    }
+}
+
+/// Request body for manually creating an admin content version.
+public struct CreateAdminVersionRequest: Encodable, Sendable {
+    public let adminContentDataID: AdminContentID
+    public let label: String?
+
+    public init(adminContentDataID: AdminContentID, label: String? = nil) {
+        self.adminContentDataID = adminContentDataID
+        self.label = label
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminContentDataID = "admin_content_data_id"
+        case label
+    }
+}
+
+/// Request body for restoring content to a previous version.
+public struct RestoreRequest: Encodable, Sendable {
+    public let contentDataID: ContentID
+    public let contentVersionID: ContentVersionID
+
+    public init(contentDataID: ContentID, contentVersionID: ContentVersionID) {
+        self.contentDataID = contentDataID
+        self.contentVersionID = contentVersionID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case contentDataID = "content_data_id"
+        case contentVersionID = "content_version_id"
+    }
+}
+
+/// Request body for restoring admin content to a previous version.
+public struct AdminRestoreRequest: Encodable, Sendable {
+    public let adminContentDataID: AdminContentID
+    public let adminContentVersionID: AdminContentVersionID
+
+    public init(adminContentDataID: AdminContentID, adminContentVersionID: AdminContentVersionID) {
+        self.adminContentDataID = adminContentDataID
+        self.adminContentVersionID = adminContentVersionID
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case adminContentDataID = "admin_content_data_id"
+        case adminContentVersionID = "admin_content_version_id"
+    }
+}
+
+/// Response from a restore operation.
+public struct RestoreResponse: Decodable, Sendable {
+    public let status: String
+    public let contentDataID: String
+    public let restoredVersionID: String
+    public let fieldsRestored: Int
+    public let unmappedFields: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case contentDataID = "content_data_id"
+        case restoredVersionID = "restored_version_id"
+        case fieldsRestored = "fields_restored"
+        case unmappedFields = "unmapped_fields"
+    }
+}
+
+/// Response from an admin restore operation.
+public struct AdminRestoreResponse: Decodable, Sendable {
+    public let status: String
+    public let adminContentDataID: String
+    public let restoredVersionID: String
+    public let fieldsRestored: Int
+    public let unmappedFields: [String]?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case adminContentDataID = "admin_content_data_id"
+        case restoredVersionID = "restored_version_id"
+        case fieldsRestored = "fields_restored"
+        case unmappedFields = "unmapped_fields"
     }
 }

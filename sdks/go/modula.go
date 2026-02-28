@@ -84,6 +84,10 @@ type Client struct {
 	// Content reorder
 	ContentReorder      *ContentReorderResource
 	AdminContentReorder *AdminContentReorderResource
+
+	// Publishing
+	Publishing      *PublishingResource
+	AdminPublishing *PublishingResource
 }
 
 // NewClient creates a new Modula API client.
@@ -167,6 +171,10 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		// Content reorder
 		ContentReorder:      &ContentReorderResource{http: h},
 		AdminContentReorder: &AdminContentReorderResource{http: h},
+
+		// Publishing
+		Publishing:      &PublishingResource{http: h, prefix: "content"},
+		AdminPublishing: &PublishingResource{http: h, prefix: "admin/content"},
 	}, nil
 }
 

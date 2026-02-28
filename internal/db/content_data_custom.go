@@ -230,6 +230,62 @@ func (d Database) CountContentDataTopLevel() (*int64, error) {
 	return &c, nil
 }
 
+func (d Database) mapContentDataTopLevelByStatus(a mdb.ListContentDataTopLevelPaginatedByStatusRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdb.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginatedByStatus returns paginated top-level content filtered by status.
+func (d Database) ListContentDataTopLevelPaginatedByStatus(params PaginationParams, status types.ContentStatus) (*[]ContentDataTopLevel, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginatedByStatus(d.Context, mdb.ListContentDataTopLevelPaginatedByStatusParams{
+		Status: status,
+		Limit:  params.Limit,
+		Offset: params.Offset,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData by status: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevelByStatus(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevelByStatus returns the count of top-level content with a given status.
+func (d Database) CountContentDataTopLevelByStatus(status types.ContentStatus) (*int64, error) {
+	queries := mdb.New(d.Connection)
+	c, err := queries.CountContentDataTopLevelByStatus(d.Context, mdb.CountContentDataTopLevelByStatusParams{
+		Status: status,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData by status: %v", err)
+	}
+	return &c, nil
+}
+
 // MYSQL
 
 func (d MysqlDatabase) mapContentDataTopLevel(a mdbm.ListContentDataTopLevelPaginatedRow) ContentDataTopLevel {
@@ -285,6 +341,62 @@ func (d MysqlDatabase) CountContentDataTopLevel() (*int64, error) {
 	return &c, nil
 }
 
+func (d MysqlDatabase) mapContentDataTopLevelByStatus(a mdbm.ListContentDataTopLevelPaginatedByStatusRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdbm.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginatedByStatus returns paginated top-level content filtered by status.
+func (d MysqlDatabase) ListContentDataTopLevelPaginatedByStatus(params PaginationParams, status types.ContentStatus) (*[]ContentDataTopLevel, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginatedByStatus(d.Context, mdbm.ListContentDataTopLevelPaginatedByStatusParams{
+		Status: status,
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData by status: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevelByStatus(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevelByStatus returns the count of top-level content with a given status.
+func (d MysqlDatabase) CountContentDataTopLevelByStatus(status types.ContentStatus) (*int64, error) {
+	queries := mdbm.New(d.Connection)
+	c, err := queries.CountContentDataTopLevelByStatus(d.Context, mdbm.CountContentDataTopLevelByStatusParams{
+		Status: status,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData by status: %v", err)
+	}
+	return &c, nil
+}
+
 // PSQL
 
 func (d PsqlDatabase) mapContentDataTopLevel(a mdbp.ListContentDataTopLevelPaginatedRow) ContentDataTopLevel {
@@ -336,6 +448,62 @@ func (d PsqlDatabase) CountContentDataTopLevel() (*int64, error) {
 	c, err := queries.CountContentDataTopLevel(d.Context)
 	if err != nil {
 		return nil, fmt.Errorf("failed to count top-level ContentData: %v", err)
+	}
+	return &c, nil
+}
+
+func (d PsqlDatabase) mapContentDataTopLevelByStatus(a mdbp.ListContentDataTopLevelPaginatedByStatusRow) ContentDataTopLevel {
+	return ContentDataTopLevel{
+		ContentData: d.MapContentData(mdbp.ContentData{
+			ContentDataID: a.ContentDataID,
+			ParentID:      a.ParentID,
+			FirstChildID:  a.FirstChildID,
+			NextSiblingID: a.NextSiblingID,
+			PrevSiblingID: a.PrevSiblingID,
+			RouteID:       a.RouteID,
+			DatatypeID:    a.DatatypeID,
+			AuthorID:      a.AuthorID,
+			Status:        a.Status,
+			DateCreated:   a.DateCreated,
+			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
+		}),
+		AuthorName:    a.AuthorName.String,
+		RouteSlug:     a.RouteSlug,
+		RouteTitle:    a.RouteTitle,
+		DatatypeLabel: a.DatatypeLabel,
+	}
+}
+
+// ListContentDataTopLevelPaginatedByStatus returns paginated top-level content filtered by status.
+func (d PsqlDatabase) ListContentDataTopLevelPaginatedByStatus(params PaginationParams, status types.ContentStatus) (*[]ContentDataTopLevel, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListContentDataTopLevelPaginatedByStatus(d.Context, mdbp.ListContentDataTopLevelPaginatedByStatusParams{
+		Status: status,
+		Limit:  int32(params.Limit),
+		Offset: int32(params.Offset),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get top-level ContentData by status: %v", err)
+	}
+	res := make([]ContentDataTopLevel, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.mapContentDataTopLevelByStatus(v))
+	}
+	return &res, nil
+}
+
+// CountContentDataTopLevelByStatus returns the count of top-level content with a given status.
+func (d PsqlDatabase) CountContentDataTopLevelByStatus(status types.ContentStatus) (*int64, error) {
+	queries := mdbp.New(d.Connection)
+	c, err := queries.CountContentDataTopLevelByStatus(d.Context, mdbp.CountContentDataTopLevelByStatusParams{
+		Status: status,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to count top-level ContentData by status: %v", err)
 	}
 	return &c, nil
 }

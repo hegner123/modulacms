@@ -53,6 +53,35 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case ShowPublishDialogMsg:
+		// Show publish or unpublish confirmation dialog
+		var dialogMsg string
+		var dialogAction DialogAction
+		var title string
+		if msg.IsPublished {
+			title = "Unpublish Content"
+			dialogMsg = fmt.Sprintf("Unpublish '%s'?\nIt will no longer be publicly accessible.", msg.ContentName)
+			dialogAction = DIALOGUNPUBLISHCONTENT
+		} else {
+			title = "Publish Content"
+			dialogMsg = fmt.Sprintf("Publish '%s'?\nThis creates a public snapshot.", msg.ContentName)
+			dialogAction = DIALOGPUBLISHCONTENT
+		}
+		dialog := NewDialog(title, dialogMsg, true, dialogAction)
+		if msg.IsPublished {
+			dialog.SetButtons("Unpublish", "Cancel")
+		} else {
+			dialog.SetButtons("Publish", "Cancel")
+		}
+		publishContentContext = &PublishContentContext{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+		}
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
 	case ShowDeleteContentDialogMsg:
 		// Show delete content confirmation dialog
 		var dialogMsg string
@@ -566,6 +595,70 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 					FocusSetCmd(PAGEFOCUS),
 					LoadingStartCmd(),
 					DeleteContentCmd(contentID, routeID),
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGPUBLISHCONTENT:
+			// User confirmed publish
+			if publishContentContext != nil {
+				ctx := publishContentContext
+				publishContentContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedPublishMsg{
+							ContentID: ctx.ContentID,
+							RouteID:   ctx.RouteID,
+						}
+					},
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGUNPUBLISHCONTENT:
+			// User confirmed unpublish
+			if publishContentContext != nil {
+				ctx := publishContentContext
+				publishContentContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedUnpublishMsg{
+							ContentID: ctx.ContentID,
+							RouteID:   ctx.RouteID,
+						}
+					},
+				)
+			}
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGRESTOREVERSION:
+			// User confirmed version restore
+			if restoreVersionContext != nil {
+				ctx := restoreVersionContext
+				restoreVersionContext = nil
+				return m, tea.Batch(
+					DialogActiveSetCmd(false),
+					FocusSetCmd(PAGEFOCUS),
+					LoadingStartCmd(),
+					func() tea.Msg {
+						return ConfirmedRestoreVersionMsg{
+							ContentID: ctx.ContentID,
+							VersionID: ctx.VersionID,
+							RouteID:   ctx.RouteID,
+						}
+					},
 				)
 			}
 			return m, tea.Batch(
@@ -2591,6 +2684,33 @@ var restoreRequiresQuit bool
 
 // Global variable to store delete context for content deletion.
 var deleteContentContext *DeleteContentContext
+
+// =============================================================================
+// PUBLISH / UNPUBLISH CONTENT
+// =============================================================================
+
+// PublishContentContext stores context for a publish/unpublish confirmation dialog.
+type PublishContentContext struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// Global variable to store publish context during dialog.
+var publishContentContext *PublishContentContext
+
+// =============================================================================
+// RESTORE VERSION
+// =============================================================================
+
+// RestoreVersionContext stores context for a version restore confirmation dialog.
+type RestoreVersionContext struct {
+	ContentID types.ContentID
+	VersionID types.ContentVersionID
+	RouteID   types.RouteID
+}
+
+// Global variable to store restore version context during dialog.
+var restoreVersionContext *RestoreVersionContext
 
 // =============================================================================
 // APPROVE PLUGIN ROUTES / HOOKS

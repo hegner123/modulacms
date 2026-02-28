@@ -613,6 +613,13 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 		}
 		// Esc / back: step back through content flow states
 		if km.Matches(key, config.ActionDismiss) || km.Matches(key, config.ActionBack) {
+			// Dismiss version list first
+			if m.ShowVersionList {
+				m.ShowVersionList = false
+				m.Versions = nil
+				m.VersionCursor = 0
+				return m, nil
+			}
 			if !m.PageRouteId.IsZero() {
 				m.PageRouteId = types.RouteID("")
 				m.Root = tree.Root{}
@@ -632,6 +639,13 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 					return m, CursorUpCmd()
 				}
 			} else if m.PanelFocus == tui.RoutePanel {
+				if m.ShowVersionList {
+					// Navigate versions in right panel
+					if m.VersionCursor > 0 {
+						m.VersionCursor--
+					}
+					return m, nil
+				}
 				// Navigate fields in right panel
 				if m.FieldCursor > 0 {
 					m.FieldCursor--
@@ -649,6 +663,13 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 					return m, CursorDownCmd()
 				}
 			} else if m.PanelFocus == tui.RoutePanel {
+				if m.ShowVersionList {
+					// Navigate versions in right panel
+					if m.VersionCursor < len(m.Versions)-1 {
+						m.VersionCursor++
+					}
+					return m, nil
+				}
 				// Navigate fields in right panel
 				if m.FieldCursor < len(m.SelectedContentFields)-1 {
 					m.FieldCursor++
@@ -677,6 +698,28 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 							ReloadContentTreeCmd(m.Config, content.RouteID.ID),
 						)
 					}
+				}
+			} else if m.ShowVersionList && m.PanelFocus == tui.RoutePanel {
+				// Restore selected version with confirmation
+				if m.VersionCursor < len(m.Versions) {
+					v := m.Versions[m.VersionCursor]
+					restoreVersionContext = &RestoreVersionContext{
+						ContentID: m.VersionContentID,
+						VersionID: v.ContentVersionID,
+						RouteID:   m.VersionRouteID,
+					}
+					dialog := NewDialog(
+						"Restore Version",
+						fmt.Sprintf("Restore to version #%d? Current field values will be overwritten.", v.VersionNumber),
+						true,
+						DIALOGRESTOREVERSION,
+					)
+					dialog.SetButtons("Restore", "Cancel")
+					return m, tea.Batch(
+						DialogSetCmd(&dialog),
+						DialogActiveSetCmd(true),
+						FocusSetCmd(DIALOGFOCUS),
+					)
 				}
 			} else {
 				node := m.Root.NodeAtIndex(m.Cursor)
@@ -842,7 +885,15 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 			if !m.PageRouteId.IsZero() {
 				node := m.Root.NodeAtIndex(m.Cursor)
 				if node != nil && node.Instance != nil {
-					return m, tea.Batch(LoadingStartCmd(), TogglePublishCmd(node.Instance.ContentDataID, m.PageRouteId))
+					return m, TogglePublishCmd(node.Instance.ContentDataID, m.PageRouteId)
+				}
+			}
+		}
+		if km.Matches(key, config.ActionVersions) {
+			if !m.PageRouteId.IsZero() {
+				node := m.Root.NodeAtIndex(m.Cursor)
+				if node != nil && node.Instance != nil {
+					return m, tea.Batch(LoadingStartCmd(), ListVersionsCmd(node.Instance.ContentDataID, m.PageRouteId))
 				}
 			}
 		}

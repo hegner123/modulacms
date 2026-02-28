@@ -582,6 +582,14 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/content/move", mutating("content:update", adminhandlers.ContentMoveHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/tree", mutating("content:update", adminhandlers.ContentTreeSaveHandler(driver, mgr)))
 
+	// Content publish / unpublish / versions / restore
+	mux.Handle("POST /admin/content/{id}/publish", mutating("content:publish", adminhandlers.ContentPublishHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/{id}/unpublish", mutating("content:publish", adminhandlers.ContentUnpublishHandler(driver, mgr)))
+	mux.Handle("GET /admin/content/{id}/versions", viewing("content", adminhandlers.ContentVersionsHandler(driver)))
+	mux.Handle("POST /admin/content/{id}/versions", mutating("content:update", adminhandlers.ContentCreateVersionHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/{id}/restore", mutating("content:update", adminhandlers.ContentRestoreVersionHandler(driver, mgr)))
+	mux.Handle("GET /admin/content/{id}/versions/compare", viewing("content", adminhandlers.ContentVersionCompareHandler(driver)))
+
 	// Admin API — config endpoints
 	mux.Handle("GET /admin/api/config/richtext-toolbar", viewing("config", adminhandlers.RichtextToolbarHandler(mgr)))
 

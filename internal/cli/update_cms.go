@@ -157,6 +157,22 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		)
 	case TogglePublishRequestMsg:
 		return m, m.HandleTogglePublish(msg)
+	case ConfirmedPublishMsg:
+		return m, m.HandleConfirmedPublish(msg)
+	case ConfirmedUnpublishMsg:
+		return m, m.HandleConfirmedUnpublish(msg)
+	case PublishCompletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Published", "Content published via snapshot.", false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
+	case UnpublishCompletedMsg:
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Unpublished", "Content is now draft.", false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
 	case ContentPublishToggledMsg:
 		statusLabel := "Published"
 		if msg.NewStatus == types.ContentStatusDraft {
@@ -165,6 +181,24 @@ func (m Model) UpdateCms(msg tea.Msg) (Model, tea.Cmd) {
 		return m, tea.Batch(
 			LoadingStopCmd(),
 			ShowDialog("Status Changed", fmt.Sprintf("Content is now: %s", statusLabel), false),
+			ReloadContentTreeCmd(m.Config, msg.RouteID),
+		)
+	case ListVersionsRequestMsg:
+		return m, m.HandleListVersions(msg)
+	case VersionsListedMsg:
+		m.Versions = msg.Versions
+		m.ShowVersionList = true
+		m.VersionContentID = msg.ContentID
+		m.VersionRouteID = msg.RouteID
+		m.VersionCursor = 0
+		return m, LoadingStopCmd()
+	case ConfirmedRestoreVersionMsg:
+		return m, m.HandleConfirmedRestoreVersion(msg)
+	case VersionRestoredMsg:
+		m.ShowVersionList = false
+		return m, tea.Batch(
+			LoadingStopCmd(),
+			ShowDialog("Restored", fmt.Sprintf("Restored %d fields from version.", msg.FieldsRestored), false),
 			ReloadContentTreeCmd(m.Config, msg.RouteID),
 		)
 	case DeleteContentRequestMsg:

@@ -16,7 +16,7 @@ import type {
 } from './common.js'
 
 // Re-export shared entity types
-export type { ContentData, ContentField, ContentRelation } from '@modulacms/types'
+export type { ContentData, ContentField, ContentRelation, ContentVersion, AdminContentVersion } from '@modulacms/types'
 
 // ---------------------------------------------------------------------------
 // Create params

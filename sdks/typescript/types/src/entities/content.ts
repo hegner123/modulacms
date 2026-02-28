@@ -6,9 +6,12 @@
  */
 
 import type {
+  AdminContentID,
+  AdminContentVersionID,
   ContentFieldID,
   ContentID,
   ContentRelationID,
+  ContentVersionID,
   DatatypeID,
   FieldID,
   RouteID,
@@ -39,10 +42,70 @@ export type ContentData = {
   author_id: UserID | null
   /** Publication lifecycle status. */
   status: ContentStatus
+  /** ISO 8601 timestamp when this content was last published, or `null`. */
+  published_at?: string | null
+  /** User ID of the person who last published this content, or `null`. */
+  published_by?: string | null
+  /** ISO 8601 timestamp for scheduled publication, or `null`. */
+  publish_at?: string | null
+  /** Monotonically increasing revision counter. */
+  revision: number
   /** ISO 8601 creation timestamp. */
   date_created: string
   /** ISO 8601 last-modification timestamp. */
   date_modified: string
+}
+
+/**
+ * A snapshot version of a content data node at a point in time.
+ */
+export type ContentVersion = {
+  /** Unique identifier for this version. */
+  content_version_id: ContentVersionID
+  /** The content data node this version belongs to. */
+  content_data_id: ContentID
+  /** Sequential version number. */
+  version_number: number
+  /** Locale of the content at snapshot time. */
+  locale: string
+  /** JSON-serialized snapshot of content data and fields. */
+  snapshot: string
+  /** What triggered this version (e.g. `"publish"`, `"manual"`, `"auto"`). */
+  trigger: string
+  /** Human-readable label for this version. */
+  label: string
+  /** Whether this version represents a published state. */
+  published: boolean
+  /** User ID of the person who published this version, or `null`. */
+  published_by?: string | null
+  /** ISO 8601 creation timestamp. */
+  date_created: string
+}
+
+/**
+ * A snapshot version of an admin content data node at a point in time.
+ */
+export type AdminContentVersion = {
+  /** Unique identifier for this admin version. */
+  admin_content_version_id: AdminContentVersionID
+  /** The admin content data node this version belongs to. */
+  admin_content_data_id: AdminContentID
+  /** Sequential version number. */
+  version_number: number
+  /** Locale of the content at snapshot time. */
+  locale: string
+  /** JSON-serialized snapshot of content data and fields. */
+  snapshot: string
+  /** What triggered this version (e.g. `"publish"`, `"manual"`, `"auto"`). */
+  trigger: string
+  /** Human-readable label for this version. */
+  label: string
+  /** Whether this version represents a published state. */
+  published: boolean
+  /** User ID of the person who published this version, or `null`. */
+  published_by?: string | null
+  /** ISO 8601 creation timestamp. */
+  date_created: string
 }
 
 /**

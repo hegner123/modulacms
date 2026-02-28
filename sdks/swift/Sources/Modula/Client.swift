@@ -59,6 +59,10 @@ public final class ModulaClient: Sendable {
     public let pluginRoutes: PluginRoutesResource
     public let pluginHooks: PluginHooksResource
 
+    // Publishing resources
+    public let publishing: PublishingResource
+    public let adminPublishing: AdminPublishingResource
+
     // Config resource
     public let config: ConfigResource
 
@@ -124,6 +128,10 @@ public final class ModulaClient: Sendable {
         contentTree = ContentTreeResource(http: http)
         contentHeal = ContentHealResource(http: http)
         deploy = DeployResource(http: http)
+
+        // Publishing
+        publishing = PublishingResource(http: http, prefix: "content")
+        adminPublishing = AdminPublishingResource(http: http, prefix: "admin/content")
 
         // RBAC
         rolePermissions = RolePermissionsResource(http: http)

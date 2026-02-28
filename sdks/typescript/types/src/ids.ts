@@ -69,6 +69,12 @@ export type SessionID = Brand<string, 'SessionID'>
 /** Unique identifier for a user OAuth connection. */
 export type UserOauthID = Brand<string, 'UserOauthID'>
 
+/** Unique identifier for a content version snapshot. */
+export type ContentVersionID = Brand<string, 'ContentVersionID'>
+
+/** Unique identifier for an admin content version snapshot. */
+export type AdminContentVersionID = Brand<string, 'AdminContentVersionID'>
+
 /** URL-safe slug string used to identify routes. */
 export type Slug = Brand<string, 'Slug'>
 

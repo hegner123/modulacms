@@ -384,6 +384,23 @@ func (q *Queries) CountContentDataTopLevel(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countContentDataTopLevelByStatus = `-- name: CountContentDataTopLevelByStatus :one
+SELECT COUNT(*) FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+`
+
+type CountContentDataTopLevelByStatusParams struct {
+	Status types.ContentStatus `json:"status"`
+}
+
+func (q *Queries) CountContentDataTopLevelByStatus(ctx context.Context, arg CountContentDataTopLevelByStatusParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countContentDataTopLevelByStatus, arg.Status)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countContentField = `-- name: CountContentField :one
 SELECT COUNT(*)
 FROM content_fields
@@ -8472,6 +8489,87 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 	items := []ListContentDataTopLevelPaginatedRow{}
 	for rows.Next() {
 		var i ListContentDataTopLevelPaginatedRow
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+			&i.AuthorName,
+			&i.RouteSlug,
+			&i.RouteTitle,
+			&i.DatatypeLabel,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentDataTopLevelPaginatedByStatus = `-- name: ListContentDataTopLevelPaginatedByStatus :many
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+LEFT JOIN users u ON cd.author_id = u.user_id
+LEFT JOIN routes r ON cd.route_id = r.route_id
+WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+ORDER BY cd.content_data_id
+LIMIT $2 OFFSET $3
+`
+
+type ListContentDataTopLevelPaginatedByStatusParams struct {
+	Status types.ContentStatus `json:"status"`
+	Limit  int32               `json:"limit"`
+	Offset int32               `json:"offset"`
+}
+
+type ListContentDataTopLevelPaginatedByStatusRow struct {
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.UserID             `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	PublishedAt   types.Timestamp          `json:"published_at"`
+	PublishedBy   types.NullableUserID     `json:"published_by"`
+	PublishAt     types.Timestamp          `json:"publish_at"`
+	Revision      int32                    `json:"revision"`
+	AuthorName    sql.NullString           `json:"author_name"`
+	RouteSlug     types.Slug               `json:"route_slug"`
+	RouteTitle    string                   `json:"route_title"`
+	DatatypeLabel string                   `json:"datatype_label"`
+}
+
+func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, arg ListContentDataTopLevelPaginatedByStatusParams) ([]ListContentDataTopLevelPaginatedByStatusRow, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataTopLevelPaginatedByStatus, arg.Status, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListContentDataTopLevelPaginatedByStatusRow{}
+	for rows.Next() {
+		var i ListContentDataTopLevelPaginatedByStatusRow
 		if err := rows.Scan(
 			&i.ContentDataID,
 			&i.ParentID,

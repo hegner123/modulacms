@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/hegner123/modulacms/internal/admin/components"
 	"github.com/hegner123/modulacms/internal/admin/layouts"
 	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
@@ -8,9 +9,11 @@ import (
 
 // ContentMeta holds resolved human-readable labels for content relationships.
 type ContentMeta struct {
-	DatatypeLabel string
-	RouteTitle    string
-	AuthorName    string
+	DatatypeLabel   string
+	RouteTitle      string
+	AuthorName      string
+	PublishedByName string
+	HasPublishPerm  bool
 }
 
 templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFieldRow, csrfToken string, treeJSON string, meta ContentMeta) {
@@ -29,14 +32,40 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 		</div>
 		<div class="page-header-right">
 			<div class="content-meta-inline">
-				<span class="badge">{ string(content.Status) }</span>
+				@components.StatusBadge(string(content.Status))
 				if meta.DatatypeLabel != "" {
 					<span class="text-muted">{ meta.DatatypeLabel }</span>
 				}
 				if meta.AuthorName != "" {
 					<span class="text-muted">{ meta.AuthorName }</span>
 				}
+				if meta.PublishedByName != "" {
+					<span class="text-muted">Published by { meta.PublishedByName }</span>
+				}
 			</div>
+			if meta.HasPublishPerm {
+				if string(content.Status) == "draft" {
+					<button
+						class="btn btn-primary"
+						hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
+						hx-target="#main-content"
+						hx-swap="innerHTML"
+						hx-confirm="Publish this content? This creates a public snapshot."
+					>
+						Publish
+					</button>
+				} else {
+					<button
+						class="btn btn-ghost"
+						hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
+						hx-target="#main-content"
+						hx-swap="innerHTML"
+						hx-confirm="Unpublish this content? It will no longer be publicly accessible."
+					>
+						Unpublish
+					</button>
+				}
+			}
 			@partials.DeleteConfirm(
 				"Delete Content",
 				"This will permanently delete this content and all its children.",
@@ -44,6 +73,17 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 				"#main-content",
 			)
 		</div>
+	</div>
+	<!-- Version History (lazy-loaded) -->
+	<div id="version-list-panel" class="version-panel">
+		<button
+			class="btn btn-ghost"
+			hx-get={ "/admin/content/" + content.ContentDataID.String() + "/versions" }
+			hx-target="#version-list-panel"
+			hx-swap="innerHTML"
+		>
+			Show Version History
+		</button>
 	</div>
 	<!-- Block Editor: adaptive 5/7 layout -->
 	<div class="content-editor-layout" id="content-editor-layout">

@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -102,7 +103,7 @@ func CreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config
 	ctx := r.Context()
 
 	// Build snapshot from live tables.
-	snapshot, err := buildSnapshot(d, ctx, req.ContentDataID)
+	snapshot, err := publishing.BuildSnapshot(d, ctx, req.ContentDataID)
 	if err != nil {
 		utility.DefaultLogger.Error("build snapshot for manual version failed", err)
 		http.Error(w, fmt.Sprintf("failed to build snapshot: %v", err), http.StatusInternalServerError)
@@ -147,7 +148,7 @@ func CreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config
 
 	// Async: prune old versions if retention cap exceeded.
 	retentionCap := c.VersionMaxPerContent()
-	go pruneExcessVersions(d, req.ContentDataID, "", retentionCap)
+	go publishing.PruneExcessVersions(d, req.ContentDataID, "", retentionCap)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

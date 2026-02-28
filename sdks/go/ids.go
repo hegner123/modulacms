@@ -180,6 +180,20 @@ type BackupID string
 func (id BackupID) String() string { return string(id) }
 func (id BackupID) IsZero() bool   { return id == "" }
 
+// Version IDs
+
+// ContentVersionID is a ULID identifying a content version.
+type ContentVersionID string
+
+func (id ContentVersionID) String() string { return string(id) }
+func (id ContentVersionID) IsZero() bool   { return id == "" }
+
+// AdminContentVersionID is a ULID identifying an admin content version.
+type AdminContentVersionID string
+
+func (id AdminContentVersionID) String() string { return string(id) }
+func (id AdminContentVersionID) IsZero() bool   { return id == "" }
+
 // Value types
 
 // Slug represents a URL slug.

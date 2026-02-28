@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/model"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/transform"
 	"github.com/hegner123/modulacms/internal/tree/core"
 	"github.com/hegner123/modulacms/internal/utility"
@@ -98,7 +97,7 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config
 	}
 
 	// 4. Deserialize the snapshot JSON.
-	var snapshot Snapshot
+	var snapshot publishing.Snapshot
 	if err := json.Unmarshal([]byte(version.Snapshot), &snapshot); err != nil {
 		utility.DefaultLogger.Error("snapshot unmarshal failed", err)
 		http.Error(w, "failed to read published content", http.StatusInternalServerError)
@@ -106,28 +105,28 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config
 	}
 
 	// 5. Convert snapshot JSON types back to DB types for model.BuildTree.
-	cdSlice, err := snapshotContentDataToSlice(snapshot.ContentData)
+	cdSlice, err := publishing.SnapshotContentDataToSlice(snapshot.ContentData)
 	if err != nil {
 		utility.DefaultLogger.Error("snapshot content data conversion failed", err)
 		http.Error(w, "failed to process published content", http.StatusInternalServerError)
 		return err
 	}
 
-	dtSlice, err := snapshotDatatypesToSlice(snapshot.Datatypes)
+	dtSlice, err := publishing.SnapshotDatatypesToSlice(snapshot.Datatypes)
 	if err != nil {
 		utility.DefaultLogger.Error("snapshot datatypes conversion failed", err)
 		http.Error(w, "failed to process published content", http.StatusInternalServerError)
 		return err
 	}
 
-	cfSlice, err := snapshotContentFieldsToSlice(snapshot.ContentFields)
+	cfSlice, err := publishing.SnapshotContentFieldsToSlice(snapshot.ContentFields)
 	if err != nil {
 		utility.DefaultLogger.Error("snapshot content fields conversion failed", err)
 		http.Error(w, "failed to process published content", http.StatusInternalServerError)
 		return err
 	}
 
-	fdSlice, err := snapshotFieldsToSlice(snapshot.Fields)
+	fdSlice, err := publishing.SnapshotFieldsToSlice(snapshot.Fields)
 	if err != nil {
 		utility.DefaultLogger.Error("snapshot fields conversion failed", err)
 		http.Error(w, "failed to process published content", http.StatusInternalServerError)
@@ -341,27 +340,27 @@ func (f *SnapshotTreeFetcher) FetchAndBuildTree(ctx context.Context, id types.Co
 		return nil, fmt.Errorf("no published snapshot for %s: %w", id, err)
 	}
 
-	var snapshot Snapshot
+	var snapshot publishing.Snapshot
 	if err := json.Unmarshal([]byte(version.Snapshot), &snapshot); err != nil {
 		return nil, fmt.Errorf("unmarshal snapshot for %s: %w", id, err)
 	}
 
-	cd, err := snapshotContentDataToSlice(snapshot.ContentData)
+	cd, err := publishing.SnapshotContentDataToSlice(snapshot.ContentData)
 	if err != nil {
 		return nil, fmt.Errorf("convert snapshot content data for %s: %w", id, err)
 	}
 
-	dt, err := snapshotDatatypesToSlice(snapshot.Datatypes)
+	dt, err := publishing.SnapshotDatatypesToSlice(snapshot.Datatypes)
 	if err != nil {
 		return nil, fmt.Errorf("convert snapshot datatypes for %s: %w", id, err)
 	}
 
-	cf, err := snapshotContentFieldsToSlice(snapshot.ContentFields)
+	cf, err := publishing.SnapshotContentFieldsToSlice(snapshot.ContentFields)
 	if err != nil {
 		return nil, fmt.Errorf("convert snapshot content fields for %s: %w", id, err)
 	}
 
-	df, err := snapshotFieldsToSlice(snapshot.Fields)
+	df, err := publishing.SnapshotFieldsToSlice(snapshot.Fields)
 	if err != nil {
 		return nil, fmt.Errorf("convert snapshot fields for %s: %w", id, err)
 	}
@@ -376,211 +375,4 @@ func (f *SnapshotTreeFetcher) FetchAndBuildTree(ctx context.Context, id types.Co
 
 	root, _, err := core.BuildTree(cd, dt, cf, df)
 	return root, err
-}
-
-///////////////////////////////
-// SNAPSHOT REVERSE MAPPERS
-///////////////////////////////
-
-// snapshotContentDataToSlice converts snapshot JSON content data back to
-// typed db.ContentData structs for tree building.
-func snapshotContentDataToSlice(items []db.ContentDataJSON) ([]db.ContentData, error) {
-	result := make([]db.ContentData, len(items))
-	for i, item := range items {
-		ts, err := parseSnapshotTimestamp(item.DateCreated)
-		if err != nil {
-			return nil, fmt.Errorf("content_data[%d] date_created: %w", i, err)
-		}
-		tm, err := parseSnapshotTimestamp(item.DateModified)
-		if err != nil {
-			return nil, fmt.Errorf("content_data[%d] date_modified: %w", i, err)
-		}
-		pubAt, err := parseSnapshotTimestamp(item.PublishedAt)
-		if err != nil {
-			return nil, fmt.Errorf("content_data[%d] published_at: %w", i, err)
-		}
-		pubAtField, err := parseSnapshotTimestamp(item.PublishAt)
-		if err != nil {
-			return nil, fmt.Errorf("content_data[%d] publish_at: %w", i, err)
-		}
-
-		result[i] = db.ContentData{
-			ContentDataID: types.ContentID(item.ContentDataID),
-			ParentID:      snapshotNullableContentID(item.ParentID),
-			FirstChildID:  snapshotNullableContentID(item.FirstChildID),
-			NextSiblingID: snapshotNullableContentID(item.NextSiblingID),
-			PrevSiblingID: snapshotNullableContentID(item.PrevSiblingID),
-			RouteID:       parseNullableRouteID(item.RouteID),
-			DatatypeID:    parseNullableDatatypeID(item.DatatypeID),
-			AuthorID:      types.UserID(item.AuthorID),
-			Status:        types.ContentStatus(item.Status),
-			DateCreated:   ts,
-			DateModified:  tm,
-			PublishedAt:   pubAt,
-			PublishedBy:   parseNullableUserID(item.PublishedBy),
-			PublishAt:     pubAtField,
-			Revision:      item.Revision,
-		}
-	}
-	return result, nil
-}
-
-// snapshotDatatypesToSlice converts snapshot JSON datatypes back to
-// typed db.Datatypes structs for tree building.
-func snapshotDatatypesToSlice(items []db.DatatypeJSON) ([]db.Datatypes, error) {
-	result := make([]db.Datatypes, len(items))
-	for i, item := range items {
-		ts, err := parseSnapshotTimestamp(item.DateCreated)
-		if err != nil {
-			return nil, fmt.Errorf("datatypes[%d] date_created: %w", i, err)
-		}
-		tm, err := parseSnapshotTimestamp(item.DateModified)
-		if err != nil {
-			return nil, fmt.Errorf("datatypes[%d] date_modified: %w", i, err)
-		}
-
-		result[i] = db.Datatypes{
-			DatatypeID:   types.DatatypeID(item.DatatypeID),
-			ParentID:     parseNullableDatatypeID(item.ParentID),
-			Name:         item.Name,
-			Label:        item.Label,
-			Type:         item.Type,
-			AuthorID:     types.UserID(item.AuthorID),
-			DateCreated:  ts,
-			DateModified: tm,
-		}
-	}
-	return result, nil
-}
-
-// snapshotContentFieldsToSlice converts snapshot content field JSON back to
-// typed db.ContentFields structs for tree building.
-func snapshotContentFieldsToSlice(items []SnapshotContentFieldJSON) ([]db.ContentFields, error) {
-	result := make([]db.ContentFields, len(items))
-	for i, item := range items {
-		ts, err := parseSnapshotTimestamp(item.DateCreated)
-		if err != nil {
-			return nil, fmt.Errorf("content_fields[%d] date_created: %w", i, err)
-		}
-		tm, err := parseSnapshotTimestamp(item.DateModified)
-		if err != nil {
-			return nil, fmt.Errorf("content_fields[%d] date_modified: %w", i, err)
-		}
-
-		result[i] = db.ContentFields{
-			ContentFieldID: types.ContentFieldID(item.ContentFieldID),
-			RouteID:        parseNullableRouteID(item.RouteID),
-			ContentDataID:  snapshotNullableContentID(item.ContentDataID),
-			FieldID:        parseNullableFieldID(item.FieldID),
-			FieldValue:     item.FieldValue,
-			AuthorID:       types.UserID(item.AuthorID),
-			DateCreated:    ts,
-			DateModified:   tm,
-		}
-	}
-	return result, nil
-}
-
-// snapshotFieldsToSlice converts snapshot field definition JSON back to
-// typed db.Fields structs for tree building.
-func snapshotFieldsToSlice(items []db.FieldsJSON) ([]db.Fields, error) {
-	result := make([]db.Fields, len(items))
-	for i, item := range items {
-		ts, err := parseSnapshotTimestamp(item.DateCreated)
-		if err != nil {
-			return nil, fmt.Errorf("fields[%d] date_created: %w", i, err)
-		}
-		tm, err := parseSnapshotTimestamp(item.DateModified)
-		if err != nil {
-			return nil, fmt.Errorf("fields[%d] date_modified: %w", i, err)
-		}
-
-		sortOrder, err := strconv.ParseInt(item.SortOrder, 10, 64)
-		if err != nil {
-			// Default to 0 if sort order is empty or unparseable.
-			sortOrder = 0
-		}
-
-		result[i] = db.Fields{
-			FieldID:      types.FieldID(item.FieldID),
-			ParentID:     parseNullableDatatypeID(item.ParentID),
-			SortOrder:    sortOrder,
-			Name:         item.Name,
-			Label:        item.Label,
-			Data:         item.Data,
-			Validation:   item.Validation,
-			UIConfig:     item.UIConfig,
-			Type:         types.FieldType(item.Type),
-			AuthorID:     parseNullableUserID(item.AuthorID),
-			DateCreated:  ts,
-			DateModified: tm,
-		}
-	}
-	return result, nil
-}
-
-///////////////////////////////
-// SNAPSHOT PARSE HELPERS
-///////////////////////////////
-
-// parseSnapshotTimestamp parses a timestamp string from a snapshot.
-// Empty strings and "null" produce a zero-value (invalid) Timestamp.
-func parseSnapshotTimestamp(s string) (types.Timestamp, error) {
-	if s == "" || s == "null" {
-		return types.Timestamp{}, nil
-	}
-	t, err := time.Parse(time.RFC3339, s)
-	if err != nil {
-		// Try RFC3339Nano as fallback.
-		t, err = time.Parse(time.RFC3339Nano, s)
-		if err != nil {
-			return types.Timestamp{}, fmt.Errorf("parse timestamp %q: %w", s, err)
-		}
-	}
-	return types.NewTimestamp(t), nil
-}
-
-// snapshotNullableContentID creates a NullableContentID from a snapshot string.
-// Empty strings and "null" produce an invalid (unset) nullable.
-func snapshotNullableContentID(s string) types.NullableContentID {
-	if s == "" || s == "null" {
-		return types.NullableContentID{}
-	}
-	return types.NullableContentID{ID: types.ContentID(s), Valid: true}
-}
-
-// parseNullableRouteID creates a NullableRouteID from a string.
-// Empty strings and "null" produce an invalid (unset) nullable.
-func parseNullableRouteID(s string) types.NullableRouteID {
-	if s == "" || s == "null" {
-		return types.NullableRouteID{}
-	}
-	return types.NullableRouteID{ID: types.RouteID(s), Valid: true}
-}
-
-// parseNullableDatatypeID creates a NullableDatatypeID from a string.
-// Empty strings and "null" produce an invalid (unset) nullable.
-func parseNullableDatatypeID(s string) types.NullableDatatypeID {
-	if s == "" || s == "null" {
-		return types.NullableDatatypeID{}
-	}
-	return types.NullableDatatypeID{ID: types.DatatypeID(s), Valid: true}
-}
-
-// parseNullableFieldID creates a NullableFieldID from a string.
-// Empty strings and "null" produce an invalid (unset) nullable.
-func parseNullableFieldID(s string) types.NullableFieldID {
-	if s == "" || s == "null" {
-		return types.NullableFieldID{}
-	}
-	return types.NullableFieldID{ID: types.FieldID(s), Valid: true}
-}
-
-// parseNullableUserID creates a NullableUserID from a string.
-// Empty strings and "null" produce an invalid (unset) nullable.
-func parseNullableUserID(s string) types.NullableUserID {
-	if s == "" || s == "null" {
-		return types.NullableUserID{}
-	}
-	return types.NullableUserID{ID: types.UserID(s), Valid: true}
 }

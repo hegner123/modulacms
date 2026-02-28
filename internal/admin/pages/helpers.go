@@ -19,8 +19,9 @@ func truncateID(id string) string {
 // resolved from the associated route or title content field.
 type ContentListItem struct {
 	db.ContentDataTopLevel
-	DisplayName string
-	Slug        string
+	DisplayName    string
+	Slug           string
+	HasPublishPerm bool
 }
 
 

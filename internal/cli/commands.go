@@ -15,6 +15,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/media"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -2003,7 +2004,7 @@ func (m Model) HandleCopyContent(msg CopyContentRequestMsg) tea.Cmd {
 	}
 }
 
-// TogglePublishCmd creates a command to toggle content publish status.
+// TogglePublishCmd creates a command to show the publish/unpublish confirmation dialog.
 func TogglePublishCmd(contentID types.ContentID, routeID types.RouteID) tea.Cmd {
 	return func() tea.Msg {
 		return TogglePublishRequestMsg{
@@ -2013,8 +2014,40 @@ func TogglePublishCmd(contentID types.ContentID, routeID types.RouteID) tea.Cmd 
 	}
 }
 
-// HandleTogglePublish toggles a content node between draft and published status.
+// HandleTogglePublish shows a confirmation dialog before publishing or unpublishing.
+// The actual operation runs after the user confirms via ConfirmedPublishMsg / ConfirmedUnpublishMsg.
 func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		content, err := d.GetContentData(msg.ContentID)
+		if err != nil || content == nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content not found: %v", err)}
+		}
+
+		contentName := msg.ContentID.String()
+		if len(contentName) > 12 {
+			contentName = contentName[:8] + "..."
+		}
+		isPublished := content.Status == types.ContentStatusPublished
+
+		return ShowPublishDialogMsg{
+			ContentID:   msg.ContentID,
+			RouteID:     msg.RouteID,
+			ContentName: contentName,
+			IsPublished: isPublished,
+		}
+	}
+}
+
+// HandleConfirmedPublish creates a snapshot and publishes content.
+func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 	cfg := m.Config
 	if cfg == nil {
 		return func() tea.Msg {
@@ -2029,39 +2062,115 @@ func (m Model) HandleTogglePublish(msg TogglePublishRequestMsg) tea.Cmd {
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
-		content, err := d.GetContentData(msg.ContentID)
-		if err != nil || content == nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Content not found: %v", err)}
+		retentionCap := cfg.VersionMaxPerContent()
+		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, userID, ac, retentionCap)
+		if pubErr != nil {
+			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
 		}
 
-		// Toggle status
-		newStatus := types.ContentStatusPublished
-		if content.Status == types.ContentStatusPublished {
-			newStatus = types.ContentStatusDraft
-		}
-
-		_, updateErr := d.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
-			ContentDataID: content.ContentDataID,
-			RouteID:       content.RouteID,
-			ParentID:      content.ParentID,
-			FirstChildID:  content.FirstChildID,
-			NextSiblingID: content.NextSiblingID,
-			PrevSiblingID: content.PrevSiblingID,
-			DatatypeID:    content.DatatypeID,
-			AuthorID:      content.AuthorID,
-			Status:        newStatus,
-			DateCreated:   content.DateCreated,
-			DateModified:  types.TimestampNow(),
-		})
-		if updateErr != nil {
-			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to update status: %v", updateErr)}
-		}
-
-		logger.Finfo(fmt.Sprintf("Content %s status changed to %s", msg.ContentID, newStatus))
-		return ContentPublishToggledMsg{
+		logger.Finfo(fmt.Sprintf("Content %s published via snapshot", msg.ContentID))
+		return PublishCompletedMsg{
 			ContentID: msg.ContentID,
 			RouteID:   msg.RouteID,
-			NewStatus: newStatus,
+		}
+	}
+}
+
+// HandleConfirmedUnpublish unpublishes content (sets status to draft, clears published metadata).
+func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	userID := m.UserID
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
+		logger := utility.DefaultLogger
+
+		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, userID, ac)
+		if unpubErr != nil {
+			logger.Ferror(fmt.Sprintf("Failed to unpublish content %s", msg.ContentID), unpubErr)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content %s unpublished", msg.ContentID))
+		return UnpublishCompletedMsg{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+		}
+	}
+}
+
+// ListVersionsCmd creates a command to list versions for a content item.
+func ListVersionsCmd(contentID types.ContentID, routeID types.RouteID) tea.Cmd {
+	return func() tea.Msg {
+		return ListVersionsRequestMsg{
+			ContentID: contentID,
+			RouteID:   routeID,
+		}
+	}
+}
+
+// HandleListVersions fetches versions for a content item.
+func (m Model) HandleListVersions(msg ListVersionsRequestMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		versions, err := d.ListContentVersionsByContent(msg.ContentID)
+		if err != nil {
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Failed to list versions: %v", err)}
+		}
+		var versionList []db.ContentVersion
+		if versions != nil {
+			versionList = *versions
+		}
+		return VersionsListedMsg{
+			ContentID: msg.ContentID,
+			RouteID:   msg.RouteID,
+			Versions:  versionList,
+		}
+	}
+}
+
+// HandleConfirmedRestoreVersion restores content from a saved version.
+func (m Model) HandleConfirmedRestoreVersion(msg ConfirmedRestoreVersionMsg) tea.Cmd {
+	cfg := m.Config
+	if cfg == nil {
+		return func() tea.Msg {
+			return ActionResultMsg{Title: "Error", Message: "Configuration not loaded"}
+		}
+	}
+
+	userID := m.UserID
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+		ctx := context.Background()
+		ac := middleware.AuditContextFromCLI(*cfg, userID)
+		logger := utility.DefaultLogger
+
+		result, err := publishing.RestoreContent(ctx, d, msg.ContentID, msg.VersionID, userID, ac)
+		if err != nil {
+			logger.Ferror(fmt.Sprintf("Failed to restore version for %s", msg.ContentID), err)
+			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Restore failed: %v", err)}
+		}
+
+		logger.Finfo(fmt.Sprintf("Content %s restored from version %s (%d fields)", msg.ContentID, msg.VersionID, result.FieldsRestored))
+		return VersionRestoredMsg{
+			ContentID:      msg.ContentID,
+			RouteID:        msg.RouteID,
+			FieldsRestored: result.FieldsRestored,
 		}
 	}
 }

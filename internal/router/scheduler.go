@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -65,10 +66,11 @@ func publishDueContent(ctx context.Context, driver db.DbDriver, cfg config.Confi
 		return
 	}
 
+	retentionCap := cfg.VersionMaxPerContent()
 	for _, item := range *items {
 		ac := audited.Ctx(types.NewNodeID(), item.AuthorID, "scheduled-publish", "system")
 
-		_, pubErr := publishContent(ctx, driver, item.ContentDataID, item.AuthorID, ac, cfg)
+		_, pubErr := publishing.PublishContent(ctx, driver, item.ContentDataID, item.AuthorID, ac, retentionCap)
 		if pubErr != nil {
 			utility.DefaultLogger.Error(fmt.Sprintf("scheduler: publish content %s failed", item.ContentDataID), pubErr)
 			continue
@@ -100,10 +102,11 @@ func publishDueAdminContent(ctx context.Context, driver db.DbDriver, cfg config.
 		return
 	}
 
+	retentionCap := cfg.VersionMaxPerContent()
 	for _, item := range *items {
 		ac := audited.Ctx(types.NewNodeID(), item.AuthorID, "scheduled-publish", "system")
 
-		pubErr := publishAdminContent(ctx, driver, item.AdminContentDataID, item.AuthorID, ac, cfg)
+		pubErr := publishing.PublishAdminContent(ctx, driver, item.AdminContentDataID, item.AuthorID, ac, retentionCap)
 		if pubErr != nil {
 			utility.DefaultLogger.Error(fmt.Sprintf("scheduler: publish admin content %s failed", item.AdminContentDataID), pubErr)
 			continue
@@ -141,7 +144,7 @@ func pruneAllContentVersions(driver db.DbDriver, cfg config.Config) {
 
 	pruned := 0
 	for _, item := range *items {
-		pruneExcessVersions(driver, item.ContentDataID, "", retentionCap)
+		publishing.PruneExcessVersions(driver, item.ContentDataID, "", retentionCap)
 		pruned++
 	}
 
@@ -169,7 +172,7 @@ func pruneAllAdminContentVersions(driver db.DbDriver, cfg config.Config) {
 
 	pruned := 0
 	for _, item := range *items {
-		pruneExcessAdminVersions(driver, item.AdminContentDataID, "", retentionCap)
+		publishing.PruneExcessAdminVersions(driver, item.AdminContentDataID, "", retentionCap)
 		pruned++
 	}
 

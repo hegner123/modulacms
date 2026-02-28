@@ -176,6 +176,20 @@ SET publish_at = NULL,
     date_modified = $1
 WHERE content_data_id = $2;
 
+-- name: ListContentDataTopLevelPaginatedByStatus :many
+SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+LEFT JOIN users u ON cd.author_id = u.user_id
+LEFT JOIN routes r ON cd.route_id = r.route_id
+WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+ORDER BY cd.content_data_id
+LIMIT $2 OFFSET $3;
+
+-- name: CountContentDataTopLevelByStatus :one
+SELECT COUNT(*) FROM content_data cd
+LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
+WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1;
+
 -- name: ListContentDataDueForPublish :many
 SELECT * FROM content_data
 WHERE publish_at IS NOT NULL AND publish_at <= $1 AND status = 'draft';

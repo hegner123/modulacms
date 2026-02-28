@@ -611,18 +611,77 @@ type ContentCopiedMsg struct {
 }
 
 // TogglePublishRequestMsg requests toggling content publish status.
+// Now triggers a confirmation dialog instead of direct toggle.
 type TogglePublishRequestMsg struct {
 	ContentID types.ContentID
 	RouteID   types.RouteID
 }
 
+// ConfirmedPublishMsg signals user confirmed the publish action.
+type ConfirmedPublishMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// ConfirmedUnpublishMsg signals user confirmed the unpublish action.
+type ConfirmedUnpublishMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// PublishCompletedMsg signals successful snapshot-based publish.
+type PublishCompletedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// UnpublishCompletedMsg signals successful unpublish.
+type UnpublishCompletedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
 // ContentPublishToggledMsg signals successful publish status toggle.
+// Kept for backward compatibility; new flow uses PublishCompletedMsg / UnpublishCompletedMsg.
 type ContentPublishToggledMsg struct {
 	ContentID types.ContentID
 	RouteID   types.RouteID
 	NewStatus types.ContentStatus
 }
 
+// ListVersionsRequestMsg requests listing versions for a content item.
+type ListVersionsRequestMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+}
+
+// VersionsListedMsg delivers the version list to the model.
+type VersionsListedMsg struct {
+	ContentID types.ContentID
+	RouteID   types.RouteID
+	Versions  []db.ContentVersion
+}
+
+// RestoreVersionRequestMsg requests restoring content from a specific version.
+type RestoreVersionRequestMsg struct {
+	ContentID types.ContentID
+	VersionID types.ContentVersionID
+	RouteID   types.RouteID
+}
+
+// ConfirmedRestoreVersionMsg signals user confirmed the restore action.
+type ConfirmedRestoreVersionMsg struct {
+	ContentID types.ContentID
+	VersionID types.ContentVersionID
+	RouteID   types.RouteID
+}
+
+// VersionRestoredMsg signals successful version restore.
+type VersionRestoredMsg struct {
+	ContentID      types.ContentID
+	RouteID        types.RouteID
+	FieldsRestored int
+}
 
 // PanelFocusReset resets panel focus to the default state.
 type PanelFocusReset struct{}

@@ -41,6 +41,7 @@ import { createPluginRoutesResource } from './resources/plugin-routes.js'
 import { createPluginHooksResource } from './resources/plugin-hooks.js'
 import { createConfigResource } from './resources/config.js'
 import { createContentDeliveryResource } from './resources/content-delivery.js'
+import { createPublishingResource, createAdminPublishingResource } from './resources/publishing.js'
 
 import type { RequestOptions, AdminRouteID, FieldTypeID, AdminFieldTypeID, Slug } from './types/common.js'
 import type { MediaUploadOptions } from './resources/media-upload.js'
@@ -58,12 +59,14 @@ export type {
   AdminContentID,
   AdminContentFieldID,
   AdminContentRelationID,
+  AdminContentVersionID,
   AdminDatatypeID,
   AdminFieldID,
   AdminRouteID,
   ContentID,
   ContentFieldID,
   ContentRelationID,
+  ContentVersionID,
   DatatypeID,
   FieldID,
   MediaID,
@@ -113,6 +116,8 @@ export type {
   ContentData,
   ContentField,
   ContentRelation,
+  ContentVersion,
+  AdminContentVersion,
   CreateContentDataParams,
   CreateContentFieldParams,
   UpdateContentDataParams,
@@ -234,6 +239,24 @@ export type {
 } from './types/config.js'
 export type { ConfigResource } from './resources/config.js'
 export type { ContentDeliveryResource } from './resources/content-delivery.js'
+export type {
+  PublishingResource,
+  AdminPublishingResource,
+  PublishRequest,
+  AdminPublishRequest,
+  PublishResponse,
+  AdminPublishResponse,
+  ScheduleRequest,
+  AdminScheduleRequest,
+  ScheduleResponse,
+  AdminScheduleResponse,
+  CreateVersionRequest,
+  CreateAdminVersionRequest,
+  RestoreRequest,
+  AdminRestoreRequest,
+  RestoreResponse,
+  AdminRestoreResponse,
+} from './resources/publishing.js'
 
 // ---------------------------------------------------------------------------
 // Imports for client type (type-only, for the ModulaCMSAdminClient shape)
@@ -348,6 +371,8 @@ import type { PluginHooksResource } from './resources/plugin-hooks.js'
 import type { ConfigResource } from './resources/config.js'
 import type { ContentDeliveryResource } from './resources/content-delivery.js'
 import type { DeployHealthResponse, DeploySyncPayload, DeploySyncResult } from './types/deploy.js'
+import type { PublishingResource } from './resources/publishing.js'
+import type { AdminPublishingResource } from './resources/publishing.js'
 
 // ---------------------------------------------------------------------------
 // Client config
@@ -594,6 +619,11 @@ export type ModulaCMSAdminClient = {
     importPayload: (payload: DeploySyncPayload, dryRun?: boolean, opts?: RequestOptions) => Promise<DeploySyncResult>
   }
 
+  /** Publishing operations for public content (publish, unpublish, schedule, versions, restore). */
+  publishing: PublishingResource
+  /** Publishing operations for admin content (publish, unpublish, schedule, versions, restore). */
+  adminPublishing: AdminPublishingResource
+
   /** Bulk content import from external CMS platforms. */
   import: {
     /** Import from Contentful export format. */
@@ -805,6 +835,8 @@ export function createAdminClient(config: ClientConfig): ModulaCMSAdminClient {
         return http.post<HealReport>(path, {} as Record<string, unknown>, opts)
       },
     },
+    publishing: createPublishingResource(http, 'content'),
+    adminPublishing: createAdminPublishingResource(http, 'admin/content'),
     deploy: createDeployResource(http),
     import: createImportResource(http),
   }

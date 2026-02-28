@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -102,7 +103,7 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 	ctx := r.Context()
 
 	// Build snapshot from live admin tables.
-	snapshot, err := buildAdminSnapshot(d, ctx, req.AdminContentDataID)
+	snapshot, err := publishing.BuildAdminSnapshot(d, ctx, req.AdminContentDataID)
 	if err != nil {
 		utility.DefaultLogger.Error("build admin snapshot for manual version failed", err)
 		http.Error(w, fmt.Sprintf("failed to build snapshot: %v", err), http.StatusInternalServerError)
@@ -147,7 +148,7 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 
 	// Async: prune old admin versions if retention cap exceeded.
 	retentionCap := c.VersionMaxPerContent()
-	go pruneExcessAdminVersions(d, req.AdminContentDataID, "", retentionCap)
+	go publishing.PruneExcessAdminVersions(d, req.AdminContentDataID, "", retentionCap)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

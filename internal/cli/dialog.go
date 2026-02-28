@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tui"
 )
 
@@ -40,6 +41,9 @@ const (
 	DIALOGDELETEADMINFIELDTYPE DialogAction = "delete_admin_field_type"
 	DIALOGDEPLOYPULL           DialogAction = "deploy_pull"
 	DIALOGDEPLOYPUSH           DialogAction = "deploy_push"
+	DIALOGPUBLISHCONTENT       DialogAction = "publish_content"
+	DIALOGUNPUBLISHCONTENT     DialogAction = "unpublish_content"
+	DIALOGRESTOREVERSION       DialogAction = "restore_version"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -109,7 +113,8 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGDELETECONTENTFIELD, DIALOGDELETEADMINROUTE, DIALOGDELETEADMINDATATYPE, DIALOGDELETEADMINFIELD,
 		DIALOGDELETEADMINCONTENT, DIALOGBACKUPRESTORE, DIALOGAPPROVEPLUGINROUTES, DIALOGAPPROVEPLUGINSHOOKS,
 		DIALOGQUICKSTART, DIALOGDELETEFIELDTYPE, DIALOGDELETEADMINFIELDTYPE,
-		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH:
+		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH,
+		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION:
 		return d.ToggleControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc
@@ -327,4 +332,24 @@ func FilePickerOverlay(base string, fp filepicker.Model, width, height int) stri
 		pickerView,
 		lipgloss.WithWhitespaceChars(" "),
 	)
+}
+
+// ShowPublishDialogMsg triggers showing a publish/unpublish confirmation dialog.
+type ShowPublishDialogMsg struct {
+	ContentID   types.ContentID
+	RouteID     types.RouteID
+	ContentName string
+	IsPublished bool
+}
+
+// ShowPublishDialogCmd creates a command to show the publish confirmation dialog.
+func ShowPublishDialogCmd(contentID types.ContentID, routeID types.RouteID, contentName string, isPublished bool) tea.Cmd {
+	return func() tea.Msg {
+		return ShowPublishDialogMsg{
+			ContentID:   contentID,
+			RouteID:     routeID,
+			ContentName: contentName,
+			IsPublished: isPublished,
+		}
+	}
 }

@@ -110,6 +110,9 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		if m.PageRouteId.IsZero() {
 			return "Content", "Details", "Actions"
 		}
+		if m.ShowVersionList {
+			return "Tree", "Content", "Versions"
+		}
 		return "Tree", "Content", "Fields"
 	case ROUTES:
 		return "Routes", "Details", "Actions"
@@ -162,7 +165,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 			cms := CMSPage{}
 			left = cms.ProcessTreeDatatypes(m)
 			center = cms.ProcessContentPreview(m)
-			right = cms.ProcessFields(m)
+			if m.ShowVersionList {
+				right = renderVersionList(m)
+			} else {
+				right = cms.ProcessFields(m)
+			}
 		}
 
 	case ROUTES:
@@ -330,6 +337,9 @@ func getContextControls(m Model) string {
 			return nav + " │ enter:view │ " + km.HintString(config.ActionNew) + ":new │ " +
 				km.HintString(config.ActionEdit) + ":edit │ " + common
 		}
+		if m.ShowVersionList && m.PanelFocus == tui.RoutePanel {
+			return nav + " │ enter:restore │ esc:close │ " + common
+		}
 		if m.PanelFocus == tui.RoutePanel {
 			return nav + " │ " +
 				km.HintString(config.ActionEdit) + ":edit │ " +
@@ -344,7 +354,8 @@ func getContextControls(m Model) string {
 			km.HintString(config.ActionDelete) + ":delete │ " +
 			km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " +
 			km.HintString(config.ActionCopy) + ":copy │ " +
-			km.HintString(config.ActionPublish) + ":publish │ " + common
+			km.HintString(config.ActionPublish) + ":publish │ " +
+			km.HintString(config.ActionVersions) + ":versions │ " + common
 
 	case ROUTES:
 		return nav + " │ enter:select │ " + km.HintString(config.ActionNew) + ":new │ " +
@@ -950,6 +961,51 @@ func renderPipelineDetail(m Model) string {
 		}
 		lines = append(lines, fmt.Sprintf("  %d. %s -> %s (pri:%d, %s)", i+1, e.PluginName, e.Handler, e.Priority, enabled))
 	}
+	return strings.Join(lines, "\n")
+}
+
+// renderVersionList renders the version history list for the right panel on CONTENT page.
+func renderVersionList(m Model) string {
+	if len(m.Versions) == 0 {
+		return "(no versions)\n\nPress esc to close"
+	}
+
+	publishedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("#16a34a")).Bold(true)
+	triggerStyle := lipgloss.NewStyle().Faint(true)
+	labelStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent)
+
+	lines := make([]string, 0, len(m.Versions)*3+2)
+	for i, v := range m.Versions {
+		cursor := "   "
+		if m.PanelFocus == tui.RoutePanel && m.VersionCursor == i {
+			cursor = " > "
+		}
+
+		// Version number + published badge
+		numStr := fmt.Sprintf("#%d", v.VersionNumber)
+		if v.Published {
+			numStr = publishedStyle.Render(numStr + " [pub]")
+		}
+
+		// Trigger badge
+		trigger := triggerStyle.Render(v.Trigger)
+
+		// Label (if present)
+		label := ""
+		if v.Label != "" {
+			label = " " + labelStyle.Render(v.Label)
+		}
+
+		// Date
+		date := triggerStyle.Render(v.DateCreated.String())
+
+		lines = append(lines, fmt.Sprintf("%s%s %s%s", cursor, numStr, trigger, label))
+		lines = append(lines, fmt.Sprintf("     %s", date))
+	}
+
+	lines = append(lines, "")
+	lines = append(lines, triggerStyle.Render("  enter:restore │ esc:close"))
+
 	return strings.Join(lines, "\n")
 }
 

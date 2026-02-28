@@ -1,0 +1,59 @@
+package partials
+
+import (
+	"fmt"
+	"github.com/hegner123/modulacms/internal/db"
+)
+
+templ VersionList(versions []db.ContentVersion, contentID string, csrfToken string) {
+	<div class="version-list">
+		<div class="version-list-header">
+			<h3>Version History</h3>
+			<form
+				hx-post={ "/admin/content/" + contentID + "/versions" }
+				hx-target="#version-list-panel"
+				hx-swap="innerHTML"
+				class="version-create-form"
+			>
+				@CSRFField(csrfToken)
+				<input type="text" name="label" placeholder="Version label (optional)" class="version-label-input"/>
+				<button type="submit" class="btn btn-ghost btn-sm">Save Version</button>
+			</form>
+		</div>
+		if len(versions) == 0 {
+			<p class="text-muted">No versions yet.</p>
+		} else {
+			<ul class="version-items">
+				for _, v := range versions {
+					<li class="version-item">
+						<div class="version-item-header">
+							<span class="version-number">#{ fmt.Sprintf("%d", v.VersionNumber) }</span>
+							<span class={ "badge", templ.KV("badge-published", v.Published) }>{ v.Trigger }</span>
+							if v.Published {
+								<span class="badge badge-published">published</span>
+							}
+						</div>
+						if v.Label != "" {
+							<div class="version-item-label">{ v.Label }</div>
+						}
+						<div class="version-item-meta">
+							<span class="text-muted">{ v.DateCreated.String() }</span>
+						</div>
+						<div class="version-item-actions">
+							<form
+								hx-post={ "/admin/content/" + contentID + "/restore" }
+								hx-target="#main-content"
+								hx-swap="innerHTML"
+								hx-confirm={ fmt.Sprintf("Restore to version #%d? Current field values will be overwritten.", v.VersionNumber) }
+							>
+								@CSRFField(csrfToken)
+								<input type="hidden" name="version_id" value={ v.ContentVersionID.String() }/>
+								<button type="submit" class="btn btn-ghost btn-sm">Restore</button>
+							</form>
+						</div>
+					</li>
+				}
+			</ul>
+		}
+	</div>
+}

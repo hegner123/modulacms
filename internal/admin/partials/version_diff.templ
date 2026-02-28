@@ -1,0 +1,108 @@
+package partials
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/publishing"
+)
+
+// snapshotField is a helper to hold a field's label and value for diff display.
+type snapshotField struct {
+	FieldID string
+	Label   string
+	Value   string
+}
+
+// parseSnapshotFields extracts field data from a version snapshot JSON.
+// Joins ContentFields (values) with Fields (definitions) to get labels.
+func parseSnapshotFields(snapshot string) []snapshotField {
+	var snap publishing.Snapshot
+	if err := json.Unmarshal([]byte(snapshot), &snap); err != nil {
+		return nil
+	}
+	// Build label lookup from field definitions
+	labelMap := make(map[string]string, len(snap.Fields))
+	for _, f := range snap.Fields {
+		labelMap[f.FieldID] = f.Label
+	}
+	fields := make([]snapshotField, 0, len(snap.ContentFields))
+	for _, f := range snap.ContentFields {
+		label := labelMap[f.FieldID]
+		if label == "" {
+			label = f.FieldID
+		}
+		fields = append(fields, snapshotField{
+			FieldID: f.FieldID,
+			Label:   label,
+			Value:   f.FieldValue,
+		})
+	}
+	return fields
+}
+
+templ VersionDiff(versionA db.ContentVersion, versionB db.ContentVersion) {
+	<div class="version-diff">
+		<div class="version-diff-header">
+			<h3>
+				Comparing Version #{ fmt.Sprintf("%d", versionA.VersionNumber) }
+				vs #{ fmt.Sprintf("%d", versionB.VersionNumber) }
+			</h3>
+		</div>
+		<table class="table version-diff-table">
+			<thead>
+				<tr>
+					<th>Field</th>
+					<th>Version #{ fmt.Sprintf("%d", versionA.VersionNumber) }</th>
+					<th>Version #{ fmt.Sprintf("%d", versionB.VersionNumber) }</th>
+				</tr>
+			</thead>
+			<tbody>
+				@versionDiffRows(versionA.Snapshot, versionB.Snapshot)
+			</tbody>
+		</table>
+	</div>
+}
+
+templ versionDiffRows(snapshotA string, snapshotB string) {
+	{{
+		fieldsA := parseSnapshotFields(snapshotA)
+		fieldsB := parseSnapshotFields(snapshotB)
+
+		// Index B fields by field ID for lookup
+		bMap := make(map[string]snapshotField, len(fieldsB))
+		for _, f := range fieldsB {
+			bMap[f.FieldID] = f
+		}
+
+		// Track which B fields were matched
+		matched := make(map[string]bool)
+	}}
+	for _, a := range fieldsA {
+		{{
+			b, found := bMap[a.FieldID]
+			if found {
+				matched[a.FieldID] = true
+			}
+			changed := !found || a.Value != b.Value
+		}}
+		<tr class={ templ.KV("diff-changed", changed) }>
+			<td>{ a.Label }</td>
+			<td>{ a.Value }</td>
+			if found {
+				<td>{ b.Value }</td>
+			} else {
+				<td class="text-muted">(removed)</td>
+			}
+		</tr>
+	}
+	for _, b := range fieldsB {
+		if !matched[b.FieldID] {
+			<tr class="diff-changed">
+				<td>{ b.Label }</td>
+				<td class="text-muted">(not present)</td>
+				<td>{ b.Value }</td>
+			</tr>
+		}
+	}
+}

@@ -17,6 +17,10 @@ type ContentData struct {
 	DatatypeID    *DatatypeID   `json:"datatype_id"`
 	AuthorID      *UserID       `json:"author_id"`
 	Status        ContentStatus `json:"status"`
+	PublishedAt   *Timestamp    `json:"published_at,omitempty"`
+	PublishedBy   *UserID       `json:"published_by,omitempty"`
+	PublishAt     *Timestamp    `json:"publish_at,omitempty"`
+	Revision      int64         `json:"revision"`
 	DateCreated   Timestamp     `json:"date_created"`
 	DateModified  Timestamp     `json:"date_modified"`
 }
@@ -575,6 +579,10 @@ type AdminContentData struct {
 	AdminDatatypeID    *AdminDatatypeID `json:"admin_datatype_id"`
 	AuthorID           *UserID          `json:"author_id"`
 	Status             ContentStatus    `json:"status"`
+	PublishedAt        *Timestamp       `json:"published_at,omitempty"`
+	PublishedBy        *UserID          `json:"published_by,omitempty"`
+	PublishAt          *Timestamp       `json:"publish_at,omitempty"`
+	Revision           int64            `json:"revision"`
 	DateCreated        Timestamp        `json:"date_created"`
 	DateModified       Timestamp        `json:"date_modified"`
 }
@@ -896,4 +904,134 @@ type Backup struct {
 	TriggeredBy    *string         `json:"triggered_by"`
 	ErrorMessage   *string         `json:"error_message"`
 	Metadata       json.RawMessage `json:"metadata"`
+}
+
+// ---------------------------------------------------------------------------
+// Content Version
+// ---------------------------------------------------------------------------
+
+// ContentVersion represents a snapshot version of content data.
+type ContentVersion struct {
+	ContentVersionID ContentVersionID `json:"content_version_id"`
+	ContentDataID    ContentID        `json:"content_data_id"`
+	VersionNumber    int64            `json:"version_number"`
+	Locale           string           `json:"locale"`
+	Snapshot         string           `json:"snapshot"`
+	Trigger          string           `json:"trigger"`
+	Label            string           `json:"label"`
+	Published        bool             `json:"published"`
+	PublishedBy      *UserID          `json:"published_by,omitempty"`
+	DateCreated      Timestamp        `json:"date_created"`
+}
+
+// AdminContentVersion represents a snapshot version of admin content data.
+type AdminContentVersion struct {
+	AdminContentVersionID AdminContentVersionID `json:"admin_content_version_id"`
+	AdminContentDataID    AdminContentID        `json:"admin_content_data_id"`
+	VersionNumber         int64                 `json:"version_number"`
+	Locale                string                `json:"locale"`
+	Snapshot              string                `json:"snapshot"`
+	Trigger               string                `json:"trigger"`
+	Label                 string                `json:"label"`
+	Published             bool                  `json:"published"`
+	PublishedBy           *UserID               `json:"published_by,omitempty"`
+	DateCreated           Timestamp             `json:"date_created"`
+}
+
+// ---------------------------------------------------------------------------
+// Publishing Request/Response Types
+// ---------------------------------------------------------------------------
+
+// PublishRequest is the request body for publishing content.
+type PublishRequest struct {
+	ContentDataID ContentID `json:"content_data_id"`
+}
+
+// AdminPublishRequest is the request body for publishing admin content.
+type AdminPublishRequest struct {
+	AdminContentDataID AdminContentID `json:"admin_content_data_id"`
+}
+
+// PublishResponse is the response from a publish or unpublish operation.
+type PublishResponse struct {
+	Status           string `json:"status"`
+	VersionNumber    int64  `json:"version_number,omitempty"`
+	ContentVersionID string `json:"content_version_id,omitempty"`
+	ContentDataID    string `json:"content_data_id"`
+}
+
+// AdminPublishResponse is the response from an admin publish or unpublish operation.
+type AdminPublishResponse struct {
+	Status                string `json:"status"`
+	VersionNumber         int64  `json:"version_number,omitempty"`
+	AdminContentVersionID string `json:"admin_content_version_id,omitempty"`
+	AdminContentDataID    string `json:"admin_content_data_id"`
+}
+
+// ScheduleRequest is the request body for scheduling content publication.
+type ScheduleRequest struct {
+	ContentDataID ContentID `json:"content_data_id"`
+	PublishAt     string    `json:"publish_at"`
+}
+
+// AdminScheduleRequest is the request body for scheduling admin content publication.
+type AdminScheduleRequest struct {
+	AdminContentDataID AdminContentID `json:"admin_content_data_id"`
+	PublishAt          string         `json:"publish_at"`
+}
+
+// ScheduleResponse is the response from a schedule operation.
+type ScheduleResponse struct {
+	Status        string `json:"status"`
+	ContentDataID string `json:"content_data_id"`
+	PublishAt     string `json:"publish_at"`
+}
+
+// AdminScheduleResponse is the response from an admin schedule operation.
+type AdminScheduleResponse struct {
+	Status             string `json:"status"`
+	AdminContentDataID string `json:"admin_content_data_id"`
+	PublishAt          string `json:"publish_at"`
+}
+
+// CreateVersionRequest is the request body for manually creating a content version.
+type CreateVersionRequest struct {
+	ContentDataID ContentID `json:"content_data_id"`
+	Label         string    `json:"label,omitempty"`
+}
+
+// CreateAdminVersionRequest is the request body for manually creating an admin content version.
+type CreateAdminVersionRequest struct {
+	AdminContentDataID AdminContentID `json:"admin_content_data_id"`
+	Label              string         `json:"label,omitempty"`
+}
+
+// RestoreRequest is the request body for restoring content to a previous version.
+type RestoreRequest struct {
+	ContentDataID    ContentID        `json:"content_data_id"`
+	ContentVersionID ContentVersionID `json:"content_version_id"`
+}
+
+// AdminRestoreRequest is the request body for restoring admin content to a previous version.
+type AdminRestoreRequest struct {
+	AdminContentDataID    AdminContentID        `json:"admin_content_data_id"`
+	AdminContentVersionID AdminContentVersionID `json:"admin_content_version_id"`
+}
+
+// RestoreResponse is the response from a restore operation.
+type RestoreResponse struct {
+	Status          string   `json:"status"`
+	ContentDataID   string   `json:"content_data_id"`
+	RestoredVersion string   `json:"restored_version_id"`
+	FieldsRestored  int      `json:"fields_restored"`
+	UnmappedFields  []string `json:"unmapped_fields,omitempty"`
+}
+
+// AdminRestoreResponse is the response from an admin restore operation.
+type AdminRestoreResponse struct {
+	Status             string   `json:"status"`
+	AdminContentDataID string   `json:"admin_content_data_id"`
+	RestoredVersion    string   `json:"restored_version_id"`
+	FieldsRestored     int      `json:"fields_restored"`
+	UnmappedFields     []string `json:"unmapped_fields,omitempty"`
 }
