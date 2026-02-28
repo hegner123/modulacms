@@ -22,6 +22,10 @@ type ContentDataJSON struct {
 	Status        string `json:"status"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
+	PublishedAt   string `json:"published_at"`
+	PublishedBy   string `json:"published_by"`
+	PublishAt     string `json:"publish_at"`
+	Revision      int64  `json:"revision"`
 }
 
 // nullableContentIDStringEmpty returns "" when the nullable ID is invalid,
@@ -48,6 +52,10 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 		Status:        string(a.Status),
 		DateCreated:   a.DateCreated.String(),
 		DateModified:  a.DateModified.String(),
+		PublishedAt:   a.PublishedAt.String(),
+		PublishedBy:   a.PublishedBy.String(),
+		PublishAt:     a.PublishAt.String(),
+		Revision:      a.Revision,
 	}
 }
 
@@ -183,6 +191,10 @@ func (d Database) mapContentDataTopLevel(a mdb.ListContentDataTopLevelPaginatedR
 			Status:        a.Status,
 			DateCreated:   a.DateCreated,
 			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
 		}),
 		AuthorName:    a.AuthorName.String,
 		RouteSlug:     a.RouteSlug,
@@ -234,6 +246,10 @@ func (d MysqlDatabase) mapContentDataTopLevel(a mdbm.ListContentDataTopLevelPagi
 			Status:        a.Status,
 			DateCreated:   a.DateCreated,
 			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
 		}),
 		AuthorName:    a.AuthorName.String,
 		RouteSlug:     a.RouteSlug,
@@ -285,6 +301,10 @@ func (d PsqlDatabase) mapContentDataTopLevel(a mdbp.ListContentDataTopLevelPagin
 			Status:        a.Status,
 			DateCreated:   a.DateCreated,
 			DateModified:  a.DateModified,
+			PublishedAt:   a.PublishedAt,
+			PublishedBy:   a.PublishedBy,
+			PublishAt:     a.PublishAt,
+			Revision:      a.Revision,
 		}),
 		AuthorName:    a.AuthorName.String,
 		RouteSlug:     a.RouteSlug,

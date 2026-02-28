@@ -152,6 +152,66 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		ContentTreeSaveHandler(w, r, *c)
 	})))
 
+	// Content publish / unpublish / schedule
+	mux.Handle("POST /api/v1/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		PublishHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		UnpublishHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ScheduleHandler(w, r, *c)
+	})))
+
+	// Content version management
+	mux.Handle("GET /api/v1/content/versions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		ListVersionsHandler(w, r, *c)
+	})))
+	mux.Handle("GET /api/v1/content/versions/", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		GetVersionHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/content/versions", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		CreateManualVersionHandler(w, r, *c)
+	})))
+	mux.Handle("DELETE /api/v1/content/versions/", middleware.RequirePermission("content:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		DeleteVersionHandler(w, r, *c)
+	})))
+
+	// Content restore from version
+	mux.Handle("POST /api/v1/content/restore", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		RestoreVersionHandler(w, r, *c)
+	})))
+
+	// Admin content publish / unpublish / schedule
+	mux.Handle("POST /api/v1/admin/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminPublishHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminUnpublishHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminScheduleHandler(w, r, *c)
+	})))
+
+	// Admin content version management
+	mux.Handle("GET /api/v1/admin/content/versions", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminListVersionsHandler(w, r, *c)
+	})))
+	mux.Handle("GET /api/v1/admin/content/versions/", middleware.RequirePermission("content:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminGetVersionHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/content/versions", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminCreateManualVersionHandler(w, r, *c)
+	})))
+	mux.Handle("DELETE /api/v1/admin/content/versions/", middleware.RequirePermission("content:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminDeleteVersionHandler(w, r, *c)
+	})))
+
+	// Admin content restore from version
+	mux.Handle("POST /api/v1/admin/content/restore", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminRestoreVersionHandler(w, r, *c)
+	})))
+
 	// Content data reorder
 	mux.Handle("POST /api/v1/contentdata/reorder", middleware.RequirePermission("content:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ContentDataReorderHandler(w, r, *c)

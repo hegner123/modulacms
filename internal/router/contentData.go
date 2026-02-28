@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -329,27 +330,65 @@ func apiCreateContentData(w http.ResponseWriter, r *http.Request, c config.Confi
 	return nil
 }
 
+// updateContentDataRequest wraps UpdateContentDataParams with an optional
+// revision field for optimistic locking. If Revision is zero (omitted by the
+// client), the update falls through to the non-revision path for backward
+// compatibility.
+type updateContentDataRequest struct {
+	db.UpdateContentDataParams
+	Revision int64 `json:"revision"`
+}
+
 // apiUpdateContentData handles PUT requests to update existing content data
 func apiUpdateContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	var updateContentData db.UpdateContentDataParams
-	err := json.NewDecoder(r.Body).Decode(&updateContentData)
+	var req updateContentDataRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateContentData(r.Context(), ac, updateContentData)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+	if req.Revision > 0 {
+		// Optimistic locking: reject if the row's revision no longer matches.
+		revisionParams := db.UpdateContentDataWithRevisionParams{
+			RouteID:       req.RouteID,
+			ParentID:      req.ParentID,
+			FirstChildID:  req.FirstChildID,
+			NextSiblingID: req.NextSiblingID,
+			PrevSiblingID: req.PrevSiblingID,
+			DatatypeID:    req.DatatypeID,
+			AuthorID:      req.AuthorID,
+			Status:        req.Status,
+			DateCreated:   req.DateCreated,
+			DateModified:  req.DateModified,
+			ContentDataID: req.ContentDataID,
+			Revision:      req.Revision,
+		}
+		err = d.UpdateContentDataWithRevision(r.Context(), revisionParams)
+		if errors.Is(err, db.ErrRevisionConflict) {
+			http.Error(w, "Content was modified by another user. Please refresh and try again.", http.StatusConflict)
+			return err
+		}
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+	} else {
+		// No revision supplied -- backward-compatible non-locking update.
+		ac := middleware.AuditContextFromRequest(r, c)
+		_, err = d.UpdateContentData(r.Context(), ac, req.UpdateContentDataParams)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
 	}
 
-	updated, err := d.GetContentData(updateContentData.ContentDataID)
+	updated, err := d.GetContentData(req.ContentDataID)
 	if err != nil {
 		utility.DefaultLogger.Error("failed to fetch updated content data", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

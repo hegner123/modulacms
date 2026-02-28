@@ -90,7 +90,7 @@ func Create[T any](cmd CreateCommand[T]) (T, error) {
 //
 // Hook integration (Phase 3): before_update hooks run inside the transaction
 // with the before-state entity. DetectStatusTransition fires before_publish or
-// before_archive hooks for content_data status changes (M12). After-hooks fire
+// before_publish hooks for content_data status changes (M12). After-hooks fire
 // asynchronously after commit.
 func Update[T any](cmd UpdateCommand[T]) error {
 	ctx := cmd.Context()
@@ -128,7 +128,7 @@ func Update[T any](cmd UpdateCommand[T]) error {
 		}
 
 		// Phase 3 (M12): Detect status transitions for content_data.
-		// Compare before-state with update params to detect publish/archive transitions.
+		// Compare before-state with update params to detect publish transitions.
 		if runner != nil {
 			beforeMap, mapErr := StructToMap(before)
 			if mapErr == nil {
@@ -176,7 +176,7 @@ func Update[T any](cmd UpdateCommand[T]) error {
 		if runner.HasHooks(HookAfterUpdate, tableName) {
 			runner.RunAfterHooks(ctx, HookAfterUpdate, tableName, beforeEntity)
 		}
-		// Fire after_publish/after_archive for detected status transitions.
+		// Fire after_publish for detected status transitions.
 		for _, beforeEvent := range extraBeforeEvents {
 			afterEvent := BeforeToAfterEvent(beforeEvent)
 			if runner.HasHooks(afterEvent, tableName) {

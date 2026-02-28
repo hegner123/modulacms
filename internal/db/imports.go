@@ -149,6 +149,10 @@ type StringContentData struct {
 	Status        string `json:"status"`
 	DateCreated   string `json:"date_created"`
 	DateModified  string `json:"date_modified"`
+	PublishedAt   string `json:"published_at"`
+	PublishedBy   string `json:"published_by"`
+	PublishAt     string `json:"publish_at"`
+	Revision      int64  `json:"revision"`
 	History       string `json:"history"`
 }
 

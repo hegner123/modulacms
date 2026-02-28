@@ -126,6 +126,66 @@ func ensureReferenceDatatype(ctx context.Context, driver DbDriver) error {
 	return nil
 }
 
+// EnsurePublishPermission checks that the "content:publish" permission exists
+// and is assigned to the admin role. This is idempotent — safe to call on every boot.
+// For fresh installs (where CreateBootstrapData already includes "content:publish"),
+// this is a no-op. For upgrades from older versions, this backfills the permission.
+func EnsurePublishPermission(ctx context.Context, driver DbDriver) error {
+	const label = "content:publish"
+
+	// Check if the permission already exists
+	perms, err := driver.ListPermissions()
+	if err != nil {
+		return fmt.Errorf("list permissions: %w", err)
+	}
+	if perms != nil {
+		for _, p := range *perms {
+			if p.Label == label {
+				return nil // already exists
+			}
+		}
+	}
+
+	// Permission doesn't exist — create it
+	systemUserID, userErr := findSystemUserID(driver)
+	if userErr != nil {
+		return fmt.Errorf("find system user for publish permission: %w", userErr)
+	}
+	ac := audited.Ctx(types.NewNodeID(), systemUserID, "ensure-publish-permission", "system")
+
+	perm, err := driver.CreatePermission(ctx, ac, CreatePermissionParams{
+		Label:           label,
+		SystemProtected: true,
+	})
+	if err != nil {
+		return fmt.Errorf("create permission %q: %w", label, err)
+	}
+	utility.DefaultLogger.Info("Created missing permission", "label", label)
+
+	// Assign to admin role
+	roles, err := driver.ListRoles()
+	if err != nil {
+		return fmt.Errorf("list roles: %w", err)
+	}
+	if roles != nil {
+		for _, r := range *roles {
+			if r.Label == "admin" {
+				_, assignErr := driver.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+					RoleID:       r.RoleID,
+					PermissionID: perm.PermissionID,
+				})
+				if assignErr != nil {
+					return fmt.Errorf("assign %q to admin role: %w", label, assignErr)
+				}
+				utility.DefaultLogger.Info("Assigned permission to admin role", "label", label)
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // findSystemUserID returns the UserID of the "system" user.
 func findSystemUserID(driver DbDriver) (types.UserID, error) {
 	users, err := driver.ListUsers()

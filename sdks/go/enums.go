@@ -6,8 +6,6 @@ type ContentStatus string
 const (
 	ContentStatusDraft     ContentStatus = "draft"
 	ContentStatusPublished ContentStatus = "published"
-	ContentStatusArchived  ContentStatus = "archived"
-	ContentStatusPending   ContentStatus = "pending"
 )
 
 // FieldType represents the data type of a field.

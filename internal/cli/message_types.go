@@ -623,18 +623,6 @@ type ContentPublishToggledMsg struct {
 	NewStatus types.ContentStatus
 }
 
-// ArchiveContentRequestMsg requests archiving or unarchiving content.
-type ArchiveContentRequestMsg struct {
-	ContentID types.ContentID
-	RouteID   types.RouteID
-}
-
-// ContentArchivedMsg signals successful archive status change.
-type ContentArchivedMsg struct {
-	ContentID types.ContentID
-	RouteID   types.RouteID
-	NewStatus types.ContentStatus
-}
 
 // PanelFocusReset resets panel focus to the default state.
 type PanelFocusReset struct{}

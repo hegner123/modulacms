@@ -13,19 +13,17 @@ type ContentStatus string
 const (
 	ContentStatusDraft     ContentStatus = "draft"
 	ContentStatusPublished ContentStatus = "published"
-	ContentStatusArchived  ContentStatus = "archived"
-	ContentStatusPending   ContentStatus = "pending"
 )
 
 // Validate checks that the ContentStatus is one of the allowed values.
 func (s ContentStatus) Validate() error {
 	switch s {
-	case ContentStatusDraft, ContentStatusPublished, ContentStatusArchived, ContentStatusPending:
+	case ContentStatusDraft, ContentStatusPublished:
 		return nil
 	case "":
 		return fmt.Errorf("ContentStatus: cannot be empty")
 	default:
-		return fmt.Errorf("ContentStatus: invalid value %q (valid: draft, published, archived, pending)", s)
+		return fmt.Errorf("ContentStatus: invalid value %q (valid: draft, published)", s)
 	}
 }
 
@@ -362,18 +360,17 @@ const (
 	ActionUpdate  Action = "update"
 	ActionDelete  Action = "delete"
 	ActionPublish Action = "publish"
-	ActionArchive Action = "archive"
 )
 
 // Validate checks that the Action is one of the allowed values.
 func (a Action) Validate() error {
 	switch a {
-	case ActionCreate, ActionUpdate, ActionDelete, ActionPublish, ActionArchive:
+	case ActionCreate, ActionUpdate, ActionDelete, ActionPublish:
 		return nil
 	case "":
 		return fmt.Errorf("Action: cannot be empty")
 	default:
-		return fmt.Errorf("Action: invalid value %q (valid: create, update, delete, publish, archive)", a)
+		return fmt.Errorf("Action: invalid value %q (valid: create, update, delete, publish)", a)
 	}
 }
 

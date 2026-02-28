@@ -34,7 +34,14 @@ CREATE TABLE IF NOT EXISTS content_data (
             ON UPDATE CASCADE ON DELETE SET NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    published_at TIMESTAMP,
+    published_by TEXT
+        CONSTRAINT fk_published_by
+            REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    publish_at TIMESTAMP,
+    revision INTEGER NOT NULL DEFAULT 0
 );
 
 -- name: CountContentData :one
@@ -133,3 +140,42 @@ LIMIT $1 OFFSET $2;
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id IS NOT NULL OR dt.type = '_root';
+
+-- name: UpdateContentDataPublishMeta :exec
+UPDATE content_data
+SET status = $1,
+    published_at = $2,
+    published_by = $3,
+    revision = revision + 1,
+    date_modified = $4
+WHERE content_data_id = $5;
+
+-- name: UpdateContentDataWithRevision :exec
+UPDATE content_data
+SET route_id = $1,
+    parent_id = $2,
+    first_child_id = $3,
+    next_sibling_id = $4,
+    prev_sibling_id = $5,
+    datatype_id = $6,
+    author_id = $7,
+    status = $8,
+    date_created = $9,
+    date_modified = $10
+WHERE content_data_id = $11 AND revision = $12;
+
+-- name: UpdateContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = $1,
+    date_modified = $2
+WHERE content_data_id = $3;
+
+-- name: ClearContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = NULL,
+    date_modified = $1
+WHERE content_data_id = $2;
+
+-- name: ListContentDataDueForPublish :many
+SELECT * FROM content_data
+WHERE publish_at IS NOT NULL AND publish_at <= $1 AND status = 'draft';

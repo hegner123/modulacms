@@ -19,8 +19,6 @@ const (
 	HookAfterDelete   HookEvent = "after_delete"
 	HookBeforePublish HookEvent = "before_publish"
 	HookAfterPublish  HookEvent = "after_publish"
-	HookBeforeArchive HookEvent = "before_archive"
-	HookAfterArchive  HookEvent = "after_archive"
 )
 
 // ValidHookEvents is the complete set of valid hook event strings for
@@ -34,8 +32,6 @@ var ValidHookEvents = map[string]HookEvent{
 	"after_delete":   HookAfterDelete,
 	"before_publish": HookBeforePublish,
 	"after_publish":  HookAfterPublish,
-	"before_archive": HookBeforeArchive,
-	"after_archive":  HookAfterArchive,
 }
 
 // HookRunner is the interface between the audited command layer and the plugin
@@ -115,19 +111,18 @@ func StructToMap(v any) (map[string]any, error) {
 }
 
 // DetectStatusTransition checks whether an Update to content_data involves a
-// status transition that should fire publish/archive hooks.
+// status transition that should fire publish hooks.
 //
 // Rules (M12):
 //   - Only applies to table "content_data". All other tables return nil.
 //   - Compares the "status" field (case-sensitive string).
 //   - before.Status != "published" AND params contains "status" == "published" -> before_publish
-//   - before.Status != "archived" AND params contains "status" == "archived" -> before_archive
 //   - If before is nil: skip detection, return nil.
 //   - If params has no "status" field: skip detection (partial update not touching status).
 //   - Unknown status values: no extra events.
 //
-// Returns a slice of 0, 1, or 2 extra HookEvents (the "before_" variants).
-// The caller is responsible for mapping before_publish -> after_publish, etc.
+// Returns a slice of 0 or 1 extra HookEvents (the "before_" variant).
+// The caller is responsible for mapping before_publish -> after_publish.
 func DetectStatusTransition(table string, before map[string]any, params map[string]any) []HookEvent {
 	if table != "content_data" {
 		return nil
@@ -153,9 +148,6 @@ func DetectStatusTransition(table string, before map[string]any, params map[stri
 	if newStatus == "published" && oldStatus != "published" {
 		events = append(events, HookBeforePublish)
 	}
-	if newStatus == "archived" && oldStatus != "archived" {
-		events = append(events, HookBeforeArchive)
-	}
 
 	return events
 }
@@ -172,8 +164,6 @@ func BeforeToAfterEvent(event HookEvent) HookEvent {
 		return HookAfterDelete
 	case HookBeforePublish:
 		return HookAfterPublish
-	case HookBeforeArchive:
-		return HookAfterArchive
 	default:
 		return event
 	}

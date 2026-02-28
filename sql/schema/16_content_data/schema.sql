@@ -10,6 +10,10 @@ CREATE TABLE IF NOT EXISTS content_data (
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    published_by TEXT REFERENCES users(user_id) ON DELETE SET NULL,
+    publish_at TEXT,
+    revision INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,

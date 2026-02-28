@@ -38,6 +38,8 @@ sql:
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
+          content_version_id: "ContentVersionID"
+          admin_content_version_id: "AdminContentVersionID"
           datatype_id: "DatatypeID"
           event_id: "EventID"
           field_id: "FieldID"
@@ -71,12 +73,14 @@ sql:
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
+          admin_content_version: AdminContentVersions
           admin_datatype: AdminDatatypes
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
+          content_version: ContentVersions
           datatype: Datatypes
           field: Fields
           field_type: FieldTypes
@@ -167,6 +171,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "content_versions.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_versions.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # NOT NULL author_id columns
           - column: "content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
@@ -436,6 +444,40 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
           - column: "pipelines.config"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          # CONTENT VERSIONS
+          - column: "content_versions.content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentVersionID"}
+          - column: "content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_versions.admin_content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentVersionID"}
+          - column: "admin_content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PUBLISH METADATA on content_data / admin_content_data
+          - column: "content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
 
   # ---------- MySQL ----------
   - engine: "mysql"
@@ -468,6 +510,8 @@ sql:
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
+          content_version_id: "ContentVersionID"
+          admin_content_version_id: "AdminContentVersionID"
           datatype_id: "DatatypeID"
           event_id: "EventID"
           field_id: "FieldID"
@@ -501,12 +545,14 @@ sql:
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
+          admin_content_version: AdminContentVersions
           admin_datatype: AdminDatatypes
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
+          content_version: ContentVersions
           datatype: Datatypes
           field: Fields
           field_type: FieldTypes
@@ -597,6 +643,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "content_versions.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_versions.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # NOT NULL author_id columns
           - column: "content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
@@ -866,6 +916,40 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
           - column: "pipelines.config"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          # CONTENT VERSIONS
+          - column: "content_versions.content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentVersionID"}
+          - column: "content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_versions.admin_content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentVersionID"}
+          - column: "admin_content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PUBLISH METADATA on content_data / admin_content_data
+          - column: "content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
 
   # ---------- PostgreSQL ----------
   - engine: "postgresql"
@@ -898,6 +982,8 @@ sql:
           content_data_id: "ContentDataID"
           content_field_id: "ContentFieldID"
           content_relation_id: "ContentRelationID"
+          content_version_id: "ContentVersionID"
+          admin_content_version_id: "AdminContentVersionID"
           datatype_id: "DatatypeID"
           event_id: "EventID"
           field_id: "FieldID"
@@ -931,12 +1017,14 @@ sql:
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
           admin_content_relation: AdminContentRelations
+          admin_content_version: AdminContentVersions
           admin_datatype: AdminDatatypes
           admin_field: AdminFields
           admin_route: AdminRoutes
           content_datum: ContentData
           content_field: ContentFields
           content_relation: ContentRelations
+          content_version: ContentVersions
           datatype: Datatypes
           field: Fields
           field_type: FieldTypes
@@ -1027,6 +1115,10 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RoleID"}
           - column: "role_permissions.permission_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PermissionID"}
+          - column: "content_versions.content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentID"}
+          - column: "admin_content_versions.admin_content_data_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           # NOT NULL author_id columns
           - column: "content_data.author_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
@@ -1296,3 +1388,37 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PluginID"}
           - column: "pipelines.config"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
+          # CONTENT VERSIONS
+          - column: "content_versions.content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentVersionID"}
+          - column: "content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_versions.admin_content_version_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentVersionID"}
+          - column: "admin_content_versions.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_versions.date_created"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # PUBLISH METADATA on content_data / admin_content_data
+          - column: "content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "admin_content_data.published_by"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableUserID"}
+          - column: "admin_content_data.publish_at"
+            nullable: true
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}

@@ -14,7 +14,14 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    published_at TIMESTAMP NULL,
+    published_by VARCHAR(26) NULL,
+    publish_at TIMESTAMP NULL,
+    revision INT NOT NULL DEFAULT 0,
 
+    CONSTRAINT fk_admin_content_data_published_by
+        FOREIGN KEY (published_by) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_admin_content_data_parent_id
         FOREIGN KEY (parent_id) REFERENCES admin_content_data (admin_content_data_id)
              ON UPDATE CASCADE ON DELETE CASCADE,
@@ -125,3 +132,42 @@ LIMIT ? OFFSET ?;
 SELECT COUNT(*) FROM admin_content_data acd
 LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
 WHERE acd.admin_route_id IS NOT NULL OR adt.type = '_root';
+
+-- name: UpdateAdminContentDataPublishMeta :exec
+UPDATE admin_content_data
+SET status = ?,
+    published_at = ?,
+    published_by = ?,
+    revision = revision + 1,
+    date_modified = ?
+WHERE admin_content_data_id = ?;
+
+-- name: UpdateAdminContentDataWithRevision :exec
+UPDATE admin_content_data
+SET admin_route_id = ?,
+    parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
+    admin_datatype_id = ?,
+    author_id = ?,
+    status = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE admin_content_data_id = ? AND revision = ?;
+
+-- name: UpdateAdminContentDataSchedule :exec
+UPDATE admin_content_data
+SET publish_at = ?,
+    date_modified = ?
+WHERE admin_content_data_id = ?;
+
+-- name: ClearAdminContentDataSchedule :exec
+UPDATE admin_content_data
+SET publish_at = NULL,
+    date_modified = ?
+WHERE admin_content_data_id = ?;
+
+-- name: ListAdminContentDataDueForPublish :many
+SELECT * FROM admin_content_data
+WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft';

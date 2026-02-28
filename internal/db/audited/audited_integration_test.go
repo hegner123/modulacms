@@ -841,18 +841,16 @@ func TestIntegration_StatusTransition_DraftToPublished(t *testing.T) {
 	}
 }
 
-func TestIntegration_StatusTransition_DraftToArchived(t *testing.T) {
+func TestIntegration_StatusTransition_DraftToNonPublished(t *testing.T) {
+	// Transitioning to a non-published status does not fire any transition events.
 	t.Parallel()
 
 	before := map[string]any{"status": "draft"}
-	params := map[string]any{"status": "archived"}
+	params := map[string]any{"status": "draft"}
 
 	events := audited.DetectStatusTransition("content_data", before, params)
-	if len(events) != 1 {
-		t.Fatalf("expected 1 transition event, got %d", len(events))
-	}
-	if events[0] != audited.HookBeforeArchive {
-		t.Errorf("event = %v, want before_archive", events[0])
+	if len(events) != 0 {
+		t.Errorf("expected 0 transition events for draft->draft, got %d", len(events))
 	}
 }
 
@@ -906,7 +904,6 @@ func TestIntegration_BeforeToAfterEvent(t *testing.T) {
 		{audited.HookBeforeUpdate, audited.HookAfterUpdate},
 		{audited.HookBeforeDelete, audited.HookAfterDelete},
 		{audited.HookBeforePublish, audited.HookAfterPublish},
-		{audited.HookBeforeArchive, audited.HookAfterArchive},
 		// Unknown event passes through unchanged
 		{audited.HookEvent("unknown"), audited.HookEvent("unknown")},
 	}

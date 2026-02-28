@@ -9,10 +9,8 @@
  *
  * - `'draft'` - Work in progress, not publicly visible.
  * - `'published'` - Live and publicly accessible.
- * - `'archived'` - Removed from public view but retained.
- * - `'pending'` - Awaiting review or approval.
  */
-export type ContentStatus = 'draft' | 'published' | 'archived' | 'pending'
+export type ContentStatus = 'draft' | 'published'
 
 /**
  * Supported field types for content schema definitions.

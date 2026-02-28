@@ -18,7 +18,7 @@ func allEnumContracts() []enumContract {
 	return []enumContract{
 		{
 			name:        "ContentStatus",
-			validValues: []string{"draft", "published", "archived", "pending"},
+			validValues: []string{"draft", "published"},
 			validateFn:  func(s string) error { return ContentStatus(s).Validate() },
 			valueFn:     func(s string) (any, error) { return ContentStatus(s).Value() },
 			scanFn: func(v any) (string, error) {
@@ -53,7 +53,7 @@ func allEnumContracts() []enumContract {
 		},
 		{
 			name:        "Action",
-			validValues: []string{"create", "update", "delete", "publish", "archive"},
+			validValues: []string{"create", "update", "delete", "publish"},
 			validateFn:  func(s string) error { return Action(s).Validate() },
 			valueFn:     func(s string) (any, error) { return Action(s).Value() },
 			scanFn: func(v any) (string, error) {

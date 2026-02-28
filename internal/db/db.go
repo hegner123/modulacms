@@ -102,6 +102,11 @@ type DbDriver interface {
 	ListAdminContentDataWithDatatypeByRoute(types.NullableAdminRouteID) (*[]AdminContentDataWithDatatypeRow, error)
 	CountAdminContentDataTopLevel() (*int64, error)
 	UpdateAdminContentData(context.Context, audited.AuditContext, UpdateAdminContentDataParams) (*string, error)
+	UpdateAdminContentDataPublishMeta(context.Context, UpdateAdminContentDataPublishMetaParams) error
+	UpdateAdminContentDataWithRevision(context.Context, UpdateAdminContentDataWithRevisionParams) error
+	UpdateAdminContentDataSchedule(context.Context, UpdateAdminContentDataScheduleParams) error
+	ClearAdminContentDataSchedule(context.Context, ClearAdminContentDataScheduleParams) error
+	ListAdminContentDataDueForPublish(types.Timestamp) (*[]AdminContentData, error)
 
 	// AdminContentFields
 	CountAdminContentFields() (*int64, error)
@@ -128,6 +133,21 @@ type DbDriver interface {
 	ListAdminContentRelationsByTarget(types.AdminContentID) (*[]AdminContentRelations, error)
 	ListAdminContentRelationsBySourceAndField(types.AdminContentID, types.AdminFieldID) (*[]AdminContentRelations, error)
 	UpdateAdminContentRelationSortOrder(context.Context, audited.AuditContext, UpdateAdminContentRelationSortOrderParams) error
+
+	// AdminContentVersions
+	CountAdminContentVersions() (*int64, error)
+	CountAdminContentVersionsByContent(types.AdminContentID) (*int64, error)
+	CreateAdminContentVersion(context.Context, audited.AuditContext, CreateAdminContentVersionParams) (*AdminContentVersion, error)
+	CreateAdminContentVersionTable() error
+	DropAdminContentVersionTable() error
+	DeleteAdminContentVersion(context.Context, audited.AuditContext, types.AdminContentVersionID) error
+	GetAdminContentVersion(types.AdminContentVersionID) (*AdminContentVersion, error)
+	GetAdminPublishedSnapshot(types.AdminContentID, string) (*AdminContentVersion, error)
+	ListAdminContentVersionsByContent(types.AdminContentID) (*[]AdminContentVersion, error)
+	ListAdminContentVersionsByContentLocale(types.AdminContentID, string) (*[]AdminContentVersion, error)
+	ClearAdminPublishedFlag(types.AdminContentID, string) error
+	GetAdminMaxVersionNumber(types.AdminContentID, string) (int64, error)
+	PruneAdminOldVersions(types.AdminContentID, string, int64) error
 
 	// AdminDatatypes
 	CountAdminDatatypes() (*int64, error)
@@ -226,6 +246,11 @@ type DbDriver interface {
 	GetContentDataDescendants(context.Context, types.ContentID) (*[]ContentData, error)
 	ListRootContentSummary() (*[]RootContentSummary, error)
 	UpdateContentData(context.Context, audited.AuditContext, UpdateContentDataParams) (*string, error)
+	UpdateContentDataPublishMeta(context.Context, UpdateContentDataPublishMetaParams) error
+	UpdateContentDataWithRevision(context.Context, UpdateContentDataWithRevisionParams) error
+	UpdateContentDataSchedule(context.Context, UpdateContentDataScheduleParams) error
+	ClearContentDataSchedule(context.Context, ClearContentDataScheduleParams) error
+	ListContentDataDueForPublish(types.Timestamp) (*[]ContentData, error)
 
 	// ContentFields
 	CountContentFields() (*int64, error)
@@ -255,6 +280,21 @@ type DbDriver interface {
 	ListContentRelationsByTarget(types.ContentID) (*[]ContentRelations, error)
 	ListContentRelationsBySourceAndField(types.ContentID, types.FieldID) (*[]ContentRelations, error)
 	UpdateContentRelationSortOrder(context.Context, audited.AuditContext, UpdateContentRelationSortOrderParams) error
+
+	// ContentVersions
+	CountContentVersions() (*int64, error)
+	CountContentVersionsByContent(types.ContentID) (*int64, error)
+	CreateContentVersion(context.Context, audited.AuditContext, CreateContentVersionParams) (*ContentVersion, error)
+	CreateContentVersionTable() error
+	DropContentVersionTable() error
+	DeleteContentVersion(context.Context, audited.AuditContext, types.ContentVersionID) error
+	GetContentVersion(types.ContentVersionID) (*ContentVersion, error)
+	GetPublishedSnapshot(types.ContentID, string) (*ContentVersion, error)
+	ListContentVersionsByContent(types.ContentID) (*[]ContentVersion, error)
+	ListContentVersionsByContentLocale(types.ContentID, string) (*[]ContentVersion, error)
+	ClearPublishedFlag(types.ContentID, string) error
+	GetMaxVersionNumber(types.ContentID, string) (int64, error)
+	PruneOldVersions(types.ContentID, string, int64) error
 
 	// Datatypes
 	CountDatatypes() (*int64, error)
@@ -654,6 +694,17 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5b: Content version tables (depend on content_data + users)
+	err = d.CreateContentVersionTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentVersionTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
@@ -696,7 +747,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 
 	// 1b. Create RBAC system permissions
 	rbacPermissionLabels := []string{
-		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"content:read", "content:create", "content:update", "content:delete", "content:publish", "content:admin",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
 		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
 		"media:read", "media:create", "media:update", "media:delete", "media:admin",
@@ -1526,6 +1577,17 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5b: Content version tables (depend on content_data + users)
+	err = d.CreateContentVersionTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentVersionTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
@@ -1568,7 +1630,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 1b. Create RBAC system permissions
 	rbacPermissionLabels := []string{
-		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"content:read", "content:create", "content:update", "content:delete", "content:publish", "content:admin",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
 		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
 		"media:read", "media:create", "media:update", "media:delete", "media:admin",
@@ -2370,6 +2432,17 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 5.5b: Content version tables (depend on content_data + users)
+	err = d.CreateContentVersionTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateAdminContentVersionTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 6: Junction tables (depend on both sides)
 	err = d.CreateRolePermissionsTable()
 	if err != nil {
@@ -2412,7 +2485,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 
 	// 1b. Create RBAC system permissions
 	rbacPermissionLabels := []string{
-		"content:read", "content:create", "content:update", "content:delete", "content:admin",
+		"content:read", "content:create", "content:update", "content:delete", "content:publish", "content:admin",
 		"datatypes:read", "datatypes:create", "datatypes:update", "datatypes:delete", "datatypes:admin",
 		"fields:read", "fields:create", "fields:update", "fields:delete", "fields:admin",
 		"media:read", "media:create", "media:update", "media:delete", "media:admin",

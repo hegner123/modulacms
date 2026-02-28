@@ -192,8 +192,6 @@ func TestMapContentDataJSON_StatusVariants(t *testing.T) {
 	}{
 		{"draft", types.ContentStatus("draft")},
 		{"published", types.ContentStatus("published")},
-		{"archived", types.ContentStatus("archived")},
-		{"pending", types.ContentStatus("pending")},
 		{"empty", types.ContentStatus("")},
 	}
 
@@ -510,7 +508,7 @@ func TestDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 		RouteID:       routeID,
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      authorID,
-		Status:        types.ContentStatus("archived"),
+		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
 		ContentDataID: contentID,
@@ -533,8 +531,8 @@ func TestDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.AuthorID != authorID {
 		t.Errorf("AuthorID = %v, want %v", got.AuthorID, authorID)
 	}
-	if got.Status != types.ContentStatus("archived") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.DateCreated != ts {
 		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
@@ -660,7 +658,7 @@ func TestMysqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NewUserID(),
-		Status:        types.ContentStatus("archived"),
+		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
 		ContentDataID: contentID,
@@ -674,8 +672,8 @@ func TestMysqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.RouteID != input.RouteID {
 		t.Errorf("RouteID = %v, want %v", got.RouteID, input.RouteID)
 	}
-	if got.Status != types.ContentStatus("archived") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.FirstChildID.ID != types.ContentID("mysql-updated-child") {
 		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.ContentID("mysql-updated-child"))
@@ -798,7 +796,7 @@ func TestPsqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
 		DatatypeID:    types.NullableDatatypeID{Valid: false},
 		AuthorID:      types.NewUserID(),
-		Status:        types.ContentStatus("pending"),
+		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
 		ContentDataID: contentID,
@@ -812,8 +810,8 @@ func TestPsqlDatabase_MapUpdateContentDataParams_AllFields(t *testing.T) {
 	if got.RouteID != input.RouteID {
 		t.Errorf("RouteID = %v, want %v", got.RouteID, input.RouteID)
 	}
-	if got.Status != types.ContentStatus("pending") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("pending"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.FirstChildID.ID != types.ContentID("psql-updated-child") {
 		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.ContentID("psql-updated-child"))
@@ -1276,7 +1274,7 @@ func TestUpdateContentDataCmdMysql_AllAccessors(t *testing.T) {
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	params := UpdateContentDataParams{
 		RouteID:       types.NullableRouteID{ID: types.NewRouteID(), Valid: true},
-		Status:        types.ContentStatus("archived"),
+		Status:        types.ContentStatus("draft"),
 		DateCreated:   ts,
 		DateModified:  ts,
 		ContentDataID: contentID,
@@ -1300,8 +1298,8 @@ func TestUpdateContentDataCmdMysql_AllAccessors(t *testing.T) {
 	if !ok {
 		t.Fatalf("Params() returned %T, want UpdateContentDataParams", cmd.Params())
 	}
-	if p.Status != types.ContentStatus("archived") {
-		t.Errorf("Params().Status = %v, want %v", p.Status, types.ContentStatus("archived"))
+	if p.Status != types.ContentStatus("draft") {
+		t.Errorf("Params().Status = %v, want %v", p.Status, types.ContentStatus("draft"))
 	}
 	if cmd.Recorder() == nil {
 		t.Fatal("Recorder() returned nil")
@@ -1693,6 +1691,7 @@ func TestContentDataStruct_JSONTags(t *testing.T) {
 		"next_sibling_id", "prev_sibling_id", "route_id",
 		"datatype_id", "author_id", "status",
 		"date_created", "date_modified",
+		"published_at", "published_by", "publish_at", "revision",
 	}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
@@ -1808,6 +1807,7 @@ func TestContentDataJSONStruct_JSONTags(t *testing.T) {
 		"next_sibling_id", "prev_sibling_id", "route_id",
 		"datatype_id", "author_id", "status",
 		"date_created", "date_modified",
+		"published_at", "published_by", "publish_at", "revision",
 	}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {

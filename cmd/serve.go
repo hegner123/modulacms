@@ -104,6 +104,11 @@ var serveCmd = &cobra.Command{
 			utility.DefaultLogger.Warn("EnsureSystemData failed, tree composition may be inactive", ensureErr)
 		}
 
+		// Ensure "content:publish" permission exists (backfill for upgrades).
+		if ensureErr := db.EnsurePublishPermission(rootCtx, driver); ensureErr != nil {
+			utility.DefaultLogger.Warn("EnsurePublishPermission failed", ensureErr)
+		}
+
 		cfg, err := mgr.Config()
 		if err != nil {
 			return err
@@ -271,6 +276,8 @@ var serveCmd = &cobra.Command{
 				"ssh", sshAddr)
 		} else {
 			handler.set(buildRealHandler())
+			publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
+			go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval)
 		}
 
 		manager := autocert.Manager{
@@ -358,6 +365,8 @@ var serveCmd = &cobra.Command{
 					utility.DefaultLogger.Info("Permission cache loaded, switching to real HTTP handler")
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
+					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
+					go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval)
 
 					if cfg.Plugin_Enabled {
 						tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)

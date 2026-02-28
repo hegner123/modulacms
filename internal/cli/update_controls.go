@@ -846,14 +846,6 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				}
 			}
 		}
-		if km.Matches(key, config.ActionArchive) {
-			if !m.PageRouteId.IsZero() {
-				node := m.Root.NodeAtIndex(m.Cursor)
-				if node != nil && node.Instance != nil {
-					return m, tea.Batch(LoadingStartCmd(), ArchiveContentCmd(node.Instance.ContentDataID, m.PageRouteId))
-				}
-			}
-		}
 
 		// Navigate to parent
 		if km.Matches(key, config.ActionGoParent) {

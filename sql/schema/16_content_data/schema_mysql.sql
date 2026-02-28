@@ -10,7 +10,14 @@ CREATE TABLE IF NOT EXISTS content_data (
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    published_at TIMESTAMP NULL,
+    published_by VARCHAR(26) NULL,
+    publish_at TIMESTAMP NULL,
+    revision INT NOT NULL DEFAULT 0,
 
+    CONSTRAINT fk_content_data_published_by
+        FOREIGN KEY (published_by) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_datatypes
         FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE ON DELETE SET NULL,

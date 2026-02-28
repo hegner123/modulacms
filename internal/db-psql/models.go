@@ -23,6 +23,10 @@ type AdminContentData struct {
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
+	PublishedAt        types.Timestamp               `json:"published_at"`
+	PublishedBy        types.NullableUserID          `json:"published_by"`
+	PublishAt          types.Timestamp               `json:"publish_at"`
+	Revision           int32                         `json:"revision"`
 }
 
 type AdminContentFields struct {
@@ -43,6 +47,19 @@ type AdminContentRelations struct {
 	AdminFieldID           types.AdminFieldID           `json:"admin_field_id"`
 	SortOrder              int32                        `json:"sort_order"`
 	DateCreated            types.Timestamp              `json:"date_created"`
+}
+
+type AdminContentVersions struct {
+	AdminContentVersionID types.AdminContentVersionID `json:"admin_content_version_id"`
+	AdminContentDataID    types.AdminContentID        `json:"admin_content_data_id"`
+	VersionNumber         int32                       `json:"version_number"`
+	Locale                string                      `json:"locale"`
+	Snapshot              string                      `json:"snapshot"`
+	Trigger               string                      `json:"trigger"`
+	Label                 string                      `json:"label"`
+	Published             bool                        `json:"published"`
+	PublishedBy           types.NullableUserID        `json:"published_by"`
+	DateCreated           types.Timestamp             `json:"date_created"`
 }
 
 type AdminDatatypes struct {
@@ -161,6 +178,10 @@ type ContentData struct {
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
+	PublishedAt   types.Timestamp          `json:"published_at"`
+	PublishedBy   types.NullableUserID     `json:"published_by"`
+	PublishAt     types.Timestamp          `json:"publish_at"`
+	Revision      int32                    `json:"revision"`
 }
 
 type ContentFields struct {
@@ -181,6 +202,19 @@ type ContentRelations struct {
 	FieldID           types.FieldID           `json:"field_id"`
 	SortOrder         int32                   `json:"sort_order"`
 	DateCreated       types.Timestamp         `json:"date_created"`
+}
+
+type ContentVersions struct {
+	ContentVersionID types.ContentVersionID `json:"content_version_id"`
+	ContentDataID    types.ContentID        `json:"content_data_id"`
+	VersionNumber    int32                  `json:"version_number"`
+	Locale           string                 `json:"locale"`
+	Snapshot         string                 `json:"snapshot"`
+	Trigger          string                 `json:"trigger"`
+	Label            string                 `json:"label"`
+	Published        bool                   `json:"published"`
+	PublishedBy      types.NullableUserID   `json:"published_by"`
+	DateCreated      types.Timestamp        `json:"date_created"`
 }
 
 type Datatypes struct {

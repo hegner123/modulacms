@@ -1527,6 +1527,158 @@ func (id *AdminContentRelationID) UnmarshalJSON(data []byte) error {
 	return id.Validate()
 }
 
+// ContentVersionID uniquely identifies a content version.
+type ContentVersionID string
+
+// NewContentVersionID generates a new ULID-based ContentVersionID.
+func NewContentVersionID() ContentVersionID { return ContentVersionID(NewULID().String()) }
+
+// String returns the string representation of the ContentVersionID.
+func (id ContentVersionID) String() string { return string(id) }
+
+// IsZero returns true if the ContentVersionID is empty.
+func (id ContentVersionID) IsZero() bool { return id == "" }
+
+// Validate checks if the ContentVersionID is a valid ULID.
+func (id ContentVersionID) Validate() error {
+	return validateULID(string(id), "ContentVersionID")
+}
+
+// ULID parses the ContentVersionID as a ulid.ULID.
+func (id ContentVersionID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the ContentVersionID.
+func (id ContentVersionID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseContentVersionID parses and validates a string as a ContentVersionID.
+func ParseContentVersionID(s string) (ContentVersionID, error) {
+	id := ContentVersionID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id ContentVersionID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("ContentVersionID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *ContentVersionID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("ContentVersionID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = ContentVersionID(v)
+	case []byte:
+		*id = ContentVersionID(string(v))
+	default:
+		return fmt.Errorf("ContentVersionID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id ContentVersionID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *ContentVersionID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("ContentVersionID: %w", err)
+	}
+	*id = ContentVersionID(s)
+	return id.Validate()
+}
+
+// AdminContentVersionID uniquely identifies an admin content version.
+type AdminContentVersionID string
+
+// NewAdminContentVersionID generates a new ULID-based AdminContentVersionID.
+func NewAdminContentVersionID() AdminContentVersionID {
+	return AdminContentVersionID(NewULID().String())
+}
+
+// String returns the string representation of the AdminContentVersionID.
+func (id AdminContentVersionID) String() string { return string(id) }
+
+// IsZero returns true if the AdminContentVersionID is empty.
+func (id AdminContentVersionID) IsZero() bool { return id == "" }
+
+// Validate checks if the AdminContentVersionID is a valid ULID.
+func (id AdminContentVersionID) Validate() error {
+	return validateULID(string(id), "AdminContentVersionID")
+}
+
+// ULID parses the AdminContentVersionID as a ulid.ULID.
+func (id AdminContentVersionID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the AdminContentVersionID.
+func (id AdminContentVersionID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseAdminContentVersionID parses and validates a string as an AdminContentVersionID.
+func ParseAdminContentVersionID(s string) (AdminContentVersionID, error) {
+	id := AdminContentVersionID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id AdminContentVersionID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("AdminContentVersionID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *AdminContentVersionID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("AdminContentVersionID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = AdminContentVersionID(v)
+	case []byte:
+		*id = AdminContentVersionID(string(v))
+	default:
+		return fmt.Errorf("AdminContentVersionID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id AdminContentVersionID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *AdminContentVersionID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("AdminContentVersionID: %w", err)
+	}
+	*id = AdminContentVersionID(s)
+	return id.Validate()
+}
+
 // RolePermissionID uniquely identifies a role-permission junction row.
 type RolePermissionID string
 

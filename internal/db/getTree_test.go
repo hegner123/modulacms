@@ -752,7 +752,7 @@ func TestPsqlDatabase_MapGetContentTreeByRouteRow_AllFields(t *testing.T) {
 		AuthorID:      authorID,
 		DateCreated:   ts,
 		DateModified:  ts,
-		Status:        types.ContentStatus("archived"),
+		Status:        types.ContentStatus("draft"),
 		DatatypeLabel: "PsqlPage",
 		DatatypeType:  "psql-type",
 	}
@@ -780,8 +780,8 @@ func TestPsqlDatabase_MapGetContentTreeByRouteRow_AllFields(t *testing.T) {
 	if got.DateModified != ts {
 		t.Errorf("DateModified = %v, want %v", got.DateModified, ts)
 	}
-	if got.Status != types.ContentStatus("archived") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.DatatypeLabel != "PsqlPage" {
 		t.Errorf("DatatypeLabel = %q, want %q", got.DatatypeLabel, "PsqlPage")
@@ -1348,7 +1348,7 @@ func TestDatabase_MapGetContentTreeByRouteRow_StatusVariants(t *testing.T) {
 	d := Database{}
 
 	statuses := []types.ContentStatus{
-		"draft", "published", "archived", "pending", "",
+		"draft", "published", "",
 	}
 
 	for _, s := range statuses {

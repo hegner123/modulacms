@@ -2118,7 +2118,7 @@ func TestDBAPI_Update_WithWhereOrOnly(t *testing.T) {
 	defer cancel()
 
 	code := `db.update("tasks", {
-		set = {status = "archived"},
+		set = {status = "draft"},
 		where_or = {
 			{status = "stale"},
 		},
@@ -2127,15 +2127,15 @@ func TestDBAPI_Update_WithWhereOrOnly(t *testing.T) {
 		t.Fatalf("update with where_or only failed: %v", err)
 	}
 
-	// Verify: 2 rows should now be "archived".
+	// Verify: 2 rows should now be "draft".
 	fullName := tablePrefix(pluginName) + "tasks"
 	ctx := context.Background()
-	count, err := db.QCount(ctx, conn, db.DialectSQLite, fullName, map[string]any{"status": "archived"})
+	count, err := db.QCount(ctx, conn, db.DialectSQLite, fullName, map[string]any{"status": "draft"})
 	if err != nil {
 		t.Fatalf("count failed: %v", err)
 	}
 	if count != 2 {
-		t.Errorf("expected 2 archived rows, got %d", count)
+		t.Errorf("expected 2 draft rows, got %d", count)
 	}
 }
 
@@ -2889,7 +2889,7 @@ func TestDBAPI_Update_WithConditionsInWhere(t *testing.T) {
 	defer cancel()
 
 	code := `db.update("tasks", {
-		set = {status = "archived"},
+		set = {status = "draft"},
 		where = {priority = db.lt(3)},
 	})`
 	if err := L.DoString(code); err != nil {
@@ -2898,12 +2898,12 @@ func TestDBAPI_Update_WithConditionsInWhere(t *testing.T) {
 
 	fullName := tablePrefix(pluginName) + "tasks"
 	ctx := context.Background()
-	count, err := db.QCount(ctx, conn, db.DialectSQLite, fullName, map[string]any{"status": "archived"})
+	count, err := db.QCount(ctx, conn, db.DialectSQLite, fullName, map[string]any{"status": "draft"})
 	if err != nil {
 		t.Fatalf("count failed: %v", err)
 	}
 	if count != 1 {
-		t.Errorf("expected 1 archived row (priority < 3), got %d", count)
+		t.Errorf("expected 1 draft row (priority < 3), got %d", count)
 	}
 }
 

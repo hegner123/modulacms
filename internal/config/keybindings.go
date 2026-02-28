@@ -28,7 +28,6 @@ const (
 	ActionReorderDown Action = "reorder_down"
 	ActionCopy        Action = "copy"
 	ActionPublish     Action = "publish"
-	ActionArchive     Action = "archive"
 	ActionGoParent    Action = "go_parent"
 	ActionGoChild     Action = "go_child"
 )
@@ -63,7 +62,6 @@ func DefaultKeyMap() KeyMap {
 		ActionReorderDown: {"shift+down", "J"},
 		ActionCopy:        {"c"},
 		ActionPublish:     {"p"},
-		ActionArchive:     {"a"},
 		ActionGoParent:    {"g"},
 		ActionGoChild:     {"G"},
 	}

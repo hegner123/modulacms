@@ -103,6 +103,72 @@ func (q *Queries) CheckRouteExists(ctx context.Context, arg CheckRouteExistsPara
 	return column_1, err
 }
 
+const clearAdminContentDataSchedule = `-- name: ClearAdminContentDataSchedule :exec
+UPDATE admin_content_data
+SET publish_at = NULL,
+    date_modified = ?
+WHERE admin_content_data_id = ?
+`
+
+type ClearAdminContentDataScheduleParams struct {
+	DateModified       types.Timestamp      `json:"date_modified"`
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) ClearAdminContentDataSchedule(ctx context.Context, arg ClearAdminContentDataScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, clearAdminContentDataSchedule, arg.DateModified, arg.AdminContentDataID)
+	return err
+}
+
+const clearAdminPublishedFlag = `-- name: ClearAdminPublishedFlag :exec
+UPDATE admin_content_versions
+SET published = 0
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1
+`
+
+type ClearAdminPublishedFlagParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+}
+
+func (q *Queries) ClearAdminPublishedFlag(ctx context.Context, arg ClearAdminPublishedFlagParams) error {
+	_, err := q.db.ExecContext(ctx, clearAdminPublishedFlag, arg.AdminContentDataID, arg.Locale)
+	return err
+}
+
+const clearContentDataSchedule = `-- name: ClearContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = NULL,
+    date_modified = ?
+WHERE content_data_id = ?
+`
+
+type ClearContentDataScheduleParams struct {
+	DateModified  types.Timestamp `json:"date_modified"`
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) ClearContentDataSchedule(ctx context.Context, arg ClearContentDataScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, clearContentDataSchedule, arg.DateModified, arg.ContentDataID)
+	return err
+}
+
+const clearPublishedFlag = `-- name: ClearPublishedFlag :exec
+UPDATE content_versions
+SET published = 0
+WHERE content_data_id = ? AND locale = ? AND published = 1
+`
+
+type ClearPublishedFlagParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+}
+
+func (q *Queries) ClearPublishedFlag(ctx context.Context, arg ClearPublishedFlagParams) error {
+	_, err := q.db.ExecContext(ctx, clearPublishedFlag, arg.ContentDataID, arg.Locale)
+	return err
+}
+
 const countAdminContentData = `-- name: CountAdminContentData :one
 SELECT COUNT(*)
 FROM admin_content_data
@@ -146,6 +212,33 @@ SELECT COUNT(*) FROM admin_content_relations
 
 func (q *Queries) CountAdminContentRelation(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countAdminContentRelation)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAdminContentVersions = `-- name: CountAdminContentVersions :one
+SELECT COUNT(*) FROM admin_content_versions
+`
+
+func (q *Queries) CountAdminContentVersions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminContentVersions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countAdminContentVersionsByContent = `-- name: CountAdminContentVersionsByContent :one
+SELECT COUNT(*) FROM admin_content_versions
+WHERE admin_content_data_id = ?
+`
+
+type CountAdminContentVersionsByContentParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) CountAdminContentVersionsByContent(ctx context.Context, arg CountAdminContentVersionsByContentParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countAdminContentVersionsByContent, arg.AdminContentDataID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -308,6 +401,33 @@ SELECT COUNT(*) FROM content_relations
 
 func (q *Queries) CountContentRelation(ctx context.Context) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countContentRelation)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countContentVersions = `-- name: CountContentVersions :one
+SELECT COUNT(*) FROM content_versions
+`
+
+func (q *Queries) CountContentVersions(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countContentVersions)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countContentVersionsByContent = `-- name: CountContentVersionsByContent :one
+SELECT COUNT(*) FROM content_versions
+WHERE content_data_id = ?
+`
+
+type CountContentVersionsByContentParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) CountContentVersionsByContent(ctx context.Context, arg CountContentVersionsByContentParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countContentVersionsByContent, arg.ContentDataID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -549,7 +669,7 @@ INSERT INTO admin_content_data (
     ?,
     ?,
     ?
-) RETURNING admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified
+) RETURNING admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
 `
 
 type CreateAdminContentDataParams struct {
@@ -593,6 +713,10 @@ func (q *Queries) CreateAdminContentData(ctx context.Context, arg CreateAdminCon
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
+		&i.PublishedAt,
+		&i.PublishedBy,
+		&i.PublishAt,
+		&i.Revision,
 	)
 	return i, err
 }
@@ -610,6 +734,10 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    published_by TEXT REFERENCES users(user_id) ON DELETE SET NULL,
+    publish_at TEXT,
+    revision INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
@@ -782,6 +910,89 @@ CREATE TABLE IF NOT EXISTS admin_content_relations (
 
 func (q *Queries) CreateAdminContentRelationTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createAdminContentRelationTable)
+	return err
+}
+
+const createAdminContentVersion = `-- name: CreateAdminContentVersion :one
+INSERT INTO admin_content_versions (
+    admin_content_version_id,
+    admin_content_data_id,
+    version_number,
+    locale,
+    snapshot,
+    trigger,
+    label,
+    published,
+    published_by,
+    date_created
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+) RETURNING admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created
+`
+
+type CreateAdminContentVersionParams struct {
+	AdminContentVersionID types.AdminContentVersionID `json:"admin_content_version_id"`
+	AdminContentDataID    types.AdminContentID        `json:"admin_content_data_id"`
+	VersionNumber         int64                       `json:"version_number"`
+	Locale                string                      `json:"locale"`
+	Snapshot              string                      `json:"snapshot"`
+	Trigger               string                      `json:"trigger"`
+	Label                 string                      `json:"label"`
+	Published             int64                       `json:"published"`
+	PublishedBy           types.NullableUserID        `json:"published_by"`
+	DateCreated           types.Timestamp             `json:"date_created"`
+}
+
+func (q *Queries) CreateAdminContentVersion(ctx context.Context, arg CreateAdminContentVersionParams) (AdminContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, createAdminContentVersion,
+		arg.AdminContentVersionID,
+		arg.AdminContentDataID,
+		arg.VersionNumber,
+		arg.Locale,
+		arg.Snapshot,
+		arg.Trigger,
+		arg.Label,
+		arg.Published,
+		arg.PublishedBy,
+		arg.DateCreated,
+	)
+	var i AdminContentVersions
+	err := row.Scan(
+		&i.AdminContentVersionID,
+		&i.AdminContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const createAdminContentVersionTable = `-- name: CreateAdminContentVersionTable :exec
+CREATE TABLE IF NOT EXISTS admin_content_versions (
+    admin_content_version_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_version_id) = 26),
+    admin_content_data_id TEXT NOT NULL
+        REFERENCES admin_content_data(admin_content_data_id)
+            ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
+    snapshot TEXT NOT NULL,
+    trigger TEXT NOT NULL DEFAULT 'manual',
+    label TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    published_by TEXT
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateAdminContentVersionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createAdminContentVersionTable)
 	return err
 }
 
@@ -1264,7 +1475,7 @@ INSERT INTO content_data (
     ?,
     ?,
     ?
-) RETURNING content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified
+) RETURNING content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision
 `
 
 type CreateContentDataParams struct {
@@ -1308,6 +1519,10 @@ func (q *Queries) CreateContentData(ctx context.Context, arg CreateContentDataPa
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
+		&i.PublishedAt,
+		&i.PublishedBy,
+		&i.PublishAt,
+		&i.Revision,
 	)
 	return i, err
 }
@@ -1339,6 +1554,10 @@ CREATE TABLE IF NOT EXISTS content_data (
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    published_by TEXT REFERENCES users(user_id) ON DELETE SET NULL,
+    publish_at TEXT,
+    revision INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
@@ -1507,6 +1726,89 @@ CREATE TABLE IF NOT EXISTS content_relations (
 
 func (q *Queries) CreateContentRelationTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createContentRelationTable)
+	return err
+}
+
+const createContentVersion = `-- name: CreateContentVersion :one
+INSERT INTO content_versions (
+    content_version_id,
+    content_data_id,
+    version_number,
+    locale,
+    snapshot,
+    trigger,
+    label,
+    published,
+    published_by,
+    date_created
+) VALUES (
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+) RETURNING content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created
+`
+
+type CreateContentVersionParams struct {
+	ContentVersionID types.ContentVersionID `json:"content_version_id"`
+	ContentDataID    types.ContentID        `json:"content_data_id"`
+	VersionNumber    int64                  `json:"version_number"`
+	Locale           string                 `json:"locale"`
+	Snapshot         string                 `json:"snapshot"`
+	Trigger          string                 `json:"trigger"`
+	Label            string                 `json:"label"`
+	Published        int64                  `json:"published"`
+	PublishedBy      types.NullableUserID   `json:"published_by"`
+	DateCreated      types.Timestamp        `json:"date_created"`
+}
+
+func (q *Queries) CreateContentVersion(ctx context.Context, arg CreateContentVersionParams) (ContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, createContentVersion,
+		arg.ContentVersionID,
+		arg.ContentDataID,
+		arg.VersionNumber,
+		arg.Locale,
+		arg.Snapshot,
+		arg.Trigger,
+		arg.Label,
+		arg.Published,
+		arg.PublishedBy,
+		arg.DateCreated,
+	)
+	var i ContentVersions
+	err := row.Scan(
+		&i.ContentVersionID,
+		&i.ContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const createContentVersionTable = `-- name: CreateContentVersionTable :exec
+CREATE TABLE IF NOT EXISTS content_versions (
+    content_version_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_version_id) = 26),
+    content_data_id TEXT NOT NULL
+        REFERENCES content_data(content_data_id)
+            ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
+    snapshot TEXT NOT NULL,
+    trigger TEXT NOT NULL DEFAULT 'manual',
+    label TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    published_by TEXT
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateContentVersionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createContentVersionTable)
 	return err
 }
 
@@ -2771,6 +3073,20 @@ func (q *Queries) DeleteAdminContentRelation(ctx context.Context, arg DeleteAdmi
 	return err
 }
 
+const deleteAdminContentVersion = `-- name: DeleteAdminContentVersion :exec
+DELETE FROM admin_content_versions
+WHERE admin_content_version_id = ?
+`
+
+type DeleteAdminContentVersionParams struct {
+	AdminContentVersionID types.AdminContentVersionID `json:"admin_content_version_id"`
+}
+
+func (q *Queries) DeleteAdminContentVersion(ctx context.Context, arg DeleteAdminContentVersionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteAdminContentVersion, arg.AdminContentVersionID)
+	return err
+}
+
 const deleteAdminDatatype = `-- name: DeleteAdminDatatype :exec
 DELETE FROM admin_datatypes
 WHERE admin_datatype_id = ?
@@ -2924,6 +3240,20 @@ type DeleteContentRelationParams struct {
 
 func (q *Queries) DeleteContentRelation(ctx context.Context, arg DeleteContentRelationParams) error {
 	_, err := q.db.ExecContext(ctx, deleteContentRelation, arg.ContentRelationID)
+	return err
+}
+
+const deleteContentVersion = `-- name: DeleteContentVersion :exec
+DELETE FROM content_versions
+WHERE content_version_id = ?
+`
+
+type DeleteContentVersionParams struct {
+	ContentVersionID types.ContentVersionID `json:"content_version_id"`
+}
+
+func (q *Queries) DeleteContentVersion(ctx context.Context, arg DeleteContentVersionParams) error {
+	_, err := q.db.ExecContext(ctx, deleteContentVersion, arg.ContentVersionID)
 	return err
 }
 
@@ -3243,6 +3573,15 @@ func (q *Queries) DropAdminContentRelationTable(ctx context.Context) error {
 	return err
 }
 
+const dropAdminContentVersionTable = `-- name: DropAdminContentVersionTable :exec
+DROP TABLE IF EXISTS admin_content_versions
+`
+
+func (q *Queries) DropAdminContentVersionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropAdminContentVersionTable)
+	return err
+}
+
 const dropAdminDatatypeTable = `-- name: DropAdminDatatypeTable :exec
 DROP TABLE admin_datatypes
 `
@@ -3357,6 +3696,15 @@ DROP TABLE IF EXISTS content_relations
 
 func (q *Queries) DropContentRelationTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, dropContentRelationTable)
+	return err
+}
+
+const dropContentVersionTable = `-- name: DropContentVersionTable :exec
+DROP TABLE IF EXISTS content_versions
+`
+
+func (q *Queries) DropContentVersionTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropContentVersionTable)
 	return err
 }
 
@@ -3514,7 +3862,7 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 }
 
 const getAdminContentData = `-- name: GetAdminContentData :one
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
 `
 
@@ -3537,6 +3885,10 @@ func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDa
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
+		&i.PublishedAt,
+		&i.PublishedBy,
+		&i.PublishAt,
+		&i.Revision,
 	)
 	return i, err
 }
@@ -3584,6 +3936,33 @@ func (q *Queries) GetAdminContentRelation(ctx context.Context, arg GetAdminConte
 		&i.TargetContentID,
 		&i.AdminFieldID,
 		&i.SortOrder,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const getAdminContentVersion = `-- name: GetAdminContentVersion :one
+SELECT admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM admin_content_versions
+WHERE admin_content_version_id = ? LIMIT 1
+`
+
+type GetAdminContentVersionParams struct {
+	AdminContentVersionID types.AdminContentVersionID `json:"admin_content_version_id"`
+}
+
+func (q *Queries) GetAdminContentVersion(ctx context.Context, arg GetAdminContentVersionParams) (AdminContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, getAdminContentVersion, arg.AdminContentVersionID)
+	var i AdminContentVersions
+	err := row.Scan(
+		&i.AdminContentVersionID,
+		&i.AdminContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
 		&i.DateCreated,
 	)
 	return i, err
@@ -3672,6 +4051,51 @@ func (q *Queries) GetAdminFieldTypesByType(ctx context.Context, arg GetAdminFiel
 	row := q.db.QueryRowContext(ctx, getAdminFieldTypesByType, arg.Type)
 	var i AdminFieldTypes
 	err := row.Scan(&i.AdminFieldTypeID, &i.Type, &i.Label)
+	return i, err
+}
+
+const getAdminMaxVersionNumber = `-- name: GetAdminMaxVersionNumber :one
+SELECT COALESCE(MAX(version_number), 0) FROM admin_content_versions
+WHERE admin_content_data_id = ? AND locale = ?
+`
+
+type GetAdminMaxVersionNumberParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+}
+
+func (q *Queries) GetAdminMaxVersionNumber(ctx context.Context, arg GetAdminMaxVersionNumberParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getAdminMaxVersionNumber, arg.AdminContentDataID, arg.Locale)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
+const getAdminPublishedSnapshot = `-- name: GetAdminPublishedSnapshot :one
+SELECT admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM admin_content_versions
+WHERE admin_content_data_id = ? AND locale = ? AND published = 1 LIMIT 1
+`
+
+type GetAdminPublishedSnapshotParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+}
+
+func (q *Queries) GetAdminPublishedSnapshot(ctx context.Context, arg GetAdminPublishedSnapshotParams) (AdminContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, getAdminPublishedSnapshot, arg.AdminContentDataID, arg.Locale)
+	var i AdminContentVersions
+	err := row.Scan(
+		&i.AdminContentVersionID,
+		&i.AdminContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
+		&i.DateCreated,
+	)
 	return i, err
 }
 
@@ -4125,7 +4549,7 @@ func (q *Queries) GetChangeEventsByRecordPaginated(ctx context.Context, arg GetC
 }
 
 const getContentData = `-- name: GetContentData :one
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE content_data_id = ? LIMIT 1
 `
 
@@ -4148,6 +4572,10 @@ func (q *Queries) GetContentData(ctx context.Context, arg GetContentDataParams) 
 		&i.Status,
 		&i.DateCreated,
 		&i.DateModified,
+		&i.PublishedAt,
+		&i.PublishedBy,
+		&i.PublishAt,
+		&i.Revision,
 	)
 	return i, err
 }
@@ -4159,7 +4587,7 @@ WITH RECURSIVE tree AS (
     SELECT cd2.content_data_id FROM content_data cd2
     INNER JOIN tree t ON cd2.parent_id = t.cid
 )
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision FROM content_data cd
 INNER JOIN tree t ON cd.content_data_id = t.cid
 `
 
@@ -4188,6 +4616,10 @@ func (q *Queries) GetContentDataDescendants(ctx context.Context, arg GetContentD
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -4365,6 +4797,33 @@ func (q *Queries) GetContentTreeByRoute(ctx context.Context, arg GetContentTreeB
 		return nil, err
 	}
 	return items, nil
+}
+
+const getContentVersion = `-- name: GetContentVersion :one
+SELECT content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM content_versions
+WHERE content_version_id = ? LIMIT 1
+`
+
+type GetContentVersionParams struct {
+	ContentVersionID types.ContentVersionID `json:"content_version_id"`
+}
+
+func (q *Queries) GetContentVersion(ctx context.Context, arg GetContentVersionParams) (ContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, getContentVersion, arg.ContentVersionID)
+	var i ContentVersions
+	err := row.Scan(
+		&i.ContentVersionID,
+		&i.ContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
+		&i.DateCreated,
+	)
+	return i, err
 }
 
 const getDatatype = `-- name: GetDatatype :one
@@ -4661,6 +5120,23 @@ func (q *Queries) GetMaxSortOrderByParentID(ctx context.Context, arg GetMaxSortO
 	return coalesce, err
 }
 
+const getMaxVersionNumber = `-- name: GetMaxVersionNumber :one
+SELECT COALESCE(MAX(version_number), 0) FROM content_versions
+WHERE content_data_id = ? AND locale = ?
+`
+
+type GetMaxVersionNumberParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+}
+
+func (q *Queries) GetMaxVersionNumber(ctx context.Context, arg GetMaxVersionNumberParams) (interface{}, error) {
+	row := q.db.QueryRowContext(ctx, getMaxVersionNumber, arg.ContentDataID, arg.Locale)
+	var coalesce interface{}
+	err := row.Scan(&coalesce)
+	return coalesce, err
+}
+
 const getMedia = `-- name: GetMedia :one
 SELECT media_id, name, display_name, alt, caption, description, class, mimetype, dimensions, url, srcset, focal_x, focal_y, author_id, date_created, date_modified FROM media
 WHERE media_id = ? LIMIT 1
@@ -4932,6 +5408,34 @@ func (q *Queries) GetPluginByName(ctx context.Context, arg GetPluginByNameParams
 	return i, err
 }
 
+const getPublishedSnapshot = `-- name: GetPublishedSnapshot :one
+SELECT content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM content_versions
+WHERE content_data_id = ? AND locale = ? AND published = 1 LIMIT 1
+`
+
+type GetPublishedSnapshotParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+}
+
+func (q *Queries) GetPublishedSnapshot(ctx context.Context, arg GetPublishedSnapshotParams) (ContentVersions, error) {
+	row := q.db.QueryRowContext(ctx, getPublishedSnapshot, arg.ContentDataID, arg.Locale)
+	var i ContentVersions
+	err := row.Scan(
+		&i.ContentVersionID,
+		&i.ContentDataID,
+		&i.VersionNumber,
+		&i.Locale,
+		&i.Snapshot,
+		&i.Trigger,
+		&i.Label,
+		&i.Published,
+		&i.PublishedBy,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
 const getRole = `-- name: GetRole :one
 SELECT role_id, label, system_protected
 FROM roles
@@ -5149,7 +5653,7 @@ func (q *Queries) GetSessionByUserId(ctx context.Context, arg GetSessionByUserId
 }
 
 const getShallowTreeByRouteId = `-- name: GetShallowTreeByRouteId :many
-    SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, dt.label as datatype_label, dt.type as datatype_type
+    SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, dt.label as datatype_label, dt.type as datatype_type
     FROM content_data cd
     JOIN datatypes dt ON cd.datatype_id = dt.datatype_id  
     WHERE cd.route_id = ? 
@@ -5177,6 +5681,10 @@ type GetShallowTreeByRouteIdRow struct {
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
+	PublishedAt   types.Timestamp          `json:"published_at"`
+	PublishedBy   types.NullableUserID     `json:"published_by"`
+	PublishAt     types.Timestamp          `json:"publish_at"`
+	Revision      int64                    `json:"revision"`
 	DatatypeLabel string                   `json:"datatype_label"`
 	DatatypeType  string                   `json:"datatype_type"`
 }
@@ -5202,6 +5710,10 @@ func (q *Queries) GetShallowTreeByRouteId(ctx context.Context, arg GetShallowTre
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 			&i.DatatypeLabel,
 			&i.DatatypeType,
 		); err != nil {
@@ -5853,7 +6365,7 @@ func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, arg Increment
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 ORDER BY admin_content_data_id
 `
 
@@ -5878,6 +6390,10 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -5893,7 +6409,7 @@ func (q *Queries) ListAdminContentData(ctx context.Context) ([]AdminContentData,
 }
 
 const listAdminContentDataByRoute = `-- name: ListAdminContentDataByRoute :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 `
@@ -5923,6 +6439,10 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdmin
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -5938,7 +6458,7 @@ func (q *Queries) ListAdminContentDataByRoute(ctx context.Context, arg ListAdmin
 }
 
 const listAdminContentDataByRoutePaginated = `-- name: ListAdminContentDataByRoutePaginated :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_route_id = ?
 ORDER BY admin_content_data_id
 LIMIT ? OFFSET ?
@@ -5971,6 +6491,58 @@ func (q *Queries) ListAdminContentDataByRoutePaginated(ctx context.Context, arg 
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentDataDueForPublish = `-- name: ListAdminContentDataDueForPublish :many
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
+WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft'
+`
+
+type ListAdminContentDataDueForPublishParams struct {
+	PublishAt types.Timestamp `json:"publish_at"`
+}
+
+func (q *Queries) ListAdminContentDataDueForPublish(ctx context.Context, arg ListAdminContentDataDueForPublishParams) ([]AdminContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentDataDueForPublish, arg.PublishAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentData{}
+	for rows.Next() {
+		var i AdminContentData
+		if err := rows.Scan(
+			&i.AdminContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.AdminRouteID,
+			&i.AdminDatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -5986,7 +6558,7 @@ func (q *Queries) ListAdminContentDataByRoutePaginated(ctx context.Context, arg 
 }
 
 const listAdminContentDataPaginated = `-- name: ListAdminContentDataPaginated :many
-SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified FROM admin_content_data
+SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 ORDER BY admin_content_data_id
 LIMIT ? OFFSET ?
 `
@@ -6017,6 +6589,10 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -6032,7 +6608,7 @@ func (q *Queries) ListAdminContentDataPaginated(ctx context.Context, arg ListAdm
 }
 
 const listAdminContentDataTopLevelPaginated = `-- name: ListAdminContentDataTopLevelPaginated :many
-SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label FROM admin_content_data acd
+SELECT acd.admin_content_data_id, acd.parent_id, acd.first_child_id, acd.next_sibling_id, acd.prev_sibling_id, acd.admin_route_id, acd.admin_datatype_id, acd.author_id, acd.status, acd.date_created, acd.date_modified, acd.published_at, acd.published_by, acd.publish_at, acd.revision, u.name AS author_name, COALESCE(ar.slug, '') AS route_slug, COALESCE(ar.title, '') AS route_title, COALESCE(adt.label, '') AS datatype_label FROM admin_content_data acd
 LEFT JOIN admin_datatypes adt ON acd.admin_datatype_id = adt.admin_datatype_id
 LEFT JOIN users u ON acd.author_id = u.user_id
 LEFT JOIN admin_routes ar ON acd.admin_route_id = ar.admin_route_id
@@ -6058,6 +6634,10 @@ type ListAdminContentDataTopLevelPaginatedRow struct {
 	Status             types.ContentStatus           `json:"status"`
 	DateCreated        types.Timestamp               `json:"date_created"`
 	DateModified       types.Timestamp               `json:"date_modified"`
+	PublishedAt        types.Timestamp               `json:"published_at"`
+	PublishedBy        types.NullableUserID          `json:"published_by"`
+	PublishAt          types.Timestamp               `json:"publish_at"`
+	Revision           int64                         `json:"revision"`
 	AuthorName         sql.NullString                `json:"author_name"`
 	RouteSlug          types.Slug                    `json:"route_slug"`
 	RouteTitle         string                        `json:"route_title"`
@@ -6085,6 +6665,10 @@ func (q *Queries) ListAdminContentDataTopLevelPaginated(ctx context.Context, arg
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 			&i.AuthorName,
 			&i.RouteSlug,
 			&i.RouteTitle,
@@ -6586,6 +7170,95 @@ func (q *Queries) ListAdminContentRelationsByTarget(ctx context.Context, arg Lis
 			&i.TargetContentID,
 			&i.AdminFieldID,
 			&i.SortOrder,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentVersionsByContent = `-- name: ListAdminContentVersionsByContent :many
+SELECT admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM admin_content_versions
+WHERE admin_content_data_id = ?
+ORDER BY version_number DESC
+`
+
+type ListAdminContentVersionsByContentParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) ListAdminContentVersionsByContent(ctx context.Context, arg ListAdminContentVersionsByContentParams) ([]AdminContentVersions, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentVersionsByContent, arg.AdminContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentVersions{}
+	for rows.Next() {
+		var i AdminContentVersions
+		if err := rows.Scan(
+			&i.AdminContentVersionID,
+			&i.AdminContentDataID,
+			&i.VersionNumber,
+			&i.Locale,
+			&i.Snapshot,
+			&i.Trigger,
+			&i.Label,
+			&i.Published,
+			&i.PublishedBy,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentVersionsByContentLocale = `-- name: ListAdminContentVersionsByContentLocale :many
+SELECT admin_content_version_id, admin_content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM admin_content_versions
+WHERE admin_content_data_id = ? AND locale = ?
+ORDER BY version_number DESC
+`
+
+type ListAdminContentVersionsByContentLocaleParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+}
+
+func (q *Queries) ListAdminContentVersionsByContentLocale(ctx context.Context, arg ListAdminContentVersionsByContentLocaleParams) ([]AdminContentVersions, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentVersionsByContentLocale, arg.AdminContentDataID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentVersions{}
+	for rows.Next() {
+		var i AdminContentVersions
+		if err := rows.Scan(
+			&i.AdminContentVersionID,
+			&i.AdminContentDataID,
+			&i.VersionNumber,
+			&i.Locale,
+			&i.Snapshot,
+			&i.Trigger,
+			&i.Label,
+			&i.Published,
+			&i.PublishedBy,
 			&i.DateCreated,
 		); err != nil {
 			return nil, err
@@ -7385,7 +8058,7 @@ func (q *Queries) ListChangeEventsByUser(ctx context.Context, arg ListChangeEven
 }
 
 const listContentData = `-- name: ListContentData :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 ORDER BY content_data_id
 `
 
@@ -7410,6 +8083,10 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -7425,7 +8102,7 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 }
 
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 `
@@ -7455,6 +8132,10 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -7470,7 +8151,7 @@ func (q *Queries) ListContentDataByRoute(ctx context.Context, arg ListContentDat
 }
 
 const listContentDataByRoutePaginated = `-- name: ListContentDataByRoutePaginated :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE route_id = ?
 ORDER BY content_data_id
 LIMIT ? OFFSET ?
@@ -7503,6 +8184,58 @@ func (q *Queries) ListContentDataByRoutePaginated(ctx context.Context, arg ListC
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentDataDueForPublish = `-- name: ListContentDataDueForPublish :many
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft'
+`
+
+type ListContentDataDueForPublishParams struct {
+	PublishAt types.Timestamp `json:"publish_at"`
+}
+
+func (q *Queries) ListContentDataDueForPublish(ctx context.Context, arg ListContentDataDueForPublishParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataDueForPublish, arg.PublishAt)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -7518,7 +8251,7 @@ func (q *Queries) ListContentDataByRoutePaginated(ctx context.Context, arg ListC
 }
 
 const listContentDataPaginated = `-- name: ListContentDataPaginated :many
-SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified FROM content_data
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 ORDER BY content_data_id
 LIMIT ? OFFSET ?
 `
@@ -7549,6 +8282,10 @@ func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentD
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 		); err != nil {
 			return nil, err
 		}
@@ -7564,7 +8301,7 @@ func (q *Queries) ListContentDataPaginated(ctx context.Context, arg ListContentD
 }
 
 const listContentDataTopLevelPaginated = `-- name: ListContentDataTopLevelPaginated :many
-SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
+SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, cd.prev_sibling_id, cd.route_id, cd.datatype_id, cd.author_id, cd.status, cd.date_created, cd.date_modified, cd.published_at, cd.published_by, cd.publish_at, cd.revision, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE(r.title, '') AS route_title, COALESCE(dt.label, '') AS datatype_label FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
@@ -7590,6 +8327,10 @@ type ListContentDataTopLevelPaginatedRow struct {
 	Status        types.ContentStatus      `json:"status"`
 	DateCreated   types.Timestamp          `json:"date_created"`
 	DateModified  types.Timestamp          `json:"date_modified"`
+	PublishedAt   types.Timestamp          `json:"published_at"`
+	PublishedBy   types.NullableUserID     `json:"published_by"`
+	PublishAt     types.Timestamp          `json:"publish_at"`
+	Revision      int64                    `json:"revision"`
 	AuthorName    sql.NullString           `json:"author_name"`
 	RouteSlug     types.Slug               `json:"route_slug"`
 	RouteTitle    string                   `json:"route_title"`
@@ -7617,6 +8358,10 @@ func (q *Queries) ListContentDataTopLevelPaginated(ctx context.Context, arg List
 			&i.Status,
 			&i.DateCreated,
 			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
 			&i.AuthorName,
 			&i.RouteSlug,
 			&i.RouteTitle,
@@ -8098,6 +8843,95 @@ func (q *Queries) ListContentRelationsByTarget(ctx context.Context, arg ListCont
 			&i.TargetContentID,
 			&i.FieldID,
 			&i.SortOrder,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentVersionsByContent = `-- name: ListContentVersionsByContent :many
+SELECT content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM content_versions
+WHERE content_data_id = ?
+ORDER BY version_number DESC
+`
+
+type ListContentVersionsByContentParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) ListContentVersionsByContent(ctx context.Context, arg ListContentVersionsByContentParams) ([]ContentVersions, error) {
+	rows, err := q.db.QueryContext(ctx, listContentVersionsByContent, arg.ContentDataID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentVersions{}
+	for rows.Next() {
+		var i ContentVersions
+		if err := rows.Scan(
+			&i.ContentVersionID,
+			&i.ContentDataID,
+			&i.VersionNumber,
+			&i.Locale,
+			&i.Snapshot,
+			&i.Trigger,
+			&i.Label,
+			&i.Published,
+			&i.PublishedBy,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentVersionsByContentLocale = `-- name: ListContentVersionsByContentLocale :many
+SELECT content_version_id, content_data_id, version_number, locale, snapshot, "trigger", label, published, published_by, date_created FROM content_versions
+WHERE content_data_id = ? AND locale = ?
+ORDER BY version_number DESC
+`
+
+type ListContentVersionsByContentLocaleParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+}
+
+func (q *Queries) ListContentVersionsByContentLocale(ctx context.Context, arg ListContentVersionsByContentLocaleParams) ([]ContentVersions, error) {
+	rows, err := q.db.QueryContext(ctx, listContentVersionsByContentLocale, arg.ContentDataID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentVersions{}
+	for rows.Next() {
+		var i ContentVersions
+		if err := rows.Scan(
+			&i.ContentVersionID,
+			&i.ContentDataID,
+			&i.VersionNumber,
+			&i.Locale,
+			&i.Snapshot,
+			&i.Trigger,
+			&i.Label,
+			&i.Published,
+			&i.PublishedBy,
 			&i.DateCreated,
 		); err != nil {
 			return nil, err
@@ -9758,6 +10592,50 @@ func (q *Queries) MarkEventsSyncedBatch(ctx context.Context, arg MarkEventsSynce
 	return err
 }
 
+const pruneAdminOldVersions = `-- name: PruneAdminOldVersions :exec
+DELETE FROM admin_content_versions
+WHERE admin_content_version_id IN (
+    SELECT acv.admin_content_version_id FROM admin_content_versions acv
+    WHERE acv.admin_content_data_id = ? AND acv.locale = ?
+        AND acv.published = 0 AND acv.label = ''
+    ORDER BY acv.version_number ASC
+    LIMIT ?
+)
+`
+
+type PruneAdminOldVersionsParams struct {
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
+	Limit              int64                `json:"limit"`
+}
+
+func (q *Queries) PruneAdminOldVersions(ctx context.Context, arg PruneAdminOldVersionsParams) error {
+	_, err := q.db.ExecContext(ctx, pruneAdminOldVersions, arg.AdminContentDataID, arg.Locale, arg.Limit)
+	return err
+}
+
+const pruneOldVersions = `-- name: PruneOldVersions :exec
+DELETE FROM content_versions
+WHERE content_version_id IN (
+    SELECT cv.content_version_id FROM content_versions cv
+    WHERE cv.content_data_id = ? AND cv.locale = ?
+        AND cv.published = 0 AND cv.label = ''
+    ORDER BY cv.version_number ASC
+    LIMIT ?
+)
+`
+
+type PruneOldVersionsParams struct {
+	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
+	Limit         int64           `json:"limit"`
+}
+
+func (q *Queries) PruneOldVersions(ctx context.Context, arg PruneOldVersionsParams) error {
+	_, err := q.db.ExecContext(ctx, pruneOldVersions, arg.ContentDataID, arg.Locale, arg.Limit)
+	return err
+}
+
 const recordChangeEvent = `-- name: RecordChangeEvent :one
 INSERT INTO change_events (
     event_id,
@@ -9875,6 +10753,101 @@ func (q *Queries) UpdateAdminContentData(ctx context.Context, arg UpdateAdminCon
 		arg.DateCreated,
 		arg.DateModified,
 		arg.AdminContentDataID,
+	)
+	return err
+}
+
+const updateAdminContentDataPublishMeta = `-- name: UpdateAdminContentDataPublishMeta :exec
+UPDATE admin_content_data
+SET status = ?,
+    published_at = ?,
+    published_by = ?,
+    revision = revision + 1,
+    date_modified = ?
+WHERE admin_content_data_id = ?
+`
+
+type UpdateAdminContentDataPublishMetaParams struct {
+	Status             types.ContentStatus  `json:"status"`
+	PublishedAt        types.Timestamp      `json:"published_at"`
+	PublishedBy        types.NullableUserID `json:"published_by"`
+	DateModified       types.Timestamp      `json:"date_modified"`
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) UpdateAdminContentDataPublishMeta(ctx context.Context, arg UpdateAdminContentDataPublishMetaParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminContentDataPublishMeta,
+		arg.Status,
+		arg.PublishedAt,
+		arg.PublishedBy,
+		arg.DateModified,
+		arg.AdminContentDataID,
+	)
+	return err
+}
+
+const updateAdminContentDataSchedule = `-- name: UpdateAdminContentDataSchedule :exec
+UPDATE admin_content_data
+SET publish_at = ?,
+    date_modified = ?
+WHERE admin_content_data_id = ?
+`
+
+type UpdateAdminContentDataScheduleParams struct {
+	PublishAt          types.Timestamp      `json:"publish_at"`
+	DateModified       types.Timestamp      `json:"date_modified"`
+	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+}
+
+func (q *Queries) UpdateAdminContentDataSchedule(ctx context.Context, arg UpdateAdminContentDataScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminContentDataSchedule, arg.PublishAt, arg.DateModified, arg.AdminContentDataID)
+	return err
+}
+
+const updateAdminContentDataWithRevision = `-- name: UpdateAdminContentDataWithRevision :exec
+UPDATE admin_content_data
+SET admin_route_id = ?,
+    parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
+    admin_datatype_id = ?,
+    author_id = ?,
+    status = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE admin_content_data_id = ? AND revision = ?
+`
+
+type UpdateAdminContentDataWithRevisionParams struct {
+	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
+	ParentID           types.NullableAdminContentID  `json:"parent_id"`
+	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
+	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
+	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
+	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
+	AuthorID           types.UserID                  `json:"author_id"`
+	Status             types.ContentStatus           `json:"status"`
+	DateCreated        types.Timestamp               `json:"date_created"`
+	DateModified       types.Timestamp               `json:"date_modified"`
+	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
+	Revision           int64                         `json:"revision"`
+}
+
+func (q *Queries) UpdateAdminContentDataWithRevision(ctx context.Context, arg UpdateAdminContentDataWithRevisionParams) error {
+	_, err := q.db.ExecContext(ctx, updateAdminContentDataWithRevision,
+		arg.AdminRouteID,
+		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
+		arg.AdminDatatypeID,
+		arg.AuthorID,
+		arg.Status,
+		arg.DateCreated,
+		arg.DateModified,
+		arg.AdminContentDataID,
+		arg.Revision,
 	)
 	return err
 }
@@ -10208,6 +11181,101 @@ func (q *Queries) UpdateContentData(ctx context.Context, arg UpdateContentDataPa
 		arg.DateCreated,
 		arg.DateModified,
 		arg.ContentDataID,
+	)
+	return err
+}
+
+const updateContentDataPublishMeta = `-- name: UpdateContentDataPublishMeta :exec
+UPDATE content_data
+SET status = ?,
+    published_at = ?,
+    published_by = ?,
+    revision = revision + 1,
+    date_modified = ?
+WHERE content_data_id = ?
+`
+
+type UpdateContentDataPublishMetaParams struct {
+	Status        types.ContentStatus  `json:"status"`
+	PublishedAt   types.Timestamp      `json:"published_at"`
+	PublishedBy   types.NullableUserID `json:"published_by"`
+	DateModified  types.Timestamp      `json:"date_modified"`
+	ContentDataID types.ContentID      `json:"content_data_id"`
+}
+
+func (q *Queries) UpdateContentDataPublishMeta(ctx context.Context, arg UpdateContentDataPublishMetaParams) error {
+	_, err := q.db.ExecContext(ctx, updateContentDataPublishMeta,
+		arg.Status,
+		arg.PublishedAt,
+		arg.PublishedBy,
+		arg.DateModified,
+		arg.ContentDataID,
+	)
+	return err
+}
+
+const updateContentDataSchedule = `-- name: UpdateContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = ?,
+    date_modified = ?
+WHERE content_data_id = ?
+`
+
+type UpdateContentDataScheduleParams struct {
+	PublishAt     types.Timestamp `json:"publish_at"`
+	DateModified  types.Timestamp `json:"date_modified"`
+	ContentDataID types.ContentID `json:"content_data_id"`
+}
+
+func (q *Queries) UpdateContentDataSchedule(ctx context.Context, arg UpdateContentDataScheduleParams) error {
+	_, err := q.db.ExecContext(ctx, updateContentDataSchedule, arg.PublishAt, arg.DateModified, arg.ContentDataID)
+	return err
+}
+
+const updateContentDataWithRevision = `-- name: UpdateContentDataWithRevision :exec
+UPDATE content_data
+SET route_id = ?,
+    parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
+    datatype_id = ?,
+    author_id = ?,
+    status = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE content_data_id = ? AND revision = ?
+`
+
+type UpdateContentDataWithRevisionParams struct {
+	RouteID       types.NullableRouteID    `json:"route_id"`
+	ParentID      types.NullableContentID  `json:"parent_id"`
+	FirstChildID  types.NullableContentID  `json:"first_child_id"`
+	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
+	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
+	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
+	AuthorID      types.UserID             `json:"author_id"`
+	Status        types.ContentStatus      `json:"status"`
+	DateCreated   types.Timestamp          `json:"date_created"`
+	DateModified  types.Timestamp          `json:"date_modified"`
+	ContentDataID types.ContentID          `json:"content_data_id"`
+	Revision      int64                    `json:"revision"`
+}
+
+func (q *Queries) UpdateContentDataWithRevision(ctx context.Context, arg UpdateContentDataWithRevisionParams) error {
+	_, err := q.db.ExecContext(ctx, updateContentDataWithRevision,
+		arg.RouteID,
+		arg.ParentID,
+		arg.FirstChildID,
+		arg.NextSiblingID,
+		arg.PrevSiblingID,
+		arg.DatatypeID,
+		arg.AuthorID,
+		arg.Status,
+		arg.DateCreated,
+		arg.DateModified,
+		arg.ContentDataID,
+		arg.Revision,
 	)
 	return err
 }

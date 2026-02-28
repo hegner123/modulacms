@@ -1134,7 +1134,7 @@ func TestHookIntegration_HookEngineWithTestdataFixtures(t *testing.T) {
 		t.Errorf("hooks_priority_plugin state = %s, want running", prioPlugin.State)
 	}
 
-	// hooks_publish_plugin: should register publish/archive hooks.
+	// hooks_publish_plugin: should register publish hooks.
 	pubPlugin := mgr.GetPlugin("hooks_publish_plugin")
 	if pubPlugin == nil {
 		t.Fatal("hooks_publish_plugin not loaded")
@@ -1144,9 +1144,6 @@ func TestHookIntegration_HookEngineWithTestdataFixtures(t *testing.T) {
 	}
 	if !engine.HasHooks(audited.HookBeforePublish, "content_data") {
 		t.Error("hooks_publish_plugin: HasHooks(before_publish, content_data) should be true")
-	}
-	if !engine.HasHooks(audited.HookBeforeArchive, "content_data") {
-		t.Error("hooks_publish_plugin: HasHooks(before_archive, content_data) should be true")
 	}
 
 	// hooks_abort_plugin: should register a before_create hook that always errors.

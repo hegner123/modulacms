@@ -44,9 +44,9 @@ func seedRows(t *testing.T, db *sql.DB) {
 	}{
 		{"1", "alpha", "active", 3, strPtr("first item")},
 		{"2", "beta", "active", 1, nil},
-		{"3", "gamma", "archived", 2, strPtr("third item")},
+		{"3", "gamma", "draft", 2, strPtr("third item")},
 		{"4", "delta", "active", 4, strPtr("fourth item")},
-		{"5", "epsilon", "archived", 5, nil},
+		{"5", "epsilon", "draft", 5, nil},
 	}
 	for _, r := range rows {
 		var desc any
@@ -568,7 +568,7 @@ func TestQDelete(t *testing.T) {
 
 		result, err := QDelete(ctx, db, DialectSQLite, DeleteParams{
 			Table: "test_items",
-			Where: map[string]any{"status": "archived"},
+			Where: map[string]any{"status": "draft"},
 		})
 		if err != nil {
 			t.Fatalf("delete: %v", err)
@@ -2316,9 +2316,9 @@ func setupJoinTestDB(t *testing.T) *sql.DB {
 	}{
 		{"1", "alpha", "active", "cat1", 3},
 		{"2", "beta", "active", "cat1", 1},
-		{"3", "gamma", "archived", "cat2", 2},
+		{"3", "gamma", "draft", "cat2", 2},
 		{"4", "delta", "active", "cat2", 4},
-		{"5", "epsilon", "archived", "", 5}, // no category
+		{"5", "epsilon", "draft", "", 5}, // no category
 	} {
 		var catID any
 		if r.catID != "" {
@@ -2521,8 +2521,8 @@ func TestGroupByHaving(t *testing.T) {
 		if rows[0]["status"] != "active" {
 			t.Fatalf("expected first group active, got %v", rows[0]["status"])
 		}
-		if rows[1]["status"] != "archived" {
-			t.Fatalf("expected second group archived, got %v", rows[1]["status"])
+		if rows[1]["status"] != "draft" {
+			t.Fatalf("expected second group draft, got %v", rows[1]["status"])
 		}
 	})
 
@@ -2572,7 +2572,7 @@ func TestPostgresPlaceholders(t *testing.T) {
 			Where: map[string]any{
 				"name":     "alpha",
 				"priority": Gt(3),
-				"status":   In("active", "archived"),
+				"status":   In("active", "draft"),
 			},
 			Limit: 10,
 		})

@@ -584,16 +584,13 @@ func TestDetectStatusTransition(t *testing.T) {
 		}
 	})
 
-	t.Run("archive transition detected", func(t *testing.T) {
+	t.Run("non-publish transition returns nil", func(t *testing.T) {
 		events := audited.DetectStatusTransition("content_data",
 			map[string]any{"status": "published"},
-			map[string]any{"status": "archived"},
+			map[string]any{"status": "draft"},
 		)
-		if len(events) != 1 {
-			t.Fatalf("expected 1 event, got %d", len(events))
-		}
-		if events[0] != audited.HookBeforeArchive {
-			t.Errorf("expected before_archive, got %s", events[0])
+		if len(events) != 0 {
+			t.Fatalf("expected 0 events for published->draft, got %d", len(events))
 		}
 	})
 
@@ -637,7 +634,6 @@ func TestBeforeToAfterEvent(t *testing.T) {
 		{audited.HookBeforeUpdate, audited.HookAfterUpdate},
 		{audited.HookBeforeDelete, audited.HookAfterDelete},
 		{audited.HookBeforePublish, audited.HookAfterPublish},
-		{audited.HookBeforeArchive, audited.HookAfterArchive},
 		{audited.HookAfterCreate, audited.HookAfterCreate}, // no mapping, returns self
 	}
 

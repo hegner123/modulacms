@@ -14,7 +14,14 @@ CREATE TABLE IF NOT EXISTS content_data (
     status VARCHAR(20) NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
+    published_at TIMESTAMP NULL,
+    published_by VARCHAR(26) NULL,
+    publish_at TIMESTAMP NULL,
+    revision INT NOT NULL DEFAULT 0,
 
+    CONSTRAINT fk_content_data_published_by
+        FOREIGN KEY (published_by) REFERENCES users (user_id)
+            ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_content_data_datatypes
         FOREIGN KEY (datatype_id) REFERENCES datatypes (datatype_id)
             ON UPDATE CASCADE ON DELETE SET NULL,
@@ -134,3 +141,42 @@ LIMIT ? OFFSET ?;
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 WHERE cd.route_id IS NOT NULL OR dt.type = '_root';
+
+-- name: UpdateContentDataPublishMeta :exec
+UPDATE content_data
+SET status = ?,
+    published_at = ?,
+    published_by = ?,
+    revision = revision + 1,
+    date_modified = ?
+WHERE content_data_id = ?;
+
+-- name: UpdateContentDataWithRevision :exec
+UPDATE content_data
+SET route_id = ?,
+    parent_id = ?,
+    first_child_id = ?,
+    next_sibling_id = ?,
+    prev_sibling_id = ?,
+    datatype_id = ?,
+    author_id = ?,
+    status = ?,
+    date_created = ?,
+    date_modified = ?
+WHERE content_data_id = ? AND revision = ?;
+
+-- name: UpdateContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = ?,
+    date_modified = ?
+WHERE content_data_id = ?;
+
+-- name: ClearContentDataSchedule :exec
+UPDATE content_data
+SET publish_at = NULL,
+    date_modified = ?
+WHERE content_data_id = ?;
+
+-- name: ListContentDataDueForPublish :many
+SELECT * FROM content_data
+WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft';

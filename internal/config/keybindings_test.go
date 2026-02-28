@@ -39,7 +39,6 @@ func TestDefaultKeyMap_AllActionsBound(t *testing.T) {
 		config.ActionReorderDown,
 		config.ActionCopy,
 		config.ActionPublish,
-		config.ActionArchive,
 		config.ActionGoParent,
 		config.ActionGoChild,
 	}
@@ -478,7 +477,7 @@ func TestActionConstants_StringValues(t *testing.T) {
 		{name: "reorder_down", got: config.ActionReorderDown, want: "reorder_down"},
 		{name: "copy", got: config.ActionCopy, want: "copy"},
 		{name: "publish", got: config.ActionPublish, want: "publish"},
-		{name: "archive", got: config.ActionArchive, want: "archive"},
+
 		{name: "go_parent", got: config.ActionGoParent, want: "go_parent"},
 		{name: "go_child", got: config.ActionGoChild, want: "go_child"},
 	}

@@ -30,7 +30,14 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
             ON UPDATE CASCADE ON DELETE RESTRICT,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    published_at TIMESTAMP,
+    published_by TEXT
+        CONSTRAINT fk_admin_published_by
+            REFERENCES users
+            ON UPDATE CASCADE ON DELETE SET NULL,
+    publish_at TIMESTAMP,
+    revision INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_data_parent ON admin_content_data(parent_id);

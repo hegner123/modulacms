@@ -357,3 +357,19 @@ func ReadNullBool(ns sql.NullBool) string {
 		return "null"
 	}
 }
+
+// boolToInt64 converts a bool to an int64 (1 for true, 0 for false) for SQLite storage.
+func boolToInt64(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// boolToInt8 converts a bool to an int8 (1 for true, 0 for false) for MySQL TINYINT storage.
+func boolToInt8(b bool) int8 {
+	if b {
+		return 1
+	}
+	return 0
+}

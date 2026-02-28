@@ -554,7 +554,7 @@ func TestPsqlDatabase_MapRecordChangeEventParams_AllFields(t *testing.T) {
 		TableName:    "permissions",
 		RecordID:     "perm-007",
 		Operation:    types.OpDelete,
-		Action:       types.ActionArchive,
+		Action:       types.ActionPublish,
 		UserID:       userID,
 		OldValues:    types.NewJSONData(nil),
 		NewValues:    types.NewJSONData(nil),
@@ -583,8 +583,8 @@ func TestPsqlDatabase_MapRecordChangeEventParams_AllFields(t *testing.T) {
 	if got.Operation != types.OpDelete {
 		t.Errorf("Operation = %v, want %v", got.Operation, types.OpDelete)
 	}
-	if got.Action != types.ActionArchive {
-		t.Errorf("Action = %v, want %v", got.Action, types.ActionArchive)
+	if got.Action != types.ActionPublish {
+		t.Errorf("Action = %v, want %v", got.Action, types.ActionPublish)
 	}
 	if got.UserID != userID {
 		t.Errorf("UserID = %v, want %v", got.UserID, userID)
@@ -831,7 +831,6 @@ func TestDatabase_MapChangeEvent_AllActions(t *testing.T) {
 		types.ActionUpdate,
 		types.ActionDelete,
 		types.ActionPublish,
-		types.ActionArchive,
 	}
 
 	for _, action := range actions {
@@ -1148,7 +1147,6 @@ func TestListChangeEventsByActionParams_AllActions(t *testing.T) {
 		types.ActionUpdate,
 		types.ActionDelete,
 		types.ActionPublish,
-		types.ActionArchive,
 	}
 
 	for _, action := range actions {

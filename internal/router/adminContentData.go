@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -215,21 +216,30 @@ func apiCreateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 	return nil
 }
 
+// updateAdminContentDataRequest wraps UpdateAdminContentDataParams with an
+// optional revision field for optimistic locking. If Revision is zero (omitted
+// by the client), the update falls through to the non-revision path for
+// backward compatibility.
+type updateAdminContentDataRequest struct {
+	db.UpdateAdminContentDataParams
+	Revision int64 `json:"revision"`
+}
+
 // apiUpdateAdminContentData handles PUT requests to update existing admin content data
 func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
-	var updateAdminContentData db.UpdateAdminContentDataParams
-	err := json.NewDecoder(r.Body).Decode(&updateAdminContentData)
+	var req updateAdminContentDataRequest
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
 
-	updateAdminContentData.DateModified = types.TimestampNow()
+	req.DateModified = types.TimestampNow()
 
-	oldData, err := d.GetAdminContentData(updateAdminContentData.AdminContentDataID)
+	oldData, err := d.GetAdminContentData(req.AdminContentDataID)
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -243,15 +253,44 @@ func apiUpdateAdminContentData(w http.ResponseWriter, r *http.Request, c config.
 		return err
 	}
 
-	ac := middleware.AuditContextFromRequest(r, c)
-	_, err = d.UpdateAdminContentData(r.Context(), ac, updateAdminContentData)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return err
+	if req.Revision > 0 {
+		// Optimistic locking: reject if the row's revision no longer matches.
+		revisionParams := db.UpdateAdminContentDataWithRevisionParams{
+			AdminRouteID:       req.AdminRouteID,
+			ParentID:           req.ParentID,
+			FirstChildID:       req.FirstChildID,
+			NextSiblingID:      req.NextSiblingID,
+			PrevSiblingID:      req.PrevSiblingID,
+			AdminDatatypeID:    req.AdminDatatypeID,
+			AuthorID:           req.AuthorID,
+			Status:             req.Status,
+			DateCreated:        req.DateCreated,
+			DateModified:       req.DateModified,
+			AdminContentDataID: req.AdminContentDataID,
+			Revision:           req.Revision,
+		}
+		err = d.UpdateAdminContentDataWithRevision(r.Context(), revisionParams)
+		if errors.Is(err, db.ErrRevisionConflict) {
+			http.Error(w, "Content was modified by another user. Please refresh and try again.", http.StatusConflict)
+			return err
+		}
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
+	} else {
+		// No revision supplied -- backward-compatible non-locking update.
+		ac := middleware.AuditContextFromRequest(r, c)
+		_, err = d.UpdateAdminContentData(r.Context(), ac, req.UpdateAdminContentDataParams)
+		if err != nil {
+			utility.DefaultLogger.Error("", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return err
+		}
 	}
 
-	updated, err := d.GetAdminContentData(updateAdminContentData.AdminContentDataID)
+	updated, err := d.GetAdminContentData(req.AdminContentDataID)
 	if err != nil {
 		utility.DefaultLogger.Error("failed to fetch updated admin content data", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

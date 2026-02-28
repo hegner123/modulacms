@@ -440,7 +440,7 @@ func TestDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           authorID,
-		Status:             types.ContentStatus("archived"),
+		Status:             types.ContentStatus("draft"),
 		DateCreated:        ts,
 		DateModified:       ts,
 		AdminContentDataID: contentID,
@@ -463,8 +463,8 @@ func TestDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.AuthorID != authorID {
 		t.Errorf("AuthorID = %v, want %v", got.AuthorID, authorID)
 	}
-	if got.Status != types.ContentStatus("archived") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.DateCreated != ts {
 		t.Errorf("DateCreated = %v, want %v", got.DateCreated, ts)
@@ -589,7 +589,7 @@ func TestMysqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("mysql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           types.NewUserID(),
-		Status:             types.ContentStatus("archived"),
+		Status:             types.ContentStatus("draft"),
 		DateCreated:        ts,
 		DateModified:       ts,
 		AdminContentDataID: contentID,
@@ -603,8 +603,8 @@ func TestMysqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.AdminRouteID.String() != "mysql-updated-route" {
 		t.Errorf("AdminRouteID = %q, want %q", got.AdminRouteID.String(), "mysql-updated-route")
 	}
-	if got.Status != types.ContentStatus("archived") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("archived"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.FirstChildID.ID != types.AdminContentID("mysql-updated-child") {
 		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.AdminContentID("mysql-updated-child"))
@@ -726,7 +726,7 @@ func TestPsqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("psql-updated-route"), Valid: true},
 		AdminDatatypeID:    types.NullableAdminDatatypeID{Valid: false},
 		AuthorID:           types.NewUserID(),
-		Status:             types.ContentStatus("pending"),
+		Status:             types.ContentStatus("draft"),
 		DateCreated:        ts,
 		DateModified:       ts,
 		AdminContentDataID: contentID,
@@ -740,8 +740,8 @@ func TestPsqlDatabase_MapUpdateAdminContentDataParams_AllFields(t *testing.T) {
 	if got.AdminRouteID.String() != "psql-updated-route" {
 		t.Errorf("AdminRouteID = %q, want %q", got.AdminRouteID.String(), "psql-updated-route")
 	}
-	if got.Status != types.ContentStatus("pending") {
-		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("pending"))
+	if got.Status != types.ContentStatus("draft") {
+		t.Errorf("Status = %v, want %v", got.Status, types.ContentStatus("draft"))
 	}
 	if got.FirstChildID.ID != types.AdminContentID("psql-updated-child") {
 		t.Errorf("FirstChildID.ID = %q, want %q", got.FirstChildID.ID, types.AdminContentID("psql-updated-child"))
@@ -1036,7 +1036,7 @@ func TestUpdateAdminContentDataCmdMysql_AllAccessors(t *testing.T) {
 	ac := audited.AuditContext{UserID: types.NewUserID()}
 	params := UpdateAdminContentDataParams{
 		AdminRouteID:       types.NullableAdminRouteID{ID: types.AdminRouteID("mysql-updated"), Valid: true},
-		Status:             types.ContentStatus("archived"),
+		Status:             types.ContentStatus("draft"),
 		DateCreated:        ts,
 		DateModified:       ts,
 		AdminContentDataID: contentID,
@@ -1453,6 +1453,7 @@ func TestAdminContentDataStruct_JSONTags(t *testing.T) {
 		"next_sibling_id", "prev_sibling_id", "admin_route_id",
 		"admin_datatype_id", "author_id", "status",
 		"date_created", "date_modified",
+		"published_at", "published_by", "publish_at", "revision",
 	}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {
@@ -1576,8 +1577,6 @@ func TestMapAdminContentDataJSON_StatusVariants(t *testing.T) {
 	}{
 		{"draft", types.ContentStatus("draft")},
 		{"published", types.ContentStatus("published")},
-		{"archived", types.ContentStatus("archived")},
-		{"pending", types.ContentStatus("pending")},
 		{"empty", types.ContentStatus("")},
 	}
 

@@ -493,11 +493,8 @@ func (c CMSPage) FormatTreeRow(node *tree.Node, isSelected bool, depth int) stri
 	// Status indicator for published/archived content
 	statusMark := ""
 	if node.Instance != nil {
-		switch node.Instance.Status {
-		case types.ContentStatusPublished:
+		if node.Instance.Status == types.ContentStatusPublished {
 			statusMark = "* "
-		case types.ContentStatusArchived:
-			statusMark = "~ "
 		}
 	}
 

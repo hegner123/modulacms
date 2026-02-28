@@ -779,7 +779,6 @@ func TestRecorder_FieldMapping_AllActions(t *testing.T) {
 		types.ActionUpdate,
 		types.ActionDelete,
 		types.ActionPublish,
-		types.ActionArchive,
 	}
 
 	for _, action := range actions {
