@@ -46,6 +46,8 @@ modula-x86
 modula
 /dbgen
 mcp/modula-mcp
+/transform_bootstrap
+/transform_cud
 
 #references
 references/
