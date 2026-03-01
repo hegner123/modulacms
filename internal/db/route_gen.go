@@ -64,6 +64,47 @@ func MapStringRoute(a Routes) StringRoutes {
 // SQLITE
 //////////////////////////////
 
+// MAPS
+
+// MapRoute converts a sqlc-generated SQLite route to the wrapper type.
+func (d Database) MapRoute(a mdb.Routes) Routes {
+	return Routes{
+		RouteID:      a.RouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateRouteParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreateRouteParams(a CreateRouteParams) mdb.CreateRouteParams {
+	return mdb.CreateRouteParams{
+		RouteID:      types.NewRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateRouteParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdateRouteParams(a UpdateRouteParams) mdb.UpdateRouteParams {
+	return mdb.UpdateRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
+
 // QUERIES
 
 // CountRoutes returns the total number of routes in the database.
@@ -113,6 +154,47 @@ func (d Database) ListRoutes() (*[]Routes, error) {
 // MYSQL
 //////////////////////////////
 
+// MAPS
+
+// MapRoute converts a sqlc-generated MySQL route to the wrapper type.
+func (d MysqlDatabase) MapRoute(a mdbm.Routes) Routes {
+	return Routes{
+		RouteID:      a.RouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int64(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateRouteParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbm.CreateRouteParams {
+	return mdbm.CreateRouteParams{
+		RouteID:      types.NewRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateRouteParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbm.UpdateRouteParams {
+	return mdbm.UpdateRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
+
 // QUERIES
 
 // CountRoutes returns the total number of routes in the database.
@@ -161,6 +243,47 @@ func (d MysqlDatabase) ListRoutes() (*[]Routes, error) {
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
+
+// MAPS
+
+// MapRoute converts a sqlc-generated PostgreSQL route to the wrapper type.
+func (d PsqlDatabase) MapRoute(a mdbp.Routes) Routes {
+	return Routes{
+		RouteID:      a.RouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int64(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateRouteParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreateRouteParams(a CreateRouteParams) mdbp.CreateRouteParams {
+	return mdbp.CreateRouteParams{
+		RouteID:      types.NewRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateRouteParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdateRouteParams(a UpdateRouteParams) mdbp.UpdateRouteParams {
+	return mdbp.UpdateRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
 
 // QUERIES
 

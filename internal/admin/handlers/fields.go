@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net"
 	"net/http"
 	"strings"
@@ -41,6 +42,15 @@ func FieldsListHandler(driver db.DbDriver) http.HandlerFunc {
 			list = *items
 		}
 
+		// Filter fields by the authenticated user's role.
+		user := middleware.AuthenticatedUser(r.Context())
+		isAdmin := middleware.ContextIsAdmin(r.Context())
+		roleID := ""
+		if user != nil {
+			roleID = user.Role
+		}
+		list = db.FilterFieldsByRole(list, roleID, isAdmin)
+
 		pd := NewPaginationData(*total, limit, offset, "#fields-table-body", "/admin/schema/fields")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
@@ -70,7 +80,8 @@ func FieldsListHandler(driver db.DbDriver) http.HandlerFunc {
 
 // FieldDetailHandler handles GET /admin/schema/fields/{id}.
 // Shows field detail with configuration, validation, and linked datatypes.
-func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
+// When i18n is enabled, shows a "Translatable" checkbox on the edit form.
+func FieldDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -85,6 +96,18 @@ func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		// Check field-level role access.
+		user := middleware.AuthenticatedUser(r.Context())
+		isAdmin := middleware.ContextIsAdmin(r.Context())
+		roleID := ""
+		if user != nil {
+			roleID = user.Role
+		}
+		if !db.IsFieldAccessible(*field, roleID, isAdmin) {
+			http.Error(w, "Forbidden", http.StatusForbidden)
+			return
+		}
+
 		// Fetch parent datatype if the field has one
 		linkedDatatypes := make([]db.Datatypes, 0)
 		if field.ParentID.Valid {
@@ -94,9 +117,24 @@ func FieldDetailHandler(driver db.DbDriver) http.HandlerFunc {
 			}
 		}
 
+		i18nEnabled := false
+		cfg, cfgErr := mgr.Config()
+		if cfgErr == nil {
+			i18nEnabled = cfg.I18nEnabled()
+		}
+
+		// Fetch all roles for the roles multi-select dropdown.
+		allRoles := make([]db.Roles, 0)
+		rolesList, rolesErr := driver.ListRoles()
+		if rolesErr == nil && rolesList != nil {
+			allRoles = *rolesList
+		}
+
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Field: "+field.Label)
-		RenderNav(w, r, "Field: "+field.Label, pages.FieldDetailContent(*field, linkedDatatypes, csrfToken), pages.FieldDetail(layout, *field, linkedDatatypes, csrfToken))
+		RenderNav(w, r, "Field: "+field.Label,
+			pages.FieldDetailContent(*field, linkedDatatypes, allRoles, csrfToken, i18nEnabled),
+			pages.FieldDetail(layout, *field, linkedDatatypes, allRoles, csrfToken, i18nEnabled))
 	}
 }
 
@@ -157,6 +195,15 @@ func FieldCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		}
 		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
+		// Parse roles multi-select: marshal selected role IDs to a JSON array.
+		var rolesParam types.NullableString
+		if selectedRoles := r.Form["roles"]; len(selectedRoles) > 0 {
+			rolesJSON, marshalErr := json.Marshal(selectedRoles)
+			if marshalErr == nil {
+				rolesParam = types.NewNullableString(string(rolesJSON))
+			}
+		}
+
 		now := types.NewTimestamp(time.Now())
 		_, err := driver.CreateField(r.Context(), ac, db.CreateFieldParams{
 			FieldID:      types.NewFieldID(),
@@ -166,6 +213,7 @@ func FieldCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			Data:         data,
 			Validation:   validation,
 			UIConfig:     uiConfig,
+			Roles:        rolesParam,
 			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
 			DateCreated:  now,
 			DateModified: now,
@@ -256,6 +304,26 @@ func FieldUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		}
 		ac := audited.Ctx(types.NodeID(cfg.Node_ID), user.UserID, middleware.RequestIDFromContext(r.Context()), clientIP)
 
+		// Parse translatable flag from form (checkbox: "1" = true, hidden "0" = false)
+		translatable := existing.Translatable
+		if r.Form.Has("translatable") {
+			if r.FormValue("translatable") == "1" {
+				translatable = 1
+			} else {
+				translatable = 0
+			}
+		}
+
+		// Parse roles multi-select: marshal selected role IDs to a JSON array.
+		// An empty selection clears the roles restriction (NULL = unrestricted).
+		var rolesParam types.NullableString
+		if selectedRoles := r.Form["roles"]; len(selectedRoles) > 0 {
+			rolesJSON, marshalErr := json.Marshal(selectedRoles)
+			if marshalErr == nil {
+				rolesParam = types.NewNullableString(string(rolesJSON))
+			}
+		}
+
 		_, err = driver.UpdateField(r.Context(), ac, db.UpdateFieldParams{
 			FieldID:      types.FieldID(id),
 			ParentID:     existing.ParentID,
@@ -265,6 +333,8 @@ func FieldUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			Data:         data,
 			Validation:   validation,
 			UIConfig:     uiConfig,
+			Translatable: translatable,
+			Roles:        rolesParam,
 			AuthorID:     existing.AuthorID,
 			DateCreated:  existing.DateCreated,
 			DateModified: types.NewTimestamp(time.Now()),

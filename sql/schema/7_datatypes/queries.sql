@@ -90,6 +90,10 @@ WHERE datatype_id = ?;
 SELECT * FROM datatypes
 WHERE type = ? LIMIT 1;
 
+-- name: GetDatatypeByName :one
+SELECT * FROM datatypes
+WHERE name = ? LIMIT 1;
+
 -- name: ListDatatypePaginated :many
 SELECT * FROM datatypes
 ORDER BY datatype_id

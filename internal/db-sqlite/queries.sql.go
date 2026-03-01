@@ -153,6 +153,15 @@ func (q *Queries) ClearContentDataSchedule(ctx context.Context, arg ClearContent
 	return err
 }
 
+const clearDefaultLocale = `-- name: ClearDefaultLocale :exec
+UPDATE locales SET is_default = 0 WHERE is_default = 1
+`
+
+func (q *Queries) ClearDefaultLocale(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, clearDefaultLocale)
+	return err
+}
+
 const clearPublishedFlag = `-- name: ClearPublishedFlag :exec
 UPDATE content_versions
 SET published = 0
@@ -486,6 +495,18 @@ func (q *Queries) CountFieldType(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countLocale = `-- name: CountLocale :one
+SELECT COUNT(*)
+FROM locales
+`
+
+func (q *Queries) CountLocale(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countLocale)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countMedia = `-- name: CountMedia :one
 SELECT COUNT(*)
 FROM media
@@ -661,6 +682,30 @@ func (q *Queries) CountVerifications(ctx context.Context) (int64, error) {
 	return count, err
 }
 
+const countWebhook = `-- name: CountWebhook :one
+SELECT COUNT(*)
+FROM webhooks
+`
+
+func (q *Queries) CountWebhook(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWebhook)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const countWebhookDelivery = `-- name: CountWebhookDelivery :one
+SELECT COUNT(*)
+FROM webhook_deliveries
+`
+
+func (q *Queries) CountWebhookDelivery(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countWebhookDelivery)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createAdminContentData = `-- name: CreateAdminContentData :one
 INSERT INTO admin_content_data (
     admin_content_data_id,
@@ -778,6 +823,7 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
+    locale,
     author_id,
     date_created,
     date_modified
@@ -789,8 +835,9 @@ INSERT INTO admin_content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified
+) RETURNING admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified
 `
 
 type CreateAdminContentFieldParams struct {
@@ -799,6 +846,7 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
+	Locale              string                       `json:"locale"`
 	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
@@ -811,6 +859,7 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
+		arg.Locale,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -822,6 +871,7 @@ func (q *Queries) CreateAdminContentField(ctx context.Context, arg CreateAdminCo
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
+		&i.Locale,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -836,6 +886,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -1105,6 +1156,8 @@ INSERT INTO admin_fields (
     validation,
     ui_config,
     type,
+    translatable,
+    roles,
     author_id,
     date_created,
     date_modified
@@ -1120,8 +1173,10 @@ INSERT INTO admin_fields (
     ?,
     ?,
     ?,
+    ?,
+    ?,
     ?
-    ) RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    ) RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type CreateAdminFieldParams struct {
@@ -1134,6 +1189,8 @@ type CreateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -1150,6 +1207,8 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		arg.Validation,
 		arg.UiConfig,
 		arg.Type,
+		arg.Translatable,
+		arg.Roles,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -1165,6 +1224,8 @@ func (q *Queries) CreateAdminField(ctx context.Context, arg CreateAdminFieldPara
 		&i.Validation,
 		&i.UiConfig,
 		&i.Type,
+		&i.Translatable,
+		&i.Roles,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1186,6 +1247,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL,
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE SET NULL,
@@ -1598,6 +1661,7 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value,
+    locale,
     author_id,
     date_created,
     date_modified
@@ -1609,8 +1673,9 @@ INSERT INTO content_fields (
     ?,
     ?,
     ?,
+    ?,
     ?
-) RETURNING content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified
+) RETURNING content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified
 `
 
 type CreateContentFieldParams struct {
@@ -1619,6 +1684,7 @@ type CreateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
+	Locale         string                  `json:"locale"`
 	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
@@ -1631,6 +1697,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,
+		arg.Locale,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -1642,6 +1709,7 @@ func (q *Queries) CreateContentField(ctx context.Context, arg CreateContentField
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
+		&i.Locale,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -1662,6 +1730,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
@@ -1921,6 +1990,8 @@ INSERT INTO fields  (
     validation,
     ui_config,
     type,
+    translatable,
+    roles,
     author_id,
     date_created,
     date_modified
@@ -1936,8 +2007,10 @@ INSERT INTO fields  (
     ?,
     ?,
     ?,
+    ?,
+    ?,
     ?
-    ) RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    ) RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type CreateFieldParams struct {
@@ -1950,6 +2023,8 @@ type CreateFieldParams struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
+	Translatable int64                    `json:"translatable"`
+	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
@@ -1966,6 +2041,8 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		arg.Validation,
 		arg.UiConfig,
 		arg.Type,
+		arg.Translatable,
+		arg.Roles,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -1981,6 +2058,8 @@ func (q *Queries) CreateField(ctx context.Context, arg CreateFieldParams) (Field
 		&i.Validation,
 		&i.UiConfig,
 		&i.Type,
+		&i.Translatable,
+		&i.Roles,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -2001,6 +2080,8 @@ CREATE TABLE IF NOT EXISTS fields(
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE SET NULL,
@@ -2050,6 +2131,82 @@ CREATE TABLE IF NOT EXISTS field_types (
 
 func (q *Queries) CreateFieldTypeTable(ctx context.Context) error {
 	_, err := q.db.ExecContext(ctx, createFieldTypeTable)
+	return err
+}
+
+const createLocale = `-- name: CreateLocale :one
+INSERT INTO locales (
+    locale_id,
+    code,
+    label,
+    is_default,
+    is_enabled,
+    fallback_code,
+    sort_order,
+    date_created
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+) RETURNING locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created
+`
+
+type CreateLocaleParams struct {
+	LocaleID     types.LocaleID  `json:"locale_id"`
+	Code         string          `json:"code"`
+	Label        string          `json:"label"`
+	IsDefault    int64           `json:"is_default"`
+	IsEnabled    int64           `json:"is_enabled"`
+	FallbackCode sql.NullString  `json:"fallback_code"`
+	SortOrder    int64           `json:"sort_order"`
+	DateCreated  types.Timestamp `json:"date_created"`
+}
+
+func (q *Queries) CreateLocale(ctx context.Context, arg CreateLocaleParams) (Locale, error) {
+	row := q.db.QueryRowContext(ctx, createLocale,
+		arg.LocaleID,
+		arg.Code,
+		arg.Label,
+		arg.IsDefault,
+		arg.IsEnabled,
+		arg.FallbackCode,
+		arg.SortOrder,
+		arg.DateCreated,
+	)
+	var i Locale
+	err := row.Scan(
+		&i.LocaleID,
+		&i.Code,
+		&i.Label,
+		&i.IsDefault,
+		&i.IsEnabled,
+		&i.FallbackCode,
+		&i.SortOrder,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const createLocaleTable = `-- name: CreateLocaleTable :exec
+CREATE TABLE IF NOT EXISTS locales (
+    locale_id     TEXT PRIMARY KEY NOT NULL CHECK (length(locale_id) = 26),
+    code          TEXT NOT NULL UNIQUE,
+    label         TEXT NOT NULL,
+    is_default    INTEGER NOT NULL DEFAULT 0,
+    is_enabled    INTEGER NOT NULL DEFAULT 1,
+    fallback_code TEXT,
+    sort_order    INTEGER NOT NULL DEFAULT 0,
+    date_created  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateLocaleTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createLocaleTable)
 	return err
 }
 
@@ -2170,11 +2327,11 @@ RETURNING md_id, label, width, height, aspect_ratio
 `
 
 type CreateMediaDimensionParams struct {
-	MdID        string         `json:"md_id"`
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        string              `json:"md_id"`
+	Label       sql.NullString      `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio sql.NullString      `json:"aspect_ratio"`
 }
 
 func (q *Queries) CreateMediaDimension(ctx context.Context, arg CreateMediaDimensionParams) (MediaDimensions, error) {
@@ -2259,7 +2416,7 @@ RETURNING permission_id, label, system_protected
 type CreatePermissionParams struct {
 	PermissionID    types.PermissionID `json:"permission_id"`
 	Label           string             `json:"label"`
-	SystemProtected int64              `json:"system_protected"`
+	SystemProtected types.SafeBool     `json:"system_protected"`
 }
 
 func (q *Queries) CreatePermission(ctx context.Context, arg CreatePermissionParams) (Permissions, error) {
@@ -2439,9 +2596,9 @@ RETURNING role_id, label, system_protected
 `
 
 type CreateRoleParams struct {
-	RoleID          types.RoleID `json:"role_id"`
-	Label           string       `json:"label"`
-	SystemProtected int64        `json:"system_protected"`
+	RoleID          types.RoleID   `json:"role_id"`
+	Label           string         `json:"label"`
+	SystemProtected types.SafeBool `json:"system_protected"`
 }
 
 func (q *Queries) CreateRole(ctx context.Context, arg CreateRoleParams) (Roles, error) {
@@ -2598,7 +2755,7 @@ type CreateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  sql.NullString       `json:"last_access"`
+	LastAccess  types.Timestamp      `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
 	UserAgent   sql.NullString       `json:"user_agent"`
 	SessionData sql.NullString       `json:"session_data"`
@@ -2716,7 +2873,7 @@ type CreateTokenParams struct {
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Tokens    string               `json:"token"`
-	IssuedAt  string               `json:"issued_at"`
+	IssuedAt  types.Timestamp      `json:"issued_at"`
 	ExpiresAt types.Timestamp      `json:"expires_at"`
 	Revoked   bool                 `json:"revoked"`
 }
@@ -2856,7 +3013,7 @@ type CreateUserOauthParams struct {
 	OAuthProviderUserID string               `json:"oauth_provider_user_id"`
 	AccessToken         string               `json:"access_token"`
 	RefreshToken        string               `json:"refresh_token"`
-	TokenExpiresAt      string               `json:"token_expires_at"`
+	TokenExpiresAt      types.Timestamp      `json:"token_expires_at"`
 	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
@@ -3046,6 +3203,172 @@ func (q *Queries) CreateVerification(ctx context.Context, arg CreateVerification
 		&i.DurationMs,
 	)
 	return i, err
+}
+
+const createWebhook = `-- name: CreateWebhook :one
+INSERT INTO webhooks (
+    webhook_id,
+    name,
+    url,
+    secret,
+    events,
+    is_active,
+    headers,
+    author_id,
+    date_created,
+    date_modified
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+) RETURNING webhook_id, name, url, secret, events, is_active, headers, author_id, date_created, date_modified
+`
+
+type CreateWebhookParams struct {
+	WebhookID    types.WebhookID      `json:"webhook_id"`
+	Name         string               `json:"name"`
+	URL          string               `json:"url"`
+	Secret       string               `json:"secret"`
+	Events       string               `json:"events"`
+	IsActive     int64                `json:"is_active"`
+	Headers      string               `json:"headers"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
+}
+
+func (q *Queries) CreateWebhook(ctx context.Context, arg CreateWebhookParams) (Webhooks, error) {
+	row := q.db.QueryRowContext(ctx, createWebhook,
+		arg.WebhookID,
+		arg.Name,
+		arg.URL,
+		arg.Secret,
+		arg.Events,
+		arg.IsActive,
+		arg.Headers,
+		arg.AuthorID,
+		arg.DateCreated,
+		arg.DateModified,
+	)
+	var i Webhooks
+	err := row.Scan(
+		&i.WebhookID,
+		&i.Name,
+		&i.URL,
+		&i.Secret,
+		&i.Events,
+		&i.IsActive,
+		&i.Headers,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const createWebhookDelivery = `-- name: CreateWebhookDelivery :one
+INSERT INTO webhook_deliveries (
+    delivery_id,
+    webhook_id,
+    event,
+    payload,
+    status,
+    attempts,
+    created_at
+) VALUES (
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?,
+    ?
+) RETURNING delivery_id, webhook_id, event, payload, status, attempts, last_status_code, last_error, next_retry_at, created_at, completed_at
+`
+
+type CreateWebhookDeliveryParams struct {
+	DeliveryID types.WebhookDeliveryID `json:"delivery_id"`
+	WebhookID  types.WebhookID         `json:"webhook_id"`
+	Event      string                  `json:"event"`
+	Payload    string                  `json:"payload"`
+	Status     string                  `json:"status"`
+	Attempts   int64                   `json:"attempts"`
+	CreatedAt  string                  `json:"created_at"`
+}
+
+func (q *Queries) CreateWebhookDelivery(ctx context.Context, arg CreateWebhookDeliveryParams) (WebhookDeliveries, error) {
+	row := q.db.QueryRowContext(ctx, createWebhookDelivery,
+		arg.DeliveryID,
+		arg.WebhookID,
+		arg.Event,
+		arg.Payload,
+		arg.Status,
+		arg.Attempts,
+		arg.CreatedAt,
+	)
+	var i WebhookDeliveries
+	err := row.Scan(
+		&i.DeliveryID,
+		&i.WebhookID,
+		&i.Event,
+		&i.Payload,
+		&i.Status,
+		&i.Attempts,
+		&i.LastStatusCode,
+		&i.LastError,
+		&i.NextRetryAt,
+		&i.CreatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
+const createWebhookDeliveryTable = `-- name: CreateWebhookDeliveryTable :exec
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    delivery_id      TEXT PRIMARY KEY NOT NULL CHECK (length(delivery_id) = 26),
+    webhook_id       TEXT NOT NULL REFERENCES webhooks(webhook_id) ON DELETE CASCADE,
+    event            TEXT NOT NULL,
+    payload          TEXT NOT NULL DEFAULT '{}',
+    status           TEXT NOT NULL DEFAULT 'pending',
+    attempts         INTEGER NOT NULL DEFAULT 0,
+    last_status_code INTEGER,
+    last_error       TEXT NOT NULL DEFAULT '',
+    next_retry_at    TEXT,
+    created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at     TEXT
+)
+`
+
+func (q *Queries) CreateWebhookDeliveryTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createWebhookDeliveryTable)
+	return err
+}
+
+const createWebhookTable = `-- name: CreateWebhookTable :exec
+CREATE TABLE IF NOT EXISTS webhooks (
+    webhook_id    TEXT PRIMARY KEY NOT NULL CHECK (length(webhook_id) = 26),
+    name          TEXT NOT NULL,
+    url           TEXT NOT NULL,
+    secret        TEXT NOT NULL DEFAULT '',
+    events        TEXT NOT NULL DEFAULT '[]',
+    is_active     INTEGER NOT NULL DEFAULT 1,
+    headers       TEXT NOT NULL DEFAULT '{}',
+    author_id     TEXT NOT NULL REFERENCES users(user_id),
+    date_created  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+)
+`
+
+func (q *Queries) CreateWebhookTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, createWebhookTable)
+	return err
 }
 
 const deleteAdminContentData = `-- name: DeleteAdminContentData :exec
@@ -3316,6 +3639,20 @@ func (q *Queries) DeleteFieldType(ctx context.Context, arg DeleteFieldTypeParams
 	return err
 }
 
+const deleteLocale = `-- name: DeleteLocale :exec
+DELETE FROM locales
+WHERE locale_id = ?
+`
+
+type DeleteLocaleParams struct {
+	LocaleID types.LocaleID `json:"locale_id"`
+}
+
+func (q *Queries) DeleteLocale(ctx context.Context, arg DeleteLocaleParams) error {
+	_, err := q.db.ExecContext(ctx, deleteLocale, arg.LocaleID)
+	return err
+}
+
 const deleteMedia = `-- name: DeleteMedia :exec
 DELETE FROM media
 WHERE media_id = ?
@@ -3563,6 +3900,34 @@ func (q *Queries) DeleteVerification(ctx context.Context, arg DeleteVerification
 	return err
 }
 
+const deleteWebhook = `-- name: DeleteWebhook :exec
+DELETE FROM webhooks
+WHERE webhook_id = ?
+`
+
+type DeleteWebhookParams struct {
+	WebhookID types.WebhookID `json:"webhook_id"`
+}
+
+func (q *Queries) DeleteWebhook(ctx context.Context, arg DeleteWebhookParams) error {
+	_, err := q.db.ExecContext(ctx, deleteWebhook, arg.WebhookID)
+	return err
+}
+
+const deleteWebhookDelivery = `-- name: DeleteWebhookDelivery :exec
+DELETE FROM webhook_deliveries
+WHERE delivery_id = ?
+`
+
+type DeleteWebhookDeliveryParams struct {
+	DeliveryID types.WebhookDeliveryID `json:"delivery_id"`
+}
+
+func (q *Queries) DeleteWebhookDelivery(ctx context.Context, arg DeleteWebhookDeliveryParams) error {
+	_, err := q.db.ExecContext(ctx, deleteWebhookDelivery, arg.DeliveryID)
+	return err
+}
+
 const dropAdminContentData = `-- name: DropAdminContentData :exec
 DROP TABLE admin_content_data
 `
@@ -3752,6 +4117,15 @@ func (q *Queries) DropFieldTypeTable(ctx context.Context) error {
 	return err
 }
 
+const dropLocaleTable = `-- name: DropLocaleTable :exec
+DROP TABLE locales
+`
+
+func (q *Queries) DropLocaleTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropLocaleTable)
+	return err
+}
+
 const dropMediaDimensionTable = `-- name: DropMediaDimensionTable :exec
 DROP TABLE media_dimensions
 `
@@ -3878,6 +4252,24 @@ func (q *Queries) DropUserTable(ctx context.Context) error {
 	return err
 }
 
+const dropWebhookDeliveryTable = `-- name: DropWebhookDeliveryTable :exec
+DROP TABLE webhook_deliveries
+`
+
+func (q *Queries) DropWebhookDeliveryTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropWebhookDeliveryTable)
+	return err
+}
+
+const dropWebhookTable = `-- name: DropWebhookTable :exec
+DROP TABLE webhooks
+`
+
+func (q *Queries) DropWebhookTable(ctx context.Context) error {
+	_, err := q.db.ExecContext(ctx, dropWebhookTable)
+	return err
+}
+
 const getAdminContentData = `-- name: GetAdminContentData :one
 SELECT admin_content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, admin_route_id, admin_datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM admin_content_data
 WHERE admin_content_data_id = ? LIMIT 1
@@ -3911,7 +4303,7 @@ func (q *Queries) GetAdminContentData(ctx context.Context, arg GetAdminContentDa
 }
 
 const getAdminContentField = `-- name: GetAdminContentField :one
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_content_field_id = ? LIMIT 1
 `
 
@@ -3928,6 +4320,7 @@ func (q *Queries) GetAdminContentField(ctx context.Context, arg GetAdminContentF
 		&i.AdminContentDataID,
 		&i.AdminFieldID,
 		&i.AdminFieldValue,
+		&i.Locale,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -4011,7 +4404,7 @@ func (q *Queries) GetAdminDatatype(ctx context.Context, arg GetAdminDatatypePara
 }
 
 const getAdminField = `-- name: GetAdminField :one
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 WHERE admin_field_id = ? LIMIT 1
 `
 
@@ -4032,6 +4425,8 @@ func (q *Queries) GetAdminField(ctx context.Context, arg GetAdminFieldParams) (A
 		&i.Validation,
 		&i.UiConfig,
 		&i.Type,
+		&i.Translatable,
+		&i.Roles,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -4652,7 +5047,7 @@ func (q *Queries) GetContentDataDescendants(ctx context.Context, arg GetContentD
 }
 
 const getContentField = `-- name: GetContentField :one
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_field_id = ? LIMIT 1
 `
 
@@ -4669,6 +5064,7 @@ func (q *Queries) GetContentField(ctx context.Context, arg GetContentFieldParams
 		&i.ContentDataID,
 		&i.FieldID,
 		&i.FieldValue,
+		&i.Locale,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -4868,6 +5264,31 @@ func (q *Queries) GetDatatype(ctx context.Context, arg GetDatatypeParams) (Datat
 	return i, err
 }
 
+const getDatatypeByName = `-- name: GetDatatypeByName :one
+SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
+WHERE name = ? LIMIT 1
+`
+
+type GetDatatypeByNameParams struct {
+	Name string `json:"name"`
+}
+
+func (q *Queries) GetDatatypeByName(ctx context.Context, arg GetDatatypeByNameParams) (Datatypes, error) {
+	row := q.db.QueryRowContext(ctx, getDatatypeByName, arg.Name)
+	var i Datatypes
+	err := row.Scan(
+		&i.DatatypeID,
+		&i.ParentID,
+		&i.Name,
+		&i.Label,
+		&i.Type,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
 const getDatatypeByType = `-- name: GetDatatypeByType :one
 SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
 WHERE type = ? LIMIT 1
@@ -4893,10 +5314,31 @@ func (q *Queries) GetDatatypeByType(ctx context.Context, arg GetDatatypeByTypePa
 	return i, err
 }
 
+const getDefaultLocale = `-- name: GetDefaultLocale :one
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+WHERE is_default = 1 LIMIT 1
+`
+
+func (q *Queries) GetDefaultLocale(ctx context.Context) (Locale, error) {
+	row := q.db.QueryRowContext(ctx, getDefaultLocale)
+	var i Locale
+	err := row.Scan(
+		&i.LocaleID,
+		&i.Code,
+		&i.Label,
+		&i.IsDefault,
+		&i.IsEnabled,
+		&i.FallbackCode,
+		&i.SortOrder,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
 const getField = `-- name: GetField :one
 ;
 
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 WHERE field_id = ? LIMIT 1
 `
 
@@ -4917,6 +5359,8 @@ func (q *Queries) GetField(ctx context.Context, arg GetFieldParams) (Fields, err
 		&i.Validation,
 		&i.UiConfig,
 		&i.Type,
+		&i.Translatable,
+		&i.Roles,
 		&i.AuthorID,
 		&i.DateCreated,
 		&i.DateModified,
@@ -5099,6 +5543,56 @@ func (q *Queries) GetLatestVerification(ctx context.Context, arg GetLatestVerifi
 		&i.Status,
 		&i.ErrorMessage,
 		&i.DurationMs,
+	)
+	return i, err
+}
+
+const getLocale = `-- name: GetLocale :one
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+WHERE locale_id = ? LIMIT 1
+`
+
+type GetLocaleParams struct {
+	LocaleID types.LocaleID `json:"locale_id"`
+}
+
+func (q *Queries) GetLocale(ctx context.Context, arg GetLocaleParams) (Locale, error) {
+	row := q.db.QueryRowContext(ctx, getLocale, arg.LocaleID)
+	var i Locale
+	err := row.Scan(
+		&i.LocaleID,
+		&i.Code,
+		&i.Label,
+		&i.IsDefault,
+		&i.IsEnabled,
+		&i.FallbackCode,
+		&i.SortOrder,
+		&i.DateCreated,
+	)
+	return i, err
+}
+
+const getLocaleByCode = `-- name: GetLocaleByCode :one
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+WHERE code = ? LIMIT 1
+`
+
+type GetLocaleByCodeParams struct {
+	Code string `json:"code"`
+}
+
+func (q *Queries) GetLocaleByCode(ctx context.Context, arg GetLocaleByCodeParams) (Locale, error) {
+	row := q.db.QueryRowContext(ctx, getLocaleByCode, arg.Code)
+	var i Locale
+	err := row.Scan(
+		&i.LocaleID,
+		&i.Code,
+		&i.Label,
+		&i.IsDefault,
+		&i.IsEnabled,
+		&i.FallbackCode,
+		&i.SortOrder,
+		&i.DateCreated,
 	)
 	return i, err
 }
@@ -6366,6 +6860,61 @@ func (q *Queries) GetVerificationsByBackup(ctx context.Context, arg GetVerificat
 	return items, nil
 }
 
+const getWebhook = `-- name: GetWebhook :one
+SELECT webhook_id, name, url, secret, events, is_active, headers, author_id, date_created, date_modified FROM webhooks
+WHERE webhook_id = ? LIMIT 1
+`
+
+type GetWebhookParams struct {
+	WebhookID types.WebhookID `json:"webhook_id"`
+}
+
+func (q *Queries) GetWebhook(ctx context.Context, arg GetWebhookParams) (Webhooks, error) {
+	row := q.db.QueryRowContext(ctx, getWebhook, arg.WebhookID)
+	var i Webhooks
+	err := row.Scan(
+		&i.WebhookID,
+		&i.Name,
+		&i.URL,
+		&i.Secret,
+		&i.Events,
+		&i.IsActive,
+		&i.Headers,
+		&i.AuthorID,
+		&i.DateCreated,
+		&i.DateModified,
+	)
+	return i, err
+}
+
+const getWebhookDelivery = `-- name: GetWebhookDelivery :one
+SELECT delivery_id, webhook_id, event, payload, status, attempts, last_status_code, last_error, next_retry_at, created_at, completed_at FROM webhook_deliveries
+WHERE delivery_id = ? LIMIT 1
+`
+
+type GetWebhookDeliveryParams struct {
+	DeliveryID types.WebhookDeliveryID `json:"delivery_id"`
+}
+
+func (q *Queries) GetWebhookDelivery(ctx context.Context, arg GetWebhookDeliveryParams) (WebhookDeliveries, error) {
+	row := q.db.QueryRowContext(ctx, getWebhookDelivery, arg.DeliveryID)
+	var i WebhookDeliveries
+	err := row.Scan(
+		&i.DeliveryID,
+		&i.WebhookID,
+		&i.Event,
+		&i.Payload,
+		&i.Status,
+		&i.Attempts,
+		&i.LastStatusCode,
+		&i.LastError,
+		&i.NextRetryAt,
+		&i.CreatedAt,
+		&i.CompletedAt,
+	)
+	return i, err
+}
+
 const incrementBackupSetCompleted = `-- name: IncrementBackupSetCompleted :exec
 UPDATE backup_sets
 SET completed_count = completed_count + 1
@@ -6379,6 +6928,46 @@ type IncrementBackupSetCompletedParams struct {
 func (q *Queries) IncrementBackupSetCompleted(ctx context.Context, arg IncrementBackupSetCompletedParams) error {
 	_, err := q.db.ExecContext(ctx, incrementBackupSetCompleted, arg.BackupSetID)
 	return err
+}
+
+const listActiveWebhooks = `-- name: ListActiveWebhooks :many
+SELECT webhook_id, name, url, secret, events, is_active, headers, author_id, date_created, date_modified FROM webhooks
+WHERE is_active = 1
+ORDER BY date_created DESC
+`
+
+func (q *Queries) ListActiveWebhooks(ctx context.Context) ([]Webhooks, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveWebhooks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Webhooks{}
+	for rows.Next() {
+		var i Webhooks
+		if err := rows.Scan(
+			&i.WebhookID,
+			&i.Name,
+			&i.URL,
+			&i.Secret,
+			&i.Events,
+			&i.IsActive,
+			&i.Headers,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listAdminContentData = `-- name: ListAdminContentData :many
@@ -6791,7 +7380,7 @@ func (q *Queries) ListAdminContentDataWithDatatypeByRoute(ctx context.Context, a
 }
 
 const listAdminContentFields = `-- name: ListAdminContentFields :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 ORDER BY admin_content_field_id
 `
 
@@ -6810,6 +7399,51 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsByContentDataAndLocale = `-- name: ListAdminContentFieldsByContentDataAndLocale :many
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+WHERE admin_content_data_id = ? AND locale IN (?, '')
+ORDER BY admin_content_field_id
+`
+
+type ListAdminContentFieldsByContentDataAndLocaleParams struct {
+	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
+	Locale             string                       `json:"locale"`
+}
+
+func (q *Queries) ListAdminContentFieldsByContentDataAndLocale(ctx context.Context, arg ListAdminContentFieldsByContentDataAndLocaleParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByContentDataAndLocale, arg.AdminContentDataID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -6828,7 +7462,7 @@ func (q *Queries) ListAdminContentFields(ctx context.Context) ([]AdminContentFie
 }
 
 const listAdminContentFieldsByRoute = `-- name: ListAdminContentFieldsByRoute :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 `
@@ -6852,6 +7486,51 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdm
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminContentFieldsByRouteAndLocale = `-- name: ListAdminContentFieldsByRouteAndLocale :many
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
+WHERE admin_route_id = ? AND locale IN (?, '')
+ORDER BY admin_content_data_id, admin_field_id
+`
+
+type ListAdminContentFieldsByRouteAndLocaleParams struct {
+	AdminRouteID types.NullableAdminRouteID `json:"admin_route_id"`
+	Locale       string                     `json:"locale"`
+}
+
+func (q *Queries) ListAdminContentFieldsByRouteAndLocale(ctx context.Context, arg ListAdminContentFieldsByRouteAndLocaleParams) ([]AdminContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listAdminContentFieldsByRouteAndLocale, arg.AdminRouteID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []AdminContentFields{}
+	for rows.Next() {
+		var i AdminContentFields
+		if err := rows.Scan(
+			&i.AdminContentFieldID,
+			&i.AdminRouteID,
+			&i.AdminContentDataID,
+			&i.AdminFieldID,
+			&i.AdminFieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -6870,7 +7549,7 @@ func (q *Queries) ListAdminContentFieldsByRoute(ctx context.Context, arg ListAdm
 }
 
 const listAdminContentFieldsByRoutePaginated = `-- name: ListAdminContentFieldsByRoutePaginated :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?
@@ -6897,6 +7576,7 @@ func (q *Queries) ListAdminContentFieldsByRoutePaginated(ctx context.Context, ar
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -6915,7 +7595,7 @@ func (q *Queries) ListAdminContentFieldsByRoutePaginated(ctx context.Context, ar
 }
 
 const listAdminContentFieldsPaginated = `-- name: ListAdminContentFieldsPaginated :many
-SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, author_id, date_created, date_modified FROM admin_content_fields
+SELECT admin_content_field_id, admin_route_id, admin_content_data_id, admin_field_id, admin_field_value, locale, author_id, date_created, date_modified FROM admin_content_fields
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?
 `
@@ -6940,6 +7620,7 @@ func (q *Queries) ListAdminContentFieldsPaginated(ctx context.Context, arg ListA
 			&i.AdminContentDataID,
 			&i.AdminFieldID,
 			&i.AdminFieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -7534,7 +8215,7 @@ func (q *Queries) ListAdminDatatypeRoot(ctx context.Context) ([]AdminDatatypes, 
 }
 
 const listAdminField = `-- name: ListAdminField :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 ORDER BY sort_order, admin_field_id
 `
 
@@ -7557,6 +8238,8 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -7575,7 +8258,7 @@ func (q *Queries) ListAdminField(ctx context.Context) ([]AdminFields, error) {
 }
 
 const listAdminFieldByParentID = `-- name: ListAdminFieldByParentID :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
 FROM admin_fields
 WHERE parent_id = ?
 ORDER BY sort_order, admin_field_id
@@ -7604,6 +8287,8 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -7622,7 +8307,7 @@ func (q *Queries) ListAdminFieldByParentID(ctx context.Context, arg ListAdminFie
 }
 
 const listAdminFieldByParentIDPaginated = `-- name: ListAdminFieldByParentIDPaginated :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 WHERE parent_id = ?
 ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?
@@ -7653,6 +8338,8 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -7671,7 +8358,7 @@ func (q *Queries) ListAdminFieldByParentIDPaginated(ctx context.Context, arg Lis
 }
 
 const listAdminFieldPaginated = `-- name: ListAdminFieldPaginated :many
-SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM admin_fields
+SELECT admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM admin_fields
 ORDER BY sort_order, admin_field_id
 LIMIT ? OFFSET ?
 `
@@ -7700,6 +8387,8 @@ func (q *Queries) ListAdminFieldPaginated(ctx context.Context, arg ListAdminFiel
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8118,6 +8807,54 @@ func (q *Queries) ListContentData(ctx context.Context) ([]ContentData, error) {
 	return items, nil
 }
 
+const listContentDataByDatatypeID = `-- name: ListContentDataByDatatypeID :many
+SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
+WHERE datatype_id = ?
+`
+
+type ListContentDataByDatatypeIDParams struct {
+	DatatypeID types.NullableDatatypeID `json:"datatype_id"`
+}
+
+func (q *Queries) ListContentDataByDatatypeID(ctx context.Context, arg ListContentDataByDatatypeIDParams) ([]ContentData, error) {
+	rows, err := q.db.QueryContext(ctx, listContentDataByDatatypeID, arg.DatatypeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentData{}
+	for rows.Next() {
+		var i ContentData
+		if err := rows.Scan(
+			&i.ContentDataID,
+			&i.ParentID,
+			&i.FirstChildID,
+			&i.NextSiblingID,
+			&i.PrevSiblingID,
+			&i.RouteID,
+			&i.DatatypeID,
+			&i.AuthorID,
+			&i.Status,
+			&i.DateCreated,
+			&i.DateModified,
+			&i.PublishedAt,
+			&i.PublishedBy,
+			&i.PublishAt,
+			&i.Revision,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listContentDataByRoute = `-- name: ListContentDataByRoute :many
 SELECT content_data_id, parent_id, first_child_id, next_sibling_id, prev_sibling_id, route_id, datatype_id, author_id, status, date_created, date_modified, published_at, published_by, publish_at, revision FROM content_data
 WHERE route_id = ?
@@ -8479,7 +9216,7 @@ func (q *Queries) ListContentDataTopLevelPaginatedByStatus(ctx context.Context, 
 }
 
 const listContentFields = `-- name: ListContentFields :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 ORDER BY content_field_id
 `
 
@@ -8498,6 +9235,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8516,7 +9254,7 @@ func (q *Queries) ListContentFields(ctx context.Context) ([]ContentFields, error
 }
 
 const listContentFieldsByContentData = `-- name: ListContentFieldsByContentData :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 `
@@ -8540,6 +9278,51 @@ func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListCo
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsByContentDataAndLocale = `-- name: ListContentFieldsByContentDataAndLocale :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+WHERE content_data_id = ? AND locale IN (?, '')
+ORDER BY content_field_id
+`
+
+type ListContentFieldsByContentDataAndLocaleParams struct {
+	ContentDataID types.NullableContentID `json:"content_data_id"`
+	Locale        string                  `json:"locale"`
+}
+
+func (q *Queries) ListContentFieldsByContentDataAndLocale(ctx context.Context, arg ListContentFieldsByContentDataAndLocaleParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByContentDataAndLocale, arg.ContentDataID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8558,7 +9341,7 @@ func (q *Queries) ListContentFieldsByContentData(ctx context.Context, arg ListCo
 }
 
 const listContentFieldsByContentDataPaginated = `-- name: ListContentFieldsByContentDataPaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
@@ -8585,6 +9368,7 @@ func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, a
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8603,7 +9387,7 @@ func (q *Queries) ListContentFieldsByContentDataPaginated(ctx context.Context, a
 }
 
 const listContentFieldsByRoute = `-- name: ListContentFieldsByRoute :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ?
 ORDER BY content_field_id
 `
@@ -8627,6 +9411,51 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentF
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listContentFieldsByRouteAndLocale = `-- name: ListContentFieldsByRouteAndLocale :many
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
+WHERE route_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id
+`
+
+type ListContentFieldsByRouteAndLocaleParams struct {
+	RouteID types.NullableRouteID `json:"route_id"`
+	Locale  string                `json:"locale"`
+}
+
+func (q *Queries) ListContentFieldsByRouteAndLocale(ctx context.Context, arg ListContentFieldsByRouteAndLocaleParams) ([]ContentFields, error) {
+	rows, err := q.db.QueryContext(ctx, listContentFieldsByRouteAndLocale, arg.RouteID, arg.Locale)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ContentFields{}
+	for rows.Next() {
+		var i ContentFields
+		if err := rows.Scan(
+			&i.ContentFieldID,
+			&i.RouteID,
+			&i.ContentDataID,
+			&i.FieldID,
+			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8645,7 +9474,7 @@ func (q *Queries) ListContentFieldsByRoute(ctx context.Context, arg ListContentF
 }
 
 const listContentFieldsByRoutePaginated = `-- name: ListContentFieldsByRoutePaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 WHERE route_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
@@ -8672,6 +9501,7 @@ func (q *Queries) ListContentFieldsByRoutePaginated(ctx context.Context, arg Lis
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -8690,7 +9520,7 @@ func (q *Queries) ListContentFieldsByRoutePaginated(ctx context.Context, arg Lis
 }
 
 const listContentFieldsPaginated = `-- name: ListContentFieldsPaginated :many
-SELECT content_field_id, route_id, content_data_id, field_id, field_value, author_id, date_created, date_modified FROM content_fields
+SELECT content_field_id, route_id, content_data_id, field_id, field_value, locale, author_id, date_created, date_modified FROM content_fields
 ORDER BY content_field_id
 LIMIT ? OFFSET ?
 `
@@ -8715,6 +9545,7 @@ func (q *Queries) ListContentFieldsPaginated(ctx context.Context, arg ListConten
 			&i.ContentDataID,
 			&i.FieldID,
 			&i.FieldValue,
+			&i.Locale,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -9288,6 +10119,44 @@ func (q *Queries) ListDatatypeRoot(ctx context.Context) ([]Datatypes, error) {
 	return items, nil
 }
 
+const listEnabledLocales = `-- name: ListEnabledLocales :many
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+WHERE is_enabled = 1
+ORDER BY sort_order, code
+`
+
+func (q *Queries) ListEnabledLocales(ctx context.Context) ([]Locale, error) {
+	rows, err := q.db.QueryContext(ctx, listEnabledLocales)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Locale{}
+	for rows.Next() {
+		var i Locale
+		if err := rows.Scan(
+			&i.LocaleID,
+			&i.Code,
+			&i.Label,
+			&i.IsDefault,
+			&i.IsEnabled,
+			&i.FallbackCode,
+			&i.SortOrder,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listEnabledPipelines = `-- name: ListEnabledPipelines :many
 SELECT pipeline_id, plugin_id, table_name, operation, plugin_name, handler, priority, enabled, config, date_created, date_modified FROM pipelines WHERE enabled = 1 ORDER BY table_name, operation, priority
 `
@@ -9328,7 +10197,7 @@ func (q *Queries) ListEnabledPipelines(ctx context.Context) ([]Pipelines, error)
 }
 
 const listField = `-- name: ListField :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 ORDER BY sort_order, field_id
 `
 
@@ -9351,6 +10220,8 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -9369,7 +10240,7 @@ func (q *Queries) ListField(ctx context.Context) ([]Fields, error) {
 }
 
 const listFieldByDatatypeID = `-- name: ListFieldByDatatypeID :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 WHERE parent_id = ?
 ORDER BY sort_order, field_id
 `
@@ -9397,6 +10268,8 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -9415,7 +10288,7 @@ func (q *Queries) ListFieldByDatatypeID(ctx context.Context, arg ListFieldByData
 }
 
 const listFieldPaginated = `-- name: ListFieldPaginated :many
-SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified FROM fields
+SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
 ORDER BY sort_order, field_id
 LIMIT ? OFFSET ?
 `
@@ -9444,6 +10317,8 @@ func (q *Queries) ListFieldPaginated(ctx context.Context, arg ListFieldPaginated
 			&i.Validation,
 			&i.UiConfig,
 			&i.Type,
+			&i.Translatable,
+			&i.Roles,
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
@@ -9497,7 +10372,8 @@ SELECT
     f.type,
     f.data,
     f.validation,
-    f.ui_config
+    f.ui_config,
+    f.roles
 FROM fields f
 WHERE f.parent_id = ?
 ORDER BY f.sort_order, f.field_id
@@ -9508,13 +10384,14 @@ type ListFieldsWithSortOrderByDatatypeIDParams struct {
 }
 
 type ListFieldsWithSortOrderByDatatypeIDRow struct {
-	SortOrder  int64           `json:"sort_order"`
-	FieldID    types.FieldID   `json:"field_id"`
-	Label      string          `json:"label"`
-	Type       types.FieldType `json:"type"`
-	Data       string          `json:"data"`
-	Validation string          `json:"validation"`
-	UiConfig   string          `json:"ui_config"`
+	SortOrder  int64                `json:"sort_order"`
+	FieldID    types.FieldID        `json:"field_id"`
+	Label      string               `json:"label"`
+	Type       types.FieldType      `json:"type"`
+	Data       string               `json:"data"`
+	Validation string               `json:"validation"`
+	UiConfig   string               `json:"ui_config"`
+	Roles      types.NullableString `json:"roles"`
 }
 
 func (q *Queries) ListFieldsWithSortOrderByDatatypeID(ctx context.Context, arg ListFieldsWithSortOrderByDatatypeIDParams) ([]ListFieldsWithSortOrderByDatatypeIDRow, error) {
@@ -9534,6 +10411,87 @@ func (q *Queries) ListFieldsWithSortOrderByDatatypeID(ctx context.Context, arg L
 			&i.Data,
 			&i.Validation,
 			&i.UiConfig,
+			&i.Roles,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLocales = `-- name: ListLocales :many
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+ORDER BY sort_order, code
+`
+
+func (q *Queries) ListLocales(ctx context.Context) ([]Locale, error) {
+	rows, err := q.db.QueryContext(ctx, listLocales)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Locale{}
+	for rows.Next() {
+		var i Locale
+		if err := rows.Scan(
+			&i.LocaleID,
+			&i.Code,
+			&i.Label,
+			&i.IsDefault,
+			&i.IsEnabled,
+			&i.FallbackCode,
+			&i.SortOrder,
+			&i.DateCreated,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listLocalesPaginated = `-- name: ListLocalesPaginated :many
+SELECT locale_id, code, label, is_default, is_enabled, fallback_code, sort_order, date_created FROM locales
+ORDER BY sort_order, code
+LIMIT ? OFFSET ?
+`
+
+type ListLocalesPaginatedParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListLocalesPaginated(ctx context.Context, arg ListLocalesPaginatedParams) ([]Locale, error) {
+	rows, err := q.db.QueryContext(ctx, listLocalesPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Locale{}
+	for rows.Next() {
+		var i Locale
+		if err := rows.Scan(
+			&i.LocaleID,
+			&i.Code,
+			&i.Label,
+			&i.IsDefault,
+			&i.IsEnabled,
+			&i.FallbackCode,
+			&i.SortOrder,
+			&i.DateCreated,
 		); err != nil {
 			return nil, err
 		}
@@ -9664,6 +10622,53 @@ func (q *Queries) ListMediaPaginated(ctx context.Context, arg ListMediaPaginated
 			&i.AuthorID,
 			&i.DateCreated,
 			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPendingRetries = `-- name: ListPendingRetries :many
+SELECT delivery_id, webhook_id, event, payload, status, attempts, last_status_code, last_error, next_retry_at, created_at, completed_at FROM webhook_deliveries
+WHERE status = 'retrying' AND next_retry_at <= ?
+ORDER BY next_retry_at
+LIMIT ?
+`
+
+type ListPendingRetriesParams struct {
+	NextRetryAt sql.NullString `json:"next_retry_at"`
+	Limit       int64          `json:"limit"`
+}
+
+func (q *Queries) ListPendingRetries(ctx context.Context, arg ListPendingRetriesParams) ([]WebhookDeliveries, error) {
+	rows, err := q.db.QueryContext(ctx, listPendingRetries, arg.NextRetryAt, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WebhookDeliveries{}
+	for rows.Next() {
+		var i WebhookDeliveries
+		if err := rows.Scan(
+			&i.DeliveryID,
+			&i.WebhookID,
+			&i.Event,
+			&i.Payload,
+			&i.Status,
+			&i.Attempts,
+			&i.LastStatusCode,
+			&i.LastError,
+			&i.NextRetryAt,
+			&i.CreatedAt,
+			&i.CompletedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -10610,6 +11615,175 @@ func (q *Queries) ListVerifications(ctx context.Context, arg ListVerificationsPa
 	return items, nil
 }
 
+const listWebhookDeliveries = `-- name: ListWebhookDeliveries :many
+SELECT delivery_id, webhook_id, event, payload, status, attempts, last_status_code, last_error, next_retry_at, created_at, completed_at FROM webhook_deliveries
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListWebhookDeliveries(ctx context.Context) ([]WebhookDeliveries, error) {
+	rows, err := q.db.QueryContext(ctx, listWebhookDeliveries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WebhookDeliveries{}
+	for rows.Next() {
+		var i WebhookDeliveries
+		if err := rows.Scan(
+			&i.DeliveryID,
+			&i.WebhookID,
+			&i.Event,
+			&i.Payload,
+			&i.Status,
+			&i.Attempts,
+			&i.LastStatusCode,
+			&i.LastError,
+			&i.NextRetryAt,
+			&i.CreatedAt,
+			&i.CompletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWebhookDeliveriesByWebhook = `-- name: ListWebhookDeliveriesByWebhook :many
+SELECT delivery_id, webhook_id, event, payload, status, attempts, last_status_code, last_error, next_retry_at, created_at, completed_at FROM webhook_deliveries
+WHERE webhook_id = ?
+ORDER BY created_at DESC
+`
+
+type ListWebhookDeliveriesByWebhookParams struct {
+	WebhookID types.WebhookID `json:"webhook_id"`
+}
+
+func (q *Queries) ListWebhookDeliveriesByWebhook(ctx context.Context, arg ListWebhookDeliveriesByWebhookParams) ([]WebhookDeliveries, error) {
+	rows, err := q.db.QueryContext(ctx, listWebhookDeliveriesByWebhook, arg.WebhookID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []WebhookDeliveries{}
+	for rows.Next() {
+		var i WebhookDeliveries
+		if err := rows.Scan(
+			&i.DeliveryID,
+			&i.WebhookID,
+			&i.Event,
+			&i.Payload,
+			&i.Status,
+			&i.Attempts,
+			&i.LastStatusCode,
+			&i.LastError,
+			&i.NextRetryAt,
+			&i.CreatedAt,
+			&i.CompletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWebhooks = `-- name: ListWebhooks :many
+SELECT webhook_id, name, url, secret, events, is_active, headers, author_id, date_created, date_modified FROM webhooks
+ORDER BY date_created DESC
+`
+
+func (q *Queries) ListWebhooks(ctx context.Context) ([]Webhooks, error) {
+	rows, err := q.db.QueryContext(ctx, listWebhooks)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Webhooks{}
+	for rows.Next() {
+		var i Webhooks
+		if err := rows.Scan(
+			&i.WebhookID,
+			&i.Name,
+			&i.URL,
+			&i.Secret,
+			&i.Events,
+			&i.IsActive,
+			&i.Headers,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWebhooksPaginated = `-- name: ListWebhooksPaginated :many
+SELECT webhook_id, name, url, secret, events, is_active, headers, author_id, date_created, date_modified FROM webhooks
+ORDER BY date_created DESC
+LIMIT ? OFFSET ?
+`
+
+type ListWebhooksPaginatedParams struct {
+	Limit  int64 `json:"limit"`
+	Offset int64 `json:"offset"`
+}
+
+func (q *Queries) ListWebhooksPaginated(ctx context.Context, arg ListWebhooksPaginatedParams) ([]Webhooks, error) {
+	rows, err := q.db.QueryContext(ctx, listWebhooksPaginated, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Webhooks{}
+	for rows.Next() {
+		var i Webhooks
+		if err := rows.Scan(
+			&i.WebhookID,
+			&i.Name,
+			&i.URL,
+			&i.Secret,
+			&i.Events,
+			&i.IsActive,
+			&i.Headers,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const markEventConsumed = `-- name: MarkEventConsumed :exec
 UPDATE change_events
 SET consumed_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
@@ -10709,6 +11883,20 @@ type PruneAdminOldVersionsParams struct {
 
 func (q *Queries) PruneAdminOldVersions(ctx context.Context, arg PruneAdminOldVersionsParams) error {
 	_, err := q.db.ExecContext(ctx, pruneAdminOldVersions, arg.AdminContentDataID, arg.Locale, arg.Limit)
+	return err
+}
+
+const pruneOldDeliveries = `-- name: PruneOldDeliveries :exec
+DELETE FROM webhook_deliveries
+WHERE status IN ('success', 'failed') AND created_at < ?
+`
+
+type PruneOldDeliveriesParams struct {
+	CreatedAt string `json:"created_at"`
+}
+
+func (q *Queries) PruneOldDeliveries(ctx context.Context, arg PruneOldDeliveriesParams) error {
+	_, err := q.db.ExecContext(ctx, pruneOldDeliveries, arg.CreatedAt)
 	return err
 }
 
@@ -10956,6 +12144,7 @@ SET admin_route_id = ?,
     admin_content_data_id = ?,
     admin_field_id = ?,
     admin_field_value = ?,
+    locale = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
@@ -10967,6 +12156,7 @@ type UpdateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
+	Locale              string                       `json:"locale"`
 	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
@@ -10979,6 +12169,7 @@ func (q *Queries) UpdateAdminContentField(ctx context.Context, arg UpdateAdminCo
 		arg.AdminContentDataID,
 		arg.AdminFieldID,
 		arg.AdminFieldValue,
+		arg.Locale,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -11051,11 +12242,13 @@ SET parent_id = ?,
     validation = ?,
     ui_config = ?,
     type = ?,
+    translatable = ?,
+    roles = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
     WHERE admin_field_id = ?
-    RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    RETURNING admin_field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type UpdateAdminFieldParams struct {
@@ -11067,6 +12260,8 @@ type UpdateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -11083,6 +12278,8 @@ func (q *Queries) UpdateAdminField(ctx context.Context, arg UpdateAdminFieldPara
 		arg.Validation,
 		arg.UiConfig,
 		arg.Type,
+		arg.Translatable,
+		arg.Roles,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -11384,6 +12581,7 @@ SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
+    locale = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
@@ -11395,6 +12593,7 @@ type UpdateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
+	Locale         string                  `json:"locale"`
 	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
@@ -11407,6 +12606,7 @@ func (q *Queries) UpdateContentField(ctx context.Context, arg UpdateContentField
 		arg.ContentDataID,
 		arg.FieldID,
 		arg.FieldValue,
+		arg.Locale,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -11479,11 +12679,13 @@ SET parent_id = ?,
     validation = ?,
     ui_config = ?,
     type = ?,
+    translatable = ?,
+    roles = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
     WHERE field_id = ?
-    RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, author_id, date_created, date_modified
+    RETURNING field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified
 `
 
 type UpdateFieldParams struct {
@@ -11495,6 +12697,8 @@ type UpdateFieldParams struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
+	Translatable int64                    `json:"translatable"`
+	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
@@ -11511,6 +12715,8 @@ func (q *Queries) UpdateField(ctx context.Context, arg UpdateFieldParams) error 
 		arg.Validation,
 		arg.UiConfig,
 		arg.Type,
+		arg.Translatable,
+		arg.Roles,
 		arg.AuthorID,
 		arg.DateCreated,
 		arg.DateModified,
@@ -11550,6 +12756,43 @@ type UpdateFieldTypeParams struct {
 
 func (q *Queries) UpdateFieldType(ctx context.Context, arg UpdateFieldTypeParams) error {
 	_, err := q.db.ExecContext(ctx, updateFieldType, arg.Type, arg.Label, arg.FieldTypeID)
+	return err
+}
+
+const updateLocale = `-- name: UpdateLocale :exec
+UPDATE locales
+SET code = ?,
+    label = ?,
+    is_default = ?,
+    is_enabled = ?,
+    fallback_code = ?,
+    sort_order = ?,
+    date_created = ?
+WHERE locale_id = ?
+`
+
+type UpdateLocaleParams struct {
+	Code         string          `json:"code"`
+	Label        string          `json:"label"`
+	IsDefault    int64           `json:"is_default"`
+	IsEnabled    int64           `json:"is_enabled"`
+	FallbackCode sql.NullString  `json:"fallback_code"`
+	SortOrder    int64           `json:"sort_order"`
+	DateCreated  types.Timestamp `json:"date_created"`
+	LocaleID     types.LocaleID  `json:"locale_id"`
+}
+
+func (q *Queries) UpdateLocale(ctx context.Context, arg UpdateLocaleParams) error {
+	_, err := q.db.ExecContext(ctx, updateLocale,
+		arg.Code,
+		arg.Label,
+		arg.IsDefault,
+		arg.IsEnabled,
+		arg.FallbackCode,
+		arg.SortOrder,
+		arg.DateCreated,
+		arg.LocaleID,
+	)
 	return err
 }
 
@@ -11624,11 +12867,11 @@ WHERE md_id = ?
 `
 
 type UpdateMediaDimensionParams struct {
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt64  `json:"width"`
-	Height      sql.NullInt64  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
-	MdID        string         `json:"md_id"`
+	Label       sql.NullString      `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio sql.NullString      `json:"aspect_ratio"`
+	MdID        string              `json:"md_id"`
 }
 
 func (q *Queries) UpdateMediaDimension(ctx context.Context, arg UpdateMediaDimensionParams) error {
@@ -11651,7 +12894,7 @@ WHERE permission_id = ?
 
 type UpdatePermissionParams struct {
 	Label           string             `json:"label"`
-	SystemProtected int64              `json:"system_protected"`
+	SystemProtected types.SafeBool     `json:"system_protected"`
 	PermissionID    types.PermissionID `json:"permission_id"`
 }
 
@@ -11758,9 +13001,9 @@ WHERE role_id = ?
 `
 
 type UpdateRoleParams struct {
-	Label           string       `json:"label"`
-	SystemProtected int64        `json:"system_protected"`
-	RoleID          types.RoleID `json:"role_id"`
+	Label           string         `json:"label"`
+	SystemProtected types.SafeBool `json:"system_protected"`
+	RoleID          types.RoleID   `json:"role_id"`
 }
 
 func (q *Queries) UpdateRole(ctx context.Context, arg UpdateRoleParams) error {
@@ -11819,7 +13062,7 @@ type UpdateSessionParams struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  sql.NullString       `json:"last_access"`
+	LastAccess  types.Timestamp      `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
 	UserAgent   sql.NullString       `json:"user_agent"`
 	SessionData sql.NullString       `json:"session_data"`
@@ -11867,7 +13110,7 @@ WHERE id = ?
 
 type UpdateTokenParams struct {
 	Tokens    string          `json:"token"`
-	IssuedAt  string          `json:"issued_at"`
+	IssuedAt  types.Timestamp `json:"issued_at"`
 	ExpiresAt types.Timestamp `json:"expires_at"`
 	Revoked   bool            `json:"revoked"`
 	ID        string          `json:"id"`
@@ -11932,7 +13175,7 @@ WHERE user_oauth_id = ?
 type UpdateUserOauthParams struct {
 	AccessToken    string            `json:"access_token"`
 	RefreshToken   string            `json:"refresh_token"`
-	TokenExpiresAt string            `json:"token_expires_at"`
+	TokenExpiresAt types.Timestamp   `json:"token_expires_at"`
 	UserOAuthID    types.UserOauthID `json:"user_oauth_id"`
 }
 
@@ -11975,6 +13218,111 @@ type UpdateUserSshKeyLastUsedParams struct {
 
 func (q *Queries) UpdateUserSshKeyLastUsed(ctx context.Context, arg UpdateUserSshKeyLastUsedParams) error {
 	_, err := q.db.ExecContext(ctx, updateUserSshKeyLastUsed, arg.LastUsed, arg.SSHKeyID)
+	return err
+}
+
+const updateWebhook = `-- name: UpdateWebhook :exec
+UPDATE webhooks
+SET name = ?,
+    url = ?,
+    secret = ?,
+    events = ?,
+    is_active = ?,
+    headers = ?,
+    date_modified = ?
+WHERE webhook_id = ?
+`
+
+type UpdateWebhookParams struct {
+	Name         string          `json:"name"`
+	URL          string          `json:"url"`
+	Secret       string          `json:"secret"`
+	Events       string          `json:"events"`
+	IsActive     int64           `json:"is_active"`
+	Headers      string          `json:"headers"`
+	DateModified types.Timestamp `json:"date_modified"`
+	WebhookID    types.WebhookID `json:"webhook_id"`
+}
+
+func (q *Queries) UpdateWebhook(ctx context.Context, arg UpdateWebhookParams) error {
+	_, err := q.db.ExecContext(ctx, updateWebhook,
+		arg.Name,
+		arg.URL,
+		arg.Secret,
+		arg.Events,
+		arg.IsActive,
+		arg.Headers,
+		arg.DateModified,
+		arg.WebhookID,
+	)
+	return err
+}
+
+const updateWebhookDelivery = `-- name: UpdateWebhookDelivery :exec
+UPDATE webhook_deliveries
+SET status = ?,
+    attempts = ?,
+    last_status_code = ?,
+    last_error = ?,
+    next_retry_at = ?,
+    completed_at = ?
+WHERE delivery_id = ?
+`
+
+type UpdateWebhookDeliveryParams struct {
+	Status         string                  `json:"status"`
+	Attempts       int64                   `json:"attempts"`
+	LastStatusCode sql.NullInt64           `json:"last_status_code"`
+	LastError      string                  `json:"last_error"`
+	NextRetryAt    sql.NullString          `json:"next_retry_at"`
+	CompletedAt    sql.NullString          `json:"completed_at"`
+	DeliveryID     types.WebhookDeliveryID `json:"delivery_id"`
+}
+
+func (q *Queries) UpdateWebhookDelivery(ctx context.Context, arg UpdateWebhookDeliveryParams) error {
+	_, err := q.db.ExecContext(ctx, updateWebhookDelivery,
+		arg.Status,
+		arg.Attempts,
+		arg.LastStatusCode,
+		arg.LastError,
+		arg.NextRetryAt,
+		arg.CompletedAt,
+		arg.DeliveryID,
+	)
+	return err
+}
+
+const updateWebhookDeliveryStatus = `-- name: UpdateWebhookDeliveryStatus :exec
+UPDATE webhook_deliveries
+SET status = ?,
+    attempts = ?,
+    last_status_code = ?,
+    last_error = ?,
+    next_retry_at = ?,
+    completed_at = ?
+WHERE delivery_id = ?
+`
+
+type UpdateWebhookDeliveryStatusParams struct {
+	Status         string                  `json:"status"`
+	Attempts       int64                   `json:"attempts"`
+	LastStatusCode sql.NullInt64           `json:"last_status_code"`
+	LastError      string                  `json:"last_error"`
+	NextRetryAt    sql.NullString          `json:"next_retry_at"`
+	CompletedAt    sql.NullString          `json:"completed_at"`
+	DeliveryID     types.WebhookDeliveryID `json:"delivery_id"`
+}
+
+func (q *Queries) UpdateWebhookDeliveryStatus(ctx context.Context, arg UpdateWebhookDeliveryStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateWebhookDeliveryStatus,
+		arg.Status,
+		arg.Attempts,
+		arg.LastStatusCode,
+		arg.LastError,
+		arg.NextRetryAt,
+		arg.CompletedAt,
+		arg.DeliveryID,
+	)
 	return err
 }
 

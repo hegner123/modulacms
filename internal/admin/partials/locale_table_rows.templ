@@ -1,0 +1,58 @@
+package partials
+
+import "github.com/hegner123/modulacms/internal/db"
+
+templ LocaleTableRows(locales []db.Locale, csrfToken string) {
+    if len(locales) == 0 {
+        <tr>
+            <td colspan="7">
+                @EmptyState("No locales configured. Add your first locale to enable i18n.")
+            </td>
+        </tr>
+    }
+    for _, locale := range locales {
+        <tr id={ "locale-row-" + locale.LocaleID.String() }>
+            <td>
+                <strong>{ locale.Code }</strong>
+            </td>
+            <td>{ locale.Label }</td>
+            <td>
+                if locale.IsDefault {
+                    <span class="badge badge-published">Default</span>
+                }
+            </td>
+            <td>
+                if locale.IsEnabled {
+                    <span class="badge badge-published">Yes</span>
+                } else {
+                    <span class="badge badge-draft">No</span>
+                }
+            </td>
+            <td>
+                if locale.FallbackCode != "" {
+                    { locale.FallbackCode }
+                } else {
+                    <span class="text-muted">-</span>
+                }
+            </td>
+            <td>{ IntToStr(int(locale.SortOrder)) }</td>
+            <td>
+                <div class="action-buttons">
+                    <button class="btn btn-ghost btn-sm"
+                            hx-get={ "/admin/settings/locales/" + locale.LocaleID.String() + "/edit" }
+                            hx-target="#admin-dialogs"
+                            hx-swap="innerHTML">
+                        Edit
+                    </button>
+                    <button class="btn btn-ghost btn-sm btn-danger"
+                            hx-delete={ "/admin/settings/locales/" + locale.LocaleID.String() }
+                            hx-target="#locale-table-body"
+                            hx-swap="innerHTML"
+                            hx-confirm="Are you sure you want to delete this locale? This cannot be undone.">
+                        Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    }
+}

@@ -17,11 +17,15 @@ import type { ContentVersion, AdminContentVersion } from '../types/content.js'
 /** Request body for publishing content. */
 export type PublishRequest = {
   content_data_id: ContentID
+  /** Optional locale code to publish content for a specific locale. */
+  locale?: string
 }
 
 /** Request body for publishing admin content. */
 export type AdminPublishRequest = {
   admin_content_data_id: AdminContentID
+  /** Optional locale code to publish admin content for a specific locale. */
+  locale?: string
 }
 
 /** Response from a publish or unpublish operation. */

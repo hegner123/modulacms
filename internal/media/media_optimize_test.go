@@ -224,8 +224,8 @@ func (m *mockDimensionLister) ListMediaDimensions() (*[]db.MediaDimensions, erro
 // dim is a shorthand constructor for db.MediaDimensions used in tests.
 func dim(w, h int64) db.MediaDimensions {
 	return db.MediaDimensions{
-		Width:  db.NewNullInt64(w),
-		Height: db.NewNullInt64(h),
+		Width:  types.NewNullableInt64(w),
+		Height: types.NewNullableInt64(h),
 	}
 }
 
@@ -409,10 +409,10 @@ func TestOptimizeUpload_SkipsInvalidDimensions(t *testing.T) {
 	srcPath := createTestImage(t, srcDir, "skip.png", 200, 200)
 
 	dims := []db.MediaDimensions{
-		{Width: db.NullInt64{}, Height: db.NewNullInt64(100)},                // no width
-		{Width: db.NewNullInt64(100), Height: db.NullInt64{}},                // no height
-		{Width: db.NewNullInt64(0), Height: db.NewNullInt64(100)},            // zero width
-		{Width: db.NewNullInt64(-5), Height: db.NewNullInt64(100)},           // negative width
+		{Width: types.NullableInt64{}, Height: types.NewNullableInt64(100)},      // no width
+		{Width: types.NewNullableInt64(100), Height: types.NullableInt64{}},      // no height
+		{Width: types.NewNullableInt64(0), Height: types.NewNullableInt64(100)},  // zero width
+		{Width: types.NewNullableInt64(-5), Height: types.NewNullableInt64(100)}, // negative width
 		dim(50, 50), // valid
 	}
 	lister := &mockDimensionLister{dims: &dims}
@@ -823,9 +823,9 @@ func TestFocalPointToPixels_Corners(t *testing.T) {
 	bounds := image.Rect(0, 0, 200, 100)
 
 	tests := []struct {
-		name string
-		fx   float64
-		fy   float64
+		name  string
+		fx    float64
+		fy    float64
 		wantX int
 		wantY int
 	}{

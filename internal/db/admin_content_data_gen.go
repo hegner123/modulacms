@@ -72,44 +72,6 @@ type ListAdminContentDataByRoutePaginatedParams struct {
 	Offset       int64
 }
 
-// UpdateAdminContentDataPublishMetaParams contains parameters for updating publish metadata.
-type UpdateAdminContentDataPublishMetaParams struct {
-	Status             types.ContentStatus  `json:"status"`
-	PublishedAt        types.Timestamp      `json:"published_at"`
-	PublishedBy        types.NullableUserID `json:"published_by"`
-	DateModified       types.Timestamp      `json:"date_modified"`
-	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
-}
-
-// UpdateAdminContentDataWithRevisionParams contains parameters for updating with revision tracking.
-type UpdateAdminContentDataWithRevisionParams struct {
-	AdminRouteID       types.NullableAdminRouteID    `json:"admin_route_id"`
-	ParentID           types.NullableAdminContentID  `json:"parent_id"`
-	FirstChildID       types.NullableAdminContentID  `json:"first_child_id"`
-	NextSiblingID      types.NullableAdminContentID  `json:"next_sibling_id"`
-	PrevSiblingID      types.NullableAdminContentID  `json:"prev_sibling_id"`
-	AdminDatatypeID    types.NullableAdminDatatypeID `json:"admin_datatype_id"`
-	AuthorID           types.UserID                  `json:"author_id"`
-	Status             types.ContentStatus           `json:"status"`
-	DateCreated        types.Timestamp               `json:"date_created"`
-	DateModified       types.Timestamp               `json:"date_modified"`
-	AdminContentDataID types.AdminContentID          `json:"admin_content_data_id"`
-	Revision           int64                         `json:"revision"`
-}
-
-// UpdateAdminContentDataScheduleParams contains parameters for setting a scheduled publish time.
-type UpdateAdminContentDataScheduleParams struct {
-	PublishAt          types.Timestamp     `json:"publish_at"`
-	DateModified       types.Timestamp     `json:"date_modified"`
-	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
-}
-
-// ClearAdminContentDataScheduleParams contains parameters for clearing a scheduled publish time.
-type ClearAdminContentDataScheduleParams struct {
-	DateModified       types.Timestamp     `json:"date_modified"`
-	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
-}
-
 // MapStringAdminContentData converts AdminContentData to StringAdminContentData for TUI display.
 func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 	return StringAdminContentData{
@@ -121,6 +83,10 @@ func MapStringAdminContentData(a AdminContentData) StringAdminContentData {
 		Status:             string(a.Status),
 		DateCreated:        a.DateCreated.String(),
 		DateModified:       a.DateModified.String(),
+		PublishedAt:        a.PublishedAt.String(),
+		PublishedBy:        a.PublishedBy.String(),
+		PublishAt:          a.PublishAt.String(),
+		Revision:           fmt.Sprintf("%d", a.Revision),
 		History:            "",
 	}
 }
@@ -310,72 +276,6 @@ func (d Database) ListAdminContentDataByRoutePaginated(params ListAdminContentDa
 	return &res, nil
 }
 
-// UpdateAdminContentDataPublishMeta updates publish metadata for an admin content data record.
-func (d Database) UpdateAdminContentDataPublishMeta(ctx context.Context, params UpdateAdminContentDataPublishMetaParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateAdminContentDataPublishMeta(ctx, mdb.UpdateAdminContentDataPublishMetaParams{
-		Status:             params.Status,
-		PublishedAt:        params.PublishedAt,
-		PublishedBy:        params.PublishedBy,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// UpdateAdminContentDataWithRevision updates an admin content data record with revision tracking.
-func (d Database) UpdateAdminContentDataWithRevision(ctx context.Context, params UpdateAdminContentDataWithRevisionParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateAdminContentDataWithRevision(ctx, mdb.UpdateAdminContentDataWithRevisionParams{
-		AdminRouteID:       params.AdminRouteID,
-		ParentID:           params.ParentID,
-		FirstChildID:       params.FirstChildID,
-		NextSiblingID:      params.NextSiblingID,
-		PrevSiblingID:      params.PrevSiblingID,
-		AdminDatatypeID:    params.AdminDatatypeID,
-		AuthorID:           params.AuthorID,
-		Status:             params.Status,
-		DateCreated:        params.DateCreated,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-		Revision:           params.Revision,
-	})
-}
-
-// ListAdminContentDataDueForPublish returns admin content data records due for scheduled publish.
-func (d Database) ListAdminContentDataDueForPublish(publishAt types.Timestamp) (*[]AdminContentData, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminContentDataDueForPublish(d.Context, mdb.ListAdminContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin content data due for publish: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateAdminContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d Database) UpdateAdminContentDataSchedule(ctx context.Context, params UpdateAdminContentDataScheduleParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateAdminContentDataSchedule(ctx, mdb.UpdateAdminContentDataScheduleParams{
-		PublishAt:          params.PublishAt,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// ClearAdminContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d Database) ClearAdminContentDataSchedule(ctx context.Context, params ClearAdminContentDataScheduleParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.ClearAdminContentDataSchedule(ctx, mdb.ClearAdminContentDataScheduleParams{
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -561,72 +461,6 @@ func (d MysqlDatabase) ListAdminContentDataByRoutePaginated(params ListAdminCont
 	return &res, nil
 }
 
-// UpdateAdminContentDataPublishMeta updates publish metadata for an admin content data record.
-func (d MysqlDatabase) UpdateAdminContentDataPublishMeta(ctx context.Context, params UpdateAdminContentDataPublishMetaParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateAdminContentDataPublishMeta(ctx, mdbm.UpdateAdminContentDataPublishMetaParams{
-		Status:             params.Status,
-		PublishedAt:        params.PublishedAt,
-		PublishedBy:        params.PublishedBy,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// UpdateAdminContentDataWithRevision updates an admin content data record with revision tracking.
-func (d MysqlDatabase) UpdateAdminContentDataWithRevision(ctx context.Context, params UpdateAdminContentDataWithRevisionParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateAdminContentDataWithRevision(ctx, mdbm.UpdateAdminContentDataWithRevisionParams{
-		AdminRouteID:       params.AdminRouteID,
-		ParentID:           params.ParentID,
-		FirstChildID:       params.FirstChildID,
-		NextSiblingID:      params.NextSiblingID,
-		PrevSiblingID:      params.PrevSiblingID,
-		AdminDatatypeID:    params.AdminDatatypeID,
-		AuthorID:           params.AuthorID,
-		Status:             params.Status,
-		DateCreated:        params.DateCreated,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-		Revision:           int32(params.Revision),
-	})
-}
-
-// ListAdminContentDataDueForPublish returns admin content data records due for scheduled publish.
-func (d MysqlDatabase) ListAdminContentDataDueForPublish(publishAt types.Timestamp) (*[]AdminContentData, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminContentDataDueForPublish(d.Context, mdbm.ListAdminContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin content data due for publish: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateAdminContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d MysqlDatabase) UpdateAdminContentDataSchedule(ctx context.Context, params UpdateAdminContentDataScheduleParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateAdminContentDataSchedule(ctx, mdbm.UpdateAdminContentDataScheduleParams{
-		PublishAt:          params.PublishAt,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// ClearAdminContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d MysqlDatabase) ClearAdminContentDataSchedule(ctx context.Context, params ClearAdminContentDataScheduleParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.ClearAdminContentDataSchedule(ctx, mdbm.ClearAdminContentDataScheduleParams{
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -810,72 +644,6 @@ func (d PsqlDatabase) ListAdminContentDataByRoutePaginated(params ListAdminConte
 		res = append(res, m)
 	}
 	return &res, nil
-}
-
-// UpdateAdminContentDataPublishMeta updates publish metadata for an admin content data record.
-func (d PsqlDatabase) UpdateAdminContentDataPublishMeta(ctx context.Context, params UpdateAdminContentDataPublishMetaParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateAdminContentDataPublishMeta(ctx, mdbp.UpdateAdminContentDataPublishMetaParams{
-		Status:             params.Status,
-		PublishedAt:        params.PublishedAt,
-		PublishedBy:        params.PublishedBy,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// UpdateAdminContentDataWithRevision updates an admin content data record with revision tracking.
-func (d PsqlDatabase) UpdateAdminContentDataWithRevision(ctx context.Context, params UpdateAdminContentDataWithRevisionParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateAdminContentDataWithRevision(ctx, mdbp.UpdateAdminContentDataWithRevisionParams{
-		AdminRouteID:       params.AdminRouteID,
-		ParentID:           params.ParentID,
-		FirstChildID:       params.FirstChildID,
-		NextSiblingID:      params.NextSiblingID,
-		PrevSiblingID:      params.PrevSiblingID,
-		AdminDatatypeID:    params.AdminDatatypeID,
-		AuthorID:           params.AuthorID,
-		Status:             params.Status,
-		DateCreated:        params.DateCreated,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-		Revision:           int32(params.Revision),
-	})
-}
-
-// ListAdminContentDataDueForPublish returns admin content data records due for scheduled publish.
-func (d PsqlDatabase) ListAdminContentDataDueForPublish(publishAt types.Timestamp) (*[]AdminContentData, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminContentDataDueForPublish(d.Context, mdbp.ListAdminContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin content data due for publish: %w", err)
-	}
-	res := make([]AdminContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapAdminContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateAdminContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d PsqlDatabase) UpdateAdminContentDataSchedule(ctx context.Context, params UpdateAdminContentDataScheduleParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateAdminContentDataSchedule(ctx, mdbp.UpdateAdminContentDataScheduleParams{
-		PublishAt:          params.PublishAt,
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
-}
-
-// ClearAdminContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d PsqlDatabase) ClearAdminContentDataSchedule(ctx context.Context, params ClearAdminContentDataScheduleParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.ClearAdminContentDataSchedule(ctx, mdbp.ClearAdminContentDataScheduleParams{
-		DateModified:       params.DateModified,
-		AdminContentDataID: params.AdminContentDataID,
-	})
 }
 
 // ========== AUDITED COMMAND TYPES ==========

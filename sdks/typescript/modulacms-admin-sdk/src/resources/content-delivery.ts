@@ -26,10 +26,11 @@ type ContentDeliveryResource = {
    *
    * @param slug - Route slug (e.g. `"about"`, `"blog"`). Leading slashes are stripped.
    * @param format - Optional output format.
+   * @param locale - Optional locale code to request content in a specific locale.
    * @param opts - Optional request options.
    * @returns The content tree in the requested format.
    */
-  getPage: (slug: Slug, format?: ContentFormat, opts?: RequestOptions) => Promise<ContentTree | Record<string, unknown>>
+  getPage: (slug: Slug, format?: ContentFormat, locale?: string, opts?: RequestOptions) => Promise<ContentTree | Record<string, unknown>>
 }
 
 /**
@@ -40,10 +41,17 @@ type ContentDeliveryResource = {
  */
 function createContentDeliveryResource(http: HttpClient): ContentDeliveryResource {
   return {
-    getPage(slug: Slug, format?: ContentFormat, opts?: RequestOptions): Promise<ContentTree | Record<string, unknown>> {
+    getPage(slug: Slug, format?: ContentFormat, locale?: string, opts?: RequestOptions): Promise<ContentTree | Record<string, unknown>> {
       const trimmed = slug.startsWith('/') ? slug.slice(1) : slug
-      const params: Record<string, string> | undefined = format ? { format } : undefined
-      return http.get<ContentTree | Record<string, unknown>>(`/content/${trimmed}`, params, opts)
+      const params: Record<string, string> = {}
+      if (format) {
+        params.format = format
+      }
+      if (locale) {
+        params.locale = locale
+      }
+      const p = Object.keys(params).length > 0 ? params : undefined
+      return http.get<ContentTree | Record<string, unknown>>(`/content/${trimmed}`, p, opts)
     },
   }
 }

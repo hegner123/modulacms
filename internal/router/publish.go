@@ -21,6 +21,7 @@ import (
 // PublishRequest is the JSON body for POST /api/v1/content/publish.
 type PublishRequest struct {
 	ContentDataID types.ContentID `json:"content_data_id"`
+	Locale        string          `json:"locale"`
 }
 
 // PublishResponse is the JSON response for publish and unpublish operations.
@@ -51,7 +52,7 @@ type ScheduleResponse struct {
 // PublishHandler handles POST requests to publish content.
 // It builds a snapshot of the content tree, stores it as a versioned snapshot,
 // and marks the content as published.
-func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req PublishRequest
@@ -74,7 +75,7 @@ func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	d := db.ConfigDB(c)
 	ac := middleware.AuditContextFromRequest(r, c)
 
-	version, err := publishing.PublishContent(r.Context(), d, req.ContentDataID, user.UserID, ac, c.VersionMaxPerContent())
+	version, err := publishing.PublishContent(r.Context(), d, req.ContentDataID, req.Locale, user.UserID, ac, c.VersionMaxPerContent(), dispatcher)
 	if err != nil {
 		utility.DefaultLogger.Error("publish content failed", err)
 		// Return 409 Conflict for TOCTOU revision mismatch.
@@ -100,7 +101,7 @@ func PublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 
 // UnpublishHandler handles POST requests to unpublish content.
 // It clears the published flag and resets publish metadata to draft.
-func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req PublishRequest
@@ -123,7 +124,7 @@ func UnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	d := db.ConfigDB(c)
 	ac := middleware.AuditContextFromRequest(r, c)
 
-	if err := publishing.UnpublishContent(r.Context(), d, req.ContentDataID, user.UserID, ac); err != nil {
+	if err := publishing.UnpublishContent(r.Context(), d, req.ContentDataID, req.Locale, user.UserID, ac, dispatcher); err != nil {
 		utility.DefaultLogger.Error("unpublish content failed", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

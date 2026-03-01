@@ -193,3 +193,7 @@ WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = ?;
 -- name: ListContentDataDueForPublish :many
 SELECT * FROM content_data
 WHERE publish_at IS NOT NULL AND publish_at <= ? AND status = 'draft';
+
+-- name: ListContentDataByDatatypeID :many
+SELECT * FROM content_data
+WHERE datatype_id = ?;

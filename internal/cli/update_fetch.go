@@ -456,6 +456,24 @@ func (m Model) UpdateFetch(msg tea.Msg) (Model, tea.Cmd) {
 			PluginsFetchCmd(),
 		)
 
+	case WebhooksFetchMsg:
+		driver := m.DB
+		return m, func() tea.Msg {
+			list, err := driver.ListWebhooks()
+			if err != nil {
+				return FetchErrMsg{Error: err}
+			}
+			data := make([]db.Webhook, 0)
+			if list != nil {
+				data = *list
+			}
+			return WebhooksFetchResultsMsg{Data: data}
+		}
+
+	case WebhooksFetchResultsMsg:
+		m.WebhooksList = msg.Data
+		return m, LoadingStopCmd()
+
 	case FetchErrMsg:
 		// Handle an error from data fetching - show dialog to user
 		return m, tea.Batch(

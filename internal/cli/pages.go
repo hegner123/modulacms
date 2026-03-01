@@ -48,6 +48,7 @@ const (
 	DEPLOYPAGE
 	PIPELINESPAGE
 	PIPELINEDETAILPAGE
+	WEBHOOKSPAGE
 )
 
 // NewDatatypePage creates a new datatype page with the specified label.
@@ -117,6 +118,7 @@ func InitPages() *map[PageIndex]Page {
 	deployPage := NewPage(DEPLOYPAGE, "Deploy")
 	pipelinesPage := NewPage(PIPELINESPAGE, "Pipelines")
 	pipelineDetailPage := NewPage(PIPELINEDETAILPAGE, "Pipeline Detail")
+	webhooksPage := NewPage(WEBHOOKSPAGE, "Webhooks")
 
 	p := make(map[PageIndex]Page, 0)
 	p[HOMEPAGE] = homePage
@@ -155,5 +157,6 @@ func InitPages() *map[PageIndex]Page {
 	p[DEPLOYPAGE] = deployPage
 	p[PIPELINESPAGE] = pipelinesPage
 	p[PIPELINEDETAILPAGE] = pipelineDetailPage
+	p[WEBHOOKSPAGE] = webhooksPage
 	return &p
 }

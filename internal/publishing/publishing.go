@@ -11,6 +11,13 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// WebhookDispatcher is a consumer-defined interface for dispatching webhook events.
+// The concrete implementation lives in internal/webhooks. Defining the interface here
+// avoids an import cycle (publishing -> webhooks -> db vs webhooks -> db).
+type WebhookDispatcher interface {
+	Dispatch(ctx context.Context, event string, data map[string]any)
+}
+
 // PruneExcessVersions removes the oldest unlabeled, unpublished versions that
 // exceed the retention cap. It counts total versions first and only deletes the
 // excess (total - cap). If cap is 0, pruning is disabled (unlimited retention).
@@ -56,7 +63,10 @@ func PruneExcessAdminVersions(d db.DbDriver, adminContentDataID types.AdminConte
 
 // BuildSnapshot reads the content tree from live tables and assembles a Snapshot
 // suitable for JSON serialization and storage in content_versions.
-func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID) (*Snapshot, error) {
+// When locale is non-empty (i18n enabled), only fields matching that locale plus
+// non-translatable fields (locale="") are included. When locale is "" (i18n disabled),
+// all fields are included (current behavior).
+func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID, locale string) (*Snapshot, error) {
 	// 1. Fetch the content data tree (root + all descendants).
 	cdPtr, err := d.GetContentDataDescendants(ctx, rootID)
 	if err != nil {
@@ -88,13 +98,21 @@ func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID) (
 	}
 
 	// 3. Fetch content fields and field definitions for all content data rows.
+	// When locale is non-empty, use locale-aware query that returns matching
+	// locale + non-translatable (locale="") fields. Otherwise fetch all.
 	var allCF []db.ContentFields
 	var allFD []db.Fields
 	fieldCache := make(map[types.FieldID]db.Fields)
 
 	for _, c := range cd {
 		nullableID := types.NullableContentID{ID: c.ContentDataID, Valid: true}
-		cfPtr, cfErr := d.ListContentFieldsByContentData(nullableID)
+		var cfPtr *[]db.ContentFields
+		var cfErr error
+		if locale != "" {
+			cfPtr, cfErr = d.ListContentFieldsByContentDataAndLocale(nullableID, locale)
+		} else {
+			cfPtr, cfErr = d.ListContentFieldsByContentData(nullableID)
+		}
 		if cfErr != nil {
 			return nil, fmt.Errorf("fetch content fields for %s: %w", c.ContentDataID, cfErr)
 		}
@@ -171,8 +189,9 @@ func BuildSnapshot(d db.DbDriver, ctx context.Context, rootID types.ContentID) (
 // content version marked as published, and updates the content data's publish
 // metadata. It uses optimistic locking via the revision field to prevent
 // publishing stale data. retentionCap: max versions to keep (0 = unlimited).
+// locale specifies which locale to snapshot ("" for all fields / i18n disabled).
 // Async pruning runs after return.
-func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, userID types.UserID, ac audited.AuditContext, retentionCap int) (*db.ContentVersion, error) {
+func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher) (*db.ContentVersion, error) {
 	// 1. Read root's current revision for TOCTOU guard.
 	root, err := d.GetContentData(rootID)
 	if err != nil {
@@ -181,7 +200,7 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	revisionBefore := root.Revision
 
 	// 2. Build snapshot from live tables.
-	snapshot, err := BuildSnapshot(d, ctx, rootID)
+	snapshot, err := BuildSnapshot(d, ctx, rootID, locale)
 	if err != nil {
 		return nil, fmt.Errorf("build snapshot: %w", err)
 	}
@@ -202,14 +221,14 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	}
 
 	// 5. Get next version number.
-	maxVersion, err := d.GetMaxVersionNumber(rootID, "")
+	maxVersion, err := d.GetMaxVersionNumber(rootID, locale)
 	if err != nil {
 		return nil, fmt.Errorf("get max version number: %w", err)
 	}
 	nextVersion := maxVersion + 1
 
 	// 6. Clear published flag on all existing versions for this content+locale.
-	if clearErr := d.ClearPublishedFlag(rootID, ""); clearErr != nil {
+	if clearErr := d.ClearPublishedFlag(rootID, locale); clearErr != nil {
 		return nil, fmt.Errorf("clear published flag: %w", clearErr)
 	}
 
@@ -218,7 +237,7 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	version, err := d.CreateContentVersion(ctx, ac, db.CreateContentVersionParams{
 		ContentDataID: rootID,
 		VersionNumber: nextVersion,
-		Locale:        "",
+		Locale:        locale,
 		Snapshot:      string(snapshotBytes),
 		Trigger:       "publish",
 		Label:         "",
@@ -243,28 +262,54 @@ func PublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, 
 	}
 
 	// 9. Async: prune old versions if retention cap exceeded.
-	go PruneExcessVersions(d, rootID, "", retentionCap)
+	go PruneExcessVersions(d, rootID, locale, retentionCap)
+
+	// 10. Dispatch webhook event.
+	if dispatcher != nil {
+		dispatcher.Dispatch(ctx, "content.published", map[string]any{
+			"content_data_id":    rootID.String(),
+			"content_version_id": version.ContentVersionID.String(),
+			"version_number":     version.VersionNumber,
+			"locale":             locale,
+			"published_by":       userID.String(),
+		})
+	}
 
 	return version, nil
 }
 
 // UnpublishContent clears the published flag on all versions for the given
-// content data and resets the publish metadata to draft status.
-func UnpublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, userID types.UserID, ac audited.AuditContext) error {
-	// 1. Clear published flag on all versions.
-	if err := d.ClearPublishedFlag(rootID, ""); err != nil {
+// content data and locale, and resets the publish metadata to draft status.
+// locale specifies which locale to unpublish ("" for i18n disabled).
+func UnpublishContent(ctx context.Context, d db.DbDriver, rootID types.ContentID, locale string, userID types.UserID, ac audited.AuditContext, dispatcher WebhookDispatcher) error {
+	// 1. Clear published flag on all versions for this content+locale.
+	if err := d.ClearPublishedFlag(rootID, locale); err != nil {
 		return fmt.Errorf("clear published flag: %w", err)
 	}
 
 	// 2. Reset content data publish metadata to draft.
 	now := types.TimestampNow()
-	return d.UpdateContentDataPublishMeta(ctx, db.UpdateContentDataPublishMetaParams{
+	err := d.UpdateContentDataPublishMeta(ctx, db.UpdateContentDataPublishMetaParams{
 		Status:        types.ContentStatusDraft,
 		PublishedAt:   types.Timestamp{},
 		PublishedBy:   types.NullableUserID{},
 		DateModified:  now,
 		ContentDataID: rootID,
 	})
+	if err != nil {
+		return err
+	}
+
+	// 3. Dispatch webhook event.
+	if dispatcher != nil {
+		dispatcher.Dispatch(ctx, "content.unpublished", map[string]any{
+			"content_data_id": rootID.String(),
+			"locale":          locale,
+			"unpublished_by":  userID.String(),
+		})
+	}
+
+	return nil
 }
 
 // IsRevisionConflict checks whether an error is a TOCTOU revision conflict.

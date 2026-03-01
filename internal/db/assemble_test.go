@@ -699,7 +699,7 @@ func TestMapUserOauthView(t *testing.T) {
 		OauthProviderUserID: "12345",
 		AccessToken:         "secret-access-token",
 		RefreshToken:        "secret-refresh-token",
-		TokenExpiresAt:      "2026-12-31T23:59:59Z",
+		TokenExpiresAt:      types.TimestampNow(),
 		DateCreated:         types.TimestampNow(),
 	}
 
@@ -736,7 +736,7 @@ func TestMapTokenView(t *testing.T) {
 		ID:        "tok-1",
 		TokenType: "api",
 		Token:     "secret-token-value",
-		IssuedAt:  "2026-01-01T00:00:00Z",
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   false,
 	}

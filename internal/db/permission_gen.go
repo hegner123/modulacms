@@ -2,11 +2,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -46,6 +49,35 @@ func MapStringPermission(a Permissions) StringPermissions {
 // SQLITE
 //////////////////////////////
 
+// MAPS
+
+// MapPermission converts a sqlc-generated SQLite permission to the wrapper type.
+func (d Database) MapPermission(a mdb.Permissions) Permissions {
+	return Permissions{
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreatePermissionParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreatePermissionParams(a CreatePermissionParams) mdb.CreatePermissionParams {
+	return mdb.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdatePermissionParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdatePermissionParams(a UpdatePermissionParams) mdb.UpdatePermissionParams {
+	return mdb.UpdatePermissionParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		PermissionID:    a.PermissionID,
+	}
+}
+
 // QUERIES
 
 // CountPermissions returns the total number of permissions in the database.
@@ -63,6 +95,23 @@ func (d Database) CreatePermissionTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreatePermissionTable(d.Context)
 	return err
+}
+
+// CreatePermission inserts a new permission and records an audit event.
+func (d Database) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create permission: %w", err)
+	}
+	r := d.MapPermission(result)
+	return &r, nil
+}
+
+// DeletePermission removes a permission and records an audit event.
+func (d Database) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetPermission retrieves a permission by ID.
@@ -91,9 +140,48 @@ func (d Database) ListPermissions() (*[]Permissions, error) {
 	return &res, nil
 }
 
+// UpdatePermission modifies an existing permission and records an audit event.
+func (d Database) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
+
+// MAPS
+
+// MapPermission converts a sqlc-generated MySQL permission to the wrapper type.
+func (d MysqlDatabase) MapPermission(a mdbm.Permissions) Permissions {
+	return Permissions{
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreatePermissionParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbm.CreatePermissionParams {
+	return mdbm.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdatePermissionParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbm.UpdatePermissionParams {
+	return mdbm.UpdatePermissionParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		PermissionID:    a.PermissionID,
+	}
+}
 
 // QUERIES
 
@@ -112,6 +200,23 @@ func (d MysqlDatabase) CreatePermissionTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreatePermissionTable(d.Context)
 	return err
+}
+
+// CreatePermission inserts a new permission and records an audit event.
+func (d MysqlDatabase) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create permission: %w", err)
+	}
+	r := d.MapPermission(result)
+	return &r, nil
+}
+
+// DeletePermission removes a permission and records an audit event.
+func (d MysqlDatabase) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetPermission retrieves a permission by ID.
@@ -140,9 +245,48 @@ func (d MysqlDatabase) ListPermissions() (*[]Permissions, error) {
 	return &res, nil
 }
 
+// UpdatePermission modifies an existing permission and records an audit event.
+func (d MysqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
+
+// MAPS
+
+// MapPermission converts a sqlc-generated PostgreSQL permission to the wrapper type.
+func (d PsqlDatabase) MapPermission(a mdbp.Permissions) Permissions {
+	return Permissions{
+		PermissionID:    a.PermissionID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreatePermissionParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreatePermissionParams(a CreatePermissionParams) mdbp.CreatePermissionParams {
+	return mdbp.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdatePermissionParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdatePermissionParams(a UpdatePermissionParams) mdbp.UpdatePermissionParams {
+	return mdbp.UpdatePermissionParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		PermissionID:    a.PermissionID,
+	}
+}
 
 // QUERIES
 
@@ -161,6 +305,23 @@ func (d PsqlDatabase) CreatePermissionTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreatePermissionTable(d.Context)
 	return err
+}
+
+// CreatePermission inserts a new permission and records an audit event.
+func (d PsqlDatabase) CreatePermission(ctx context.Context, ac audited.AuditContext, s CreatePermissionParams) (*Permissions, error) {
+	cmd := d.NewPermissionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create permission: %w", err)
+	}
+	r := d.MapPermission(result)
+	return &r, nil
+}
+
+// DeletePermission removes a permission and records an audit event.
+func (d PsqlDatabase) DeletePermission(ctx context.Context, ac audited.AuditContext, id types.PermissionID) error {
+	cmd := d.DeletePermissionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetPermission retrieves a permission by ID.
@@ -187,4 +348,458 @@ func (d PsqlDatabase) ListPermissions() (*[]Permissions, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// UpdatePermission modifies an existing permission and records an audit event.
+func (d PsqlDatabase) UpdatePermission(ctx context.Context, ac audited.AuditContext, s UpdatePermissionParams) (*string, error) {
+	cmd := d.UpdatePermissionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update permission: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+// NewPermissionCmd is an audited command for creating permissions.
+type NewPermissionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewPermissionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewPermissionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewPermissionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewPermissionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewPermissionCmd) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c NewPermissionCmd) Params() any { return c.params }
+
+// GetID extracts the ID from a permission record.
+func (c NewPermissionCmd) GetID(u mdb.Permissions) string { return string(u.PermissionID) }
+
+// Execute creates the permission in the database.
+func (c NewPermissionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Permissions, error) {
+	queries := mdb.New(tx)
+	return queries.CreatePermission(ctx, mdb.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	})
+}
+
+// NewPermissionCmd creates a command for inserting a permission.
+func (d Database) NewPermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreatePermissionParams) NewPermissionCmd {
+	return NewPermissionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+// UpdatePermissionCmd is an audited command for updating permissions.
+type UpdatePermissionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdatePermissionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdatePermissionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdatePermissionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdatePermissionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdatePermissionCmd) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c UpdatePermissionCmd) Params() any { return c.params }
+
+// GetID returns the permission ID for this command.
+func (c UpdatePermissionCmd) GetID() string { return string(c.params.PermissionID) }
+
+// GetBefore retrieves the permission before the update.
+func (c UpdatePermissionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Permissions, error) {
+	queries := mdb.New(tx)
+	return queries.GetPermission(ctx, mdb.GetPermissionParams{PermissionID: c.params.PermissionID})
+}
+
+// Execute updates the permission in the database.
+func (c UpdatePermissionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdatePermission(ctx, mdb.UpdatePermissionParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		PermissionID:    c.params.PermissionID,
+	})
+}
+
+// UpdatePermissionCmd creates a command for updating a permission.
+func (d Database) UpdatePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdatePermissionParams) UpdatePermissionCmd {
+	return UpdatePermissionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+// DeletePermissionCmd is an audited command for deleting permissions.
+type DeletePermissionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.PermissionID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeletePermissionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeletePermissionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeletePermissionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeletePermissionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeletePermissionCmd) TableName() string { return "permissions" }
+
+// GetID returns the permission ID for this command.
+func (c DeletePermissionCmd) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the permission before the delete.
+func (c DeletePermissionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Permissions, error) {
+	queries := mdb.New(tx)
+	return queries.GetPermission(ctx, mdb.GetPermissionParams{PermissionID: c.id})
+}
+
+// Execute deletes the permission from the database.
+func (c DeletePermissionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeletePermission(ctx, mdb.DeletePermissionParams{PermissionID: c.id})
+}
+
+// DeletePermissionCmd creates a command for deleting a permission.
+func (d Database) DeletePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.PermissionID) DeletePermissionCmd {
+	return DeletePermissionCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+// NewPermissionCmdMysql is an audited command for creating permissions in MySQL.
+type NewPermissionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewPermissionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewPermissionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewPermissionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewPermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewPermissionCmdMysql) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c NewPermissionCmdMysql) Params() any { return c.params }
+
+// GetID extracts the ID from a permission record.
+func (c NewPermissionCmdMysql) GetID(u mdbm.Permissions) string { return string(u.PermissionID) }
+
+// Execute creates the permission in the database.
+func (c NewPermissionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Permissions, error) {
+	queries := mdbm.New(tx)
+	params := mdbm.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	}
+	if err := queries.CreatePermission(ctx, params); err != nil {
+		return mdbm.Permissions{}, err
+	}
+	return queries.GetPermission(ctx, mdbm.GetPermissionParams{PermissionID: params.PermissionID})
+}
+
+// NewPermissionCmd creates a command for inserting a permission.
+func (d MysqlDatabase) NewPermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreatePermissionParams) NewPermissionCmdMysql {
+	return NewPermissionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+// UpdatePermissionCmdMysql is an audited command for updating permissions in MySQL.
+type UpdatePermissionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdatePermissionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdatePermissionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdatePermissionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdatePermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdatePermissionCmdMysql) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c UpdatePermissionCmdMysql) Params() any { return c.params }
+
+// GetID returns the permission ID for this command.
+func (c UpdatePermissionCmdMysql) GetID() string { return string(c.params.PermissionID) }
+
+// GetBefore retrieves the permission before the update.
+func (c UpdatePermissionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Permissions, error) {
+	queries := mdbm.New(tx)
+	return queries.GetPermission(ctx, mdbm.GetPermissionParams{PermissionID: c.params.PermissionID})
+}
+
+// Execute updates the permission in the database.
+func (c UpdatePermissionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdatePermission(ctx, mdbm.UpdatePermissionParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		PermissionID:    c.params.PermissionID,
+	})
+}
+
+// UpdatePermissionCmd creates a command for updating a permission.
+func (d MysqlDatabase) UpdatePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdatePermissionParams) UpdatePermissionCmdMysql {
+	return UpdatePermissionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+// DeletePermissionCmdMysql is an audited command for deleting permissions in MySQL.
+type DeletePermissionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.PermissionID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeletePermissionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeletePermissionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeletePermissionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeletePermissionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeletePermissionCmdMysql) TableName() string { return "permissions" }
+
+// GetID returns the permission ID for this command.
+func (c DeletePermissionCmdMysql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the permission before the delete.
+func (c DeletePermissionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Permissions, error) {
+	queries := mdbm.New(tx)
+	return queries.GetPermission(ctx, mdbm.GetPermissionParams{PermissionID: c.id})
+}
+
+// Execute deletes the permission from the database.
+func (c DeletePermissionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeletePermission(ctx, mdbm.DeletePermissionParams{PermissionID: c.id})
+}
+
+// DeletePermissionCmd creates a command for deleting a permission.
+func (d MysqlDatabase) DeletePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.PermissionID) DeletePermissionCmdMysql {
+	return DeletePermissionCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+// NewPermissionCmdPsql is an audited command for creating permissions in PostgreSQL.
+type NewPermissionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewPermissionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewPermissionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewPermissionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewPermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewPermissionCmdPsql) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c NewPermissionCmdPsql) Params() any { return c.params }
+
+// GetID extracts the ID from a permission record.
+func (c NewPermissionCmdPsql) GetID(u mdbp.Permissions) string { return string(u.PermissionID) }
+
+// Execute creates the permission in the database.
+func (c NewPermissionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Permissions, error) {
+	queries := mdbp.New(tx)
+	return queries.CreatePermission(ctx, mdbp.CreatePermissionParams{
+		PermissionID:    types.NewPermissionID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	})
+}
+
+// NewPermissionCmd creates a command for inserting a permission.
+func (d PsqlDatabase) NewPermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreatePermissionParams) NewPermissionCmdPsql {
+	return NewPermissionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+// UpdatePermissionCmdPsql is an audited command for updating permissions in PostgreSQL.
+type UpdatePermissionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdatePermissionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdatePermissionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdatePermissionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdatePermissionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdatePermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdatePermissionCmdPsql) TableName() string { return "permissions" }
+
+// Params returns the parameters for this command.
+func (c UpdatePermissionCmdPsql) Params() any { return c.params }
+
+// GetID returns the permission ID for this command.
+func (c UpdatePermissionCmdPsql) GetID() string { return string(c.params.PermissionID) }
+
+// GetBefore retrieves the permission before the update.
+func (c UpdatePermissionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Permissions, error) {
+	queries := mdbp.New(tx)
+	return queries.GetPermission(ctx, mdbp.GetPermissionParams{PermissionID: c.params.PermissionID})
+}
+
+// Execute updates the permission in the database.
+func (c UpdatePermissionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdatePermission(ctx, mdbp.UpdatePermissionParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		PermissionID:    c.params.PermissionID,
+	})
+}
+
+// UpdatePermissionCmd creates a command for updating a permission.
+func (d PsqlDatabase) UpdatePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdatePermissionParams) UpdatePermissionCmdPsql {
+	return UpdatePermissionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+// DeletePermissionCmdPsql is an audited command for deleting permissions in PostgreSQL.
+type DeletePermissionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.PermissionID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeletePermissionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeletePermissionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeletePermissionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeletePermissionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeletePermissionCmdPsql) TableName() string { return "permissions" }
+
+// GetID returns the permission ID for this command.
+func (c DeletePermissionCmdPsql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the permission before the delete.
+func (c DeletePermissionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Permissions, error) {
+	queries := mdbp.New(tx)
+	return queries.GetPermission(ctx, mdbp.GetPermissionParams{PermissionID: c.id})
+}
+
+// Execute deletes the permission from the database.
+func (c DeletePermissionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeletePermission(ctx, mdbp.DeletePermissionParams{PermissionID: c.id})
+}
+
+// DeletePermissionCmd creates a command for deleting a permission.
+func (d PsqlDatabase) DeletePermissionCmd(ctx context.Context, auditCtx audited.AuditContext, id types.PermissionID) DeletePermissionCmdPsql {
+	return DeletePermissionCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

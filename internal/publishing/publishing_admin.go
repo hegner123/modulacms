@@ -13,7 +13,9 @@ import (
 // BuildAdminSnapshot reads the admin content tree from live tables and assembles
 // an AdminSnapshot suitable for JSON serialization and storage in admin_content_versions.
 // It fetches all content data for the route and filters to the root and its descendants.
-func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminContentID) (*AdminSnapshot, error) {
+// When locale is non-empty (i18n enabled), only fields matching that locale plus
+// non-translatable fields (locale="") are included.
+func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminContentID, locale string) (*AdminSnapshot, error) {
 	// 1. Fetch root content data to determine its route.
 	root, err := d.GetAdminContentData(rootID)
 	if err != nil {
@@ -84,7 +86,14 @@ func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminCo
 	}
 
 	// 5. Fetch content fields for the entire route, then filter to descendants.
-	allCFPtr, err := d.ListAdminContentFieldsByRoute(root.AdminRouteID)
+	// When locale is non-empty, use locale-aware query that returns matching
+	// locale + non-translatable (locale="") fields.
+	var allCFPtr *[]db.AdminContentFields
+	if locale != "" {
+		allCFPtr, err = d.ListAdminContentFieldsByRouteAndLocale(root.AdminRouteID, locale)
+	} else {
+		allCFPtr, err = d.ListAdminContentFieldsByRoute(root.AdminRouteID)
+	}
 	if err != nil {
 		return nil, fmt.Errorf("list admin content fields by route: %w", err)
 	}
@@ -159,8 +168,10 @@ func BuildAdminSnapshot(d db.DbDriver, ctx context.Context, rootID types.AdminCo
 }
 
 // PublishAdminContent builds a snapshot and publishes admin content.
-// retentionCap: max versions to keep (0 = unlimited). Async pruning runs after return.
-func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, userID types.UserID, ac audited.AuditContext, retentionCap int) error {
+// retentionCap: max versions to keep (0 = unlimited).
+// locale specifies which locale to snapshot ("" for all fields / i18n disabled).
+// Async pruning runs after return.
+func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, locale string, userID types.UserID, ac audited.AuditContext, retentionCap int, dispatcher WebhookDispatcher) error {
 	// Read root's current revision for TOCTOU guard.
 	root, err := d.GetAdminContentData(rootID)
 	if err != nil {
@@ -169,7 +180,7 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 	revisionBefore := root.Revision
 
 	// Build snapshot.
-	snapshot, err := BuildAdminSnapshot(d, ctx, rootID)
+	snapshot, err := BuildAdminSnapshot(d, ctx, rootID, locale)
 	if err != nil {
 		return fmt.Errorf("build admin snapshot: %w", err)
 	}
@@ -190,14 +201,14 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 	}
 
 	// Get next version number.
-	maxVersion, err := d.GetAdminMaxVersionNumber(rootID, "")
+	maxVersion, err := d.GetAdminMaxVersionNumber(rootID, locale)
 	if err != nil {
 		return fmt.Errorf("get admin max version number: %w", err)
 	}
 	nextVersion := maxVersion + 1
 
 	// Clear published flag.
-	if clearErr := d.ClearAdminPublishedFlag(rootID, ""); clearErr != nil {
+	if clearErr := d.ClearAdminPublishedFlag(rootID, locale); clearErr != nil {
 		return fmt.Errorf("clear admin published flag: %w", clearErr)
 	}
 
@@ -206,7 +217,7 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 	_, err = d.CreateAdminContentVersion(ctx, ac, db.CreateAdminContentVersionParams{
 		AdminContentDataID: rootID,
 		VersionNumber:      nextVersion,
-		Locale:             "",
+		Locale:             locale,
 		Snapshot:           string(snapshotBytes),
 		Trigger:            "publish",
 		Label:              "",
@@ -231,23 +242,47 @@ func PublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminC
 	}
 
 	// Async prune.
-	go PruneExcessAdminVersions(d, rootID, "", retentionCap)
+	go PruneExcessAdminVersions(d, rootID, locale, retentionCap)
+
+	// Dispatch webhook event.
+	if dispatcher != nil {
+		dispatcher.Dispatch(ctx, "admin.content.published", map[string]any{
+			"admin_content_data_id": rootID.String(),
+			"locale":                locale,
+			"published_by":          userID.String(),
+		})
+	}
 
 	return nil
 }
 
 // UnpublishAdminContent clears the published flag and resets publish metadata.
-func UnpublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, userID types.UserID, ac audited.AuditContext) error {
-	if err := d.ClearAdminPublishedFlag(rootID, ""); err != nil {
+// locale specifies which locale to unpublish ("" for i18n disabled).
+func UnpublishAdminContent(ctx context.Context, d db.DbDriver, rootID types.AdminContentID, locale string, userID types.UserID, ac audited.AuditContext, dispatcher WebhookDispatcher) error {
+	if err := d.ClearAdminPublishedFlag(rootID, locale); err != nil {
 		return fmt.Errorf("clear admin published flag: %w", err)
 	}
 
 	now := types.TimestampNow()
-	return d.UpdateAdminContentDataPublishMeta(ctx, db.UpdateAdminContentDataPublishMetaParams{
+	err := d.UpdateAdminContentDataPublishMeta(ctx, db.UpdateAdminContentDataPublishMetaParams{
 		Status:             types.ContentStatusDraft,
 		PublishedAt:        types.Timestamp{},
 		PublishedBy:        types.NullableUserID{},
 		DateModified:       now,
 		AdminContentDataID: rootID,
 	})
+	if err != nil {
+		return err
+	}
+
+	// Dispatch webhook event.
+	if dispatcher != nil {
+		dispatcher.Dispatch(ctx, "admin.content.unpublished", map[string]any{
+			"admin_content_data_id": rootID.String(),
+			"locale":                locale,
+			"unpublished_by":        userID.String(),
+		})
+	}
+
+	return nil
 }

@@ -163,6 +163,13 @@ public struct AdminRouteID: ResourceID {
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }
 
+// MARK: - Locale IDs
+
+public struct LocaleID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
 // MARK: - Version IDs
 
 public struct ContentVersionID: ResourceID {
@@ -171,6 +178,18 @@ public struct ContentVersionID: ResourceID {
 }
 
 public struct AdminContentVersionID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
+// MARK: - Webhook IDs
+
+public struct WebhookID: ResourceID {
+    public let rawValue: String
+    public init(_ rawValue: String) { self.rawValue = rawValue }
+}
+
+public struct WebhookDeliveryID: ResourceID {
     public let rawValue: String
     public init(_ rawValue: String) { self.rawValue = rawValue }
 }

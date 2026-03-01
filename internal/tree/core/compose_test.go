@@ -382,7 +382,7 @@ func TestComposeTrees_EmptyFieldValueSkipped(t *testing.T) {
 
 	rootNode := makeNode(rootID, string(types.DatatypeTypeRoot), "page")
 	refNode := makeNode(refNodeID, string(types.DatatypeTypeReference), "partial_ref")
-	addRefField(refNode, "")              // empty — should be skipped
+	addRefField(refNode, "")               // empty — should be skipped
 	addRefField(refNode, string(targetID)) // valid
 
 	attachChild(rootNode, refNode)
@@ -421,9 +421,9 @@ func TestComposeTrees_NonRefFieldsIgnored(t *testing.T) {
 
 	rootNode := makeNode(rootID, string(types.DatatypeTypeRoot), "page")
 	refNode := makeNode(refNodeID, string(types.DatatypeTypeReference), "mixed_ref")
-	addTextField(refNode, "title", "Navigation")       // text field — should be ignored
-	addRefField(refNode, string(targetID))              // ref field — should be resolved
-	addTextField(refNode, "description", "Site nav")    // text field — should be ignored
+	addTextField(refNode, "title", "Navigation")     // text field — should be ignored
+	addRefField(refNode, string(targetID))           // ref field — should be resolved
+	addTextField(refNode, "description", "Site nav") // text field — should be ignored
 
 	attachChild(rootNode, refNode)
 

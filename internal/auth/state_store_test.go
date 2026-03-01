@@ -142,7 +142,7 @@ func TestValidateState(t *testing.T) {
 	tests := []struct {
 		name    string
 		setup   func(t *testing.T) string // returns the state to validate
-		wantErr string                     // empty means no error expected
+		wantErr string                    // empty means no error expected
 	}{
 		{
 			name: "valid state succeeds",

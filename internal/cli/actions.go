@@ -467,7 +467,7 @@ func runGenerateAPIToken(cfg *config.Config, userID types.UserID) tea.Cmd {
 			UserID:    types.NullableUserID{ID: ownerID, Valid: true},
 			TokenType: "api_key",
 			Token:     token,
-			IssuedAt:  now.Format(time.RFC3339),
+			IssuedAt:  types.NewTimestamp(now),
 			ExpiresAt: types.NewTimestamp(expiry),
 			Revoked:   false,
 		})

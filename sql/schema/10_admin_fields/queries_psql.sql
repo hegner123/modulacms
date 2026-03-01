@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text'::TEXT NOT NULL,
+    translatable BOOLEAN NOT NULL DEFAULT FALSE,
+    roles TEXT DEFAULT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
             ON UPDATE CASCADE ON DELETE SET NULL,
@@ -54,6 +56,8 @@ INSERT INTO admin_fields (
     validation,
     ui_config,
     type,
+    translatable,
+    roles,
     author_id,
     date_created,
     date_modified
@@ -69,7 +73,9 @@ INSERT INTO admin_fields (
     $9,
     $10,
     $11,
-    $12
+    $12,
+    $13,
+    $14
 )
 RETURNING *;
 
@@ -83,10 +89,12 @@ SET parent_id    = $1,
     validation   = $6,
     ui_config    = $7,
     type         = $8,
-    author_id    = $9,
-    date_created = $10,
-    date_modified= $11
-WHERE admin_field_id = $12;
+    translatable = $9,
+    roles        = $10,
+    author_id    = $11,
+    date_created = $12,
+    date_modified= $13
+WHERE admin_field_id = $14;
 
 -- name: DeleteAdminField :exec
 DELETE FROM admin_fields

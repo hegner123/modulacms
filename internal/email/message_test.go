@@ -69,39 +69,39 @@ func TestMessage_Validate(t *testing.T) {
 	validTo := []Address{NewAddress("Recip", "recip@example.com")}
 
 	tests := []struct {
-		name    string
-		msg     Message
-		wantErr bool
+		name     string
+		msg      Message
+		wantErr  bool
 		errField string
 	}{
 		{
-			name:    "missing from",
-			msg:     Message{To: validTo, Subject: "Hi", PlainBody: "body"},
-			wantErr: true,
+			name:     "missing from",
+			msg:      Message{To: validTo, Subject: "Hi", PlainBody: "body"},
+			wantErr:  true,
 			errField: "From",
 		},
 		{
-			name:    "empty to",
-			msg:     Message{From: validFrom, Subject: "Hi", PlainBody: "body"},
-			wantErr: true,
+			name:     "empty to",
+			msg:      Message{From: validFrom, Subject: "Hi", PlainBody: "body"},
+			wantErr:  true,
 			errField: "To",
 		},
 		{
-			name:    "invalid to addr",
-			msg:     Message{From: validFrom, To: []Address{NewAddress("", "bad")}, Subject: "Hi", PlainBody: "body"},
-			wantErr: true,
+			name:     "invalid to addr",
+			msg:      Message{From: validFrom, To: []Address{NewAddress("", "bad")}, Subject: "Hi", PlainBody: "body"},
+			wantErr:  true,
 			errField: "To",
 		},
 		{
-			name:    "empty subject",
-			msg:     Message{From: validFrom, To: validTo, Subject: "", PlainBody: "body"},
-			wantErr: true,
+			name:     "empty subject",
+			msg:      Message{From: validFrom, To: validTo, Subject: "", PlainBody: "body"},
+			wantErr:  true,
 			errField: "Subject",
 		},
 		{
-			name:    "no body",
-			msg:     Message{From: validFrom, To: validTo, Subject: "Hi"},
-			wantErr: true,
+			name:     "no body",
+			msg:      Message{From: validFrom, To: validTo, Subject: "Hi"},
+			wantErr:  true,
 			errField: "Body",
 		},
 		{
@@ -125,7 +125,7 @@ func TestMessage_Validate(t *testing.T) {
 				From: validFrom, To: validTo, Subject: "Hi", PlainBody: "body",
 				Attachments: []Attachment{{Filename: "", ContentType: "text/plain", Data: []byte("x")}},
 			},
-			wantErr: true,
+			wantErr:  true,
 			errField: "Attachment",
 		},
 		{
@@ -136,7 +136,7 @@ func TestMessage_Validate(t *testing.T) {
 					{Filename: "big.bin", ContentType: "application/octet-stream", Data: make([]byte, 8*1024*1024)},
 				},
 			},
-			wantErr: true,
+			wantErr:  true,
 			errField: "Attachments",
 		},
 		{
@@ -148,7 +148,7 @@ func TestMessage_Validate(t *testing.T) {
 				}
 				return Message{From: validFrom, To: to, Subject: "Hi", PlainBody: "body"}
 			}(),
-			wantErr: true,
+			wantErr:  true,
 			errField: "Recipients",
 		},
 		{
@@ -157,7 +157,7 @@ func TestMessage_Validate(t *testing.T) {
 				From: validFrom, To: validTo, Subject: "Hi", PlainBody: "body",
 				Headers: map[string]string{"X-Bad:Key": "value"},
 			},
-			wantErr: true,
+			wantErr:  true,
 			errField: "Headers",
 		},
 		{
@@ -166,7 +166,7 @@ func TestMessage_Validate(t *testing.T) {
 				From: validFrom, To: validTo, Subject: "Hi", PlainBody: "body",
 				Headers: map[string]string{"X-Bad\x00Key": "value"},
 			},
-			wantErr: true,
+			wantErr:  true,
 			errField: "Headers",
 		},
 		{
@@ -175,7 +175,7 @@ func TestMessage_Validate(t *testing.T) {
 				From: validFrom, To: validTo, Subject: "Hi", PlainBody: "body",
 				Headers: map[string]string{"X-Good": "value\r\nInjected: header"},
 			},
-			wantErr: true,
+			wantErr:  true,
 			errField: "Headers",
 		},
 	}

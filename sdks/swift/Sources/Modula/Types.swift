@@ -145,6 +145,7 @@ public struct ContentField: Codable, Sendable {
     public let contentDataID: ContentID?
     public let fieldID: FieldID?
     public let fieldValue: String
+    public let locale: String
     public let authorID: UserID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
@@ -155,6 +156,7 @@ public struct ContentField: Codable, Sendable {
         case contentDataID = "content_data_id"
         case fieldID = "field_id"
         case fieldValue = "field_value"
+        case locale
         case authorID = "author_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
@@ -390,6 +392,8 @@ public struct Field: Codable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let translatable: Int
+    public let roles: [String]?
     public let authorID: UserID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
@@ -404,6 +408,8 @@ public struct Field: Codable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case translatable
+        case roles
         case authorID = "author_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
@@ -420,6 +426,7 @@ public struct CreateFieldParams: Encodable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let roles: [String]?
     public let authorID: UserID
 
     public init(
@@ -432,6 +439,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         validation: String,
         uiConfig: String,
         type: FieldType,
+        roles: [String]? = nil,
         authorID: UserID
     ) {
         self.fieldID = fieldID
@@ -443,6 +451,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         self.validation = validation
         self.uiConfig = uiConfig
         self.type = type
+        self.roles = roles
         self.authorID = authorID
     }
 
@@ -456,6 +465,7 @@ public struct CreateFieldParams: Encodable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case roles
         case authorID = "author_id"
     }
 }
@@ -470,6 +480,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let roles: [String]?
     public let authorID: UserID
 
     public init(
@@ -482,6 +493,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         validation: String,
         uiConfig: String,
         type: FieldType,
+        roles: [String]? = nil,
         authorID: UserID
     ) {
         self.fieldID = fieldID
@@ -493,6 +505,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         self.validation = validation
         self.uiConfig = uiConfig
         self.type = type
+        self.roles = roles
         self.authorID = authorID
     }
 
@@ -506,6 +519,7 @@ public struct UpdateFieldParams: Encodable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case roles
         case authorID = "author_id"
     }
 }
@@ -1443,6 +1457,7 @@ public struct AdminContentField: Codable, Sendable {
     public let adminContentDataID: AdminContentID?
     public let adminFieldID: AdminFieldID?
     public let adminFieldValue: String
+    public let locale: String
     public let authorID: UserID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
@@ -1453,6 +1468,7 @@ public struct AdminContentField: Codable, Sendable {
         case adminContentDataID = "admin_content_data_id"
         case adminFieldID = "admin_field_id"
         case adminFieldValue = "admin_field_value"
+        case locale
         case authorID = "author_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
@@ -1643,6 +1659,8 @@ public struct AdminField: Codable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let translatable: Int
+    public let roles: [String]?
     public let authorID: UserID?
     public let dateCreated: Timestamp
     public let dateModified: Timestamp
@@ -1657,6 +1675,8 @@ public struct AdminField: Codable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case translatable
+        case roles
         case authorID = "author_id"
         case dateCreated = "date_created"
         case dateModified = "date_modified"
@@ -1672,6 +1692,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let roles: [String]?
     public let authorID: UserID
 
     public init(
@@ -1683,6 +1704,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         validation: String,
         uiConfig: String,
         type: FieldType,
+        roles: [String]? = nil,
         authorID: UserID
     ) {
         self.parentID = parentID
@@ -1693,6 +1715,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         self.validation = validation
         self.uiConfig = uiConfig
         self.type = type
+        self.roles = roles
         self.authorID = authorID
     }
 
@@ -1705,6 +1728,7 @@ public struct CreateAdminFieldParams: Encodable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case roles
         case authorID = "author_id"
     }
 }
@@ -1719,6 +1743,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
     public let validation: String
     public let uiConfig: String
     public let type: FieldType
+    public let roles: [String]?
     public let authorID: UserID
 
     public init(
@@ -1731,6 +1756,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         validation: String,
         uiConfig: String,
         type: FieldType,
+        roles: [String]? = nil,
         authorID: UserID
     ) {
         self.adminFieldID = adminFieldID
@@ -1742,6 +1768,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         self.validation = validation
         self.uiConfig = uiConfig
         self.type = type
+        self.roles = roles
         self.authorID = authorID
     }
 
@@ -1755,6 +1782,7 @@ public struct UpdateAdminFieldParams: Encodable, Sendable {
         case validation
         case uiConfig = "ui_config"
         case type
+        case roles
         case authorID = "author_id"
     }
 }
@@ -2270,26 +2298,32 @@ public struct AdminContentVersion: Codable, Sendable {
 /// Request body for publishing content.
 public struct PublishRequest: Encodable, Sendable {
     public let contentDataID: ContentID
+    public let locale: String?
 
-    public init(contentDataID: ContentID) {
+    public init(contentDataID: ContentID, locale: String? = nil) {
         self.contentDataID = contentDataID
+        self.locale = locale
     }
 
     enum CodingKeys: String, CodingKey {
         case contentDataID = "content_data_id"
+        case locale
     }
 }
 
 /// Request body for publishing admin content.
 public struct AdminPublishRequest: Encodable, Sendable {
     public let adminContentDataID: AdminContentID
+    public let locale: String?
 
-    public init(adminContentDataID: AdminContentID) {
+    public init(adminContentDataID: AdminContentID, locale: String? = nil) {
         self.adminContentDataID = adminContentDataID
+        self.locale = locale
     }
 
     enum CodingKeys: String, CodingKey {
         case adminContentDataID = "admin_content_data_id"
+        case locale
     }
 }
 
@@ -2476,5 +2510,273 @@ public struct AdminRestoreResponse: Decodable, Sendable {
         case restoredVersionID = "restored_version_id"
         case fieldsRestored = "fields_restored"
         case unmappedFields = "unmapped_fields"
+    }
+}
+
+// MARK: - Locale
+
+/// A locale configuration for i18n content.
+public struct Locale: Codable, Sendable {
+    public let localeID: LocaleID
+    public let code: String
+    public let label: String
+    public let isDefault: Bool
+    public let isEnabled: Bool
+    public let fallbackCode: String
+    public let sortOrder: Int64
+    public let dateCreated: String
+
+    enum CodingKeys: String, CodingKey {
+        case localeID = "locale_id"
+        case code
+        case label
+        case isDefault = "is_default"
+        case isEnabled = "is_enabled"
+        case fallbackCode = "fallback_code"
+        case sortOrder = "sort_order"
+        case dateCreated = "date_created"
+    }
+}
+
+/// Parameters for creating a new locale.
+public struct CreateLocaleRequest: Encodable, Sendable {
+    public let code: String
+    public let label: String
+    public let isDefault: Bool
+    public let isEnabled: Bool
+    public let fallbackCode: String?
+    public let sortOrder: Int64
+
+    public init(
+        code: String,
+        label: String,
+        isDefault: Bool = false,
+        isEnabled: Bool = true,
+        fallbackCode: String? = nil,
+        sortOrder: Int64 = 0
+    ) {
+        self.code = code
+        self.label = label
+        self.isDefault = isDefault
+        self.isEnabled = isEnabled
+        self.fallbackCode = fallbackCode
+        self.sortOrder = sortOrder
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case code
+        case label
+        case isDefault = "is_default"
+        case isEnabled = "is_enabled"
+        case fallbackCode = "fallback_code"
+        case sortOrder = "sort_order"
+    }
+}
+
+/// Parameters for updating an existing locale.
+public struct UpdateLocaleRequest: Encodable, Sendable {
+    public let localeID: LocaleID
+    public let code: String
+    public let label: String
+    public let isDefault: Bool
+    public let isEnabled: Bool
+    public let fallbackCode: String?
+    public let sortOrder: Int64
+
+    public init(
+        localeID: LocaleID,
+        code: String,
+        label: String,
+        isDefault: Bool = false,
+        isEnabled: Bool = true,
+        fallbackCode: String? = nil,
+        sortOrder: Int64 = 0
+    ) {
+        self.localeID = localeID
+        self.code = code
+        self.label = label
+        self.isDefault = isDefault
+        self.isEnabled = isEnabled
+        self.fallbackCode = fallbackCode
+        self.sortOrder = sortOrder
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case localeID = "locale_id"
+        case code
+        case label
+        case isDefault = "is_default"
+        case isEnabled = "is_enabled"
+        case fallbackCode = "fallback_code"
+        case sortOrder = "sort_order"
+    }
+}
+
+/// Request body for creating translations for a content item.
+public struct CreateTranslationRequest: Encodable, Sendable {
+    public let locale: String
+
+    public init(locale: String) {
+        self.locale = locale
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case locale
+    }
+}
+
+/// Response from a translation creation operation.
+public struct CreateTranslationResponse: Decodable, Sendable {
+    public let locale: String
+    public let fieldsCreated: Int
+
+    enum CodingKeys: String, CodingKey {
+        case locale
+        case fieldsCreated = "fields_created"
+    }
+}
+
+// MARK: - Webhook
+
+/// A webhook endpoint that receives event notifications.
+public struct Webhook: Codable, Sendable {
+    public let webhookID: WebhookID
+    public let name: String
+    public let url: String
+    public let secret: String
+    public let events: [String]
+    public let isActive: Bool
+    public let headers: [String: String]
+    public let authorID: UserID
+    public let dateCreated: String
+    public let dateModified: String
+
+    enum CodingKeys: String, CodingKey {
+        case webhookID = "webhook_id"
+        case name
+        case url
+        case secret
+        case events
+        case isActive = "is_active"
+        case headers
+        case authorID = "author_id"
+        case dateCreated = "date_created"
+        case dateModified = "date_modified"
+    }
+}
+
+/// Parameters for creating a new webhook.
+public struct CreateWebhookRequest: Encodable, Sendable {
+    public let name: String
+    public let url: String
+    public let secret: String?
+    public let events: [String]
+    public let isActive: Bool
+    public let headers: [String: String]?
+
+    public init(
+        name: String,
+        url: String,
+        secret: String? = nil,
+        events: [String],
+        isActive: Bool = true,
+        headers: [String: String]? = nil
+    ) {
+        self.name = name
+        self.url = url
+        self.secret = secret
+        self.events = events
+        self.isActive = isActive
+        self.headers = headers
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case url
+        case secret
+        case events
+        case isActive = "is_active"
+        case headers
+    }
+}
+
+/// Parameters for updating an existing webhook.
+public struct UpdateWebhookRequest: Encodable, Sendable {
+    public let webhookID: WebhookID
+    public let name: String
+    public let url: String
+    public let secret: String?
+    public let events: [String]
+    public let isActive: Bool
+    public let headers: [String: String]?
+
+    public init(
+        webhookID: WebhookID,
+        name: String,
+        url: String,
+        secret: String? = nil,
+        events: [String],
+        isActive: Bool = true,
+        headers: [String: String]? = nil
+    ) {
+        self.webhookID = webhookID
+        self.name = name
+        self.url = url
+        self.secret = secret
+        self.events = events
+        self.isActive = isActive
+        self.headers = headers
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case webhookID = "webhook_id"
+        case name
+        case url
+        case secret
+        case events
+        case isActive = "is_active"
+        case headers
+    }
+}
+
+/// A single delivery attempt for a webhook event.
+public struct WebhookDelivery: Codable, Sendable {
+    public let deliveryID: WebhookDeliveryID
+    public let webhookID: WebhookID
+    public let event: String
+    public let payload: String
+    public let status: String
+    public let attempts: Int64
+    public let lastStatusCode: Int64
+    public let lastError: String
+    public let nextRetryAt: String
+    public let createdAt: String
+    public let completedAt: String
+
+    enum CodingKeys: String, CodingKey {
+        case deliveryID = "delivery_id"
+        case webhookID = "webhook_id"
+        case event
+        case payload
+        case status
+        case attempts
+        case lastStatusCode = "last_status_code"
+        case lastError = "last_error"
+        case nextRetryAt = "next_retry_at"
+        case createdAt = "created_at"
+        case completedAt = "completed_at"
+    }
+}
+
+/// Response from a webhook test request.
+public struct WebhookTestResponse: Decodable, Sendable {
+    public let status: String
+    public let statusCode: Int?
+    public let error: String?
+
+    enum CodingKeys: String, CodingKey {
+        case status
+        case statusCode = "status_code"
+        case error
     }
 }

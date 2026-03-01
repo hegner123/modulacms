@@ -30,8 +30,10 @@ import (
 	"github.com/hegner123/modulacms/internal/install"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/router"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/webhooks"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/acme/autocert"
 )
@@ -107,6 +109,16 @@ var serveCmd = &cobra.Command{
 		// Ensure "content:publish" permission exists (backfill for upgrades).
 		if ensureErr := db.EnsurePublishPermission(rootCtx, driver); ensureErr != nil {
 			utility.DefaultLogger.Warn("EnsurePublishPermission failed", ensureErr)
+		}
+
+		// Ensure locale CRUD permissions exist (backfill for upgrades).
+		if ensureErr := db.EnsureLocalePermissions(rootCtx, driver); ensureErr != nil {
+			utility.DefaultLogger.Warn("EnsureLocalePermissions failed", ensureErr)
+		}
+
+		// Ensure webhook CRUD permissions exist (backfill for upgrades).
+		if ensureErr := db.EnsureWebhookPermissions(rootCtx, driver); ensureErr != nil {
+			utility.DefaultLogger.Warn("EnsureWebhookPermissions failed", ensureErr)
 		}
 
 		cfg, err := mgr.Config()
@@ -218,6 +230,16 @@ var serveCmd = &cobra.Command{
 			bridge = pluginManager.Bridge()
 		}
 
+		// Initialize webhook dispatcher (nil if disabled).
+		var dispatcher publishing.WebhookDispatcher
+		if cfg.WebhookEnabled() {
+			wd := webhooks.New(driver, *cfg)
+			wd.Start(rootCtx)
+			defer wd.Shutdown()
+			dispatcher = wd
+			utility.DefaultLogger.Info("Webhooks enabled")
+		}
+
 		// buildRealHandler creates the full router + middleware stack.
 		buildRealHandler := func() http.Handler {
 			// Ensure S3 buckets exist (media + backup)
@@ -248,7 +270,7 @@ var serveCmd = &cobra.Command{
 				}
 			}
 
-			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc)
+			mux := router.NewModulacmsMux(mgr, bridge, driver, pc, emailSvc, dispatcher)
 
 			var hookRunner audited.HookRunner
 			if pluginManager != nil {
@@ -277,7 +299,7 @@ var serveCmd = &cobra.Command{
 		} else {
 			handler.set(buildRealHandler())
 			publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
-			go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval)
+			go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval, dispatcher)
 		}
 
 		manager := autocert.Manager{
@@ -366,7 +388,7 @@ var serveCmd = &cobra.Command{
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
 					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
-					go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval)
+					go router.StartPublishScheduler(rootCtx, driver, *cfg, publishInterval, dispatcher)
 
 					if cfg.Plugin_Enabled {
 						tokenID, tokenPath, tokenErr := generatePluginAPIToken(rootCtx, driver, cfg.Node_ID)
@@ -504,7 +526,7 @@ func generatePluginAPIToken(ctx context.Context, driver db.DbDriver, nodeID stri
 		UserID:    systemNullableID,
 		TokenType: "plugin_api_key",
 		Token:     tokenValue,
-		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(24 * time.Hour)),
 		Revoked:   false,
 	})

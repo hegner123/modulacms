@@ -7,7 +7,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	db "github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // TestFocalPointArtifacts generates crop output files to test_artifacts/ for visual inspection.
@@ -24,8 +25,8 @@ func TestFocalPointArtifacts(t *testing.T) {
 	}
 
 	dims := []db.MediaDimensions{
-		{Width: db.NewNullInt64(150), Height: db.NewNullInt64(150)},
-		{Width: db.NewNullInt64(200), Height: db.NewNullInt64(100)},
+		{Width: types.NewNullableInt64(150), Height: types.NewNullableInt64(150)},
+		{Width: types.NewNullableInt64(200), Height: types.NewNullableInt64(100)},
 	}
 	lister := &mockDimensionLister{dims: &dims}
 

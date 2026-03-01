@@ -24,6 +24,7 @@ type ContentFields struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
+	Locale         string                  `json:"locale"`
 	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
@@ -35,6 +36,7 @@ type CreateContentFieldParams struct {
 	ContentDataID types.NullableContentID `json:"content_data_id"`
 	FieldID       types.NullableFieldID   `json:"field_id"`
 	FieldValue    string                  `json:"field_value"`
+	Locale        string                  `json:"locale"`
 	AuthorID      types.UserID            `json:"author_id"`
 	DateCreated   types.Timestamp         `json:"date_created"`
 	DateModified  types.Timestamp         `json:"date_modified"`
@@ -46,6 +48,7 @@ type UpdateContentFieldParams struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
+	Locale         string                  `json:"locale"`
 	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
@@ -74,6 +77,7 @@ func MapStringContentField(a ContentFields) StringContentFields {
 		ContentDataID:  a.ContentDataID.String(),
 		FieldID:        a.FieldID.String(),
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID.String(),
 		DateCreated:    a.DateCreated.String(),
 		DateModified:   a.DateModified.String(),
@@ -95,6 +99,7 @@ func (d Database) MapContentField(a mdb.ContentFields) ContentFields {
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -109,6 +114,7 @@ func (d Database) MapCreateContentFieldParams(a CreateContentFieldParams) mdb.Cr
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -122,6 +128,7 @@ func (d Database) MapUpdateContentFieldParams(a UpdateContentFieldParams) mdb.Up
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -283,6 +290,7 @@ func (d MysqlDatabase) MapContentField(a mdbm.ContentFields) ContentFields {
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -297,6 +305,7 @@ func (d MysqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) m
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -310,6 +319,7 @@ func (d MysqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) m
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -471,6 +481,7 @@ func (d PsqlDatabase) MapContentField(a mdbp.ContentFields) ContentFields {
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -485,6 +496,7 @@ func (d PsqlDatabase) MapCreateContentFieldParams(a CreateContentFieldParams) md
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -498,6 +510,7 @@ func (d PsqlDatabase) MapUpdateContentFieldParams(a UpdateContentFieldParams) md
 		ContentDataID:  a.ContentDataID,
 		FieldID:        a.FieldID,
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID,
 		DateCreated:    a.DateCreated,
 		DateModified:   a.DateModified,
@@ -688,6 +701,7 @@ func (c NewContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.C
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,
@@ -745,6 +759,7 @@ func (c UpdateContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) err
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,
@@ -844,6 +859,7 @@ func (c NewContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,
@@ -905,6 +921,7 @@ func (c UpdateContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,
@@ -1004,6 +1021,7 @@ func (c NewContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (m
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,
@@ -1061,6 +1079,7 @@ func (c UpdateContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX)
 		ContentDataID:  c.params.ContentDataID,
 		FieldID:        c.params.FieldID,
 		FieldValue:     c.params.FieldValue,
+		Locale:         c.params.Locale,
 		AuthorID:       c.params.AuthorID,
 		DateCreated:    c.params.DateCreated,
 		DateModified:   c.params.DateModified,

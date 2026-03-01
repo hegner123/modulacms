@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
     content_data_id VARCHAR(26) NOT NULL,
     field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
+    locale VARCHAR(35) NOT NULL DEFAULT '',
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -26,3 +27,4 @@ CREATE INDEX idx_content_fields_route ON content_fields(route_id);
 CREATE INDEX idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX idx_content_fields_author ON content_fields(author_id);
+CREATE UNIQUE INDEX idx_cf_unique_locale ON content_fields(content_data_id, field_id, locale);

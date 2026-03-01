@@ -28,6 +28,8 @@ var NavItems = []NavItem{
 	{Label: "Import", Href: "/admin/import", Icon: "upload", Permission: "import:create"},
 	{Label: "Audit", Href: "/admin/audit", Icon: "history"},
 	{Label: "Settings", Href: "/admin/settings", Icon: "settings", Permission: "config:read"},
+	{Label: "Locales", Href: "/admin/settings/locales", Icon: "globe", Permission: "locale:read"},
+	{Label: "Webhooks", Href: "/admin/settings/webhooks", Icon: "webhook", Permission: "webhook:read"},
 	{Label: "Demo", Href: "/admin/demo", Icon: "flask-conical"},
 }
 

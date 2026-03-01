@@ -63,6 +63,15 @@ public final class ModulaClient: Sendable {
     public let publishing: PublishingResource
     public let adminPublishing: AdminPublishingResource
 
+    // Locale resources
+    public let locales: LocaleResource
+
+    // Webhook resources
+    public let webhooks: WebhookResource
+
+    // Content query
+    public let query: QueryResource
+
     // Config resource
     public let config: ConfigResource
 
@@ -132,6 +141,15 @@ public final class ModulaClient: Sendable {
         // Publishing
         publishing = PublishingResource(http: http, prefix: "content")
         adminPublishing = AdminPublishingResource(http: http, prefix: "admin/content")
+
+        // Locales
+        locales = LocaleResource(http: http)
+
+        // Webhooks
+        webhooks = WebhookResource(http: http)
+
+        // Content query
+        query = QueryResource(http: http)
 
         // RBAC
         rolePermissions = RolePermissionsResource(http: http)

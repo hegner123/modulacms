@@ -31,6 +31,7 @@ func contentFieldFixture() (ContentFields, types.ContentFieldID, types.Timestamp
 		ContentDataID:  contentDataID,
 		FieldID:        fieldID,
 		FieldValue:     "test field value",
+		Locale:         "en",
 		AuthorID:       authorID,
 		DateCreated:    ts,
 		DateModified:   ts,
@@ -1546,7 +1547,7 @@ func TestContentFieldsStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"content_field_id", "route_id", "content_data_id",
-		"field_id", "field_value", "author_id",
+		"field_id", "field_value", "locale", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1567,6 +1568,7 @@ func TestCreateContentFieldParams_JSONTags(t *testing.T) {
 		ContentDataID: types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:       types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:    "test-value",
+		Locale:        "en",
 		AuthorID:      types.NewUserID(),
 		DateCreated:   ts,
 		DateModified:  ts,
@@ -1584,7 +1586,7 @@ func TestCreateContentFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"route_id", "content_data_id", "field_id",
-		"field_value", "author_id",
+		"field_value", "locale", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1606,6 +1608,7 @@ func TestUpdateContentFieldParams_JSONTags(t *testing.T) {
 		ContentDataID:  types.NullableContentID{ID: types.NewContentID(), Valid: true},
 		FieldID:        types.NullableFieldID{ID: types.NewFieldID(), Valid: true},
 		FieldValue:     "test-value",
+		Locale:         "en",
 		AuthorID:       types.NewUserID(),
 		DateCreated:    ts,
 		DateModified:   ts,
@@ -1624,7 +1627,7 @@ func TestUpdateContentFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"route_id", "content_data_id", "field_id",
-		"field_value", "author_id",
+		"field_value", "locale", "author_id",
 		"date_created", "date_modified",
 		"content_field_id",
 	}

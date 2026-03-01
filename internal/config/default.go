@@ -28,17 +28,17 @@ func DefaultConfig() Config {
 	c.Environment_Hosts = hosts
 	c.Port = ":8080"
 	c.SSL_Port = ":4000"
-    c.Cert_Dir = "./"
+	c.Cert_Dir = "./"
 	c.Client_Site = "localhost"
 	c.Admin_Site = "localhost"
 	c.SSH_Host = "localhost"
 	c.SSH_Port = "2233"
 	c.Log_Path = "./"
 	c.Auth_Salt = enc
-    c.Cookie_Name = "modula_cms"
-    c.Cookie_Duration = "1w"
-	c.Cookie_Secure = false      // Set to true in production with HTTPS
-	c.Cookie_SameSite = "lax"    // Options: "strict", "lax", "none"
+	c.Cookie_Name = "modula_cms"
+	c.Cookie_Duration = "1w"
+	c.Cookie_Secure = false   // Set to true in production with HTTPS
+	c.Cookie_SameSite = "lax" // Options: "strict", "lax", "none"
 	c.Db_Driver = "sqlite"
 	c.Db_Name = "modula.db"
 	c.Db_URL = "./modula.db"
@@ -107,6 +107,18 @@ func DefaultConfig() Config {
 
 	// Default deploy settings
 	c.Deploy_Snapshot_Dir = "./deploy/snapshots"
+
+	// Default i18n settings
+	c.I18n_Enabled = false
+	c.I18n_Default_Locale = "en"
+
+	// Default webhook settings
+	c.Webhook_Enabled = false
+	c.Webhook_Timeout = 10
+	c.Webhook_Max_Retries = 3
+	c.Webhook_Workers = 4
+	c.Webhook_Allow_HTTP = false
+	c.Webhook_Delivery_Retention_Days = 30
 
 	c.Node_ID = string(types.NewNodeID())
 

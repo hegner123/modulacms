@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
             REFERENCES admin_fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     admin_field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
@@ -49,6 +50,7 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
+    locale,
     author_id,
     date_created,
     date_modified
@@ -60,7 +62,8 @@ INSERT INTO admin_content_fields (
     $5,
     $6,
     $7,
-    $8
+    $8,
+    $9
 ) RETURNING *;
 
 -- name: UpdateAdminContentField :exec
@@ -69,10 +72,11 @@ SET admin_route_id=$1,
     admin_content_data_id=$2,
     admin_field_id=$3,
     admin_field_value=$4,
-    author_id=$5,
-    date_created=$6,
-    date_modified=$7
-WHERE admin_content_field_id = $8;
+    locale=$5,
+    author_id=$6,
+    date_created=$7,
+    date_modified=$8
+WHERE admin_content_field_id = $9;
 
 -- name: DeleteAdminContentField :exec
 DELETE FROM admin_content_fields
@@ -88,3 +92,13 @@ SELECT * FROM admin_content_fields
 WHERE admin_route_id = $1
 ORDER BY admin_content_field_id
 LIMIT $2 OFFSET $3;
+
+-- name: ListAdminContentFieldsByContentDataAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE admin_content_data_id = $1 AND locale IN ($2, '')
+ORDER BY admin_content_field_id;
+
+-- name: ListAdminContentFieldsByRouteAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE admin_route_id = $1 AND locale IN ($2, '')
+ORDER BY admin_content_data_id, admin_field_id;

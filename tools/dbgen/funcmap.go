@@ -98,6 +98,8 @@ func templateFuncMap() template.FuncMap {
 				return "fmt.Sprintf(\"%t\", " + expr + ")"
 			case "sprintfFloat64":
 				return "fmt.Sprintf(\"%v\", " + expr + ".Float64)"
+			case "nullableStringValue":
+				return "func() string { if " + expr + ".Valid { return " + expr + ".String }; return \"\" }()"
 			}
 			return expr
 		},
@@ -111,6 +113,24 @@ func templateFuncMap() template.FuncMap {
 			return strings.Replace(wrapExpr, "%s", value, 1)
 		},
 
+		// narrowToApp wraps expr in int64() if the field is NarrowInt and driver uses int32.
+		// Used in Map functions (sqlc → wrapper): sqlc has int32, wrapper has int64.
+		"narrowToApp": func(d DriverConfig, f Field, expr string) string {
+			if f.NarrowInt && d.Int32Pagination {
+				return "int64(" + expr + ")"
+			}
+			return expr
+		},
+
+		// narrowToSqlc wraps expr in int32() if the field is NarrowInt and driver uses int32.
+		// Used in MapCreate/MapUpdate functions (wrapper → sqlc): wrapper has int64, sqlc has int32.
+		"narrowToSqlc": func(d DriverConfig, f Field, expr string) string {
+			if f.NarrowInt && d.Int32Pagination {
+				return "int32(" + expr + ")"
+			}
+			return expr
+		},
+
 		// sqlcExtraQueryName returns the sqlc function name for an ExtraQuery.
 		"sqlcExtraQueryName": func(e Entity, eq ExtraQuery) string {
 			return e.SqlcExtraQueryName(eq)
@@ -119,6 +139,12 @@ func templateFuncMap() template.FuncMap {
 		// sqlcPaginatedQueryName returns the sqlc function name for a PaginatedExtraQuery.
 		"sqlcPaginatedQueryName": func(e Entity, pq PaginatedExtraQuery) string {
 			return e.SqlcPaginatedQueryName(pq)
+		},
+
+		// sqlcIDField returns the sqlc struct field name for the entity's primary key.
+		// May differ from IDField when the primary key field has SqlcName set.
+		"sqlcIDField": func(e Entity) string {
+			return e.SqlcIDFieldName()
 		},
 	}
 }

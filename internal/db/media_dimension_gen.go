@@ -2,11 +2,15 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
+	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
@@ -16,28 +20,28 @@ import (
 
 // MediaDimensions represents a mediaDimension record in the database.
 type MediaDimensions struct {
-	MdID        string     `json:"md_id"`
-	Label       NullString `json:"label"`
-	Width       NullInt64  `json:"width"`
-	Height      NullInt64  `json:"height"`
-	AspectRatio NullString `json:"aspect_ratio"`
+	MdID        string              `json:"md_id"`
+	Label       NullString          `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio NullString          `json:"aspect_ratio"`
 }
 
 // CreateMediaDimensionParams contains parameters for creating a new mediaDimension.
 type CreateMediaDimensionParams struct {
-	Label       NullString `json:"label"`
-	Width       NullInt64  `json:"width"`
-	Height      NullInt64  `json:"height"`
-	AspectRatio NullString `json:"aspect_ratio"`
+	Label       NullString          `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio NullString          `json:"aspect_ratio"`
 }
 
 // UpdateMediaDimensionParams contains parameters for updating an existing mediaDimension.
 type UpdateMediaDimensionParams struct {
-	Label       NullString `json:"label"`
-	Width       NullInt64  `json:"width"`
-	Height      NullInt64  `json:"height"`
-	AspectRatio NullString `json:"aspect_ratio"`
-	MdID        string     `json:"md_id"`
+	Label       NullString          `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio NullString          `json:"aspect_ratio"`
+	MdID        string              `json:"md_id"`
 }
 
 // MapStringMediaDimension converts MediaDimensions to StringMediaDimensions for TUI display.
@@ -45,8 +49,8 @@ func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 	return StringMediaDimensions{
 		MdID:        a.MdID,
 		Label:       utility.NullToString(a.Label.NullString),
-		Width:       utility.NullToString(a.Width.NullInt64),
-		Height:      utility.NullToString(a.Height.NullInt64),
+		Width:       a.Width.String(),
+		Height:      a.Height.String(),
 		AspectRatio: utility.NullToString(a.AspectRatio.NullString),
 	}
 }
@@ -54,6 +58,41 @@ func MapStringMediaDimension(a MediaDimensions) StringMediaDimensions {
 ///////////////////////////////
 // SQLITE
 //////////////////////////////
+
+// MAPS
+
+// MapMediaDimension converts a sqlc-generated SQLite mediaDimension to the wrapper type.
+func (d Database) MapMediaDimension(a mdb.MediaDimensions) MediaDimensions {
+	return MediaDimensions{
+		MdID:        a.MdID,
+		Label:       NullString{a.Label},
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: NullString{a.AspectRatio},
+	}
+}
+
+// MapCreateMediaDimensionParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdb.CreateMediaDimensionParams {
+	return mdb.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+	}
+}
+
+// MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdb.UpdateMediaDimensionParams {
+	return mdb.UpdateMediaDimensionParams{
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+		MdID:        a.MdID,
+	}
+}
 
 // QUERIES
 
@@ -72,6 +111,23 @@ func (d Database) CreateMediaDimensionTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateMediaDimensionTable(d.Context)
 	return err
+}
+
+// CreateMediaDimension inserts a new mediaDimension and records an audit event.
+func (d Database) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
+	}
+	r := d.MapMediaDimension(result)
+	return &r, nil
+}
+
+// DeleteMediaDimension removes a mediaDimension and records an audit event.
+func (d Database) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetMediaDimension retrieves a mediaDimension by ID.
@@ -100,9 +156,54 @@ func (d Database) ListMediaDimensions() (*[]MediaDimensions, error) {
 	return &res, nil
 }
 
+// UpdateMediaDimension modifies an existing mediaDimension and records an audit event.
+func (d Database) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
+
+// MAPS
+
+// MapMediaDimension converts a sqlc-generated MySQL mediaDimension to the wrapper type.
+func (d MysqlDatabase) MapMediaDimension(a mdbm.MediaDimensions) MediaDimensions {
+	return MediaDimensions{
+		MdID:        a.MdID,
+		Label:       NullString{a.Label},
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: NullString{a.AspectRatio},
+	}
+}
+
+// MapCreateMediaDimensionParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbm.CreateMediaDimensionParams {
+	return mdbm.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+	}
+}
+
+// MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbm.UpdateMediaDimensionParams {
+	return mdbm.UpdateMediaDimensionParams{
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+		MdID:        a.MdID,
+	}
+}
 
 // QUERIES
 
@@ -121,6 +222,23 @@ func (d MysqlDatabase) CreateMediaDimensionTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateMediaDimensionTable(d.Context)
 	return err
+}
+
+// CreateMediaDimension inserts a new mediaDimension and records an audit event.
+func (d MysqlDatabase) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
+	}
+	r := d.MapMediaDimension(result)
+	return &r, nil
+}
+
+// DeleteMediaDimension removes a mediaDimension and records an audit event.
+func (d MysqlDatabase) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetMediaDimension retrieves a mediaDimension by ID.
@@ -149,9 +267,54 @@ func (d MysqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 	return &res, nil
 }
 
+// UpdateMediaDimension modifies an existing mediaDimension and records an audit event.
+func (d MysqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
+
+// MAPS
+
+// MapMediaDimension converts a sqlc-generated PostgreSQL mediaDimension to the wrapper type.
+func (d PsqlDatabase) MapMediaDimension(a mdbp.MediaDimensions) MediaDimensions {
+	return MediaDimensions{
+		MdID:        a.MdID,
+		Label:       NullString{a.Label},
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: NullString{a.AspectRatio},
+	}
+}
+
+// MapCreateMediaDimensionParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreateMediaDimensionParams(a CreateMediaDimensionParams) mdbp.CreateMediaDimensionParams {
+	return mdbp.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+	}
+}
+
+// MapUpdateMediaDimensionParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdateMediaDimensionParams(a UpdateMediaDimensionParams) mdbp.UpdateMediaDimensionParams {
+	return mdbp.UpdateMediaDimensionParams{
+		Label:       a.Label.NullString,
+		Width:       a.Width,
+		Height:      a.Height,
+		AspectRatio: a.AspectRatio.NullString,
+		MdID:        a.MdID,
+	}
+}
 
 // QUERIES
 
@@ -170,6 +333,23 @@ func (d PsqlDatabase) CreateMediaDimensionTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateMediaDimensionTable(d.Context)
 	return err
+}
+
+// CreateMediaDimension inserts a new mediaDimension and records an audit event.
+func (d PsqlDatabase) CreateMediaDimension(ctx context.Context, ac audited.AuditContext, s CreateMediaDimensionParams) (*MediaDimensions, error) {
+	cmd := d.NewMediaDimensionCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create mediaDimension: %w", err)
+	}
+	r := d.MapMediaDimension(result)
+	return &r, nil
+}
+
+// DeleteMediaDimension removes a mediaDimension and records an audit event.
+func (d PsqlDatabase) DeleteMediaDimension(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteMediaDimensionCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetMediaDimension retrieves a mediaDimension by ID.
@@ -196,4 +376,470 @@ func (d PsqlDatabase) ListMediaDimensions() (*[]MediaDimensions, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// UpdateMediaDimension modifies an existing mediaDimension and records an audit event.
+func (d PsqlDatabase) UpdateMediaDimension(ctx context.Context, ac audited.AuditContext, s UpdateMediaDimensionParams) (*string, error) {
+	cmd := d.UpdateMediaDimensionCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update mediaDimension: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.MdID)
+	return &msg, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+// NewMediaDimensionCmd is an audited command for creating mediaDimensions.
+type NewMediaDimensionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewMediaDimensionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewMediaDimensionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewMediaDimensionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewMediaDimensionCmd) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c NewMediaDimensionCmd) Params() any { return c.params }
+
+// GetID extracts the ID from a mediaDimension record.
+func (c NewMediaDimensionCmd) GetID(u mdb.MediaDimensions) string { return u.MdID }
+
+// Execute creates the mediaDimension in the database.
+func (c NewMediaDimensionCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.MediaDimensions, error) {
+	queries := mdb.New(tx)
+	return queries.CreateMediaDimension(ctx, mdb.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+	})
+}
+
+// NewMediaDimensionCmd creates a command for inserting a mediaDimension.
+func (d Database) NewMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaDimensionParams) NewMediaDimensionCmd {
+	return NewMediaDimensionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+// UpdateMediaDimensionCmd is an audited command for updating mediaDimensions.
+type UpdateMediaDimensionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateMediaDimensionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateMediaDimensionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateMediaDimensionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateMediaDimensionCmd) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c UpdateMediaDimensionCmd) Params() any { return c.params }
+
+// GetID returns the mediaDimension ID for this command.
+func (c UpdateMediaDimensionCmd) GetID() string { return c.params.MdID }
+
+// GetBefore retrieves the mediaDimension before the update.
+func (c UpdateMediaDimensionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.MediaDimensions, error) {
+	queries := mdb.New(tx)
+	return queries.GetMediaDimension(ctx, mdb.GetMediaDimensionParams{MdID: c.params.MdID})
+}
+
+// Execute updates the mediaDimension in the database.
+func (c UpdateMediaDimensionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateMediaDimension(ctx, mdb.UpdateMediaDimensionParams{
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+		MdID:        c.params.MdID,
+	})
+}
+
+// UpdateMediaDimensionCmd creates a command for updating a mediaDimension.
+func (d Database) UpdateMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaDimensionParams) UpdateMediaDimensionCmd {
+	return UpdateMediaDimensionCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+// DeleteMediaDimensionCmd is an audited command for deleting mediaDimensions.
+type DeleteMediaDimensionCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteMediaDimensionCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteMediaDimensionCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteMediaDimensionCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteMediaDimensionCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteMediaDimensionCmd) TableName() string { return "media_dimensions" }
+
+// GetID returns the mediaDimension ID for this command.
+func (c DeleteMediaDimensionCmd) GetID() string { return c.id }
+
+// GetBefore retrieves the mediaDimension before the delete.
+func (c DeleteMediaDimensionCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.MediaDimensions, error) {
+	queries := mdb.New(tx)
+	return queries.GetMediaDimension(ctx, mdb.GetMediaDimensionParams{MdID: c.id})
+}
+
+// Execute deletes the mediaDimension from the database.
+func (c DeleteMediaDimensionCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteMediaDimension(ctx, mdb.DeleteMediaDimensionParams{MdID: c.id})
+}
+
+// DeleteMediaDimensionCmd creates a command for deleting a mediaDimension.
+func (d Database) DeleteMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteMediaDimensionCmd {
+	return DeleteMediaDimensionCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+// NewMediaDimensionCmdMysql is an audited command for creating mediaDimensions in MySQL.
+type NewMediaDimensionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewMediaDimensionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewMediaDimensionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewMediaDimensionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewMediaDimensionCmdMysql) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c NewMediaDimensionCmdMysql) Params() any { return c.params }
+
+// GetID extracts the ID from a mediaDimension record.
+func (c NewMediaDimensionCmdMysql) GetID(u mdbm.MediaDimensions) string { return u.MdID }
+
+// Execute creates the mediaDimension in the database.
+func (c NewMediaDimensionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.MediaDimensions, error) {
+	queries := mdbm.New(tx)
+	params := mdbm.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+	}
+	if err := queries.CreateMediaDimension(ctx, params); err != nil {
+		return mdbm.MediaDimensions{}, err
+	}
+	return queries.GetMediaDimension(ctx, mdbm.GetMediaDimensionParams{MdID: params.MdID})
+}
+
+// NewMediaDimensionCmd creates a command for inserting a mediaDimension.
+func (d MysqlDatabase) NewMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaDimensionParams) NewMediaDimensionCmdMysql {
+	return NewMediaDimensionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+// UpdateMediaDimensionCmdMysql is an audited command for updating mediaDimensions in MySQL.
+type UpdateMediaDimensionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateMediaDimensionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateMediaDimensionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateMediaDimensionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateMediaDimensionCmdMysql) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c UpdateMediaDimensionCmdMysql) Params() any { return c.params }
+
+// GetID returns the mediaDimension ID for this command.
+func (c UpdateMediaDimensionCmdMysql) GetID() string { return c.params.MdID }
+
+// GetBefore retrieves the mediaDimension before the update.
+func (c UpdateMediaDimensionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.MediaDimensions, error) {
+	queries := mdbm.New(tx)
+	return queries.GetMediaDimension(ctx, mdbm.GetMediaDimensionParams{MdID: c.params.MdID})
+}
+
+// Execute updates the mediaDimension in the database.
+func (c UpdateMediaDimensionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateMediaDimension(ctx, mdbm.UpdateMediaDimensionParams{
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+		MdID:        c.params.MdID,
+	})
+}
+
+// UpdateMediaDimensionCmd creates a command for updating a mediaDimension.
+func (d MysqlDatabase) UpdateMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaDimensionParams) UpdateMediaDimensionCmdMysql {
+	return UpdateMediaDimensionCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+// DeleteMediaDimensionCmdMysql is an audited command for deleting mediaDimensions in MySQL.
+type DeleteMediaDimensionCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteMediaDimensionCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteMediaDimensionCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteMediaDimensionCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteMediaDimensionCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteMediaDimensionCmdMysql) TableName() string { return "media_dimensions" }
+
+// GetID returns the mediaDimension ID for this command.
+func (c DeleteMediaDimensionCmdMysql) GetID() string { return c.id }
+
+// GetBefore retrieves the mediaDimension before the delete.
+func (c DeleteMediaDimensionCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.MediaDimensions, error) {
+	queries := mdbm.New(tx)
+	return queries.GetMediaDimension(ctx, mdbm.GetMediaDimensionParams{MdID: c.id})
+}
+
+// Execute deletes the mediaDimension from the database.
+func (c DeleteMediaDimensionCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteMediaDimension(ctx, mdbm.DeleteMediaDimensionParams{MdID: c.id})
+}
+
+// DeleteMediaDimensionCmd creates a command for deleting a mediaDimension.
+func (d MysqlDatabase) DeleteMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteMediaDimensionCmdMysql {
+	return DeleteMediaDimensionCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+// NewMediaDimensionCmdPsql is an audited command for creating mediaDimensions in PostgreSQL.
+type NewMediaDimensionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewMediaDimensionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewMediaDimensionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewMediaDimensionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewMediaDimensionCmdPsql) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c NewMediaDimensionCmdPsql) Params() any { return c.params }
+
+// GetID extracts the ID from a mediaDimension record.
+func (c NewMediaDimensionCmdPsql) GetID(u mdbp.MediaDimensions) string { return u.MdID }
+
+// Execute creates the mediaDimension in the database.
+func (c NewMediaDimensionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.MediaDimensions, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateMediaDimension(ctx, mdbp.CreateMediaDimensionParams{
+		MdID:        string(types.NewMediaDimensionID()),
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+	})
+}
+
+// NewMediaDimensionCmd creates a command for inserting a mediaDimension.
+func (d PsqlDatabase) NewMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateMediaDimensionParams) NewMediaDimensionCmdPsql {
+	return NewMediaDimensionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+// UpdateMediaDimensionCmdPsql is an audited command for updating mediaDimensions in PostgreSQL.
+type UpdateMediaDimensionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateMediaDimensionParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateMediaDimensionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateMediaDimensionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateMediaDimensionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateMediaDimensionCmdPsql) TableName() string { return "media_dimensions" }
+
+// Params returns the parameters for this command.
+func (c UpdateMediaDimensionCmdPsql) Params() any { return c.params }
+
+// GetID returns the mediaDimension ID for this command.
+func (c UpdateMediaDimensionCmdPsql) GetID() string { return c.params.MdID }
+
+// GetBefore retrieves the mediaDimension before the update.
+func (c UpdateMediaDimensionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.MediaDimensions, error) {
+	queries := mdbp.New(tx)
+	return queries.GetMediaDimension(ctx, mdbp.GetMediaDimensionParams{MdID: c.params.MdID})
+}
+
+// Execute updates the mediaDimension in the database.
+func (c UpdateMediaDimensionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateMediaDimension(ctx, mdbp.UpdateMediaDimensionParams{
+		Label:       c.params.Label.NullString,
+		Width:       c.params.Width,
+		Height:      c.params.Height,
+		AspectRatio: c.params.AspectRatio.NullString,
+		MdID:        c.params.MdID,
+	})
+}
+
+// UpdateMediaDimensionCmd creates a command for updating a mediaDimension.
+func (d PsqlDatabase) UpdateMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateMediaDimensionParams) UpdateMediaDimensionCmdPsql {
+	return UpdateMediaDimensionCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+// DeleteMediaDimensionCmdPsql is an audited command for deleting mediaDimensions in PostgreSQL.
+type DeleteMediaDimensionCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteMediaDimensionCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteMediaDimensionCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteMediaDimensionCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteMediaDimensionCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteMediaDimensionCmdPsql) TableName() string { return "media_dimensions" }
+
+// GetID returns the mediaDimension ID for this command.
+func (c DeleteMediaDimensionCmdPsql) GetID() string { return c.id }
+
+// GetBefore retrieves the mediaDimension before the delete.
+func (c DeleteMediaDimensionCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.MediaDimensions, error) {
+	queries := mdbp.New(tx)
+	return queries.GetMediaDimension(ctx, mdbp.GetMediaDimensionParams{MdID: c.id})
+}
+
+// Execute deletes the mediaDimension from the database.
+func (c DeleteMediaDimensionCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteMediaDimension(ctx, mdbp.DeleteMediaDimensionParams{MdID: c.id})
+}
+
+// DeleteMediaDimensionCmd creates a command for deleting a mediaDimension.
+func (d PsqlDatabase) DeleteMediaDimensionCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteMediaDimensionCmdPsql {
+	return DeleteMediaDimensionCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

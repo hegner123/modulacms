@@ -41,15 +41,15 @@ func newPostmarkSender(cfg config.Config) (*PostmarkSender, error) {
 
 // postmarkPayload is the JSON structure for the Postmark email API.
 type postmarkPayload struct {
-	From        string                `json:"From"`
-	To          string                `json:"To"`
-	Cc          string                `json:"Cc,omitempty"`
-	Bcc         string                `json:"Bcc,omitempty"`
-	Subject     string                `json:"Subject"`
-	TextBody    string                `json:"TextBody,omitempty"`
-	HtmlBody    string                `json:"HtmlBody,omitempty"`
-	ReplyTo     string                `json:"ReplyTo,omitempty"`
-	Attachments []postmarkAttachment  `json:"Attachments,omitempty"`
+	From        string               `json:"From"`
+	To          string               `json:"To"`
+	Cc          string               `json:"Cc,omitempty"`
+	Bcc         string               `json:"Bcc,omitempty"`
+	Subject     string               `json:"Subject"`
+	TextBody    string               `json:"TextBody,omitempty"`
+	HtmlBody    string               `json:"HtmlBody,omitempty"`
+	ReplyTo     string               `json:"ReplyTo,omitempty"`
+	Attachments []postmarkAttachment `json:"Attachments,omitempty"`
 }
 
 type postmarkAttachment struct {

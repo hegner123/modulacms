@@ -9,12 +9,12 @@ import (
 
 // Manager handles configuration loading, access, and live updates.
 type Manager struct {
-	provider  Provider
-	saver     Saver
-	config    *Config
-	loaded    bool
-	mu        sync.RWMutex
-	onChange  []func(Config)
+	provider Provider
+	saver    Saver
+	config   *Config
+	loaded   bool
+	mu       sync.RWMutex
+	onChange []func(Config)
 }
 
 // NewManager creates a new configuration manager with the specified provider.

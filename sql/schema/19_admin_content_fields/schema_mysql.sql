@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id VARCHAR(26) NOT NULL,
     admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
+    locale VARCHAR(35) NOT NULL DEFAULT '',
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -26,3 +27,4 @@ CREATE INDEX idx_admin_content_fields_route ON admin_content_fields(admin_route_
 CREATE INDEX idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX idx_admin_content_fields_author ON admin_content_fields(author_id);
+CREATE UNIQUE INDEX idx_acf_unique_locale ON admin_content_fields(admin_content_data_id, admin_field_id, locale);

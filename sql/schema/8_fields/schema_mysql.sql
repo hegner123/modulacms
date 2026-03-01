@@ -8,6 +8,8 @@ CREATE TABLE IF NOT EXISTS fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type VARCHAR(20) NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    translatable TINYINT NOT NULL DEFAULT 0,
+    roles TEXT NULL,
     author_id VARCHAR(26) NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,

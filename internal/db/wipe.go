@@ -13,6 +13,14 @@ import (
 func (d Database) DropAllTables() error {
 	queries := mdb.New(d.Connection)
 
+	// Tier 7.5: Webhook system tables (deliveries before webhooks for FK)
+	if err := queries.DropWebhookDeliveryTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhook_deliveries: %w", err)
+	}
+	if err := queries.DropWebhookTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhooks: %w", err)
+	}
+
 	// Tier 7: Plugin system tables (pipelines before plugins for FK)
 	if err := queries.DropPipelinesTable(d.Context); err != nil {
 		return fmt.Errorf("drop pipelines: %w", err)
@@ -113,6 +121,9 @@ func (d Database) DropAllTables() error {
 	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
 	}
+	if err := queries.DropLocaleTable(d.Context); err != nil {
+		return fmt.Errorf("drop locales: %w", err)
+	}
 	if err := queries.DropRoleTable(d.Context); err != nil {
 		return fmt.Errorf("drop roles: %w", err)
 	}
@@ -141,6 +152,14 @@ func (d Database) DropAllTables() error {
 // Each table is dropped individually because sqlc :exec only executes one statement.
 func (d MysqlDatabase) DropAllTables() error {
 	queries := mdbm.New(d.Connection)
+
+	// Tier 7.5: Webhook system tables (deliveries before webhooks for FK)
+	if err := queries.DropWebhookDeliveryTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhook_deliveries: %w", err)
+	}
+	if err := queries.DropWebhookTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhooks: %w", err)
+	}
 
 	// Tier 7: Plugin system tables (pipelines before plugins for FK)
 	if err := queries.DropPipelinesTable(d.Context); err != nil {
@@ -242,6 +261,9 @@ func (d MysqlDatabase) DropAllTables() error {
 	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
 	}
+	if err := queries.DropLocaleTable(d.Context); err != nil {
+		return fmt.Errorf("drop locales: %w", err)
+	}
 	if err := queries.DropRoleTable(d.Context); err != nil {
 		return fmt.Errorf("drop roles: %w", err)
 	}
@@ -270,6 +292,14 @@ func (d MysqlDatabase) DropAllTables() error {
 // Each table is dropped individually because sqlc :exec only executes one statement.
 func (d PsqlDatabase) DropAllTables() error {
 	queries := mdbp.New(d.Connection)
+
+	// Tier 7.5: Webhook system tables (deliveries before webhooks for FK)
+	if err := queries.DropWebhookDeliveryTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhook_deliveries: %w", err)
+	}
+	if err := queries.DropWebhookTable(d.Context); err != nil {
+		return fmt.Errorf("drop webhooks: %w", err)
+	}
 
 	// Tier 7: Plugin system tables (pipelines before plugins for FK)
 	if err := queries.DropPipelinesTable(d.Context); err != nil {
@@ -370,6 +400,9 @@ func (d PsqlDatabase) DropAllTables() error {
 	}
 	if err := queries.DropAdminFieldTypeTable(d.Context); err != nil {
 		return fmt.Errorf("drop admin_field_types: %w", err)
+	}
+	if err := queries.DropLocaleTable(d.Context); err != nil {
+		return fmt.Errorf("drop locales: %w", err)
 	}
 	if err := queries.DropRoleTable(d.Context); err != nil {
 		return fmt.Errorf("drop roles: %w", err)

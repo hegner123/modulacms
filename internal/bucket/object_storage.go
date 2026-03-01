@@ -71,8 +71,8 @@ type bucketPolicyStatement struct {
 
 // bucketPolicy represents an S3 bucket policy document.
 type bucketPolicy struct {
-	Version   string                   `json:"Version"`
-	Statement []bucketPolicyStatement  `json:"Statement"`
+	Version   string                  `json:"Version"`
+	Statement []bucketPolicyStatement `json:"Statement"`
 }
 
 // SetPublicReadPolicy configures the bucket to allow anonymous read access.

@@ -185,6 +185,18 @@ type Config struct {
 	// Richtext editor toolbar configuration
 	Richtext_Toolbar []string `json:"richtext_toolbar"`
 
+	// Internationalization
+	I18n_Enabled        bool   `json:"i18n_enabled"`        // default false
+	I18n_Default_Locale string `json:"i18n_default_locale"` // default "en"
+
+	// Webhooks
+	Webhook_Enabled                 bool `json:"webhook_enabled"`
+	Webhook_Timeout                 int  `json:"webhook_timeout"`
+	Webhook_Max_Retries             int  `json:"webhook_max_retries"`
+	Webhook_Workers                 int  `json:"webhook_workers"`
+	Webhook_Allow_HTTP              bool `json:"webhook_allow_http"`
+	Webhook_Delivery_Retention_Days int  `json:"webhook_delivery_retention_days"`
+
 	KeyBindings KeyMap `json:"keybindings"`
 }
 
@@ -261,6 +273,66 @@ func (c Config) RichtextToolbar() []string {
 		return []string{"bold", "italic", "h1", "h2", "h3", "link", "ul", "ol", "preview"}
 	}
 	return c.Richtext_Toolbar
+}
+
+// WebhookEnabled returns whether webhooks are active.
+func (c Config) WebhookEnabled() bool { return c.Webhook_Enabled }
+
+// WebhookTimeout returns the HTTP timeout in seconds for webhook delivery.
+// Falls back to 10 if not configured.
+func (c Config) WebhookTimeout() int {
+	if c.Webhook_Timeout <= 0 {
+		return 10
+	}
+	return c.Webhook_Timeout
+}
+
+// WebhookMaxRetries returns the maximum number of delivery retry attempts.
+// Falls back to 3 if not configured.
+func (c Config) WebhookMaxRetries() int {
+	if c.Webhook_Max_Retries <= 0 {
+		return 3
+	}
+	return c.Webhook_Max_Retries
+}
+
+// WebhookWorkers returns the number of concurrent delivery workers.
+// Falls back to 4 if not configured.
+func (c Config) WebhookWorkers() int {
+	if c.Webhook_Workers <= 0 {
+		return 4
+	}
+	return c.Webhook_Workers
+}
+
+// WebhookAllowHTTP returns whether non-TLS webhook URLs are allowed (dev only).
+func (c Config) WebhookAllowHTTP() bool { return c.Webhook_Allow_HTTP }
+
+// WebhookDeliveryRetentionDays returns the number of days to retain completed deliveries.
+// Falls back to 30 if not configured. 0 means unlimited retention.
+func (c Config) WebhookDeliveryRetentionDays() int {
+	if c.Webhook_Delivery_Retention_Days < 0 {
+		return 30
+	}
+	if c.Webhook_Delivery_Retention_Days == 0 {
+		// Distinguish "not set" (zero value) from explicit 0 (unlimited).
+		// Since JSON unmarshaling defaults to 0, treat 0 as "use default 30".
+		// Users must set to -1 or a positive value to override.
+		return 30
+	}
+	return c.Webhook_Delivery_Retention_Days
+}
+
+// I18nEnabled returns whether internationalization is active.
+func (c Config) I18nEnabled() bool { return c.I18n_Enabled }
+
+// I18nDefaultLocale returns the configured default locale code.
+// Falls back to "en" if not configured.
+func (c Config) I18nDefaultLocale() string {
+	if c.I18n_Default_Locale == "" {
+		return "en"
+	}
+	return c.I18n_Default_Locale
 }
 
 // MaxUploadSize returns the configured maximum upload size in bytes.

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id VARCHAR(26) NOT NULL,
     admin_field_id VARCHAR(26) NOT NULL,
     admin_field_value TEXT NOT NULL,
+    locale VARCHAR(35) NOT NULL DEFAULT '',
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -50,10 +51,12 @@ INSERT INTO admin_content_fields (
     admin_content_data_id,
     admin_field_id,
     admin_field_value,
+    locale,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -69,7 +72,8 @@ UPDATE admin_content_fields
 SET admin_route_id=?,
     admin_content_data_id=?,
     admin_field_id=?,
-    admin_field_value=?, 
+    admin_field_value=?,
+    locale=?,
     author_id=?,
     date_created=?,
     date_modified=?
@@ -89,3 +93,13 @@ SELECT * FROM admin_content_fields
 WHERE admin_route_id = ?
 ORDER BY admin_content_field_id
 LIMIT ? OFFSET ?;
+
+-- name: ListAdminContentFieldsByContentDataAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE admin_content_data_id = ? AND locale IN (?, '')
+ORDER BY admin_content_field_id;
+
+-- name: ListAdminContentFieldsByRouteAndLocale :many
+SELECT * FROM admin_content_fields
+WHERE admin_route_id = ? AND locale IN (?, '')
+ORDER BY admin_content_data_id, admin_field_id;

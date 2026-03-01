@@ -1,0 +1,181 @@
+package pages
+
+import (
+    "strings"
+
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
+)
+
+templ WebhookSettingsContent(webhooksList []db.Webhook, csrfToken string) {
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/admin/settings" class="btn btn-ghost"
+               hx-get="/admin/settings"
+               hx-target="#main-content"
+               hx-push-url="true">&larr; Settings</a>
+            <h1>Webhooks</h1>
+        </div>
+        <div class="page-header-right">
+            <button class="btn btn-primary"
+                    onclick="document.getElementById('add-webhook-dialog').showModal()">
+                Add Webhook
+            </button>
+        </div>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>URL</th>
+                <th>Status</th>
+                <th>Events</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="webhook-table-body">
+            @partials.WebhookTableRows(webhooksList, csrfToken)
+        </tbody>
+    </table>
+}
+
+templ WebhookAddDialog(csrfToken string) {
+    <dialog id="add-webhook-dialog" class="admin-dialog" aria-labelledby="add-webhook-dialog-title">
+        <div class="dialog-content">
+            <div class="dialog-header">
+                <h2 id="add-webhook-dialog-title">Add Webhook</h2>
+                <button class="btn btn-ghost dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
+            </div>
+            <form hx-post="/admin/settings/webhooks"
+                  hx-target="#webhook-table-body"
+                  hx-swap="innerHTML"
+                  id="add-webhook-form">
+                @partials.CSRFField(csrfToken)
+                @partials.FormField("name", "Name", "", "A descriptive name for this webhook")
+                @partials.FormField("url", "URL", "", "The HTTPS endpoint to receive events")
+                @partials.FormField("secret", "Secret", "", "Leave blank to auto-generate")
+                @partials.FormField("events", "Events", "*", "Comma-separated list of events (e.g. content.published, content.unpublished) or * for all")
+                <div class="form-field form-field-checkbox">
+                    <label>
+                        <input type="hidden" name="is_active" value="false"/>
+                        <input type="checkbox" name="is_active" value="true" checked/>
+                        Active
+                    </label>
+                </div>
+                <div class="dialog-actions">
+                    <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create</button>
+                </div>
+            </form>
+        </div>
+    </dialog>
+}
+
+templ WebhookSettings(layout layouts.AdminData, webhooksList []db.Webhook) {
+    @layouts.Admin(layout.WithDialogs(WebhookAddDialog(layout.CSRFToken))) {
+        @WebhookSettingsContent(webhooksList, layout.CSRFToken)
+    }
+}
+
+templ WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfToken string) {
+    <div class="page-header">
+        <div class="page-header-left">
+            <a href="/admin/settings/webhooks" class="btn btn-ghost"
+               hx-get="/admin/settings/webhooks"
+               hx-target="#main-content"
+               hx-push-url="true">&larr; Webhooks</a>
+            <h1>{ wh.Name }</h1>
+            if wh.IsActive {
+                <span class="badge badge-published">Active</span>
+            } else {
+                <span class="badge badge-draft">Inactive</span>
+            }
+        </div>
+        <div class="page-header-right">
+            <button class="btn btn-secondary"
+                    hx-post={ "/admin/settings/webhooks/" + wh.WebhookID.String() + "/test" }
+                    hx-swap="none">
+                Test Webhook
+            </button>
+        </div>
+    </div>
+
+    <form hx-post={ "/admin/settings/webhooks/" + wh.WebhookID.String() }
+          hx-target="#webhook-table-body"
+          hx-swap="innerHTML"
+          class="form-card">
+        @partials.CSRFField(csrfToken)
+        @partials.FormField("name", "Name", wh.Name, "")
+        @partials.FormField("url", "URL", wh.URL, "")
+        @partials.FormField("secret", "Secret", wh.Secret, "")
+        @partials.FormField("events", "Events", strings.Join(wh.Events, ", "), "Comma-separated event names or * for all")
+        <div class="form-field form-field-checkbox">
+            <label>
+                <input type="hidden" name="is_active" value="false"/>
+                if wh.IsActive {
+                    <input type="checkbox" name="is_active" value="true" checked/>
+                } else {
+                    <input type="checkbox" name="is_active" value="true"/>
+                }
+                Active
+            </label>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+    </form>
+
+    <h2 class="section-title">Recent Deliveries</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Event</th>
+                <th>Status</th>
+                <th>Attempts</th>
+                <th>Last Status Code</th>
+                <th>Created</th>
+            </tr>
+        </thead>
+        <tbody>
+            if len(deliveries) == 0 {
+                <tr>
+                    <td colspan="5">
+                        @partials.EmptyState("No deliveries yet. Publish some content to trigger webhook events.")
+                    </td>
+                </tr>
+            }
+            for _, del := range deliveries {
+                <tr>
+                    <td>{ del.Event }</td>
+                    <td>
+                        if del.Status == "success" {
+                            <span class="badge badge-published">Success</span>
+                        } else if del.Status == "failed" {
+                            <span class="badge badge-draft">Failed</span>
+                        } else if del.Status == "retrying" {
+                            <span class="badge badge-scheduled">Retrying</span>
+                        } else {
+                            <span class="badge">{ del.Status }</span>
+                        }
+                    </td>
+                    <td>{ partials.IntToStr(int(del.Attempts)) }</td>
+                    <td>
+                        if del.LastStatusCode > 0 {
+                            { partials.IntToStr(int(del.LastStatusCode)) }
+                        } else {
+                            <span class="text-muted">-</span>
+                        }
+                    </td>
+                    <td>{ del.CreatedAt.String() }</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+templ WebhookDetail(layout layouts.AdminData, wh db.Webhook, deliveries []db.WebhookDelivery) {
+    @layouts.Admin(layout) {
+        @WebhookDetailContent(wh, deliveries, layout.CSRFToken)
+    }
+}

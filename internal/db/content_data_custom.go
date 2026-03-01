@@ -1,6 +1,7 @@
 package db
 
 import (
+	"context"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
@@ -57,6 +58,55 @@ func MapContentDataJSON(a ContentData) ContentDataJSON {
 		PublishAt:     a.PublishAt.String(),
 		Revision:      a.Revision,
 	}
+}
+
+///////////////////////////////
+// LIST BY DATATYPE
+//////////////////////////////
+
+// ListContentDataByDatatypeID returns all content data for a given datatype (SQLite).
+func (d Database) ListContentDataByDatatypeID(datatypeID types.DatatypeID) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	rows, err := queries.ListContentDataByDatatypeID(d.Context, mdb.ListContentDataByDatatypeIDParams{DatatypeID: dtID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content data by datatype %s: %w", datatypeID, err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// ListContentDataByDatatypeID returns all content data for a given datatype (MySQL).
+func (d MysqlDatabase) ListContentDataByDatatypeID(datatypeID types.DatatypeID) (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	rows, err := queries.ListContentDataByDatatypeID(d.Context, mdbm.ListContentDataByDatatypeIDParams{DatatypeID: dtID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content data by datatype %s: %w", datatypeID, err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// ListContentDataByDatatypeID returns all content data for a given datatype (PostgreSQL).
+func (d PsqlDatabase) ListContentDataByDatatypeID(datatypeID types.DatatypeID) (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	dtID := types.NullableDatatypeID{ID: datatypeID, Valid: true}
+	rows, err := queries.ListContentDataByDatatypeID(d.Context, mdbp.ListContentDataByDatatypeIDParams{DatatypeID: dtID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to list content data by datatype %s: %w", datatypeID, err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
 }
 
 ///////////////////////////////
@@ -506,4 +556,50 @@ func (d PsqlDatabase) CountContentDataTopLevelByStatus(status types.ContentStatu
 		return nil, fmt.Errorf("failed to count top-level ContentData by status: %v", err)
 	}
 	return &c, nil
+}
+
+///////////////////////////////
+// CONTENT DATA DESCENDANTS
+//////////////////////////////
+
+// GetContentDataDescendants returns a node and all its descendants via recursive CTE.
+func (d Database) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdb.GetContentDataDescendantsParams{ContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content data descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// GetContentDataDescendants returns a node and all its descendants via recursive CTE.
+func (d MysqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdbm.GetContentDataDescendantsParams{ContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content data descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
+}
+
+// GetContentDataDescendants returns a node and all its descendants via recursive CTE.
+func (d PsqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetContentDataDescendants(ctx, mdbp.GetContentDataDescendantsParams{ContentDataID: id})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get content data descendants: %w", err)
+	}
+	res := make([]ContentData, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapContentData(v))
+	}
+	return &res, nil
 }

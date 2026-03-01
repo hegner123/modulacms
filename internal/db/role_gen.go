@@ -2,11 +2,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -46,6 +49,35 @@ func MapStringRole(a Roles) StringRoles {
 // SQLITE
 //////////////////////////////
 
+// MAPS
+
+// MapRole converts a sqlc-generated SQLite role to the wrapper type.
+func (d Database) MapRole(a mdb.Roles) Roles {
+	return Roles{
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreateRoleParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreateRoleParams(a CreateRoleParams) mdb.CreateRoleParams {
+	return mdb.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdateRoleParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdateRoleParams(a UpdateRoleParams) mdb.UpdateRoleParams {
+	return mdb.UpdateRoleParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		RoleID:          a.RoleID,
+	}
+}
+
 // QUERIES
 
 // CountRoles returns the total number of roles in the database.
@@ -63,6 +95,23 @@ func (d Database) CreateRoleTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateRoleTable(d.Context)
 	return err
+}
+
+// CreateRole inserts a new role and records an audit event.
+func (d Database) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create role: %w", err)
+	}
+	r := d.MapRole(result)
+	return &r, nil
+}
+
+// DeleteRole removes a role and records an audit event.
+func (d Database) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetRole retrieves a role by ID.
@@ -91,9 +140,48 @@ func (d Database) ListRoles() (*[]Roles, error) {
 	return &res, nil
 }
 
+// UpdateRole modifies an existing role and records an audit event.
+func (d Database) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
+
+// MAPS
+
+// MapRole converts a sqlc-generated MySQL role to the wrapper type.
+func (d MysqlDatabase) MapRole(a mdbm.Roles) Roles {
+	return Roles{
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreateRoleParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbm.CreateRoleParams {
+	return mdbm.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdateRoleParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbm.UpdateRoleParams {
+	return mdbm.UpdateRoleParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		RoleID:          a.RoleID,
+	}
+}
 
 // QUERIES
 
@@ -112,6 +200,23 @@ func (d MysqlDatabase) CreateRoleTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateRoleTable(d.Context)
 	return err
+}
+
+// CreateRole inserts a new role and records an audit event.
+func (d MysqlDatabase) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create role: %w", err)
+	}
+	r := d.MapRole(result)
+	return &r, nil
+}
+
+// DeleteRole removes a role and records an audit event.
+func (d MysqlDatabase) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetRole retrieves a role by ID.
@@ -140,9 +245,48 @@ func (d MysqlDatabase) ListRoles() (*[]Roles, error) {
 	return &res, nil
 }
 
+// UpdateRole modifies an existing role and records an audit event.
+func (d MysqlDatabase) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
+
+// MAPS
+
+// MapRole converts a sqlc-generated PostgreSQL role to the wrapper type.
+func (d PsqlDatabase) MapRole(a mdbp.Roles) Roles {
+	return Roles{
+		RoleID:          a.RoleID,
+		Label:           a.Label,
+		SystemProtected: a.SystemProtected.Bool(),
+	}
+}
+
+// MapCreateRoleParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreateRoleParams(a CreateRoleParams) mdbp.CreateRoleParams {
+	return mdbp.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+	}
+}
+
+// MapUpdateRoleParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdateRoleParams(a UpdateRoleParams) mdbp.UpdateRoleParams {
+	return mdbp.UpdateRoleParams{
+		Label:           a.Label,
+		SystemProtected: types.SafeBool{Val: a.SystemProtected},
+		RoleID:          a.RoleID,
+	}
+}
 
 // QUERIES
 
@@ -161,6 +305,23 @@ func (d PsqlDatabase) CreateRoleTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateRoleTable(d.Context)
 	return err
+}
+
+// CreateRole inserts a new role and records an audit event.
+func (d PsqlDatabase) CreateRole(ctx context.Context, ac audited.AuditContext, s CreateRoleParams) (*Roles, error) {
+	cmd := d.NewRoleCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create role: %w", err)
+	}
+	r := d.MapRole(result)
+	return &r, nil
+}
+
+// DeleteRole removes a role and records an audit event.
+func (d PsqlDatabase) DeleteRole(ctx context.Context, ac audited.AuditContext, id types.RoleID) error {
+	cmd := d.DeleteRoleCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetRole retrieves a role by ID.
@@ -187,4 +348,458 @@ func (d PsqlDatabase) ListRoles() (*[]Roles, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// UpdateRole modifies an existing role and records an audit event.
+func (d PsqlDatabase) UpdateRole(ctx context.Context, ac audited.AuditContext, s UpdateRoleParams) (*string, error) {
+	cmd := d.UpdateRoleCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update role: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.Label)
+	return &msg, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+// NewRoleCmd is an audited command for creating roles.
+type NewRoleCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewRoleCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewRoleCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewRoleCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewRoleCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewRoleCmd) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c NewRoleCmd) Params() any { return c.params }
+
+// GetID extracts the ID from a role record.
+func (c NewRoleCmd) GetID(u mdb.Roles) string { return string(u.RoleID) }
+
+// Execute creates the role in the database.
+func (c NewRoleCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Roles, error) {
+	queries := mdb.New(tx)
+	return queries.CreateRole(ctx, mdb.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	})
+}
+
+// NewRoleCmd creates a command for inserting a role.
+func (d Database) NewRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRoleParams) NewRoleCmd {
+	return NewRoleCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+// UpdateRoleCmd is an audited command for updating roles.
+type UpdateRoleCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateRoleCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateRoleCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateRoleCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateRoleCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateRoleCmd) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c UpdateRoleCmd) Params() any { return c.params }
+
+// GetID returns the role ID for this command.
+func (c UpdateRoleCmd) GetID() string { return string(c.params.RoleID) }
+
+// GetBefore retrieves the role before the update.
+func (c UpdateRoleCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Roles, error) {
+	queries := mdb.New(tx)
+	return queries.GetRole(ctx, mdb.GetRoleParams{RoleID: c.params.RoleID})
+}
+
+// Execute updates the role in the database.
+func (c UpdateRoleCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateRole(ctx, mdb.UpdateRoleParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		RoleID:          c.params.RoleID,
+	})
+}
+
+// UpdateRoleCmd creates a command for updating a role.
+func (d Database) UpdateRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateRoleParams) UpdateRoleCmd {
+	return UpdateRoleCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+// DeleteRoleCmd is an audited command for deleting roles.
+type DeleteRoleCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RoleID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteRoleCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteRoleCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteRoleCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteRoleCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteRoleCmd) TableName() string { return "roles" }
+
+// GetID returns the role ID for this command.
+func (c DeleteRoleCmd) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the role before the delete.
+func (c DeleteRoleCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Roles, error) {
+	queries := mdb.New(tx)
+	return queries.GetRole(ctx, mdb.GetRoleParams{RoleID: c.id})
+}
+
+// Execute deletes the role from the database.
+func (c DeleteRoleCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteRole(ctx, mdb.DeleteRoleParams{RoleID: c.id})
+}
+
+// DeleteRoleCmd creates a command for deleting a role.
+func (d Database) DeleteRoleCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RoleID) DeleteRoleCmd {
+	return DeleteRoleCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+// NewRoleCmdMysql is an audited command for creating roles in MySQL.
+type NewRoleCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewRoleCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewRoleCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewRoleCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewRoleCmdMysql) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c NewRoleCmdMysql) Params() any { return c.params }
+
+// GetID extracts the ID from a role record.
+func (c NewRoleCmdMysql) GetID(u mdbm.Roles) string { return string(u.RoleID) }
+
+// Execute creates the role in the database.
+func (c NewRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Roles, error) {
+	queries := mdbm.New(tx)
+	params := mdbm.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	}
+	if err := queries.CreateRole(ctx, params); err != nil {
+		return mdbm.Roles{}, err
+	}
+	return queries.GetRole(ctx, mdbm.GetRoleParams{RoleID: params.RoleID})
+}
+
+// NewRoleCmd creates a command for inserting a role.
+func (d MysqlDatabase) NewRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRoleParams) NewRoleCmdMysql {
+	return NewRoleCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+// UpdateRoleCmdMysql is an audited command for updating roles in MySQL.
+type UpdateRoleCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateRoleCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateRoleCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateRoleCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateRoleCmdMysql) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c UpdateRoleCmdMysql) Params() any { return c.params }
+
+// GetID returns the role ID for this command.
+func (c UpdateRoleCmdMysql) GetID() string { return string(c.params.RoleID) }
+
+// GetBefore retrieves the role before the update.
+func (c UpdateRoleCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Roles, error) {
+	queries := mdbm.New(tx)
+	return queries.GetRole(ctx, mdbm.GetRoleParams{RoleID: c.params.RoleID})
+}
+
+// Execute updates the role in the database.
+func (c UpdateRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateRole(ctx, mdbm.UpdateRoleParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		RoleID:          c.params.RoleID,
+	})
+}
+
+// UpdateRoleCmd creates a command for updating a role.
+func (d MysqlDatabase) UpdateRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateRoleParams) UpdateRoleCmdMysql {
+	return UpdateRoleCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+// DeleteRoleCmdMysql is an audited command for deleting roles in MySQL.
+type DeleteRoleCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RoleID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteRoleCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteRoleCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteRoleCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteRoleCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteRoleCmdMysql) TableName() string { return "roles" }
+
+// GetID returns the role ID for this command.
+func (c DeleteRoleCmdMysql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the role before the delete.
+func (c DeleteRoleCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Roles, error) {
+	queries := mdbm.New(tx)
+	return queries.GetRole(ctx, mdbm.GetRoleParams{RoleID: c.id})
+}
+
+// Execute deletes the role from the database.
+func (c DeleteRoleCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteRole(ctx, mdbm.DeleteRoleParams{RoleID: c.id})
+}
+
+// DeleteRoleCmd creates a command for deleting a role.
+func (d MysqlDatabase) DeleteRoleCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RoleID) DeleteRoleCmdMysql {
+	return DeleteRoleCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+// NewRoleCmdPsql is an audited command for creating roles in PostgreSQL.
+type NewRoleCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewRoleCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewRoleCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewRoleCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewRoleCmdPsql) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c NewRoleCmdPsql) Params() any { return c.params }
+
+// GetID extracts the ID from a role record.
+func (c NewRoleCmdPsql) GetID(u mdbp.Roles) string { return string(u.RoleID) }
+
+// Execute creates the role in the database.
+func (c NewRoleCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Roles, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateRole(ctx, mdbp.CreateRoleParams{
+		RoleID:          types.NewRoleID(),
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+	})
+}
+
+// NewRoleCmd creates a command for inserting a role.
+func (d PsqlDatabase) NewRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateRoleParams) NewRoleCmdPsql {
+	return NewRoleCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+// UpdateRoleCmdPsql is an audited command for updating roles in PostgreSQL.
+type UpdateRoleCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateRoleParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateRoleCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateRoleCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateRoleCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateRoleCmdPsql) TableName() string { return "roles" }
+
+// Params returns the parameters for this command.
+func (c UpdateRoleCmdPsql) Params() any { return c.params }
+
+// GetID returns the role ID for this command.
+func (c UpdateRoleCmdPsql) GetID() string { return string(c.params.RoleID) }
+
+// GetBefore retrieves the role before the update.
+func (c UpdateRoleCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Roles, error) {
+	queries := mdbp.New(tx)
+	return queries.GetRole(ctx, mdbp.GetRoleParams{RoleID: c.params.RoleID})
+}
+
+// Execute updates the role in the database.
+func (c UpdateRoleCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateRole(ctx, mdbp.UpdateRoleParams{
+		Label:           c.params.Label,
+		SystemProtected: types.SafeBool{Val: c.params.SystemProtected},
+		RoleID:          c.params.RoleID,
+	})
+}
+
+// UpdateRoleCmd creates a command for updating a role.
+func (d PsqlDatabase) UpdateRoleCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateRoleParams) UpdateRoleCmdPsql {
+	return UpdateRoleCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+// DeleteRoleCmdPsql is an audited command for deleting roles in PostgreSQL.
+type DeleteRoleCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       types.RoleID
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteRoleCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteRoleCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteRoleCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteRoleCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteRoleCmdPsql) TableName() string { return "roles" }
+
+// GetID returns the role ID for this command.
+func (c DeleteRoleCmdPsql) GetID() string { return string(c.id) }
+
+// GetBefore retrieves the role before the delete.
+func (c DeleteRoleCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Roles, error) {
+	queries := mdbp.New(tx)
+	return queries.GetRole(ctx, mdbp.GetRoleParams{RoleID: c.id})
+}
+
+// Execute deletes the role from the database.
+func (c DeleteRoleCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteRole(ctx, mdbp.DeleteRoleParams{RoleID: c.id})
+}
+
+// DeleteRoleCmd creates a command for deleting a role.
+func (d PsqlDatabase) DeleteRoleCmd(ctx context.Context, auditCtx audited.AuditContext, id types.RoleID) DeleteRoleCmdPsql {
+	return DeleteRoleCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

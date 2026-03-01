@@ -247,8 +247,16 @@ admin action:
         *)             echo "Unknown action: {{action}}"; echo "Actions: generate, watch, verify, bundle, bundle-watch, bundle-verify"; exit 1 ;;
     esac
 
-# [SQL] Run sqlc generate in sql directory
-sqlc:
+# [Codegen] Generate sqlc.yml from shared definitions
+sqlc-config:
+    {{gocmd}} run ./tools/sqlcgen/...
+
+# [Codegen] Verify sqlc.yml is up-to-date (for CI)
+sqlc-config-verify:
+    {{gocmd}} run ./tools/sqlcgen/... -verify
+
+# [SQL] Generate sqlc.yml then run sqlc generate
+sqlc: sqlc-config
     cd ./sql && sqlc generate && echo "generated code successfully"
 
 # [Codegen] Generate db wrapper code from entity definitions

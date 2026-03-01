@@ -28,6 +28,8 @@ type AdminFields struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -43,6 +45,8 @@ type CreateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -58,6 +62,8 @@ type UpdateAdminFieldParams struct {
 	Validation   string                        `json:"validation"`
 	UIConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -83,6 +89,13 @@ func MapStringAdminField(a AdminFields) StringAdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UIConfig,
 		Type:         string(a.Type),
+		Translatable: fmt.Sprintf("%d", a.Translatable),
+		Roles: func() string {
+			if a.Roles.Valid {
+				return a.Roles.String
+			}
+			return ""
+		}(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
 		DateModified: a.DateModified.String(),
@@ -108,6 +121,8 @@ func (d Database) MapAdminField(a mdb.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -126,6 +141,8 @@ func (d Database) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdb.Create
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -143,6 +160,8 @@ func (d Database) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdb.Update
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -241,22 +260,6 @@ func (d Database) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsByPar
 	return &res, nil
 }
 
-// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
-// the given admin datatype ID.
-func (d Database) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdb.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
-	}
-	res := []AdminFields{}
-	for _, v := range rows {
-		m := d.MapAdminField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -275,6 +278,8 @@ func (d MysqlDatabase) MapAdminField(a mdbm.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -293,6 +298,8 @@ func (d MysqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbm.
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -310,6 +317,8 @@ func (d MysqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbm.
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -408,22 +417,6 @@ func (d MysqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFields
 	return &res, nil
 }
 
-// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
-// the given admin datatype ID.
-func (d MysqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbm.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
-	}
-	res := []AdminFields{}
-	for _, v := range rows {
-		m := d.MapAdminField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -442,6 +435,8 @@ func (d PsqlDatabase) MapAdminField(a mdbp.AdminFields) AdminFields {
 		Validation:   a.Validation,
 		UIConfig:     a.UiConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -460,6 +455,8 @@ func (d PsqlDatabase) MapCreateAdminFieldParams(a CreateAdminFieldParams) mdbp.C
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -477,6 +474,8 @@ func (d PsqlDatabase) MapUpdateAdminFieldParams(a UpdateAdminFieldParams) mdbp.U
 		Validation:   a.Validation,
 		UiConfig:     a.UIConfig,
 		Type:         a.Type,
+		Translatable: a.Translatable,
+		Roles:        a.Roles,
 		AuthorID:     a.AuthorID,
 		DateCreated:  a.DateCreated,
 		DateModified: a.DateModified,
@@ -575,22 +574,6 @@ func (d PsqlDatabase) ListAdminFieldsByParentIDPaginated(params ListAdminFieldsB
 	return &res, nil
 }
 
-// ListAdminFieldsByDatatypeID returns all admin fields whose parent_id matches
-// the given admin datatype ID.
-func (d PsqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbp.ListAdminFieldByParentIDParams{ParentID: datatypeID})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list admin fields by datatype ID: %w", err)
-	}
-	res := []AdminFields{}
-	for _, v := range rows {
-		m := d.MapAdminField(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
 // ========== AUDITED COMMAND TYPES ==========
 
 // ----- SQLite CREATE -----
@@ -638,6 +621,8 @@ func (c NewAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Adm
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
@@ -699,6 +684,8 @@ func (c UpdateAdminFieldCmd) Execute(ctx context.Context, tx audited.DBTX) error
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
@@ -802,6 +789,8 @@ func (c NewAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (md
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
@@ -867,6 +856,8 @@ func (c UpdateAdminFieldCmdMysql) Execute(ctx context.Context, tx audited.DBTX) 
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
@@ -970,6 +961,8 @@ func (c NewAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdb
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,
@@ -1031,6 +1024,8 @@ func (c UpdateAdminFieldCmdPsql) Execute(ctx context.Context, tx audited.DBTX) e
 		Validation:   c.params.Validation,
 		UiConfig:     c.params.UIConfig,
 		Type:         c.params.Type,
+		Translatable: c.params.Translatable,
+		Roles:        c.params.Roles,
 		AuthorID:     c.params.AuthorID,
 		DateCreated:  c.params.DateCreated,
 		DateModified: c.params.DateModified,

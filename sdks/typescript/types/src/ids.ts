@@ -75,6 +75,15 @@ export type ContentVersionID = Brand<string, 'ContentVersionID'>
 /** Unique identifier for an admin content version snapshot. */
 export type AdminContentVersionID = Brand<string, 'AdminContentVersionID'>
 
+/** Unique identifier for a locale. */
+export type LocaleID = Brand<string, 'LocaleID'>
+
+/** Unique identifier for a webhook. */
+export type WebhookID = Brand<string, 'WebhookID'>
+
+/** Unique identifier for a webhook delivery. */
+export type WebhookDeliveryID = Brand<string, 'WebhookDeliveryID'>
+
 /** URL-safe slug string used to identify routes. */
 export type Slug = Brand<string, 'Slug'>
 

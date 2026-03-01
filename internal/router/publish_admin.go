@@ -21,6 +21,7 @@ import (
 // AdminPublishRequest is the JSON body for admin publish/unpublish operations.
 type AdminPublishRequest struct {
 	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
+	Locale             string               `json:"locale"`
 }
 
 // AdminPublishResponse is the JSON response for admin publish and unpublish operations.
@@ -49,7 +50,7 @@ type AdminScheduleResponse struct {
 ///////////////////////////////
 
 // AdminPublishHandler handles POST requests to publish admin content.
-func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminPublishRequest
@@ -72,7 +73,7 @@ func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config
 	d := db.ConfigDB(c)
 	ac := middleware.AuditContextFromRequest(r, c)
 
-	err := publishing.PublishAdminContent(r.Context(), d, req.AdminContentDataID, user.UserID, ac, c.VersionMaxPerContent())
+	err := publishing.PublishAdminContent(r.Context(), d, req.AdminContentDataID, req.Locale, user.UserID, ac, c.VersionMaxPerContent(), dispatcher)
 	if err != nil {
 		utility.DefaultLogger.Error("admin publish content failed", err)
 		if publishing.IsRevisionConflict(err) {
@@ -92,7 +93,7 @@ func AdminPublishHandler(w http.ResponseWriter, r *http.Request, c config.Config
 }
 
 // AdminUnpublishHandler handles POST requests to unpublish admin content.
-func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
+func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Config, dispatcher publishing.WebhookDispatcher) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
 	var req AdminPublishRequest
@@ -115,7 +116,7 @@ func AdminUnpublishHandler(w http.ResponseWriter, r *http.Request, c config.Conf
 	d := db.ConfigDB(c)
 	ac := middleware.AuditContextFromRequest(r, c)
 
-	if err := publishing.UnpublishAdminContent(r.Context(), d, req.AdminContentDataID, user.UserID, ac); err != nil {
+	if err := publishing.UnpublishAdminContent(r.Context(), d, req.AdminContentDataID, req.Locale, user.UserID, ac, dispatcher); err != nil {
 		utility.DefaultLogger.Error("admin unpublish content failed", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

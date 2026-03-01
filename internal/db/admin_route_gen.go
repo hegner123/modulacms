@@ -64,6 +64,47 @@ func MapStringAdminRoute(a AdminRoutes) StringAdminRoutes {
 // SQLITE
 //////////////////////////////
 
+// MAPS
+
+// MapAdminRoute converts a sqlc-generated SQLite adminRoute to the wrapper type.
+func (d Database) MapAdminRoute(a mdb.AdminRoutes) AdminRoutes {
+	return AdminRoutes{
+		AdminRouteID: a.AdminRouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateAdminRouteParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdb.CreateAdminRouteParams {
+	return mdb.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateAdminRouteParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdb.UpdateAdminRouteParams {
+	return mdb.UpdateAdminRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       a.Status,
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
+
 // QUERIES
 
 // CountAdminRoutes returns the total number of adminRoutes in the database.
@@ -102,6 +143,47 @@ func (d Database) ListAdminRoutes() (*[]AdminRoutes, error) {
 // MYSQL
 //////////////////////////////
 
+// MAPS
+
+// MapAdminRoute converts a sqlc-generated MySQL adminRoute to the wrapper type.
+func (d MysqlDatabase) MapAdminRoute(a mdbm.AdminRoutes) AdminRoutes {
+	return AdminRoutes{
+		AdminRouteID: a.AdminRouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int64(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateAdminRouteParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbm.CreateAdminRouteParams {
+	return mdbm.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateAdminRouteParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbm.UpdateAdminRouteParams {
+	return mdbm.UpdateAdminRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
+
 // QUERIES
 
 // CountAdminRoutes returns the total number of adminRoutes in the database.
@@ -139,6 +221,47 @@ func (d MysqlDatabase) ListAdminRoutes() (*[]AdminRoutes, error) {
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
+
+// MAPS
+
+// MapAdminRoute converts a sqlc-generated PostgreSQL adminRoute to the wrapper type.
+func (d PsqlDatabase) MapAdminRoute(a mdbp.AdminRoutes) AdminRoutes {
+	return AdminRoutes{
+		AdminRouteID: a.AdminRouteID,
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int64(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapCreateAdminRouteParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreateAdminRouteParams(a CreateAdminRouteParams) mdbp.CreateAdminRouteParams {
+	return mdbp.CreateAdminRouteParams{
+		AdminRouteID: types.NewAdminRouteID(),
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+	}
+}
+
+// MapUpdateAdminRouteParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdateAdminRouteParams(a UpdateAdminRouteParams) mdbp.UpdateAdminRouteParams {
+	return mdbp.UpdateAdminRouteParams{
+		Slug:         a.Slug,
+		Title:        a.Title,
+		Status:       int32(a.Status),
+		AuthorID:     a.AuthorID,
+		DateCreated:  a.DateCreated,
+		DateModified: a.DateModified,
+		Slug_2:       a.Slug_2,
+	}
+}
 
 // QUERIES
 

@@ -104,6 +104,8 @@ export type CreateFieldParams = {
   ui_config: string
   /** The data type of this field. */
   type: FieldType
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles?: string[] | null
   /** Author user ID, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */
@@ -156,6 +158,8 @@ export type UpdateFieldParams = {
   ui_config: string
   /** Updated field type. */
   type: FieldType
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles?: string[] | null
   /** Author user ID, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */

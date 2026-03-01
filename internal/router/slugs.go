@@ -49,6 +49,8 @@ func apiGetSlugContent(w http.ResponseWriter, r *http.Request, c config.Config) 
 // apiGetSlugContentPublished serves content from published snapshots.
 // It looks up the route, finds the root content data, retrieves the published
 // snapshot, deserializes it, and builds the tree for response.
+// When i18n is enabled, resolves locale from ?locale= param, Accept-Language
+// header, or default locale. ?locale=* returns lightweight metadata only.
 func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
@@ -88,12 +90,54 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config
 		return fmt.Errorf("no root content data for slug %s", slug)
 	}
 
-	// 3. Get the published snapshot.
-	version, err := d.GetPublishedSnapshot(rootContentDataID, "")
-	if err != nil {
-		utility.DefaultLogger.Error("GetPublishedSnapshot failed", err)
+	// 2b. Handle ?locale=* — return locale availability metadata only.
+	if r.URL.Query().Get("locale") == "*" {
+		meta, metaErr := BuildLocaleMetadata(d, rootContentDataID)
+		if metaErr != nil {
+			utility.DefaultLogger.Error("BuildLocaleMetadata failed", metaErr)
+			http.Error(w, "failed to build locale metadata", http.StatusInternalServerError)
+			return metaErr
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(meta)
+		return nil
+	}
+
+	// 3. Resolve locale and get the published snapshot.
+	locale := ResolveLocale(r, &c, d)
+
+	var version *db.ContentVersion
+	var resolvedLocale string
+	if locale != "" {
+		// i18n enabled: try requested locale, then fallback chain, then default.
+		resolvedLocale, version, err = WalkFallback(d, rootContentDataID, locale)
+		if err != nil || version == nil {
+			// Try default locale as last resort.
+			defaultLocale := c.I18nDefaultLocale()
+			if defaultLocale != locale {
+				version, err = d.GetPublishedSnapshot(rootContentDataID, defaultLocale)
+				if err == nil {
+					resolvedLocale = defaultLocale
+				}
+			}
+		}
+		// If still no snapshot, try empty-locale (pre-i18n content).
+		if version == nil {
+			version, err = d.GetPublishedSnapshot(rootContentDataID, "")
+			if err == nil {
+				resolvedLocale = ""
+			}
+		}
+	} else {
+		// i18n disabled: use empty locale (original behavior).
+		version, err = d.GetPublishedSnapshot(rootContentDataID, "")
+		resolvedLocale = ""
+	}
+
+	if version == nil {
 		http.Error(w, "content not published", http.StatusNotFound)
-		return err
+		return fmt.Errorf("no published snapshot for slug %s locale %s", slug, locale)
 	}
 
 	// 4. Deserialize the snapshot JSON.
@@ -142,8 +186,9 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config
 	}
 
 	// 7. Compose referenced subtrees using published snapshots.
+	// Pass locale through so composed references use the same locale.
 	if root.CoreRoot != nil {
-		fetcher := core.NewCachedFetcher(&SnapshotTreeFetcher{Driver: d})
+		fetcher := core.NewCachedFetcher(&SnapshotTreeFetcher{Driver: d, Locale: resolvedLocale})
 		composeErr := core.ComposeTrees(r.Context(), root.CoreRoot, fetcher, core.ComposeOptions{
 			MaxDepth:       c.CompositionMaxDepth(),
 			MaxConcurrency: 10,
@@ -160,6 +205,8 @@ func apiGetSlugContentPublished(w http.ResponseWriter, r *http.Request, c config
 
 // apiGetSlugContentLive serves live draft content directly from the database.
 // This is the original content delivery path, now used only for preview mode.
+// When i18n is enabled, resolves locale from the request and filters content
+// fields to the requested locale + non-translatable fields (locale="").
 func apiGetSlugContentLive(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
@@ -198,8 +245,19 @@ func apiGetSlugContentLive(w http.ResponseWriter, r *http.Request, c config.Conf
 		dt = append(dt, *datatype)
 	}
 
-	// Fetch existing content field values for this route.
-	contentFields, err := d.ListContentFieldsByRoute(nullableRoute)
+	// Resolve locale for field filtering. When i18n is enabled, this returns
+	// the target locale; when disabled, returns "" (fetch all fields).
+	locale := ResolveLocale(r, &c, d)
+
+	// Fetch content field values for this route, filtered by locale when i18n is enabled.
+	var contentFields *[]db.ContentFields
+	if locale != "" {
+		// i18n enabled: fetch only locale-specific + non-translatable (locale="") fields.
+		contentFields, err = d.ListContentFieldsByRouteAndLocale(nullableRoute, locale)
+	} else {
+		// i18n disabled: fetch all fields (original behavior).
+		contentFields, err = d.ListContentFieldsByRoute(nullableRoute)
+	}
 	if err != nil {
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -264,6 +322,33 @@ func apiGetSlugContentLive(w http.ResponseWriter, r *http.Request, c config.Conf
 		}
 	}
 
+	// Filter fields by the authenticated user's role for preview mode.
+	// The caller (apiGetSlugContent) already verified the user is authenticated.
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+	filteredFD := db.FilterFieldsByRole(allFD, roleID, isAdmin)
+	if len(filteredFD) != len(allFD) {
+		// Rebuild allCF to match the filtered allFD by index.
+		accessibleFieldIDs := make(map[string]bool, len(filteredFD))
+		for _, fd := range filteredFD {
+			accessibleFieldIDs[fd.FieldID.String()] = true
+		}
+		var filteredCF []db.ContentFields
+		var filteredFD2 []db.Fields
+		for i, fd := range allFD {
+			if accessibleFieldIDs[fd.FieldID.String()] {
+				filteredCF = append(filteredCF, allCF[i])
+				filteredFD2 = append(filteredFD2, fd)
+			}
+		}
+		allCF = filteredCF
+		allFD = filteredFD2
+	}
+
 	root, err := model.BuildTree(utility.DefaultLogger, dataSlice, dt, allCF, allFD)
 	if err != nil {
 		utility.DefaultLogger.Error("BuildTree error", err)
@@ -325,9 +410,11 @@ func applyFormatAndTransform(w http.ResponseWriter, r *http.Request, c config.Co
 // SnapshotTreeFetcher implements core.TreeFetcher by resolving content
 // references via published snapshots instead of live database data.
 // This ensures that public delivery only shows published content for
-// referenced subtrees.
+// referenced subtrees. Locale propagates to composed references so that
+// all subtrees resolve from the same locale.
 type SnapshotTreeFetcher struct {
 	Driver db.DbDriver
+	Locale string
 }
 
 // FetchAndBuildTree retrieves the published snapshot for the given content
@@ -335,7 +422,7 @@ type SnapshotTreeFetcher struct {
 // exists for the reference, it returns nil gracefully (the composition
 // layer will produce a _system_log node for the missing reference).
 func (f *SnapshotTreeFetcher) FetchAndBuildTree(ctx context.Context, id types.ContentID) (*core.Root, error) {
-	version, err := f.Driver.GetPublishedSnapshot(id, "")
+	version, err := f.Driver.GetPublishedSnapshot(id, f.Locale)
 	if err != nil {
 		return nil, fmt.Errorf("no published snapshot for %s: %w", id, err)
 	}

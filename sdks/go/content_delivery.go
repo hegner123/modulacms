@@ -14,11 +14,15 @@ type ContentDeliveryResource struct {
 
 // GetPage retrieves a page by its slug. The format parameter controls
 // the response structure (e.g. "clean", "contentful", "sanity", etc.).
+// The locale parameter, when non-empty, requests content in a specific locale.
 // Returns json.RawMessage because the output structure varies by format.
-func (c *ContentDeliveryResource) GetPage(ctx context.Context, slug string, format string) (json.RawMessage, error) {
+func (c *ContentDeliveryResource) GetPage(ctx context.Context, slug string, format string, locale string) (json.RawMessage, error) {
 	params := url.Values{}
 	if format != "" {
 		params.Set("format", format)
+	}
+	if locale != "" {
+		params.Set("locale", locale)
 	}
 	path := "/api/v1/content/" + strings.TrimLeft(slug, "/")
 	var result json.RawMessage

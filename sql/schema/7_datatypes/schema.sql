@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
 
 CREATE INDEX IF NOT EXISTS idx_datatypes_parent ON datatypes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_datatypes_author ON datatypes(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_datatypes_name ON datatypes(name);
 
 CREATE TRIGGER IF NOT EXISTS update_datatypes_modified
     AFTER UPDATE ON datatypes

@@ -61,6 +61,7 @@ type ContentField struct {
 	ContentDataID  *ContentID     `json:"content_data_id"`
 	FieldID        *FieldID       `json:"field_id"`
 	FieldValue     string         `json:"field_value"`
+	Locale         string         `json:"locale"`
 	AuthorID       *UserID        `json:"author_id"`
 	DateCreated    Timestamp      `json:"date_created"`
 	DateModified   Timestamp      `json:"date_modified"`
@@ -164,6 +165,8 @@ type Field struct {
 	Validation   string      `json:"validation"`
 	UIConfig     string      `json:"ui_config"`
 	Type         FieldType   `json:"type"`
+	Translatable int64       `json:"translatable"`
+	Roles        []string    `json:"roles"` // nil = unrestricted
 	AuthorID     *UserID     `json:"author_id"`
 	DateCreated  Timestamp   `json:"date_created"`
 	DateModified Timestamp   `json:"date_modified"`
@@ -180,6 +183,7 @@ type CreateFieldParams struct {
 	Validation string      `json:"validation"`
 	UIConfig   string      `json:"ui_config"`
 	Type       FieldType   `json:"type"`
+	Roles      []string    `json:"roles,omitempty"` // nil = unrestricted
 	AuthorID   *UserID     `json:"author_id"`
 }
 
@@ -194,6 +198,7 @@ type UpdateFieldParams struct {
 	Validation string      `json:"validation"`
 	UIConfig   string      `json:"ui_config"`
 	Type       FieldType   `json:"type"`
+	Roles      []string    `json:"roles,omitempty"` // nil = unrestricted
 	AuthorID   *UserID     `json:"author_id"`
 }
 
@@ -623,6 +628,7 @@ type AdminContentField struct {
 	AdminContentDataID  *AdminContentID     `json:"admin_content_data_id"`
 	AdminFieldID        *AdminFieldID       `json:"admin_field_id"`
 	AdminFieldValue     string              `json:"admin_field_value"`
+	Locale              string              `json:"locale"`
 	AuthorID            *UserID             `json:"author_id"`
 	DateCreated         Timestamp           `json:"date_created"`
 	DateModified        Timestamp           `json:"date_modified"`
@@ -711,6 +717,8 @@ type AdminField struct {
 	Validation   string           `json:"validation"`
 	UIConfig     string           `json:"ui_config"`
 	Type         FieldType        `json:"type"`
+	Translatable int64            `json:"translatable"`
+	Roles        []string         `json:"roles"` // nil = unrestricted
 	AuthorID     *UserID          `json:"author_id"`
 	DateCreated  Timestamp        `json:"date_created"`
 	DateModified Timestamp        `json:"date_modified"`
@@ -726,6 +734,7 @@ type CreateAdminFieldParams struct {
 	Validation string           `json:"validation"`
 	UIConfig   string           `json:"ui_config"`
 	Type       FieldType        `json:"type"`
+	Roles      []string         `json:"roles,omitempty"` // nil = unrestricted
 	AuthorID   *UserID          `json:"author_id"`
 }
 
@@ -740,6 +749,7 @@ type UpdateAdminFieldParams struct {
 	Validation   string           `json:"validation"`
 	UIConfig     string           `json:"ui_config"`
 	Type         FieldType        `json:"type"`
+	Roles        []string         `json:"roles,omitempty"` // nil = unrestricted
 	AuthorID     *UserID          `json:"author_id"`
 }
 
@@ -945,11 +955,13 @@ type AdminContentVersion struct {
 // PublishRequest is the request body for publishing content.
 type PublishRequest struct {
 	ContentDataID ContentID `json:"content_data_id"`
+	Locale        string    `json:"locale,omitempty"`
 }
 
 // AdminPublishRequest is the request body for publishing admin content.
 type AdminPublishRequest struct {
 	AdminContentDataID AdminContentID `json:"admin_content_data_id"`
+	Locale             string         `json:"locale,omitempty"`
 }
 
 // PublishResponse is the response from a publish or unpublish operation.
@@ -1034,4 +1046,117 @@ type AdminRestoreResponse struct {
 	RestoredVersion    string   `json:"restored_version_id"`
 	FieldsRestored     int      `json:"fields_restored"`
 	UnmappedFields     []string `json:"unmapped_fields,omitempty"`
+}
+
+// ---------------------------------------------------------------------------
+// Locale
+// ---------------------------------------------------------------------------
+
+// Locale represents a locale configuration for i18n content.
+type Locale struct {
+	LocaleID     LocaleID `json:"locale_id"`
+	Code         string   `json:"code"`
+	Label        string   `json:"label"`
+	IsDefault    bool     `json:"is_default"`
+	IsEnabled    bool     `json:"is_enabled"`
+	FallbackCode string   `json:"fallback_code"`
+	SortOrder    int64    `json:"sort_order"`
+	DateCreated  string   `json:"date_created"`
+}
+
+// CreateLocaleRequest contains parameters for creating a new locale.
+type CreateLocaleRequest struct {
+	Code         string `json:"code"`
+	Label        string `json:"label"`
+	IsDefault    bool   `json:"is_default"`
+	IsEnabled    bool   `json:"is_enabled"`
+	FallbackCode string `json:"fallback_code,omitempty"`
+	SortOrder    int64  `json:"sort_order"`
+}
+
+// UpdateLocaleRequest contains parameters for updating an existing locale.
+type UpdateLocaleRequest struct {
+	LocaleID     LocaleID `json:"locale_id"`
+	Code         string   `json:"code"`
+	Label        string   `json:"label"`
+	IsDefault    bool     `json:"is_default"`
+	IsEnabled    bool     `json:"is_enabled"`
+	FallbackCode string   `json:"fallback_code,omitempty"`
+	SortOrder    int64    `json:"sort_order"`
+}
+
+// ---------------------------------------------------------------------------
+// Webhook
+// ---------------------------------------------------------------------------
+
+// Webhook represents a webhook endpoint that receives event notifications.
+type Webhook struct {
+	WebhookID    WebhookID         `json:"webhook_id"`
+	Name         string            `json:"name"`
+	URL          string            `json:"url"`
+	Secret       string            `json:"secret"`
+	Events       []string          `json:"events"`
+	IsActive     bool              `json:"is_active"`
+	Headers      map[string]string `json:"headers"`
+	AuthorID     UserID            `json:"author_id"`
+	DateCreated  Timestamp         `json:"date_created"`
+	DateModified Timestamp         `json:"date_modified"`
+}
+
+// CreateWebhookRequest contains parameters for creating a new webhook.
+type CreateWebhookRequest struct {
+	Name     string            `json:"name"`
+	URL      string            `json:"url"`
+	Secret   string            `json:"secret,omitempty"`
+	Events   []string          `json:"events"`
+	IsActive bool              `json:"is_active"`
+	Headers  map[string]string `json:"headers,omitempty"`
+}
+
+// UpdateWebhookRequest contains parameters for updating an existing webhook.
+type UpdateWebhookRequest struct {
+	WebhookID WebhookID         `json:"webhook_id"`
+	Name      string            `json:"name"`
+	URL       string            `json:"url"`
+	Secret    string            `json:"secret,omitempty"`
+	Events    []string          `json:"events"`
+	IsActive  bool              `json:"is_active"`
+	Headers   map[string]string `json:"headers,omitempty"`
+}
+
+// WebhookDelivery represents a single delivery attempt for a webhook event.
+type WebhookDelivery struct {
+	DeliveryID     WebhookDeliveryID `json:"delivery_id"`
+	WebhookID      WebhookID         `json:"webhook_id"`
+	Event          string            `json:"event"`
+	Payload        string            `json:"payload"`
+	Status         string            `json:"status"`
+	Attempts       int64             `json:"attempts"`
+	LastStatusCode int64             `json:"last_status_code"`
+	LastError      string            `json:"last_error"`
+	NextRetryAt    string            `json:"next_retry_at"`
+	CreatedAt      Timestamp         `json:"created_at"`
+	CompletedAt    string            `json:"completed_at"`
+}
+
+// WebhookTestResponse is the response from a webhook test request.
+type WebhookTestResponse struct {
+	Status     string `json:"status"`
+	StatusCode int    `json:"status_code,omitempty"`
+	Error      string `json:"error,omitempty"`
+}
+
+// ---------------------------------------------------------------------------
+// Translation
+// ---------------------------------------------------------------------------
+
+// CreateTranslationRequest is the request body for creating translations for a content item.
+type CreateTranslationRequest struct {
+	Locale string `json:"locale"`
+}
+
+// CreateTranslationResponse is the response from a translation creation operation.
+type CreateTranslationResponse struct {
+	Locale        string `json:"locale"`
+	FieldsCreated int    `json:"fields_created"`
 }

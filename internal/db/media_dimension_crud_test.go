@@ -4,6 +4,8 @@ package db
 
 import (
 	"testing"
+
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 func TestDatabase_CRUD_MediaDimension(t *testing.T) {
@@ -24,8 +26,8 @@ func TestDatabase_CRUD_MediaDimension(t *testing.T) {
 	// --- Create ---
 	created, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       NewNullString("Thumbnail"),
-		Width:       NewNullInt64(1920),
-		Height:      NewNullInt64(1080),
+		Width:       types.NewNullableInt64(1920),
+		Height:      types.NewNullableInt64(1080),
 		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
@@ -98,8 +100,8 @@ func TestDatabase_CRUD_MediaDimension(t *testing.T) {
 	// --- Update ---
 	_, err = d.UpdateMediaDimension(ctx, ac, UpdateMediaDimensionParams{
 		Label:       NewNullString("Banner"),
-		Width:       NewNullInt64(2560),
-		Height:      NewNullInt64(1440),
+		Width:       types.NewNullableInt64(2560),
+		Height:      types.NewNullableInt64(1440),
 		AspectRatio: NewNullString("16:9"),
 		MdID:        created.MdID,
 	})
@@ -154,8 +156,8 @@ func TestDatabase_CRUD_MediaDimension_NullFields(t *testing.T) {
 
 	created, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       NullString{},
-		Width:       NullInt64{},
-		Height:      NullInt64{},
+		Width:       types.NullableInt64{},
+		Height:      types.NullableInt64{},
 		AspectRatio: NullString{},
 	})
 	if err != nil {

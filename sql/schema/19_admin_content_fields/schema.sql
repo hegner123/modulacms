@@ -4,6 +4,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
@@ -22,6 +23,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_field
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_acf_unique_locale ON admin_content_fields(admin_content_data_id, admin_field_id, locale);
 
 CREATE TRIGGER IF NOT EXISTS update_admin_content_fields_modified
     AFTER UPDATE ON admin_content_fields

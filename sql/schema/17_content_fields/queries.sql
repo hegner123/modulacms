@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
@@ -50,10 +51,12 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value,
+    locale,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -71,6 +74,7 @@ SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
+    locale = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
@@ -96,3 +100,13 @@ SELECT * FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?;
+
+-- name: ListContentFieldsByContentDataAndLocale :many
+SELECT * FROM content_fields
+WHERE content_data_id = ? AND locale IN (?, '')
+ORDER BY content_field_id;
+
+-- name: ListContentFieldsByRouteAndLocale :many
+SELECT * FROM content_fields
+WHERE route_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id;

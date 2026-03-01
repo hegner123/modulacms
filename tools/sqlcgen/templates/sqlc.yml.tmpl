@@ -1,0 +1,50 @@
+version: "2"
+
+# ============================================
+# SHARED OVERRIDES TEMPLATE (copied to each engine)
+# ============================================
+# Note: sqlc v2 requires overrides to be per-engine when using multiple engines.
+# The overrides below are duplicated in each engine section.
+
+sql:
+{{- range $i, $engine := .Engines}}
+{{separator $i}}  # ---------- {{$engine.Label}} ----------
+  - engine: "{{$engine.Name}}"
+    schema: "{{$engine.SchemaGlob}}"
+    queries: "{{$engine.QueryGlob}}"
+    gen:
+      go:
+        package: "{{$engine.Package}}"
+        out: "{{$engine.OutDir}}"
+        emit_json_tags: true
+        emit_empty_slices: true
+        json_tags_case_style: "snake"
+        initialisms: ["ID", "URL", "OAuth", "SSH", "HTTP", "HTTPS", "API"]
+        query_parameter_limit: 0
+        rename:
+{{- range $.Renames}}
+{{- if .Comment}}
+          # {{.Comment}}
+{{- end}}
+{{- if .Quoted}}
+          {{.From}}: "{{.To}}"
+{{- else}}
+          {{.From}}: {{.To}}
+{{- end}}
+{{- end}}
+        overrides:
+{{- range $.Overrides}}
+{{- if .Comment}}
+          # {{.Comment}}
+{{- end}}
+          - column: "{{.Column}}"
+{{- if .Nullable}}
+            nullable: {{if derefBool .Nullable}}true{{else}}false{{end}}
+{{- end}}
+{{- if .Import}}
+            go_type: {import: "{{.Import}}", type: "{{.Type}}"}
+{{- else}}
+            go_type: {type: "{{.Type}}"}
+{{- end}}
+{{- end}}
+{{- end}}

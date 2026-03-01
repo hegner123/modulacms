@@ -44,6 +44,7 @@ const (
 	DIALOGPUBLISHCONTENT       DialogAction = "publish_content"
 	DIALOGUNPUBLISHCONTENT     DialogAction = "unpublish_content"
 	DIALOGRESTOREVERSION       DialogAction = "restore_version"
+	DIALOGLOCALESELECT         DialogAction = "locale_select"
 )
 
 // DialogModel represents a dialog that can be rendered on top of other content
@@ -116,6 +117,8 @@ func (d *DialogModel) Update(msg tea.Msg) (DialogModel, tea.Cmd) {
 		DIALOGDEPLOYPULL, DIALOGDEPLOYPUSH,
 		DIALOGPUBLISHCONTENT, DIALOGUNPUBLISHCONTENT, DIALOGRESTOREVERSION:
 		return d.ToggleControls(msg)
+	case DIALOGLOCALESELECT:
+		return d.LocaleSelectControls(msg)
 	case DIALOGGENERIC:
 		// Generic dialog dismisses on enter or esc
 		if keyMsg, ok := msg.(tea.KeyMsg); ok {
@@ -332,6 +335,51 @@ func FilePickerOverlay(base string, fp filepicker.Model, width, height int) stri
 		pickerView,
 		lipgloss.WithWhitespaceChars(" "),
 	)
+}
+
+// localeDialogLocales holds the locale list during locale selection dialog lifecycle.
+// Follows the same module-level context pattern as publishContentContext.
+var localeDialogLocales []string
+
+// LocaleSelectControls handles navigation within the locale selection dialog.
+// Up/down cycles through locale options (tracked via ActionIndex),
+// enter selects the current locale, esc cancels.
+func (d *DialogModel) LocaleSelectControls(msg tea.Msg) (DialogModel, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "up", "k":
+			if d.ActionIndex > 0 {
+				d.ActionIndex--
+				d.Message = buildLocaleDialogMessage(localeDialogLocales, d.ActionIndex)
+			}
+			return *d, nil
+		case "down", "j":
+			if d.ActionIndex < len(localeDialogLocales)-1 {
+				d.ActionIndex++
+				d.Message = buildLocaleDialogMessage(localeDialogLocales, d.ActionIndex)
+			}
+			return *d, nil
+		case "enter":
+			return *d, func() tea.Msg { return DialogAcceptMsg{Action: d.Action} }
+		case "esc":
+			return *d, func() tea.Msg { return DialogCancelMsg{} }
+		}
+	}
+	return *d, nil
+}
+
+// buildLocaleDialogMessage renders the locale list with a cursor indicator.
+func buildLocaleDialogMessage(locales []string, cursor int) string {
+	var b strings.Builder
+	for i, loc := range locales {
+		if i == cursor {
+			b.WriteString("> " + loc + "\n")
+		} else {
+			b.WriteString("  " + loc + "\n")
+		}
+	}
+	return b.String()
 }
 
 // ShowPublishDialogMsg triggers showing a publish/unpublish confirmation dialog.

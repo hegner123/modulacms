@@ -123,6 +123,8 @@ export type ContentField = {
   field_id: FieldID | null
   /** The stored value as a serialized string. */
   field_value: string
+  /** Locale code for this field value (e.g. `"en"`, `"fr"`). */
+  locale: string
   /** ID of the user who set this value, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */

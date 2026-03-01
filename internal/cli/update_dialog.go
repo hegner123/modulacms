@@ -82,6 +82,48 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			DialogActiveSetCmd(true),
 			FocusSetCmd(DIALOGFOCUS),
 		)
+	case LocaleListMsg:
+		if msg.Err != nil {
+			return m, ShowDialog("Error", fmt.Sprintf("Failed to load locales: %v", msg.Err), false)
+		}
+		if len(msg.Locales) == 0 {
+			return m, ShowDialog("Info", "No enabled locales configured", false)
+		}
+		// Build the locale code list for the selection dialog
+		localeDialogLocales = make([]string, len(msg.Locales))
+		for i, loc := range msg.Locales {
+			localeDialogLocales[i] = loc.Code + " - " + loc.Label
+		}
+		// Find current locale index
+		startIdx := 0
+		for i, loc := range msg.Locales {
+			if loc.Code == m.ActiveLocale {
+				startIdx = i
+				break
+			}
+		}
+		dialogMessage := buildLocaleDialogMessage(localeDialogLocales, startIdx)
+		dialog := NewDialog("Select Locale", dialogMessage, false, DIALOGLOCALESELECT)
+		dialog.ActionIndex = startIdx
+		dialog.SetButtons("Select", "Cancel")
+		dialog.ShowCancel = true
+		return m, tea.Batch(
+			DialogSetCmd(&dialog),
+			DialogActiveSetCmd(true),
+			FocusSetCmd(DIALOGFOCUS),
+		)
+
+	case LocaleSwitchMsg:
+		m.ActiveLocale = msg.Locale
+		// Reload content fields for the new locale if viewing content
+		if !m.PageRouteId.IsZero() {
+			node := m.Root.NodeAtIndex(m.Cursor)
+			if node != nil && node.Instance != nil {
+				return m, LoadContentFieldsForLocaleCmd(m.Config, node.Instance.ContentDataID, node.Instance.DatatypeID, m.ActiveLocale)
+			}
+		}
+		return m, nil
+
 	case ShowDeleteContentDialogMsg:
 		// Show delete content confirmation dialog
 		var dialogMsg string
@@ -664,6 +706,28 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			return m, tea.Batch(
 				DialogActiveSetCmd(false),
 				FocusSetCmd(PAGEFOCUS),
+			)
+		case DIALOGLOCALESELECT:
+			// Extract the locale code from the selected locale option
+			selectedIdx := 0
+			if m.Dialog != nil {
+				selectedIdx = m.Dialog.ActionIndex
+			}
+			var selectedLocale string
+			if selectedIdx >= 0 && selectedIdx < len(localeDialogLocales) {
+				// The locale string is "code - label", extract the code
+				parts := strings.SplitN(localeDialogLocales[selectedIdx], " - ", 2)
+				if len(parts) > 0 {
+					selectedLocale = parts[0]
+				}
+			}
+			localeDialogLocales = nil // Clear the context
+			return m, tea.Batch(
+				DialogActiveSetCmd(false),
+				FocusSetCmd(PAGEFOCUS),
+				func() tea.Msg {
+					return LocaleSwitchMsg{Locale: selectedLocale}
+				},
 			)
 		case DIALOGDELETE:
 			id := m.GetCurrentRowId()

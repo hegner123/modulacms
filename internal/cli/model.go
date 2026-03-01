@@ -192,6 +192,12 @@ type Model struct {
 	SSHPublicKey      string
 	UserID            types.UserID
 
+	// Webhook management
+	WebhooksList []db.Webhook
+
+	// i18n locale state
+	ActiveLocale string // Current locale code; "" means i18n disabled / default behavior
+
 	// Version list state
 	Versions         []db.ContentVersion
 	ShowVersionList  bool

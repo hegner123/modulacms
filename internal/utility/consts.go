@@ -13,7 +13,7 @@ const (
 
 // Standard MIME types.
 const (
-    AppJson string = "application/json"
+	AppJson string = "application/json"
 )
 
 // SizeInBytes converts a value in the given StorageUnit to bytes.

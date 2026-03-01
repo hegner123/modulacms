@@ -18,6 +18,7 @@ export type {
   ContentFieldID,
   ContentRelationID,
   ContentVersionID,
+  LocaleID,
   DatatypeID,
   FieldID,
   MediaID,

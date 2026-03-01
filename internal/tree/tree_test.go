@@ -470,7 +470,7 @@ func TestLoadFromRows_OrphanCircularDetection(t *testing.T) {
 	// With missing parents, hasCircularReference returns false (parent==nil),
 	// so they remain as unresolved orphans, not circular refs.
 	rows := []db.GetContentTreeByRouteRow{
-		makeRow("R1", ""),        // real root
+		makeRow("R1", ""),         // real root
 		makeRow("AA", "MISSING1"), // parent not in rows
 		makeRow("BB", "MISSING2"), // parent not in rows
 	}

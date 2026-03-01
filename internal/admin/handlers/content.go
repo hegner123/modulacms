@@ -211,7 +211,7 @@ const emptyEditorState = `{"blocks":{},"rootId":null}`
 // buildTreeJSON loads the descendants of a content node and their datatype labels,
 // then returns the block editor state as a JSON string. Always returns valid JSON
 // so the editor can render even with zero children (allowing users to add blocks).
-func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.ContentID) string {
+func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.ContentID, roleID string, isAdmin bool) string {
 	descendants, descErr := driver.GetContentDataDescendants(ctx, contentID)
 	if descErr != nil || descendants == nil || len(*descendants) <= 1 {
 		return emptyEditorState
@@ -248,6 +248,16 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		}
 		fds := make([]blockFieldData, 0, len(*cfRows))
 		for _, row := range *cfRows {
+			// Check field-level role access before including in block editor data.
+			if !isAdmin && row.FieldID.Valid {
+				fieldDef, fieldErr := driver.GetField(row.FieldID.ID)
+				if fieldErr != nil {
+					continue
+				}
+				if !db.IsFieldAccessible(*fieldDef, roleID, isAdmin) {
+					continue
+				}
+			}
 			fds = append(fds, blockFieldData{
 				ContentFieldID: row.ContentFieldID.String(),
 				FieldID:        row.FFieldID.String(),
@@ -334,7 +344,8 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 // ContentEditHandler renders the content editor page.
 // Loads content by ID from the URL path and its associated fields.
 // Resolves datatype, route, and author IDs to human-readable labels.
-func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
+// When i18n is enabled, loads enabled locales for the locale tab bar.
+func ContentEditHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -363,6 +374,34 @@ func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
 			contentFields = *fields
 		}
 
+		// Filter content fields by the authenticated user's role.
+		// Look up each field definition to check its Roles column.
+		editUser := middleware.AuthenticatedUser(r.Context())
+		editIsAdmin := middleware.ContextIsAdmin(r.Context())
+		editRoleID := ""
+		if editUser != nil {
+			editRoleID = editUser.Role
+		}
+		if !editIsAdmin && len(contentFields) > 0 {
+			accessible := make([]db.ContentFieldWithFieldRow, 0, len(contentFields))
+			for _, cf := range contentFields {
+				if !cf.FieldID.Valid {
+					accessible = append(accessible, cf)
+					continue
+				}
+				fieldDef, fieldErr := driver.GetField(cf.FieldID.ID)
+				if fieldErr != nil {
+					// Cannot verify access; fail-closed: skip the field.
+					utility.DefaultLogger.Warn("field role check: could not fetch field definition, skipping", fieldErr)
+					continue
+				}
+				if db.IsFieldAccessible(*fieldDef, editRoleID, editIsAdmin) {
+					accessible = append(accessible, cf)
+				}
+			}
+			contentFields = accessible
+		}
+
 		// Resolve related entities to human-readable labels
 		meta := pages.ContentMeta{}
 		if content.DatatypeID.Valid {
@@ -389,7 +428,21 @@ func ContentEditHandler(driver db.DbDriver) http.HandlerFunc {
 			}
 		}
 
-		treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID)
+		// Populate i18n metadata when enabled
+		cfg, cfgErr := mgr.Config()
+		if cfgErr == nil && cfg.I18nEnabled() {
+			meta.I18nEnabled = true
+			meta.ActiveLocale = r.URL.Query().Get("locale")
+			if meta.ActiveLocale == "" {
+				meta.ActiveLocale = cfg.I18nDefaultLocale()
+			}
+			enabledLocales, locErr := driver.ListEnabledLocales()
+			if locErr == nil && enabledLocales != nil {
+				meta.EnabledLocales = *enabledLocales
+			}
+		}
+
+		treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID, editRoleID, editIsAdmin)
 
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Edit Content")
@@ -1293,10 +1346,35 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 		}
 
 		// --- Phase 4: Field value updates ---
+		saveIsAdmin := middleware.ContextIsAdmin(r.Context())
+		saveRoleID := user.Role
 		for _, fu := range req.FieldUpdates {
 			cdIDStr := fu.ContentDataID
 			if mapped, ok := idMap[cdIDStr]; ok {
 				cdIDStr = mapped
+			}
+
+			// Guard: check field-level role access before allowing updates.
+			// Resolve the field definition ID from either the field update or existing content field.
+			guardFieldID := fu.FieldID
+			if guardFieldID == "" && fu.ContentFieldID != "" {
+				existingCF, cfErr := driver.GetContentField(types.ContentFieldID(fu.ContentFieldID))
+				if cfErr == nil && existingCF.FieldID.Valid {
+					guardFieldID = existingCF.FieldID.ID.String()
+				}
+			}
+			if guardFieldID != "" {
+				fieldDef, fieldErr := driver.GetField(types.FieldID(guardFieldID))
+				if fieldErr != nil {
+					utility.DefaultLogger.Warn(fmt.Sprintf("tree-save: field role check failed for %s, skipping update", guardFieldID), fieldErr)
+					resp.Errors = append(resp.Errors, fmt.Sprintf("field access check failed for %s", guardFieldID))
+					continue
+				}
+				if !db.IsFieldAccessible(*fieldDef, saveRoleID, saveIsAdmin) {
+					utility.DefaultLogger.Warn("tree-save: field role access denied, skipping update",
+						fmt.Errorf("role %s denied for field %s", saveRoleID, guardFieldID))
+					continue
+				}
 			}
 
 			if fu.ContentFieldID != "" {
@@ -1376,9 +1454,18 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 			return
 		}
 
+		// Filter fields by the authenticated user's role.
+		dtUser := middleware.AuthenticatedUser(r.Context())
+		dtIsAdmin := middleware.ContextIsAdmin(r.Context())
+		dtRoleID := ""
+		if dtUser != nil {
+			dtRoleID = dtUser.Role
+		}
+
 		result := make([]blockFieldData, 0)
 		if fields != nil {
-			for _, f := range *fields {
+			filtered := db.FilterFieldsByRole(*fields, dtRoleID, dtIsAdmin)
+			for _, f := range filtered {
 				bfd := blockFieldData{
 					FieldID: f.FieldID.String(),
 					Label:   f.Label,
@@ -1401,7 +1488,7 @@ func DatatypeFieldsJSONHandler(driver db.DbDriver) http.HandlerFunc {
 
 // ContentPublishHandler publishes content by creating a snapshot version.
 // On success, re-renders the content edit page with updated status.
-func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher publishing.WebhookDispatcher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -1429,7 +1516,8 @@ func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		)
 
 		contentID := types.ContentID(id)
-		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, user.UserID, ac, cfg.VersionMaxPerContent())
+		locale := r.URL.Query().Get("locale")
+		_, pubErr := publishing.PublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, cfg.VersionMaxPerContent(), dispatcher)
 		if pubErr != nil {
 			utility.DefaultLogger.Error("admin publish content failed", pubErr)
 			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Publish failed: %s", "type": "error"}}`, pubErr.Error())
@@ -1446,7 +1534,7 @@ func ContentPublishHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 
 // ContentUnpublishHandler unpublishes content by clearing the published flag.
 // On success, re-renders the content edit page with updated status.
-func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
+func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager, dispatcher publishing.WebhookDispatcher) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := r.PathValue("id")
 		if id == "" {
@@ -1474,7 +1562,8 @@ func ContentUnpublishHandler(driver db.DbDriver, mgr *config.Manager) http.Handl
 		)
 
 		contentID := types.ContentID(id)
-		unpubErr := publishing.UnpublishContent(r.Context(), driver, contentID, user.UserID, ac)
+		locale := r.URL.Query().Get("locale")
+		unpubErr := publishing.UnpublishContent(r.Context(), driver, contentID, locale, user.UserID, ac, dispatcher)
 		if unpubErr != nil {
 			utility.DefaultLogger.Error("admin unpublish content failed", unpubErr)
 			toastMsg := fmt.Sprintf(`{"showToast": {"message": "Unpublish failed: %s", "type": "error"}}`, unpubErr.Error())
@@ -1543,9 +1632,10 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 
 		contentID := types.ContentID(id)
 		label := r.FormValue("label")
+		locale := r.URL.Query().Get("locale")
 
 		// Build snapshot from live tables
-		snapshot, snapErr := publishing.BuildSnapshot(driver, r.Context(), contentID)
+		snapshot, snapErr := publishing.BuildSnapshot(driver, r.Context(), contentID, locale)
 		if snapErr != nil {
 			utility.DefaultLogger.Error("failed to build snapshot for manual version", snapErr)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
@@ -1561,7 +1651,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 			return
 		}
 
-		maxVersion, maxErr := driver.GetMaxVersionNumber(contentID, "")
+		maxVersion, maxErr := driver.GetMaxVersionNumber(contentID, locale)
 		if maxErr != nil {
 			utility.DefaultLogger.Error("failed to get max version number", maxErr)
 			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Failed to create version", "type": "error"}}`)
@@ -1580,7 +1670,7 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		_, createErr := driver.CreateContentVersion(r.Context(), ac, db.CreateContentVersionParams{
 			ContentDataID: contentID,
 			VersionNumber: maxVersion + 1,
-			Locale:        "",
+			Locale:        locale,
 			Snapshot:      string(snapshotBytes),
 			Trigger:       "manual",
 			Label:         label,
@@ -1734,6 +1824,31 @@ func renderContentEditPage(w http.ResponseWriter, r *http.Request, driver db.DbD
 		contentFields = *fields
 	}
 
+	// Filter content fields by the authenticated user's role.
+	reUser := middleware.AuthenticatedUser(r.Context())
+	reIsAdmin := middleware.ContextIsAdmin(r.Context())
+	reRoleID := ""
+	if reUser != nil {
+		reRoleID = reUser.Role
+	}
+	if !reIsAdmin && len(contentFields) > 0 {
+		accessible := make([]db.ContentFieldWithFieldRow, 0, len(contentFields))
+		for _, cf := range contentFields {
+			if !cf.FieldID.Valid {
+				accessible = append(accessible, cf)
+				continue
+			}
+			fieldDef, fieldErr := driver.GetField(cf.FieldID.ID)
+			if fieldErr != nil {
+				continue
+			}
+			if db.IsFieldAccessible(*fieldDef, reRoleID, reIsAdmin) {
+				accessible = append(accessible, cf)
+			}
+		}
+		contentFields = accessible
+	}
+
 	meta := pages.ContentMeta{}
 	if content.DatatypeID.Valid {
 		dt, dtErr := driver.GetDatatype(content.DatatypeID.ID)
@@ -1759,7 +1874,7 @@ func renderContentEditPage(w http.ResponseWriter, r *http.Request, driver db.DbD
 		}
 	}
 
-	treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID)
+	treeJSON := buildTreeJSON(r.Context(), driver, content.ContentDataID, reRoleID, reIsAdmin)
 	csrfToken := CSRFTokenFromContext(r.Context())
 
 	Render(w, r, pages.ContentEditContent(*content, contentFields, csrfToken, treeJSON, meta))

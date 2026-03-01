@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE CASCADE,
@@ -21,6 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cf_unique_locale ON content_fields(content_data_id, field_id, locale);
 
 CREATE TRIGGER IF NOT EXISTS update_content_fields_modified
     AFTER UPDATE ON content_fields

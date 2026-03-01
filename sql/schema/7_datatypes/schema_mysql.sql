@@ -18,3 +18,4 @@ CREATE TABLE IF NOT EXISTS datatypes (
 
 CREATE INDEX idx_datatypes_parent ON datatypes(parent_id);
 CREATE INDEX idx_datatypes_author ON datatypes(author_id);
+CREATE UNIQUE INDEX idx_datatypes_name ON datatypes(name);

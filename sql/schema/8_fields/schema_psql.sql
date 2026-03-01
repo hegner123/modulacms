@@ -11,6 +11,8 @@ CREATE TABLE IF NOT EXISTS fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    translatable BOOLEAN NOT NULL DEFAULT FALSE,
+    roles TEXT DEFAULT NULL,
     author_id TEXT
         CONSTRAINT fk_users_author_id
             REFERENCES users

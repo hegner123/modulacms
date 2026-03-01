@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
             REFERENCES admin_fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     admin_field_value TEXT NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
     author_id TEXT NOT NULL
         CONSTRAINT fk_author_id
             REFERENCES users
@@ -25,6 +26,7 @@ CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_field
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_acf_unique_locale ON admin_content_fields(admin_content_data_id, admin_field_id, locale);
 
 CREATE OR REPLACE FUNCTION update_admin_content_fields_modified()
 RETURNS TRIGGER AS $$

@@ -6,7 +6,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 )
 
-templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, csrfToken string) {
+templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
 	<div class="page-header">
 		<div class="page-header-left">
 			<a href="/admin/schema/fields" class="btn btn-ghost"
@@ -23,8 +23,8 @@ templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, csrfTo
 			<h2>Details</h2>
 			<div id="field-edit-form">
 				<form hx-post={ "/admin/schema/fields/" + field.FieldID.String() }
-				      hx-target="#field-edit-form"
-				      hx-swap="innerHTML">
+					  hx-target="#field-edit-form"
+					  hx-swap="innerHTML">
 					@partials.CSRFField(csrfToken)
 					@partials.FormField("name", "Name", field.Name, "")
 					@partials.FormField("label", "Label", field.Label, "")
@@ -46,6 +46,33 @@ templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, csrfTo
 							<option value="email" selected?={ field.Type.String() == "email" }>Email</option>
 							<option value="url" selected?={ field.Type.String() == "url" }>URL</option>
 						</select>
+					</div>
+					if i18nEnabled {
+						<div class="form-field form-field-checkbox">
+							<label>
+								<input type="hidden" name="translatable" value="0"/>
+								if field.Translatable != 0 {
+									<input type="checkbox" name="translatable" value="1" checked/>
+								} else {
+									<input type="checkbox" name="translatable" value="1"/>
+								}
+								Translatable
+								<span class="text-muted"> (content for this field varies per locale)</span>
+							</label>
+						</div>
+					}
+					<div class="form-field">
+						<label for="roles">Role Restrictions</label>
+						<select id="roles" name="roles" multiple>
+							for _, role := range availableRoles {
+								if isRoleSelected(field.Roles, role.RoleID.String()) {
+									<option value={ role.RoleID.String() } selected>{ role.Label }</option>
+								} else {
+									<option value={ role.RoleID.String() }>{ role.Label }</option>
+								}
+							}
+						</select>
+						<span class="text-muted">Leave empty for unrestricted access. Select roles to limit visibility.</span>
 					</div>
 					<div class="form-field">
 						<label for="data">Data (JSON)</label>
@@ -94,8 +121,8 @@ templ FieldDetailContent(field db.Fields, linkedDatatypes []db.Datatypes, csrfTo
 	</div>
 }
 
-templ FieldDetail(layout layouts.AdminData, field db.Fields, linkedDatatypes []db.Datatypes, csrfToken string) {
+templ FieldDetail(layout layouts.AdminData, field db.Fields, linkedDatatypes []db.Datatypes, availableRoles []db.Roles, csrfToken string, i18nEnabled bool) {
 	@layouts.Admin(layout) {
-		@FieldDetailContent(field, linkedDatatypes, csrfToken)
+		@FieldDetailContent(field, linkedDatatypes, availableRoles, csrfToken, i18nEnabled)
 	}
 }

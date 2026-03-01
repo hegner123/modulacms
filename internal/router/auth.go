@@ -150,7 +150,7 @@ func RequestPasswordResetHandler(w http.ResponseWriter, r *http.Request, c confi
 		UserID:    userNullID,
 		TokenType: "password_reset",
 		Token:     tokenValue,
-		IssuedAt:  time.Now().UTC().Format(time.RFC3339),
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.NewTimestamp(time.Now().UTC().Add(1 * time.Hour)),
 		Revoked:   false,
 	})

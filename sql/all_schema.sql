@@ -105,6 +105,8 @@ CREATE TABLE admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
@@ -235,18 +237,22 @@ CREATE TABLE IF NOT EXISTS content_data (
     first_child_id TEXT,
     next_sibling_id TEXT,
     prev_sibling_id TEXT,
-    route_id TEXT NOT NULL,
+    route_id TEXT,
     datatype_id TEXT NOT NULL,
     author_id TEXT NOT NULL,
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    published_by TEXT REFERENCES users(user_id) ON DELETE SET NULL,
+    publish_at TEXT,
+    revision INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (parent_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (next_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (prev_sibling_id) REFERENCES content_data(content_data_id) ON DELETE SET NULL,
-    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE RESTRICT,
+    FOREIGN KEY (route_id) REFERENCES routes(route_id) ON DELETE SET NULL,
     FOREIGN KEY (datatype_id) REFERENCES datatypes(datatype_id) ON DELETE RESTRICT,
     FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE RESTRICT
 );
@@ -279,9 +285,10 @@ CREATE TABLE IF NOT EXISTS content_fields (
         REFERENCES fields
             ON UPDATE CASCADE ON DELETE CASCADE,
     field_value TEXT NOT NULL,
-    author_id TEXT
+    locale TEXT NOT NULL DEFAULT '',
+    author_id TEXT NOT NULL
         REFERENCES users
-            ON DELETE SET NULL,
+            ON DELETE CASCADE,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP
 );
@@ -290,6 +297,7 @@ CREATE INDEX IF NOT EXISTS idx_content_fields_route ON content_fields(route_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_content ON content_fields(content_data_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_field ON content_fields(field_id);
 CREATE INDEX IF NOT EXISTS idx_content_fields_author ON content_fields(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cf_unique_locale ON content_fields(content_data_id, field_id, locale);
 
 CREATE TRIGGER IF NOT EXISTS update_content_fields_modified
     AFTER UPDATE ON content_fields
@@ -313,6 +321,10 @@ CREATE TABLE IF NOT EXISTS admin_content_data (
     status TEXT NOT NULL DEFAULT 'draft',
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
+    published_at TEXT,
+    published_by TEXT REFERENCES users(user_id) ON DELETE SET NULL,
+    publish_at TEXT,
+    revision INTEGER NOT NULL DEFAULT 0,
 
     FOREIGN KEY (parent_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
     FOREIGN KEY (first_child_id) REFERENCES admin_content_data(admin_content_data_id) ON DELETE SET NULL,
@@ -344,7 +356,8 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     admin_content_data_id TEXT NOT NULL,
     admin_field_id TEXT NOT NULL,
     admin_field_value TEXT NOT NULL,
-    author_id TEXT,
+    locale TEXT NOT NULL DEFAULT '',
+    author_id TEXT NOT NULL,
     date_created TEXT DEFAULT CURRENT_TIMESTAMP,
     date_modified TEXT DEFAULT CURRENT_TIMESTAMP,
 
@@ -355,13 +368,14 @@ CREATE TABLE IF NOT EXISTS admin_content_fields (
     FOREIGN KEY (admin_field_id) REFERENCES admin_fields(admin_field_id)
         ON DELETE CASCADE,
     FOREIGN KEY (author_id) REFERENCES users(user_id)
-        ON DELETE SET NULL
+        ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_route ON admin_content_fields(admin_route_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_content ON admin_content_fields(admin_content_data_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_field ON admin_content_fields(admin_field_id);
 CREATE INDEX IF NOT EXISTS idx_admin_content_fields_author ON admin_content_fields(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_acf_unique_locale ON admin_content_fields(admin_content_data_id, admin_field_id, locale);
 
 CREATE TRIGGER IF NOT EXISTS update_admin_content_fields_modified
     AFTER UPDATE ON admin_content_fields
@@ -473,6 +487,41 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 CREATE INDEX IF NOT EXISTS idx_role_permissions_role ON role_permissions(role_id);
 CREATE INDEX IF NOT EXISTS idx_role_permissions_permission ON role_permissions(permission_id);
 
+-- ===== 27_field_types =====
+
+CREATE TABLE IF NOT EXISTS field_types (
+    field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);
+
+-- ===== 28_admin_field_types =====
+
+CREATE TABLE IF NOT EXISTS admin_field_types (
+    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
+    type TEXT NOT NULL UNIQUE,
+    label TEXT NOT NULL
+);
+
+-- ===== 29_plugins =====
+
+CREATE TABLE IF NOT EXISTS plugins (
+    plugin_id TEXT PRIMARY KEY NOT NULL CHECK (length(plugin_id) = 26),
+    name TEXT NOT NULL UNIQUE,
+    version TEXT NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    author TEXT NOT NULL DEFAULT '',
+    status TEXT NOT NULL DEFAULT 'installed',
+    capabilities TEXT NOT NULL DEFAULT '[]',
+    approved_access TEXT NOT NULL DEFAULT '{}',
+    manifest_hash TEXT NOT NULL DEFAULT '',
+    date_installed TEXT NOT NULL,
+    date_modified TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_plugins_status ON plugins(status);
+CREATE INDEX IF NOT EXISTS idx_plugins_name ON plugins(name);
+
 -- ===== 3_media_dimension =====
 
 CREATE TABLE IF NOT EXISTS media_dimensions
@@ -484,6 +533,124 @@ CREATE TABLE IF NOT EXISTS media_dimensions
     height INTEGER,
     aspect_ratio TEXT
 );
+
+-- ===== 30_pipelines =====
+
+CREATE TABLE IF NOT EXISTS pipelines (
+    pipeline_id TEXT PRIMARY KEY NOT NULL CHECK (length(pipeline_id) = 26),
+    plugin_id TEXT NOT NULL,
+    table_name TEXT NOT NULL,
+    operation TEXT NOT NULL,
+    plugin_name TEXT NOT NULL,
+    handler TEXT NOT NULL,
+    priority INTEGER NOT NULL DEFAULT 50,
+    enabled INTEGER NOT NULL DEFAULT 1,
+    config TEXT NOT NULL DEFAULT '{}',
+    date_created TEXT NOT NULL,
+    date_modified TEXT NOT NULL,
+    FOREIGN KEY (plugin_id) REFERENCES plugins(plugin_id) ON DELETE CASCADE
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_pipeline_unique ON pipelines(table_name, operation, plugin_id);
+CREATE INDEX IF NOT EXISTS idx_pipelines_plugin ON pipelines(plugin_id);
+CREATE INDEX IF NOT EXISTS idx_pipelines_table ON pipelines(table_name);
+
+-- ===== 31_content_versions =====
+
+CREATE TABLE IF NOT EXISTS content_versions (
+    content_version_id TEXT PRIMARY KEY NOT NULL CHECK (length(content_version_id) = 26),
+    content_data_id TEXT NOT NULL
+        REFERENCES content_data(content_data_id)
+            ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
+    snapshot TEXT NOT NULL,
+    trigger TEXT NOT NULL DEFAULT 'manual',
+    label TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    published_by TEXT
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_cv_content ON content_versions(content_data_id);
+CREATE INDEX IF NOT EXISTS idx_cv_content_locale ON content_versions(content_data_id, locale);
+CREATE INDEX IF NOT EXISTS idx_cv_published ON content_versions(content_data_id, locale) WHERE published = 1;
+
+-- ===== 32_admin_content_versions =====
+
+CREATE TABLE IF NOT EXISTS admin_content_versions (
+    admin_content_version_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_content_version_id) = 26),
+    admin_content_data_id TEXT NOT NULL
+        REFERENCES admin_content_data(admin_content_data_id)
+            ON DELETE CASCADE,
+    version_number INTEGER NOT NULL,
+    locale TEXT NOT NULL DEFAULT '',
+    snapshot TEXT NOT NULL,
+    trigger TEXT NOT NULL DEFAULT 'manual',
+    label TEXT NOT NULL DEFAULT '',
+    published INTEGER NOT NULL DEFAULT 0,
+    published_by TEXT
+        REFERENCES users(user_id)
+            ON DELETE SET NULL,
+    date_created TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_acv_content ON admin_content_versions(admin_content_data_id);
+CREATE INDEX IF NOT EXISTS idx_acv_content_locale ON admin_content_versions(admin_content_data_id, locale);
+CREATE INDEX IF NOT EXISTS idx_acv_published ON admin_content_versions(admin_content_data_id, locale) WHERE published = 1;
+
+-- ===== 33_locales =====
+
+CREATE TABLE IF NOT EXISTS locales (
+    locale_id     TEXT PRIMARY KEY NOT NULL CHECK (length(locale_id) = 26),
+    code          TEXT NOT NULL UNIQUE,
+    label         TEXT NOT NULL,
+    is_default    INTEGER NOT NULL DEFAULT 0,
+    is_enabled    INTEGER NOT NULL DEFAULT 1,
+    fallback_code TEXT,
+    sort_order    INTEGER NOT NULL DEFAULT 0,
+    date_created  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_locales_code ON locales(code);
+CREATE INDEX IF NOT EXISTS idx_locales_default ON locales(is_default) WHERE is_default = 1;
+
+-- ===== 34_webhooks =====
+
+CREATE TABLE IF NOT EXISTS webhooks (
+    webhook_id    TEXT PRIMARY KEY NOT NULL CHECK (length(webhook_id) = 26),
+    name          TEXT NOT NULL,
+    url           TEXT NOT NULL,
+    secret        TEXT NOT NULL DEFAULT '',
+    events        TEXT NOT NULL DEFAULT '[]',
+    is_active     INTEGER NOT NULL DEFAULT 1,
+    headers       TEXT NOT NULL DEFAULT '{}',
+    author_id     TEXT NOT NULL REFERENCES users(user_id),
+    date_created  TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_webhooks_active ON webhooks(is_active);
+
+-- ===== 35_webhook_deliveries =====
+
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    delivery_id      TEXT PRIMARY KEY NOT NULL CHECK (length(delivery_id) = 26),
+    webhook_id       TEXT NOT NULL REFERENCES webhooks(webhook_id) ON DELETE CASCADE,
+    event            TEXT NOT NULL,
+    payload          TEXT NOT NULL DEFAULT '{}',
+    status           TEXT NOT NULL DEFAULT 'pending',
+    attempts         INTEGER NOT NULL DEFAULT 0,
+    last_status_code INTEGER,
+    last_error       TEXT NOT NULL DEFAULT '',
+    next_retry_at    TEXT,
+    created_at       TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at     TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_wd_webhook ON webhook_deliveries(webhook_id);
+CREATE INDEX IF NOT EXISTS idx_wd_status ON webhook_deliveries(status);
+CREATE INDEX IF NOT EXISTS idx_wd_retry ON webhook_deliveries(next_retry_at) WHERE status = 'retrying';
 
 -- ===== 4_users =====
 
@@ -579,6 +746,7 @@ CREATE TABLE IF NOT EXISTS datatypes(
 
 CREATE INDEX IF NOT EXISTS idx_datatypes_parent ON datatypes(parent_id);
 CREATE INDEX IF NOT EXISTS idx_datatypes_author ON datatypes(author_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_datatypes_name ON datatypes(name);
 
 CREATE TRIGGER IF NOT EXISTS update_datatypes_modified
     AFTER UPDATE ON datatypes
@@ -602,6 +770,8 @@ CREATE TABLE IF NOT EXISTS fields(
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,
@@ -648,19 +818,3 @@ CREATE TRIGGER IF NOT EXISTS update_admin_datatypes_modified
         UPDATE admin_datatypes SET date_modified = strftime('%Y-%m-%dT%H:%M:%SZ', 'now')
         WHERE admin_datatype_id = NEW.admin_datatype_id;
     END;
-
--- ===== 27_field_types =====
-
-CREATE TABLE IF NOT EXISTS field_types (
-    field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(field_type_id) = 26),
-    type TEXT NOT NULL UNIQUE,
-    label TEXT NOT NULL
-);
-
--- ===== 28_admin_field_types =====
-
-CREATE TABLE IF NOT EXISTS admin_field_types (
-    admin_field_type_id TEXT PRIMARY KEY NOT NULL CHECK (length(admin_field_type_id) = 26),
-    type TEXT NOT NULL UNIQUE,
-    label TEXT NOT NULL
-);

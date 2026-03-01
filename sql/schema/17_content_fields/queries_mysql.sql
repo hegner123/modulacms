@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS content_fields (
     content_data_id VARCHAR(26) NOT NULL,
     field_id VARCHAR(26) NOT NULL,
     field_value TEXT NOT NULL,
+    locale VARCHAR(35) NOT NULL DEFAULT '',
     author_id VARCHAR(26) NOT NULL,
     date_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     date_modified TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -55,10 +56,12 @@ INSERT INTO content_fields (
     content_data_id,
     field_id,
     field_value,
+    locale,
     author_id,
     date_created,
     date_modified
 ) VALUES (
+    ?,
     ?,
     ?,
     ?,
@@ -75,6 +78,7 @@ SET route_id = ?,
     content_data_id = ?,
     field_id = ?,
     field_value = ?,
+    locale = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?
@@ -100,3 +104,13 @@ SELECT * FROM content_fields
 WHERE content_data_id = ?
 ORDER BY content_field_id
 LIMIT ? OFFSET ?;
+
+-- name: ListContentFieldsByContentDataAndLocale :many
+SELECT * FROM content_fields
+WHERE content_data_id = ? AND locale IN (?, '')
+ORDER BY content_field_id;
+
+-- name: ListContentFieldsByRouteAndLocale :many
+SELECT * FROM content_fields
+WHERE route_id = ? AND locale IN (?, '')
+ORDER BY content_data_id, field_id;

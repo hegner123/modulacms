@@ -16,7 +16,7 @@ templ TokensTableRows(items []db.Tokens) {
 			<td>{ item.TokenType }</td>
 			<td><code>{ maskToken(item.Token) }</code></td>
 			<td>{ truncateStr(item.UserID.String(), 12) }</td>
-			<td>{ item.IssuedAt }</td>
+			<td>{ item.IssuedAt.String() }</td>
 			<td>{ item.ExpiresAt.String() }</td>
 			<td>
 				if item.Revoked {

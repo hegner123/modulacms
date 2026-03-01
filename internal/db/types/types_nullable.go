@@ -128,6 +128,15 @@ func (n *NullableInt64) UnmarshalJSON(data []byte) error {
 // IsZero reports whether NullableInt64 is null or zero.
 func (n NullableInt64) IsZero() bool { return !n.Valid || n.Int64 == 0 }
 
+// String returns the string representation of NullableInt64.
+// Returns "" for null values, otherwise the decimal representation.
+func (n NullableInt64) String() string {
+	if !n.Valid {
+		return ""
+	}
+	return fmt.Sprintf("%d", n.Int64)
+}
+
 // NullableFloat64 handles nullable float columns across SQLite (REAL), MySQL (FLOAT), PostgreSQL (REAL)
 type NullableFloat64 struct {
 	Float64 float64

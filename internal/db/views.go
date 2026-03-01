@@ -41,13 +41,14 @@ type ContentDataView struct {
 
 // DatatypeFieldView is a field definition with sort order for the datatype full view.
 type DatatypeFieldView struct {
-	FieldID    types.FieldID   `json:"field_id"`
-	Label      string          `json:"label"`
-	Type       types.FieldType `json:"type"`
-	Data       string          `json:"data"`
-	Validation string          `json:"validation"`
-	UIConfig   string          `json:"ui_config"`
-	SortOrder  int64           `json:"sort_order"`
+	FieldID    types.FieldID        `json:"field_id"`
+	Label      string               `json:"label"`
+	Type       types.FieldType      `json:"type"`
+	Data       string               `json:"data"`
+	Validation string               `json:"validation"`
+	UIConfig   string               `json:"ui_config"`
+	SortOrder  int64                `json:"sort_order"`
+	Roles      types.NullableString `json:"roles"`
 }
 
 // DatatypeFullView is a composed response for a datatype with all field definitions.
@@ -72,6 +73,7 @@ func MapDatatypeFieldView(row FieldWithSortOrderRow) DatatypeFieldView {
 		Validation: row.Validation,
 		UIConfig:   row.UIConfig,
 		SortOrder:  row.SortOrder,
+		Roles:      row.Roles,
 	}
 }
 
@@ -135,7 +137,7 @@ func MapUserOauthView(o UserOauth) UserOauthView {
 		UserOauthID:         o.UserOauthID,
 		OauthProvider:       o.OauthProvider,
 		OauthProviderUserID: o.OauthProviderUserID,
-		TokenExpiresAt:      o.TokenExpiresAt,
+		TokenExpiresAt:      o.TokenExpiresAt.String(),
 		DateCreated:         o.DateCreated,
 	}
 }
@@ -158,7 +160,7 @@ func MapSessionView(s Sessions) SessionView {
 		SessionID:   s.SessionID,
 		DateCreated: s.DateCreated,
 		ExpiresAt:   s.ExpiresAt,
-		LastAccess:  nullStringValue(s.LastAccess),
+		LastAccess:  s.LastAccess.String(),
 		IpAddress:   nullStringValue(s.IpAddress),
 		UserAgent:   nullStringValue(s.UserAgent),
 	}
@@ -169,7 +171,7 @@ func MapTokenView(t Tokens) TokenView {
 	return TokenView{
 		ID:        t.ID,
 		TokenType: t.TokenType,
-		IssuedAt:  t.IssuedAt,
+		IssuedAt:  t.IssuedAt.String(),
 		ExpiresAt: t.ExpiresAt,
 		Revoked:   t.Revoked,
 	}

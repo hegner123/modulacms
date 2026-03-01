@@ -21,6 +21,7 @@ import (
 type CreateAdminVersionRequest struct {
 	AdminContentDataID types.AdminContentID `json:"admin_content_data_id"`
 	Label              string               `json:"label"`
+	Locale             string               `json:"locale"`
 }
 
 ///////////////////////////////
@@ -103,7 +104,7 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 	ctx := r.Context()
 
 	// Build snapshot from live admin tables.
-	snapshot, err := publishing.BuildAdminSnapshot(d, ctx, req.AdminContentDataID)
+	snapshot, err := publishing.BuildAdminSnapshot(d, ctx, req.AdminContentDataID, req.Locale)
 	if err != nil {
 		utility.DefaultLogger.Error("build admin snapshot for manual version failed", err)
 		http.Error(w, fmt.Sprintf("failed to build snapshot: %v", err), http.StatusInternalServerError)
@@ -118,7 +119,7 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 	}
 
 	// Get next version number.
-	maxVersion, err := d.GetAdminMaxVersionNumber(req.AdminContentDataID, "")
+	maxVersion, err := d.GetAdminMaxVersionNumber(req.AdminContentDataID, req.Locale)
 	if err != nil {
 		utility.DefaultLogger.Error("get admin max version number failed", err)
 		http.Error(w, fmt.Sprintf("failed to get version number: %v", err), http.StatusInternalServerError)
@@ -132,7 +133,7 @@ func AdminCreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c c
 	version, err := d.CreateAdminContentVersion(ctx, ac, db.CreateAdminContentVersionParams{
 		AdminContentDataID: req.AdminContentDataID,
 		VersionNumber:      nextVersion,
-		Locale:             "",
+		Locale:             req.Locale,
 		Snapshot:           string(snapshotBytes),
 		Trigger:            "manual",
 		Label:              req.Label,

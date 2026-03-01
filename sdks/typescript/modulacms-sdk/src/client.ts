@@ -1,5 +1,5 @@
 import { ModulaError } from "./errors.js";
-import type { ContentFormat, ContentData, ContentField, Route, Media, MediaDimension, Datatype, Field, PaginationParams, PaginatedResponse } from "@modulacms/types";
+import type { ContentFormat, ContentData, ContentField, Route, Media, MediaDimension, Datatype, Field, PaginationParams, PaginatedResponse, QueryParams, QueryResult } from "@modulacms/types";
 
 /**
  * A type predicate function used to validate API response data at runtime.
@@ -48,6 +48,8 @@ export interface ModulaClientConfig {
 export interface GetPageOptions<T = unknown> {
   /** Content output format override for this request. Takes precedence over {@link ModulaClientConfig.defaultFormat}. */
   format?: ContentFormat;
+  /** Locale code to request content in a specific locale (e.g. `"en"`, `"fr"`). */
+  locale?: string;
   /** Optional runtime validator. When provided, the response is checked before returning. Throws {@link ModulaError} on validation failure. */
   validate?: Validator<T>;
 }
@@ -189,6 +191,9 @@ export class ModulaClient {
     const params: Record<string, string> = {};
     if (format) {
       params.format = format;
+    }
+    if (options?.locale) {
+      params.locale = options.locale;
     }
     const trimmed = slug.startsWith("/") ? slug.slice(1) : slug;
     const path = `/api/v1/content/${trimmed}`;
@@ -354,5 +359,35 @@ export class ModulaClient {
    */
   async getField(id: string): Promise<Field> {
     return this.request<Field>("/api/v1/fields/", { q: id });
+  }
+
+  /**
+   * Query content items by datatype name with optional filtering, sorting, and pagination.
+   *
+   * @param datatype - The datatype name to query (e.g. "blog_post").
+   * @param params - Optional query parameters (filters, sort, limit, offset, locale, status).
+   * @returns A paginated query result envelope.
+   * @throws {@link ModulaError} On non-2xx response.
+   *
+   * @example
+   * const result = await cms.queryContent("blog_post", {
+   *   filters: { "category": "engineering" },
+   *   sort: "-published_at",
+   *   limit: 10,
+   * });
+   */
+  async queryContent(datatype: string, params?: QueryParams): Promise<QueryResult> {
+    const p: Record<string, string> = {};
+    if (params?.sort) p.sort = params.sort;
+    if (params?.limit !== undefined) p.limit = String(params.limit);
+    if (params?.offset !== undefined) p.offset = String(params.offset);
+    if (params?.locale) p.locale = params.locale;
+    if (params?.status) p.status = params.status;
+    if (params?.filters) {
+      for (const [key, value] of Object.entries(params.filters)) {
+        p[key] = value;
+      }
+    }
+    return this.request<QueryResult>(`/api/v1/query/${encodeURIComponent(datatype)}`, p);
   }
 }

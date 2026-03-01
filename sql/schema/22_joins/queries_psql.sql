@@ -147,7 +147,8 @@ SELECT
     f.type,
     f.data,
     f.validation,
-    f.ui_config
+    f.ui_config,
+    f.roles
 FROM fields f
 WHERE f.parent_id = $1
 ORDER BY f.sort_order, f.field_id;

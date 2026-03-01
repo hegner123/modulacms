@@ -87,6 +87,8 @@ export type AdminContentField = {
   admin_field_id: AdminFieldID | null
   /** The stored value as a string (serialized based on field type). */
   admin_field_value: string
+  /** Locale code for this field value (e.g. `"en"`, `"fr"`). */
+  locale: string
   /** ID of the user who set this value, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */
@@ -140,6 +142,10 @@ export type AdminField = {
   ui_config: string
   /** The data type of this field. */
   type: FieldType
+  /** Whether this field is translatable (0 = no, 1 = yes). */
+  translatable: number
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles: string[] | null
   /** ID of the user who created this field, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */
@@ -264,6 +270,8 @@ export type CreateAdminFieldParams = {
   ui_config: string
   /** The data type of this field. */
   type: FieldType
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles?: string[] | null
   /** Author user ID, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */
@@ -384,6 +392,8 @@ export type UpdateAdminFieldParams = {
   ui_config: string
   /** Updated field type. */
   type: FieldType
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles?: string[] | null
   /** Author user ID, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */

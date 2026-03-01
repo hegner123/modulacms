@@ -295,48 +295,6 @@ You: "Because... WordPress wasn't built that way..."
 
 ---
 
-### Pain Point 8: Multi-Site Complexity
-
-**The Experience:**
-```
-Client: "We need 5 websites (different brands)"
-WordPress: "Use WordPress Multisite!"
-
-[Setup Multisite]
-Problems:
-- Shared plugins (can't have different versions)
-- Complex folder structure
-- Plugin incompatibilities
-- Hard to separate later
-- Performance issues
-
-Alternative: 5 separate WordPress installs
-Problems:
-- 5 databases
-- 5 admin panels
-- 5 sets of updates
-- Can't share content
-- Management nightmare
-```
-
-**The Frustration:**
-- Clients often have multiple sites
-- WordPress Multisite is complex
-- Separate installs are tedious
-- Want to share content across sites
-- Want separate admin experiences
-- WordPress not built for this
-
-**ModulaCMS Solution:**
-- Routes = Multiple sites/brands
-- One database, multiple routes
-- Share content library (or don't)
-- Different admin panels per site
-- Manage all from one backend
-- Simple, elegant
-
----
-
 ## The "I Wish I Could..." Moments
 
 **These exact thoughts led to ModulaCMS features:**

@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL,
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT NOT NULL
         REFERENCES users
             ON DELETE SET NULL,
@@ -56,10 +58,14 @@ INSERT INTO admin_fields (
     validation,
     ui_config,
     type,
+    translatable,
+    roles,
     author_id,
     date_created,
     date_modified
     ) VALUES (
+    ?,
+    ?,
     ?,
     ?,
     ?,
@@ -85,6 +91,8 @@ SET parent_id = ?,
     validation = ?,
     ui_config = ?,
     type = ?,
+    translatable = ?,
+    roles = ?,
     author_id = ?,
     date_created = ?,
     date_modified = ?

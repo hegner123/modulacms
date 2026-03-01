@@ -72,44 +72,6 @@ type ListContentDataByRoutePaginatedParams struct {
 	Offset  int64
 }
 
-// UpdateContentDataPublishMetaParams contains parameters for updating publish metadata.
-type UpdateContentDataPublishMetaParams struct {
-	Status        types.ContentStatus  `json:"status"`
-	PublishedAt   types.Timestamp      `json:"published_at"`
-	PublishedBy   types.NullableUserID `json:"published_by"`
-	DateModified  types.Timestamp      `json:"date_modified"`
-	ContentDataID types.ContentID      `json:"content_data_id"`
-}
-
-// UpdateContentDataWithRevisionParams contains parameters for an optimistic-lock update.
-type UpdateContentDataWithRevisionParams struct {
-	RouteID       types.NullableRouteID    `json:"route_id"`
-	ParentID      types.NullableContentID  `json:"parent_id"`
-	FirstChildID  types.NullableContentID  `json:"first_child_id"`
-	NextSiblingID types.NullableContentID  `json:"next_sibling_id"`
-	PrevSiblingID types.NullableContentID  `json:"prev_sibling_id"`
-	DatatypeID    types.NullableDatatypeID `json:"datatype_id"`
-	AuthorID      types.UserID             `json:"author_id"`
-	Status        types.ContentStatus      `json:"status"`
-	DateCreated   types.Timestamp          `json:"date_created"`
-	DateModified  types.Timestamp          `json:"date_modified"`
-	ContentDataID types.ContentID          `json:"content_data_id"`
-	Revision      int64                    `json:"revision"`
-}
-
-// UpdateContentDataScheduleParams contains parameters for setting a scheduled publish time.
-type UpdateContentDataScheduleParams struct {
-	PublishAt     types.Timestamp `json:"publish_at"`
-	DateModified  types.Timestamp `json:"date_modified"`
-	ContentDataID types.ContentID `json:"content_data_id"`
-}
-
-// ClearContentDataScheduleParams contains parameters for clearing a scheduled publish time.
-type ClearContentDataScheduleParams struct {
-	DateModified  types.Timestamp `json:"date_modified"`
-	ContentDataID types.ContentID `json:"content_data_id"`
-}
-
 // MapStringContentData converts ContentData to StringContentData for TUI display.
 func MapStringContentData(a ContentData) StringContentData {
 	return StringContentData{
@@ -127,7 +89,7 @@ func MapStringContentData(a ContentData) StringContentData {
 		PublishedAt:   a.PublishedAt.String(),
 		PublishedBy:   a.PublishedBy.String(),
 		PublishAt:     a.PublishAt.String(),
-		Revision:      a.Revision,
+		Revision:      fmt.Sprintf("%d", a.Revision),
 		History:       "",
 	}
 }
@@ -317,89 +279,6 @@ func (d Database) ListContentDataByRoutePaginated(params ListContentDataByRouteP
 	return &res, nil
 }
 
-// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
-func (d Database) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.GetContentDataDescendants(ctx, mdb.GetContentDataDescendantsParams{
-		ContentDataID: id,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		m := d.MapContentData(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// UpdateContentDataPublishMeta updates publish metadata on a content data row.
-func (d Database) UpdateContentDataPublishMeta(ctx context.Context, params UpdateContentDataPublishMetaParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateContentDataPublishMeta(ctx, mdb.UpdateContentDataPublishMetaParams{
-		Status:        params.Status,
-		PublishedAt:   params.PublishedAt,
-		PublishedBy:   params.PublishedBy,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// UpdateContentDataWithRevision performs an optimistic-lock update using the revision column.
-func (d Database) UpdateContentDataWithRevision(ctx context.Context, params UpdateContentDataWithRevisionParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateContentDataWithRevision(ctx, mdb.UpdateContentDataWithRevisionParams{
-		RouteID:       params.RouteID,
-		ParentID:      params.ParentID,
-		FirstChildID:  params.FirstChildID,
-		NextSiblingID: params.NextSiblingID,
-		PrevSiblingID: params.PrevSiblingID,
-		DatatypeID:    params.DatatypeID,
-		AuthorID:      params.AuthorID,
-		Status:        params.Status,
-		DateCreated:   params.DateCreated,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-		Revision:      params.Revision,
-	})
-}
-
-// ListContentDataDueForPublish returns content items where publish_at <= given time and status is draft.
-func (d Database) ListContentDataDueForPublish(publishAt types.Timestamp) (*[]ContentData, error) {
-	queries := mdb.New(d.Connection)
-	rows, err := queries.ListContentDataDueForPublish(d.Context, mdb.ListContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list content data due for publish: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d Database) UpdateContentDataSchedule(ctx context.Context, params UpdateContentDataScheduleParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.UpdateContentDataSchedule(ctx, mdb.UpdateContentDataScheduleParams{
-		PublishAt:     params.PublishAt,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// ClearContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d Database) ClearContentDataSchedule(ctx context.Context, params ClearContentDataScheduleParams) error {
-	queries := mdb.New(d.Connection)
-	return queries.ClearContentDataSchedule(ctx, mdb.ClearContentDataScheduleParams{
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
 ///////////////////////////////
 // MYSQL
 //////////////////////////////
@@ -585,89 +464,6 @@ func (d MysqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByR
 	return &res, nil
 }
 
-// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
-func (d MysqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.GetContentDataDescendants(ctx, mdbm.GetContentDataDescendantsParams{
-		ContentDataID: id,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		m := d.MapContentData(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// UpdateContentDataPublishMeta updates publish metadata on a content data row.
-func (d MysqlDatabase) UpdateContentDataPublishMeta(ctx context.Context, params UpdateContentDataPublishMetaParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateContentDataPublishMeta(ctx, mdbm.UpdateContentDataPublishMetaParams{
-		Status:        params.Status,
-		PublishedAt:   params.PublishedAt,
-		PublishedBy:   params.PublishedBy,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// UpdateContentDataWithRevision performs an optimistic-lock update using the revision column.
-func (d MysqlDatabase) UpdateContentDataWithRevision(ctx context.Context, params UpdateContentDataWithRevisionParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateContentDataWithRevision(ctx, mdbm.UpdateContentDataWithRevisionParams{
-		RouteID:       params.RouteID,
-		ParentID:      params.ParentID,
-		FirstChildID:  params.FirstChildID,
-		NextSiblingID: params.NextSiblingID,
-		PrevSiblingID: params.PrevSiblingID,
-		DatatypeID:    params.DatatypeID,
-		AuthorID:      params.AuthorID,
-		Status:        params.Status,
-		DateCreated:   params.DateCreated,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-		Revision:      int32(params.Revision),
-	})
-}
-
-// ListContentDataDueForPublish returns content items where publish_at <= given time and status is draft.
-func (d MysqlDatabase) ListContentDataDueForPublish(publishAt types.Timestamp) (*[]ContentData, error) {
-	queries := mdbm.New(d.Connection)
-	rows, err := queries.ListContentDataDueForPublish(d.Context, mdbm.ListContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list content data due for publish: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d MysqlDatabase) UpdateContentDataSchedule(ctx context.Context, params UpdateContentDataScheduleParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.UpdateContentDataSchedule(ctx, mdbm.UpdateContentDataScheduleParams{
-		PublishAt:     params.PublishAt,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// ClearContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d MysqlDatabase) ClearContentDataSchedule(ctx context.Context, params ClearContentDataScheduleParams) error {
-	queries := mdbm.New(d.Connection)
-	return queries.ClearContentDataSchedule(ctx, mdbm.ClearContentDataScheduleParams{
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
 ///////////////////////////////
 // POSTGRES
 //////////////////////////////
@@ -851,89 +647,6 @@ func (d PsqlDatabase) ListContentDataByRoutePaginated(params ListContentDataByRo
 		res = append(res, m)
 	}
 	return &res, nil
-}
-
-// GetContentDataDescendants fetches a content data row and all its descendants via recursive CTE.
-func (d PsqlDatabase) GetContentDataDescendants(ctx context.Context, id types.ContentID) (*[]ContentData, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.GetContentDataDescendants(ctx, mdbp.GetContentDataDescendantsParams{
-		ContentDataID: id,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get ContentData descendants: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		m := d.MapContentData(v)
-		res = append(res, m)
-	}
-	return &res, nil
-}
-
-// UpdateContentDataPublishMeta updates publish metadata on a content data row.
-func (d PsqlDatabase) UpdateContentDataPublishMeta(ctx context.Context, params UpdateContentDataPublishMetaParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateContentDataPublishMeta(ctx, mdbp.UpdateContentDataPublishMetaParams{
-		Status:        params.Status,
-		PublishedAt:   params.PublishedAt,
-		PublishedBy:   params.PublishedBy,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// UpdateContentDataWithRevision performs an optimistic-lock update using the revision column.
-func (d PsqlDatabase) UpdateContentDataWithRevision(ctx context.Context, params UpdateContentDataWithRevisionParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateContentDataWithRevision(ctx, mdbp.UpdateContentDataWithRevisionParams{
-		RouteID:       params.RouteID,
-		ParentID:      params.ParentID,
-		FirstChildID:  params.FirstChildID,
-		NextSiblingID: params.NextSiblingID,
-		PrevSiblingID: params.PrevSiblingID,
-		DatatypeID:    params.DatatypeID,
-		AuthorID:      params.AuthorID,
-		Status:        params.Status,
-		DateCreated:   params.DateCreated,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-		Revision:      int32(params.Revision),
-	})
-}
-
-// ListContentDataDueForPublish returns content items where publish_at <= given time and status is draft.
-func (d PsqlDatabase) ListContentDataDueForPublish(publishAt types.Timestamp) (*[]ContentData, error) {
-	queries := mdbp.New(d.Connection)
-	rows, err := queries.ListContentDataDueForPublish(d.Context, mdbp.ListContentDataDueForPublishParams{
-		PublishAt: publishAt,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("failed to list content data due for publish: %w", err)
-	}
-	res := make([]ContentData, 0, len(rows))
-	for _, v := range rows {
-		res = append(res, d.MapContentData(v))
-	}
-	return &res, nil
-}
-
-// UpdateContentDataSchedule sets the publish_at field for scheduled publishing.
-func (d PsqlDatabase) UpdateContentDataSchedule(ctx context.Context, params UpdateContentDataScheduleParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.UpdateContentDataSchedule(ctx, mdbp.UpdateContentDataScheduleParams{
-		PublishAt:     params.PublishAt,
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
-}
-
-// ClearContentDataSchedule clears the publish_at field after successful publish or cancellation.
-func (d PsqlDatabase) ClearContentDataSchedule(ctx context.Context, params ClearContentDataScheduleParams) error {
-	queries := mdbp.New(d.Connection)
-	return queries.ClearContentDataSchedule(ctx, mdbp.ClearContentDataScheduleParams{
-		DateModified:  params.DateModified,
-		ContentDataID: params.ContentDataID,
-	})
 }
 
 // ========== AUDITED COMMAND TYPES ==========

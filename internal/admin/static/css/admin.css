@@ -3239,6 +3239,49 @@ block-editor .insert-dialog-empty {
   color: var(--text);
 }
 
+/* ========================================
+   SECTION: Locale Tabs (i18n)
+   ======================================== */
+.locale-tabs {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.5rem;
+}
+
+.locale-tab {
+  padding: 0.375rem 0.75rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-family: var(--font-sans);
+  transition: color var(--transition), border-color var(--transition), background var(--transition);
+}
+
+.locale-tab:hover {
+  color: var(--color-text);
+  background: var(--color-surface-hover);
+}
+
+.locale-tab.active {
+  border-color: var(--color-border);
+  border-bottom-color: var(--color-bg);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.locale-tab .badge {
+  margin-left: 0.25rem;
+  font-size: 0.6875rem;
+  font-weight: 400;
+}
+
 @media (max-width: 1024px) {
   .content-editor-layout.panel-open {
     grid-template-columns: 1fr;

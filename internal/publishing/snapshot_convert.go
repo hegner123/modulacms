@@ -100,6 +100,7 @@ func SnapshotContentFieldsToSlice(items []SnapshotContentFieldJSON) ([]db.Conten
 			ContentDataID:  SnapshotNullableContentID(item.ContentDataID),
 			FieldID:        ParseNullableFieldID(item.FieldID),
 			FieldValue:     item.FieldValue,
+			Locale:         item.Locale,
 			AuthorID:       types.UserID(item.AuthorID),
 			DateCreated:    ts,
 			DateModified:   tm,
@@ -128,6 +129,17 @@ func SnapshotFieldsToSlice(items []db.FieldsJSON) ([]db.Fields, error) {
 			sortOrder = 0
 		}
 
+		translatable, err := strconv.ParseInt(item.Translatable, 10, 64)
+		if err != nil {
+			// Default to 0 (not translatable) for snapshots created before i18n.
+			translatable = 0
+		}
+
+		var roles types.NullableString
+		if item.Roles != "" {
+			roles = types.NewNullableString(item.Roles)
+		}
+
 		result[i] = db.Fields{
 			FieldID:      types.FieldID(item.FieldID),
 			ParentID:     ParseNullableDatatypeID(item.ParentID),
@@ -138,6 +150,8 @@ func SnapshotFieldsToSlice(items []db.FieldsJSON) ([]db.Fields, error) {
 			Validation:   item.Validation,
 			UIConfig:     item.UIConfig,
 			Type:         types.FieldType(item.Type),
+			Translatable: translatable,
+			Roles:        roles,
 			AuthorID:     ParseNullableUserID(item.AuthorID),
 			DateCreated:  ts,
 			DateModified: tm,

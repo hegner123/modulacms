@@ -1,9 +1,11 @@
 package pages
 
 import (
+	"encoding/json"
 	"strings"
 
 	"github.com/hegner123/modulacms/internal/db"
+	"github.com/hegner123/modulacms/internal/db/types"
 )
 
 // truncateID returns a shortened version of an ID string for display.
@@ -23,7 +25,6 @@ type ContentListItem struct {
 	Slug           string
 	HasPublishPerm bool
 }
-
 
 // nullStr extracts the string value from a NullString, returning empty string if not valid.
 func nullStr(ns db.NullString) string {
@@ -45,4 +46,21 @@ func fileExtension(filename string) string {
 		return strings.ToUpper(filename[dotIdx+1:])
 	}
 	return "FILE"
+}
+
+// isRoleSelected checks if a role ID appears in the field's roles JSON array.
+func isRoleSelected(rolesJSON types.NullableString, roleID string) bool {
+	if !rolesJSON.Valid {
+		return false
+	}
+	var roles []string
+	if err := json.Unmarshal([]byte(rolesJSON.String), &roles); err != nil {
+		return false
+	}
+	for _, r := range roles {
+		if r == roleID {
+			return true
+		}
+	}
+	return false
 }

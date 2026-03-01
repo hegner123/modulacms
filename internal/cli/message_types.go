@@ -867,4 +867,32 @@ type PluginSyncCapabilitiesResultMsg struct {
 	Err  error
 }
 
+// --- i18n locale messages ---
+
+// LocaleListMsg carries the list of enabled locales for the locale picker.
+type LocaleListMsg struct {
+	Locales []db.Locale
+	Err     error
+}
+
+// LocaleSwitchMsg indicates the user selected a new locale.
+type LocaleSwitchMsg struct {
+	Locale string
+}
+
+// --- Webhook management messages ---
+
+// WebhooksFetchMsg requests fetching all webhooks.
+type WebhooksFetchMsg struct{}
+
+// WebhooksFetchResultsMsg returns fetched webhooks.
+type WebhooksFetchResultsMsg struct {
+	Data []db.Webhook
+}
+
+// WebhooksListSet sets the webhooks list on the model.
+type WebhooksListSet struct {
+	WebhooksList []db.Webhook
+}
+
 // ShowDialogMsg is defined in dialog.go

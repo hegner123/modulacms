@@ -35,6 +35,7 @@ type AdminContentFields struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
+	Locale              string                       `json:"locale"`
 	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
@@ -89,6 +90,8 @@ type AdminFields struct {
 	Validation   string                        `json:"validation"`
 	UiConfig     string                        `json:"ui_config"`
 	Type         types.FieldType               `json:"type"`
+	Translatable int64                         `json:"translatable"`
+	Roles        types.NullableString          `json:"roles"`
 	AuthorID     types.NullableUserID          `json:"author_id"`
 	DateCreated  types.Timestamp               `json:"date_created"`
 	DateModified types.Timestamp               `json:"date_modified"`
@@ -190,6 +193,7 @@ type ContentFields struct {
 	ContentDataID  types.NullableContentID `json:"content_data_id"`
 	FieldID        types.NullableFieldID   `json:"field_id"`
 	FieldValue     string                  `json:"field_value"`
+	Locale         string                  `json:"locale"`
 	AuthorID       types.UserID            `json:"author_id"`
 	DateCreated    types.Timestamp         `json:"date_created"`
 	DateModified   types.Timestamp         `json:"date_modified"`
@@ -244,9 +248,22 @@ type Fields struct {
 	Validation   string                   `json:"validation"`
 	UiConfig     string                   `json:"ui_config"`
 	Type         types.FieldType          `json:"type"`
+	Translatable int64                    `json:"translatable"`
+	Roles        types.NullableString     `json:"roles"`
 	AuthorID     types.NullableUserID     `json:"author_id"`
 	DateCreated  types.Timestamp          `json:"date_created"`
 	DateModified types.Timestamp          `json:"date_modified"`
+}
+
+type Locale struct {
+	LocaleID     types.LocaleID  `json:"locale_id"`
+	Code         string          `json:"code"`
+	Label        string          `json:"label"`
+	IsDefault    int64           `json:"is_default"`
+	IsEnabled    int64           `json:"is_enabled"`
+	FallbackCode sql.NullString  `json:"fallback_code"`
+	SortOrder    int64           `json:"sort_order"`
+	DateCreated  types.Timestamp `json:"date_created"`
 }
 
 type Media struct {
@@ -269,17 +286,17 @@ type Media struct {
 }
 
 type MediaDimensions struct {
-	MdID        string         `json:"md_id"`
-	Label       sql.NullString `json:"label"`
-	Width       sql.NullInt32  `json:"width"`
-	Height      sql.NullInt32  `json:"height"`
-	AspectRatio sql.NullString `json:"aspect_ratio"`
+	MdID        string              `json:"md_id"`
+	Label       sql.NullString      `json:"label"`
+	Width       types.NullableInt64 `json:"width"`
+	Height      types.NullableInt64 `json:"height"`
+	AspectRatio sql.NullString      `json:"aspect_ratio"`
 }
 
 type Permissions struct {
 	PermissionID    types.PermissionID `json:"permission_id"`
 	Label           string             `json:"label"`
-	SystemProtected bool               `json:"system_protected"`
+	SystemProtected types.SafeBool     `json:"system_protected"`
 }
 
 type Pipelines struct {
@@ -317,9 +334,9 @@ type RolePermissions struct {
 }
 
 type Roles struct {
-	RoleID          types.RoleID `json:"role_id"`
-	Label           string       `json:"label"`
-	SystemProtected bool         `json:"system_protected"`
+	RoleID          types.RoleID   `json:"role_id"`
+	Label           string         `json:"label"`
+	SystemProtected types.SafeBool `json:"system_protected"`
 }
 
 type Routes struct {
@@ -337,7 +354,7 @@ type Sessions struct {
 	UserID      types.NullableUserID `json:"user_id"`
 	DateCreated types.Timestamp      `json:"date_created"`
 	ExpiresAt   types.Timestamp      `json:"expires_at"`
-	LastAccess  time.Time            `json:"last_access"`
+	LastAccess  types.Timestamp      `json:"last_access"`
 	IpAddress   sql.NullString       `json:"ip_address"`
 	UserAgent   sql.NullString       `json:"user_agent"`
 	SessionData sql.NullString       `json:"session_data"`
@@ -354,7 +371,7 @@ type Tokens struct {
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Tokens    string               `json:"token"`
-	IssuedAt  time.Time            `json:"issued_at"`
+	IssuedAt  types.Timestamp      `json:"issued_at"`
 	ExpiresAt types.Timestamp      `json:"expires_at"`
 	Revoked   bool                 `json:"revoked"`
 }
@@ -366,7 +383,7 @@ type UserOauth struct {
 	OAuthProviderUserID string               `json:"oauth_provider_user_id"`
 	AccessToken         string               `json:"access_token"`
 	RefreshToken        string               `json:"refresh_token"`
-	TokenExpiresAt      time.Time            `json:"token_expires_at"`
+	TokenExpiresAt      types.Timestamp      `json:"token_expires_at"`
 	DateCreated         types.Timestamp      `json:"date_created"`
 }
 
@@ -390,4 +407,31 @@ type Users struct {
 	Roles        string          `json:"role"`
 	DateCreated  types.Timestamp `json:"date_created"`
 	DateModified types.Timestamp `json:"date_modified"`
+}
+
+type WebhookDeliveries struct {
+	DeliveryID     types.WebhookDeliveryID `json:"delivery_id"`
+	WebhookID      types.WebhookID         `json:"webhook_id"`
+	Event          string                  `json:"event"`
+	Payload        string                  `json:"payload"`
+	Status         string                  `json:"status"`
+	Attempts       int32                   `json:"attempts"`
+	LastStatusCode sql.NullInt32           `json:"last_status_code"`
+	LastError      string                  `json:"last_error"`
+	NextRetryAt    sql.NullTime            `json:"next_retry_at"`
+	CreatedAt      time.Time               `json:"created_at"`
+	CompletedAt    sql.NullTime            `json:"completed_at"`
+}
+
+type Webhooks struct {
+	WebhookID    types.WebhookID      `json:"webhook_id"`
+	Name         string               `json:"name"`
+	URL          string               `json:"url"`
+	Secret       string               `json:"secret"`
+	Events       string               `json:"events"`
+	IsActive     int64                `json:"is_active"`
+	Headers      string               `json:"headers"`
+	AuthorID     types.NullableUserID `json:"author_id"`
+	DateCreated  types.Timestamp      `json:"date_created"`
+	DateModified types.Timestamp      `json:"date_modified"`
 }

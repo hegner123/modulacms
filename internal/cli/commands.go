@@ -1185,6 +1185,67 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 	}
 }
 
+// LoadContentFieldsForLocaleCmd fetches content fields for a specific content
+// node and locale. When locale is non-empty, it uses the locale-filtered query;
+// otherwise it falls back to the default (all-locale) query.
+func LoadContentFieldsForLocaleCmd(cfg *config.Config, contentDataID types.ContentID, datatypeID types.NullableDatatypeID, locale string) tea.Cmd {
+	return func() tea.Msg {
+		d := db.ConfigDB(*cfg)
+
+		contentID := types.NullableContentID{ID: contentDataID, Valid: true}
+
+		var contentFields *[]db.ContentFields
+		var err error
+		if locale != "" {
+			contentFields, err = d.ListContentFieldsByContentDataAndLocale(contentID, locale)
+		} else {
+			contentFields, err = d.ListContentFieldsByContentData(contentID)
+		}
+		if err != nil {
+			return LoadContentFieldsMsg{Fields: nil}
+		}
+
+		// Fetch field definitions by parent datatype ID
+		var fieldDefs *[]db.Fields
+		if datatypeID.Valid {
+			fieldDefs, err = d.ListFieldsByDatatypeID(datatypeID)
+			if err != nil {
+				fieldDefs = nil
+			}
+		}
+
+		// Build content field value map: field_id -> ContentFields
+		cfMap := make(map[string]db.ContentFields)
+		if contentFields != nil {
+			for _, cf := range *contentFields {
+				if cf.FieldID.Valid {
+					cfMap[string(cf.FieldID.ID)] = cf
+				}
+			}
+		}
+
+		// Build result ordered by sort_order from field definitions
+		var result []ContentFieldDisplay
+		if fieldDefs != nil {
+			result = make([]ContentFieldDisplay, 0, len(*fieldDefs))
+			for _, field := range *fieldDefs {
+				display := ContentFieldDisplay{
+					FieldID: field.FieldID,
+					Label:   field.Label,
+					Type:    string(field.Type),
+				}
+				if cf, ok := cfMap[string(field.FieldID)]; ok {
+					display.ContentFieldID = cf.ContentFieldID
+					display.Value = cf.FieldValue
+				}
+				result = append(result, display)
+			}
+		}
+
+		return LoadContentFieldsMsg{Fields: result}
+	}
+}
+
 // ContentFieldUpdatedMsg signals that a single content field was updated.
 type ContentFieldUpdatedMsg struct {
 	ContentID  types.ContentID
@@ -2056,6 +2117,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 	}
 
 	userID := m.UserID
+	locale := m.ActiveLocale
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
 		ctx := context.Background()
@@ -2063,7 +2125,7 @@ func (m Model) HandleConfirmedPublish(msg ConfirmedPublishMsg) tea.Cmd {
 		logger := utility.DefaultLogger
 
 		retentionCap := cfg.VersionMaxPerContent()
-		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, userID, ac, retentionCap)
+		_, pubErr := publishing.PublishContent(ctx, d, msg.ContentID, locale, userID, ac, retentionCap, nil)
 		if pubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to publish content %s", msg.ContentID), pubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Publish failed: %v", pubErr)}
@@ -2087,13 +2149,14 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 	}
 
 	userID := m.UserID
+	locale := m.ActiveLocale
 	return func() tea.Msg {
 		d := db.ConfigDB(*cfg)
 		ctx := context.Background()
 		ac := middleware.AuditContextFromCLI(*cfg, userID)
 		logger := utility.DefaultLogger
 
-		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, userID, ac)
+		unpubErr := publishing.UnpublishContent(ctx, d, msg.ContentID, locale, userID, ac, nil)
 		if unpubErr != nil {
 			logger.Ferror(fmt.Sprintf("Failed to unpublish content %s", msg.ContentID), unpubErr)
 			return ActionResultMsg{Title: "Error", Message: fmt.Sprintf("Unpublish failed: %v", unpubErr)}
@@ -2104,6 +2167,20 @@ func (m Model) HandleConfirmedUnpublish(msg ConfirmedUnpublishMsg) tea.Cmd {
 			ContentID: msg.ContentID,
 			RouteID:   msg.RouteID,
 		}
+	}
+}
+
+// LoadEnabledLocalesCmd fetches the list of enabled locales from the database.
+func LoadEnabledLocalesCmd(d db.DbDriver) tea.Cmd {
+	return func() tea.Msg {
+		locales, err := d.ListEnabledLocales()
+		if err != nil {
+			return LocaleListMsg{Err: err}
+		}
+		if locales == nil {
+			return LocaleListMsg{Locales: []db.Locale{}}
+		}
+		return LocaleListMsg{Locales: *locales}
 	}
 }
 
@@ -2174,7 +2251,6 @@ func (m Model) HandleConfirmedRestoreVersion(msg ConfirmedRestoreVersionMsg) tea
 		}
 	}
 }
-
 
 // HandlePluginEnable enables a plugin via the manager.
 func (m Model) HandlePluginEnable(msg PluginEnableRequestMsg) tea.Cmd {
@@ -2375,4 +2451,3 @@ func (m Model) FetchPendingHooksForApprovalCmd(pluginName string) tea.Cmd {
 		}
 	}
 }
-

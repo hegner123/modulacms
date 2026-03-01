@@ -60,6 +60,10 @@ export type Field = {
   ui_config: string
   /** The data type of this field. */
   type: FieldType
+  /** Whether this field is translatable (0 = no, 1 = yes). */
+  translatable: number
+  /** Role names that can access this field, or `null` for unrestricted. */
+  roles: string[] | null
   /** ID of the user who created this field, or `null`. */
   author_id: UserID | null
   /** ISO 8601 creation timestamp. */

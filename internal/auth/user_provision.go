@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
@@ -265,9 +264,9 @@ func (up *UserProvisioner) createNewUser(
 
 	// Link OAuth
 	// Handle tokens without expiry (GitHub)
-	expiresAt := ""
+	var expiresAt types.Timestamp
 	if !token.Expiry.IsZero() {
-		expiresAt = token.Expiry.Format(time.RFC3339)
+		expiresAt = types.NewTimestamp(token.Expiry)
 	}
 	_, err = up.driver.CreateUserOauth(ctx, ac, db.CreateUserOauthParams{
 		UserID:              types.NullableUserID{ID: user.UserID, Valid: true},
@@ -296,9 +295,9 @@ func (up *UserProvisioner) linkOAuthToUser(
 	providerUserID string,
 ) (*db.Users, error) {
 	// Handle tokens without expiry (GitHub)
-	expiresAt := ""
+	var expiresAt types.Timestamp
 	if !token.Expiry.IsZero() {
-		expiresAt = token.Expiry.Format(time.RFC3339)
+		expiresAt = types.NewTimestamp(token.Expiry)
 	}
 
 	ctx := context.Background()
@@ -324,9 +323,9 @@ func (up *UserProvisioner) linkOAuthToUser(
 // updateTokens updates the OAuth tokens for an existing user_oauth record.
 func (up *UserProvisioner) updateTokens(userOauthID types.UserOauthID, token *oauth2.Token) error {
 	// Handle tokens without expiry (GitHub)
-	expiresAt := ""
+	var expiresAt types.Timestamp
 	if !token.Expiry.IsZero() {
-		expiresAt = token.Expiry.Format(time.RFC3339)
+		expiresAt = types.NewTimestamp(token.Expiry)
 	}
 
 	ctx := context.Background()

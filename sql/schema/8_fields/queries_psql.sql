@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT NOT NULL,
+    translatable BOOLEAN NOT NULL DEFAULT FALSE,
+    roles TEXT DEFAULT NULL,
     author_id TEXT NOT NULL
         CONSTRAINT fk_users_author_id
             REFERENCES users
@@ -55,6 +57,8 @@ INSERT INTO fields  (
     validation,
     ui_config,
     type,
+    translatable,
+    roles,
     author_id,
     date_created,
     date_modified
@@ -70,7 +74,9 @@ INSERT INTO fields  (
     $9,
     $10,
     $11,
-    $12
+    $12,
+    $13,
+    $14
     ) RETURNING *;
 
 
@@ -84,10 +90,12 @@ SET parent_id = $1,
     validation = $6,
     ui_config = $7,
     type = $8,
-    author_id = $9,
-    date_created = $10,
-    date_modified = $11
-    WHERE field_id = $12
+    translatable = $9,
+    roles = $10,
+    author_id = $11,
+    date_created = $12,
+    date_modified = $13
+    WHERE field_id = $14
     RETURNING *;
 
 -- name: DeleteField :exec

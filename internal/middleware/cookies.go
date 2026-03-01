@@ -21,8 +21,8 @@ func SetCookieHandler(w http.ResponseWriter, c *http.Cookie) {
 	if err != nil {
 		return
 	}
-    utility.DefaultLogger.Fdebug("wrote %d bytes\n", i)
-    utility.DefaultLogger.Fdebug("Cook has been set!", w)
+	utility.DefaultLogger.Fdebug("wrote %d bytes\n", i)
+	utility.DefaultLogger.Fdebug("Cook has been set!", w)
 }
 
 // ReadCookie decodes and deserializes a cookie value into a MiddlewareCookie struct.
@@ -77,10 +77,10 @@ func WriteCookie(w http.ResponseWriter, c *config.Config, sessionData string, us
 		Name:     c.Cookie_Name,
 		Value:    encoded,
 		Path:     "/",
-		MaxAge:   86400,             // 24 hours
-		HttpOnly: true,              // Prevent JavaScript access
-		Secure:   c.Cookie_Secure,   // HTTPS only (from config)
-		SameSite: sameSite,          // CSRF protection (from config)
+		MaxAge:   86400,           // 24 hours
+		HttpOnly: true,            // Prevent JavaScript access
+		Secure:   c.Cookie_Secure, // HTTPS only (from config)
+		SameSite: sameSite,        // CSRF protection (from config)
 	})
 
 	utility.DefaultLogger.Finfo("Secure cookie set for user %d", userId)

@@ -186,6 +186,162 @@ func EnsurePublishPermission(ctx context.Context, driver DbDriver) error {
 	return nil
 }
 
+// EnsureLocalePermissions checks that locale CRUD permissions exist and are
+// assigned to the appropriate roles. This is idempotent — safe to call on every boot.
+// For fresh installs (where CreateBootstrapData already includes these), this is a no-op.
+// For upgrades from older versions, this backfills the permissions.
+func EnsureLocalePermissions(ctx context.Context, driver DbDriver) error {
+	perms, err := driver.ListPermissions()
+	if err != nil {
+		return fmt.Errorf("list permissions: %w", err)
+	}
+
+	existing := make(map[string]struct{})
+	if perms != nil {
+		for _, p := range *perms {
+			existing[p.Label] = struct{}{}
+		}
+	}
+
+	// locale:read is for admin, editor, viewer; the rest are admin-only.
+	localePerms := []struct {
+		label string
+		roles []string
+	}{
+		{"locale:create", []string{"admin"}},
+		{"locale:read", []string{"admin", "editor", "viewer"}},
+		{"locale:update", []string{"admin"}},
+		{"locale:delete", []string{"admin"}},
+	}
+
+	// Build role lookup.
+	roles, err := driver.ListRoles()
+	if err != nil {
+		return fmt.Errorf("list roles: %w", err)
+	}
+	rolesByLabel := make(map[string]Roles)
+	if roles != nil {
+		for _, r := range *roles {
+			rolesByLabel[r.Label] = r
+		}
+	}
+
+	systemUserID, userErr := findSystemUserID(driver)
+	if userErr != nil {
+		return fmt.Errorf("find system user for locale permissions: %w", userErr)
+	}
+
+	for _, lp := range localePerms {
+		if _, found := existing[lp.label]; found {
+			continue
+		}
+
+		ac := audited.Ctx(types.NewNodeID(), systemUserID, "ensure-locale-permissions", "system")
+		perm, createErr := driver.CreatePermission(ctx, ac, CreatePermissionParams{
+			Label:           lp.label,
+			SystemProtected: true,
+		})
+		if createErr != nil {
+			return fmt.Errorf("create permission %q: %w", lp.label, createErr)
+		}
+		utility.DefaultLogger.Info("Created missing permission", "label", lp.label)
+
+		for _, roleLabel := range lp.roles {
+			role, ok := rolesByLabel[roleLabel]
+			if !ok {
+				continue
+			}
+			_, assignErr := driver.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+				RoleID:       role.RoleID,
+				PermissionID: perm.PermissionID,
+			})
+			if assignErr != nil {
+				return fmt.Errorf("assign %q to %s role: %w", lp.label, roleLabel, assignErr)
+			}
+			utility.DefaultLogger.Info("Assigned permission to role", "label", lp.label, "role", roleLabel)
+		}
+	}
+
+	return nil
+}
+
+// EnsureWebhookPermissions checks that webhook CRUD permissions exist and are
+// assigned to the admin role. This is idempotent — safe to call on every boot.
+// For fresh installs (where CreateBootstrapData already includes these), this is a no-op.
+// For upgrades from older versions, this backfills the permissions.
+func EnsureWebhookPermissions(ctx context.Context, driver DbDriver) error {
+	perms, err := driver.ListPermissions()
+	if err != nil {
+		return fmt.Errorf("list permissions: %w", err)
+	}
+
+	existing := make(map[string]struct{})
+	if perms != nil {
+		for _, p := range *perms {
+			existing[p.Label] = struct{}{}
+		}
+	}
+
+	webhookPerms := []struct {
+		label string
+		roles []string
+	}{
+		{"webhook:create", []string{"admin"}},
+		{"webhook:read", []string{"admin"}},
+		{"webhook:update", []string{"admin"}},
+		{"webhook:delete", []string{"admin"}},
+	}
+
+	roles, err := driver.ListRoles()
+	if err != nil {
+		return fmt.Errorf("list roles: %w", err)
+	}
+	rolesByLabel := make(map[string]Roles)
+	if roles != nil {
+		for _, r := range *roles {
+			rolesByLabel[r.Label] = r
+		}
+	}
+
+	systemUserID, userErr := findSystemUserID(driver)
+	if userErr != nil {
+		return fmt.Errorf("find system user for webhook permissions: %w", userErr)
+	}
+
+	for _, wp := range webhookPerms {
+		if _, found := existing[wp.label]; found {
+			continue
+		}
+
+		ac := audited.Ctx(types.NewNodeID(), systemUserID, "ensure-webhook-permissions", "system")
+		perm, createErr := driver.CreatePermission(ctx, ac, CreatePermissionParams{
+			Label:           wp.label,
+			SystemProtected: true,
+		})
+		if createErr != nil {
+			return fmt.Errorf("create permission %q: %w", wp.label, createErr)
+		}
+		utility.DefaultLogger.Info("Created missing permission", "label", wp.label)
+
+		for _, roleLabel := range wp.roles {
+			role, ok := rolesByLabel[roleLabel]
+			if !ok {
+				continue
+			}
+			_, assignErr := driver.CreateRolePermission(ctx, ac, CreateRolePermissionParams{
+				RoleID:       role.RoleID,
+				PermissionID: perm.PermissionID,
+			})
+			if assignErr != nil {
+				return fmt.Errorf("assign %q to %s role: %w", wp.label, roleLabel, assignErr)
+			}
+			utility.DefaultLogger.Info("Assigned permission to role", "label", wp.label, "role", roleLabel)
+		}
+	}
+
+	return nil
+}
+
 // findSystemUserID returns the UserID of the "system" user.
 func findSystemUserID(driver DbDriver) (types.UserID, error) {
 	users, err := driver.ListUsers()

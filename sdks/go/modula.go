@@ -88,6 +88,15 @@ type Client struct {
 	// Publishing
 	Publishing      *PublishingResource
 	AdminPublishing *PublishingResource
+
+	// Locales
+	Locales *LocaleResource
+
+	// Webhooks
+	Webhooks *WebhookResource
+
+	// Content Query
+	Query *QueryResource
 }
 
 // NewClient creates a new Modula API client.
@@ -175,6 +184,15 @@ func NewClient(cfg ClientConfig) (*Client, error) {
 		// Publishing
 		Publishing:      &PublishingResource{http: h, prefix: "content"},
 		AdminPublishing: &PublishingResource{http: h, prefix: "admin/content"},
+
+		// Locales
+		Locales: newLocaleResource(h),
+
+		// Webhooks
+		Webhooks: newWebhookResource(h),
+
+		// Content Query
+		Query: &QueryResource{http: h},
 	}, nil
 }
 

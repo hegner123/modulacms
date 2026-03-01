@@ -2,6 +2,7 @@ package router
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -19,7 +20,7 @@ func FieldsHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 		if HasPaginationParams(r) {
 			apiListFieldsPaginated(w, r, c)
 		} else {
-			apiListFields(w, c)
+			apiListFields(w, r, c)
 		}
 	case http.MethodPost:
 		apiCreateField(w, r, c)
@@ -60,14 +61,27 @@ func apiGetField(w http.ResponseWriter, r *http.Request, c config.Config) error 
 		return err
 	}
 
+	// Check field-level role access.
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+	if !db.IsFieldAccessible(*field, roleID, isAdmin) {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return fmt.Errorf("field %s not accessible to role %s", fID, roleID)
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(field)
 	return nil
 }
 
-// apiListFields handles GET requests for listing fields
-func apiListFields(w http.ResponseWriter, c config.Config) error {
+// apiListFields handles GET requests for listing fields.
+// Filters results by the authenticated user's role.
+func apiListFields(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 
 	fields, err := d.ListFields()
@@ -77,9 +91,17 @@ func apiListFields(w http.ResponseWriter, c config.Config) error {
 		return err
 	}
 
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+	filtered := db.FilterFieldsByRole(*fields, roleID, isAdmin)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(fields)
+	json.NewEncoder(w).Encode(filtered)
 	return nil
 }
 
@@ -191,6 +213,8 @@ func apiDeleteField(w http.ResponseWriter, r *http.Request, c config.Config) err
 }
 
 // apiListFieldsPaginated handles GET requests for listing fields with pagination.
+// Filters results by the authenticated user's role. Total count reflects
+// the pre-filter database count; Data contains only accessible fields.
 func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Config) error {
 	d := db.ConfigDB(c)
 	params := ParsePaginationParams(r)
@@ -209,8 +233,16 @@ func apiListFieldsPaginated(w http.ResponseWriter, r *http.Request, c config.Con
 		return err
 	}
 
+	user := middleware.AuthenticatedUser(r.Context())
+	isAdmin := middleware.ContextIsAdmin(r.Context())
+	roleID := ""
+	if user != nil {
+		roleID = user.Role
+	}
+	filtered := db.FilterFieldsByRole(*items, roleID, isAdmin)
+
 	response := db.PaginatedResponse[db.Fields]{
-		Data:   *items,
+		Data:   filtered,
 		Total:  *total,
 		Limit:  params.Limit,
 		Offset: params.Offset,

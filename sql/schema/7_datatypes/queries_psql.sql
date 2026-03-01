@@ -87,6 +87,10 @@ WHERE datatype_id = $1;
 SELECT * FROM datatypes
 WHERE type = $1 LIMIT 1;
 
+-- name: GetDatatypeByName :one
+SELECT * FROM datatypes
+WHERE name = $1 LIMIT 1;
+
 -- name: ListDatatypePaginated :many
 SELECT * FROM datatypes
 ORDER BY datatype_id

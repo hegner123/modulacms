@@ -69,6 +69,9 @@ sql:
           verification_id: "VerificationID"
           plugin_id: "PluginID"
           pipeline_id: "PipelineID"
+          locale_id: "LocaleID"
+          webhook_id: "WebhookID"
+          delivery_id: "DeliveryID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -98,6 +101,8 @@ sql:
           token: Tokens
           user: Users
           user_ssh_key: UserSshKeys
+          webhook: Webhooks
+          webhook_delivery: WebhookDeliveries
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -140,6 +145,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          # LOCALES
+          - column: "locales.locale_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "LocaleID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -404,6 +412,23 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # SAFE BOOLEANS
+          - column: "roles.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          - column: "permissions.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          # NULLABLE INTEGERS
+          - column: "media_dimensions.width"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "media_dimensions.height"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          # TIMESTAMP OVERRIDES
+          - column: "tokens.issued_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "user_oauth.token_expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
@@ -413,6 +438,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "fields.translatable"
+            go_type: {type: "int64"}
+          - column: "admin_fields.translatable"
+            go_type: {type: "int64"}
+          - column: "fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "admin_fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "locales.is_default"
+            go_type: {type: "int64"}
+          - column: "locales.is_enabled"
+            go_type: {type: "int64"}
+          - column: "locales.sort_order"
+            go_type: {type: "int64"}
           - column: "routes.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
           # VALIDATION
@@ -437,6 +476,17 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "plugins.date_installed"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # WEBHOOKS
+          - column: "webhooks.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
+          - column: "webhooks.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "webhooks.is_active"
+            go_type: {type: "int64"}
+          - column: "webhook_deliveries.delivery_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
+          - column: "webhook_deliveries.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
           # PIPELINES
           - column: "pipelines.pipeline_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}
@@ -541,6 +591,9 @@ sql:
           verification_id: "VerificationID"
           plugin_id: "PluginID"
           pipeline_id: "PipelineID"
+          locale_id: "LocaleID"
+          webhook_id: "WebhookID"
+          delivery_id: "DeliveryID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -570,6 +623,8 @@ sql:
           token: Tokens
           user: Users
           user_ssh_key: UserSshKeys
+          webhook: Webhooks
+          webhook_delivery: WebhookDeliveries
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -612,6 +667,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          # LOCALES
+          - column: "locales.locale_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "LocaleID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -876,6 +934,23 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # SAFE BOOLEANS
+          - column: "roles.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          - column: "permissions.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          # NULLABLE INTEGERS
+          - column: "media_dimensions.width"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "media_dimensions.height"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          # TIMESTAMP OVERRIDES
+          - column: "tokens.issued_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "user_oauth.token_expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
@@ -885,6 +960,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "fields.translatable"
+            go_type: {type: "int64"}
+          - column: "admin_fields.translatable"
+            go_type: {type: "int64"}
+          - column: "fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "admin_fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "locales.is_default"
+            go_type: {type: "int64"}
+          - column: "locales.is_enabled"
+            go_type: {type: "int64"}
+          - column: "locales.sort_order"
+            go_type: {type: "int64"}
           - column: "routes.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
           # VALIDATION
@@ -909,6 +998,17 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "plugins.date_installed"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # WEBHOOKS
+          - column: "webhooks.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
+          - column: "webhooks.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "webhooks.is_active"
+            go_type: {type: "int64"}
+          - column: "webhook_deliveries.delivery_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
+          - column: "webhook_deliveries.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
           # PIPELINES
           - column: "pipelines.pipeline_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}
@@ -1013,6 +1113,9 @@ sql:
           verification_id: "VerificationID"
           plugin_id: "PluginID"
           pipeline_id: "PipelineID"
+          locale_id: "LocaleID"
+          webhook_id: "WebhookID"
+          delivery_id: "DeliveryID"
           # Table-to-struct names (sqlc singularizes first, then applies rename)
           admin_content_datum: AdminContentData
           admin_content_field: AdminContentFields
@@ -1042,6 +1145,8 @@ sql:
           token: Tokens
           user: Users
           user_ssh_key: UserSshKeys
+          webhook: Webhooks
+          webhook_delivery: WebhookDeliveries
         overrides:
           # PRIMARY ID COLUMNS
           - column: "datatypes.datatype_id"
@@ -1084,6 +1189,9 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentID"}
           - column: "admin_content_fields.admin_content_field_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "AdminContentFieldID"}
+          # LOCALES
+          - column: "locales.locale_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "LocaleID"}
           # FIELD TYPES
           - column: "field_types.field_type_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldTypeID"}
@@ -1348,6 +1456,23 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           - column: "change_events.consumed_at"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # SAFE BOOLEANS
+          - column: "roles.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          - column: "permissions.system_protected"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "SafeBool"}
+          # NULLABLE INTEGERS
+          - column: "media_dimensions.width"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          - column: "media_dimensions.height"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableInt64"}
+          # TIMESTAMP OVERRIDES
+          - column: "tokens.issued_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "sessions.last_access"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          - column: "user_oauth.token_expires_at"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
           # ENUMS
           - column: "content_data.status"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "ContentStatus"}
@@ -1357,6 +1482,20 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
           - column: "admin_fields.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "FieldType"}
+          - column: "fields.translatable"
+            go_type: {type: "int64"}
+          - column: "admin_fields.translatable"
+            go_type: {type: "int64"}
+          - column: "fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "admin_fields.roles"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "NullableString"}
+          - column: "locales.is_default"
+            go_type: {type: "int64"}
+          - column: "locales.is_enabled"
+            go_type: {type: "int64"}
+          - column: "locales.sort_order"
+            go_type: {type: "int64"}
           - column: "routes.type"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "RouteType"}
           # VALIDATION
@@ -1381,6 +1520,17 @@ sql:
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "JSONData"}
           - column: "plugins.date_installed"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "Timestamp"}
+          # WEBHOOKS
+          - column: "webhooks.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
+          - column: "webhooks.author_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "UserID"}
+          - column: "webhooks.is_active"
+            go_type: {type: "int64"}
+          - column: "webhook_deliveries.delivery_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookDeliveryID"}
+          - column: "webhook_deliveries.webhook_id"
+            go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "WebhookID"}
           # PIPELINES
           - column: "pipelines.pipeline_id"
             go_type: {import: "github.com/hegner123/modulacms/internal/db/types", type: "PipelineID"}

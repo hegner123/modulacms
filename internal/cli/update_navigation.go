@@ -276,6 +276,15 @@ func (m Model) UpdateNavigation(msg tea.Msg) (Model, tea.Cmd) {
 			cmds = append(cmds, CursorResetCmd())
 
 			return m, tea.Batch(cmds...)
+		case WEBHOOKSPAGE:
+			page := m.PageMap[WEBHOOKSPAGE]
+			cmds = append(cmds, LoadingStartCmd())
+			cmds = append(cmds, WebhooksFetchCmd())
+			cmds = append(cmds, PageSetCmd(page))
+			cmds = append(cmds, StatusSetCmd(OK))
+			cmds = append(cmds, PanelFocusResetCmd())
+
+			return m, tea.Batch(cmds...)
 		}
 
 		return m, nil

@@ -111,13 +111,14 @@ type UserWithRoleLabelRow struct {
 
 // FieldWithSortOrderRow represents a field definition with its sort order.
 type FieldWithSortOrderRow struct {
-	SortOrder  int64           `json:"sort_order"`
-	FieldID    types.FieldID   `json:"field_id"`
-	Label      string          `json:"label"`
-	Type       types.FieldType `json:"type"`
-	Data       string          `json:"data"`
-	Validation string          `json:"validation"`
-	UIConfig   string          `json:"ui_config"`
+	SortOrder  int64                `json:"sort_order"`
+	FieldID    types.FieldID        `json:"field_id"`
+	Label      string               `json:"label"`
+	Type       types.FieldType      `json:"type"`
+	Data       string               `json:"data"`
+	Validation string               `json:"validation"`
+	UIConfig   string               `json:"ui_config"`
+	Roles      types.NullableString `json:"roles"`
 }
 
 // AdminContentFieldsWithFieldRow represents an admin content field row joined with its field definition.
@@ -405,6 +406,7 @@ func (d Database) MapFieldWithSortOrderRow(a mdb.ListFieldsWithSortOrderByDataty
 		Data:       a.Data,
 		Validation: a.Validation,
 		UIConfig:   a.UiConfig,
+		Roles:      a.Roles,
 	}
 }
 
@@ -685,6 +687,7 @@ func (d MysqlDatabase) MapFieldWithSortOrderRow(a mdbm.ListFieldsWithSortOrderBy
 		Data:       a.Data,
 		Validation: a.Validation,
 		UIConfig:   a.UiConfig,
+		Roles:      a.Roles,
 	}
 }
 
@@ -965,6 +968,7 @@ func (d PsqlDatabase) MapFieldWithSortOrderRow(a mdbp.ListFieldsWithSortOrderByD
 		Data:       a.Data,
 		Validation: a.Validation,
 		UIConfig:   a.UiConfig,
+		Roles:      a.Roles,
 	}
 }
 

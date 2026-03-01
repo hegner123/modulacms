@@ -13,7 +13,7 @@ import (
 // isCMSPanelPage returns true for pages that use the 3-panel CMS layout.
 func isCMSPanelPage(idx PageIndex) bool {
 	switch idx {
-	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE, PIPELINESPAGE, PIPELINEDETAILPAGE:
+	case CMSPAGE, ADMINCMSPAGE, CONTENT, MEDIA, USERSADMIN, ROUTES, DATATYPES, ADMINROUTES, ADMINDATATYPES, ADMINCONTENT, PLUGINSPAGE, FIELDTYPES, ADMINFIELDTYPES, DEPLOYPAGE, PIPELINESPAGE, PIPELINEDETAILPAGE, WEBHOOKSPAGE:
 		return true
 	default:
 		return false
@@ -140,6 +140,8 @@ func cmsPanelTitles(m Model) (left, center, right string) {
 		return "Pipelines", "Entries", "Info"
 	case PIPELINEDETAILPAGE:
 		return "Pipelines", "Configuration", "Status"
+	case WEBHOOKSPAGE:
+		return "Webhooks", "Details", "Info"
 	default:
 		return "Tree", "Content", "Route"
 	}
@@ -232,6 +234,11 @@ func cmsPanelContent(m Model) (left, center, right string) {
 		center = renderPipelineDetail(m)
 		right = renderPipelineInfo(m)
 
+	case WEBHOOKSPAGE:
+		left = renderWebhooksList(m)
+		center = renderWebhookDetail(m)
+		right = renderWebhookInfo(m)
+
 	default:
 		left = ""
 		center = ""
@@ -286,6 +293,17 @@ func renderCMSPanelStatusBar(m Model) string {
 	// Left: status badge
 	statusBadge := m.GetStatus()
 
+	// Locale indicator (shown when i18n is enabled)
+	var localeBadge string
+	if m.Config.I18nEnabled() && m.ActiveLocale != "" {
+		localeStyle := lipgloss.NewStyle().
+			Foreground(config.DefaultStyle.Accent).
+			Background(config.DefaultStyle.AccentBG).
+			Bold(true).
+			Padding(0, 1)
+		localeBadge = localeStyle.Render(strings.ToUpper(m.ActiveLocale))
+	}
+
 	// Center: panel focus indicator
 	panels := []tui.FocusPanel{tui.TreePanel, tui.ContentPanel, tui.RoutePanel}
 	focusParts := make([]string, len(panels))
@@ -304,14 +322,16 @@ func renderCMSPanelStatusBar(m Model) string {
 
 	// Calculate spacing
 	statusW := lipgloss.Width(statusBadge)
+	localeW := lipgloss.Width(localeBadge)
 	focusW := lipgloss.Width(focusIndicator)
 	hintsW := lipgloss.Width(hints)
+	fixedW := statusW + localeW + focusW + hintsW
 
-	leftGap := (m.Width - statusW - focusW - hintsW) / 2
+	leftGap := (m.Width - fixedW) / 2
 	if leftGap < 1 {
 		leftGap = 1
 	}
-	rightGap := m.Width - statusW - leftGap - focusW - hintsW
+	rightGap := m.Width - fixedW - leftGap
 	if rightGap < 0 {
 		rightGap = 0
 	}
@@ -319,7 +339,7 @@ func renderCMSPanelStatusBar(m Model) string {
 	leftSpacer := barStyle.Render(strings.Repeat(" ", leftGap))
 	rightSpacer := barStyle.Render(strings.Repeat(" ", rightGap))
 
-	return statusBadge + leftSpacer + focusIndicator + rightSpacer + hints
+	return statusBadge + localeBadge + leftSpacer + focusIndicator + rightSpacer + hints
 }
 
 // getContextControls returns context-sensitive keybinding hints based on
@@ -347,6 +367,10 @@ func getContextControls(m Model) string {
 				km.HintString(config.ActionDelete) + ":delete │ " +
 				km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " + common
 		}
+		localeHint := ""
+		if m.Config.I18nEnabled() {
+			localeHint = km.HintString(config.ActionLocale) + ":locale │ "
+		}
 		return nav + " │ " + km.HintString(config.ActionExpand) + "/" + km.HintString(config.ActionCollapse) + ":expand │ " +
 			km.HintString(config.ActionGoParent) + "/" + km.HintString(config.ActionGoChild) + ":parent/child │ " +
 			km.HintString(config.ActionNew) + ":new │ " +
@@ -355,7 +379,8 @@ func getContextControls(m Model) string {
 			km.HintString(config.ActionReorderUp) + "/" + km.HintString(config.ActionReorderDown) + ":reorder │ " +
 			km.HintString(config.ActionCopy) + ":copy │ " +
 			km.HintString(config.ActionPublish) + ":publish │ " +
-			km.HintString(config.ActionVersions) + ":versions │ " + common
+			km.HintString(config.ActionVersions) + ":versions │ " +
+			localeHint + common
 
 	case ROUTES:
 		return nav + " │ enter:select │ " + km.HintString(config.ActionNew) + ":new │ " +
@@ -1038,5 +1063,66 @@ func renderPipelineInfo(m Model) string {
 	lines = append(lines, fmt.Sprintf("  Before chains: %d", before))
 	lines = append(lines, fmt.Sprintf("  After chains:  %d", after))
 
+	return strings.Join(lines, "\n")
+}
+
+// renderWebhooksList renders the webhook list for the left panel on the WEBHOOKSPAGE.
+func renderWebhooksList(m Model) string {
+	if len(m.WebhooksList) == 0 {
+		return "(no webhooks)"
+	}
+
+	lines := make([]string, 0, len(m.WebhooksList))
+	for i, wh := range m.WebhooksList {
+		cursor := "   "
+		if m.Cursor == i {
+			cursor = " ->"
+		}
+		status := "off"
+		if wh.IsActive {
+			status = "on"
+		}
+		lines = append(lines, fmt.Sprintf("%s %s [%s]", cursor, wh.Name, status))
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderWebhookDetail renders the selected webhook details for the center panel.
+func renderWebhookDetail(m Model) string {
+	if len(m.WebhooksList) == 0 || m.Cursor >= len(m.WebhooksList) {
+		return "No webhook selected"
+	}
+
+	wh := m.WebhooksList[m.Cursor]
+	active := "No"
+	if wh.IsActive {
+		active = "Yes"
+	}
+	lines := []string{
+		fmt.Sprintf("Name:     %s", wh.Name),
+		fmt.Sprintf("URL:      %s", wh.URL),
+		fmt.Sprintf("Active:   %s", active),
+		fmt.Sprintf("Events:   %s", strings.Join(wh.Events, ", ")),
+		"",
+		fmt.Sprintf("Created:  %s", wh.DateCreated.String()),
+		fmt.Sprintf("Modified: %s", wh.DateModified.String()),
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderWebhookInfo renders the webhook summary for the right panel.
+func renderWebhookInfo(m Model) string {
+	active := 0
+	for _, wh := range m.WebhooksList {
+		if wh.IsActive {
+			active++
+		}
+	}
+	lines := []string{
+		"Webhook Manager",
+		"",
+		fmt.Sprintf("  Total:  %d", len(m.WebhooksList)),
+		fmt.Sprintf("  Active: %d", active),
+	}
 	return strings.Join(lines, "\n")
 }

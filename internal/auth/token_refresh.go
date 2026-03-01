@@ -48,27 +48,12 @@ func (tr *TokenRefresher) RefreshIfNeeded(userID types.UserID) error {
 	}
 
 	// Check if token has no expiry (GitHub tokens don't expire)
-	if userOauth.TokenExpiresAt == "" {
+	if !userOauth.TokenExpiresAt.Valid || userOauth.TokenExpiresAt.IsZero() {
 		tr.log.Debug("Token for user %s has no expiry (long-lived token)", userID)
 		return nil // No refresh needed for long-lived tokens
 	}
 
-	// Parse expiration time
-	expiresAt, err := time.Parse(time.RFC3339, userOauth.TokenExpiresAt)
-	if err != nil {
-		tr.log.Warn("Failed to parse token expiration for user", err, userID)
-		// Try parsing as alternative formats
-		expiresAt, err = time.Parse("2006-01-02 15:04:05", userOauth.TokenExpiresAt)
-		if err != nil {
-			return fmt.Errorf("failed to parse expiration: %w", err)
-		}
-	}
-
-	// Double-check if token has no expiry
-	if expiresAt.IsZero() || expiresAt.Year() == 1 {
-		tr.log.Debug("Token for user %s has no expiry (long-lived token)", userID)
-		return nil // No refresh needed for long-lived tokens
-	}
+	expiresAt := userOauth.TokenExpiresAt.Time
 
 	// Check if token expires within 5 minutes
 	if time.Until(expiresAt) > 5*time.Minute {
@@ -127,9 +112,9 @@ func (tr *TokenRefresher) refreshToken(userOauth *db.UserOauth) (*oauth2.Token, 
 // updateTokens updates the user_oauth record with new token information.
 func (tr *TokenRefresher) updateTokens(userOauthID types.UserOauthID, token *oauth2.Token) error {
 	// Handle tokens without expiry (GitHub)
-	expiresAt := ""
+	var expiresAt types.Timestamp
 	if !token.Expiry.IsZero() {
-		expiresAt = token.Expiry.Format(time.RFC3339)
+		expiresAt = types.NewTimestamp(token.Expiry)
 	}
 
 	// Update in database

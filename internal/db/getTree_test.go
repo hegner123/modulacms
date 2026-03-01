@@ -3064,7 +3064,7 @@ func TestFieldWithSortOrderRow_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"sort_order", "field_id", "label", "type",
-		"data", "validation", "ui_config",
+		"data", "validation", "ui_config", "roles",
 	}
 	for _, field := range expectedFields {
 		if _, ok := m[field]; !ok {

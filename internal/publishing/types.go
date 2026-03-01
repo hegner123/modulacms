@@ -32,6 +32,7 @@ type SnapshotContentFieldJSON struct {
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
+	Locale         string `json:"locale"`
 	AuthorID       string `json:"author_id"`
 	DateCreated    string `json:"date_created"`
 	DateModified   string `json:"date_modified"`
@@ -45,6 +46,7 @@ func MapSnapshotContentFieldJSON(a db.ContentFields) SnapshotContentFieldJSON {
 		ContentDataID:  a.ContentDataID.String(),
 		FieldID:        a.FieldID.String(),
 		FieldValue:     a.FieldValue,
+		Locale:         a.Locale,
 		AuthorID:       a.AuthorID.String(),
 		DateCreated:    a.DateCreated.String(),
 		DateModified:   a.DateModified.String(),
@@ -53,12 +55,12 @@ func MapSnapshotContentFieldJSON(a db.ContentFields) SnapshotContentFieldJSON {
 
 // AdminSnapshot holds the serialized admin content tree data for a published version.
 type AdminSnapshot struct {
-	ContentData   []db.ContentDataJSON           `json:"content_data"`
-	Datatypes     []db.DatatypeJSON              `json:"datatypes"`
+	ContentData   []db.ContentDataJSON            `json:"content_data"`
+	Datatypes     []db.DatatypeJSON               `json:"datatypes"`
 	ContentFields []AdminSnapshotContentFieldJSON `json:"content_fields"`
-	Fields        []db.FieldsJSON                `json:"fields"`
-	Route         AdminSnapshotRoute             `json:"route"`
-	SchemaVersion int                            `json:"schema_version"`
+	Fields        []db.FieldsJSON                 `json:"fields"`
+	Route         AdminSnapshotRoute              `json:"route"`
+	SchemaVersion int                             `json:"schema_version"`
 }
 
 // AdminSnapshotRoute holds admin route metadata at the time of publish.
@@ -73,6 +75,7 @@ type AdminSnapshotContentFieldJSON struct {
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`
+	Locale              string `json:"locale"`
 	AuthorID            string `json:"author_id"`
 	DateCreated         string `json:"date_created"`
 	DateModified        string `json:"date_modified"`
@@ -86,6 +89,7 @@ func MapAdminSnapshotContentFieldJSON(a db.AdminContentFields) AdminSnapshotCont
 		AdminContentDataID:  a.AdminContentDataID.String(),
 		AdminFieldID:        a.AdminFieldID.String(),
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID.String(),
 		DateCreated:         a.DateCreated.String(),
 		DateModified:        a.DateModified.String(),

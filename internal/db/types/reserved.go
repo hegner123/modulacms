@@ -12,6 +12,7 @@ const (
 	DatatypeTypeReference  DatatypeType = "_reference"
 	DatatypeTypeNestedRoot DatatypeType = "_nested_root"
 	DatatypeTypeSystemLog  DatatypeType = "_system_log"
+	DatatypeTypeCollection DatatypeType = "_collection"
 )
 
 // reservedTypes maps each reserved type to a description of its engine behavior.
@@ -20,6 +21,7 @@ var reservedTypes = map[DatatypeType]string{
 	DatatypeTypeReference:  "Triggers tree composition — resolves content_tree_ref field values, attaches referenced trees as children",
 	DatatypeTypeNestedRoot: "Root of a composed subtree, assigned by the engine during tree composition",
 	DatatypeTypeSystemLog:  "Synthetic node injected when a reference cannot be resolved",
+	DatatypeTypeCollection: "Marks content as a queryable collection; signals to clients that children support filtering",
 }
 
 // IsReserved returns true if the type is engine-reserved.

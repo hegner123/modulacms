@@ -1,6 +1,6 @@
 # Plan: Publishing, Versioning, and i18n
 
-**Status:** Reviewed — must-fix items addressed
+**Status:** Phases 1-2 COMPLETE | Phases 3-6 PLANNED
 **Date:** 2026-02-28
 
 ---
@@ -11,8 +11,12 @@
 2. [Design Decisions](#design-decisions)
 3. [Publishing and Versioning (Unified)](#publishing-and-versioning)
 4. [Internationalization (i18n)](#internationalization)
-5. [Implementation Phases](#implementation-phases)
-6. [Schema Changes](#schema-changes)
+5. [Webhooks & Content Lifecycle Events (Phase 3)](#webhooks--content-lifecycle-events)
+6. [Review Workflows (Phase 4)](#review-workflows)
+7. [Preview Environments & Draft Sharing (Phase 5)](#preview-environments--draft-sharing)
+8. [Bulk Operations & Content Dependencies (Phase 6)](#bulk-operations--content-dependencies)
+9. [Implementation Phases](#implementation-phases)
+10. [Schema Changes](#schema-changes)
 
 ---
 
@@ -20,13 +24,19 @@
 
 | Area | State |
 |------|-------|
-| Content statuses | `draft`, `published`, `archived`, `pending` defined — no transition enforcement |
-| Public delivery | Serves all statuses — **draft content is publicly accessible** |
-| Publish permission | None — publishing is just `content:update` |
-| Plugin hooks | `before_publish`/`after_publish` already fire on status transitions |
+| Content statuses | `draft` and `published` — enforced via snapshot publishing (Phase 1 COMPLETE) |
+| Public delivery | Snapshot-based — only published content is publicly accessible (Phase 1 COMPLETE) |
+| Publish permission | `content:publish` gates snapshot creation and unpublish (Phase 1 COMPLETE) |
+| Version history | Snapshot-based versioning with restore, retention policy, optimistic locking (Phase 1 COMPLETE) |
+| Scheduled publishing | Background goroutine with configurable interval (Phase 1 COMPLETE) |
+| Plugin hooks | `before_publish`/`after_publish` fire on status transitions |
 | Audit trail | `change_events` records old/new JSON for every mutation |
-| Locale support | None |
+| Locale support | Per-field locale column, shared tree, fallback chains, per-locale publishing (Phase 2 COMPLETE) |
 | Content structure | Tree with sibling pointers on `content_data`; field values in separate `content_fields` table (EAV) |
+| Webhooks | Not yet (Phase 3 PLANNED) |
+| Review workflows | Not yet (Phase 4 PLANNED) |
+| Preview sharing | Not yet (Phase 5 PLANNED) |
+| Bulk operations | Not yet (Phase 6 PLANNED) |
 
 ---
 
@@ -54,9 +64,39 @@ These decisions are based on research into how Strapi v5, Contentful, Payload CM
 
 For now, content is either `draft` (not publicly accessible) or `published` (a published snapshot exists). The `status` field on `content_data` becomes an editorial indicator. The delivery API checks for the existence of a published snapshot, not the status field.
 
-### Review workflows: Not yet
+### Webhooks: Async delivery with retries
 
-**Why defer?** Every CMS team that built complex review workflows before knowing whether anyone would use them regretted it. Common regrets: too many stages, mandatory review for all content types, no admin bypass. The simplest approach that works: permission-gated publishing. Only users with `content:publish` can create published snapshots. Add workflow stages later when a real use case demands it.
+**Why now?** Webhooks are table stakes for headless CMS. Every major platform (Strapi, Contentful, Contentstack, Hygraph) ships them alongside publishing. Without webhooks, published content changes can't notify external systems — no CDN invalidation, no SSG rebuild triggers, no Slack notifications.
+
+**Why a dedicated table, not plugin hooks?** The existing `before_publish`/`after_publish` Lua hooks fire in-process. Webhooks need async delivery with retries, audit trails, and admin-managed configuration. These are complementary — Lua hooks for in-process logic, webhooks for external notification.
+
+**Retry strategy:** Exponential backoff with 3 retries (1min, 5min, 30min). After final failure, mark as failed — no infinite retry loops. Admin can manually retry from the UI.
+
+**Security:** HMAC-SHA256 signature in `X-ModulaCMS-Signature` header using a per-webhook secret. Payload is JSON. HTTPS-only enforced on save (with dev bypass config flag).
+
+### Review workflows: Single approval gate
+
+**Why not multi-stage (Strapi style)?** Strapi's 4-stage workflow (To do → In progress → Ready to review → Reviewed) is overcomplicated for most teams. Every CMS that shipped complex workflows before knowing if anyone would use them regretted it. Start with the simplest useful model.
+
+**The approach:** A single optional approval gate between draft and published. Datatypes can opt in via a `requires_review` flag. When enabled, content must pass through `pending_review` status before it can be published. Users with `content:review` permission can approve or reject.
+
+**Why per-datatype, not global?** Blog posts may need review; footer links may not. Making it per-datatype lets teams apply review only where it matters.
+
+**Why not a separate workflow engine?** A dedicated workflow table with stages, transitions, and assignees adds significant complexity. The single-gate model uses the existing status field and permission system. If multi-stage is needed later, it can be built on top of this foundation.
+
+### Preview environments: Token-based draft sharing
+
+**Why not OAuth/session-based?** The whole point is sharing with people who don't have CMS accounts — stakeholders, clients, external reviewers. A simple token in the URL is the right UX.
+
+**Why database-backed tokens, not JWTs?** Tokens need revocation (stakeholder leaves project, content is published and preview no longer needed). Database lookup is simple and revocation is immediate. JWTs would require a denylist, which is database-backed anyway.
+
+**Scope:** Tokens are scoped to a specific content item + locale. A token for the English version doesn't grant access to the Spanish draft. Generate separate tokens per locale if needed.
+
+### Bulk operations: Dependency tracking via query, not table
+
+**Why not a dedicated dependencies table?** Content references are already stored in `content_fields` as relation and `content_tree_ref` field values. Querying these fields to find "what references content X" is a read operation, not a new data structure. A junction table would duplicate data and require sync on every field update.
+
+**The approach:** A query-based dependency resolver that scans relation/content_tree_ref fields. On unpublish, query dependents and warn. On bulk publish, use the same resolver to find and include referenced content.
 
 ### i18n: Locale column on content_fields, shared tree
 
@@ -649,6 +689,556 @@ Methods:
 
 ---
 
+## Webhooks & Content Lifecycle Events
+
+Phase 3. Depends on Phase 1 (publishing). Other phases fire webhook events through this system.
+
+### 5.1 webhooks Table
+
+Schema number: `34_webhooks`
+
+```sql
+CREATE TABLE IF NOT EXISTS webhooks (
+    webhook_id    TEXT PRIMARY KEY CHECK (length(webhook_id) = 26),
+    name          TEXT NOT NULL,
+    url           TEXT NOT NULL,
+    secret        TEXT NOT NULL,                    -- HMAC-SHA256 signing key
+    events        TEXT NOT NULL DEFAULT '[]',       -- JSON array: ["content.published", "content.unpublished"]
+    is_active     INTEGER NOT NULL DEFAULT 1,
+    headers       TEXT NOT NULL DEFAULT '{}',       -- JSON object: custom headers to include
+    author_id     TEXT NOT NULL REFERENCES users(user_id),
+    date_created  TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_modified TEXT DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+No admin counterpart — webhooks are system-wide, not per-table-family.
+
+### 5.2 webhook_deliveries Table
+
+Schema number: `35_webhook_deliveries`
+
+```sql
+CREATE TABLE IF NOT EXISTS webhook_deliveries (
+    delivery_id   TEXT PRIMARY KEY CHECK (length(delivery_id) = 26),
+    webhook_id    TEXT NOT NULL REFERENCES webhooks(webhook_id) ON DELETE CASCADE,
+    event         TEXT NOT NULL,                    -- "content.published"
+    payload       TEXT NOT NULL,                    -- JSON request body sent
+    status        TEXT NOT NULL DEFAULT 'pending',  -- pending | success | failed | retrying
+    attempts      INTEGER NOT NULL DEFAULT 0,
+    last_status_code INTEGER,                       -- HTTP response code from target
+    last_error    TEXT,                             -- error message if failed
+    next_retry_at TEXT,                             -- NULL if not retrying
+    created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+    completed_at  TEXT
+);
+
+CREATE INDEX idx_wd_webhook ON webhook_deliveries(webhook_id);
+CREATE INDEX idx_wd_retry ON webhook_deliveries(status, next_retry_at)
+    WHERE status = 'retrying';
+```
+
+### 5.3 Events
+
+| Event | Fires when | Payload includes |
+|-------|-----------|-----------------|
+| `content.published` | Snapshot created and marked published | content_data_id, route slug, locale, version_number |
+| `content.unpublished` | Published flag cleared | content_data_id, route slug, locale |
+| `content.updated` | Draft content_data modified | content_data_id, route slug, changed fields list |
+| `content.scheduled` | publish_at timestamp set | content_data_id, route slug, locale, publish_at |
+| `content.deleted` | Content data deleted | content_data_id, route slug |
+| `locale.published` | Locale-specific snapshot published | content_data_id, locale, version_number |
+| `version.created` | Manual or auto version snapshot | content_data_id, locale, version_number, trigger |
+
+Admin-side events mirror with `admin.` prefix (e.g., `admin.content.published`).
+
+### 5.4 Webhook Delivery Engine
+
+New package: `internal/webhooks/`
+
+- `Dispatch(event string, payload any)` — called from publish/unpublish/update handlers
+- Queries active webhooks matching the event
+- Inserts delivery rows with `status = 'pending'`
+- Sends to an async worker (buffered channel, configurable pool size)
+- Worker signs payload with HMAC-SHA256, sends HTTP POST, records result
+- On failure: schedules retry with exponential backoff
+- Background goroutine in `cmd/serve.go` processes retry queue (piggybacks on publish scheduler ticker)
+
+### 5.5 Config
+
+```go
+Webhook_Enabled      bool `json:"webhook_enabled"`       // default false
+Webhook_Timeout      int  `json:"webhook_timeout"`       // seconds, default 10
+Webhook_Max_Retries  int  `json:"webhook_max_retries"`   // default 3
+Webhook_Workers      int  `json:"webhook_workers"`       // concurrent delivery workers, default 4
+Webhook_Allow_HTTP   bool `json:"webhook_allow_http"`    // default false (dev only)
+```
+
+### 5.6 New Permissions
+
+| Permission | admin | editor | viewer |
+|------------|-------|--------|--------|
+| `webhook:create` | yes | no | no |
+| `webhook:read` | yes | no | no |
+| `webhook:update` | yes | no | no |
+| `webhook:delete` | yes | no | no |
+
+### 5.7 API Endpoints
+
+```
+GET    /api/v1/admin/webhooks                    webhook:read
+POST   /api/v1/admin/webhooks                    webhook:create
+GET    /api/v1/admin/webhooks/{id}               webhook:read
+PUT    /api/v1/admin/webhooks/{id}               webhook:update
+DELETE /api/v1/admin/webhooks/{id}               webhook:delete
+POST   /api/v1/admin/webhooks/{id}/test          webhook:update   (send test event)
+GET    /api/v1/admin/webhooks/{id}/deliveries    webhook:read     (delivery log)
+POST   /api/v1/admin/webhooks/deliveries/{id}/retry  webhook:update  (manual retry)
+```
+
+### 5.8 DbDriver Interface Additions
+
+```go
+// Webhooks
+CreateWebhook(context.Context, audited.AuditContext, CreateWebhookParams) (*Webhook, error)
+GetWebhook(types.WebhookID) (*Webhook, error)
+ListWebhooks() (*[]Webhook, error)
+ListActiveWebhooksByEvent(string) (*[]Webhook, error)
+UpdateWebhook(context.Context, audited.AuditContext, UpdateWebhookParams) (*string, error)
+DeleteWebhook(context.Context, audited.AuditContext, types.WebhookID) error
+CreateWebhookTable() error
+
+// Webhook Deliveries
+CreateWebhookDelivery(context.Context, CreateWebhookDeliveryParams) (*WebhookDelivery, error)
+UpdateWebhookDeliveryStatus(context.Context, UpdateWebhookDeliveryStatusParams) error
+ListWebhookDeliveries(types.WebhookID) (*[]WebhookDelivery, error)
+ListPendingRetries(types.Timestamp) (*[]WebhookDelivery, error)
+CreateWebhookDeliveryTable() error
+```
+
+### 5.9 Typed IDs
+
+- `WebhookID` — ULID
+- `WebhookDeliveryID` — ULID
+
+### 5.10 Admin UI
+
+**Settings > Webhooks page:**
+- List of configured webhooks with active/inactive toggle
+- Create/edit form: name, URL, secret (auto-generated), event checkboxes, custom headers
+- "Test" button sends a test event and shows response
+- Delivery log per webhook: timestamp, event, status, response code, retry count
+- "Retry" button on failed deliveries
+
+### 5.11 TUI
+
+- Webhook list/create/edit in settings menu
+- Delivery log view per webhook
+
+### 5.12 SDK Changes
+
+All three SDKs:
+- `Webhook` type, `WebhookDelivery` type, `WebhookID`/`WebhookDeliveryID` branded types
+- Admin SDK: `ListWebhooks()`, `CreateWebhook()`, `UpdateWebhook()`, `DeleteWebhook()`, `TestWebhook()`, `ListDeliveries()`, `RetryDelivery()`
+
+---
+
+## Review Workflows
+
+Phase 4. Builds on Phase 1 (publishing statuses) and optionally Phase 3 (webhook notifications for review events).
+
+### 6.1 New Column on datatypes/admin_datatypes
+
+```sql
+ALTER TABLE datatypes ADD COLUMN requires_review INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE admin_datatypes ADD COLUMN requires_review INTEGER NOT NULL DEFAULT 0;
+```
+
+### 6.2 New Status Value
+
+Extend `ContentStatus` to three values:
+
+```go
+ContentStatusDraft         ContentStatus = "draft"
+ContentStatusPendingReview ContentStatus = "pending_review"
+ContentStatusPublished     ContentStatus = "published"
+```
+
+### 6.3 content_reviews / admin_content_reviews Tables
+
+Schema number: `36_content_reviews`
+
+```sql
+CREATE TABLE IF NOT EXISTS content_reviews (
+    review_id       TEXT PRIMARY KEY CHECK (length(review_id) = 26),
+    content_data_id TEXT NOT NULL REFERENCES content_data(content_data_id) ON DELETE CASCADE,
+    locale          TEXT NOT NULL DEFAULT '',
+    status          TEXT NOT NULL DEFAULT 'pending',  -- pending | approved | rejected
+    submitted_by    TEXT NOT NULL REFERENCES users(user_id),
+    reviewed_by     TEXT REFERENCES users(user_id),
+    comment         TEXT,                             -- reviewer's comment on approve/reject
+    date_submitted  TEXT DEFAULT CURRENT_TIMESTAMP,
+    date_reviewed   TEXT,
+
+    UNIQUE (content_data_id, locale, status)          -- one pending review per locale
+);
+
+CREATE INDEX idx_cr_pending ON content_reviews(status) WHERE status = 'pending';
+```
+
+Admin counterpart: `admin_content_reviews` with identical structure referencing `admin_content_data`.
+
+### 6.4 Review Flow
+
+**Submit for review:**
+1. Editor clicks "Submit for Review" (requires `content:update`)
+2. Validate: datatype has `requires_review = 1`
+3. Set `status = 'pending_review'` on content_data
+4. Insert `content_reviews` row with `status = 'pending'`
+5. Fire webhook: `content.review_submitted`
+6. Record in `change_events`
+
+**Approve:**
+1. Reviewer clicks "Approve" (requires `content:review`)
+2. Update review row: `status = 'approved'`, set `reviewed_by`, `comment`, `date_reviewed`
+3. Content is now eligible for publishing (status stays `pending_review` until published)
+4. Fire webhook: `content.review_approved`
+5. If reviewer also has `content:publish`, offer "Approve & Publish" combo action
+
+**Reject:**
+1. Reviewer clicks "Reject" with comment (requires `content:review`)
+2. Update review row: `status = 'rejected'`
+3. Set content_data `status = 'draft'`
+4. Fire webhook: `content.review_rejected`
+5. Editor sees rejection with comment, can edit and resubmit
+
+**Bypass:** Users with `content:publish` can always publish directly, even if `requires_review = 1`. The review gate is for editors without publish permission.
+
+### 6.5 New Permissions
+
+| Permission | admin | editor | viewer |
+|------------|-------|--------|--------|
+| `content:review` | yes | no | no |
+
+### 6.6 API Endpoints
+
+```
+POST /api/v1/contentdata/{id}/submit-review      content:update
+POST /api/v1/contentdata/{id}/approve             content:review
+POST /api/v1/contentdata/{id}/reject              content:review  (body: {"comment": "..."})
+GET  /api/v1/reviews/pending                      content:review  (review queue)
+```
+
+Admin counterparts with `/admin/` prefix.
+
+### 6.7 DbDriver Interface Additions
+
+```go
+// Content Reviews
+CreateContentReview(context.Context, audited.AuditContext, CreateContentReviewParams) (*ContentReview, error)
+GetContentReview(types.ContentReviewID) (*ContentReview, error)
+GetPendingReview(types.ContentID, string) (*ContentReview, error)  // by content_data_id + locale
+ListPendingReviews() (*[]ContentReview, error)
+UpdateContentReviewStatus(context.Context, UpdateContentReviewStatusParams) error
+CreateContentReviewTable() error
+
+// Admin Content Reviews (parallel)
+CreateAdminContentReview(context.Context, audited.AuditContext, CreateAdminContentReviewParams) (*AdminContentReview, error)
+GetAdminContentReview(types.AdminContentReviewID) (*AdminContentReview, error)
+GetAdminPendingReview(types.AdminContentID, string) (*AdminContentReview, error)
+ListAdminPendingReviews() (*[]AdminContentReview, error)
+UpdateAdminContentReviewStatus(context.Context, UpdateAdminContentReviewStatusParams) error
+CreateAdminContentReviewTable() error
+```
+
+### 6.8 Typed IDs
+
+- `ContentReviewID` — ULID
+- `AdminContentReviewID` — ULID
+
+### 6.9 Admin UI
+
+**Content edit page (when datatype requires_review):**
+- Editor without `content:publish`: "Submit for Review" button replaces "Publish"
+- Reviewer with `content:review`: "Approve" / "Reject" buttons with comment textarea
+- "Approve & Publish" combo button if reviewer also has `content:publish`
+- Review status badge: yellow=pending, green=approved, red=rejected
+- Rejection comment displayed to editor
+
+**Review queue page (`/admin/reviews`):**
+- List of pending reviews across all content
+- Filter by datatype, locale, submitter
+- Quick approve/reject from the list
+
+**Datatype settings:**
+- "Requires review before publishing" toggle per datatype
+
+### 6.10 TUI
+
+- Review queue screen
+- Approve/reject actions with comment input
+
+### 6.11 SDK Changes
+
+All three SDKs:
+- `ContentReview` type, `ContentReviewID` branded type
+- `SubmitForReview(contentID)`, `ApproveReview(contentID)`, `RejectReview(contentID, comment)`, `ListPendingReviews()`
+
+---
+
+## Preview Environments & Draft Sharing
+
+Phase 5. Standalone — builds on Phase 1 (delivery API with published snapshots) and Phase 2 (locale support).
+
+### 7.1 preview_tokens Table
+
+Schema number: `37_preview_tokens`
+
+```sql
+CREATE TABLE IF NOT EXISTS preview_tokens (
+    token_id        TEXT PRIMARY KEY CHECK (length(token_id) = 26),
+    token           TEXT NOT NULL UNIQUE,              -- random 32-byte hex string
+    content_data_id TEXT NOT NULL REFERENCES content_data(content_data_id) ON DELETE CASCADE,
+    locale          TEXT NOT NULL DEFAULT '',
+    label           TEXT,                              -- "For client review"
+    created_by      TEXT NOT NULL REFERENCES users(user_id),
+    expires_at      TEXT NOT NULL,
+    revoked         INTEGER NOT NULL DEFAULT 0,
+    date_created    TEXT DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_pt_token ON preview_tokens(token) WHERE revoked = 0;
+CREATE INDEX idx_pt_content ON preview_tokens(content_data_id);
+```
+
+Admin counterpart: `admin_preview_tokens` with identical structure referencing `admin_content_data`.
+
+### 7.2 Preview Delivery
+
+New public endpoint (no auth required):
+
+```
+GET /api/v1/preview/{token}
+```
+
+Flow:
+1. Look up token in `preview_tokens` where `revoked = 0`
+2. Validate: not expired (`expires_at > now`)
+3. Read live content from editing tables (same as `?preview=true` authenticated path)
+4. Resolve locale from token's locale field
+5. Feed through `BuildTree()` → `TransformAndWrite()` with `?format=` support
+6. Response includes `X-Robots-Tag: noindex` and `X-Preview: true` headers
+7. Response body includes `"preview": true, "expires_at": "..."` metadata
+
+### 7.3 Config
+
+```go
+Preview_Enabled           bool `json:"preview_enabled"`           // default true
+Preview_Token_Expiry_Days int  `json:"preview_token_expiry_days"` // default 7
+Preview_Max_Per_Content   int  `json:"preview_max_per_content"`   // default 10
+```
+
+### 7.4 API Endpoints
+
+```
+POST   /api/v1/contentdata/{id}/preview-tokens          content:update  (create token)
+GET    /api/v1/contentdata/{id}/preview-tokens           content:read    (list active tokens)
+DELETE /api/v1/contentdata/{id}/preview-tokens/{tid}     content:update  (revoke token)
+GET    /api/v1/preview/{token}                           no auth         (preview delivery)
+```
+
+Admin counterparts for token management.
+
+### 7.5 DbDriver Interface Additions
+
+```go
+// Preview Tokens
+CreatePreviewToken(context.Context, CreatePreviewTokenParams) (*PreviewToken, error)
+GetPreviewTokenByToken(string) (*PreviewToken, error)
+ListPreviewTokensByContent(types.ContentID) (*[]PreviewToken, error)
+RevokePreviewToken(context.Context, types.PreviewTokenID) error
+CleanExpiredPreviewTokens(types.Timestamp) error
+CreatePreviewTokenTable() error
+
+// Admin Preview Tokens (parallel)
+CreateAdminPreviewToken(context.Context, CreateAdminPreviewTokenParams) (*AdminPreviewToken, error)
+GetAdminPreviewTokenByToken(string) (*AdminPreviewToken, error)
+ListAdminPreviewTokensByContent(types.AdminContentID) (*[]AdminPreviewToken, error)
+RevokeAdminPreviewToken(context.Context, types.AdminPreviewTokenID) error
+CleanExpiredAdminPreviewTokens(types.Timestamp) error
+CreateAdminPreviewTokenTable() error
+```
+
+### 7.6 Typed IDs
+
+- `PreviewTokenID` — ULID
+- `AdminPreviewTokenID` — ULID
+
+### 7.7 Admin UI
+
+**Content edit page:**
+- "Share Preview" button → dialog with locale selector + optional label + expiry picker
+- Generated URL displayed with copy button
+- List of active preview tokens with revoke buttons
+- Token expiry countdown display
+
+### 7.8 No TUI Changes
+
+Preview token management is admin-facing only. TUI users can use the REST API directly.
+
+### 7.9 SDK Changes
+
+All three SDKs:
+- `PreviewToken` type, `PreviewTokenID` branded type
+- `CreatePreviewToken(contentID, locale, label)`, `ListPreviewTokens(contentID)`, `RevokePreviewToken(contentID, tokenID)`
+- Content delivery SDK: `GetPreview(token)` method
+
+---
+
+## Bulk Operations & Content Dependencies
+
+Phase 6. Standalone — enhanced by Phase 3 webhooks (fires events on bulk operations) but does not depend on it.
+
+### 8.1 Dependency Resolution
+
+New functions in `internal/publishing/`:
+
+```go
+// FindDependents returns content items that reference the given content_data_id
+// via relation or content_tree_ref fields.
+func FindDependents(ctx context.Context, driver db.DbDriver, contentDataID types.ContentID) ([]DependencyRef, error)
+
+// FindDependencies returns content items that the given content references.
+func FindDependencies(ctx context.Context, driver db.DbDriver, contentDataID types.ContentID) ([]DependencyRef, error)
+
+type DependencyRef struct {
+    ContentDataID types.ContentID
+    RouteSlug     string
+    FieldID       types.FieldID
+    FieldLabel    string
+    Direction     string  // "references" or "referenced_by"
+}
+```
+
+### 8.2 Unpublish Warning
+
+Updated unpublish flow (modifies Phase 1 unpublish):
+
+1. Before unpublishing, call `FindDependents()`
+2. If dependents exist AND any are published:
+   - Return 409 with dependent list (force = false, default)
+   - OR proceed if `?force=true` query param is set
+3. Response includes list of dependent content that may show broken references
+
+### 8.3 Bulk Publish API
+
+```
+POST /api/v1/contentdata/bulk-publish    content:publish
+```
+
+Body:
+```json
+{
+  "items": [
+    {"content_data_id": "...", "locale": "en"},
+    {"content_data_id": "...", "locale": "es"}
+  ],
+  "include_dependencies": false
+}
+```
+
+When `include_dependencies: true`, the resolver finds all referenced content and adds them to the publish set.
+
+Response:
+```json
+{
+  "published": 5,
+  "failed": 1,
+  "results": [
+    {"content_data_id": "...", "locale": "en", "status": "published", "version_number": 3},
+    {"content_data_id": "...", "locale": "en", "status": "failed", "error": "no content fields for locale"}
+  ]
+}
+```
+
+### 8.4 Publish All Locales
+
+```
+POST /api/v1/contentdata/{id}/publish-all-locales    content:publish
+```
+
+Publishes the content item in every enabled locale that has content_field rows. Returns per-locale results.
+
+### 8.5 Bulk Schedule
+
+```
+POST /api/v1/contentdata/bulk-schedule    content:publish
+```
+
+Body:
+```json
+{
+  "items": [
+    {"content_data_id": "...", "locale": "en"},
+    {"content_data_id": "...", "locale": "es"}
+  ],
+  "publish_at": "2026-03-15T09:00:00Z"
+}
+```
+
+### 8.6 DbDriver Interface Additions
+
+```go
+// Dependency queries
+ListContentFieldsByFieldValue(string) (*[]ContentFields, error)  // find fields referencing a content_data_id
+ListPublishedContentByIDs([]types.ContentID) (*[]ContentData, error)
+
+// Bulk operations
+BulkUpdateContentDataSchedule(context.Context, []UpdateContentDataScheduleParams) error
+
+// Admin parallels
+ListAdminContentFieldsByFieldValue(string) (*[]AdminContentFields, error)
+ListAdminPublishedContentByIDs([]types.AdminContentID) (*[]AdminContentData, error)
+BulkUpdateAdminContentDataSchedule(context.Context, []UpdateAdminContentDataScheduleParams) error
+```
+
+### 8.7 API Endpoints
+
+```
+GET    /api/v1/contentdata/{id}/dependencies     content:read     (what this references)
+GET    /api/v1/contentdata/{id}/dependents        content:read     (what references this)
+POST   /api/v1/contentdata/bulk-publish           content:publish
+POST   /api/v1/contentdata/bulk-schedule          content:publish
+POST   /api/v1/contentdata/{id}/publish-all-locales  content:publish
+```
+
+Admin counterparts with `/admin/` prefix.
+
+### 8.8 Admin UI
+
+**Content list page:**
+- Multi-select checkboxes on content rows
+- Bulk action dropdown: "Publish Selected", "Schedule Selected", "Unpublish Selected"
+
+**Content edit page:**
+- "Dependencies" tab showing referenced and referencing content
+- Unpublish confirmation dialog lists published dependents with warning
+- "Publish All Locales" button (when i18n enabled, content has multiple locale translations)
+
+### 8.9 TUI
+
+- Multi-select in content list (space to toggle, enter to act)
+- Bulk publish/unpublish/schedule actions
+
+### 8.10 SDK Changes
+
+All three SDKs:
+- `DependencyRef` type
+- `ListDependencies(contentID)`, `ListDependents(contentID)`
+- `BulkPublish(items)`, `BulkSchedule(items, publishAt)`, `PublishAllLocales(contentID)`
+
+---
+
 ## Implementation Phases
 
 ### Phase 1: Snapshot Publishing (foundation)
@@ -788,12 +1378,181 @@ Everything else depends on this. The delivery API must stop serving draft conten
     - New types + methods across Go, TypeScript, Swift
 ```
 
+### Phase 3: Webhooks & Content Lifecycle Events (builds on Phase 1)
+
+```
+3a  Schema: webhooks + webhook_deliveries tables
+    - SQL for all 3 databases (no admin counterpart — system-wide)
+    - sqlc queries
+    - Typed IDs: WebhookID, WebhookDeliveryID
+
+3b  DbDriver interface + 3 implementations
+    - Webhook CRUD + delivery tracking methods
+
+3c  Webhook delivery engine (internal/webhooks/)
+    - Dispatch function, async worker pool, HMAC signing
+    - Retry queue processing
+    - Integration: call Dispatch from publish/unpublish/update handlers
+
+3d  Background retry goroutine
+    - Piggyback on publish scheduler ticker
+    - Process pending retries
+
+3e  Config additions
+    - webhook_enabled, webhook_timeout, webhook_max_retries, etc.
+
+3f  Permissions: webhook:create/read/update/delete
+    - Bootstrap RBAC data update
+
+3g  REST API endpoints
+    - CRUD + test + delivery log + manual retry
+
+3h  Admin UI
+    - Webhook management page
+    - Delivery log with retry
+
+3i  TUI updates
+    - Webhook management screens
+
+3j  SDK updates
+    - Types + methods across Go, TypeScript, Swift
+```
+
+### Phase 4: Review Workflows (builds on Phase 1, optionally Phase 3)
+
+```
+4a  Schema: requires_review column on datatypes/admin_datatypes
+    - SQL for all 3 databases
+
+4b  Status: add pending_review to ContentStatus enum
+    - Update types_enums.go
+    - Update status validation
+
+4c  Schema: content_reviews + admin_content_reviews tables
+    - SQL for all 3 databases
+    - sqlc queries
+    - Typed IDs: ContentReviewID, AdminContentReviewID
+
+4d  DbDriver interface + 3 implementations
+    - Review CRUD methods for both table families
+
+4e  Review flow logic
+    - Submit, approve, reject handlers
+    - Publish flow updated: check requires_review + approved status
+    - Bypass for users with content:publish
+
+4f  Permissions: content:review
+    - Bootstrap RBAC data update
+
+4g  Webhook events
+    - content.review_submitted, content.review_approved, content.review_rejected
+
+4h  REST API endpoints
+    - Submit, approve, reject, review queue
+
+4i  Admin UI
+    - Review queue page
+    - Content edit page review state
+    - Datatype requires_review toggle
+
+4j  TUI updates
+    - Review queue + approve/reject
+
+4k  SDK updates
+    - Types + methods across Go, TypeScript, Swift
+```
+
+### Phase 5: Preview Environments & Draft Sharing (standalone)
+
+```
+5a  Schema: preview_tokens + admin_preview_tokens tables
+    - SQL for all 3 databases
+    - sqlc queries
+    - Typed IDs: PreviewTokenID, AdminPreviewTokenID
+
+5b  DbDriver interface + 3 implementations
+    - Token CRUD + lookup + cleanup methods
+
+5c  Preview delivery endpoint
+    - Token validation, live content read, format support
+    - X-Robots-Tag and preview metadata in response
+
+5d  Token management endpoints
+    - Create, list, revoke
+
+5e  Expired token cleanup
+    - Piggyback on publish scheduler ticker
+
+5f  Config additions
+    - preview_enabled, preview_token_expiry_days, preview_max_per_content
+
+5g  Admin UI
+    - Share Preview dialog on content edit page
+    - Token list with revoke
+
+5h  SDK updates
+    - Types + methods across Go, TypeScript, Swift
+```
+
+### Phase 6: Bulk Operations & Content Dependencies (standalone)
+
+```
+6a  Dependency resolver (internal/publishing/)
+    - FindDependents, FindDependencies functions
+    - Scans relation/content_tree_ref field values
+
+6b  Unpublish warning
+    - Modified unpublish flow: check dependents, return 409 or proceed with force
+    - Works for both public and admin
+
+6c  Bulk publish endpoint + logic
+    - Iterate items, publish each, collect results
+    - Optional dependency inclusion
+
+6d  Publish all locales endpoint
+    - Query enabled locales with content_field rows, publish each
+
+6e  Bulk schedule endpoint
+    - Set publish_at on multiple items
+
+6f  Dependency API endpoints
+    - GET dependencies/dependents
+
+6g  Admin UI
+    - Multi-select on content list
+    - Bulk action dropdown
+    - Dependencies tab on content edit
+    - Unpublish warning dialog
+    - Publish All Locales button
+
+6h  TUI updates
+    - Multi-select + bulk actions
+
+6i  SDK updates
+    - Types + methods across Go, TypeScript, Swift
+```
+
 ### Scope per phase
 
-| Phase | New tables | New typed IDs | Estimated files touched |
-|-------|-----------|---------------|------------------------|
-| 1 | content_versions, admin_content_versions | ContentVersionID, AdminContentVersionID | ~45 (schema × 3 DBs × 2 table families, sqlc, db interface, 3 wrappers × 2, router, handlers, admin pages/partials, TUI, config, 3 SDKs) |
-| 2 | locales | LocaleID | ~35 (schema × 3 DBs × 2 table families, sqlc, db interface, 3 wrappers × 2, router, handlers, admin pages/partials, config, 3 SDKs) |
+| Phase | New tables | New typed IDs | New permissions | Estimated files |
+|-------|-----------|---------------|-----------------|----------------|
+| 1 | content_versions, admin_content_versions | ContentVersionID, AdminContentVersionID | content:publish | ~45 |
+| 2 | locales | LocaleID | locale:create/read/update/delete | ~35 |
+| 3 | webhooks, webhook_deliveries | WebhookID, WebhookDeliveryID | webhook:create/read/update/delete | ~40 |
+| 4 | content_reviews, admin_content_reviews | ContentReviewID, AdminContentReviewID | content:review | ~35 |
+| 5 | preview_tokens, admin_preview_tokens | PreviewTokenID, AdminPreviewTokenID | (none, uses content:update) | ~30 |
+| 6 | (none) | (none) | (none) | ~25 |
+
+### Dependency Chain
+
+```
+Phase 1 (DONE) ──> Phase 3 (Webhooks)
+Phase 2 (DONE) ──> Phase 4 (Review) ──> uses Phase 3 webhooks for notifications
+                ──> Phase 5 (Preview) ──> standalone
+                ──> Phase 6 (Bulk Ops) ──> standalone, enhanced by Phase 3 webhooks
+```
+
+Phase 3 should ship first (other phases fire webhook events). Phases 4, 5, 6 are independent and can ship in any order.
 
 ---
 
@@ -806,8 +1565,14 @@ Everything else depends on this. The delivery API must stop serving draft conten
 | 27 | `content_versions` | 1 |
 | 27a | `admin_content_versions` | 1 |
 | 28 | `locales` | 2 |
+| 34 | `webhooks` | 3 |
+| 35 | `webhook_deliveries` | 3 |
+| 36 | `content_reviews` | 4 |
+| 36a | `admin_content_reviews` | 4 |
+| 37 | `preview_tokens` | 5 |
+| 37a | `admin_preview_tokens` | 5 |
 
-The `locales` table is shared between public and admin content — locale definitions are system-wide.
+The `locales` and `webhooks` tables are shared between public and admin content — definitions are system-wide.
 
 ### Altered Tables
 
@@ -819,6 +1584,8 @@ The `locales` table is shared between public and admin content — locale defini
 | `admin_content_fields` | Add `locale` column + unique index | 2 |
 | `fields` | Add `translatable` column | 2 |
 | `admin_fields` | Add `translatable` column | 2 |
+| `datatypes` | Add `requires_review` column | 4 |
+| `admin_datatypes` | Add `requires_review` column | 4 |
 
 ### New Typed IDs
 
@@ -827,6 +1594,12 @@ The `locales` table is shared between public and admin content — locale defini
 | `ContentVersionID` | 1 |
 | `AdminContentVersionID` | 1 |
 | `LocaleID` | 2 |
+| `WebhookID` | 3 |
+| `WebhookDeliveryID` | 3 |
+| `ContentReviewID` | 4 |
+| `AdminContentReviewID` | 4 |
+| `PreviewTokenID` | 5 |
+| `AdminPreviewTokenID` | 5 |
 
 ### New Permissions
 
@@ -837,6 +1610,11 @@ The `locales` table is shared between public and admin content — locale defini
 | `locale:read` | 2 |
 | `locale:update` | 2 |
 | `locale:delete` | 2 |
+| `webhook:create` | 3 |
+| `webhook:read` | 3 |
+| `webhook:update` | 3 |
+| `webhook:delete` | 3 |
+| `content:review` | 4 |
 
 ### Migration Notes
 
@@ -858,3 +1636,41 @@ There are no active deployments requiring a phased migration strategy. Schema ch
 - Same for admin_fields
 - No locales table rows until admin creates them
 - `i18n_enabled` defaults to `false` — zero behavior change until explicitly enabled
+
+**Phase 3 migration:**
+- New tables only — no existing data affected
+- `webhook_enabled` defaults to `false` — zero behavior change until explicitly enabled
+- New bootstrap permissions added for admin role
+
+**Phase 4 migration:**
+- `ALTER TABLE datatypes ADD COLUMN requires_review INTEGER NOT NULL DEFAULT 0` — all existing datatypes default to no review
+- Same for `admin_datatypes`
+- `ContentStatus` gains `pending_review` value — existing content is unaffected (only triggered by explicit submit-for-review action)
+- New `content:review` permission added to admin role bootstrap
+
+**Phase 5 migration:**
+- New tables only — no existing data affected
+- `preview_enabled` defaults to `true` — feature is available immediately but no tokens exist until created
+
+**Phase 6 migration:**
+- No schema changes — all functionality is query-based and uses existing tables
+- New API endpoints are additive
+
+---
+
+## Verification
+
+After implementing each phase:
+
+1. `go build ./...` passes cleanly
+2. `go test ./internal/db/` passes (includes new table CRUD)
+3. `go test ./internal/publishing/` passes (webhook dispatch, review flow, preview, bulk ops)
+4. `just sqlc` regenerates cleanly
+5. `just admin-verify` confirms templ files are up-to-date
+6. `just sdk-build && just sdk-test` passes for TypeScript SDKs
+7. `just sdk-go-test` passes for Go SDK
+8. `just sdk-swift-build` passes for Swift SDK
+9. Manual test: create webhook, publish content, verify delivery received
+10. Manual test: enable review workflow, submit/approve/reject cycle
+11. Manual test: generate preview token, access preview URL without auth
+12. Manual test: bulk publish multiple items, verify all snapshots created

@@ -43,11 +43,13 @@ func fieldFixture() (Fields, types.FieldID, types.NullableDatatypeID, types.Null
 	f := Fields{
 		FieldID:      fieldID,
 		ParentID:     parentID,
+		Name:         "test-field",
 		Label:        "Test Label",
 		Data:         "some-data",
 		Validation:   `{"required": true}`,
 		UIConfig:     `{"widget": "text"}`,
 		Type:         types.FieldTypeText,
+		Translatable: 0,
 		AuthorID:     authorID,
 		DateCreated:  ts,
 		DateModified: ts,
@@ -1577,7 +1579,7 @@ func TestFieldsStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "author_id",
+		"validation", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1602,6 +1604,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 		Validation:   "test-validation",
 		UIConfig:     "test-ui-config",
 		Type:         types.FieldTypeText,
+		Translatable: 0,
 		AuthorID:     types.NullableUserID{ID: types.NewUserID(), Valid: true},
 		DateCreated:  ts,
 		DateModified: ts,
@@ -1619,7 +1622,7 @@ func TestCreateFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "author_id",
+		"validation", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1644,6 +1647,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 		Validation:   "test-validation",
 		UIConfig:     "test-ui-config",
 		Type:         types.FieldTypeText,
+		Translatable: 0,
 		AuthorID:     types.NullableUserID{ID: types.NewUserID(), Valid: true},
 		DateCreated:  ts,
 		DateModified: ts,
@@ -1662,7 +1666,7 @@ func TestUpdateFieldParams_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "author_id",
+		"validation", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 		"field_id",
 	}
@@ -1687,6 +1691,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 		Validation:   "json-validation",
 		UIConfig:     "json-ui-config",
 		Type:         "text",
+		Translatable: "0",
 		AuthorID:     "test-author-id",
 		DateCreated:  "2025-01-01T00:00:00Z",
 		DateModified: "2025-01-01T00:00:00Z",
@@ -1704,7 +1709,7 @@ func TestFieldsJSONStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "author_id",
+		"validation", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified",
 	}
 	for _, field := range expectedFields {
@@ -1770,6 +1775,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 		Validation:   "test-validation",
 		UIConfig:     "test-ui",
 		Type:         "text",
+		Translatable: "0",
 		AuthorID:     "test-author",
 		DateCreated:  "2025-01-01T00:00:00Z",
 		DateModified: "2025-01-01T00:00:00Z",
@@ -1788,7 +1794,7 @@ func TestStringFieldsStruct_JSONTags(t *testing.T) {
 
 	expectedFields := []string{
 		"field_id", "parent_id", "sort_order", "name", "label", "data",
-		"validation", "ui_config", "type", "author_id",
+		"validation", "ui_config", "type", "translatable", "roles", "author_id",
 		"date_created", "date_modified", "history",
 	}
 	for _, field := range expectedFields {

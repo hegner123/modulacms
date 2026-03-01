@@ -24,6 +24,7 @@ type AdminContentFields struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
+	Locale              string                       `json:"locale"`
 	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
@@ -35,6 +36,7 @@ type CreateAdminContentFieldParams struct {
 	AdminContentDataID types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID       types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue    string                       `json:"admin_field_value"`
+	Locale             string                       `json:"locale"`
 	AuthorID           types.UserID                 `json:"author_id"`
 	DateCreated        types.Timestamp              `json:"date_created"`
 	DateModified       types.Timestamp              `json:"date_modified"`
@@ -46,6 +48,7 @@ type UpdateAdminContentFieldParams struct {
 	AdminContentDataID  types.NullableAdminContentID `json:"admin_content_data_id"`
 	AdminFieldID        types.NullableAdminFieldID   `json:"admin_field_id"`
 	AdminFieldValue     string                       `json:"admin_field_value"`
+	Locale              string                       `json:"locale"`
 	AuthorID            types.UserID                 `json:"author_id"`
 	DateCreated         types.Timestamp              `json:"date_created"`
 	DateModified        types.Timestamp              `json:"date_modified"`
@@ -67,6 +70,7 @@ func MapStringAdminContentField(a AdminContentFields) StringAdminContentFields {
 		AdminContentDataID:  a.AdminContentDataID.String(),
 		AdminFieldID:        a.AdminFieldID.String(),
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID.String(),
 		DateCreated:         a.DateCreated.String(),
 		DateModified:        a.DateModified.String(),
@@ -88,6 +92,7 @@ func (d Database) MapAdminContentField(a mdb.AdminContentFields) AdminContentFie
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -102,6 +107,7 @@ func (d Database) MapCreateAdminContentFieldParams(a CreateAdminContentFieldPara
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -115,6 +121,7 @@ func (d Database) MapUpdateAdminContentFieldParams(a UpdateAdminContentFieldPara
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -242,6 +249,7 @@ func (d MysqlDatabase) MapAdminContentField(a mdbm.AdminContentFields) AdminCont
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -256,6 +264,7 @@ func (d MysqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentFiel
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -269,6 +278,7 @@ func (d MysqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentFiel
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -396,6 +406,7 @@ func (d PsqlDatabase) MapAdminContentField(a mdbp.AdminContentFields) AdminConte
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -410,6 +421,7 @@ func (d PsqlDatabase) MapCreateAdminContentFieldParams(a CreateAdminContentField
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -423,6 +435,7 @@ func (d PsqlDatabase) MapUpdateAdminContentFieldParams(a UpdateAdminContentField
 		AdminContentDataID:  a.AdminContentDataID,
 		AdminFieldID:        a.AdminFieldID,
 		AdminFieldValue:     a.AdminFieldValue,
+		Locale:              a.Locale,
 		AuthorID:            a.AuthorID,
 		DateCreated:         a.DateCreated,
 		DateModified:        a.DateModified,
@@ -581,6 +594,7 @@ func (c NewAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX) (
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,
@@ -638,6 +652,7 @@ func (c UpdateAdminContentFieldCmd) Execute(ctx context.Context, tx audited.DBTX
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,
@@ -739,6 +754,7 @@ func (c NewAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited.DB
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,
@@ -800,6 +816,7 @@ func (c UpdateAdminContentFieldCmdMysql) Execute(ctx context.Context, tx audited
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,
@@ -901,6 +918,7 @@ func (c NewAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.DBT
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,
@@ -958,6 +976,7 @@ func (c UpdateAdminContentFieldCmdPsql) Execute(ctx context.Context, tx audited.
 		AdminContentDataID:  c.params.AdminContentDataID,
 		AdminFieldID:        c.params.AdminFieldID,
 		AdminFieldValue:     c.params.AdminFieldValue,
+		Locale:              c.params.Locale,
 		AuthorID:            c.params.AuthorID,
 		DateCreated:         c.params.DateCreated,
 		DateModified:        c.params.DateModified,

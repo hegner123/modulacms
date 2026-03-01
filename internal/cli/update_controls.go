@@ -90,6 +90,8 @@ func (m Model) PageSpecificMsgHandlers(cmd tea.Cmd, msg tea.Msg) (Model, tea.Cmd
 		return m.PipelinesControls(msg)
 	case PIPELINEDETAILPAGE:
 		return m.PipelineDetailControls2(msg)
+	case WEBHOOKSPAGE:
+		return m.WebhooksControls(msg)
 
 	}
 	return m, nil
@@ -895,6 +897,16 @@ func (m Model) ContentBrowserControls(msg tea.Msg) (Model, tea.Cmd) {
 				if node != nil && node.Instance != nil {
 					return m, tea.Batch(LoadingStartCmd(), ListVersionsCmd(node.Instance.ContentDataID, m.PageRouteId))
 				}
+			}
+		}
+		// Locale switch (only when i18n is enabled)
+		if km.Matches(key, config.ActionLocale) {
+			if m.Config.I18nEnabled() {
+				d := m.DB
+				if d == nil {
+					return m, ShowDialog("Error", "Database not initialized", false)
+				}
+				return m, LoadEnabledLocalesCmd(d)
 			}
 		}
 
@@ -1941,6 +1953,53 @@ func (m Model) QuickstartControls(msg tea.Msg) (Model, tea.Cmd) {
 				return m, func() tea.Msg {
 					return QuickstartConfirmMsg{SchemaIndex: m.Cursor}
 				}
+			}
+		}
+	}
+	return m, nil
+}
+
+// WebhooksControls handles keyboard navigation for the webhooks list page.
+func (m Model) WebhooksControls(msg tea.Msg) (Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		km := m.Config.KeyBindings
+		key := msg.String()
+
+		if km.Matches(key, config.ActionQuit) || km.Matches(key, config.ActionDismiss) {
+			return m, tea.Quit
+		}
+		if km.Matches(key, config.ActionNextPanel) {
+			m.PanelFocus = (m.PanelFocus + 1) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionPrevPanel) {
+			m.PanelFocus = (m.PanelFocus + 2) % 3
+			return m, nil
+		}
+		if km.Matches(key, config.ActionUp) {
+			if m.Cursor > 0 {
+				return m, CursorUpCmd()
+			}
+		}
+		if km.Matches(key, config.ActionDown) {
+			if m.Cursor < len(m.WebhooksList)-1 {
+				return m, CursorDownCmd()
+			}
+		}
+		if km.Matches(key, config.ActionBack) {
+			if len(m.History) > 0 {
+				return m, HistoryPopCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitlePrev) {
+			if m.TitleFont > 0 {
+				return m, TitleFontPreviousCmd()
+			}
+		}
+		if km.Matches(key, config.ActionTitleNext) {
+			if m.TitleFont < len(m.Titles)-1 {
+				return m, TitleFontNextCmd()
 			}
 		}
 	}

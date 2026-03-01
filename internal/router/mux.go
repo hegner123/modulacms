@@ -12,10 +12,11 @@ import (
 	"github.com/hegner123/modulacms/internal/email"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/plugin"
+	"github.com/hegner123/modulacms/internal/publishing"
 	"golang.org/x/time/rate"
 )
 
-func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service) *http.ServeMux {
+func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	c, err := mgr.Config()
@@ -154,10 +155,10 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 
 	// Content publish / unpublish / schedule
 	mux.Handle("POST /api/v1/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		PublishHandler(w, r, *c)
+		PublishHandler(w, r, *c, dispatcher)
 	})))
 	mux.Handle("POST /api/v1/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		UnpublishHandler(w, r, *c)
+		UnpublishHandler(w, r, *c, dispatcher)
 	})))
 	mux.Handle("POST /api/v1/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ScheduleHandler(w, r, *c)
@@ -184,10 +185,10 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 
 	// Admin content publish / unpublish / schedule
 	mux.Handle("POST /api/v1/admin/content/publish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminPublishHandler(w, r, *c)
+		AdminPublishHandler(w, r, *c, dispatcher)
 	})))
 	mux.Handle("POST /api/v1/admin/content/unpublish", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		AdminUnpublishHandler(w, r, *c)
+		AdminUnpublishHandler(w, r, *c, dispatcher)
 	})))
 	mux.Handle("POST /api/v1/admin/content/schedule", middleware.RequirePermission("content:publish")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		AdminScheduleHandler(w, r, *c)
@@ -440,13 +441,65 @@ func NewModulacmsMux(mgr *config.Manager, bridge *plugin.HTTPBridge, driver db.D
 		)
 	}
 
+	// Locales — public endpoint (enabled locales only, no auth)
+	mux.Handle("GET /api/v1/locales", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		LocalesPublicHandler(w, r, *c)
+	})))
+
+	// Locales — admin CRUD (requires locale:* permissions)
+	mux.Handle("/api/v1/admin/locales", middleware.RequireResourcePermission("locale")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		LocalesHandler(w, r, *c)
+	})))
+	mux.Handle("/api/v1/admin/locales/", middleware.RequireResourcePermission("locale")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		LocaleHandler(w, r, *c)
+	})))
+
+	// Webhooks — admin CRUD (requires webhook:* permissions)
+	mux.Handle("GET /api/v1/admin/webhooks", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookListHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/webhooks", middleware.RequirePermission("webhook:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookCreateHandler(w, r, *c)
+	})))
+	mux.Handle("GET /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookGetHandler(w, r, *c)
+	})))
+	mux.Handle("PUT /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookUpdateHandler(w, r, *c)
+	})))
+	mux.Handle("DELETE /api/v1/admin/webhooks/{id}", middleware.RequirePermission("webhook:delete")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookDeleteHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/webhooks/{id}/test", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookTestHandler(w, r, *c, dispatcher)
+	})))
+	mux.Handle("GET /api/v1/admin/webhooks/{id}/deliveries", middleware.RequirePermission("webhook:read")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookDeliveryListHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/webhooks/deliveries/{id}/retry", middleware.RequirePermission("webhook:update")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		WebhookDeliveryRetryHandler(w, r, *c, dispatcher)
+	})))
+
+	// Translations — create locale translations for content data
+	mux.Handle("POST /api/v1/admin/contentdata/{id}/translations", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		TranslationHandler(w, r, *c)
+	})))
+	mux.Handle("POST /api/v1/admin/admincontentdata/{id}/translations", middleware.RequirePermission("content:create")(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		AdminTranslationHandler(w, r, *c)
+	})))
+
+	// Content query by datatype (PUBLIC - no auth required)
+	mux.Handle("GET /api/v1/query/{datatype}", corsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		QueryHandler(w, r, *c)
+	})))
+
 	// Content delivery via slug
 	mux.HandleFunc("/api/v1/content/", func(w http.ResponseWriter, r *http.Request) {
 		SlugHandler(w, r, *c)
 	})
 
 	// HTMX admin panel
-	registerAdminRoutes(mux, mgr, driver, pc, emailSvc)
+	registerAdminRoutes(mux, mgr, driver, pc, emailSvc, dispatcher)
 
 	// Root redirects to admin panel
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -536,7 +589,7 @@ func pluginRoutesApproveHandler(bridge *plugin.HTTPBridge) http.Handler {
 }
 
 // registerAdminRoutes registers all HTMX-based admin panel routes.
-func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service) {
+func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDriver, pc *middleware.PermissionCache, emailSvc *email.Service, dispatcher publishing.WebhookDispatcher) {
 	// Static assets (no auth, no CSRF)
 	staticFS, staticErr := htmxadmin.StaticFS()
 	if staticErr == nil {
@@ -574,7 +627,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 
 	// Content
 	mux.Handle("GET /admin/content", viewing("content", adminhandlers.ContentListHandler(driver, mgr)))
-	mux.Handle("GET /admin/content/{id}", viewing("content", adminhandlers.ContentEditHandler(driver)))
+	mux.Handle("GET /admin/content/{id}", viewing("content", adminhandlers.ContentEditHandler(driver, mgr)))
 	mux.Handle("POST /admin/content", mutating("content:create", adminhandlers.ContentCreateHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}", mutating("content:update", adminhandlers.ContentUpdateHandler(driver, mgr)))
 	mux.Handle("DELETE /admin/content/{id}", mutating("content:delete", adminhandlers.ContentDeleteHandler(driver, mgr)))
@@ -583,8 +636,8 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("POST /admin/content/tree", mutating("content:update", adminhandlers.ContentTreeSaveHandler(driver, mgr)))
 
 	// Content publish / unpublish / versions / restore
-	mux.Handle("POST /admin/content/{id}/publish", mutating("content:publish", adminhandlers.ContentPublishHandler(driver, mgr)))
-	mux.Handle("POST /admin/content/{id}/unpublish", mutating("content:publish", adminhandlers.ContentUnpublishHandler(driver, mgr)))
+	mux.Handle("POST /admin/content/{id}/publish", mutating("content:publish", adminhandlers.ContentPublishHandler(driver, mgr, dispatcher)))
+	mux.Handle("POST /admin/content/{id}/unpublish", mutating("content:publish", adminhandlers.ContentUnpublishHandler(driver, mgr, dispatcher)))
 	mux.Handle("GET /admin/content/{id}/versions", viewing("content", adminhandlers.ContentVersionsHandler(driver)))
 	mux.Handle("POST /admin/content/{id}/versions", mutating("content:update", adminhandlers.ContentCreateVersionHandler(driver, mgr)))
 	mux.Handle("POST /admin/content/{id}/restore", mutating("content:update", adminhandlers.ContentRestoreVersionHandler(driver, mgr)))
@@ -605,7 +658,7 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	mux.Handle("DELETE /admin/schema/datatypes/{id}", mutating("datatypes:delete", adminhandlers.DatatypeDeleteHandler(driver, mgr)))
 
 	// Schema — fields (detail, update, delete only — no standalone list or create)
-	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver)))
+	mux.Handle("GET /admin/schema/fields/{id}", viewing("fields", adminhandlers.FieldDetailHandler(driver, mgr)))
 	mux.Handle("POST /admin/schema/fields/{id}", mutating("fields:update", adminhandlers.FieldUpdateHandler(driver, mgr)))
 	mux.Handle("DELETE /admin/schema/fields/{id}", mutating("fields:delete", adminhandlers.FieldDeleteHandler(driver, mgr)))
 
@@ -670,6 +723,21 @@ func registerAdminRoutes(mux *http.ServeMux, mgr *config.Manager, driver db.DbDr
 	// Settings
 	mux.Handle("GET /admin/settings", viewing("config", adminhandlers.SettingsHandler(mgr)))
 	mux.Handle("POST /admin/settings", mutating("config:update", adminhandlers.SettingsUpdateHandler(mgr)))
+
+	// Locale settings (i18n)
+	mux.Handle("GET /admin/settings/locales", viewing("locale", adminhandlers.LocaleSettingsHandler(driver, mgr)))
+	mux.Handle("GET /admin/settings/locales/{id}/edit", viewing("locale", adminhandlers.LocaleEditDialogHandler(driver, mgr)))
+	mux.Handle("POST /admin/settings/locales", mutating("locale:create", adminhandlers.LocaleCreateHandler(driver, mgr)))
+	mux.Handle("PUT /admin/settings/locales/{id}", mutating("locale:update", adminhandlers.LocaleUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/settings/locales/{id}", mutating("locale:delete", adminhandlers.LocaleDeleteHandler(driver, mgr)))
+
+	// Webhook settings
+	mux.Handle("GET /admin/settings/webhooks", viewing("webhook", adminhandlers.WebhookSettingsHandler(driver, mgr)))
+	mux.Handle("GET /admin/settings/webhooks/{id}", viewing("webhook", adminhandlers.WebhookDetailHandler(driver, mgr)))
+	mux.Handle("POST /admin/settings/webhooks", mutating("webhook:create", adminhandlers.WebhookCreateHandler(driver, mgr)))
+	mux.Handle("POST /admin/settings/webhooks/{id}", mutating("webhook:update", adminhandlers.WebhookUpdateHandler(driver, mgr)))
+	mux.Handle("DELETE /admin/settings/webhooks/{id}", mutating("webhook:delete", adminhandlers.WebhookDeleteHandler(driver, mgr)))
+	mux.Handle("POST /admin/settings/webhooks/{id}/test", mutating("webhook:update", adminhandlers.WebhookTestHandler(driver, mgr)))
 }
 
 // pluginRoutesRevokeHandler revokes approval for one or more plugin routes.

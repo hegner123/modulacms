@@ -12,6 +12,15 @@ type Field struct {
 
 	UpdateParamsOnly bool // only include in UpdateParams struct, not in entity struct or CreateParams
 
+	// NarrowInt marks int64 fields that are int32 in MySQL/PostgreSQL sqlc models.
+	// When true, Map functions will cast int32→int64 (sqlc→wrapper) and int64→int32 (wrapper→sqlc)
+	// for drivers where Int32Pagination is true (MySQL, PostgreSQL).
+	NarrowInt bool
+
+	// SafeBool marks bool fields that use types.SafeBool in sqlc (via override).
+	// When true, Map functions use .Bool() (sqlc→wrapper) and types.SafeBool{Val: x} (wrapper→sqlc).
+	SafeBool bool
+
 	// StringConvert controls how this field is converted in MapStringX.
 	// Values: "toString" (.String()), "string" (identity), "sprintf" (fmt.Sprintf("%d",...)),
 	//         "cast" (string(...)), "nullToString" (utility.NullToString(...)),
@@ -31,9 +40,9 @@ type ExtraStringField struct {
 
 // ExtraQuery describes an additional query method beyond standard CRUD.
 type ExtraQuery struct {
-	MethodName  string           // "GetUserByEmail"
-	SqlcName    string           // sqlc function name (defaults to MethodName if empty)
-	ReturnsList bool             // false = (*Entity, error), true = (*[]Entity, error)
+	MethodName  string // "GetUserByEmail"
+	SqlcName    string // sqlc function name (defaults to MethodName if empty)
+	ReturnsList bool   // false = (*Entity, error), true = (*[]Entity, error)
 	Params      []ExtraQueryParam
 }
 
@@ -98,11 +107,11 @@ type Entity struct {
 	SkipGet             bool // skip Get CRUD method (no matching sqlc Get query, or ID field name differs)
 
 	// Query name overrides (empty = use default pattern)
-	SqlcCreateTableName    string // e.g., "CreateDatatypesFieldsTable"
-	SqlcCountName          string // e.g., "CountAdminroute" when sqlc lowercases
-	SqlcGetName            string // e.g., "GetDatatypeField" override
-	SqlcListName           string // e.g., "ListDatatypeField" override
-	SqlcListPaginatedName  string // e.g., "ListContentFieldsPaginated" override
+	SqlcCreateTableName   string // e.g., "CreateDatatypesFieldsTable"
+	SqlcCountName         string // e.g., "CountAdminroute" when sqlc lowercases
+	SqlcGetName           string // e.g., "GetDatatypeField" override
+	SqlcListName          string // e.g., "ListDatatypeField" override
+	SqlcListPaginatedName string // e.g., "ListContentFieldsPaginated" override
 
 	Fields     []Field
 	OutputFile string // "user_gen.go"
@@ -215,6 +224,18 @@ func (e Entity) NonIDUpdateFields() []Field {
 // IDIsTyped returns whether the entity's ID type is a typed ID (not plain string).
 func (e Entity) IDIsTyped() bool {
 	return e.IDType != "string"
+}
+
+// SqlcIDFieldName returns the sqlc struct field name for the primary key.
+// This may differ from IDField when SqlcName is set on the primary key field
+// (e.g., wrapper "UserOauthID" vs sqlc "UserOAuthID").
+func (e Entity) SqlcIDFieldName() string {
+	for _, f := range e.Fields {
+		if f.IsPrimaryID {
+			return f.SqlcFieldName()
+		}
+	}
+	return e.IDField
 }
 
 // IDToString returns the expression to convert an ID value to string.

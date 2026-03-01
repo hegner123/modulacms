@@ -1122,44 +1122,48 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 	// When a specific table fails, verify the exact count of tables that
 	// should remain (all tables from that point onward in the drop sequence).
 	//
-	// Drop order (31 drops total):
+	// Drop order (32 drops total):
 	//  0: pipelines (IF EXISTS)
 	//  1: plugins (IF EXISTS)
 	//  2: role_permissions (IF EXISTS)
 	//  3: admin_content_relations (IF EXISTS)
 	//  4: content_relations (IF EXISTS)
-	//  5: admin_content_fields
-	//  6: content_fields
-	//  7: admin_content_data
-	//  8: content_data
-	//  9: admin_fields
-	// 10: fields
-	// 11: admin_datatypes
-	// 12: datatypes
-	// 13: routes
-	// 14: admin_routes
-	// 15: media
-	// 16: tables
-	// 17: sessions
-	// 18: user_ssh_keys
-	// 19: user_oauth
-	// 20: tokens
-	// 21: users
-	// 22: media_dimensions
-	// 23: field_types
-	// 24: admin_field_types
-	// 25: roles
-	// 26: permissions
-	// 27: backup_sets (IF EXISTS)
-	// 28: backup_verifications (IF EXISTS)
-	// 29: backups (IF EXISTS)
-	// 30: change_events (IF EXISTS)
+	//  5: admin_content_versions (IF EXISTS)
+	//  6: content_versions (IF EXISTS)
+	//  7: admin_content_fields
+	//  8: content_fields
+	//  9: admin_content_data
+	// 10: content_data
+	// 11: admin_fields
+	// 12: fields
+	// 13: admin_datatypes
+	// 14: datatypes
+	// 15: routes
+	// 16: admin_routes
+	// 17: media
+	// 18: tables
+	// 19: sessions
+	// 20: user_ssh_keys
+	// 21: user_oauth
+	// 22: tokens
+	// 23: users
+	// 24: media_dimensions
+	// 25: field_types
+	// 26: admin_field_types
+	// 27: locales
+	// 28: roles
+	// 29: permissions
+	// 30: backup_sets (IF EXISTS)
+	// 31: backup_verifications (IF EXISTS)
+	// 32: backups (IF EXISTS)
+	// 33: change_events (IF EXISTS)
 
-	// CreateAllTables creates 29 tables. DropAllTables tries to drop 31
-	// (9 IF EXISTS drops: pipelines, plugins, role_permissions,
-	// admin_content_relations, content_relations, backup_sets,
-	// backup_verifications, backups, change_events -- so they never error).
-	// The 29 created tables minus the pre-dropped one minus the ones
+	// CreateAllTables creates 30 tables. DropAllTables tries to drop 34
+	// (11 IF EXISTS drops: pipelines, plugins, role_permissions,
+	// admin_content_relations, content_relations, admin_content_versions,
+	// content_versions, backup_sets, backup_verifications, backups,
+	// change_events -- so they never error on missing tables).
+	// The 30 created tables minus the pre-dropped one minus the ones
 	// successfully dropped before the error = remaining count.
 
 	tests := []struct {
@@ -1171,29 +1175,30 @@ func TestDatabase_DropAllTables_PartialFailure_ExactRemainingCount(t *testing.T)
 		{
 			// Pre-drop first strict table (admin_content_fields).
 			// Pipelines, plugins, role_permissions, admin_content_relations,
-			// and content_relations (IF EXISTS) drop silently first (5 tables).
+			// content_relations, admin_content_versions, and content_versions
+			// (IF EXISTS) drop first (7 drops; 2 version tables actually removed).
 			// Error fires at admin_content_fields.
-			// Remaining = 29 created - 1 pre-dropped - 5 IF EXISTS dropped = 23
+			// Remaining = 30 created - 1 pre-dropped - 2 version tables dropped - 5 non-existent skipped = 24
 			name:          "fail_at_first_table",
 			preDropTable:  "admin_content_fields",
 			dropIndex:     0,
-			wantRemaining: 23,
+			wantRemaining: 24,
 		},
 		{
-			// Pre-drop users (position 21 in drop order). Positions 0-20
-			// dropped successfully (21 tables: 5 IF EXISTS + 16 strict).
-			// Remaining = 29 created - 1 pre-dropped - 21 dropped = 7
+			// Pre-drop users (position 23 in drop order). Positions 0-22
+			// dropped successfully (23 drops: 7 IF EXISTS + 16 strict).
+			// Remaining = 30 created - 1 pre-dropped - 23 dropped (18 real) = 8
 			name:          "fail_at_users",
 			preDropTable:  "users",
-			dropIndex:     21,
-			wantRemaining: 7,
+			dropIndex:     23,
+			wantRemaining: 8,
 		},
 		{
 			// Pre-drop change_events. But it uses DROP TABLE IF EXISTS, so no error.
-			// All 29 created tables get dropped successfully. Remaining = 0
+			// All 30 created tables get dropped successfully. Remaining = 0
 			name:          "fail_at_last_table",
 			preDropTable:  "change_events",
-			dropIndex:     30,
+			dropIndex:     33,
 			wantRemaining: 0,
 		},
 	}

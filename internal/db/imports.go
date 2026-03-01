@@ -39,6 +39,8 @@ type StringFields struct {
 	Validation   string `json:"validation"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
+	Translatable string `json:"translatable"`
+	Roles        string `json:"roles"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -152,7 +154,7 @@ type StringContentData struct {
 	PublishedAt   string `json:"published_at"`
 	PublishedBy   string `json:"published_by"`
 	PublishAt     string `json:"publish_at"`
-	Revision      int64  `json:"revision"`
+	Revision      string `json:"revision"`
 	History       string `json:"history"`
 }
 
@@ -163,6 +165,7 @@ type StringContentFields struct {
 	ContentDataID  string `json:"content_data_id"`
 	FieldID        string `json:"field_id"`
 	FieldValue     string `json:"field_value"`
+	Locale         string `json:"locale"`
 	AuthorID       string `json:"author_id"`
 	DateCreated    string `json:"date_created"`
 	DateModified   string `json:"date_modified"`
@@ -192,6 +195,8 @@ type StringAdminFields struct {
 	Validation   string `json:"validation"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
+	Translatable string `json:"translatable"`
+	Roles        string `json:"roles"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -215,12 +220,19 @@ type StringAdminDatatypes struct {
 type StringAdminContentData struct {
 	AdminContentDataID string `json:"admin_content_data_id"`
 	ParentID           string `json:"parent_id"`
+	FirstChildID       string `json:"first_child_id"`
+	NextSiblingID      string `json:"next_sibling_id"`
+	PrevSiblingID      string `json:"prev_sibling_id"`
 	AdminRouteID       string `json:"admin_route_id"`
 	AdminDatatypeID    string `json:"admin_datatype_id"`
 	AuthorID           string `json:"author_id"`
 	Status             string `json:"status"`
 	DateCreated        string `json:"date_created"`
 	DateModified       string `json:"date_modified"`
+	PublishedAt        string `json:"published_at"`
+	PublishedBy        string `json:"published_by"`
+	PublishAt          string `json:"publish_at"`
+	Revision           string `json:"revision"`
 	History            string `json:"history"`
 }
 
@@ -231,6 +243,7 @@ type StringAdminContentFields struct {
 	AdminContentDataID  string `json:"admin_content_data_id"`
 	AdminFieldID        string `json:"admin_field_id"`
 	AdminFieldValue     string `json:"admin_field_value"`
+	Locale              string `json:"locale"`
 	AuthorID            string `json:"author_id"`
 	DateCreated         string `json:"date_created"`
 	DateModified        string `json:"date_modified"`

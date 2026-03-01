@@ -77,6 +77,8 @@ type FieldsJSON struct {
 	Validation   string `json:"validation"`
 	UIConfig     string `json:"ui_config"`
 	Type         string `json:"type"`
+	Translatable string `json:"translatable"`
+	Roles        string `json:"roles"`
 	AuthorID     string `json:"author_id"`
 	DateCreated  string `json:"date_created"`
 	DateModified string `json:"date_modified"`
@@ -94,6 +96,13 @@ func MapFieldJSON(a Fields) FieldsJSON {
 		Validation:   a.Validation,
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
+		Translatable: fmt.Sprintf("%d", a.Translatable),
+		Roles: func() string {
+			if a.Roles.Valid {
+				return a.Roles.String
+			}
+			return ""
+		}(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
 		DateModified: a.DateModified.String(),

@@ -495,9 +495,9 @@ func TestCreateFullBackup_SQLite_WithExtraPaths(t *testing.T) {
 	// Verify extra files are in the zip under extra/<dirname>/
 	names := zipEntryNames(t, path)
 	expectedEntries := map[string]bool{
-		"database.db":                        false,
-		"manifest.json":                      false,
-		filepath.Join("extra/uploads", "image.png"):       false,
+		"database.db":   false,
+		"manifest.json": false,
+		filepath.Join("extra/uploads", "image.png"):         false,
 		filepath.Join("extra/uploads", "docs", "readme.md"): false,
 	}
 
@@ -527,8 +527,8 @@ func TestCreateFullBackup_SQLite_SkipsEmptyAndMissingBackupPaths(t *testing.T) {
 		Db_Name:       "testdb",
 		Backup_Option: tmpDir,
 		Backup_Paths: []string{
-			"",                                        // empty -- should be skipped
-			filepath.Join(tmpDir, "nonexistent-dir"),   // missing -- should be skipped
+			"",                                       // empty -- should be skipped
+			filepath.Join(tmpDir, "nonexistent-dir"), // missing -- should be skipped
 		},
 	}
 

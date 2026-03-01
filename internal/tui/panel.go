@@ -11,7 +11,7 @@ import (
 type FocusPanel int
 
 const (
-	TreePanel    FocusPanel = iota
+	TreePanel FocusPanel = iota
 	ContentPanel
 	RoutePanel
 )

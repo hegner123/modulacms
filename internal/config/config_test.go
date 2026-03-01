@@ -366,4 +366,3 @@ func TestRichtextToolbar(t *testing.T) {
 		}
 	})
 }
-

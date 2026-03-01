@@ -21,6 +21,7 @@ export type {
   ContentRelationID,
   ContentVersionID,
   AdminContentVersionID,
+  LocaleID,
   DatatypeID,
   FieldID,
   MediaID,
@@ -32,6 +33,8 @@ export type {
   RouteID,
   SessionID,
   UserOauthID,
+  WebhookID,
+  WebhookDeliveryID,
   Slug,
   Email,
   URL,
@@ -60,3 +63,6 @@ export type { Datatype, Field, FieldTypeInfo, AdminFieldTypeInfo } from './entit
 export type { Media, MediaDimension } from './entities/media.js'
 export type { Route } from './entities/routing.js'
 export type { NodeDatatype, NodeField, ContentNode, ContentTree } from './entities/tree.js'
+export type { Locale } from './entities/locale.js'
+export type { Webhook, WebhookDelivery } from './entities/webhook.js'
+export type { QueryParams, QueryItem, QueryDatatype, QueryResult } from './entities/query.js'

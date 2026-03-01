@@ -73,7 +73,7 @@ func CurrentTimestampForDriverString(dbDriver string) string {
 func ParseDBTimestamp(timestamp string, dbDriverType DbDriverType) (*time.Time, error) {
 	var t time.Time
 	var err error
-	
+
 	switch dbDriverType {
 	case DbSqlite:
 		// Try RFC3339 first, then Unix timestamp
@@ -98,7 +98,7 @@ func ParseDBTimestamp(timestamp string, dbDriverType DbDriverType) (*time.Time, 
 			return nil, err
 		}
 	}
-	
+
 	return &t, nil
 }
 

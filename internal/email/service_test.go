@@ -188,8 +188,8 @@ func TestService_Reload_InFlightCompletes(t *testing.T) {
 	var sendCompleted atomic.Bool
 
 	slowSender := &slowMockSender{
-		delay:     200 * time.Millisecond,
-		onStart:   func() { sendStarted.Store(true) },
+		delay:      200 * time.Millisecond,
+		onStart:    func() { sendStarted.Store(true) },
 		onComplete: func() { sendCompleted.Store(true) },
 	}
 

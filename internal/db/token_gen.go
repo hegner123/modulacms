@@ -2,11 +2,14 @@
 package db
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
 
 	mdbm "github.com/hegner123/modulacms/internal/db-mysql"
 	mdbp "github.com/hegner123/modulacms/internal/db-psql"
 	mdb "github.com/hegner123/modulacms/internal/db-sqlite"
+	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
 )
 
@@ -20,7 +23,7 @@ type Tokens struct {
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Token     string               `json:"token"`
-	IssuedAt  string               `json:"issued_at"`
+	IssuedAt  types.Timestamp      `json:"issued_at"`
 	ExpiresAt types.Timestamp      `json:"expires_at"`
 	Revoked   bool                 `json:"revoked"`
 }
@@ -30,7 +33,7 @@ type CreateTokenParams struct {
 	UserID    types.NullableUserID `json:"user_id"`
 	TokenType string               `json:"token_type"`
 	Token     string               `json:"token"`
-	IssuedAt  string               `json:"issued_at"`
+	IssuedAt  types.Timestamp      `json:"issued_at"`
 	ExpiresAt types.Timestamp      `json:"expires_at"`
 	Revoked   bool                 `json:"revoked"`
 }
@@ -38,7 +41,7 @@ type CreateTokenParams struct {
 // UpdateTokenParams contains parameters for updating an existing token.
 type UpdateTokenParams struct {
 	Token     string          `json:"token"`
-	IssuedAt  string          `json:"issued_at"`
+	IssuedAt  types.Timestamp `json:"issued_at"`
 	ExpiresAt types.Timestamp `json:"expires_at"`
 	Revoked   bool            `json:"revoked"`
 	ID        string          `json:"id"`
@@ -51,7 +54,7 @@ func MapStringToken(a Tokens) StringTokens {
 		UserID:    a.UserID.String(),
 		TokenType: a.TokenType,
 		Token:     a.Token,
-		IssuedAt:  a.IssuedAt,
+		IssuedAt:  a.IssuedAt.String(),
 		ExpiresAt: a.ExpiresAt.String(),
 		Revoked:   fmt.Sprintf("%t", a.Revoked),
 	}
@@ -60,6 +63,45 @@ func MapStringToken(a Tokens) StringTokens {
 ///////////////////////////////
 // SQLITE
 //////////////////////////////
+
+// MAPS
+
+// MapToken converts a sqlc-generated SQLite token to the wrapper type.
+func (d Database) MapToken(a mdb.Tokens) Tokens {
+	return Tokens{
+		ID:        a.ID,
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Token:     a.Tokens,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapCreateTokenParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapCreateTokenParams(a CreateTokenParams) mdb.CreateTokenParams {
+	return mdb.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapUpdateTokenParams converts wrapper params to sqlc-generated SQLite params.
+func (d Database) MapUpdateTokenParams(a UpdateTokenParams) mdb.UpdateTokenParams {
+	return mdb.UpdateTokenParams{
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+		ID:        a.ID,
+	}
+}
 
 // QUERIES
 
@@ -78,6 +120,23 @@ func (d Database) CreateTokenTable() error {
 	queries := mdb.New(d.Connection)
 	err := queries.CreateTokenTable(d.Context)
 	return err
+}
+
+// CreateToken inserts a new token and records an audit event.
+func (d Database) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token: %w", err)
+	}
+	r := d.MapToken(result)
+	return &r, nil
+}
+
+// DeleteToken removes a token and records an audit event.
+func (d Database) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetToken retrieves a token by ID.
@@ -104,6 +163,16 @@ func (d Database) ListTokens() (*[]Tokens, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// UpdateToken modifies an existing token and records an audit event.
+func (d Database) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 // GetTokenByTokenValue retrieves a token by tokenValue.
@@ -136,6 +205,45 @@ func (d Database) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens, erro
 // MYSQL
 //////////////////////////////
 
+// MAPS
+
+// MapToken converts a sqlc-generated MySQL token to the wrapper type.
+func (d MysqlDatabase) MapToken(a mdbm.Tokens) Tokens {
+	return Tokens{
+		ID:        a.ID,
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Token:     a.Tokens,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapCreateTokenParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbm.CreateTokenParams {
+	return mdbm.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapUpdateTokenParams converts wrapper params to sqlc-generated MySQL params.
+func (d MysqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbm.UpdateTokenParams {
+	return mdbm.UpdateTokenParams{
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+		ID:        a.ID,
+	}
+}
+
 // QUERIES
 
 // CountTokens returns the total number of tokens in the database.
@@ -153,6 +261,23 @@ func (d MysqlDatabase) CreateTokenTable() error {
 	queries := mdbm.New(d.Connection)
 	err := queries.CreateTokenTable(d.Context)
 	return err
+}
+
+// CreateToken inserts a new token and records an audit event.
+func (d MysqlDatabase) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token: %w", err)
+	}
+	r := d.MapToken(result)
+	return &r, nil
+}
+
+// DeleteToken removes a token and records an audit event.
+func (d MysqlDatabase) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetToken retrieves a token by ID.
@@ -179,6 +304,16 @@ func (d MysqlDatabase) ListTokens() (*[]Tokens, error) {
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// UpdateToken modifies an existing token and records an audit event.
+func (d MysqlDatabase) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
 }
 
 // GetTokenByTokenValue retrieves a token by tokenValue.
@@ -211,6 +346,45 @@ func (d MysqlDatabase) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens,
 // POSTGRES
 //////////////////////////////
 
+// MAPS
+
+// MapToken converts a sqlc-generated PostgreSQL token to the wrapper type.
+func (d PsqlDatabase) MapToken(a mdbp.Tokens) Tokens {
+	return Tokens{
+		ID:        a.ID,
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Token:     a.Tokens,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapCreateTokenParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapCreateTokenParams(a CreateTokenParams) mdbp.CreateTokenParams {
+	return mdbp.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    a.UserID,
+		TokenType: a.TokenType,
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+	}
+}
+
+// MapUpdateTokenParams converts wrapper params to sqlc-generated PostgreSQL params.
+func (d PsqlDatabase) MapUpdateTokenParams(a UpdateTokenParams) mdbp.UpdateTokenParams {
+	return mdbp.UpdateTokenParams{
+		Tokens:    a.Token,
+		IssuedAt:  a.IssuedAt,
+		ExpiresAt: a.ExpiresAt,
+		Revoked:   a.Revoked,
+		ID:        a.ID,
+	}
+}
+
 // QUERIES
 
 // CountTokens returns the total number of tokens in the database.
@@ -228,6 +402,23 @@ func (d PsqlDatabase) CreateTokenTable() error {
 	queries := mdbp.New(d.Connection)
 	err := queries.CreateTokenTable(d.Context)
 	return err
+}
+
+// CreateToken inserts a new token and records an audit event.
+func (d PsqlDatabase) CreateToken(ctx context.Context, ac audited.AuditContext, s CreateTokenParams) (*Tokens, error) {
+	cmd := d.NewTokenCmd(ctx, ac, s)
+	result, err := audited.Create(cmd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token: %w", err)
+	}
+	r := d.MapToken(result)
+	return &r, nil
+}
+
+// DeleteToken removes a token and records an audit event.
+func (d PsqlDatabase) DeleteToken(ctx context.Context, ac audited.AuditContext, id string) error {
+	cmd := d.DeleteTokenCmd(ctx, ac, id)
+	return audited.Delete(cmd)
 }
 
 // GetToken retrieves a token by ID.
@@ -256,6 +447,16 @@ func (d PsqlDatabase) ListTokens() (*[]Tokens, error) {
 	return &res, nil
 }
 
+// UpdateToken modifies an existing token and records an audit event.
+func (d PsqlDatabase) UpdateToken(ctx context.Context, ac audited.AuditContext, s UpdateTokenParams) (*string, error) {
+	cmd := d.UpdateTokenCmd(ctx, ac, s)
+	if err := audited.Update(cmd); err != nil {
+		return nil, fmt.Errorf("failed to update token: %w", err)
+	}
+	msg := fmt.Sprintf("Successfully updated %v\n", s.ID)
+	return &msg, nil
+}
+
 // GetTokenByTokenValue retrieves a token by tokenValue.
 func (d PsqlDatabase) GetTokenByTokenValue(tokenValue string) (*Tokens, error) {
 	queries := mdbp.New(d.Connection)
@@ -280,4 +481,466 @@ func (d PsqlDatabase) GetTokenByUserId(userID types.NullableUserID) (*[]Tokens, 
 		res = append(res, m)
 	}
 	return &res, nil
+}
+
+// ========== AUDITED COMMAND TYPES ==========
+
+// ----- SQLite CREATE -----
+
+// NewTokenCmd is an audited command for creating tokens.
+type NewTokenCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewTokenCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewTokenCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewTokenCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewTokenCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewTokenCmd) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c NewTokenCmd) Params() any { return c.params }
+
+// GetID extracts the ID from a token record.
+func (c NewTokenCmd) GetID(u mdb.Tokens) string { return u.ID }
+
+// Execute creates the token in the database.
+func (c NewTokenCmd) Execute(ctx context.Context, tx audited.DBTX) (mdb.Tokens, error) {
+	queries := mdb.New(tx)
+	return queries.CreateToken(ctx, mdb.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    c.params.UserID,
+		TokenType: c.params.TokenType,
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+	})
+}
+
+// NewTokenCmd creates a command for inserting a token.
+func (d Database) NewTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateTokenParams) NewTokenCmd {
+	return NewTokenCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite UPDATE -----
+
+// UpdateTokenCmd is an audited command for updating tokens.
+type UpdateTokenCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateTokenCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateTokenCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateTokenCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateTokenCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateTokenCmd) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c UpdateTokenCmd) Params() any { return c.params }
+
+// GetID returns the token ID for this command.
+func (c UpdateTokenCmd) GetID() string { return c.params.ID }
+
+// GetBefore retrieves the token before the update.
+func (c UpdateTokenCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Tokens, error) {
+	queries := mdb.New(tx)
+	return queries.GetToken(ctx, mdb.GetTokenParams{ID: c.params.ID})
+}
+
+// Execute updates the token in the database.
+func (c UpdateTokenCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.UpdateToken(ctx, mdb.UpdateTokenParams{
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+		ID:        c.params.ID,
+	})
+}
+
+// UpdateTokenCmd creates a command for updating a token.
+func (d Database) UpdateTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateTokenParams) UpdateTokenCmd {
+	return UpdateTokenCmd{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- SQLite DELETE -----
+
+// DeleteTokenCmd is an audited command for deleting tokens.
+type DeleteTokenCmd struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteTokenCmd) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteTokenCmd) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteTokenCmd) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteTokenCmd) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteTokenCmd) TableName() string { return "tokens" }
+
+// GetID returns the token ID for this command.
+func (c DeleteTokenCmd) GetID() string { return c.id }
+
+// GetBefore retrieves the token before the delete.
+func (c DeleteTokenCmd) GetBefore(ctx context.Context, tx audited.DBTX) (mdb.Tokens, error) {
+	queries := mdb.New(tx)
+	return queries.GetToken(ctx, mdb.GetTokenParams{ID: c.id})
+}
+
+// Execute deletes the token from the database.
+func (c DeleteTokenCmd) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdb.New(tx)
+	return queries.DeleteToken(ctx, mdb.DeleteTokenParams{ID: c.id})
+}
+
+// DeleteTokenCmd creates a command for deleting a token.
+func (d Database) DeleteTokenCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteTokenCmd {
+	return DeleteTokenCmd{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: SQLiteRecorder}
+}
+
+// ----- MySQL CREATE -----
+
+// NewTokenCmdMysql is an audited command for creating tokens in MySQL.
+type NewTokenCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewTokenCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewTokenCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewTokenCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewTokenCmdMysql) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c NewTokenCmdMysql) Params() any { return c.params }
+
+// GetID extracts the ID from a token record.
+func (c NewTokenCmdMysql) GetID(u mdbm.Tokens) string { return u.ID }
+
+// Execute creates the token in the database.
+func (c NewTokenCmdMysql) Execute(ctx context.Context, tx audited.DBTX) (mdbm.Tokens, error) {
+	queries := mdbm.New(tx)
+	params := mdbm.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    c.params.UserID,
+		TokenType: c.params.TokenType,
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+	}
+	if err := queries.CreateToken(ctx, params); err != nil {
+		return mdbm.Tokens{}, err
+	}
+	return queries.GetToken(ctx, mdbm.GetTokenParams{ID: params.ID})
+}
+
+// NewTokenCmd creates a command for inserting a token.
+func (d MysqlDatabase) NewTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateTokenParams) NewTokenCmdMysql {
+	return NewTokenCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL UPDATE -----
+
+// UpdateTokenCmdMysql is an audited command for updating tokens in MySQL.
+type UpdateTokenCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateTokenCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateTokenCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateTokenCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateTokenCmdMysql) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c UpdateTokenCmdMysql) Params() any { return c.params }
+
+// GetID returns the token ID for this command.
+func (c UpdateTokenCmdMysql) GetID() string { return c.params.ID }
+
+// GetBefore retrieves the token before the update.
+func (c UpdateTokenCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Tokens, error) {
+	queries := mdbm.New(tx)
+	return queries.GetToken(ctx, mdbm.GetTokenParams{ID: c.params.ID})
+}
+
+// Execute updates the token in the database.
+func (c UpdateTokenCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.UpdateToken(ctx, mdbm.UpdateTokenParams{
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+		ID:        c.params.ID,
+	})
+}
+
+// UpdateTokenCmd creates a command for updating a token.
+func (d MysqlDatabase) UpdateTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateTokenParams) UpdateTokenCmdMysql {
+	return UpdateTokenCmdMysql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- MySQL DELETE -----
+
+// DeleteTokenCmdMysql is an audited command for deleting tokens in MySQL.
+type DeleteTokenCmdMysql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteTokenCmdMysql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteTokenCmdMysql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteTokenCmdMysql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteTokenCmdMysql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteTokenCmdMysql) TableName() string { return "tokens" }
+
+// GetID returns the token ID for this command.
+func (c DeleteTokenCmdMysql) GetID() string { return c.id }
+
+// GetBefore retrieves the token before the delete.
+func (c DeleteTokenCmdMysql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbm.Tokens, error) {
+	queries := mdbm.New(tx)
+	return queries.GetToken(ctx, mdbm.GetTokenParams{ID: c.id})
+}
+
+// Execute deletes the token from the database.
+func (c DeleteTokenCmdMysql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbm.New(tx)
+	return queries.DeleteToken(ctx, mdbm.DeleteTokenParams{ID: c.id})
+}
+
+// DeleteTokenCmd creates a command for deleting a token.
+func (d MysqlDatabase) DeleteTokenCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteTokenCmdMysql {
+	return DeleteTokenCmdMysql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: MysqlRecorder}
+}
+
+// ----- PostgreSQL CREATE -----
+
+// NewTokenCmdPsql is an audited command for creating tokens in PostgreSQL.
+type NewTokenCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   CreateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c NewTokenCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c NewTokenCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c NewTokenCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c NewTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c NewTokenCmdPsql) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c NewTokenCmdPsql) Params() any { return c.params }
+
+// GetID extracts the ID from a token record.
+func (c NewTokenCmdPsql) GetID(u mdbp.Tokens) string { return u.ID }
+
+// Execute creates the token in the database.
+func (c NewTokenCmdPsql) Execute(ctx context.Context, tx audited.DBTX) (mdbp.Tokens, error) {
+	queries := mdbp.New(tx)
+	return queries.CreateToken(ctx, mdbp.CreateTokenParams{
+		ID:        string(types.NewTokenID()),
+		UserID:    c.params.UserID,
+		TokenType: c.params.TokenType,
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+	})
+}
+
+// NewTokenCmd creates a command for inserting a token.
+func (d PsqlDatabase) NewTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params CreateTokenParams) NewTokenCmdPsql {
+	return NewTokenCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL UPDATE -----
+
+// UpdateTokenCmdPsql is an audited command for updating tokens in PostgreSQL.
+type UpdateTokenCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	params   UpdateTokenParams
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c UpdateTokenCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c UpdateTokenCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c UpdateTokenCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c UpdateTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c UpdateTokenCmdPsql) TableName() string { return "tokens" }
+
+// Params returns the parameters for this command.
+func (c UpdateTokenCmdPsql) Params() any { return c.params }
+
+// GetID returns the token ID for this command.
+func (c UpdateTokenCmdPsql) GetID() string { return c.params.ID }
+
+// GetBefore retrieves the token before the update.
+func (c UpdateTokenCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Tokens, error) {
+	queries := mdbp.New(tx)
+	return queries.GetToken(ctx, mdbp.GetTokenParams{ID: c.params.ID})
+}
+
+// Execute updates the token in the database.
+func (c UpdateTokenCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.UpdateToken(ctx, mdbp.UpdateTokenParams{
+		Tokens:    c.params.Token,
+		IssuedAt:  c.params.IssuedAt,
+		ExpiresAt: c.params.ExpiresAt,
+		Revoked:   c.params.Revoked,
+		ID:        c.params.ID,
+	})
+}
+
+// UpdateTokenCmd creates a command for updating a token.
+func (d PsqlDatabase) UpdateTokenCmd(ctx context.Context, auditCtx audited.AuditContext, params UpdateTokenParams) UpdateTokenCmdPsql {
+	return UpdateTokenCmdPsql{ctx: ctx, auditCtx: auditCtx, params: params, conn: d.Connection, recorder: PsqlRecorder}
+}
+
+// ----- PostgreSQL DELETE -----
+
+// DeleteTokenCmdPsql is an audited command for deleting tokens in PostgreSQL.
+type DeleteTokenCmdPsql struct {
+	ctx      context.Context
+	auditCtx audited.AuditContext
+	id       string
+	conn     *sql.DB
+	recorder audited.ChangeEventRecorder
+}
+
+// Context returns the command context.
+func (c DeleteTokenCmdPsql) Context() context.Context { return c.ctx }
+
+// AuditContext returns the audit context.
+func (c DeleteTokenCmdPsql) AuditContext() audited.AuditContext { return c.auditCtx }
+
+// Connection returns the database connection.
+func (c DeleteTokenCmdPsql) Connection() *sql.DB { return c.conn }
+
+// Recorder returns the change event recorder.
+func (c DeleteTokenCmdPsql) Recorder() audited.ChangeEventRecorder { return c.recorder }
+
+// TableName returns the table name for this command.
+func (c DeleteTokenCmdPsql) TableName() string { return "tokens" }
+
+// GetID returns the token ID for this command.
+func (c DeleteTokenCmdPsql) GetID() string { return c.id }
+
+// GetBefore retrieves the token before the delete.
+func (c DeleteTokenCmdPsql) GetBefore(ctx context.Context, tx audited.DBTX) (mdbp.Tokens, error) {
+	queries := mdbp.New(tx)
+	return queries.GetToken(ctx, mdbp.GetTokenParams{ID: c.id})
+}
+
+// Execute deletes the token from the database.
+func (c DeleteTokenCmdPsql) Execute(ctx context.Context, tx audited.DBTX) error {
+	queries := mdbp.New(tx)
+	return queries.DeleteToken(ctx, mdbp.DeleteTokenParams{ID: c.id})
+}
+
+// DeleteTokenCmd creates a command for deleting a token.
+func (d PsqlDatabase) DeleteTokenCmd(ctx context.Context, auditCtx audited.AuditContext, id string) DeleteTokenCmdPsql {
+	return DeleteTokenCmdPsql{ctx: ctx, auditCtx: auditCtx, id: id, conn: d.Connection, recorder: PsqlRecorder}
 }

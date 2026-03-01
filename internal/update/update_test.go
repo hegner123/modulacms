@@ -360,9 +360,9 @@ func TestDownloadUpdate_HTTPErrors(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		handler    http.HandlerFunc
-		wantErr    string
+		name    string
+		handler http.HandlerFunc
+		wantErr string
 	}{
 		{
 			name: "server returns 404",
@@ -744,4 +744,3 @@ func createTempFile(t *testing.T, size int64, perm os.FileMode) string {
 
 	return path
 }
-

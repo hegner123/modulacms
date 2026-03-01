@@ -21,6 +21,7 @@ import (
 type CreateVersionRequest struct {
 	ContentDataID types.ContentID `json:"content_data_id"`
 	Label         string          `json:"label"`
+	Locale        string          `json:"locale"`
 }
 
 ///////////////////////////////
@@ -103,7 +104,7 @@ func CreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config
 	ctx := r.Context()
 
 	// Build snapshot from live tables.
-	snapshot, err := publishing.BuildSnapshot(d, ctx, req.ContentDataID)
+	snapshot, err := publishing.BuildSnapshot(d, ctx, req.ContentDataID, req.Locale)
 	if err != nil {
 		utility.DefaultLogger.Error("build snapshot for manual version failed", err)
 		http.Error(w, fmt.Sprintf("failed to build snapshot: %v", err), http.StatusInternalServerError)
@@ -118,7 +119,7 @@ func CreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config
 	}
 
 	// Get next version number.
-	maxVersion, err := d.GetMaxVersionNumber(req.ContentDataID, "")
+	maxVersion, err := d.GetMaxVersionNumber(req.ContentDataID, req.Locale)
 	if err != nil {
 		utility.DefaultLogger.Error("get max version number failed", err)
 		http.Error(w, fmt.Sprintf("failed to get version number: %v", err), http.StatusInternalServerError)
@@ -132,7 +133,7 @@ func CreateManualVersionHandler(w http.ResponseWriter, r *http.Request, c config
 	version, err := d.CreateContentVersion(ctx, ac, db.CreateContentVersionParams{
 		ContentDataID: req.ContentDataID,
 		VersionNumber: nextVersion,
-		Locale:        "",
+		Locale:        req.Locale,
 		Snapshot:      string(snapshotBytes),
 		Trigger:       "manual",
 		Label:         req.Label,

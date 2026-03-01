@@ -14,6 +14,10 @@ type ContentMeta struct {
 	AuthorName      string
 	PublishedByName string
 	HasPublishPerm  bool
+	// I18n fields: populated when i18n is enabled
+	I18nEnabled    bool
+	ActiveLocale   string
+	EnabledLocales []db.Locale
 }
 
 templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFieldRow, csrfToken string, treeJSON string, meta ContentMeta) {
@@ -45,25 +49,49 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 			</div>
 			if meta.HasPublishPerm {
 				if string(content.Status) == "draft" {
-					<button
-						class="btn btn-primary"
-						hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
-						hx-target="#main-content"
-						hx-swap="innerHTML"
-						hx-confirm="Publish this content? This creates a public snapshot."
-					>
-						Publish
-					</button>
+					if meta.I18nEnabled && meta.ActiveLocale != "" {
+						<button
+							class="btn btn-primary"
+							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish?locale=" + meta.ActiveLocale }
+							hx-target="#main-content"
+							hx-swap="innerHTML"
+							hx-confirm="Publish this content? This creates a public snapshot."
+						>
+							{ "Publish (" + meta.ActiveLocale + ")" }
+						</button>
+					} else {
+						<button
+							class="btn btn-primary"
+							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
+							hx-target="#main-content"
+							hx-swap="innerHTML"
+							hx-confirm="Publish this content? This creates a public snapshot."
+						>
+							Publish
+						</button>
+					}
 				} else {
-					<button
-						class="btn btn-ghost"
-						hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
-						hx-target="#main-content"
-						hx-swap="innerHTML"
-						hx-confirm="Unpublish this content? It will no longer be publicly accessible."
-					>
-						Unpublish
-					</button>
+					if meta.I18nEnabled && meta.ActiveLocale != "" {
+						<button
+							class="btn btn-ghost"
+							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish?locale=" + meta.ActiveLocale }
+							hx-target="#main-content"
+							hx-swap="innerHTML"
+							hx-confirm="Unpublish this content? It will no longer be publicly accessible."
+						>
+							{ "Unpublish (" + meta.ActiveLocale + ")" }
+						</button>
+					} else {
+						<button
+							class="btn btn-ghost"
+							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
+							hx-target="#main-content"
+							hx-swap="innerHTML"
+							hx-confirm="Unpublish this content? It will no longer be publicly accessible."
+						>
+							Unpublish
+						</button>
+					}
 				}
 			}
 			@partials.DeleteConfirm(
@@ -74,6 +102,46 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 			)
 		</div>
 	</div>
+	<!-- Locale Tab Bar (i18n) -->
+	if meta.I18nEnabled && len(meta.EnabledLocales) > 0 {
+		<div class="locale-tabs" id="locale-tabs">
+			for _, locale := range meta.EnabledLocales {
+				if locale.Code == meta.ActiveLocale {
+					<button
+						class="locale-tab active"
+						hx-get={ "/admin/content/" + content.ContentDataID.String() + "?locale=" + locale.Code }
+						hx-target="#main-content"
+						hx-push-url="true"
+					>
+						{ locale.Code }
+						if locale.IsDefault {
+							<span class="badge badge-info">default</span>
+						}
+					</button>
+				} else {
+					<button
+						class="locale-tab"
+						hx-get={ "/admin/content/" + content.ContentDataID.String() + "?locale=" + locale.Code }
+						hx-target="#main-content"
+						hx-push-url="true"
+					>
+						{ locale.Code }
+						if locale.IsDefault {
+							<span class="badge badge-info">default</span>
+						}
+					</button>
+				}
+			}
+			<button
+				class="btn btn-ghost btn-sm"
+				hx-post={ "/api/v1/admin/contentdata/" + content.ContentDataID.String() + "/translations" }
+				hx-target="#locale-tabs"
+				hx-swap="outerHTML"
+			>
+				+ Add Translation
+			</button>
+		</div>
+	}
 	<!-- Version History (lazy-loaded) -->
 	<div id="version-list-panel" class="version-panel">
 		<button

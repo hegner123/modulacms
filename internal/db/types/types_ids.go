@@ -2043,3 +2043,224 @@ func (id *AdminFieldTypeID) UnmarshalJSON(data []byte) error {
 	*id = AdminFieldTypeID(s)
 	return id.Validate()
 }
+
+// LocaleID uniquely identifies a locale.
+type LocaleID string
+
+// NewLocaleID generates a new ULID-based LocaleID.
+func NewLocaleID() LocaleID { return LocaleID(NewULID().String()) }
+
+// String returns the string representation of the LocaleID.
+func (id LocaleID) String() string { return string(id) }
+
+// IsZero returns true if the LocaleID is empty.
+func (id LocaleID) IsZero() bool { return id == "" }
+
+// Validate checks if the LocaleID is a valid ULID.
+func (id LocaleID) Validate() error { return validateULID(string(id), "LocaleID") }
+
+// ULID parses the LocaleID as a ulid.ULID.
+func (id LocaleID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the LocaleID.
+func (id LocaleID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseLocaleID parses and validates a string as a LocaleID.
+func ParseLocaleID(s string) (LocaleID, error) {
+	id := LocaleID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id LocaleID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("LocaleID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *LocaleID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("LocaleID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = LocaleID(v)
+	case []byte:
+		*id = LocaleID(string(v))
+	default:
+		return fmt.Errorf("LocaleID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id LocaleID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *LocaleID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("LocaleID: %w", err)
+	}
+	*id = LocaleID(s)
+	return id.Validate()
+}
+
+// WebhookID uniquely identifies a webhook.
+type WebhookID string
+
+// NewWebhookID generates a new ULID-based WebhookID.
+func NewWebhookID() WebhookID { return WebhookID(NewULID().String()) }
+
+// String returns the string representation of the WebhookID.
+func (id WebhookID) String() string { return string(id) }
+
+// IsZero returns true if the WebhookID is empty.
+func (id WebhookID) IsZero() bool { return id == "" }
+
+// Validate checks if the WebhookID is a valid ULID.
+func (id WebhookID) Validate() error { return validateULID(string(id), "WebhookID") }
+
+// ULID parses the WebhookID as a ulid.ULID.
+func (id WebhookID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the WebhookID.
+func (id WebhookID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseWebhookID parses and validates a string as a WebhookID.
+func ParseWebhookID(s string) (WebhookID, error) {
+	id := WebhookID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id WebhookID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("WebhookID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *WebhookID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("WebhookID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = WebhookID(v)
+	case []byte:
+		*id = WebhookID(string(v))
+	default:
+		return fmt.Errorf("WebhookID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id WebhookID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *WebhookID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("WebhookID: %w", err)
+	}
+	*id = WebhookID(s)
+	return id.Validate()
+}
+
+// WebhookDeliveryID uniquely identifies a webhook delivery.
+type WebhookDeliveryID string
+
+// NewWebhookDeliveryID generates a new ULID-based WebhookDeliveryID.
+func NewWebhookDeliveryID() WebhookDeliveryID { return WebhookDeliveryID(NewULID().String()) }
+
+// String returns the string representation of the WebhookDeliveryID.
+func (id WebhookDeliveryID) String() string { return string(id) }
+
+// IsZero returns true if the WebhookDeliveryID is empty.
+func (id WebhookDeliveryID) IsZero() bool { return id == "" }
+
+// Validate checks if the WebhookDeliveryID is a valid ULID.
+func (id WebhookDeliveryID) Validate() error {
+	return validateULID(string(id), "WebhookDeliveryID")
+}
+
+// ULID parses the WebhookDeliveryID as a ulid.ULID.
+func (id WebhookDeliveryID) ULID() (ulid.ULID, error) { return ulid.Parse(string(id)) }
+
+// Time extracts the timestamp embedded in the WebhookDeliveryID.
+func (id WebhookDeliveryID) Time() (time.Time, error) {
+	u, err := id.ULID()
+	if err != nil {
+		return time.Time{}, err
+	}
+	return ulid.Time(u.Time()), nil
+}
+
+// ParseWebhookDeliveryID parses and validates a string as a WebhookDeliveryID.
+func ParseWebhookDeliveryID(s string) (WebhookDeliveryID, error) {
+	id := WebhookDeliveryID(s)
+	if err := id.Validate(); err != nil {
+		return "", err
+	}
+	return id, nil
+}
+
+// Value implements driver.Valuer for database serialization.
+func (id WebhookDeliveryID) Value() (driver.Value, error) {
+	if id == "" {
+		return nil, fmt.Errorf("WebhookDeliveryID: cannot be empty")
+	}
+	return string(id), nil
+}
+
+// Scan implements sql.Scanner for database deserialization.
+func (id *WebhookDeliveryID) Scan(value any) error {
+	if value == nil {
+		return fmt.Errorf("WebhookDeliveryID: cannot be null")
+	}
+	switch v := value.(type) {
+	case string:
+		*id = WebhookDeliveryID(v)
+	case []byte:
+		*id = WebhookDeliveryID(string(v))
+	default:
+		return fmt.Errorf("WebhookDeliveryID: cannot scan %T", value)
+	}
+	return id.Validate()
+}
+
+// MarshalJSON implements json.Marshaler.
+func (id WebhookDeliveryID) MarshalJSON() ([]byte, error) { return json.Marshal(string(id)) }
+
+// UnmarshalJSON implements json.Unmarshaler.
+func (id *WebhookDeliveryID) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("WebhookDeliveryID: %w", err)
+	}
+	*id = WebhookDeliveryID(s)
+	return id.Validate()
+}

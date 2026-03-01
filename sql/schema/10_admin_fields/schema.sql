@@ -11,6 +11,8 @@ CREATE TABLE admin_fields (
     validation TEXT NOT NULL,
     ui_config TEXT NOT NULL,
     type TEXT DEFAULT 'text' NOT NULL CHECK (type IN ('text', 'textarea', 'number', 'date', 'datetime', 'boolean', 'select', 'media', 'relation', 'json', 'richtext', 'slug', 'email', 'url')),
+    translatable INTEGER NOT NULL DEFAULT 0,
+    roles TEXT DEFAULT NULL,
     author_id TEXT
         REFERENCES users
             ON DELETE SET NULL,

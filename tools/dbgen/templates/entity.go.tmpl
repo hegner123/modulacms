@@ -91,8 +91,12 @@ func MapString{{.Entity.Singular}}(a {{.Entity.Name}}) {{.Entity.StringTypeName}
 func (d {{$driver.Struct}}) Map{{$.Entity.Singular}}(a {{$driver.Package}}.{{$.Entity.SqlcTypeName}}) {{$.Entity.Name}} {
 	return {{$.Entity.Name}}{
 {{- range $.Entity.StructFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.AppName}}: a.{{.SqlcFieldName}}.Bool(),
+{{- else if isNullWrapper .Type}}
 		{{.AppName}}: {{.Type}}{a.{{.SqlcFieldName}}},
+{{- else if .NarrowInt}}
+		{{.AppName}}: {{narrowToApp $driver . (printf "a.%s" .SqlcFieldName)}},
 {{- else}}
 		{{.AppName}}: a.{{.SqlcFieldName}},
 {{- end}}
@@ -115,13 +119,17 @@ func (d {{$driver.Struct}}) MapCreate{{$.Entity.Singular}}Params(a Create{{$.Ent
 {{- end}}
 	return {{$driver.Package}}.Create{{$.Entity.Singular}}Params{
 {{- if not $.Entity.CallerSuppliedID}}
-		{{$.Entity.IDField}}: {{$.Entity.NewIDFunc}},
+		{{sqlcIDField $.Entity}}: {{$.Entity.NewIDFunc}},
 {{- else}}
-		{{$.Entity.IDField}}: id,
+		{{sqlcIDField $.Entity}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.SqlcFieldName}}: types.SafeBool{Val: a.{{.AppName}}},
+{{- else if isNullWrapper .Type}}
 		{{.SqlcFieldName}}: a.{{.AppName}}.{{.Type}},
+{{- else if .NarrowInt}}
+		{{.SqlcFieldName}}: {{narrowToSqlc $driver . (printf "a.%s" .AppName)}},
 {{- else}}
 		{{.SqlcFieldName}}: a.{{.AppName}},
 {{- end}}
@@ -133,8 +141,12 @@ func (d {{$driver.Struct}}) MapCreate{{$.Entity.Singular}}Params(a Create{{$.Ent
 func (d {{$driver.Struct}}) MapUpdate{{$.Entity.Singular}}Params(a Update{{$.Entity.Singular}}Params) {{$driver.Package}}.Update{{$.Entity.Singular}}Params {
 	return {{$driver.Package}}.Update{{$.Entity.Singular}}Params{
 {{- range $.Entity.NonIDUpdateFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.SqlcFieldName}}: types.SafeBool{Val: a.{{.AppName}}},
+{{- else if isNullWrapper .Type}}
 		{{.SqlcFieldName}}: a.{{.AppName}}.{{.Type}},
+{{- else if .NarrowInt}}
+		{{.SqlcFieldName}}: {{narrowToSqlc $driver . (printf "a.%s" .AppName)}},
 {{- else}}
 		{{.SqlcFieldName}}: a.{{.AppName}},
 {{- end}}
@@ -192,7 +204,7 @@ func (d {{$driver.Struct}}) Delete{{$.Entity.Singular}}(ctx context.Context, ac 
 // Get{{$.Entity.Singular}} retrieves a {{lower $.Entity.Singular}} by ID.
 func (d {{$driver.Struct}}) Get{{$.Entity.Singular}}(id {{$.Entity.IDType}}) (*{{$.Entity.Name}}, error) {
 	queries := {{$driver.Package}}.New(d.Connection)
-	row, err := queries.{{$.Entity.GetQueryName}}(d.Context, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- $.Entity.IDField}}: id})
+	row, err := queries.{{$.Entity.GetQueryName}}(d.Context, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- sqlcIDField $.Entity}}: id})
 	if err != nil {
 		return nil, err
 	}
@@ -262,6 +274,7 @@ func (d {{$driver.Struct}}) {{.MethodName}}({{range $i, $p := .Params}}{{if $i}}
 	return &res, nil
 }
 {{- else}}
+{{- if .Params}}
 
 // {{.MethodName}} retrieves {{lower $.Entity.Plural}} by {{(index .Params 0).ParamName}}.
 func (d {{$driver.Struct}}) {{.MethodName}}({{range $i, $p := .Params}}{{if $i}}, {{end}}{{$p.ParamName}} {{$p.ParamType}}{{end}}) (*[]{{$.Entity.Name}}, error) {
@@ -277,6 +290,23 @@ func (d {{$driver.Struct}}) {{.MethodName}}({{range $i, $p := .Params}}{{if $i}}
 	}
 	return &res, nil
 }
+{{- else}}
+
+// {{.MethodName}} retrieves all matching {{lower $.Entity.Plural}}.
+func (d {{$driver.Struct}}) {{.MethodName}}() (*[]{{$.Entity.Name}}, error) {
+	queries := {{$driver.Package}}.New(d.Connection)
+	rows, err := queries.{{sqlcExtraQueryName $.Entity .}}(d.Context)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list {{lower $.Entity.Plural}}: %v\n", err)
+	}
+	res := []{{$.Entity.Name}}{}
+	for _, v := range rows {
+		m := d.Map{{$.Entity.Singular}}(v)
+		res = append(res, m)
+	}
+	return &res, nil
+}
+{{- end}}
 {{- end}}
 {{- end}}
 {{- range $.Entity.PaginatedExtraQueries}}
@@ -341,7 +371,7 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) TableName() string    
 func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Params() any                           { return c.params }
 
 // GetID extracts the ID from a {{lower $.Entity.Singular}} record.
-func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetID(u {{$driver.Package}}.{{$.Entity.SqlcTypeName}}) string { return {{$.Entity.IDToString (print "u." $.Entity.IDField)}} }
+func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetID(u {{$driver.Package}}.{{$.Entity.SqlcTypeName}}) string { return {{$.Entity.IDToString (print "u." (sqlcIDField $.Entity))}} }
 
 // Execute creates the {{lower $.Entity.Singular}} in the database.
 {{- if $driver.MysqlReturningGap}}
@@ -360,13 +390,17 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Co
 	queries := {{$driver.Package}}.New(tx)
 	params := {{$driver.Package}}.Create{{$.Entity.Singular}}Params{
 {{- if not $.Entity.CallerSuppliedID}}
-		{{$.Entity.IDField}}: {{$.Entity.NewIDFunc}},
+		{{sqlcIDField $.Entity}}: {{$.Entity.NewIDFunc}},
 {{- else}}
-		{{$.Entity.IDField}}: id,
+		{{sqlcIDField $.Entity}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.SqlcFieldName}}: types.SafeBool{Val: c.params.{{.AppName}}},
+{{- else if isNullWrapper .Type}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else if .NarrowInt}}
+		{{.SqlcFieldName}}: {{narrowToSqlc $driver . (printf "c.params.%s" .AppName)}},
 {{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
 {{- end}}
@@ -375,7 +409,7 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Co
 	if err := queries.Create{{$.Entity.Singular}}(ctx, params); err != nil {
 		return {{$driver.Package}}.{{$.Entity.SqlcTypeName}}{}, err
 	}
-	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- $.Entity.IDField}}: params.{{$.Entity.IDField}}})
+	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- sqlcIDField $.Entity}}: params.{{sqlcIDField $.Entity}}})
 }
 {{- else}}
 func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Context, tx audited.DBTX) ({{$driver.Package}}.{{$.Entity.SqlcTypeName}}, error) {
@@ -393,13 +427,17 @@ func (c New{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Co
 	queries := {{$driver.Package}}.New(tx)
 	return queries.Create{{$.Entity.Singular}}(ctx, {{$driver.Package}}.Create{{$.Entity.Singular}}Params{
 {{- if not $.Entity.CallerSuppliedID}}
-		{{$.Entity.IDField}}: {{$.Entity.NewIDFunc}},
+		{{sqlcIDField $.Entity}}: {{$.Entity.NewIDFunc}},
 {{- else}}
-		{{$.Entity.IDField}}: id,
+		{{sqlcIDField $.Entity}}: id,
 {{- end}}
 {{- range $.Entity.NonIDCreateFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.SqlcFieldName}}: types.SafeBool{Val: c.params.{{.AppName}}},
+{{- else if isNullWrapper .Type}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else if .NarrowInt}}
+		{{.SqlcFieldName}}: {{narrowToSqlc $driver . (printf "c.params.%s" .AppName)}},
 {{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
 {{- end}}
@@ -448,7 +486,7 @@ func (c Update{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetID() string { re
 // GetBefore retrieves the {{lower $.Entity.Singular}} before the update.
 func (c Update{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetBefore(ctx context.Context, tx audited.DBTX) ({{$driver.Package}}.{{$.Entity.SqlcTypeName}}, error) {
 	queries := {{$driver.Package}}.New(tx)
-	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- $.Entity.IDField}}: c.params.{{$.Entity.IDField}}})
+	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- sqlcIDField $.Entity}}: c.params.{{$.Entity.IDField}}})
 }
 
 // Execute updates the {{lower $.Entity.Singular}} in the database.
@@ -456,8 +494,12 @@ func (c Update{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context
 	queries := {{$driver.Package}}.New(tx)
 	return queries.Update{{$.Entity.Singular}}(ctx, {{$driver.Package}}.Update{{$.Entity.Singular}}Params{
 {{- range $.Entity.NonIDUpdateFields}}
-{{- if isNullWrapper .Type}}
+{{- if .SafeBool}}
+		{{.SqlcFieldName}}: types.SafeBool{Val: c.params.{{.AppName}}},
+{{- else if isNullWrapper .Type}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}}.{{.Type}},
+{{- else if .NarrowInt}}
+		{{.SqlcFieldName}}: {{narrowToSqlc $driver . (printf "c.params.%s" .AppName)}},
 {{- else}}
 		{{.SqlcFieldName}}: c.params.{{.AppName}},
 {{- end}}
@@ -507,13 +549,13 @@ func (c Delete{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetID() string { re
 // GetBefore retrieves the {{lower $.Entity.Singular}} before the delete.
 func (c Delete{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) GetBefore(ctx context.Context, tx audited.DBTX) ({{$driver.Package}}.{{$.Entity.SqlcTypeName}}, error) {
 	queries := {{$driver.Package}}.New(tx)
-	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- $.Entity.IDField}}: c.id})
+	return queries.{{$.Entity.GetQueryName}}(ctx, {{$driver.Package}}.{{$.Entity.GetQueryName}}Params{ {{- sqlcIDField $.Entity}}: c.id})
 }
 
 // Execute deletes the {{lower $.Entity.Singular}} from the database.
 func (c Delete{{$.Entity.Singular}}Cmd{{$driver.CmdSuffix}}) Execute(ctx context.Context, tx audited.DBTX) error {
 	queries := {{$driver.Package}}.New(tx)
-	return queries.Delete{{$.Entity.Singular}}(ctx, {{$driver.Package}}.Delete{{$.Entity.Singular}}Params{ {{- $.Entity.IDField}}: c.id})
+	return queries.Delete{{$.Entity.Singular}}(ctx, {{$driver.Package}}.Delete{{$.Entity.Singular}}Params{ {{- sqlcIDField $.Entity}}: c.id})
 }
 
 // Delete{{$.Entity.Singular}}Cmd creates a command for deleting a {{lower $.Entity.Singular}}.

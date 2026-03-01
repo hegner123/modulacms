@@ -98,7 +98,7 @@ func TokenCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			UserID:    types.NullableUserID{ID: user.UserID, Valid: true},
 			TokenType: tokenType,
 			Token:     tokenValue,
-			IssuedAt:  now.UTC().Format(time.RFC3339),
+			IssuedAt:  types.TimestampNow(),
 			ExpiresAt: expiresAt,
 			Revoked:   false,
 		}

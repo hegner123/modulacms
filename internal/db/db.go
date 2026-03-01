@@ -119,6 +119,8 @@ type DbDriver interface {
 	ListAdminContentFieldsPaginated(PaginationParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsByRoutePaginated(ListAdminContentFieldsByRoutePaginatedParams) (*[]AdminContentFields, error)
 	ListAdminContentFieldsWithFieldByRoute(types.NullableAdminRouteID) (*[]AdminContentFieldsWithFieldRow, error)
+	ListAdminContentFieldsByContentDataAndLocale(types.NullableAdminContentID, string) (*[]AdminContentFields, error)
+	ListAdminContentFieldsByRouteAndLocale(types.NullableAdminRouteID, string) (*[]AdminContentFields, error)
 	UpdateAdminContentField(context.Context, audited.AuditContext, UpdateAdminContentFieldParams) (*string, error)
 
 	// AdminContentRelations
@@ -239,6 +241,7 @@ type DbDriver interface {
 	GetContentData(types.ContentID) (*ContentData, error)
 	ListContentData() (*[]ContentData, error)
 	ListContentDataByRoute(types.NullableRouteID) (*[]ContentData, error)
+	ListContentDataByDatatypeID(types.DatatypeID) (*[]ContentData, error)
 	ListContentDataPaginated(PaginationParams) (*[]ContentData, error)
 	ListContentDataTopLevelPaginated(PaginationParams) (*[]ContentDataTopLevel, error)
 	ListContentDataTopLevelPaginatedByStatus(PaginationParams, types.ContentStatus) (*[]ContentDataTopLevel, error)
@@ -268,6 +271,9 @@ type DbDriver interface {
 	ListContentFieldsByRoutePaginated(ListContentFieldsByRoutePaginatedParams) (*[]ContentFields, error)
 	ListContentFieldsByContentDataPaginated(ListContentFieldsByContentDataPaginatedParams) (*[]ContentFields, error)
 	ListContentFieldsWithFieldByContentData(types.NullableContentID) (*[]ContentFieldWithFieldRow, error)
+	ListContentFieldsByContentDataAndLocale(types.NullableContentID, string) (*[]ContentFields, error)
+	ListContentFieldsByContentDataIDs(context.Context, []types.ContentID, string) (*[]ContentFields, error)
+	ListContentFieldsByRouteAndLocale(types.NullableRouteID, string) (*[]ContentFields, error)
 	UpdateContentField(context.Context, audited.AuditContext, UpdateContentFieldParams) (*string, error)
 
 	// ContentRelations
@@ -305,6 +311,7 @@ type DbDriver interface {
 	DeleteDatatype(context.Context, audited.AuditContext, types.DatatypeID) error
 	GetDatatype(types.DatatypeID) (*Datatypes, error)
 	GetDatatypeByType(string) (*Datatypes, error)
+	GetDatatypeByName(string) (*Datatypes, error)
 	ListDatatypes() (*[]Datatypes, error)
 	ListDatatypesRoot() (*[]Datatypes, error)
 	ListDatatypeChildren(types.DatatypeID) (*[]Datatypes, error)
@@ -480,6 +487,20 @@ type DbDriver interface {
 	UpdatePlugin(context.Context, audited.AuditContext, UpdatePluginParams) error
 	UpdatePluginStatus(context.Context, audited.AuditContext, types.PluginID, types.PluginStatus) error
 
+	// Locales
+	CountLocales() (*int64, error)
+	CreateLocale(context.Context, audited.AuditContext, CreateLocaleParams) (*Locale, error)
+	CreateLocaleTable() error
+	DeleteLocale(context.Context, audited.AuditContext, types.LocaleID) error
+	GetLocale(types.LocaleID) (*Locale, error)
+	GetLocaleByCode(string) (*Locale, error)
+	GetDefaultLocale() (*Locale, error)
+	ListLocales() (*[]Locale, error)
+	ListEnabledLocales() (*[]Locale, error)
+	ListLocalesPaginated(PaginationParams) (*[]Locale, error)
+	UpdateLocale(context.Context, audited.AuditContext, UpdateLocaleParams) error
+	ClearDefaultLocale(context.Context) error
+
 	// Pipelines
 	CountPipelines() (*int64, error)
 	CreatePipeline(context.Context, audited.AuditContext, CreatePipelineParams) (*Pipeline, error)
@@ -494,6 +515,29 @@ type DbDriver interface {
 	ListEnabledPipelines() (*[]Pipeline, error)
 	UpdatePipeline(context.Context, audited.AuditContext, UpdatePipelineParams) error
 	UpdatePipelineEnabled(context.Context, audited.AuditContext, types.PipelineID, bool) error
+
+	// Webhooks
+	CountWebhooks() (*int64, error)
+	CreateWebhook(context.Context, audited.AuditContext, CreateWebhookParams) (*Webhook, error)
+	CreateWebhookTable() error
+	DeleteWebhook(context.Context, audited.AuditContext, types.WebhookID) error
+	GetWebhook(types.WebhookID) (*Webhook, error)
+	ListWebhooks() (*[]Webhook, error)
+	ListActiveWebhooks() (*[]Webhook, error)
+	ListWebhooksPaginated(PaginationParams) (*[]Webhook, error)
+	UpdateWebhook(context.Context, audited.AuditContext, UpdateWebhookParams) error
+
+	// Webhook Deliveries
+	CountWebhookDeliveries() (*int64, error)
+	CreateWebhookDelivery(context.Context, CreateWebhookDeliveryParams) (*WebhookDelivery, error)
+	CreateWebhookDeliveryTable() error
+	DeleteWebhookDelivery(context.Context, types.WebhookDeliveryID) error
+	GetWebhookDelivery(types.WebhookDeliveryID) (*WebhookDelivery, error)
+	ListWebhookDeliveries() (*[]WebhookDelivery, error)
+	ListWebhookDeliveriesByWebhook(types.WebhookID) (*[]WebhookDelivery, error)
+	ListPendingRetries(types.Timestamp, int64) (*[]WebhookDelivery, error)
+	UpdateWebhookDeliveryStatus(context.Context, UpdateWebhookDeliveryStatusParams) error
+	PruneOldDeliveries(context.Context, types.Timestamp) error
 }
 
 // GetConnection returns the database connection and context
@@ -591,6 +635,11 @@ func (d Database) CreateAllTables() error {
 	}
 
 	err = d.CreateAdminFieldTypeTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateLocaleTable()
 	if err != nil {
 		return err
 	}
@@ -724,6 +773,17 @@ func (d Database) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 7.5: Webhook system tables (webhooks before deliveries for FK)
+	err = d.CreateWebhookTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateWebhookDeliveryTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -764,6 +824,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -1110,8 +1171,8 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       NewNullString("Default"),
-		Width:       NewNullInt64(1920),
-		Height:      NewNullInt64(1080),
+		Width:       types.NewNullableInt64(1920),
+		Height:      types.NewNullableInt64(1080),
 		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
@@ -1149,7 +1210,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
-		IssuedAt:  utility.TimestampS(),
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
@@ -1165,7 +1226,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  NewNullString(utility.TimestampS()),
+		LastAccess:  types.TimestampNow(),
 		IpAddress:   NewNullString("127.0.0.1"),
 		UserAgent:   NewNullString("bootstrap"),
 		SessionData: NullString{},
@@ -1184,7 +1245,7 @@ func (d Database) CreateBootstrapData(adminHash string) error {
 		OauthProviderUserID: "bootstrap_user",
 		AccessToken:         "bootstrap_access_token",
 		RefreshToken:        "bootstrap_refresh_token",
-		TokenExpiresAt:      utility.TimestampS(),
+		TokenExpiresAt:      types.TimestampNow(),
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
@@ -1478,6 +1539,11 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateLocaleTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 1: User management (depends on roles)
 	err = d.CreateUserTable()
 	if err != nil {
@@ -1607,6 +1673,17 @@ func (d MysqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 7.5: Webhook system tables (webhooks before deliveries for FK)
+	err = d.CreateWebhookTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateWebhookDeliveryTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -1647,6 +1724,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -1992,8 +2070,8 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       NewNullString("Default"),
-		Width:       NewNullInt64(1920),
-		Height:      NewNullInt64(1080),
+		Width:       types.NewNullableInt64(1920),
+		Height:      types.NewNullableInt64(1080),
 		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
@@ -2031,7 +2109,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
-		IssuedAt:  utility.TimestampS(),
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
@@ -2047,7 +2125,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  NewNullString(utility.TimestampS()),
+		LastAccess:  types.TimestampNow(),
 		IpAddress:   NewNullString("127.0.0.1"),
 		UserAgent:   NewNullString("bootstrap"),
 		SessionData: NullString{},
@@ -2066,7 +2144,7 @@ func (d MysqlDatabase) CreateBootstrapData(adminHash string) error {
 		OauthProviderUserID: "bootstrap_user",
 		AccessToken:         "bootstrap_access_token",
 		RefreshToken:        "bootstrap_refresh_token",
-		TokenExpiresAt:      utility.TimestampS(),
+		TokenExpiresAt:      types.TimestampNow(),
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {
@@ -2333,6 +2411,11 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	err = d.CreateLocaleTable()
+	if err != nil {
+		return err
+	}
+
 	// Tier 1: User management (depends on roles)
 	err = d.CreateUserTable()
 	if err != nil {
@@ -2462,6 +2545,17 @@ func (d PsqlDatabase) CreateAllTables() error {
 		return err
 	}
 
+	// Tier 7.5: Webhook system tables (webhooks before deliveries for FK)
+	err = d.CreateWebhookTable()
+	if err != nil {
+		return err
+	}
+
+	err = d.CreateWebhookDeliveryTable()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -2502,6 +2596,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		"field_types:read", "field_types:create", "field_types:update", "field_types:delete", "field_types:admin",
 		"admin_field_types:read", "admin_field_types:create", "admin_field_types:update", "admin_field_types:delete", "admin_field_types:admin",
 		"deploy:read", "deploy:create",
+		"webhook:create", "webhook:read", "webhook:update", "webhook:delete",
 	}
 	rbacPermissions := make(map[string]types.PermissionID, len(rbacPermissionLabels))
 	for _, label := range rbacPermissionLabels {
@@ -2847,8 +2942,8 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 	// 15. Create default media_dimension (md_id = 1) - Validation record
 	mediaDimension, err := d.CreateMediaDimension(ctx, ac, CreateMediaDimensionParams{
 		Label:       NewNullString("Default"),
-		Width:       NewNullInt64(1920),
-		Height:      NewNullInt64(1080),
+		Width:       types.NewNullableInt64(1920),
+		Height:      types.NewNullableInt64(1080),
 		AspectRatio: NewNullString("16:9"),
 	})
 	if err != nil {
@@ -2886,7 +2981,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:    types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		TokenType: "validation",
 		Token:     "bootstrap_validation_token",
-		IssuedAt:  utility.TimestampS(),
+		IssuedAt:  types.TimestampNow(),
 		ExpiresAt: types.TimestampNow(),
 		Revoked:   true,
 	})
@@ -2902,7 +2997,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		UserID:      types.NullableUserID{Valid: true, ID: systemUser.UserID},
 		DateCreated: types.TimestampNow(),
 		ExpiresAt:   types.TimestampNow(),
-		LastAccess:  NewNullString(utility.TimestampS()),
+		LastAccess:  types.TimestampNow(),
 		IpAddress:   NewNullString("127.0.0.1"),
 		UserAgent:   NewNullString("bootstrap"),
 		SessionData: NullString{},
@@ -2921,7 +3016,7 @@ func (d PsqlDatabase) CreateBootstrapData(adminHash string) error {
 		OauthProviderUserID: "bootstrap_user",
 		AccessToken:         "bootstrap_access_token",
 		RefreshToken:        "bootstrap_refresh_token",
-		TokenExpiresAt:      utility.TimestampS(),
+		TokenExpiresAt:      types.TimestampNow(),
 		DateCreated:         types.TimestampNow(),
 	})
 	if err != nil {

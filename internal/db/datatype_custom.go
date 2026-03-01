@@ -34,6 +34,39 @@ func MapDatatypeJSON(a Datatypes) DatatypeJSON {
 	}
 }
 
+// GetDatatypeByName returns the datatype matching the given name (SQLite).
+func (d Database) GetDatatypeByName(name string) (*Datatypes, error) {
+	queries := mdb.New(d.Connection)
+	row, err := queries.GetDatatypeByName(d.Context, mdb.GetDatatypeByNameParams{Name: name})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// GetDatatypeByName returns the datatype matching the given name (MySQL).
+func (d MysqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
+	queries := mdbm.New(d.Connection)
+	row, err := queries.GetDatatypeByName(d.Context, mdbm.GetDatatypeByNameParams{Name: name})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
+// GetDatatypeByName returns the datatype matching the given name (PostgreSQL).
+func (d PsqlDatabase) GetDatatypeByName(name string) (*Datatypes, error) {
+	queries := mdbp.New(d.Connection)
+	row, err := queries.GetDatatypeByName(d.Context, mdbp.GetDatatypeByNameParams{Name: name})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get datatype by name %q: %w", name, err)
+	}
+	m := d.MapDatatype(row)
+	return &m, nil
+}
+
 // GetDatatypeByType returns the first datatype matching the given type string (SQLite).
 func (d Database) GetDatatypeByType(t string) (*Datatypes, error) {
 	queries := mdb.New(d.Connection)

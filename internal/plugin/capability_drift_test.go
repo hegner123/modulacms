@@ -95,8 +95,8 @@ func TestCompareCapabilities_Mixed(t *testing.T) {
 		{Table: "media", Op: "before_create", Handler: "resize", Priority: 10},       // added
 	}
 	stored := []PluginCapability{
-		{Table: "content", Op: "before_create", Handler: "validate", Priority: 10},    // changed
-		{Table: "content", Op: "after_delete", Handler: "cleanup", Priority: 100},     // removed
+		{Table: "content", Op: "before_create", Handler: "validate", Priority: 10}, // changed
+		{Table: "content", Op: "after_delete", Handler: "cleanup", Priority: 100},  // removed
 	}
 	result := compareCapabilities(current, stored)
 	if len(result) != 3 {

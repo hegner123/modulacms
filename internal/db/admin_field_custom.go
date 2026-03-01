@@ -107,6 +107,13 @@ func MapAdminFieldJSON(a AdminFields) FieldsJSON {
 		Validation:   a.Validation,
 		UIConfig:     a.UIConfig,
 		Type:         a.Type.String(),
+		Translatable: fmt.Sprintf("%d", a.Translatable),
+		Roles: func() string {
+			if a.Roles.Valid {
+				return a.Roles.String
+			}
+			return ""
+		}(),
 		AuthorID:     a.AuthorID.String(),
 		DateCreated:  a.DateCreated.String(),
 		DateModified: a.DateModified.String(),
@@ -327,4 +334,50 @@ func (d PsqlDatabase) GetMaxAdminSortOrderByParentID(parentID types.NullableAdmi
 		return 0, fmt.Errorf("failed to get max admin sort order by parent id: %w", err)
 	}
 	return coalesceToInt64(result), nil
+}
+
+///////////////////////////////
+// LIST ADMIN FIELDS BY DATATYPE ID
+//////////////////////////////
+
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (SQLite).
+func (d Database) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdb.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdb.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (MySQL).
+func (d MysqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbm.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
+}
+
+// ListAdminFieldsByDatatypeID retrieves admin fields by their parent admin datatype ID (PostgreSQL).
+func (d PsqlDatabase) ListAdminFieldsByDatatypeID(datatypeID types.NullableAdminDatatypeID) (*[]AdminFields, error) {
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.ListAdminFieldByParentID(d.Context, mdbp.ListAdminFieldByParentIDParams{ParentID: datatypeID})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get admin fields by datatype id: %w", err)
+	}
+	res := make([]AdminFields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapAdminField(v))
+	}
+	return &res, nil
 }

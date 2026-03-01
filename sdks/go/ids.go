@@ -180,6 +180,14 @@ type BackupID string
 func (id BackupID) String() string { return string(id) }
 func (id BackupID) IsZero() bool   { return id == "" }
 
+// Locale IDs
+
+// LocaleID identifies a locale.
+type LocaleID string
+
+func (id LocaleID) String() string { return string(id) }
+func (id LocaleID) IsZero() bool   { return id == "" }
+
 // Version IDs
 
 // ContentVersionID is a ULID identifying a content version.
@@ -193,6 +201,20 @@ type AdminContentVersionID string
 
 func (id AdminContentVersionID) String() string { return string(id) }
 func (id AdminContentVersionID) IsZero() bool   { return id == "" }
+
+// Webhook IDs
+
+// WebhookID identifies a webhook.
+type WebhookID string
+
+func (id WebhookID) String() string { return string(id) }
+func (id WebhookID) IsZero() bool   { return id == "" }
+
+// WebhookDeliveryID identifies a webhook delivery.
+type WebhookDeliveryID string
+
+func (id WebhookDeliveryID) String() string { return string(id) }
+func (id WebhookDeliveryID) IsZero() bool   { return id == "" }
 
 // Value types
 

@@ -200,4 +200,3 @@ func mergeOrdered(chain []*Node, existing []*Node) []*Node {
 
 	return result
 }
-
