@@ -195,18 +195,6 @@ func apiUpdateDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		}
 	}
 
-	// Block type changes on system datatypes
-	existing, lookupErr := d.GetDatatype(updateDatatype.DatatypeID)
-	if lookupErr != nil {
-		utility.DefaultLogger.Error("", lookupErr)
-		http.Error(w, lookupErr.Error(), http.StatusNotFound)
-		return lookupErr
-	}
-	if types.IsReservedPrefix(existing.Type) && updateDatatype.Type != "" && updateDatatype.Type != existing.Type {
-		http.Error(w, "cannot change type of system datatype", http.StatusForbidden)
-		return fmt.Errorf("cannot change type of system datatype %q", existing.Type)
-	}
-
 	ac := middleware.AuditContextFromRequest(r, c)
 	_, err = d.UpdateDatatype(r.Context(), ac, updateDatatype)
 	if err != nil {
@@ -238,18 +226,6 @@ func apiDeleteDatatype(w http.ResponseWriter, r *http.Request, c config.Config) 
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
-	}
-
-	// Block deletion of system datatypes (e.g. _root, _reference)
-	existing, err := d.GetDatatype(dtID)
-	if err != nil {
-		utility.DefaultLogger.Error("", err)
-		http.Error(w, err.Error(), http.StatusNotFound)
-		return err
-	}
-	if types.IsReservedPrefix(existing.Type) {
-		http.Error(w, "cannot delete system datatype", http.StatusForbidden)
-		return fmt.Errorf("cannot delete system datatype %q", existing.Type)
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)

@@ -18,31 +18,94 @@ import (
 )
 
 // DatatypesListHandler handles GET /admin/schema/datatypes.
-// Lists all datatypes with pagination. HTMX requests receive partial table rows only.
+// Lists all datatypes with pagination, search, type filter, and sorting.
+// HTMX requests receive partial table rows only.
 func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		limit, offset := ParsePagination(r)
+		search := strings.TrimSpace(r.URL.Query().Get("search"))
+		typeFilter := r.URL.Query().Get("type")
+		sortBy := r.URL.Query().Get("sort")
 
-		items, err := driver.ListDatatypesPaginated(db.PaginationParams{Limit: limit, Offset: offset})
+		// Fetch all datatypes and filter in Go (table is small).
+		all, err := driver.ListDatatypes()
 		if err != nil {
 			utility.DefaultLogger.Error("failed to list datatypes", err)
 			http.Error(w, "Internal server error", http.StatusInternalServerError)
 			return
 		}
 
-		total, err := driver.CountDatatypes()
-		if err != nil {
-			utility.DefaultLogger.Error("failed to count datatypes", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-			return
-		}
-
+		// Apply type filter first
 		list := make([]db.Datatypes, 0)
-		if items != nil {
-			list = *items
+		if all != nil {
+			for _, dt := range *all {
+				if typeFilter != "" && dt.Type != typeFilter {
+					continue
+				}
+				list = append(list, dt)
+			}
 		}
 
-		pd := NewPaginationData(*total, limit, offset, "#datatypes-table-body", "/admin/schema/datatypes")
+		// Fuzzy search: ranked results supersede user sort (intentional —
+		// relevance order is more useful than alphabetical when searching).
+		if search != "" {
+			results := utility.FuzzyFind(search, list, func(dt db.Datatypes) []string {
+				return []string{dt.Name, dt.Label}
+			})
+			ranked := make([]db.Datatypes, len(results))
+			for i, r := range results {
+				ranked[i] = list[r.Index]
+			}
+			list = ranked
+			sortBy = ""
+		}
+
+		// Sort (skipped when fuzzy search is active)
+		switch sortBy {
+		case "name-asc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return strings.ToLower(a.Name) < strings.ToLower(b.Name) })
+		case "name-desc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return strings.ToLower(a.Name) > strings.ToLower(b.Name) })
+		case "modified-asc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return a.DateModified.Time.Before(b.DateModified.Time) })
+		case "modified-desc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return a.DateModified.Time.After(b.DateModified.Time) })
+		case "type-asc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return a.Type < b.Type })
+		case "type-desc":
+			sortDatatypes(list, func(a, b db.Datatypes) bool { return a.Type > b.Type })
+		}
+
+		// Paginate the filtered results
+		limit, offset := ParsePagination(r)
+		total := int64(len(list))
+		off := int(offset)
+		lim := int(limit)
+		if off < len(list) {
+			end := off + lim
+			if end > len(list) {
+				end = len(list)
+			}
+			list = list[off:end]
+		} else {
+			list = nil
+		}
+
+		// Collect distinct types for the filter dropdown
+		typeSet := make(map[string]bool)
+		if all != nil {
+			for _, dt := range *all {
+				if dt.Type != "" {
+					typeSet[dt.Type] = true
+				}
+			}
+		}
+		distinctTypes := make([]string, 0, len(typeSet))
+		for t := range typeSet {
+			distinctTypes = append(distinctTypes, t)
+		}
+		sortStrings(distinctTypes)
+
+		pd := NewPaginationData(total, limit, offset, "#datatypes-table-body", "/admin/schema/datatypes")
 		pg := partials.PaginationPageData{
 			Current:    pd.Current,
 			TotalPages: pd.TotalPages,
@@ -54,7 +117,7 @@ func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 		if IsNavHTMX(r) {
 			csrfToken := CSRFTokenFromContext(r.Context())
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Datatypes"}`)
-			RenderWithOOB(w, r, pages.DatatypesListContent(list, pg),
+			RenderWithOOB(w, r, pages.DatatypesListContent(list, pg, distinctTypes),
 				OOBSwap{TargetID: "admin-dialogs", Component: pages.DatatypeCreateDialog(csrfToken)})
 			return
 		}
@@ -65,7 +128,23 @@ func DatatypesListHandler(driver db.DbDriver) http.HandlerFunc {
 		}
 
 		layout := NewAdminData(r, "Datatypes")
-		Render(w, r, pages.DatatypesList(layout, list, pg))
+		Render(w, r, pages.DatatypesList(layout, list, pg, distinctTypes))
+	}
+}
+
+func sortDatatypes(s []db.Datatypes, less func(a, b db.Datatypes) bool) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && less(s[j], s[j-1]); j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
+	}
+}
+
+func sortStrings(s []string) {
+	for i := 1; i < len(s); i++ {
+		for j := i; j > 0 && s[j] < s[j-1]; j-- {
+			s[j], s[j-1] = s[j-1], s[j]
+		}
 	}
 }
 
@@ -136,8 +215,6 @@ func DatatypeCreateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		}
 		if dtype == "" {
 			errs["type"] = "Type is required"
-		} else if types.IsReservedPrefix(dtype) {
-			errs["type"] = "Type names starting with '_' are reserved for system use"
 		}
 
 		if len(errs) > 0 {
@@ -213,8 +290,6 @@ func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		}
 		if dtype == "" {
 			errs["type"] = "Type is required"
-		} else if types.IsReservedPrefix(dtype) {
-			errs["type"] = "Type names starting with '_' are reserved for system use"
 		}
 
 		if len(errs) > 0 {
@@ -227,14 +302,6 @@ func DatatypeUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 		existing, err := driver.GetDatatype(types.DatatypeID(id))
 		if err != nil {
 			http.Error(w, "Datatype not found", http.StatusNotFound)
-			return
-		}
-
-		// Block type changes on system datatypes (label changes are allowed)
-		if types.IsReservedPrefix(existing.Type) && dtype != existing.Type {
-			w.WriteHeader(http.StatusForbidden)
-			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeEditForm(id, name, label, dtype, map[string]string{"type": "Cannot change type of system datatype"}, csrfToken))
 			return
 		}
 
@@ -294,20 +361,6 @@ func DatatypeDeleteHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 			return
 		}
 
-		// Block deletion of system datatypes (e.g. _root, _reference)
-		existing, lookupErr := driver.GetDatatype(types.DatatypeID(id))
-		if lookupErr != nil {
-			utility.DefaultLogger.Error("failed to look up datatype for delete", lookupErr)
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Datatype not found", "type": "error"}}`)
-			w.WriteHeader(http.StatusNotFound)
-			return
-		}
-		if types.IsReservedPrefix(existing.Type) {
-			w.Header().Set("HX-Trigger", `{"showToast": {"message": "Cannot delete system datatype", "type": "error"}}`)
-			w.WriteHeader(http.StatusForbidden)
-			return
-		}
-
 		user := middleware.AuthenticatedUser(r.Context())
 		clientIP, _, splitErr := net.SplitHostPort(r.RemoteAddr)
 		if splitErr != nil {
@@ -352,6 +405,19 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 		name := strings.TrimSpace(r.FormValue("name"))
 		label := strings.TrimSpace(r.FormValue("label"))
 		fieldType := strings.TrimSpace(r.FormValue("type"))
+		data := strings.TrimSpace(r.FormValue("data"))
+		validationJSON := strings.TrimSpace(r.FormValue("validation"))
+		uiConfig := strings.TrimSpace(r.FormValue("ui_config"))
+
+		if data == "" {
+			data = "{}"
+		}
+		if validationJSON == "" {
+			validationJSON = "{}"
+		}
+		if uiConfig == "" {
+			uiConfig = "{}"
+		}
 
 		errs := make(map[string]string)
 		if label == "" {
@@ -363,10 +429,18 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 			errs["type"] = "Invalid field type"
 		}
 
+		// Validate the validation config JSON before persisting.
+		vc, vcErr := types.ParseValidationConfig(validationJSON)
+		if vcErr != nil {
+			errs["validation"] = vcErr.Error()
+		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
+			errs["validation"] = vcValErr.Error()
+		}
+
 		if len(errs) > 0 {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", errs, csrfToken))
+			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, errs, csrfToken))
 			return
 		}
 
@@ -385,9 +459,9 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 			Name:         name,
 			Label:        label,
 			Type:         types.FieldType(fieldType),
-			Data:         "{}",
-			Validation:   "{}",
-			UIConfig:     "{}",
+			Data:         data,
+			Validation:   validationJSON,
+			UIConfig:     uiConfig,
 			AuthorID:     types.NullableUserID{ID: user.UserID, Valid: true},
 			DateCreated:  now,
 			DateModified: now,
@@ -396,7 +470,7 @@ func DatatypeCreateFieldHandler(driver db.DbDriver, mgr *config.Manager) http.Ha
 			utility.DefaultLogger.Error("failed to create field for datatype", err)
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			csrfToken := CSRFTokenFromContext(r.Context())
-			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, "", "", "", map[string]string{"_": "Failed to create field"}, csrfToken))
+			Render(w, r, partials.DatatypeCreateFieldForm(id, name, label, fieldType, data, validationJSON, uiConfig, map[string]string{"_": "Failed to create field"}, csrfToken))
 			return
 		}
 

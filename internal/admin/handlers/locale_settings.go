@@ -18,7 +18,8 @@ import (
 )
 
 // LocaleSettingsHandler renders the locale management page.
-// Only accessible when i18n is enabled in config.
+// Always accessible so users can discover and configure i18n settings.
+// CRUD mutations remain gated behind i18n being enabled.
 func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cfg, err := mgr.Config()
@@ -28,10 +29,7 @@ func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 			return
 		}
 
-		if !cfg.I18nEnabled() {
-			http.Error(w, "i18n is not enabled", http.StatusNotFound)
-			return
-		}
+		i18nEnabled := cfg.I18nEnabled()
 
 		locales, localesErr := driver.ListLocales()
 		if localesErr != nil {
@@ -49,13 +47,13 @@ func LocaleSettingsHandler(driver db.DbDriver, mgr *config.Manager) http.Handler
 
 		if IsNavHTMX(r) {
 			w.Header().Set("HX-Trigger", `{"pageTitle": "Locale Settings"}`)
-			RenderWithOOB(w, r, pages.LocaleSettingsContent(localeList, csrfToken),
-				OOBSwap{TargetID: "admin-dialogs", Component: pages.LocaleAddDialog(localeList, csrfToken)})
+			RenderWithOOB(w, r, pages.LocaleSettingsContent(localeList, csrfToken, i18nEnabled),
+				OOBSwap{TargetID: "admin-dialogs", Component: pages.LocaleAddDialog(localeList, csrfToken, i18nEnabled)})
 			return
 		}
 
 		layout := NewAdminData(r, "Locale Settings")
-		Render(w, r, pages.LocaleSettings(layout, localeList))
+		Render(w, r, pages.LocaleSettings(layout, localeList, i18nEnabled))
 	}
 }
 

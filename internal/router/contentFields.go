@@ -9,6 +9,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/validation"
 )
 
 // ContentFieldsHandler handles CRUD operations that do not require a specific field ID.
@@ -94,6 +95,35 @@ func apiCreateContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 		return err
 	}
 
+	// Guard: FieldID must be present and valid.
+	if !newContentField.FieldID.Valid || newContentField.FieldID.ID.IsZero() {
+		http.Error(w, "field_id is required", http.StatusBadRequest)
+		return nil
+	}
+
+	// Look up field definition for validation.
+	fieldDef, fieldDefErr := d.GetField(newContentField.FieldID.ID)
+	if fieldDefErr != nil {
+		utility.DefaultLogger.Error("field not found for validation", fieldDefErr)
+		http.Error(w, "field not found", http.StatusNotFound)
+		return fieldDefErr
+	}
+
+	// Validate the submitted value.
+	fe := validation.ValidateField(validation.FieldInput{
+		FieldID:    fieldDef.FieldID,
+		Label:      fieldDef.Label,
+		FieldType:  fieldDef.Type,
+		Value:      newContentField.FieldValue,
+		Validation: fieldDef.Validation,
+		Data:       fieldDef.Data,
+	})
+	if fe != nil {
+		ve := validation.ValidationErrors{Fields: []validation.FieldError{*fe}}
+		writeValidationError(w, ve)
+		return fe
+	}
+
 	ac := middleware.AuditContextFromRequest(r, c)
 	createdContentField, err := d.CreateContentField(r.Context(), ac, newContentField)
 	if err != nil {
@@ -118,6 +148,35 @@ func apiUpdateContentField(w http.ResponseWriter, r *http.Request, c config.Conf
 		utility.DefaultLogger.Error("", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
+	}
+
+	// Guard: FieldID must be present and valid.
+	if !updateContentField.FieldID.Valid || updateContentField.FieldID.ID.IsZero() {
+		http.Error(w, "field_id is required", http.StatusBadRequest)
+		return nil
+	}
+
+	// Look up field definition for validation.
+	fieldDef, fieldDefErr := d.GetField(updateContentField.FieldID.ID)
+	if fieldDefErr != nil {
+		utility.DefaultLogger.Error("field not found for validation", fieldDefErr)
+		http.Error(w, "field not found", http.StatusNotFound)
+		return fieldDefErr
+	}
+
+	// Validate the submitted value.
+	fe := validation.ValidateField(validation.FieldInput{
+		FieldID:    fieldDef.FieldID,
+		Label:      fieldDef.Label,
+		FieldType:  fieldDef.Type,
+		Value:      updateContentField.FieldValue,
+		Validation: fieldDef.Validation,
+		Data:       fieldDef.Data,
+	})
+	if fe != nil {
+		ve := validation.ValidationErrors{Fields: []validation.FieldError{*fe}}
+		writeValidationError(w, ve)
+		return fe
 	}
 
 	ac := middleware.AuditContextFromRequest(r, c)

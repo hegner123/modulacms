@@ -82,19 +82,19 @@ func WebhookAddDialog(csrfToken string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("name", "Name", "", "A descriptive name for this webhook").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.FormField("name", "Name", "", "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("url", "URL", "", "The HTTPS endpoint to receive events").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.FormField("url", "URL", "", "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("secret", "Secret", "", "Leave blank to auto-generate").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.FormField("secret", "Secret", "", "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("events", "Events", "*", "Comma-separated list of events (e.g. content.published, content.unpublished) or * for all").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.FormField("events", "Events", "*", "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -215,14 +215,14 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-swap=\"none\">Test Webhook</button></div></div><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-swap=\"none\">Test Webhook</button> <button type=\"submit\" form=\"webhook-form\" class=\"btn btn-primary\">Save Changes</button></div></div><form id=\"webhook-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/settings/webhooks/" + wh.WebhookID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 104, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 106, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -248,7 +248,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = partials.FormField("events", "Events", strings.Join(wh.Events, ", "), "Comma-separated event names or * for all").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = partials.FormField("events", "Events", strings.Join(wh.Events, ", "), "").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -267,7 +267,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "Active</label></div><div class=\"form-actions\"><button type=\"submit\" class=\"btn btn-primary\">Save Changes</button></div></form><h2 class=\"section-title\">Recent Deliveries</h2><table class=\"table\"><thead><tr><th>Event</th><th>Status</th><th>Attempts</th><th>Last Status Code</th><th>Created</th></tr></thead> <tbody>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "Active</label></div></form><h2 class=\"section-title\">Recent Deliveries</h2><table class=\"table\"><thead><tr><th>Event</th><th>Status</th><th>Attempts</th><th>Last Status Code</th><th>Created</th></tr></thead> <tbody>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -293,7 +293,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(del.Event)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 150, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 149, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -326,7 +326,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(del.Status)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 159, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 158, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -344,7 +344,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(partials.IntToStr(int(del.Attempts)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 162, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 161, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(partials.IntToStr(int(del.LastStatusCode)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 165, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 164, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -377,7 +377,7 @@ func WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfTo
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(del.CreatedAt.String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 170, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/pages/webhooks.templ`, Line: 169, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {

@@ -19,13 +19,9 @@ templ DatatypeFieldList(datatypeID string, fields []db.Fields, csrfToken string)
             </thead>
             <tbody>
                 for _, f := range fields {
-                    <tr>
+                    <tr class="clickable-row" data-href={ "/admin/schema/fields/" + f.FieldID.String() }>
                         <td>{ f.Name }</td>
-                        <td>
-                            <a href={ templ.SafeURL("/admin/schema/fields/" + f.FieldID.String()) }>
-                                { f.Label }
-                            </a>
-                        </td>
+                        <td>{ f.Label }</td>
                         <td><span class="badge">{ f.Type.String() }</span></td>
                         <td>
                             <button class="btn btn-sm btn-danger"

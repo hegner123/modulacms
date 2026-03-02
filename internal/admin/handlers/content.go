@@ -18,6 +18,7 @@ import (
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/publishing"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/validation"
 )
 
 // clientIP extracts the client IP address from the request.
@@ -141,9 +142,9 @@ func ContentListHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		// Load datatypes for the create dialog
+		// Load root/global datatypes for the create dialog
 		var datatypes []db.Datatypes
-		dtList, dtErr := driver.ListDatatypes()
+		dtList, dtErr := driver.ListDatatypesRoot()
 		if dtErr != nil {
 			utility.DefaultLogger.Error("failed to list datatypes for content dialog", dtErr)
 		} else if dtList != nil {
@@ -212,12 +213,46 @@ const emptyEditorState = `{"blocks":{},"rootId":null}`
 // then returns the block editor state as a JSON string. Always returns valid JSON
 // so the editor can render even with zero children (allowing users to add blocks).
 func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.ContentID, roleID string, isAdmin bool) string {
-	descendants, descErr := driver.GetContentDataDescendants(ctx, contentID)
-	if descErr != nil || descendants == nil || len(*descendants) <= 1 {
+	log := utility.DefaultLogger
+
+	// Look up the content node to get its route_id, then load all
+	// content_data rows sharing that route. This is simpler and more
+	// reliable than walking parent_id with a recursive CTE.
+	content, contentErr := driver.GetContentData(contentID)
+	if contentErr != nil {
+		log.Debug("buildTreeJSON: failed to get content node", "contentID", contentID, "err", contentErr)
 		return emptyEditorState
 	}
 
-	nodes := *descendants
+	// Load child blocks: use route_id query for routed content,
+	// fall back to recursive parent_id walk for globals/unrouted content.
+	var nodes []db.ContentData
+	if content.RouteID.Valid {
+		all, listErr := driver.ListContentDataByRoute(content.RouteID)
+		if listErr != nil {
+			log.Debug("buildTreeJSON: ListContentDataByRoute failed", "routeID", content.RouteID.ID, "err", listErr)
+			return emptyEditorState
+		}
+		if all != nil {
+			nodes = *all
+		}
+	} else {
+		desc, descErr := driver.GetContentDataDescendants(ctx, contentID)
+		if descErr != nil {
+			log.Debug("buildTreeJSON: GetContentDataDescendants failed", "contentID", contentID, "err", descErr)
+			return emptyEditorState
+		}
+		if desc != nil {
+			nodes = *desc
+		}
+	}
+
+	if len(nodes) <= 1 {
+		log.Info("buildTreeJSON: no child blocks found", "contentID", contentID, "totalRows", len(nodes))
+		return emptyEditorState
+	}
+
+	log.Info("buildTreeJSON: found content_data rows", "contentID", contentID, "totalRows", len(nodes))
 
 	// Build datatype label cache
 	dtLabels := make(map[string]string)
@@ -294,9 +329,17 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 		if fields == nil {
 			fields = []blockFieldData{}
 		}
+		// Root-level blocks have parentId pointing to the content node in the DB,
+		// but the content node isn't in the editor's blocks map. Clear parentId
+		// for root-level blocks so the JS validator doesn't reject them.
+		parentID := nullableIDStr(node.ParentID)
+		if parentID == contentID.String() {
+			parentID = ""
+		}
+
 		blocks = append(blocks, blockNode{
 			ID:            nodeIDStr,
-			ParentID:      nullableIDStr(node.ParentID),
+			ParentID:      parentID,
 			FirstChildID:  nullableIDStr(node.FirstChildID),
 			NextSiblingID: nullableIDStr(node.NextSiblingID),
 			PrevSiblingID: nullableIDStr(node.PrevSiblingID),
@@ -313,8 +356,12 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 	}
 
 	if len(blocks) == 0 {
+		log.Info("buildTreeJSON: all rows were the content node itself, no child blocks")
 		return emptyEditorState
 	}
+
+	log.Info("buildTreeJSON: built block nodes", "blockCount", len(blocks))
+
 
 	// Build editor state: blocks map + rootId (first child of current node)
 	type editorState struct {
@@ -327,15 +374,25 @@ func buildTreeJSON(ctx context.Context, driver db.DbDriver, contentID types.Cont
 	}
 	for _, b := range blocks {
 		state.Blocks[b.ID] = b
-		// Root block = direct child of the content node being edited
-		if b.ParentID == contentID.String() && b.PrevSiblingID == "" {
+		// Root block = no parent (cleared above) and no previous sibling
+		if b.ParentID == "" && b.PrevSiblingID == "" {
 			state.RootID = b.ID
 		}
 	}
 
+	if state.RootID == "" {
+		log.Debug("buildTreeJSON: no root block found (no block with parentId=contentID and prevSiblingId=empty)",
+			"contentID", contentID, "blockCount", len(blocks))
+		for _, b := range blocks {
+			log.Info("buildTreeJSON: block", "id", b.ID, "parentId", b.ParentID, "prevSiblingId", b.PrevSiblingID)
+		}
+	} else {
+		log.Info("buildTreeJSON: tree assembled", "rootId", state.RootID, "blockCount", len(blocks))
+	}
+
 	data, marshalErr := json.Marshal(state)
 	if marshalErr != nil {
-		utility.DefaultLogger.Error("failed to marshal tree JSON", marshalErr)
+		log.Debug("buildTreeJSON: failed to marshal tree JSON", "err", marshalErr)
 		return emptyEditorState
 	}
 	return string(data)
@@ -1123,6 +1180,14 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 			return
 		}
 
+		log := utility.DefaultLogger
+		log.Info("tree-save: request received",
+			"contentID", req.ContentID,
+			"creates", len(req.Creates),
+			"updates", len(req.Updates),
+			"deletes", len(req.Deletes),
+			"fieldUpdates", len(req.FieldUpdates))
+
 		if req.ContentID == "" {
 			http.Error(w, "content_id required", http.StatusBadRequest)
 			return
@@ -1215,6 +1280,11 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 			idMap[cr.ClientID] = serverID.String()
 			created = append(created, createdNode{clientID: cr.ClientID, serverID: serverID, create: cr})
 			resp.Created++
+			log.Info("tree-save: created block",
+				"clientID", cr.ClientID,
+				"serverID", serverID,
+				"datatypeID", cr.DatatypeID,
+				"parentID", cr.ParentID)
 		}
 
 		if len(idMap) > 0 {
@@ -1222,6 +1292,8 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 		}
 
 		// --- Phase 1b: Update newly created rows with remapped pointers ---
+		contentParentID := types.NullableContentID{ID: types.ContentID(req.ContentID), Valid: true}
+
 		for _, cn := range created {
 			parentID, parseErr := parseNullableID(remapPtr(cn.create.ParentID, idMap))
 			if parseErr != nil {
@@ -1244,10 +1316,20 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 				continue
 			}
 
-			// Skip update if all pointers are NULL (nothing to set).
-			if !parentID.Valid && !firstChildID.Valid && !nextSiblingID.Valid && !prevSiblingID.Valid {
-				continue
+			// Root-level blocks in the editor have null parentId; anchor them
+			// to the content node so they can be found by route query.
+			if !parentID.Valid {
+				parentID = contentParentID
+				log.Info("tree-save: anchoring root-level block to content node",
+					"blockID", cn.serverID, "contentID", req.ContentID)
 			}
+
+			log.Info("tree-save: updating pointers",
+				"blockID", cn.serverID,
+				"parentID", parentID,
+				"firstChildID", firstChildID,
+				"nextSiblingID", nextSiblingID,
+				"prevSiblingID", prevSiblingID)
 
 			existing, getErr := driver.GetContentData(cn.serverID)
 			if getErr != nil {
@@ -1324,6 +1406,12 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 				continue
 			}
 
+			// Root-level blocks in the editor have null parentId; anchor them
+			// to the content node so GetContentDataDescendants can find them.
+			if !parentID.Valid {
+				parentID = contentParentID
+			}
+
 			_, updateErr := driver.UpdateContentData(ctx, ac, db.UpdateContentDataParams{
 				ContentDataID: existing.ContentDataID,
 				ParentID:      parentID,
@@ -1363,6 +1451,7 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 					guardFieldID = existingCF.FieldID.ID.String()
 				}
 			}
+			var resolvedFieldDef *db.Fields
 			if guardFieldID != "" {
 				fieldDef, fieldErr := driver.GetField(types.FieldID(guardFieldID))
 				if fieldErr != nil {
@@ -1373,6 +1462,23 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 				if !db.IsFieldAccessible(*fieldDef, saveRoleID, saveIsAdmin) {
 					utility.DefaultLogger.Warn("tree-save: field role access denied, skipping update",
 						fmt.Errorf("role %s denied for field %s", saveRoleID, guardFieldID))
+					continue
+				}
+				resolvedFieldDef = fieldDef
+			}
+
+			// Validate field value against the field definition rules.
+			if resolvedFieldDef != nil {
+				fe := validation.ValidateField(validation.FieldInput{
+					FieldID:    resolvedFieldDef.FieldID,
+					Label:      resolvedFieldDef.Label,
+					FieldType:  resolvedFieldDef.Type,
+					Value:      fu.Value,
+					Validation: resolvedFieldDef.Validation,
+					Data:       resolvedFieldDef.Data,
+				})
+				if fe != nil {
+					resp.Errors = append(resp.Errors, fe.Error())
 					continue
 				}
 			}
@@ -1418,6 +1524,19 @@ func ContentTreeSaveHandler(driver db.DbDriver, mgr *config.Manager) http.Handle
 				}
 			}
 			resp.FieldsUpdated++
+		}
+
+		log.Info("tree-save: complete",
+			"created", resp.Created,
+			"updated", resp.Updated,
+			"deleted", resp.Deleted,
+			"fieldsUpdated", resp.FieldsUpdated,
+			"errors", len(resp.Errors),
+			"idMapSize", len(resp.IDMap))
+		if len(resp.Errors) > 0 {
+			for _, e := range resp.Errors {
+				log.Debug("tree-save: error", "detail", e)
+			}
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -1631,7 +1750,6 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 		}
 
 		contentID := types.ContentID(id)
-		label := r.FormValue("label")
 		locale := r.URL.Query().Get("locale")
 
 		// Build snapshot from live tables
@@ -1666,6 +1784,8 @@ func ContentCreateVersionHandler(driver db.DbDriver, mgr *config.Manager) http.H
 			clientIP(r),
 		)
 		now := types.TimestampNow()
+
+		label := fmt.Sprintf("v%d-%s", maxVersion+1, id[:8])
 
 		_, createErr := driver.CreateContentVersion(r.Context(), ac, db.CreateContentVersionParams{
 			ContentDataID: contentID,

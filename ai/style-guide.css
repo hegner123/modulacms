@@ -1,0 +1,967 @@
+/* ============================================================
+ * STYLE GUIDE -- ModulaCMS Admin Panel
+ * Generated from existing CSS audit of internal/admin/static/css/admin.css
+ * Date: 2026-03-01
+ *
+ * This file documents the design token system extracted from the
+ * existing admin panel CSS. It is a reference and migration target,
+ * not a replacement stylesheet. The tokens defined here should be
+ * adopted incrementally into admin.css.
+ *
+ * The block editor (lines 2561-3058 in admin.css) maintains its own
+ * scoped token system under the `block-editor` custom element and is
+ * intentionally excluded from this guide. It uses a Catppuccin-based
+ * palette that is visually distinct from the admin shell.
+ *
+ * Table of Contents:
+ *   1. Color Tokens
+ *   2. Typography Tokens
+ *   3. Spacing Scale
+ *   4. Border & Radius
+ *   5. Shadows & Elevation
+ *   6. Z-Index Scale
+ *   7. Transitions & Animation
+ *   8. Containers & Layout
+ *   9. Semantic Aliases
+ *  10. Focus & Interactive States
+ *  11. Button Primitives
+ *  12. Typography Classes
+ *  13. Surface & Card Classes
+ *  14. Badge & Label Classes
+ *  15. Form Primitives
+ * ============================================================ */
+
+
+/* ============================================================
+ * 1. COLOR TOKENS
+ *
+ * The existing admin.css already defines a solid set of color
+ * custom properties on :root (dark theme) and html.light (light
+ * theme). Those variables are preserved exactly as-is. This
+ * section adds the missing palette shades needed for badge
+ * backgrounds, focus rings, and transparent overlays that are
+ * currently hardcoded as rgba() values throughout the file.
+ *
+ * Naming: --color-{category}-{shade} for raw palette values.
+ * Semantic aliases in Section 9 map these to roles.
+ *
+ * EXISTING variables carried forward (do NOT redefine):
+ *   --color-bg           #0a0a0a / #ffffff
+ *   --color-surface       #141414 / #f4f4f5
+ *   --color-surface-hover #1a1a1a / #e4e4e7
+ *   --color-border        #262626 / #d4d4d8
+ *   --color-text          #fafafa / #18181b
+ *   --color-text-muted    #a1a1aa / #52525b
+ *   --color-text-dim      #71717a / #a1a1aa
+ *   --color-primary       #3b82f6
+ *   --color-primary-hover #2563eb
+ *   --color-danger         #ef4444
+ *   --color-danger-hover   #dc2626
+ *   --color-success        #22c55e
+ *   --color-warning        #f59e0b
+ *   --color-info           #3b82f6
+ * ============================================================ */
+:root {
+  /* --- Primary palette (blue-500 / blue-600 already exist) --- */
+  --color-primary-50:  rgba(59, 130, 246, 0.08);  /* was: rgba(59,130,246,0.08) in .roles-sidebar-item.active */
+  --color-primary-100: rgba(59, 130, 246, 0.1);   /* was: rgba(59,130,246,0.1) in .sidebar-link.active, .badge-info, .tree-node.active */
+  --color-primary-150: rgba(59, 130, 246, 0.15);  /* was: rgba(59,130,246,0.15) in .tree-node.drop-target */
+  --color-primary-200: rgba(59, 130, 246, 0.2);   /* was: rgba(59,130,246,0.2) in focus rings */
+  --color-primary-300: rgba(59, 130, 246, 0.3);   /* was: rgba(59,130,246,0.3) in .badge-info border, .media-picker-item.selected */
+
+  /* --- Success palette (green) --- */
+  --color-success-100: rgba(34, 197, 94, 0.1);    /* was: rgba(34,197,94,0.1) in .badge-published, .badge-success */
+  --color-success-300: rgba(34, 197, 94, 0.3);    /* was: rgba(34,197,94,0.3) in badge borders */
+  --color-success-hover: #16a34a;                  /* was: #16a34a in .btn-success:hover (hardcoded) */
+
+  /* --- Danger palette (red) --- */
+  --color-danger-50:  rgba(239, 68, 68, 0.05);    /* was: rgba(239,68,68,0.05) in .perm-matrix-admin */
+  --color-danger-100: rgba(239, 68, 68, 0.1);     /* was: rgba(239,68,68,0.1) in .badge-danger, .alert-error */
+  --color-danger-150: rgba(239, 68, 68, 0.15);    /* was: rgba(239,68,68,0.15) in .perm-matrix-admin border */
+  --color-danger-300: rgba(239, 68, 68, 0.3);     /* was: rgba(239,68,68,0.3) in badge/alert borders */
+
+  /* --- Warning palette (amber) --- */
+  --color-warning-100: rgba(245, 158, 11, 0.1);   /* was: rgba(245,158,11,0.1) in .badge-draft */
+  --color-warning-300: rgba(245, 158, 11, 0.3);   /* was: rgba(245,158,11,0.3) in .badge-draft border */
+
+  /* --- Neutral palette (for muted badge) --- */
+  --color-neutral-100: rgba(161, 161, 170, 0.1);  /* was: rgba(161,161,170,0.1) in .badge-archived */
+
+  /* --- Overlay / backdrop --- */
+  --color-overlay: rgba(0, 0, 0, 0.6);            /* was: rgba(0,0,0,0.6) in dialog/media-picker/shortcuts backdrops */
+  --color-overlay-light: rgba(0, 0, 0, 0.5);      /* was: rgba(0,0,0,0.5) in .sidebar-overlay, block-editor backdrop */
+}
+
+
+/* ============================================================
+ * 2. TYPOGRAPHY TOKENS
+ *
+ * Font sizes found in admin.css (excluding block editor):
+ *   14px (base), 0.625rem, 0.6875rem, 0.75rem, 0.8125rem,
+ *   0.875rem, 1rem, 1.1rem, 1.125rem, 1.25rem, 1.5rem, 2.5rem
+ *
+ * Consolidated into a 10-step scale. The 1.1rem value (used once
+ * on .content-editor-panel-header h2) is drift from 1.125rem and
+ * is noted in Migration Notes.
+ *
+ * EXISTING variables carried forward:
+ *   --font-sans   (system font stack)
+ *   --font-mono   (monospace stack)
+ *
+ * Font weights used: 400 (normal), 500 (medium), 600 (semibold),
+ * 700 (bold). These four are intentional and distinct.
+ *
+ * Line heights used: 1 (icons/buttons), 1.2 (compact), 1.25
+ * (buttons), 1.5 (body), 1.6 (prose). All intentional.
+ *
+ * Letter spacing used: 0.05em (uppercase labels), 0.03em (block
+ * editor badges), -0.01em (headings). All intentional.
+ * ============================================================ */
+:root {
+  /* --- Type Scale --- */
+  --font-size-2xs:  0.625rem;   /* 10px -- file ext labels */
+  --font-size-xs:   0.6875rem;  /* 11px -- perm-matrix headers, locale badge */
+  --font-size-sm:   0.75rem;    /* 12px -- table headers, badges, meta text */
+  --font-size-md:   0.8125rem;  /* 13px -- btn-sm, field-error, field-hint */
+  --font-size-base: 0.875rem;   /* 14px -- body text, form inputs, buttons */
+  --font-size-lg:   1rem;       /* 16px -- section legends, theme toggle */
+  --font-size-xl:   1.125rem;   /* 18px -- section headings, dialog titles */
+  --font-size-2xl:  1.25rem;    /* 20px -- auth h2, role-detail h2 */
+  --font-size-3xl:  1.5rem;     /* 24px -- page h1, auth brand h1 */
+  --font-size-4xl:  2.5rem;     /* 40px -- media file icon (decorative) */
+
+  /* --- Font Weights --- */
+  --font-weight-normal:   400;  /* default body text */
+  --font-weight-medium:   500;  /* buttons, nav links, active states */
+  --font-weight-semibold: 600;  /* headings, labels, table headers */
+  --font-weight-bold:     700;  /* brand title, file ext, richtext bold */
+
+  /* --- Line Heights --- */
+  --line-height-none:    1;     /* icons, close buttons, single-line elements */
+  --line-height-tight:   1.2;   /* topbar-user compact */
+  --line-height-snug:    1.25;  /* buttons */
+  --line-height-normal:  1.5;   /* body text (default) */
+  --line-height-relaxed: 1.6;   /* prose / richtext preview, dialog body */
+
+  /* --- Letter Spacing --- */
+  --letter-spacing-tight:   -0.01em;  /* headings */
+  --letter-spacing-normal:  0;        /* body text */
+  --letter-spacing-wide:    0.03em;   /* block editor badges */
+  --letter-spacing-wider:   0.05em;   /* uppercase table headers, labels */
+}
+
+
+/* ============================================================
+ * 3. SPACING SCALE
+ *
+ * Agreed-upon scale (provided by project owner):
+ *   --space-1: 0.25rem   (4px)
+ *   --space-2: 0.5rem    (8px)
+ *   --space-3: 0.75rem   (12px)
+ *   --space-4: 1rem      (16px)
+ *   --space-5: 1.5rem    (24px)
+ *   --space-6: 2.5rem    (40px)
+ *   --space-7: 4rem      (64px)
+ *
+ * Raw spacing values found in admin.css mapped to this scale:
+ *
+ *   0.125rem (2px)   -- badge padding-y, file-input-info gap
+ *                       Does not fit scale. See Migration Notes.
+ *   0.25rem  (4px)   -> --space-1
+ *   0.375rem (6px)   -- form-field gap, theme-toggle padding, etc.
+ *                       Does not fit scale. See Migration Notes.
+ *   0.5rem   (8px)   -> --space-2
+ *   0.625rem (10px)  -- roles-sidebar-item padding
+ *                       Does not fit scale. See Migration Notes.
+ *   0.75rem  (12px)  -> --space-3
+ *   1rem     (16px)  -> --space-4
+ *   1.25rem  (20px)  -- dialog title/actions padding, tree indent
+ *                       Does not fit scale. See Migration Notes.
+ *   1.5rem   (24px)  -> --space-5
+ *   2rem     (32px)  -> between --space-5 and --space-6, used for
+ *                       topbar/content padding, auth card padding.
+ *                       See Migration Notes.
+ *   2.5rem   (40px)  -> --space-6
+ *   3rem     (48px)  -> between --space-6 and --space-7, used for
+ *                       empty-state padding, media-detail-file.
+ *                       See Migration Notes.
+ *   4rem     (64px)  -> --space-7
+ *
+ * The block editor already uses --sp-1 through --sp-8 internally.
+ * Those are scoped to block-editor and do not conflict.
+ * ============================================================ */
+:root {
+  --space-1: 0.25rem;   /* 4px  */
+  --space-2: 0.5rem;    /* 8px  */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2.5rem;    /* 40px */
+  --space-7: 4rem;      /* 64px */
+}
+
+
+/* ============================================================
+ * 4. BORDER & RADIUS
+ *
+ * EXISTING variables carried forward:
+ *   --radius     0.5rem   (8px)  -- default for buttons, inputs, cards
+ *   --radius-sm  0.25rem  (4px)  -- tree labels, shortcut keys, file thumbs
+ *   --radius-lg  0.75rem  (12px) -- auth card, detail sections, dialogs
+ *
+ * Additional radius values found:
+ *   9999px   -- badge (pill shape)
+ *   50%      -- spinner, tree-drop-indicator dots
+ *   1px, 2px -- drop indicators, text-line skeletons (cosmetic)
+ *
+ * Adding --radius-full for the pill/circle use case.
+ *
+ * Border widths used: 1px (standard), 2px (dashed borders on
+ * dropzones and media-picker items), 3px (toast left border,
+ * roles sidebar active indicator). All intentional and distinct.
+ * ============================================================ */
+:root {
+  /* --radius-sm, --radius, --radius-lg already defined in admin.css */
+  --radius-full: 9999px;  /* was: 9999px in .badge */
+
+  /* --- Border Widths --- */
+  --border-width:       1px;  /* standard borders */
+  --border-width-thick: 2px;  /* dropzone dashed, media-picker items */
+  --border-width-accent: 3px; /* toast left accent, roles sidebar active */
+}
+
+
+/* ============================================================
+ * 5. SHADOWS & ELEVATION
+ *
+ * Three distinct shadow levels found:
+ *
+ *   Level 1 (sm):  0 2px 8px rgba(0,0,0,0.3)
+ *                  Used: block-editor hover toolbar
+ *
+ *   Level 2 (md):  0 4px 12px rgba(0,0,0,0.3)
+ *                  Used: toast notifications
+ *
+ *   Level 3 (lg):  0 8px 32px rgba(0,0,0,0.4)
+ *                  Used: dialogs, media picker, shortcuts panel
+ *
+ * Focus ring shadow: 0 0 0 2px rgba(59,130,246,0.2)
+ *   Used on all focused inputs, dropzones, media-picker items.
+ *   This is an interactive state, not an elevation -- see Section 10.
+ * ============================================================ */
+:root {
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);   /* was: toolbar shadow */
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);   /* was: toast shadow */
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);   /* was: dialog/panel shadow */
+}
+
+
+/* ============================================================
+ * 6. Z-INDEX SCALE
+ *
+ * Current z-index values are scattered and inconsistently ordered.
+ * Several values are very high (99999, 99998, 10000, 9999) which
+ * makes it difficult to layer new components.
+ *
+ * Proposed named scale that preserves the existing stacking order:
+ *
+ *   --z-tree-indicator:  10   (was: 100 on .tree-drop-indicator)
+ *   --z-sidebar-overlay: 50   (was: 99 on .sidebar-overlay)
+ *   --z-sidebar:         60   (was: 100 on mobile .sidebar)
+ *   --z-dialog:          100  (was: 9000 on .dialog-backdrop)
+ *   --z-media-picker:    110  (was: 9500 on .media-picker-backdrop)
+ *   --z-toast:           120  (was: 10000 on .toast-container)
+ *   --z-loading-bar:     130  (was: 99999 on .loading-bar)
+ *   --z-shortcuts:       125  (was: 99998 on .shortcuts-overlay)
+ *   --z-login-overlay:   200  (was: 9999 on .login-loading)
+ *
+ * The numeric values above are suggestions. The important thing
+ * is the relative ordering, which matches the current behavior.
+ * ============================================================ */
+:root {
+  --z-tree-indicator:  10;
+  --z-block-toolbar:   20;    /* was: 50 on block-editor .block-hover-toolbar */
+  --z-sidebar-overlay: 50;    /* was: 99 on .sidebar-overlay */
+  --z-sidebar:         60;    /* was: 100 on mobile .sidebar */
+  --z-dialog:          100;   /* was: 9000 on .dialog-backdrop */
+  --z-media-picker:    110;   /* was: 9500 on .media-picker-backdrop */
+  --z-toast:           120;   /* was: 10000 on .toast-container */
+  --z-shortcuts:       125;   /* was: 99998 on .shortcuts-overlay */
+  --z-loading-bar:     130;   /* was: 99999 on .loading-bar */
+  --z-login-overlay:   200;   /* was: 9999 on .login-loading */
+}
+
+
+/* ============================================================
+ * 7. TRANSITIONS & ANIMATION
+ *
+ * EXISTING variable carried forward:
+ *   --transition: 150ms ease
+ *
+ * Additional transition durations found:
+ *   100ms  -- loading-bar completion
+ *   200ms  -- HTMX swap/settle, sidebar slide, opacity transitions
+ *   300ms  -- loading-bar progress
+ *   600ms  -- spinner rotation
+ *
+ * The block editor uses inline 0.15s (same as 150ms) and 0.2s
+ * (same as 200ms) values -- these map to the same tokens.
+ *
+ * Named animation durations:
+ * ============================================================ */
+:root {
+  /* --transition already defined as 150ms ease */
+  --transition-fast:   100ms ease;  /* was: 100ms on loading-bar.done */
+  --transition-normal: 150ms ease;  /* same as --transition */
+  --transition-slow:   200ms ease;  /* was: 200ms on HTMX swap/settle, sidebar slide */
+  --transition-slower:  300ms ease; /* was: 300ms on loading-bar progress */
+  --duration-spinner:  600ms;       /* was: 600ms on spinner animation */
+}
+
+
+/* ============================================================
+ * 8. CONTAINERS & LAYOUT
+ *
+ * EXISTING variables carried forward:
+ *   --sidebar-width:  10rem  (160px)
+ *   --topbar-height:  3.5rem (56px)
+ *
+ * Max-width values used for containers/panels:
+ *   20rem   (320px)  -- search input
+ *   24rem   (384px)  -- auth card, toast container
+ *   28rem   (448px)  -- dialog panel
+ *   32rem   (512px)  -- shortcuts panel
+ *   48rem   (768px)  -- settings form, media picker panel
+ *
+ * Fixed layout widths:
+ *   14rem   (224px)  -- roles sidebar
+ *   16rem   (256px)  -- content tree sidebar column
+ *   18rem   (288px)  -- detail grid sidebar column
+ *   20rem   (320px)  -- media detail sidebar column
+ *
+ * Breakpoints:
+ *   480px   -- small mobile
+ *   768px   -- tablet / mobile
+ *   1024px  -- content editor panel collapse
+ * ============================================================ */
+:root {
+  /* --sidebar-width and --topbar-height already in admin.css */
+
+  /* --- Container Max-Widths --- */
+  --container-xs:  20rem;  /* 320px -- search input */
+  --container-sm:  24rem;  /* 384px -- auth card, toasts */
+  --container-md:  28rem;  /* 448px -- dialogs */
+  --container-lg:  32rem;  /* 512px -- shortcuts panel */
+  --container-xl:  48rem;  /* 768px -- settings form, media picker */
+
+  /* --- Breakpoints (for documentation; CSS cannot use vars in @media) --- */
+  /* --bp-sm:  480px  */
+  /* --bp-md:  768px  */
+  /* --bp-lg:  1024px */
+}
+
+
+/* ============================================================
+ * 9. SEMANTIC ALIASES
+ *
+ * These map raw tokens to UI roles. When consuming tokens in
+ * component CSS, prefer semantic names over raw palette values.
+ *
+ * Several of these duplicate existing --color-* variables. That
+ * is intentional -- the semantic layer allows future re-theming
+ * without touching component CSS.
+ * ============================================================ */
+:root {
+  /* --- Text --- */
+  --text-primary:    var(--color-text);
+  --text-secondary:  var(--color-text-muted);
+  --text-tertiary:   var(--color-text-dim);
+
+  /* --- Surfaces --- */
+  --bg-page:     var(--color-bg);
+  --bg-surface:  var(--color-surface);
+  --bg-elevated: var(--color-surface);  /* same as surface; dialogs differentiated by shadow */
+  --bg-hover:    var(--color-surface-hover);
+
+  /* --- Borders --- */
+  --border-default: var(--color-border);
+
+  /* --- Accent / Brand --- */
+  --accent:       var(--color-primary);
+  --accent-hover: var(--color-primary-hover);
+
+  /* --- Status --- */
+  --status-danger:  var(--color-danger);
+  --status-success: var(--color-success);
+  --status-warning: var(--color-warning);
+  --status-info:    var(--color-info);
+
+  /* --- Focus Ring --- */
+  --focus-ring-color:  var(--color-primary-200);
+  --focus-ring-width:  2px;
+  --focus-ring-shadow: 0 0 0 var(--focus-ring-width) var(--focus-ring-color);
+
+  /* --- Overlay --- */
+  --backdrop: var(--color-overlay);
+}
+
+
+/* ============================================================
+ * 10. FOCUS & INTERACTIVE STATES
+ *
+ * All focusable inputs currently use the same pattern:
+ *   outline: none;
+ *   border-color: var(--color-primary);
+ *   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+ *
+ * This class extracts that pattern into a reusable utility.
+ * ============================================================ */
+
+/*
+ * Apply .focusable to any input-like element, or use
+ * the token --focus-ring-shadow directly.
+ *
+ * Example:
+ *   .my-input:focus {
+ *     outline: none;
+ *     border-color: var(--accent);
+ *     box-shadow: var(--focus-ring-shadow);
+ *   }
+ */
+.focusable:focus,
+.focusable:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: var(--focus-ring-shadow);
+}
+
+
+/* ============================================================
+ * 11. BUTTON PRIMITIVES
+ *
+ * These classes already exist in admin.css and are documented here
+ * for reference. No changes needed to the existing button system
+ * except where noted.
+ *
+ * Existing classes:
+ *   .btn          -- base (display, cursor, font, border, padding, transition)
+ *   .btn-primary  -- blue fill
+ *   .btn-danger   -- red fill
+ *   .btn-success  -- green fill (hover uses hardcoded #16a34a)
+ *   .btn-ghost    -- transparent background
+ *   .btn-sm       -- smaller padding/font
+ *   .btn-full     -- width: 100%
+ *
+ * MISSING (recommended additions):
+ *   .btn-secondary -- explicit secondary style (currently .btn IS secondary)
+ *   .btn-lg        -- larger variant for hero actions
+ *   .btn:disabled  -- disabled state (not currently styled globally)
+ * ============================================================ */
+
+/* Secondary is just the base .btn -- alias for clarity */
+.btn-secondary {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  background: var(--color-surface-hover);
+}
+
+/* Large button variant */
+.btn-lg {
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--font-size-base);
+}
+
+/* Disabled state for all buttons */
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+
+/* ============================================================
+ * 12. TYPOGRAPHY CLASSES
+ *
+ * Utility classes for applying the type scale. These use the
+ * tokens from Section 2 and should be preferred over raw
+ * font-size values in component CSS.
+ * ============================================================ */
+
+/* --- Size classes --- */
+.text-2xs  { font-size: var(--font-size-2xs); }
+.text-xs   { font-size: var(--font-size-xs); }
+.text-sm   { font-size: var(--font-size-sm); }
+.text-md   { font-size: var(--font-size-md); }
+.text-base { font-size: var(--font-size-base); }
+.text-lg   { font-size: var(--font-size-lg); }
+.text-xl   { font-size: var(--font-size-xl); }
+.text-2xl  { font-size: var(--font-size-2xl); }
+.text-3xl  { font-size: var(--font-size-3xl); }
+.text-4xl  { font-size: var(--font-size-4xl); }
+
+/* --- Weight classes --- */
+.font-normal   { font-weight: var(--font-weight-normal); }
+.font-medium   { font-weight: var(--font-weight-medium); }
+.font-semibold { font-weight: var(--font-weight-semibold); }
+.font-bold     { font-weight: var(--font-weight-bold); }
+
+/* --- Semantic text colors --- */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-tertiary); }
+.text-accent    { color: var(--accent); }
+.text-danger    { color: var(--status-danger); }
+.text-success   { color: var(--status-success); }
+.text-warning   { color: var(--status-warning); }
+
+/* --- Heading base style --- */
+.heading {
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  letter-spacing: var(--letter-spacing-tight);
+}
+
+/* --- Uppercase label (used on table headers, badges, etc.) --- */
+.label-uppercase {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wider);
+  color: var(--text-secondary);
+}
+
+/* --- Prose / body text --- */
+.prose {
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-relaxed);
+  color: var(--text-secondary);
+}
+
+/* --- Monospace --- */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+
+/* ============================================================
+ * 13. SURFACE & CARD CLASSES
+ *
+ * Existing card-like patterns in admin.css:
+ *   .detail-card          -- surface + border + radius-lg + padding 1.5rem
+ *   .detail-section       -- same as detail-card (duplicated)
+ *   .detail-section-full  -- same as detail-card (duplicated)
+ *   .dashboard-card       -- surface + border + radius (not lg) + padding 1.5rem
+ *   .sidebar-section      -- surface + border + radius-lg + padding 1rem
+ *   .auth-card            -- surface + border + radius-lg + padding 2rem
+ *   .role-card            -- surface + border + radius + padding 1rem
+ *
+ * These all share the same pattern: surface bg + border + radius + padding.
+ * The only differences are radius size (--radius vs --radius-lg) and
+ * padding amount. A generic .card class captures the common pattern.
+ * ============================================================ */
+
+/* Generic card surface */
+.card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+}
+
+.card-sm {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+}
+
+/* Divider utility */
+.divider {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-4) 0;
+}
+
+
+/* ============================================================
+ * 14. BADGE & LABEL CLASSES
+ *
+ * The existing badge system is well-structured. This section
+ * documents it and adds the token-based color references.
+ *
+ * Existing classes:
+ *   .badge           -- base pill (border + radius-full + small text)
+ *   .badge-published -- green (alias: .badge-active, .badge-success)
+ *   .badge-draft     -- amber/warning
+ *   .badge-archived  -- neutral/muted
+ *   .badge-info      -- blue/primary
+ *   .badge-danger    -- red
+ *
+ * Note: .badge-published is redefined on line 3209-3212 with a
+ * solid green background and white text, conflicting with the
+ * transparent variant on lines 570-575. This is a bug -- the
+ * later rule wins and overrides the earlier one. See Migration Notes.
+ * ============================================================ */
+
+/* No new classes needed. Badge system is complete.
+ * See Migration Notes for the .badge-published conflict. */
+
+
+/* ============================================================
+ * 15. FORM PRIMITIVES
+ *
+ * The existing form system is functional. This section documents
+ * the patterns for reference.
+ *
+ * Existing classes:
+ *   .form-field        -- flex column container with label gap
+ *   .form-field label  -- styled label
+ *   .form-field input/select/textarea -- styled controls
+ *   .form-field.has-error -- danger border on controls
+ *   .field-error       -- error message text
+ *   .field-hint        -- hint text below fields
+ *   .form-control      -- standalone styled input (same as form-field input)
+ *   .form-stack        -- vertical form layout (gap 1rem)
+ *   .form-inline       -- horizontal form layout (gap 0.75rem)
+ *   .form-actions      -- button row at bottom of forms
+ *   .form-error        -- alternate error text class
+ *   .form-field-checkbox -- horizontal checkbox + label layout
+ *   .checkbox-label    -- styled checkbox label
+ *   .settings-form     -- max-width constrained form container
+ *   .settings-section  -- fieldset-like bordered section
+ *
+ * MISSING (recommended additions):
+ *   input:disabled styling
+ *   textarea auto-resize helper
+ * ============================================================ */
+
+/* Disabled form controls */
+.form-field input:disabled,
+.form-field select:disabled,
+.form-field textarea:disabled,
+.form-control:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--color-surface);
+}
+
+
+/* ============================================================
+ * MIGRATION NOTES
+ * ============================================================
+ *
+ * 1. EXISTING CUSTOM PROPERTY MAPPING
+ *    The following existing properties map directly to design
+ *    system tokens. No renaming is needed -- the existing names
+ *    are already well-structured:
+ *
+ *    --color-bg           -> --bg-page (semantic alias)
+ *    --color-surface      -> --bg-surface (semantic alias)
+ *    --color-text         -> --text-primary (semantic alias)
+ *    --color-text-muted   -> --text-secondary (semantic alias)
+ *    --color-text-dim     -> --text-tertiary (semantic alias)
+ *    --color-primary      -> --accent (semantic alias)
+ *    --color-primary-hover-> --accent-hover (semantic alias)
+ *    --transition         -> --transition-normal (alias)
+ *
+ * 2. HARDCODED VALUES TO REPLACE
+ *    The following raw values should be replaced with tokens.
+ *    Each entry lists the line(s) in admin.css and the token to use.
+ *
+ *    rgba(59,130,246,0.08)  line 1832  -> var(--color-primary-50)
+ *    rgba(59,130,246,0.1)   lines 140, 590, 602, 1463, 1738  -> var(--color-primary-100)
+ *    rgba(59,130,246,0.15)  line 1468  -> var(--color-primary-150)
+ *    rgba(59,130,246,0.2)   lines 386, 465, 822, 828, 1338, 1716, 1758  -> var(--focus-ring-shadow) or var(--color-primary-200)
+ *    rgba(59,130,246,0.3)   lines 592, 1370  -> var(--color-primary-300)
+ *    rgba(34,197,94,0.1)    lines 572, 602  -> var(--color-success-100)
+ *    rgba(34,197,94,0.3)    lines 574, 604  -> var(--color-success-300)
+ *    rgba(239,68,68,0.05)   line 1952  -> var(--color-danger-50)
+ *    rgba(239,68,68,0.1)    lines 596, 653  -> var(--color-danger-100)
+ *    rgba(239,68,68,0.15)   line 1953  -> var(--color-danger-150)
+ *    rgba(239,68,68,0.3)    lines 598, 655, 2492  -> var(--color-danger-300)
+ *    rgba(245,158,11,0.1)   line 578  -> var(--color-warning-100)
+ *    rgba(245,158,11,0.3)   line 580  -> var(--color-warning-300)
+ *    rgba(161,161,170,0.1)  line 584  -> var(--color-neutral-100)
+ *    rgba(0,0,0,0.6)        lines 1181, 1281, 1521, 2137  -> var(--color-overlay)
+ *    rgba(0,0,0,0.5)        lines 2216, 2982  -> var(--color-overlay-light)
+ *    rgba(0,0,0,0.3)        line 975  -> use var(--shadow-md)
+ *    rgba(0,0,0,0.4)        lines 1201, 1297, 1516, 2151  -> use var(--shadow-lg)
+ *    #16a34a                lines 335, 336  -> var(--color-success-hover)
+ *    #6b7280                line 258  -> var(--text-secondary) (fallback value in auth-description)
+ *    #fff / white           lines 309, 320, 332, 641, 3211  -> consider a --color-white token or keep literal
+ *
+ * 3. FONT SIZE 1.1rem (line 3104)
+ *    .content-editor-panel-header h2 uses font-size: 1.1rem.
+ *    Every other section heading in admin.css uses 1.125rem.
+ *    This appears to be drift. Recommend changing to 1.125rem
+ *    (i.e., var(--font-size-xl)).
+ *
+ * 4. SPACING VALUES OUTSIDE THE SCALE
+ *    The agreed spacing scale (--space-1 through --space-7) does
+ *    not cover every raw value in admin.css. The following values
+ *    are used frequently but fall between scale steps:
+ *
+ *    0.125rem (2px):  Used for badge padding-block (0.125rem 0.5rem),
+ *                     file-input-info gap. Very small, cosmetic.
+ *                     Recommend keeping as raw value or adding
+ *                     --space-half: 0.125rem if needed frequently.
+ *
+ *    0.375rem (6px):  Used for form-field gap, theme-toggle padding,
+ *                     detail-list dd margin, media-detail-url label
+ *                     margin-bottom, role-card-meta gap, perm-matrix
+ *                     cell padding, shortcut-key padding.
+ *                     Appears 10+ times. This is halfway between
+ *                     --space-1 (4px) and --space-2 (8px).
+ *                     Recommend either:
+ *                     (a) Snap to --space-1 (4px) -- tighter
+ *                     (b) Snap to --space-2 (8px) -- roomier
+ *                     (c) Add --space-1-5: 0.375rem to scale
+ *
+ *    0.625rem (10px): Used only for roles-sidebar-item padding.
+ *                     Halfway between --space-2 (8px) and --space-3
+ *                     (12px). Recommend snapping to --space-2.
+ *
+ *    1.25rem (20px):  Used for dialog padding, tree-nav indent.
+ *                     Halfway between --space-4 (16px) and --space-5
+ *                     (24px). Used 6 times. Recommend snapping to
+ *                     --space-5 for consistency.
+ *
+ *    2rem (32px):     Used for topbar padding, admin-content padding,
+ *                     auth-layout/auth-card padding, shortcuts-panel
+ *                     padding. Used 8+ times. This is between
+ *                     --space-5 (24px) and --space-6 (40px).
+ *                     Significant gap in the scale. Recommend either:
+ *                     (a) Snap to --space-5 (24px) -- tighter
+ *                     (b) Snap to --space-6 (40px) -- very roomy
+ *                     (c) Add --space-5-5: 2rem to fill the gap
+ *
+ *    3rem (48px):     Used for empty-state padding, media-detail-file
+ *                     padding. Between --space-6 (40px) and --space-7
+ *                     (64px). Used only 2 times. Recommend snapping
+ *                     to --space-6.
+ *
+ * 5. .badge-published CONFLICT (BUG)
+ *    Line 570: .badge-published has transparent green bg + green text.
+ *    Line 3209: .badge-published is redefined with solid green bg + white text.
+ *    The line 3209 rule wins due to source order. This means the
+ *    version panel badges look different from the content list badges
+ *    (both use .badge-published). Likely unintentional.
+ *    Recommend removing the line 3209 redefinition, or renaming it
+ *    to .badge-published-solid if both variants are needed.
+ *
+ * 6. --text-secondary FALLBACK (line 258)
+ *    .auth-description uses `color: var(--text-secondary, #6b7280)`.
+ *    The variable name --text-secondary does not exist in the
+ *    current :root (the existing var is --color-text-muted). The
+ *    fallback #6b7280 is always used. This should reference
+ *    var(--color-text-muted) or the new var(--text-secondary) alias.
+ *
+ * 7. --color-primary FALLBACK (line 270)
+ *    .auth-links a uses `color: var(--color-primary, #3b82f6)`.
+ *    The fallback is unnecessary since --color-primary is defined
+ *    in :root. Can simplify to var(--color-primary).
+ *
+ * 8. Z-INDEX RENUMBERING
+ *    Adopting the named z-index scale requires updating all z-index
+ *    values in admin.css. This is a mechanical find-and-replace
+ *    but affects 13 locations across the file. Recommend doing this
+ *    as a single batch operation.
+ *
+ *    Current -> Token:
+ *    z-index: 50    (block toolbar)      -> var(--z-block-toolbar)
+ *    z-index: 99    (sidebar-overlay)    -> var(--z-sidebar-overlay)
+ *    z-index: 100   (mobile sidebar, tree indicators, drop indicators)
+ *                   -> var(--z-sidebar) for sidebar, var(--z-tree-indicator) for others
+ *    z-index: 9000  (dialog-backdrop)    -> var(--z-dialog)
+ *    z-index: 9500  (media-picker)       -> var(--z-media-picker)
+ *    z-index: 9999  (login-loading, drag-overlay) -> var(--z-login-overlay) or var(--z-toast)
+ *    z-index: 10000 (toast-container, insert-dialog) -> var(--z-toast)
+ *    z-index: 99998 (shortcuts-overlay)  -> var(--z-shortcuts)
+ *    z-index: 99999 (loading-bar)        -> var(--z-loading-bar)
+ *
+ * 9. DUPLICATE TABLE STYLES
+ *    Lines 488-513 style bare `table`, `thead th`, `tbody td`.
+ *    Lines 520-549 redefine the same styles for `.data-table` and `.table`.
+ *    These are identical. The bare element styles make every table
+ *    in the admin styled the same way, so the class-based duplicates
+ *    are redundant. Recommend removing the class-based duplicates or
+ *    removing the bare element styles and using classes consistently.
+ *
+ * 10. TRANSITION VALUE INCONSISTENCY (block editor)
+ *     The block editor uses raw `0.15s` and `0.2s` values instead
+ *     of the --transition variable. These are scoped inside the
+ *     block-editor custom element and use their own token space,
+ *     so this is acceptable. No action needed unless the block
+ *     editor is migrated to use the admin token system.
+ *
+ *
+ * ============================================================
+ * TEAM DECISION REQUIRED
+ * ============================================================
+ *
+ * 1. SPACING SCALE GAPS
+ *    The agreed 7-step scale has a notable gap between --space-5
+ *    (24px/1.5rem) and --space-6 (40px/2.5rem). The value 2rem
+ *    (32px) is used 8+ times for substantial padding (topbar,
+ *    content area, auth cards). The team should decide:
+ *    (a) Snap these down to --space-5 (24px) -- tighter feel
+ *    (b) Snap these up to --space-6 (40px) -- roomier feel
+ *    (c) Insert --space-5-5: 2rem into the scale
+ *
+ * 2. 0.375rem (6px) USAGE
+ *    Used 10+ times as "form-field gap" and similar small spacing.
+ *    (a) Snap to --space-1 (4px) -- slightly tighter
+ *    (b) Snap to --space-2 (8px) -- slightly roomier
+ *    (c) Add --space-1-5: 0.375rem
+ *    This affects form field label-to-input gaps and small UI
+ *    element spacing. Recommend testing both (a) and (b) visually.
+ *
+ * 3. BADGE-PUBLISHED VARIANT
+ *    Keep transparent (lines 570-575) or solid (lines 3209-3212)?
+ *    Or keep both under different class names?
+ *
+ *
+ * ============================================================
+ * DESIGN IMPROVEMENTS
+ * ============================================================
+ *
+ * 1. ADD DISABLED STATE TO ALL BUTTONS
+ *    Current state: No global .btn:disabled style exists. When
+ *      buttons are disabled via HTML attribute, they remain fully
+ *      opaque and interactive-looking.
+ *    Proposed change: Add opacity: 0.5, cursor: not-allowed,
+ *      pointer-events: none to .btn:disabled (included in Section 11
+ *      of this file).
+ *    Rationale: Users cannot distinguish disabled from enabled
+ *      buttons without a visual indicator. This is a basic
+ *      interactive affordance.
+ *    Difficulty: trivial
+ *
+ * 2. ADD DISABLED STATE TO FORM CONTROLS
+ *    Current state: No disabled styling for inputs, selects, or
+ *      textareas. Disabled fields look identical to enabled ones.
+ *    Proposed change: Add opacity: 0.5, cursor: not-allowed,
+ *      background: var(--color-surface) to disabled form controls
+ *      (included in Section 15 of this file).
+ *    Rationale: Same as buttons -- users need to know when a field
+ *      is not interactive.
+ *    Difficulty: trivial
+ *
+ * 3. USE SHADOW TOKENS IN TOAST COMPONENT
+ *    Current state: .toast uses box-shadow: 0 4px 12px rgba(0,0,0,0.3)
+ *      as a raw value.
+ *    Proposed change: Replace with var(--shadow-md).
+ *    Rationale: Consistency. If the shadow scale changes globally,
+ *      toasts will follow.
+ *    Difficulty: trivial
+ *
+ * 4. USE SHADOW TOKENS IN ALL DIALOG PANELS
+ *    Current state: .dialog-panel, .media-picker-panel, .dialog,
+ *      .admin-dialog, .shortcuts-panel all use the same raw shadow
+ *      value: 0 8px 32px rgba(0,0,0,0.4).
+ *    Proposed change: Replace all with var(--shadow-lg).
+ *    Rationale: Single source of truth for dialog elevation.
+ *    Difficulty: trivial
+ *
+ * 5. REPLACE HARDCODED #16a34a IN .btn-success:hover
+ *    Current state: .btn-success:hover uses hardcoded #16a34a
+ *      (lines 335-336). Every other button variant uses a CSS
+ *      variable for its hover color.
+ *    Proposed change: Use var(--color-success-hover).
+ *    Rationale: Consistency with .btn-primary:hover and
+ *      .btn-danger:hover patterns.
+ *    Difficulty: trivial
+ *
+ * 6. FIX --text-secondary REFERENCE IN .auth-description
+ *    Current state: .auth-description (line 258) references
+ *      var(--text-secondary, #6b7280). The variable --text-secondary
+ *      is not defined in :root, so the fallback #6b7280 always wins.
+ *      This color is Tailwind gray-500, which is close to but not
+ *      the same as --color-text-muted (#a1a1aa in dark, #52525b in
+ *      light).
+ *    Proposed change: Replace with var(--color-text-muted).
+ *    Rationale: Bug fix. The intent is to use the muted text color,
+ *      and the current code silently falls through to a hardcoded
+ *      value that does not respect theme switching.
+ *    Difficulty: trivial
+ *
+ * 7. CONSOLIDATE FOCUS RING PATTERN
+ *    Current state: The focus ring pattern (outline: none +
+ *      border-color: primary + box-shadow ring) is duplicated
+ *      verbatim in 8 places: .form-field inputs, .form-control,
+ *      .search-input, .file-input-dropzone, .media-picker-search-input,
+ *      .field-renderer-reference-search-input.
+ *    Proposed change: Use the --focus-ring-shadow token for the
+ *      box-shadow value in all locations. The three-line pattern
+ *      stays (it needs the border-color too), but the shadow value
+ *      becomes a single token.
+ *    Rationale: If the focus ring color or width changes, one
+ *      variable update covers all inputs.
+ *    Difficulty: easy
+ *
+ * 8. ADD .btn-secondary ALIAS
+ *    Current state: The base .btn class functions as the secondary
+ *      button, but there is no explicit .btn-secondary class.
+ *      Developers must know that "no modifier = secondary." This
+ *      is unintuitive when reading template code.
+ *    Proposed change: Add .btn-secondary (included in Section 11).
+ *      It mirrors .btn exactly but makes intent explicit.
+ *    Rationale: Code readability. `class="btn btn-secondary"` is
+ *      self-documenting; `class="btn"` requires knowledge of the
+ *      implicit convention.
+ *    Difficulty: trivial
+ *
+ * 9. ADD .btn-lg VARIANT
+ *    Current state: Only .btn and .btn-sm exist. Some auth and
+ *      empty-state contexts would benefit from a larger button
+ *      but currently use .btn-full to indicate importance (which
+ *      controls width, not visual weight).
+ *    Proposed change: Add .btn-lg with --space-3 vertical and
+ *      --space-5 horizontal padding (included in Section 11).
+ *    Rationale: Size communicates hierarchy. Primary actions in
+ *      sparse layouts (auth pages, empty states) should have more
+ *      visual weight than sidebar actions.
+ *    Difficulty: trivial
+ *
+ * 10. REPLACE RAW z-index VALUES WITH NAMED TOKENS
+ *     Current state: 13 z-index values ranging from 50 to 99999,
+ *       assigned without a visible system. Adding a new layered
+ *       component requires checking all existing values to pick
+ *       a safe number.
+ *     Proposed change: Adopt the named z-index scale from Section 6
+ *       and replace all raw values.
+ *     Rationale: Named z-index values make the stacking order
+ *       self-documenting and prevent "z-index wars" where each new
+ *       component picks a higher number.
+ *     Difficulty: easy (13 mechanical replacements)
+ *
+ * 11. UNIFY BACKDROP/OVERLAY COLORS
+ *     Current state: Backdrop overlays use both rgba(0,0,0,0.6)
+ *       and rgba(0,0,0,0.5) across different modals. The difference
+ *       (60% vs 50% opacity) is not visually intentional -- dialogs,
+ *       media picker, and shortcuts all use 0.6, while sidebar-overlay
+ *       and block-editor insert-dialog use 0.5.
+ *     Proposed change: Use var(--color-overlay) (0.6) everywhere.
+ *       The sidebar-overlay and block-editor insert-dialog should
+ *       match the other overlays for consistency.
+ *     Rationale: Two nearly identical overlay colors create visual
+ *       inconsistency without serving different purposes.
+ *     Difficulty: trivial
+ *
+ * 12. REMOVE DUPLICATE TABLE STYLES
+ *     Current state: Lines 488-513 style bare table/thead/tbody.
+ *       Lines 520-549 duplicate the same styles on .data-table
+ *       and .table classes. Both produce identical results.
+ *     Proposed change: Remove the class-based duplicates (lines
+ *       520-549) since the bare element styles already cover all
+ *       tables in the admin panel.
+ *     Rationale: Dead code. The class-based styles never produce
+ *       different output because they are identical to the element
+ *       styles.
+ *     Difficulty: trivial
+ *
+ * ============================================================ */

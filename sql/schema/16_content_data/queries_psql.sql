@@ -132,14 +132,14 @@ SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
-WHERE cd.route_id IS NOT NULL OR dt.type = '_root'
+WHERE dt.type IN ('_root', '_global')
 ORDER BY cd.content_data_id
 LIMIT $1 OFFSET $2;
 
 -- name: CountContentDataTopLevel :one
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
-WHERE cd.route_id IS NOT NULL OR dt.type = '_root';
+WHERE dt.type IN ('_root', '_global');
 
 -- name: UpdateContentDataPublishMeta :exec
 UPDATE content_data
@@ -181,14 +181,14 @@ SELECT cd.*, u.name AS author_name, COALESCE(r.slug, '') AS route_slug, COALESCE
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
-WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+WHERE dt.type IN ('_root', '_global') AND cd.status = $1
 ORDER BY cd.content_data_id
 LIMIT $2 OFFSET $3;
 
 -- name: CountContentDataTopLevelByStatus :one
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
-WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1;
+WHERE dt.type IN ('_root', '_global') AND cd.status = $1;
 
 -- name: ListContentDataDueForPublish :many
 SELECT * FROM content_data

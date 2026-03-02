@@ -30,6 +30,9 @@ export const dragMethods = {
                 const block = this._state?.blocks[blockId];
                 if (!block) return;
 
+                // Guard focus auto-select from firing during this pointer interaction
+                this._pointerSelectActive = true;
+
                 // Record start position for threshold detection
                 const startX = e.clientX;
                 const startY = e.clientY;
@@ -49,6 +52,7 @@ export const dragMethods = {
                         // Pointer released before threshold — this was a click, not a drag
                         blockItem.removeEventListener('pointermove', onPreMove);
                         blockItem.removeEventListener('pointerup', onPreUp);
+                        this._pointerSelectActive = false;
                         this._selectBlock(blockId);
                 };
 
@@ -511,7 +515,8 @@ export const dragMethods = {
                 this._removeDropIndicator();
                 this._removeDropInsideHighlight();
 
-                // Clear drag state
+                // Clear pointer and drag state
+                this._pointerSelectActive = false;
                 this._drag = null;
         },
 };

@@ -127,6 +127,7 @@ const shortcuts = [
     { key: 'g s', desc: 'Go to settings', action: () => navigateTo('/admin/settings') },
     { key: '?', desc: 'Show shortcuts', action: toggleShortcutsHelp },
     { key: 'Escape', desc: 'Close dialog/overlay', action: closeTopOverlay },
+    { key: '~ ~', desc: 'Focus block editor', action: focusBlockEditor },
 ];
 
 let pendingPrefix = '';
@@ -161,8 +162,8 @@ document.addEventListener('keydown', (e) => {
     }
 
     // Start a prefix sequence
-    if (key === 'g') {
-        pendingPrefix = 'g';
+    if (key === 'g' || key === '~') {
+        pendingPrefix = key;
         prefixTimer = setTimeout(() => { pendingPrefix = ''; }, 500);
         return;
     }
@@ -225,6 +226,13 @@ function toggleShortcutsHelp() {
 
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
+}
+
+function focusBlockEditor() {
+    var editor = document.querySelector('block-editor');
+    if (!editor) return;
+    var container = editor.querySelector('.editor-container');
+    if (container) container.focus();
 }
 
 function closeTopOverlay() {
@@ -398,6 +406,8 @@ const componentFiles = [
     '/admin/static/js/components/mcms-media-picker.js',
     '/admin/static/js/components/mcms-tree-nav.js',
     '/admin/static/js/components/mcms-file-input.js',
+    '/admin/static/js/components/mcms-scroll.js',
+    '/admin/static/js/components/mcms-validation-wizard.js',
 ];
 
 for (const src of componentFiles) {
@@ -461,37 +471,121 @@ document.body.addEventListener('htmx:afterSwap', function(e) {
 });
 
 // ========================================
+// Split button dropdown toggle
+// ========================================
+document.addEventListener('click', function(e) {
+    var toggle = e.target.closest('.btn-split-toggle');
+    if (toggle) {
+        var split = toggle.closest('.btn-split');
+        if (split) split.classList.toggle('open');
+        return;
+    }
+    // Close any open split menus when clicking elsewhere
+    document.querySelectorAll('.btn-split.open').forEach(function(el) {
+        el.classList.remove('open');
+    });
+});
+
+// ========================================
+// Version history dialog: move restore form into action row
+// ========================================
+(function() {
+    var moved = false;
+    var observer = new MutationObserver(function() {
+        if (moved) return;
+        var dialog = document.getElementById('version-history-dialog');
+        if (!dialog) return;
+        var form = dialog.querySelector('.version-restore-form');
+        var actions = dialog.querySelector('.dialog-actions');
+        if (form && actions) {
+            actions.insertBefore(form, actions.firstChild);
+            moved = true;
+        }
+    });
+    var dialog = document.getElementById('version-history-dialog');
+    if (dialog) {
+        observer.observe(dialog, { childList: true, subtree: true });
+    }
+})();
+
+// ========================================
+// Version list: click to select, restore button
+// ========================================
+document.addEventListener('click', function(e) {
+    var item = e.target.closest('.version-item[data-version-id]');
+    if (!item) return;
+    var list = item.closest('.version-list');
+    if (!list) return;
+    list.querySelectorAll('.version-item').forEach(function(el) {
+        el.classList.remove('selected');
+    });
+    item.classList.add('selected');
+    var dialog = document.getElementById('version-history-dialog');
+    if (!dialog) return;
+    var hiddenInput = dialog.querySelector('#version-restore-id');
+    if (hiddenInput) hiddenInput.value = item.dataset.versionId;
+    var restoreBtn = dialog.querySelector('#version-restore-form button[type="submit"]');
+    if (restoreBtn) restoreBtn.disabled = false;
+});
+
+// ========================================
+// Clickable table rows: [data-href] on <tr>
+// ========================================
+document.addEventListener('click', function(e) {
+    if (e.target.closest('button, a, input, select, textarea')) return;
+    var row = e.target.closest('tr.clickable-row[data-href]');
+    if (!row) return;
+    var href = row.getAttribute('data-href');
+    if (!href) return;
+    if (typeof htmx !== 'undefined') {
+        htmx.ajax('GET', href, {target: '#main-content', swap: 'innerHTML show:window:top'});
+        history.pushState({}, '', href);
+        return;
+    }
+    window.location.href = href;
+});
+
+// ========================================
+// Dialog openers: [data-opens-dialog] buttons
+// ========================================
+
+document.addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-opens-dialog]');
+    if (!btn) return;
+    var dialogId = btn.getAttribute('data-opens-dialog');
+    var dialog = document.getElementById(dialogId);
+    if (dialog) dialog.setAttribute('open', '');
+});
+
+// Delete dialogs: mcms-dialog with [data-delete-url]
+document.addEventListener('mcms-dialog:confirm', function(e) {
+    var dialog = e.target.closest('mcms-dialog[data-delete-url]');
+    if (!dialog) return;
+    var url = dialog.getAttribute('data-delete-url');
+    var target = dialog.getAttribute('data-delete-target') || '#main-content';
+    htmx.ajax('DELETE', url, {target: target, swap: 'outerHTML'});
+});
+
+// ========================================
 // Block Editor: field panel wiring
 // ========================================
 
-function openFieldPanel() {
-    var layout = document.getElementById('content-editor-layout');
-    if (layout) layout.classList.add('panel-open');
+// Save initial panel content (root content fields) for restoration on deselect
+var _rootPanelHTML = '';
+var _rootPanelTitle = '';
+(function() {
+    var panel = document.getElementById('panel-content');
+    var title = document.getElementById('panel-title');
+    if (panel) _rootPanelHTML = panel.innerHTML;
+    if (title) _rootPanelTitle = title.textContent;
+})();
+
+function clearFieldPanel() {
+    var panel = document.getElementById('panel-content');
+    var title = document.getElementById('panel-title');
+    if (panel) panel.innerHTML = _rootPanelHTML;
+    if (title) title.textContent = _rootPanelTitle;
 }
-
-function closeFieldPanel() {
-    var layout = document.getElementById('content-editor-layout');
-    if (layout) layout.classList.remove('panel-open');
-    var editor = document.getElementById('content-block-editor');
-    if (editor && editor._state) editor._state.selectedBlockId = null;
-}
-
-// Close button
-document.addEventListener('click', function(e) {
-    if (e.target.id === 'panel-close-btn' || e.target.closest('#panel-close-btn')) {
-        closeFieldPanel();
-    }
-});
-
-// Escape key closes panel
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        var layout = document.getElementById('content-editor-layout');
-        if (layout && layout.classList.contains('panel-open')) {
-            closeFieldPanel();
-        }
-    }
-});
 
 // Datatype fields cache for newly created blocks
 var _dtFieldsCache = {};
@@ -519,11 +613,10 @@ document.addEventListener('block-editor:select', function(e) {
     var editor = document.getElementById('content-block-editor');
     if (!editor) return;
     var blockId = e.detail && e.detail.blockId;
-    if (!blockId) { closeFieldPanel(); return; }
+    if (!blockId) { clearFieldPanel(); return; }
     var block = editor.getBlock(blockId);
-    if (!block) { closeFieldPanel(); return; }
+    if (!block) { clearFieldPanel(); return; }
     if (title) title.textContent = block.label || 'Block Fields';
-    openFieldPanel();
     var fields = editor.getFieldData(blockId);
     if (fields && fields.length > 0) {
         renderFieldPanel(panel, blockId, block, fields);
@@ -571,13 +664,95 @@ function renderFieldPanel(panel, blockId, block, fields) {
     }
 }
 
-// Field change listener — updates block state
+// Field change listener — updates block state or tracks root content field changes
 document.addEventListener('field-change', function(e) {
     var renderer = e.target.closest('mcms-field-renderer');
-    if (!renderer || !renderer.dataset.blockId) return;
-    var editor = document.getElementById('content-block-editor');
-    if (editor) editor.setFieldValue(renderer.dataset.blockId, renderer.dataset.fieldId, e.detail.value);
+    if (!renderer) return;
+
+    // Block field: update editor state
+    if (renderer.dataset.blockId) {
+        var editor = document.getElementById('content-block-editor');
+        if (editor) editor.setFieldValue(renderer.dataset.blockId, renderer.dataset.fieldId, e.detail.value);
+        return;
+    }
+
+    // Root content field: track as pending save
+    if (renderer.dataset.contentDataId) {
+        if (!_pendingRootFieldUpdates) _pendingRootFieldUpdates = {};
+        _pendingRootFieldUpdates[renderer.dataset.fieldId] = {
+            content_data_id: renderer.dataset.contentDataId,
+            content_field_id: renderer.dataset.contentFieldId || '',
+            field_id: renderer.dataset.fieldId,
+            value: e.detail.value
+        };
+        // Mark block editor dirty so Save button activates
+        var editor = document.getElementById('content-block-editor');
+        if (editor && editor._state) {
+            editor._state.dirty = true;
+            editor._updateSaveButton();
+        }
+    }
 });
+
+var _pendingRootFieldUpdates = null;
+
+// ========================================
+// Block Editor: auto-save
+// ========================================
+(function() {
+    var INTERVAL = 30000; // 30 seconds
+    var DEBOUNCE = 2000;  // 2 seconds after input
+    var debounceTimer = null;
+    var intervalTimer = null;
+    var saving = false;
+
+    function autoSave() {
+        if (saving) return;
+        var editor = document.getElementById('content-block-editor');
+        if (!editor) return;
+        var hasPendingRoot = _pendingRootFieldUpdates && Object.keys(_pendingRootFieldUpdates).length > 0;
+        if (!editor.dirty && !hasPendingRoot) return;
+        saving = true;
+        editor.save();
+    }
+
+    // Reset saving flag when save completes
+    document.addEventListener('block-editor:save-complete', function() {
+        saving = false;
+    });
+
+    // Debounce: 2s after any field change
+    document.addEventListener('field-change', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(autoSave, DEBOUNCE);
+    });
+
+    // Also debounce on block tree mutations (add, move, delete, indent, outdent)
+    document.addEventListener('block-editor:change', function() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(autoSave, DEBOUNCE);
+    });
+
+    // Interval: every 30s as a safety net
+    function startInterval() {
+        if (intervalTimer) return;
+        intervalTimer = setInterval(autoSave, INTERVAL);
+    }
+
+    // Start interval when a block editor exists on the page
+    if (document.getElementById('content-block-editor')) {
+        startInterval();
+    }
+    // Also start after HTMX swaps in case the editor loads via SPA navigation
+    document.body.addEventListener('htmx:afterSwap', function() {
+        if (document.getElementById('content-block-editor')) {
+            startInterval();
+        } else {
+            clearInterval(intervalTimer);
+            intervalTimer = null;
+        }
+    });
+})();
 
 // ========================================
 // Block Editor: save wiring
@@ -594,17 +769,24 @@ document.addEventListener('block-editor:save', function(e) {
     if (!editor || !editor.id) return;
 
     var stateStr = e.detail && e.detail.state;
-    if (!stateStr) return;
+    if (!stateStr) {
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: false } }));
+        return;
+    }
 
     var state;
     try {
         state = JSON.parse(stateStr);
     } catch (parseErr) {
         showBlockEditorToast('Failed to parse editor state', 'error');
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: false } }));
         return;
     }
 
-    if (!state.blocks) return;
+    if (!state.blocks) {
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: false } }));
+        return;
+    }
 
     // Read initial state from data-state attribute to diff against
     var initialStr = editor.getAttribute('data-state');
@@ -695,8 +877,17 @@ document.addEventListener('block-editor:save', function(e) {
         }
     }
 
+    // Include pending root content field updates
+    if (_pendingRootFieldUpdates) {
+        var rootKeys = Object.keys(_pendingRootFieldUpdates);
+        for (var ri = 0; ri < rootKeys.length; ri++) {
+            fieldUpdates.push(_pendingRootFieldUpdates[rootKeys[ri]]);
+        }
+    }
+
     if (creates.length === 0 && updates.length === 0 && deletes.length === 0 && fieldUpdates.length === 0) {
         showBlockEditorToast('No changes to save', 'info');
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: true } }));
         return;
     }
 
@@ -722,6 +913,7 @@ document.addEventListener('block-editor:save', function(e) {
     xhr.onload = function() {
         if (xhr.status !== 200) {
             showBlockEditorToast('Save failed: server error', 'error');
+            editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: false } }));
             return;
         }
         var resp;
@@ -730,6 +922,7 @@ document.addEventListener('block-editor:save', function(e) {
         } catch (ignored) {
             showBlockEditorToast('Content structure saved', 'success');
             editor.setAttribute('data-state', stateStr);
+            editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: true } }));
             return;
         }
 
@@ -751,11 +944,16 @@ document.addEventListener('block-editor:save', function(e) {
             if (resp.fields_updated > 0) parts.push(resp.fields_updated + ' field(s) saved');
             showBlockEditorToast(parts.length > 0 ? parts.join(', ') : 'Content saved', 'success');
         }
+        // Clear pending root field updates on success
+        _pendingRootFieldUpdates = null;
         // Update data-state so next save diffs correctly
         editor.setAttribute('data-state', stateStr);
+        var saveSuccess = !(resp.errors && resp.errors.length > 0);
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: saveSuccess } }));
     };
     xhr.onerror = function() {
         showBlockEditorToast('Network error saving content tree', 'error');
+        editor.dispatchEvent(new CustomEvent('block-editor:save-complete', { bubbles: true, composed: true, detail: { success: false } }));
     };
     xhr.send(JSON.stringify(body));
 });
@@ -800,6 +998,145 @@ function remapEditorState(editor, state, idMap) {
         editor.remapIds(idMap);
     }
 }
+
+// ========================================
+// Dialog Utilities
+// ========================================
+
+// showConfirmDialog creates a temporary mcms-dialog, opens it, and returns
+// a Promise that resolves true on confirm, false on cancel.
+function showConfirmDialog(options) {
+    console.log('[confirm-debug] showConfirmDialog called', options);
+    var defined = customElements.get('mcms-dialog');
+    console.log('[confirm-debug] mcms-dialog defined:', !!defined);
+    return new Promise(function(resolve) {
+        var dialog = document.createElement('mcms-dialog');
+        console.log('[confirm-debug] created dialog element, constructor:', dialog.constructor.name);
+        dialog.setAttribute('title', options.title || 'Confirm');
+        dialog.setAttribute('confirm-label', options.confirmLabel || 'Confirm');
+        dialog.setAttribute('cancel-label', options.cancelLabel || 'Cancel');
+        if (options.destructive) dialog.setAttribute('destructive', '');
+
+        if (options.message) {
+            var p = document.createElement('p');
+            p.textContent = options.message;
+            dialog.appendChild(p);
+        }
+
+        function cleanup(result) {
+            console.log('[confirm-debug] dialog resolved:', result);
+            dialog.removeEventListener('mcms-dialog:confirm', onConfirm);
+            dialog.removeEventListener('mcms-dialog:cancel', onCancel);
+            dialog.remove();
+            resolve(result);
+        }
+
+        function onConfirm() { cleanup(true); }
+        function onCancel() { cleanup(false); }
+
+        dialog.addEventListener('mcms-dialog:confirm', onConfirm);
+        dialog.addEventListener('mcms-dialog:cancel', onCancel);
+
+        document.body.appendChild(dialog);
+        console.log('[confirm-debug] dialog appended to body, setting open');
+        dialog.setAttribute('open', '');
+    });
+}
+
+// ========================================
+// HTMX: replace native confirm() with mcms-dialog
+// ========================================
+
+document.body.addEventListener('htmx:confirm', function(e) {
+    console.log('[confirm-debug] htmx:confirm fired', {
+        question: e.detail.question,
+        path: e.detail.path,
+        target: e.target,
+        tagName: e.target.tagName,
+        classList: e.target.className,
+        hxConfirmAttr: e.target.getAttribute('hx-confirm'),
+        defaultPrevented: e.defaultPrevented,
+    });
+    // Only intercept requests that have an hx-confirm attribute
+    if (!e.detail.question) {
+        console.log('[confirm-debug] no question, skipping (native confirm will fire)');
+        return;
+    }
+    e.preventDefault();
+    console.log('[confirm-debug] preventDefault called, native confirm blocked');
+
+    var question = e.detail.question;
+    var path = e.detail.path || '';
+    var questionLower = question.toLowerCase();
+
+    // Infer dialog style from the question text and request path
+    var destructive = questionLower.indexOf('delete') !== -1
+        || questionLower.indexOf('revoke') !== -1
+        || path.indexOf('/unpublish') !== -1;
+
+    var title = 'Confirm';
+    var confirmLabel = 'Confirm';
+
+    if (questionLower.indexOf('delete') !== -1) {
+        title = 'Delete';
+        confirmLabel = 'Delete';
+    } else if (questionLower.indexOf('revoke') !== -1) {
+        title = 'Revoke';
+        confirmLabel = 'Revoke';
+    } else if (path.indexOf('/unpublish') !== -1) {
+        title = 'Unpublish';
+        confirmLabel = 'Unpublish';
+    } else if (path.indexOf('/publish') !== -1) {
+        title = 'Publish';
+        confirmLabel = 'Publish';
+    } else if (questionLower.indexOf('restore') !== -1) {
+        title = 'Restore';
+        confirmLabel = 'Restore';
+    }
+
+    console.log('[confirm-debug] opening dialog:', { title: title, confirmLabel: confirmLabel, destructive: destructive });
+
+    showConfirmDialog({
+        title: title,
+        message: question,
+        confirmLabel: confirmLabel,
+        destructive: destructive,
+    }).then(function(confirmed) {
+        console.log('[confirm-debug] dialog promise resolved, confirmed:', confirmed);
+        if (!confirmed) return;
+
+        // Save block editor before publish/unpublish
+        if (path.indexOf('/publish') !== -1) {
+            var editor = document.getElementById('content-block-editor');
+            console.log('[confirm-debug] publish path detected, editor:', !!editor, 'dirty:', editor && editor.dirty);
+            if (editor && editor.dirty) {
+                console.log('[confirm-debug] editor dirty, saving before publish');
+                function onSaveComplete(saveEvent) {
+                    editor.removeEventListener('block-editor:save-complete', onSaveComplete);
+                    console.log('[confirm-debug] save complete, success:', saveEvent.detail && saveEvent.detail.success);
+                    if (saveEvent.detail && saveEvent.detail.success) {
+                        e.detail.issueRequest();
+                    }
+                }
+                editor.addEventListener('block-editor:save-complete', onSaveComplete);
+                editor.save();
+                return;
+            }
+        }
+
+        console.log('[confirm-debug] issuing request');
+        e.detail.issueRequest();
+    });
+});
+
+// Log all htmx:confirm events at the document level (captures before body)
+document.addEventListener('htmx:confirm', function(e) {
+    console.log('[confirm-debug] htmx:confirm at DOCUMENT level', {
+        question: e.detail.question,
+        target: e.target.tagName + '.' + e.target.className,
+        defaultPrevented: e.defaultPrevented,
+    });
+}, true);
 
 function showBlockEditorToast(message, type) {
     var toast = document.querySelector('mcms-toast');

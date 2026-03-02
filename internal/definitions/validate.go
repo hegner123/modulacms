@@ -14,6 +14,9 @@ func Validate(def SchemaDefinition) error {
 
 	// Validate each datatype
 	for key, dt := range def.Datatypes {
+		if dt.Name == "" {
+			return fmt.Errorf("definitions: %q datatype %q has empty name", def.Name, key)
+		}
 		if dt.Label == "" {
 			return fmt.Errorf("definitions: %q datatype %q has empty label", def.Name, key)
 		}
@@ -33,6 +36,9 @@ func Validate(def SchemaDefinition) error {
 
 		// Validate inline fields
 		for i, field := range dt.FieldRefs {
+			if field.Name == "" {
+				return fmt.Errorf("definitions: %q datatype %q field[%d] has empty name", def.Name, key, i)
+			}
 			if field.Label == "" {
 				return fmt.Errorf("definitions: %q datatype %q field[%d] has empty label", def.Name, key, i)
 			}

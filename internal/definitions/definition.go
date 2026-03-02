@@ -5,6 +5,7 @@ import "github.com/hegner123/modulacms/internal/db/types"
 // FieldDef describes a field to create within a schema definition.
 // IDs and timestamps are set at install time, not at definition time.
 type FieldDef struct {
+	Name       string               // Machine name: "title", "featured_image", "meta_title"
 	Label      string               // Display name: "Title", "Content", "Featured Image"
 	Type       types.FieldType      //
 	Data       types.NullableString // expected
@@ -14,6 +15,7 @@ type FieldDef struct {
 
 // DatatypeDef describes a datatype and which fields/children it has.
 type DatatypeDef struct {
+	Name      string               // Machine name: "page", "post", "cta"
 	Label     string               // Display name: "Page", "Blog Post"
 	Type      types.NullableString // Category: "page", "post", "_root", "GLOBAL"
 	ParentRef string               // Keys into SchemaDefinition.Datatypes (parent-child hierarchy)

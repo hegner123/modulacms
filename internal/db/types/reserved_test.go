@@ -99,8 +99,8 @@ func TestValidateUserDatatypeType(t *testing.T) {
 		wantErr bool
 	}{
 		{"empty is error", "", true},
-		{"underscore prefix is error", "_root", true},
-		{"unknown underscore is error", "_foo", true},
+		{"underscore prefix is valid", "_root", false},
+		{"unknown underscore is valid", "_foo", false},
 		{"page is valid", "page", false},
 		{"blog_post is valid", "blog_post", false},
 	}

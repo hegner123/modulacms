@@ -108,15 +108,6 @@ func FieldDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
-		// Fetch parent datatype if the field has one
-		linkedDatatypes := make([]db.Datatypes, 0)
-		if field.ParentID.Valid {
-			dt, dtErr := driver.GetDatatype(field.ParentID.ID)
-			if dtErr == nil {
-				linkedDatatypes = append(linkedDatatypes, *dt)
-			}
-		}
-
 		i18nEnabled := false
 		cfg, cfgErr := mgr.Config()
 		if cfgErr == nil {
@@ -133,8 +124,8 @@ func FieldDetailHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 		csrfToken := CSRFTokenFromContext(r.Context())
 		layout := NewAdminData(r, "Field: "+field.Label)
 		RenderNav(w, r, "Field: "+field.Label,
-			pages.FieldDetailContent(*field, linkedDatatypes, allRoles, csrfToken, i18nEnabled),
-			pages.FieldDetail(layout, *field, linkedDatatypes, allRoles, csrfToken, i18nEnabled))
+			pages.FieldDetailContent(*field, allRoles, csrfToken, i18nEnabled),
+			pages.FieldDetail(layout, *field, allRoles, csrfToken, i18nEnabled))
 	}
 }
 
@@ -179,6 +170,14 @@ func FieldCreateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			errs["type"] = "Type is required"
 		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
 			errs["type"] = "Invalid field type"
+		}
+
+		// Validate the validation config JSON before persisting.
+		vc, vcErr := types.ParseValidationConfig(validation)
+		if vcErr != nil {
+			errs["validation"] = vcErr.Error()
+		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
+			errs["validation"] = vcValErr.Error()
 		}
 
 		if len(errs) > 0 {
@@ -282,6 +281,14 @@ func FieldUpdateHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			errs["type"] = "Type is required"
 		} else if _, lookupErr := driver.GetFieldTypeByType(fieldType); lookupErr != nil {
 			errs["type"] = "Invalid field type"
+		}
+
+		// Validate the validation config JSON before persisting.
+		vc, vcErr := types.ParseValidationConfig(validation)
+		if vcErr != nil {
+			errs["validation"] = vcErr.Error()
+		} else if vcValErr := types.ValidateValidationConfig(vc); vcValErr != nil {
+			errs["validation"] = vcValErr.Error()
 		}
 
 		if len(errs) > 0 {

@@ -16,22 +16,23 @@ templ DatatypeDetailContent(dt db.Datatypes, linkedFields []db.Fields, csrfToken
             <h1>{ dt.Label }</h1>
             <span class="badge">{ dt.Type }</span>
         </div>
+        <div class="page-header-actions">
+            <button type="submit" form="datatype-form" class="btn btn-primary">Save Changes</button>
+        </div>
     </div>
     <div class="detail-grid">
         <!-- Edit Form Section -->
         <section class="detail-section">
             <h2>Details</h2>
             <div id="datatype-edit-form">
-                <form hx-post={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
+                <form id="datatype-form"
+                      hx-post={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
                       hx-target="#datatype-edit-form"
                       hx-swap="innerHTML">
                     @partials.CSRFField(csrfToken)
                     @partials.FormField("name", "Name", dt.Name, "")
                     @partials.FormField("label", "Label", dt.Label, "")
                     @partials.FormField("type", "Type", dt.Type, "")
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
-                    </div>
                 </form>
             </div>
             <div class="detail-meta">

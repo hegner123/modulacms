@@ -40,7 +40,7 @@ func NewDefineDatatypeForm(m Model, admin bool) (*huh.Form, int, []*string) {
 		datatype string
 	)
 	groupDescription := "Define datatype"
-	typeDescription := "Type names starting with '_' are reserved for system use.\n"
+	typeDescription := "Types starting with '_' enable system features (e.g. _root, _nested_root).\n"
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().
@@ -114,7 +114,7 @@ func NewEditDatatypeForm(m Model, dt db.Datatypes) (*huh.Form, int, []*string) {
 	}
 
 	groupDescription := "Edit datatype"
-	typeDescription := "Type names starting with '_' are reserved for system use.\n"
+	typeDescription := "Types starting with '_' enable system features (e.g. _root, _nested_root).\n"
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewSelect[string]().

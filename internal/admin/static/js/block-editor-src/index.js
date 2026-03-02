@@ -17,9 +17,9 @@ import {
         getBlockTraversalOrder, collectDescendants, getDescendantCount,
 } from './tree-queries.js';
 import { validateState } from './validate.js';
-import { fetchDatatypes } from './cache.js';
 import { domPatchMethods } from './dom-patches.js';
 import { dragMethods } from './drag.js';
+import { pickerMethods } from './picker.js';
 
 // ============================================================
 // Re-exports — pure functions available for testing outside browser
@@ -67,6 +67,21 @@ if (isBrowser) {
 
                         // Keyboard handler
                         this._keydownHandler = this._onKeyDown.bind(this);
+
+                        // Pointer-select guard: prevents focus auto-select from
+                        // fighting with click-to-select during pointer interactions
+                        this._pointerSelectActive = false;
+
+                        // Picker state
+                        this._pickerOpen = false;
+                        this._pickerEl = null;
+                        this._pickerBackdrop = null;
+                        this._pickerInsertTarget = null;
+                        this._pickerInsertPosition = 'after';
+                        this._pickerQuery = '';
+                        this._pickerSelectedIndex = 0;
+                        this._pickerData = null;
+                        this._rootDatatypeId = null;
                 }
 
                 get dev() {
@@ -195,6 +210,7 @@ if (isBrowser) {
                         }
 
                         this._state = newState;
+                        this._rootDatatypeId = this.getAttribute('data-root-datatype-id') || null;
                         this._elementRegistry.clear();
                         this._wrapperRegistry.clear();
                         this._render();
@@ -232,6 +248,17 @@ if (isBrowser) {
                         // Keyboard shortcuts (scoped to editor container)
                         container.addEventListener('keydown', this._keydownHandler);
 
+                        // Auto-select first block when editor gains focus via keyboard (tab).
+                        // Skipped during pointer interactions — click-to-select handles those.
+                        var self = this;
+                        container.addEventListener('focus', function() {
+                                if (self._pointerSelectActive) return;
+                                if (!self._state.selectedBlockId) {
+                                        var order = getBlockTraversalOrder(self._state);
+                                        if (order.length > 0) self._selectBlock(order[0]);
+                                }
+                        });
+
                         this.appendChild(container);
                 }
 
@@ -243,7 +270,6 @@ if (isBrowser) {
                         saveBtn.textContent = 'Save';
                         saveBtn.className = 'save-btn';
                         saveBtn.dataset.action = 'save';
-                        saveBtn.disabled = !this._state?.dirty;
                         header.appendChild(saveBtn);
 
                         return header;
@@ -348,13 +374,6 @@ if (isBrowser) {
                                 el.appendChild(countBadge);
                         }
 
-                        const deleteBtn = document.createElement('button');
-                        deleteBtn.className = 'block-delete-btn';
-                        deleteBtn.textContent = 'Delete';
-                        deleteBtn.dataset.action = 'delete';
-                        deleteBtn.dataset.blockId = block.id;
-                        el.appendChild(deleteBtn);
-
                         // Hover toolbar (child of .block-item to avoid pointerleave flicker)
                         const hoverToolbar = this._renderHoverToolbar(block.id);
                         el.appendChild(hoverToolbar);
@@ -382,10 +401,10 @@ if (isBrowser) {
                         const actions = [
                                 { label: '\u2191', action: 'toolbar-move-up', title: 'Move Up' },
                                 { label: '\u2193', action: 'toolbar-move-down', title: 'Move Down' },
-                                { label: '\u2192', action: 'toolbar-indent', title: 'Indent (Tab)' },
-                                { label: '\u2190', action: 'toolbar-outdent', title: 'Outdent (Shift+Tab)' },
-                                { label: 'Dup', action: 'toolbar-duplicate', title: 'Duplicate (Ctrl+Shift+D)' },
-                                { label: 'Del', action: 'toolbar-delete', title: 'Delete' },
+                                { label: '\u2192', action: 'toolbar-indent', title: 'Indent (>)' },
+                                { label: '\u2190', action: 'toolbar-outdent', title: 'Outdent (<)' },
+                                { label: '\u2398', action: 'toolbar-duplicate', title: 'Duplicate (Ctrl+Shift+D)' },
+                                { label: '\u2715', action: 'toolbar-delete', title: 'Delete' },
                         ];
 
                         for (const def of actions) {
@@ -482,125 +501,6 @@ if (isBrowser) {
                         return btn;
                 }
 
-                _openInsertDialog(position, targetId) {
-                        var self = this;
-                        fetchDatatypes().then(function(datatypes) {
-                                self._showDialog(datatypes, position, targetId);
-                        }).catch(function(err) {
-                                console.error('[block-editor] Failed to load datatypes:', err);
-                        });
-                }
-
-                _showDialog(datatypes, position, targetId) {
-                        var self = this;
-
-                        // Backdrop
-                        var backdrop = document.createElement('div');
-                        backdrop.className = 'insert-dialog-backdrop';
-
-                        // Panel
-                        var panel = document.createElement('div');
-                        panel.className = 'insert-dialog-panel';
-
-                        // Title
-                        var title = document.createElement('div');
-                        title.className = 'insert-dialog-title';
-                        title.textContent = 'Select Content Type';
-                        panel.appendChild(title);
-
-                        if (datatypes.length === 0) {
-                                var emptyMsg = document.createElement('div');
-                                emptyMsg.className = 'insert-dialog-empty';
-                                emptyMsg.textContent = 'No content types available';
-                                panel.appendChild(emptyMsg);
-                        } else {
-                                // Options list
-                                for (var i = 0; i < datatypes.length; i++) {
-                                        var dt = datatypes[i];
-                                        var option = document.createElement('button');
-                                        option.className = 'insert-dialog-option';
-                                        option.dataset.datatypeIdx = String(i);
-
-                                        var labelSpan = document.createElement('span');
-                                        labelSpan.className = 'insert-dialog-option-label';
-                                        labelSpan.textContent = dt.label;
-                                        option.appendChild(labelSpan);
-
-                                        var typeSpan = document.createElement('span');
-                                        typeSpan.className = 'insert-dialog-option-type';
-                                        typeSpan.textContent = dt.type;
-                                        option.appendChild(typeSpan);
-
-                                        option.addEventListener('click', (function(datatype) {
-                                                return function() {
-                                                        self._closeDialog();
-                                                        self._onDatatypeSelected(datatype, position, targetId);
-                                                };
-                                        })(dt));
-
-                                        panel.appendChild(option);
-                                }
-                        }
-
-                        // Cancel button
-                        var cancelBtn = document.createElement('button');
-                        cancelBtn.className = 'insert-dialog-cancel';
-                        cancelBtn.textContent = 'Cancel';
-                        cancelBtn.addEventListener('click', function() {
-                                self._closeDialog();
-                        });
-                        panel.appendChild(cancelBtn);
-
-                        backdrop.appendChild(panel);
-
-                        // Close on backdrop click
-                        backdrop.addEventListener('click', function(e) {
-                                if (e.target === backdrop) {
-                                        self._closeDialog();
-                                }
-                        });
-
-                        // Close on Escape
-                        this._dialogEscHandler = function(e) {
-                                if (e.key === 'Escape') {
-                                        self._closeDialog();
-                                }
-                        };
-                        window.addEventListener('keydown', this._dialogEscHandler);
-
-                        this._dialogBackdrop = backdrop;
-                        this.appendChild(backdrop);
-                }
-
-                _closeDialog() {
-                        if (this._dialogBackdrop) {
-                                this._dialogBackdrop.remove();
-                                this._dialogBackdrop = null;
-                        }
-                        if (this._dialogEscHandler) {
-                                window.removeEventListener('keydown', this._dialogEscHandler);
-                                this._dialogEscHandler = null;
-                        }
-                }
-
-                _onDatatypeSelected(datatype, position, targetId) {
-                        if (!this._state) return;
-
-                        var id = addBlockFromDatatype(this._state, datatype, position, targetId);
-                        this._devValidate();
-
-                        // Full re-render to correctly place insert buttons around the new block
-                        this._render();
-
-                        // Select the new block
-                        this._selectBlock(id);
-
-                        this.dispatchEvent(new CustomEvent('block-editor:change', {
-                                bubbles: true,
-                                composed: true,
-                                detail: { action: 'add', blockId: id },
-                        }));
-                }
 
                 _renderError(message, detail) {
                         this.innerHTML = '';
@@ -636,7 +536,7 @@ if (isBrowser) {
                         if (action === 'insert') {
                                 var position = target.dataset.position;
                                 var targetId = target.dataset.targetId || null;
-                                this._openInsertDialog(position, targetId);
+                                this._openPicker(targetId, position);
                                 return;
                         } else if (action === 'add') {
                                 const blockType = target.dataset.blockType || 'text';
@@ -680,14 +580,27 @@ if (isBrowser) {
                         const block = this._state.blocks[blockId];
                         if (!block) return;
 
-                        // Check for children — confirm if has descendants
                         const descendantCount = getDescendantCount(this._state, blockId);
                         if (descendantCount > 0) {
-                                const confirmed = confirm(`Delete "${block.label}" and ${descendantCount} children?`);
-                                if (!confirmed) return;
+                                var self = this;
+                                showConfirmDialog({
+                                        title: 'Delete Block',
+                                        message: 'Delete "' + block.label + '" and ' + descendantCount + ' children?',
+                                        confirmLabel: 'Delete',
+                                        destructive: true,
+                                }).then(function(confirmed) {
+                                        if (confirmed) self._executeDeleteBlock(blockId);
+                                });
+                                return;
                         }
 
-                        // Remember parent before removal so we can clean up empty children containers
+                        this._executeDeleteBlock(blockId);
+                }
+
+                _executeDeleteBlock(blockId) {
+                        const block = this._state.blocks[blockId];
+                        if (!block) return;
+
                         const parentId = block.parentId;
 
                         const removedIds = removeBlock(this._state, blockId);
@@ -756,6 +669,7 @@ if (isBrowser) {
                         const el = this._elementRegistry.get(blockId);
                         if (el) {
                                 el.classList.add('selected');
+                                el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
                         }
 
                         this.dispatchEvent(new CustomEvent('block-editor:select', {
@@ -768,55 +682,75 @@ if (isBrowser) {
                 // ---- Keyboard Shortcuts ----
 
                 _onKeyDown(e) {
+                        if (this._pickerOpen) {
+                                this._onPickerKeyDown(e);
+                                return;
+                        }
                         if (!this._state) return;
+                        var blockId = this._state.selectedBlockId;
+                        var noMod = !e.ctrlKey && !e.metaKey && !e.altKey;
 
-                        // Tab = indent, Shift+Tab = outdent
+                        // Tab / Shift+Tab = cycle selection through DFS order
                         if (e.key === 'Tab') {
-                                const blockId = this._state.selectedBlockId;
-                                if (!blockId) return; // No selection — let browser handle Tab normally
-
                                 e.preventDefault();
+                                this._navigateDFS(e.shiftKey);
+                                return;
+                        }
 
-                                if (e.shiftKey) {
-                                        this._doOutdentBlock(blockId);
-                                } else {
-                                        this._doIndentBlock(blockId);
+                        // ArrowUp/ArrowDown or j/k = DFS navigation
+                        if (e.key === 'ArrowDown' || (e.key === 'j' && noMod)) {
+                                e.preventDefault();
+                                this._navigateDFS(false);
+                                return;
+                        }
+                        if (e.key === 'ArrowUp' || (e.key === 'k' && noMod)) {
+                                e.preventDefault();
+                                this._navigateDFS(true);
+                                return;
+                        }
+
+                        // h / ArrowLeft = navigate to parent
+                        if (e.key === 'ArrowLeft' || (e.key === 'h' && noMod)) {
+                                if (!blockId) return;
+                                var parentId = this._state.blocks[blockId].parentId;
+                                if (parentId) {
+                                        e.preventDefault();
+                                        this._selectBlock(parentId);
                                 }
                                 return;
                         }
 
-                        // Arrow Up/Down = move selection through depth-first traversal
-                        if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                                const blockId = this._state.selectedBlockId;
-                                if (!blockId) return; // No selection — let browser handle arrows normally
-
-                                const order = getBlockTraversalOrder(this._state);
-                                if (order.length === 0) return;
-
-                                const currentIndex = order.indexOf(blockId);
-                                if (currentIndex === -1) return;
-
-                                let nextIndex;
-                                if (e.key === 'ArrowUp') {
-                                        nextIndex = currentIndex - 1;
-                                } else {
-                                        nextIndex = currentIndex + 1;
+                        // l / ArrowRight = navigate to first child
+                        if (e.key === 'ArrowRight' || (e.key === 'l' && noMod)) {
+                                if (!blockId) return;
+                                var childId = this._state.blocks[blockId].firstChildId;
+                                if (childId) {
+                                        e.preventDefault();
+                                        this._selectBlock(childId);
                                 }
+                                return;
+                        }
 
-                                // Clamp to bounds — do not wrap around
-                                if (nextIndex < 0 || nextIndex >= order.length) return;
-
+                        // > (Shift+.) = indent selected block
+                        if (e.key === '>' && noMod) {
+                                if (!blockId) return;
                                 e.preventDefault();
-                                this._selectBlock(order[nextIndex]);
+                                this._doIndentBlock(blockId);
+                                return;
+                        }
+
+                        // < (Shift+,) = outdent selected block
+                        if (e.key === '<' && noMod) {
+                                if (!blockId) return;
+                                e.preventDefault();
+                                this._doOutdentBlock(blockId);
                                 return;
                         }
 
                         // Ctrl+Shift+D / Cmd+Shift+D = duplicate selected block
                         if (e.key === 'd' || e.key === 'D') {
                                 if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-                                        const blockId = this._state.selectedBlockId;
                                         if (!blockId) return;
-
                                         e.preventDefault();
                                         this._doDuplicateBlock(blockId);
                                         return;
@@ -825,30 +759,47 @@ if (isBrowser) {
 
                         // Delete / Backspace = delete selected block
                         if (e.key === 'Delete' || e.key === 'Backspace') {
-                                const blockId = this._state.selectedBlockId;
-                                if (!blockId) return; // No selection — let browser handle normally
-
+                                if (!blockId) return;
                                 e.preventDefault();
                                 this._doDeleteBlock(blockId);
                                 return;
                         }
 
-                        // Enter = add new block after selected (default type 'text')
+                        // Enter = open block picker with selected node as insert target
                         if (e.key === 'Enter') {
-                                const blockId = this._state.selectedBlockId;
-                                if (!blockId) return; // No selection — let browser handle normally
-
+                                if (!blockId) return;
                                 e.preventDefault();
-                                this._doAddBlockAfter(blockId, 'text');
+                                this._openPicker(blockId, 'after');
                                 return;
                         }
                 }
 
-                _updateSaveButton() {
-                        const saveBtn = this.querySelector('[data-action="save"]');
-                        if (saveBtn) {
-                                saveBtn.disabled = !this._state?.dirty;
+                /**
+                 * Navigate DFS order: select next (backward=false) or previous (backward=true) block.
+                 * Auto-selects first or last block if nothing is currently selected.
+                 */
+                _navigateDFS(backward) {
+                        var order = getBlockTraversalOrder(this._state);
+                        if (order.length === 0) return;
+
+                        var blockId = this._state.selectedBlockId;
+                        if (!blockId) {
+                                this._selectBlock(backward ? order[order.length - 1] : order[0]);
+                                return;
                         }
+
+                        var currentIndex = order.indexOf(blockId);
+                        if (currentIndex === -1) return;
+
+                        var nextIndex = backward ? currentIndex - 1 : currentIndex + 1;
+                        if (nextIndex < 0 || nextIndex >= order.length) return;
+
+                        this._selectBlock(order[nextIndex]);
+                }
+
+                _updateSaveButton() {
+                        // no-op: save button is always enabled.
+                        // Dirty tracking remains for autosave and beforeunload.
                 }
 
                 // ---- Dev-mode validation ----
@@ -873,8 +824,8 @@ if (isBrowser) {
                 }
         }
 
-        // Assign prototype mixins: DOM patch helpers + drag-and-drop
-        Object.assign(BlockEditor.prototype, dragMethods, domPatchMethods);
+        // Assign prototype mixins: DOM patch helpers, drag-and-drop, picker
+        Object.assign(BlockEditor.prototype, dragMethods, domPatchMethods, pickerMethods);
 
         customElements.define('block-editor', BlockEditor);
 }

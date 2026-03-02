@@ -38,7 +38,7 @@ ORDER BY datatype_id;
 
 -- name: ListDatatypeRoot :many
 SELECT * FROM datatypes
-WHERE type = '_root'
+WHERE type IN ('_root', '_global')
 ORDER BY datatype_id;
 
 -- name: ListDatatypeChildren :many

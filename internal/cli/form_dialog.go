@@ -16,6 +16,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tree"
 	"github.com/hegner123/modulacms/internal/tui"
+	"github.com/hegner123/modulacms/internal/validation"
 )
 
 // FormDialogAction identifies the type of form dialog
@@ -1184,11 +1185,13 @@ func NewMoveContentDialog(title string, sourceContentID string, routeID string, 
 
 // ContentFieldInput represents a single field input in the content form.
 type ContentFieldInput struct {
-	FieldID types.FieldID
-	Label   string
-	Type    string // field type (text, textarea, number, etc.)
-	Widget  string // UI widget override from UIConfig (e.g. "markdown", "code-editor")
-	Bubble  FieldBubble
+	FieldID        types.FieldID
+	Label          string
+	Type           string // field type (text, textarea, number, etc.)
+	Widget         string // UI widget override from UIConfig (e.g. "markdown", "code-editor")
+	Bubble         FieldBubble
+	ValidationJSON string // raw JSON from fields.validation
+	DataJSON       string // raw JSON from fields.data
 }
 
 // ContentFormDialogModel represents a form dialog with dynamic content fields.
@@ -1205,6 +1208,9 @@ type ContentFormDialogModel struct {
 
 	// Dynamic field inputs
 	Fields []ContentFieldInput
+
+	// Validation errors from pre-submit validation (nil when no validation has run or all fields are valid)
+	ValidationErrors *validation.ValidationErrors
 
 	// Logger for editor and dialog operations (nil-safe; callers should set after construction)
 	Logger Logger
@@ -1233,11 +1239,13 @@ func NewContentFormDialog(title string, action FormDialogAction, datatypeID type
 		}
 
 		contentFields = append(contentFields, ContentFieldInput{
-			FieldID: f.FieldID,
-			Label:   f.Label,
-			Type:    string(f.Type),
-			Widget:  widget,
-			Bubble:  bubble,
+			FieldID:        f.FieldID,
+			Label:          f.Label,
+			Type:           string(f.Type),
+			Widget:         widget,
+			Bubble:         bubble,
+			ValidationJSON: f.Validation,
+			DataJSON:       f.Data,
 		})
 	}
 	// Focus first field after all inputs are created
@@ -1300,6 +1308,25 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 				return *d, func() tea.Msg { return ContentFormDialogCancelMsg{} }
 			}
 			if d.focusIndex == d.ButtonConfirmIndex() {
+				// Pre-submit validation: build inputs and validate
+				inputs := make([]validation.FieldInput, 0, len(d.Fields))
+				for _, f := range d.Fields {
+					inputs = append(inputs, validation.FieldInput{
+						FieldID:    f.FieldID,
+						Label:      f.Label,
+						FieldType:  types.FieldType(f.Type),
+						Value:      f.Bubble.Value(),
+						Validation: f.ValidationJSON,
+						Data:       f.DataJSON,
+					})
+				}
+				ve := validation.ValidateBatch(inputs)
+				if ve.HasErrors() {
+					d.ValidationErrors = &ve
+					return *d, nil
+				}
+				d.ValidationErrors = nil
+
 				// Collect all field values
 				fieldValues := make(map[types.FieldID]string)
 				for _, f := range d.Fields {
@@ -1360,6 +1387,10 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 		if d.focusIndex < len(d.Fields) {
 			var cmd tea.Cmd
 			d.Fields[d.focusIndex].Bubble, cmd = d.Fields[d.focusIndex].Bubble.Update(msg)
+			// Clear validation errors for this field when the user edits it
+			if d.ValidationErrors != nil {
+				d.ValidationErrors.ClearField(d.Fields[d.focusIndex].FieldID)
+			}
 			return *d, cmd
 		}
 	}
@@ -1411,6 +1442,9 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 	editorHintStyle := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Tertiary).
 		Italic(true)
+	validationErrStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Accent2).
+		Italic(true)
 	for i, f := range d.Fields {
 		f.Bubble.SetWidth(innerW)
 		label := d.labelStyle.Render(f.Label)
@@ -1426,6 +1460,16 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 			content.WriteString(d.inputStyle.Width(innerW).Render(f.Bubble.View()))
 		}
 		content.WriteString("\n")
+
+		// Render validation errors below the field input
+		if d.ValidationErrors != nil {
+			if fe := d.ValidationErrors.ForField(f.FieldID); fe != nil {
+				for _, errMsg := range fe.Messages {
+					content.WriteString(validationErrStyle.Render("  " + errMsg))
+					content.WriteString("\n")
+				}
+			}
+		}
 	}
 
 	content.WriteString("\n")
@@ -1613,6 +1657,8 @@ type ExistingContentField struct {
 	Type           string
 	Widget         string // UI widget override from UIConfig
 	Value          string
+	ValidationJSON string // raw JSON from fields.validation
+	DataJSON       string // raw JSON from fields.data
 }
 
 // NewEditContentFormDialog creates a content form dialog pre-populated with existing values
@@ -1621,12 +1667,22 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 	for _, f := range existingFields {
 		bubble := FieldBubbleForType(f.Type)
 		bubble.SetValue(f.Value)
+
+		// For select fields, parse options from the DataJSON column
+		if f.Type == "select" {
+			if sb, ok := bubble.(*SelectBubble); ok {
+				sb.ParseOptionsFromData(f.DataJSON)
+			}
+		}
+
 		contentFields = append(contentFields, ContentFieldInput{
-			FieldID: f.FieldID,
-			Label:   f.Label,
-			Type:    f.Type,
-			Widget:  f.Widget,
-			Bubble:  bubble,
+			FieldID:        f.FieldID,
+			Label:          f.Label,
+			Type:           f.Type,
+			Widget:         f.Widget,
+			Bubble:         bubble,
+			ValidationJSON: f.ValidationJSON,
+			DataJSON:       f.DataJSON,
 		})
 	}
 	// Focus first field after all inputs are created

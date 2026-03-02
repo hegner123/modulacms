@@ -23,6 +23,7 @@ templ UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) {
 			>
 				Delete User
 			</button>
+			<button type="submit" form="user-form" class="btn btn-primary">Update User</button>
 		</div>
 	</div>
 	<div class="detail-card">
@@ -32,6 +33,7 @@ templ UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) {
 			<span class="detail-meta-item">Modified: { user.DateModified.String() }</span>
 		</div>
 		<form
+			id="user-form"
 			hx-post={ "/admin/users/" + user.UserID.String() }
 			hx-target="#user-edit-form-container"
 			hx-swap="innerHTML"

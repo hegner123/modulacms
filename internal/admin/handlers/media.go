@@ -192,6 +192,9 @@ func MediaUploadHandler(driver db.DbDriver, mgr *config.Manager) http.HandlerFun
 			return
 		}
 
+		w.Header().Set("X-Media-ID", created.MediaID.String())
+		w.Header().Set("X-Media-URL", created.URL.String())
+
 		if IsHTMX(r) {
 			Render(w, r, pages.MediaUploadResult(*created, ""))
 			return

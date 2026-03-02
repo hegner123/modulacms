@@ -32,6 +32,17 @@ templ DatatypeCreateFieldForm(datatypeID string, name string, label string, fiel
             <span class="field-error">{ errs["type"] }</span>
         }
     </div>
+    <div class="form-field">
+        <label>Validation</label>
+        <mcms-validation-wizard
+            value={ validation }
+            textarea-id={ "create-field-validation-" + datatypeID }
+        ></mcms-validation-wizard>
+        <textarea id={ "create-field-validation-" + datatypeID } name="validation" rows="4" style="display:none">{ validation }</textarea>
+        if errs["validation"] != "" {
+            <span class="field-error">{ errs["validation"] }</span>
+        }
+    </div>
     <div class="dialog-actions">
         <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
         <button type="submit" class="btn btn-primary">Create</button>

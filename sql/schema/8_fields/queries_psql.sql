@@ -112,6 +112,10 @@ UPDATE fields
 SET sort_order = $1
 WHERE field_id = $2;
 
+-- name: GetFieldsByIDs :many
+SELECT * FROM fields
+WHERE field_id = ANY($1::char(26)[]);
+
 -- name: GetMaxSortOrderByParentID :one
 SELECT COALESCE(MAX(sort_order), -1)
 FROM fields

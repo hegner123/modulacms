@@ -15,19 +15,13 @@ templ DatatypesTableRows(items []db.Datatypes, pg PaginationPageData) {
 		</tr>
 	} else {
 		for _, dt := range items {
-			<tr>
+			<tr class="clickable-row" data-href={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }>
 				<td>{ dt.Name }</td>
-				<td>
-					<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }>
-						{ dt.Label }
-					</a>
-				</td>
+				<td>{ dt.Label }</td>
 				<td><span class="badge">{ dt.Type }</span></td>
-				<td>{ dt.DateModified.String() }</td>
+				<td>{ dt.DateModified.Time.UTC().Format("Jan 2, 2006 15:04") }</td>
 				<td>
 					<div class="table-actions">
-						<a href={ templ.SafeURL("/admin/schema/datatypes/" + dt.DatatypeID.String()) }
-						   class="btn btn-sm btn-ghost">Edit</a>
 						<button class="btn btn-sm btn-danger"
 						        hx-delete={ "/admin/schema/datatypes/" + dt.DatatypeID.String() }
 						        hx-target="closest tr"

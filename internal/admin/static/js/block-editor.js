@@ -428,8 +428,8 @@ function validateState(state) {
         errors.push(`Root chain references non-existent block "${currentId}"`);
         break;
       }
-      if (block.parentId !== null) {
-        errors.push(`Root chain block "${currentId}" has parentId "${block.parentId}", expected null`);
+      if (block.parentId) {
+        errors.push(`Root chain block "${currentId}" has parentId "${block.parentId}", expected null or empty`);
       }
       reachable.add(currentId);
       markChildrenReachable(state, currentId, reachable, errors);
@@ -484,40 +484,6 @@ function markChildrenReachable(state, parentId, reachable, errors) {
     markChildrenReachable(state, childId, reachable, errors);
     childId = child.nextSiblingId;
   }
-}
-
-// internal/admin/static/js/block-editor-src/cache.js
-var _dtCache = {
-  data: null,
-  // Array of {id, label, type} from API
-  fetchedAt: 0,
-  // timestamp ms
-  ttl: 5 * 60 * 1e3,
-  // 5 minutes
-  pending: null
-  // in-flight promise to deduplicate concurrent fetches
-};
-function fetchDatatypes() {
-  var now = Date.now();
-  if (_dtCache.data && now - _dtCache.fetchedAt < _dtCache.ttl) {
-    return Promise.resolve(_dtCache.data);
-  }
-  if (_dtCache.pending) return _dtCache.pending;
-  _dtCache.pending = fetch("/admin/api/datatypes", { credentials: "same-origin" }).then(function(res) {
-    if (!res.ok) throw new Error("Failed to fetch datatypes: " + res.status);
-    return res.json();
-  }).then(function(datatypes) {
-    _dtCache.data = datatypes.map(function(dt) {
-      return { id: dt.datatype_id, label: dt.label, type: dt.type };
-    });
-    _dtCache.fetchedAt = Date.now();
-    _dtCache.pending = null;
-    return _dtCache.data;
-  }).catch(function(err) {
-    _dtCache.pending = null;
-    throw err;
-  });
-  return _dtCache.pending;
 }
 
 // internal/admin/static/js/block-editor-src/dom-patches.js
@@ -818,6 +784,7 @@ var dragMethods = {
     if (!blockId) return;
     const block = this._state?.blocks[blockId];
     if (!block) return;
+    this._pointerSelectActive = true;
     const startX = e.clientX;
     const startY = e.clientY;
     const onPreMove = (moveEvent) => {
@@ -832,6 +799,7 @@ var dragMethods = {
     const onPreUp = () => {
       blockItem.removeEventListener("pointermove", onPreMove);
       blockItem.removeEventListener("pointerup", onPreUp);
+      this._pointerSelectActive = false;
       this._selectBlock(blockId);
     };
     blockItem.addEventListener("pointermove", onPreMove);
@@ -1152,7 +1120,332 @@ var dragMethods = {
     blockItem.classList.remove("dragging");
     this._removeDropIndicator();
     this._removeDropInsideHighlight();
+    this._pointerSelectActive = false;
     this._drag = null;
+  }
+};
+
+// internal/admin/static/js/block-editor-src/cache.js
+var _dtCache = {
+  data: null,
+  // Array of {id, parentId, name, label, type} from API
+  fetchedAt: 0,
+  // timestamp ms
+  ttl: 5 * 60 * 1e3,
+  // 5 minutes
+  pending: null
+  // in-flight promise to deduplicate concurrent fetches
+};
+var SYSTEM_TYPES = { "_root": true, "_nested_root": true, "_system_log": true, "_reference": true };
+function fetchDatatypes() {
+  var now = Date.now();
+  if (_dtCache.data && now - _dtCache.fetchedAt < _dtCache.ttl) {
+    return Promise.resolve(_dtCache.data);
+  }
+  if (_dtCache.pending) return _dtCache.pending;
+  _dtCache.pending = fetch("/admin/api/datatypes", { credentials: "same-origin" }).then(function(res) {
+    if (!res.ok) throw new Error("Failed to fetch datatypes: " + res.status);
+    return res.json();
+  }).then(function(datatypes) {
+    _dtCache.data = datatypes.map(function(dt) {
+      return { id: dt.datatype_id, parentId: dt.parent_id || null, name: dt.name, label: dt.label, type: dt.type };
+    });
+    _dtCache.fetchedAt = Date.now();
+    _dtCache.pending = null;
+    return _dtCache.data;
+  }).catch(function(err) {
+    _dtCache.pending = null;
+    throw err;
+  });
+  return _dtCache.pending;
+}
+function fetchDatatypesGrouped(rootDatatypeId) {
+  return fetchDatatypes().then(function(datatypes) {
+    var childrenOf = {};
+    var byId = {};
+    for (var i = 0; i < datatypes.length; i++) {
+      var dt = datatypes[i];
+      byId[dt.id] = dt;
+      var pid = dt.parentId || "_none";
+      if (!childrenOf[pid]) childrenOf[pid] = [];
+      childrenOf[pid].push(dt);
+    }
+    function collectChildren(parentId, baseDepth) {
+      var result = [];
+      var kids = childrenOf[parentId];
+      if (!kids) return result;
+      for (var j = 0; j < kids.length; j++) {
+        var kid = kids[j];
+        if (SYSTEM_TYPES[kid.type]) continue;
+        result.push({ id: kid.id, name: kid.name, label: kid.label, type: kid.type, depth: baseDepth });
+        var grandchildren = collectChildren(kid.id, baseDepth + 1);
+        for (var k = 0; k < grandchildren.length; k++) {
+          result.push(grandchildren[k]);
+        }
+      }
+      return result;
+    }
+    var categories = [];
+    if (rootDatatypeId && byId[rootDatatypeId]) {
+      var rootDt = byId[rootDatatypeId];
+      var rootItems = collectChildren(rootDatatypeId, 0);
+      if (rootItems.length > 0) {
+        categories.push({ name: rootDt.label, items: rootItems });
+      }
+    }
+    var collectionItems = [];
+    for (var ci = 0; ci < datatypes.length; ci++) {
+      if (datatypes[ci].type === "_collection") {
+        var kids2 = collectChildren(datatypes[ci].id, 0);
+        for (var ck = 0; ck < kids2.length; ck++) {
+          collectionItems.push(kids2[ck]);
+        }
+      }
+    }
+    if (collectionItems.length > 0) {
+      categories.push({ name: "Collections", items: collectionItems });
+    }
+    var globalItems = [];
+    for (var gi = 0; gi < datatypes.length; gi++) {
+      var gdt = datatypes[gi];
+      if (gdt.type === "_global") {
+        globalItems.push({ id: gdt.id, name: gdt.name, label: gdt.label, type: gdt.type, depth: 0 });
+        var gkids = collectChildren(gdt.id, 1);
+        for (var gk = 0; gk < gkids.length; gk++) {
+          globalItems.push(gkids[gk]);
+        }
+      }
+    }
+    if (globalItems.length > 0) {
+      categories.push({ name: "Global", items: globalItems });
+    }
+    return { categories };
+  });
+}
+
+// internal/admin/static/js/block-editor-src/picker.js
+var pickerMethods = {
+  _openPicker: function(insertTargetId, position) {
+    this._pickerOpen = true;
+    this._pickerInsertTarget = insertTargetId;
+    this._pickerInsertPosition = position || "after";
+    this._pickerQuery = "";
+    this._pickerSelectedIndex = 0;
+    var self = this;
+    fetchDatatypesGrouped(this._rootDatatypeId).then(function(grouped) {
+      self._pickerData = grouped;
+      self._renderPicker();
+    }).catch(function(err) {
+      console.error("[block-editor] Failed to load datatypes for picker:", err);
+      self._closePicker();
+    });
+  },
+  _closePicker: function() {
+    this._pickerOpen = false;
+    if (this._pickerBackdrop) {
+      this._pickerBackdrop.remove();
+      this._pickerBackdrop = null;
+    }
+    this._pickerEl = null;
+    if (this._pickerEscHandler) {
+      document.removeEventListener("keydown", this._pickerEscHandler, true);
+      this._pickerEscHandler = null;
+    }
+    var container = this.querySelector(".editor-container");
+    if (container) container.focus();
+  },
+  _renderPicker: function() {
+    if (this._pickerBackdrop) {
+      this._pickerBackdrop.remove();
+    }
+    var backdrop = document.createElement("div");
+    backdrop.className = "block-picker-backdrop";
+    var picker = document.createElement("div");
+    picker.className = "block-picker";
+    var results = document.createElement("div");
+    results.className = "block-picker-results";
+    picker.appendChild(results);
+    var inputBar = document.createElement("div");
+    inputBar.className = "block-picker-input";
+    var prompt = document.createElement("span");
+    prompt.className = "block-picker-prompt";
+    prompt.textContent = ">";
+    inputBar.appendChild(prompt);
+    var queryDisplay = document.createElement("span");
+    queryDisplay.className = "block-picker-query";
+    queryDisplay.textContent = this._pickerQuery;
+    inputBar.appendChild(queryDisplay);
+    picker.appendChild(inputBar);
+    backdrop.appendChild(picker);
+    this._pickerEl = picker;
+    this._pickerBackdrop = backdrop;
+    var self = this;
+    backdrop.addEventListener("mousedown", function(e) {
+      if (e.target === backdrop) {
+        self._closePicker();
+      }
+    });
+    document.body.appendChild(backdrop);
+    this._renderPickerResults();
+    this._pickerEscHandler = function(e) {
+      if (!self._pickerOpen) return;
+      self._onPickerKeyDown(e);
+    };
+    document.addEventListener("keydown", this._pickerEscHandler, true);
+  },
+  /**
+   * Build the flat list of selectable items from picker data,
+   * filtered by the current query. Returns an array of
+   * { id, label, type, depth, categoryName } objects.
+   */
+  _getPickerItems: function() {
+    if (!this._pickerData) return [];
+    var categories = this._pickerData.categories;
+    var query = this._pickerQuery.toLowerCase();
+    var items = [];
+    for (var c = 0; c < categories.length; c++) {
+      var cat = categories[c];
+      var catItems = [];
+      for (var i = 0; i < cat.items.length; i++) {
+        var item = cat.items[i];
+        if (query && item.label.toLowerCase().indexOf(query) === -1 && (!item.name || item.name.toLowerCase().indexOf(query) === -1)) continue;
+        catItems.push(item);
+      }
+      if (catItems.length === 0) continue;
+      items.push({ isHeader: true, name: cat.name });
+      for (var j = 0; j < catItems.length; j++) {
+        items.push(catItems[j]);
+      }
+    }
+    return items;
+  },
+  _renderPickerResults: function() {
+    var resultsEl = this._pickerEl.querySelector(".block-picker-results");
+    if (!resultsEl) return;
+    resultsEl.innerHTML = "";
+    var items = this._getPickerItems();
+    var selectableIndex = 0;
+    for (var i = 0; i < items.length; i++) {
+      var item = items[i];
+      if (item.isHeader) {
+        var header = document.createElement("div");
+        header.className = "block-picker-header";
+        header.textContent = item.name;
+        resultsEl.appendChild(header);
+        continue;
+      }
+      var row = document.createElement("div");
+      row.className = "block-picker-item";
+      row.dataset.selectableIndex = String(selectableIndex);
+      row.dataset.datatypeId = item.id;
+      row.dataset.datatypeLabel = item.label;
+      row.dataset.datatypeType = item.type;
+      if (item.depth > 0) {
+        row.style.paddingLeft = 12 + item.depth * 16 + "px";
+      }
+      if (selectableIndex === this._pickerSelectedIndex) {
+        row.classList.add("block-picker-item--selected");
+      }
+      row.textContent = item.label;
+      var self = this;
+      row.addEventListener("mousedown", /* @__PURE__ */ (function(idx) {
+        return function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          self._pickerSelectedIndex = idx;
+          self._pickerInsertBlock();
+        };
+      })(selectableIndex));
+      resultsEl.appendChild(row);
+      selectableIndex++;
+    }
+    var selected = resultsEl.querySelector(".block-picker-item--selected");
+    if (selected) {
+      selected.scrollIntoView({ block: "nearest" });
+    }
+    var queryEl = this._pickerEl.querySelector(".block-picker-query");
+    if (queryEl) {
+      queryEl.textContent = this._pickerQuery;
+    }
+  },
+  /**
+   * Get the list of selectable (non-header) items from picker data.
+   */
+  _getSelectableItems: function() {
+    if (!this._pickerData) return [];
+    var categories = this._pickerData.categories;
+    var query = this._pickerQuery.toLowerCase();
+    var items = [];
+    for (var c = 0; c < categories.length; c++) {
+      var cat = categories[c];
+      for (var i = 0; i < cat.items.length; i++) {
+        var item = cat.items[i];
+        if (query && item.label.toLowerCase().indexOf(query) === -1 && (!item.name || item.name.toLowerCase().indexOf(query) === -1)) continue;
+        items.push(item);
+      }
+    }
+    return items;
+  },
+  _onPickerKeyDown: function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.key === "Escape") {
+      this._closePicker();
+      return;
+    }
+    var selectableItems = this._getSelectableItems();
+    var maxIndex = selectableItems.length - 1;
+    if (e.key === "ArrowUp") {
+      this._pickerSelectedIndex = Math.max(0, this._pickerSelectedIndex - 1);
+      this._renderPickerResults();
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      this._pickerSelectedIndex = Math.min(maxIndex, this._pickerSelectedIndex + 1);
+      this._renderPickerResults();
+      return;
+    }
+    if (e.key === "Enter") {
+      this._pickerInsertBlock();
+      return;
+    }
+    if (e.key === "Backspace") {
+      if (this._pickerQuery.length > 0) {
+        this._pickerQuery = this._pickerQuery.slice(0, -1);
+        this._pickerSelectedIndex = 0;
+        this._renderPickerResults();
+      }
+      return;
+    }
+    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      this._pickerQuery += e.key;
+      this._pickerSelectedIndex = 0;
+      this._renderPickerResults();
+      return;
+    }
+  },
+  _pickerInsertBlock: function() {
+    var selectableItems = this._getSelectableItems();
+    if (selectableItems.length === 0) return;
+    var idx = this._pickerSelectedIndex;
+    if (idx < 0 || idx >= selectableItems.length) return;
+    var item = selectableItems[idx];
+    var datatype = { id: item.id, label: item.label, type: item.type };
+    var id = addBlockFromDatatype(
+      this._state,
+      datatype,
+      this._pickerInsertPosition,
+      this._pickerInsertTarget
+    );
+    this._closePicker();
+    this._devValidate();
+    this._render();
+    this._selectBlock(id);
+    this.dispatchEvent(new CustomEvent("block-editor:change", {
+      bubbles: true,
+      composed: true,
+      detail: { action: "add", blockId: id }
+    }));
   }
 };
 
@@ -1175,6 +1468,16 @@ if (isBrowser) {
       this._autoScrollRaf = null;
       this._lastPointerY = 0;
       this._keydownHandler = this._onKeyDown.bind(this);
+      this._pointerSelectActive = false;
+      this._pickerOpen = false;
+      this._pickerEl = null;
+      this._pickerBackdrop = null;
+      this._pickerInsertTarget = null;
+      this._pickerInsertPosition = "after";
+      this._pickerQuery = "";
+      this._pickerSelectedIndex = 0;
+      this._pickerData = null;
+      this._rootDatatypeId = null;
     }
     get dev() {
       return this.hasAttribute("data-dev");
@@ -1279,6 +1582,7 @@ if (isBrowser) {
         return;
       }
       this._state = newState;
+      this._rootDatatypeId = this.getAttribute("data-root-datatype-id") || null;
       this._elementRegistry.clear();
       this._wrapperRegistry.clear();
       this._render();
@@ -1300,6 +1604,14 @@ if (isBrowser) {
       container.addEventListener("click", (e) => this._handleClick(e));
       container.addEventListener("pointerdown", (e) => this._onPointerDown(e));
       container.addEventListener("keydown", this._keydownHandler);
+      var self = this;
+      container.addEventListener("focus", function() {
+        if (self._pointerSelectActive) return;
+        if (!self._state.selectedBlockId) {
+          var order = getBlockTraversalOrder(self._state);
+          if (order.length > 0) self._selectBlock(order[0]);
+        }
+      });
       this.appendChild(container);
     }
     _renderHeader() {
@@ -1309,7 +1621,6 @@ if (isBrowser) {
       saveBtn.textContent = "Save";
       saveBtn.className = "save-btn";
       saveBtn.dataset.action = "save";
-      saveBtn.disabled = !this._state?.dirty;
       header.appendChild(saveBtn);
       return header;
     }
@@ -1387,12 +1698,6 @@ if (isBrowser) {
         countBadge.title = childCount + " descendant" + (childCount === 1 ? "" : "s");
         el.appendChild(countBadge);
       }
-      const deleteBtn = document.createElement("button");
-      deleteBtn.className = "block-delete-btn";
-      deleteBtn.textContent = "Delete";
-      deleteBtn.dataset.action = "delete";
-      deleteBtn.dataset.blockId = block.id;
-      el.appendChild(deleteBtn);
       const hoverToolbar = this._renderHoverToolbar(block.id);
       el.appendChild(hoverToolbar);
       const content = this._renderTypeContent(block);
@@ -1414,10 +1719,10 @@ if (isBrowser) {
       const actions = [
         { label: "\u2191", action: "toolbar-move-up", title: "Move Up" },
         { label: "\u2193", action: "toolbar-move-down", title: "Move Down" },
-        { label: "\u2192", action: "toolbar-indent", title: "Indent (Tab)" },
-        { label: "\u2190", action: "toolbar-outdent", title: "Outdent (Shift+Tab)" },
-        { label: "Dup", action: "toolbar-duplicate", title: "Duplicate (Ctrl+Shift+D)" },
-        { label: "Del", action: "toolbar-delete", title: "Delete" }
+        { label: "\u2192", action: "toolbar-indent", title: "Indent (>)" },
+        { label: "\u2190", action: "toolbar-outdent", title: "Outdent (<)" },
+        { label: "\u2398", action: "toolbar-duplicate", title: "Duplicate (Ctrl+Shift+D)" },
+        { label: "\u2715", action: "toolbar-delete", title: "Delete" }
       ];
       for (const def of actions) {
         const btn = document.createElement("button");
@@ -1500,96 +1805,6 @@ if (isBrowser) {
       btn.dataset.targetId = targetId || "";
       return btn;
     }
-    _openInsertDialog(position, targetId) {
-      var self = this;
-      fetchDatatypes().then(function(datatypes) {
-        self._showDialog(datatypes, position, targetId);
-      }).catch(function(err) {
-        console.error("[block-editor] Failed to load datatypes:", err);
-      });
-    }
-    _showDialog(datatypes, position, targetId) {
-      var self = this;
-      var backdrop = document.createElement("div");
-      backdrop.className = "insert-dialog-backdrop";
-      var panel = document.createElement("div");
-      panel.className = "insert-dialog-panel";
-      var title = document.createElement("div");
-      title.className = "insert-dialog-title";
-      title.textContent = "Select Content Type";
-      panel.appendChild(title);
-      if (datatypes.length === 0) {
-        var emptyMsg = document.createElement("div");
-        emptyMsg.className = "insert-dialog-empty";
-        emptyMsg.textContent = "No content types available";
-        panel.appendChild(emptyMsg);
-      } else {
-        for (var i = 0; i < datatypes.length; i++) {
-          var dt = datatypes[i];
-          var option = document.createElement("button");
-          option.className = "insert-dialog-option";
-          option.dataset.datatypeIdx = String(i);
-          var labelSpan = document.createElement("span");
-          labelSpan.className = "insert-dialog-option-label";
-          labelSpan.textContent = dt.label;
-          option.appendChild(labelSpan);
-          var typeSpan = document.createElement("span");
-          typeSpan.className = "insert-dialog-option-type";
-          typeSpan.textContent = dt.type;
-          option.appendChild(typeSpan);
-          option.addEventListener("click", /* @__PURE__ */ (function(datatype) {
-            return function() {
-              self._closeDialog();
-              self._onDatatypeSelected(datatype, position, targetId);
-            };
-          })(dt));
-          panel.appendChild(option);
-        }
-      }
-      var cancelBtn = document.createElement("button");
-      cancelBtn.className = "insert-dialog-cancel";
-      cancelBtn.textContent = "Cancel";
-      cancelBtn.addEventListener("click", function() {
-        self._closeDialog();
-      });
-      panel.appendChild(cancelBtn);
-      backdrop.appendChild(panel);
-      backdrop.addEventListener("click", function(e) {
-        if (e.target === backdrop) {
-          self._closeDialog();
-        }
-      });
-      this._dialogEscHandler = function(e) {
-        if (e.key === "Escape") {
-          self._closeDialog();
-        }
-      };
-      window.addEventListener("keydown", this._dialogEscHandler);
-      this._dialogBackdrop = backdrop;
-      this.appendChild(backdrop);
-    }
-    _closeDialog() {
-      if (this._dialogBackdrop) {
-        this._dialogBackdrop.remove();
-        this._dialogBackdrop = null;
-      }
-      if (this._dialogEscHandler) {
-        window.removeEventListener("keydown", this._dialogEscHandler);
-        this._dialogEscHandler = null;
-      }
-    }
-    _onDatatypeSelected(datatype, position, targetId) {
-      if (!this._state) return;
-      var id = addBlockFromDatatype(this._state, datatype, position, targetId);
-      this._devValidate();
-      this._render();
-      this._selectBlock(id);
-      this.dispatchEvent(new CustomEvent("block-editor:change", {
-        bubbles: true,
-        composed: true,
-        detail: { action: "add", blockId: id }
-      }));
-    }
     _renderError(message, detail) {
       this.innerHTML = "";
       const container = document.createElement("div");
@@ -1617,7 +1832,7 @@ if (isBrowser) {
       if (action === "insert") {
         var position = target.dataset.position;
         var targetId = target.dataset.targetId || null;
-        this._openInsertDialog(position, targetId);
+        this._openPicker(targetId, position);
         return;
       } else if (action === "add") {
         const blockType = target.dataset.blockType || "text";
@@ -1657,9 +1872,22 @@ if (isBrowser) {
       if (!block) return;
       const descendantCount = getDescendantCount(this._state, blockId);
       if (descendantCount > 0) {
-        const confirmed = confirm(`Delete "${block.label}" and ${descendantCount} children?`);
-        if (!confirmed) return;
+        var self = this;
+        showConfirmDialog({
+          title: "Delete Block",
+          message: 'Delete "' + block.label + '" and ' + descendantCount + " children?",
+          confirmLabel: "Delete",
+          destructive: true
+        }).then(function(confirmed) {
+          if (confirmed) self._executeDeleteBlock(blockId);
+        });
+        return;
       }
+      this._executeDeleteBlock(blockId);
+    }
+    _executeDeleteBlock(blockId) {
+      const block = this._state.blocks[blockId];
+      if (!block) return;
       const parentId = block.parentId;
       const removedIds = removeBlock(this._state, blockId);
       this._devValidate();
@@ -1713,6 +1941,7 @@ if (isBrowser) {
       const el = this._elementRegistry.get(blockId);
       if (el) {
         el.classList.add("selected");
+        el.scrollIntoView({ block: "nearest", behavior: "smooth" });
       }
       this.dispatchEvent(new CustomEvent("block-editor:select", {
         bubbles: true,
@@ -1722,39 +1951,60 @@ if (isBrowser) {
     }
     // ---- Keyboard Shortcuts ----
     _onKeyDown(e) {
+      if (this._pickerOpen) {
+        this._onPickerKeyDown(e);
+        return;
+      }
       if (!this._state) return;
+      var blockId = this._state.selectedBlockId;
+      var noMod = !e.ctrlKey && !e.metaKey && !e.altKey;
       if (e.key === "Tab") {
-        const blockId = this._state.selectedBlockId;
-        if (!blockId) return;
         e.preventDefault();
-        if (e.shiftKey) {
-          this._doOutdentBlock(blockId);
-        } else {
-          this._doIndentBlock(blockId);
+        this._navigateDFS(e.shiftKey);
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "j" && noMod) {
+        e.preventDefault();
+        this._navigateDFS(false);
+        return;
+      }
+      if (e.key === "ArrowUp" || e.key === "k" && noMod) {
+        e.preventDefault();
+        this._navigateDFS(true);
+        return;
+      }
+      if (e.key === "ArrowLeft" || e.key === "h" && noMod) {
+        if (!blockId) return;
+        var parentId = this._state.blocks[blockId].parentId;
+        if (parentId) {
+          e.preventDefault();
+          this._selectBlock(parentId);
         }
         return;
       }
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
-        const blockId = this._state.selectedBlockId;
+      if (e.key === "ArrowRight" || e.key === "l" && noMod) {
         if (!blockId) return;
-        const order = getBlockTraversalOrder(this._state);
-        if (order.length === 0) return;
-        const currentIndex = order.indexOf(blockId);
-        if (currentIndex === -1) return;
-        let nextIndex;
-        if (e.key === "ArrowUp") {
-          nextIndex = currentIndex - 1;
-        } else {
-          nextIndex = currentIndex + 1;
+        var childId = this._state.blocks[blockId].firstChildId;
+        if (childId) {
+          e.preventDefault();
+          this._selectBlock(childId);
         }
-        if (nextIndex < 0 || nextIndex >= order.length) return;
+        return;
+      }
+      if (e.key === ">" && noMod) {
+        if (!blockId) return;
         e.preventDefault();
-        this._selectBlock(order[nextIndex]);
+        this._doIndentBlock(blockId);
+        return;
+      }
+      if (e.key === "<" && noMod) {
+        if (!blockId) return;
+        e.preventDefault();
+        this._doOutdentBlock(blockId);
         return;
       }
       if (e.key === "d" || e.key === "D") {
         if ((e.ctrlKey || e.metaKey) && e.shiftKey) {
-          const blockId = this._state.selectedBlockId;
           if (!blockId) return;
           e.preventDefault();
           this._doDuplicateBlock(blockId);
@@ -1762,25 +2012,37 @@ if (isBrowser) {
         }
       }
       if (e.key === "Delete" || e.key === "Backspace") {
-        const blockId = this._state.selectedBlockId;
         if (!blockId) return;
         e.preventDefault();
         this._doDeleteBlock(blockId);
         return;
       }
       if (e.key === "Enter") {
-        const blockId = this._state.selectedBlockId;
         if (!blockId) return;
         e.preventDefault();
-        this._doAddBlockAfter(blockId, "text");
+        this._openPicker(blockId, "after");
         return;
       }
     }
-    _updateSaveButton() {
-      const saveBtn = this.querySelector('[data-action="save"]');
-      if (saveBtn) {
-        saveBtn.disabled = !this._state?.dirty;
+    /**
+     * Navigate DFS order: select next (backward=false) or previous (backward=true) block.
+     * Auto-selects first or last block if nothing is currently selected.
+     */
+    _navigateDFS(backward) {
+      var order = getBlockTraversalOrder(this._state);
+      if (order.length === 0) return;
+      var blockId = this._state.selectedBlockId;
+      if (!blockId) {
+        this._selectBlock(backward ? order[order.length - 1] : order[0]);
+        return;
       }
+      var currentIndex = order.indexOf(blockId);
+      if (currentIndex === -1) return;
+      var nextIndex = backward ? currentIndex - 1 : currentIndex + 1;
+      if (nextIndex < 0 || nextIndex >= order.length) return;
+      this._selectBlock(order[nextIndex]);
+    }
+    _updateSaveButton() {
     }
     // ---- Dev-mode validation ----
     _devValidate() {
@@ -1800,7 +2062,7 @@ if (isBrowser) {
       }
     }
   }
-  Object.assign(BlockEditor.prototype, dragMethods, domPatchMethods);
+  Object.assign(BlockEditor.prototype, dragMethods, domPatchMethods, pickerMethods);
   customElements.define("block-editor", BlockEditor);
 }
 export {

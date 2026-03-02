@@ -3,7 +3,6 @@ package pages
 import (
 	"github.com/hegner123/modulacms/internal/admin/components"
 	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
 	"github.com/hegner123/modulacms/internal/db"
 )
 
@@ -21,47 +20,40 @@ type ContentMeta struct {
 }
 
 templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFieldRow, csrfToken string, treeJSON string, meta ContentMeta) {
-	<div class="page-header">
-		<div class="page-header-left">
+	<div class="content-edit-header">
+		<div class="content-edit-nav">
 			<a
 				href="/admin/content"
-				class="btn btn-ghost"
+				class="btn btn-ghost btn-sm"
 				hx-get="/admin/content"
 				hx-target="#main-content"
 				hx-push-url="true"
 			>
 				&larr; Back
 			</a>
-			<h1>Edit Content</h1>
+			if meta.DatatypeLabel != "" {
+				<h1>{ meta.DatatypeLabel }</h1>
+			}
 		</div>
-		<div class="page-header-right">
-			<div class="content-meta-inline">
-				@components.StatusBadge(string(content.Status))
-				if meta.DatatypeLabel != "" {
-					<span class="text-muted">{ meta.DatatypeLabel }</span>
-				}
-				if meta.AuthorName != "" {
-					<span class="text-muted">{ meta.AuthorName }</span>
-				}
-				if meta.PublishedByName != "" {
-					<span class="text-muted">Published by { meta.PublishedByName }</span>
-				}
-			</div>
+		<div class="content-edit-meta">
+			@components.StatusBadge(string(content.Status))
+		</div>
+		<div class="content-edit-actions">
 			if meta.HasPublishPerm {
-				if string(content.Status) == "draft" {
+				<div class="btn-split">
 					if meta.I18nEnabled && meta.ActiveLocale != "" {
 						<button
-							class="btn btn-primary"
+							class="btn btn-primary btn-sm btn-split-main"
 							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish?locale=" + meta.ActiveLocale }
 							hx-target="#main-content"
 							hx-swap="innerHTML"
 							hx-confirm="Publish this content? This creates a public snapshot."
 						>
-							{ "Publish (" + meta.ActiveLocale + ")" }
+							Publish
 						</button>
 					} else {
 						<button
-							class="btn btn-primary"
+							class="btn btn-primary btn-sm btn-split-main"
 							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/publish" }
 							hx-target="#main-content"
 							hx-swap="innerHTML"
@@ -70,38 +62,64 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 							Publish
 						</button>
 					}
-				} else {
-					if meta.I18nEnabled && meta.ActiveLocale != "" {
-						<button
-							class="btn btn-ghost"
-							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish?locale=" + meta.ActiveLocale }
-							hx-target="#main-content"
-							hx-swap="innerHTML"
-							hx-confirm="Unpublish this content? It will no longer be publicly accessible."
-						>
-							{ "Unpublish (" + meta.ActiveLocale + ")" }
-						</button>
-					} else {
-						<button
-							class="btn btn-ghost"
-							hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
-							hx-target="#main-content"
-							hx-swap="innerHTML"
-							hx-confirm="Unpublish this content? It will no longer be publicly accessible."
-						>
-							Unpublish
-						</button>
-					}
-				}
+					<button type="button" class="btn btn-primary btn-sm btn-split-toggle" aria-label="More options">
+						&#9662;
+					</button>
+					<div class="btn-split-menu">
+						if meta.I18nEnabled && meta.ActiveLocale != "" {
+							<button
+								class="btn-split-menu-item"
+								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish?locale=" + meta.ActiveLocale }
+								hx-target="#main-content"
+								hx-swap="innerHTML"
+								hx-confirm="Save as draft? This will unpublish the content."
+							>
+								Save as Draft
+							</button>
+						} else {
+							<button
+								class="btn-split-menu-item"
+								hx-post={ "/admin/content/" + content.ContentDataID.String() + "/unpublish" }
+								hx-target="#main-content"
+								hx-swap="innerHTML"
+								hx-confirm="Save as draft? This will unpublish the content."
+							>
+								Save as Draft
+							</button>
+						}
+					</div>
+				</div>
 			}
-			@partials.DeleteConfirm(
-				"Delete Content",
-				"This will permanently delete this content and all its children.",
-				"/admin/content/"+content.ContentDataID.String(),
-				"#main-content",
-			)
+			<button
+				type="button"
+				class="btn btn-ghost btn-sm"
+				data-opens-dialog="version-history-dialog"
+				hx-get={ "/admin/content/" + content.ContentDataID.String() + "/versions" }
+				hx-target="#version-list-panel"
+				hx-swap="innerHTML"
+				hx-trigger="click"
+			>
+				Versions
+			</button>
+			<button
+				type="button"
+				class="btn btn-danger btn-sm"
+				data-opens-dialog="delete-content-dialog"
+			>
+				Delete
+			</button>
 		</div>
 	</div>
+	<mcms-dialog
+		id="delete-content-dialog"
+		title="Delete Content"
+		confirm-label="Delete"
+		cancel-label="Cancel"
+		destructive
+		data-delete-url={ "/admin/content/" + content.ContentDataID.String() }
+	>
+		<p>This will permanently delete this content and all its children.</p>
+	</mcms-dialog>
 	<!-- Locale Tab Bar (i18n) -->
 	if meta.I18nEnabled && len(meta.EnabledLocales) > 0 {
 		<div class="locale-tabs" id="locale-tabs">
@@ -142,33 +160,55 @@ templ ContentEditContent(content db.ContentData, fields []db.ContentFieldWithFie
 			</button>
 		</div>
 	}
-	<!-- Version History (lazy-loaded) -->
-	<div id="version-list-panel" class="version-panel">
-		<button
-			class="btn btn-ghost"
-			hx-get={ "/admin/content/" + content.ContentDataID.String() + "/versions" }
-			hx-target="#version-list-panel"
+	<mcms-dialog id="version-history-dialog" title="Version History" cancel-label="Close">
+		<div id="version-list-panel">
+			<p class="text-muted">Loading...</p>
+		</div>
+		<form
+			id="version-restore-form"
+			hx-post={ "/admin/content/" + content.ContentDataID.String() + "/restore" }
+			hx-target="#main-content"
 			hx-swap="innerHTML"
+			hx-confirm="Restore this version? Current field values will be overwritten."
+			class="version-restore-form"
 		>
-			Show Version History
-		</button>
-	</div>
+			<input type="hidden" name="_csrf" value={ csrfToken }/>
+			<input type="hidden" name="version_id" id="version-restore-id" value=""/>
+			<button type="submit" class="btn btn-primary btn-sm" disabled>Restore</button>
+		</form>
+	</mcms-dialog>
 	<!-- Block Editor: adaptive 5/7 layout -->
 	<div class="content-editor-layout" id="content-editor-layout">
 		<section class="content-editor-tree">
 			<block-editor
 				id="content-block-editor"
 				data-content-id={ content.ContentDataID.String() }
+				if content.DatatypeID.Valid {
+					data-root-datatype-id={ content.DatatypeID.ID.String() }
+				}
 				data-state={ treeJSON }
 			></block-editor>
 		</section>
 		<section class="content-editor-panel" id="block-field-panel">
 			<div class="content-editor-panel-header">
-				<h2 id="panel-title">Block Fields</h2>
-				<button type="button" class="panel-close-btn" id="panel-close-btn" aria-label="Close field panel">&times;</button>
+				<h2 id="panel-title">{ meta.DatatypeLabel }</h2>
 			</div>
 			<div id="panel-content">
-				<!-- Populated by JS when a block is selected -->
+				if len(fields) > 0 {
+					for _, f := range fields {
+						<mcms-field-renderer
+							type={ string(f.FType) }
+							name={ f.FieldID.ID.String() }
+							value={ f.FieldValue }
+							label={ f.FLabel }
+							data-content-data-id={ content.ContentDataID.String() }
+							data-field-id={ f.FieldID.ID.String() }
+							data-content-field-id={ f.ContentFieldID.String() }
+						></mcms-field-renderer>
+					}
+				} else {
+					<p class="text-muted">No fields for this content type.</p>
+				}
 			</div>
 		</section>
 	</div>

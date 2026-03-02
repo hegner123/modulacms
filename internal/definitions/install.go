@@ -73,6 +73,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 		}
 		created, createErr := driver.CreateDatatype(db.CreateDatatypeParams{
 			DatatypeID:   types.NewDatatypeID(),
+			Name:         dt.Name,
 			Label:        dt.Label,
 			Type:         dt.Type.String,
 			AuthorID:     authorID,
@@ -110,6 +111,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 					ID:    parentID,
 					Valid: true,
 				},
+				Name:         dt.Name,
 				Label:        dt.Label,
 				Type:         dt.Type.String,
 				AuthorID:     authorID,
@@ -161,6 +163,7 @@ func Install(driver Installer, def SchemaDefinition, authorID types.UserID) (Ins
 			created, fieldErr := driver.CreateField(db.CreateFieldParams{
 				FieldID:      types.NewFieldID(),
 				ParentID:     types.NullableDatatypeID{ID: datatypeID, Valid: true},
+				Name:         fieldDef.Name,
 				Label:        fieldDef.Label,
 				Data:         data,
 				Validation:   validation,
@@ -200,18 +203,9 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 
 	ac := audited.Ctx(types.NewNodeID(), authorID, "reinstall", "system")
 
-	// Build a set of system datatype IDs so we can skip their fields.
 	allDatatypes, err := cleaner.ListDatatypes()
 	if err != nil {
 		return InstallResult{}, fmt.Errorf("definitions: list datatypes: %w", err)
-	}
-	systemDatatypeIDs := make(map[types.DatatypeID]bool)
-	if allDatatypes != nil {
-		for _, dt := range *allDatatypes {
-			if types.IsReservedPrefix(dt.Type) {
-				systemDatatypeIDs[dt.DatatypeID] = true
-			}
-		}
 	}
 
 	var cleanup CleanupResult
@@ -248,7 +242,7 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 		}
 	}
 
-	// Step 3: Delete system-authored fields (skip fields belonging to system datatypes).
+	// Step 3: Delete system-authored fields.
 	fields, err := cleaner.ListFields()
 	if err != nil {
 		return InstallResult{}, fmt.Errorf("definitions: list fields: %w", err)
@@ -258,9 +252,6 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 			if !f.AuthorID.Valid || f.AuthorID.ID != systemUserID {
 				continue
 			}
-			if f.ParentID.Valid && systemDatatypeIDs[f.ParentID.ID] {
-				continue
-			}
 			if delErr := cleaner.DeleteField(ctx, ac, f.FieldID); delErr != nil {
 				return InstallResult{}, fmt.Errorf("definitions: delete field %s: %w", f.FieldID, delErr)
 			}
@@ -268,10 +259,10 @@ func Reinstall(ctx context.Context, cleaner Cleaner, installer Installer, def Sc
 		}
 	}
 
-	// Step 5: Delete system-authored datatypes (skip reserved prefix types).
+	// Step 5: Delete system-authored datatypes.
 	if allDatatypes != nil {
 		for _, dt := range *allDatatypes {
-			if dt.AuthorID == systemUserID && !types.IsReservedPrefix(dt.Type) {
+			if dt.AuthorID == systemUserID {
 				if delErr := cleaner.DeleteDatatype(ctx, ac, dt.DatatypeID); delErr != nil {
 					return InstallResult{}, fmt.Errorf("definitions: delete datatype %s: %w", dt.DatatypeID, delErr)
 				}

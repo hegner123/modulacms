@@ -346,6 +346,8 @@ func (m Model) UpdateDialog(msg tea.Msg) (Model, tea.Cmd) {
 			Label:          msg.Field.Label,
 			Type:           msg.Field.Type,
 			Value:          msg.Field.Value,
+			ValidationJSON: msg.Field.ValidationJSON,
+			DataJSON:       msg.Field.DataJSON,
 		}}
 		dialog := NewEditContentFormDialog(
 			fmt.Sprintf("Edit: %s", msg.Field.Label),

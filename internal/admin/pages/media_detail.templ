@@ -1,101 +1,102 @@
 package pages
 
 import (
-	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
 )
 
 templ MediaDetailContent(media db.Media, csrfToken string) {
-	<div class="page-header">
-		<div class="page-header-left">
-			<a
-				href="/admin/media"
-				class="btn btn-ghost"
-				hx-get="/admin/media"
-				hx-target="#main-content"
-				hx-push-url="true"
-			>
-				Back to Media
-			</a>
-			<h1>{ nullStr(media.DisplayName) }</h1>
-		</div>
-	</div>
-	<div class="media-detail-layout">
-		<div class="media-detail-preview">
-			if isImage(nullStr(media.Mimetype)) {
-				<img
-					src={ media.URL.String() }
-					alt={ nullStr(media.Alt) }
-					class="media-detail-image"
-				/>
-			} else {
-				<div class="media-detail-file">
-					<span class="media-file-icon">
-						<span class="icon icon-file" aria-hidden="true"></span>
-					</span>
-					<span class="media-file-name">{ nullStr(media.Name) }</span>
-					<span class="media-file-type">{ nullStr(media.Mimetype) }</span>
-				</div>
-			}
-			<div class="media-detail-url">
-				<label>URL</label>
-				<input type="text" value={ media.URL.String() } readonly class="form-control"/>
-			</div>
-		</div>
-		<aside class="media-detail-sidebar">
-			<div class="sidebar-section">
-				<h3>Edit Metadata</h3>
-				<form
-					hx-post={ "/admin/media/" + media.MediaID.String() }
-					hx-swap="none"
-					class="media-edit-form"
-				>
-					@partials.CSRFField(csrfToken)
-					@partials.FormField("display_name", "Display Name", nullStr(media.DisplayName), "")
-					@partials.FormField("alt", "Alt Text", nullStr(media.Alt), "")
-					@partials.FormField("caption", "Caption", nullStr(media.Caption), "")
-					<div class="form-field">
-						<label for="description">Description</label>
-						<textarea id="description" name="description" rows="3" class="form-control">{ nullStr(media.Description) }</textarea>
-					</div>
-					<div class="form-actions">
-						<button type="submit" class="btn btn-primary">Save</button>
-					</div>
-				</form>
-			</div>
-			<div class="sidebar-section">
-				<h3>Details</h3>
-				<dl class="detail-list">
-					<dt>Filename</dt>
-					<dd>{ nullStr(media.Name) }</dd>
-					<dt>Type</dt>
-					<dd>{ nullStr(media.Mimetype) }</dd>
-					if media.Dimensions.Valid {
-						<dt>Dimensions</dt>
-						<dd>{ media.Dimensions.String }</dd>
-					}
-					<dt>Created</dt>
-					<dd>{ media.DateCreated.String() }</dd>
-					<dt>Modified</dt>
-					<dd>{ media.DateModified.String() }</dd>
-				</dl>
-			</div>
-			<div class="sidebar-section sidebar-section-danger">
-				<h3>Danger Zone</h3>
-				@partials.DeleteConfirm(
-					"Delete Media",
-					"This will permanently delete this media file.",
-					"/admin/media/"+media.MediaID.String(),
-					"#main-content",
-				)
-			</div>
-		</aside>
-	</div>
+    <div class="page-header">
+        <div class="page-header-left">
+            <a
+                href="/admin/media"
+                class="btn btn-ghost"
+                hx-get="/admin/media"
+                hx-target="#main-content"
+                hx-push-url="true"
+            >
+                Back to Media
+            </a>
+            <h1>{ nullStr(media.DisplayName) }</h1>
+        </div>
+        <div class="page-header-actions">
+            <button type="submit" form="media-form" class="btn btn-primary">Save</button>
+        </div>
+    </div>
+    <div class="media-detail-layout">
+        <div class="media-detail-preview">
+            if isImage(nullStr(media.Mimetype)) {
+                <img
+                    src={ media.URL.String() }
+                    alt={ nullStr(media.Alt) }
+                    class="media-detail-image"
+                />
+            } else {
+                <div class="media-detail-file">
+                    <span class="media-file-icon">
+                        <span class="icon icon-file" aria-hidden="true"></span>
+                    </span>
+                    <span class="media-file-name">{ nullStr(media.Name) }</span>
+                    <span class="media-file-type">{ nullStr(media.Mimetype) }</span>
+                </div>
+            }
+            <div class="media-detail-url">
+                <label>URL</label>
+                <input type="text" value={ media.URL.String() } readonly class="form-control"/>
+            </div>
+        </div>
+        <aside class="media-detail-sidebar">
+            <div class="sidebar-section">
+                <h3>Edit Metadata</h3>
+                <form
+                    id="media-form"
+                    hx-post={ "/admin/media/" + media.MediaID.String() }
+                    hx-swap="none"
+                    class="media-edit-form"
+                >
+                    @partials.CSRFField(csrfToken)
+                    @partials.FormField("display_name", "Display Name", nullStr(media.DisplayName), "")
+                    @partials.FormField("alt", "Alt Text", nullStr(media.Alt), "")
+                    @partials.FormField("caption", "Caption", nullStr(media.Caption), "")
+                    <div class="form-field">
+                        <label for="description">Description</label>
+                        <textarea id="description" name="description" rows="3" class="form-control">{ nullStr(media.Description) }</textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="sidebar-section">
+                <h3>Details</h3>
+                <dl class="detail-list">
+                    <dt>Filename</dt>
+                    <dd>{ nullStr(media.Name) }</dd>
+                    <dt>Type</dt>
+                    <dd>{ nullStr(media.Mimetype) }</dd>
+                    if media.Dimensions.Valid {
+                        <dt>Dimensions</dt>
+                        <dd>{ media.Dimensions.String }</dd>
+                    }
+                    <dt>Created</dt>
+                    <dd>{ media.DateCreated.String() }</dd>
+                    <dt>Modified</dt>
+                    <dd>{ media.DateModified.String() }</dd>
+                </dl>
+            </div>
+            <div class="sidebar-section sidebar-section-danger">
+                <h3>Danger Zone</h3>
+                @partials.DeleteConfirm(
+                    "Delete Media",
+                    "This will permanently delete this media file.",
+                    "/admin/media/"+media.MediaID.String(),
+                    "#main-content",
+                )
+            </div>
+        </aside>
+    </div>
 }
 
 templ MediaDetail(layout layouts.AdminData, media db.Media, csrfToken string) {
-	@layouts.Admin(layout) {
-		@MediaDetailContent(media, csrfToken)
-	}
+    @layouts.Admin(layout) {
+        @MediaDetailContent(media, csrfToken)
+    }
 }

@@ -27,6 +27,7 @@ func (m *mockInstaller) CreateField(p db.CreateFieldParams) (db.Fields, error) {
 	f := db.Fields{
 		FieldID:      p.FieldID,
 		ParentID:     p.ParentID,
+		Name:         p.Name,
 		Label:        p.Label,
 		Data:         p.Data,
 		Validation:   p.Validation,
@@ -45,6 +46,7 @@ func (m *mockInstaller) CreateDatatype(p db.CreateDatatypeParams) (db.Datatypes,
 	d := db.Datatypes{
 		DatatypeID:   p.DatatypeID,
 		ParentID:     p.ParentID,
+		Name:         p.Name,
 		Label:        p.Label,
 		Type:         p.Type,
 		AuthorID:     p.AuthorID,
@@ -404,7 +406,7 @@ func TestReinstall_PreservesUserRecords(t *testing.T) {
 	}
 }
 
-func TestReinstall_PreservesSystemDatatypes(t *testing.T) {
+func TestReinstall_DeletesReservedPrefixDatatypes(t *testing.T) {
 	su := systemUser()
 
 	refDt := db.Datatypes{DatatypeID: types.NewDatatypeID(), Label: "Reference", Type: "_reference", AuthorID: su.UserID}
@@ -427,11 +429,11 @@ func TestReinstall_PreservesSystemDatatypes(t *testing.T) {
 		t.Fatalf("Reinstall failed: %v", err)
 	}
 
-	if len(cleaner.deletedDatatypeIDs) != 0 {
-		t.Errorf("expected 0 deleted datatypes (system types preserved), got %d", len(cleaner.deletedDatatypeIDs))
+	if len(cleaner.deletedDatatypeIDs) != 1 {
+		t.Errorf("expected 1 deleted datatype, got %d", len(cleaner.deletedDatatypeIDs))
 	}
-	if len(cleaner.deletedFieldIDs) != 0 {
-		t.Errorf("expected 0 deleted fields (system datatype fields preserved), got %d", len(cleaner.deletedFieldIDs))
+	if len(cleaner.deletedFieldIDs) != 1 {
+		t.Errorf("expected 1 deleted field, got %d", len(cleaner.deletedFieldIDs))
 	}
 }
 

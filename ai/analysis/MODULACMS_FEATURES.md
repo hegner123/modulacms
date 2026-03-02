@@ -47,6 +47,48 @@
 - Cross-content references via content relations table
 - Admin content relations table
 
+## i18n / Locales
+- Locale CRUD with BCP 47 codes (2-5 lowercase letters, optional `-` region suffix)
+- Default locale flag (exactly one active at a time)
+- Fallback chains: each locale can specify a `fallback_code`, max 2 hops, cycle prevention
+- Enable/disable per locale (disabled locales hidden from public API)
+- Sort order on locales
+- Translation creation: copies all translatable fields from default locale to new locale
+- Locale resolution priority: `?locale=` query param > `Accept-Language` header > default locale
+- Accept-Language parsing with base language fallback (e.g., "en" from "en-US")
+- Fallback walking: tries requested locale's published snapshot, walks fallback chain if not found
+- Locale metadata endpoint: per-locale publish status and timestamps
+- Public locale list endpoint (enabled only, cached 5 min)
+- Admin locale list/get/create/update/delete endpoints
+- Admin UI locale settings page, TUI locales page
+- Config: `i18n_enabled` (bool), `i18n_default_locale` (string, default "en")
+- Go/TypeScript/Swift SDK locale resources
+- Audited mutations via change_events
+
+## Webhooks
+- Webhook registration with name, URL, secret, event subscriptions, custom headers, active flag
+- HMAC-SHA256 signed payloads via `X-ModulaCMS-Signature` header
+- Event header: `X-ModulaCMS-Event`
+- User-Agent: `ModulaCMS-Webhook/1.0`
+- Auto-generated 64-char hex secret if not provided
+- Wildcard event subscription (`"*"` matches all events)
+- Defined events: `content.published`, `content.unpublished`, `content.updated`, `content.scheduled`, `content.deleted`, `locale.published`, `version.created`, `admin.content.published`, `admin.content.unpublished`, `admin.content.updated`, `admin.content.deleted`
+- Delivery engine with configurable worker pool (default 4 workers, channel buffer = workers * 10)
+- Exponential retry: 1 min → 5 min → 30 min (configurable max retries, default 3 total attempts)
+- Retry checker runs every 60 seconds, fetches up to 100 pending retries per tick
+- Delivery statuses: `pending`, `retrying`, `success`, `failed`
+- SSRF protection: blocks loopback, private IPs (10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16), link-local, cloud metadata (169.254.169.254)
+- Configurable HTTP timeout (default 10s), no redirect following
+- HTTPS enforced by default (`webhook_allow_http` config to override)
+- Delivery retention with configurable pruning (default 30 days, 0 = unlimited)
+- Dispatcher integration into publish/unpublish call sites
+- Test delivery endpoint (returns status, status_code, error, duration)
+- REST API: list, create, get, update, delete webhooks + test delivery (6 endpoints)
+- Admin UI webhooks page, TUI webhooks page
+- Config: `webhook_enabled`, `webhook_timeout`, `webhook_max_retries`, `webhook_workers`, `webhook_allow_http`, `webhook_delivery_retention_days`
+- Go/TypeScript/Swift SDK webhook resources
+- Graceful shutdown with 10-second drain for in-flight deliveries
+
 ## Content Delivery (Public API)
 - Slug-based content delivery (`/api/v1/content/<slug>`)
 - Serves from published snapshots (immutable, fast)
@@ -54,12 +96,17 @@
 - Configurable output format per-request: `contentful`, `sanity`, `strapi`, `wordpress`, `clean`, `raw`
 
 ## Query API (`/api/v1/query/{datatype}`)
-- In-memory query pipeline: resolve datatype → fetch content → filter by status → batch fields → build indexes → filter → sort → paginate
+- In-memory query pipeline: resolve datatype → fetch content → filter by status → batch fields → build indexes → filter → sort → paginate → transform
 - **Zero SQL injection surface** -- all filtering, sorting, and pagination processed in Go, not dynamic SQL
-- 7 filter operators with type-aware comparison (number, boolean, date, string)
-- Multi-field sorting with type-aware comparison, missing values sort to end
-- Configurable pagination (default 20, max 100) with offset support
+- 7 filter operators: `eq` (default), `neq`, `gt`, `gte`, `lt`, `lte`, `like` (substring match)
+- Filter syntax: `?field[op]=value` or bare `?field=value` (defaults to `eq`); AND logic (all filters must match)
+- Reserved query params (non-filters): `sort`, `limit`, `offset`, `locale`, `status`, `format`
+- Type-aware comparisons: numbers (float64), booleans ("true"/"1"), dates (RFC3339 or "2006-01-02"), strings (lexical/substring)
+- Multi-field sorting via `?sort=field:asc` or `?sort=field:desc` (default ascending); missing values sort to end
+- Configurable pagination with limit/offset; status defaults to `published` (overridable via `?status=`)
+- Locale-aware field fetching via `?locale=` parameter
 - QueryTransformer interface for pluggable output formats (RawQueryTransformer produces JSON envelope)
+- Response: `{items: [...], datatype: {...}, total: N, limit: N, offset: N}`
 - Tri-database compatible -- single Go implementation works identically across SQLite/MySQL/PostgreSQL
 - Batch field loading via `ListContentFieldsByContentDataIDs` with `QSelect` + `In()` condition
 - SDK support: Go (`QueryResource`), TypeScript (`queryContent()`), Swift (`QueryResource`)
@@ -168,7 +215,7 @@
 - CSRF on all mutating requests
 - Static assets embedded with `go:embed`
 - Cache-Control on static assets
-- Pages: Dashboard, Content list/edit, Version history/compare, Datatypes list/detail, Fields detail, Field types list, Media list/detail, Routes list, Admin routes list, Users list/detail, Roles list/detail/new, Tokens list, Sessions list, Plugins list/detail, Import, Audit log, Settings, Demo, Forgot password, Reset password
+- Pages: Dashboard, Content list/edit, Version history/compare, Datatypes list/detail, Fields detail, Field types list, Media list/detail, Routes list, Admin routes list, Users list/detail, Roles list/detail/new, Tokens list, Sessions list, Plugins list/detail, Import, Audit log, Settings, Locale settings, Webhooks, Demo, Forgot password, Reset password
 - Admin JSON API endpoints for block editor and richtext toolbar config
 
 ## Plugin System (Lua)
@@ -238,6 +285,8 @@
 - User management
 - Media management
 - Admin panel (admin content trees, admin fields)
+- Locale management
+- Webhook management
 - Deploy panel (multi-environment push/pull with status)
 - Update panel (check for and apply CMS updates)
 - Database form dialog (interactive DB config)
@@ -268,7 +317,7 @@
 ## Configuration System
 - Hot-reloadable config via `config.Manager` + `FileProvider`
 - `${VAR}` and `${VAR:-default}` environment variable expansion
-- All server ports, database credentials, S3 storage, auth, cookies, OAuth, CORS, plugins, observability, email, deploy, composition, publishing, versioning, richtext toolbar, keybindings, backup, style customization, logging
+- All server ports, database credentials, S3 storage, auth, cookies, OAuth, CORS, plugins, observability, email, deploy, composition, publishing, versioning, richtext toolbar, keybindings, backup, style customization, logging, i18n, webhooks
 
 ## Email System
 - Providers: Disabled, SMTP (TLS), SendGrid, AWS SES, Postmark
@@ -298,8 +347,9 @@
 
 ## SDKs
 - **TypeScript**: `@modulacms/types` (shared types, branded IDs, enums), `@modulacms/sdk` (read-only delivery), `@modulacms/admin-sdk` (full admin CRUD) — pnpm workspace, tsup (ESM+CJS), Vitest
-- **Go**: `modulacms` package — generic CRUD, all entity types, branded IDs, enums, errors, pagination, auth, media upload, content delivery, SSH keys, sessions, import, batch
+- **Go**: `modulacms` package — generic CRUD, all entity types, branded IDs, enums, errors, pagination, auth, media upload, content delivery, SSH keys, sessions, import, batch, locales, webhooks, query
 - **Swift**: SPM package — iOS 16+, macOS 13+, tvOS 16+, watchOS 9+ — generic CRUD, all entity types, branded IDs, URLSession transport, zero dependencies
+- All three SDKs include: locale resources, webhook resources, query resources
 
 ## MCP Server
 - Model Context Protocol server exposing ModulaCMS to AI assistants via the Go SDK
@@ -307,7 +357,8 @@
 
 ## Code Generation
 - **sqlc**: SQL → type-safe Go (three backends)
-- **dbgen**: custom codegen from entity definitions in `internal/definitions/`
+- **sqlcgen**: template-driven generator for `sqlc.yml` from centralized entity definitions; single source of truth for multi-dialect SQL config; flags: `--output`, `--dry-run`, `--verify` (CI mode)
+- **dbgen**: custom codegen from entity definitions; generates wrapper methods, mappers, audited commands; per-entity generation via `-entity` flag; `--verify` for CI staleness check; supports `SkipMappers` and `SkipAuditedCommands` entity options
 - **templ**: `.templ` → type-safe Go HTML
 - **esbuild**: block editor JS bundling
 
@@ -329,5 +380,5 @@
 - CI: `.github/workflows/go.yml` (Go), `.github/workflows/sdks.yml` (all SDKs)
 - Linting: golangci-lint, hadolint, yamllint
 
-## Database Schema (33 schema directories)
-- `backups`, `change_events`, `wipe`, `permissions`, `roles`, `media_dimension`, `users`, `admin_routes`, `routes`, `datatypes`, `fields`, `admin_datatypes`, `admin_fields`, `tokens`, `user_oauth`, `tables`, `media`, `sessions`, `content_data`, `content_fields`, `admin_content_data`, `admin_content_fields`, `joins`, `user_ssh_keys`, `content_relations`, `admin_content_relations`, `role_permissions`, `field_types`, `admin_field_types`, `plugins`, `pipelines`, `content_versions`, `admin_content_versions`
+## Database Schema (36 schema directories)
+- `backups`, `change_events`, `wipe`, `permissions`, `roles`, `media_dimension`, `users`, `admin_routes`, `routes`, `datatypes`, `fields`, `admin_datatypes`, `admin_fields`, `tokens`, `user_oauth`, `tables`, `media`, `sessions`, `content_data`, `content_fields`, `admin_content_data`, `admin_content_fields`, `joins`, `user_ssh_keys`, `content_relations`, `admin_content_relations`, `role_permissions`, `field_types`, `admin_field_types`, `plugins`, `pipelines`, `content_versions`, `admin_content_versions`, `locales`, `webhooks`, `webhook_deliveries`

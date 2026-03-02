@@ -108,6 +108,10 @@ UPDATE fields
 SET sort_order = ?
 WHERE field_id = ?;
 
+-- name: GetFieldsByIDs :many
+SELECT * FROM fields
+WHERE field_id IN (sqlc.slice('ids'));
+
 -- name: GetMaxSortOrderByParentID :one
 SELECT COALESCE(MAX(sort_order), -1)
 FROM fields

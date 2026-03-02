@@ -15,7 +15,13 @@ templ Base(title string, csrfToken string, version string) {
                 document.documentElement.classList.add('light');
             }
         </script>
-        <link rel="stylesheet" href={ "/admin/static/css/admin.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/tokens.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/layout.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/components.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/web-components.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/pages.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/block-editor.css?v=" + version }/>
+        <link rel="stylesheet" href={ "/admin/static/css/utilities.css?v=" + version }/>
         <script src={ "/admin/static/js/htmx.min.js?v=" + version }></script>
         <script src="https://unpkg.com/lucide@latest"></script>
         <script src={ "/admin/static/js/admin.js?v=" + version } defer></script>

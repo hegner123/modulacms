@@ -144,7 +144,7 @@ All previous flat fields (`Required`, `MinLength`, `MaxLength`, `Min`, `Max`, `P
 | `max_items: 5`  | `{"rule": {"op": "item_count", "cmp": "lte", "n": 5}}`   |
 | `pattern: "..."` | Was never enforced — no equivalent needed                 |
 
-`N` is `*float64` to support decimal thresholds (e.g., price >= 0.01, temperature <= 99.9). For integer-semantic ops (`length`, `count`, `item_count`), the value is truncated to int at evaluation time. `ValidateRuleDefinition` rejects fractional `N` for these ops.
+`N` is `*float64` to support decimal thresholds (e.g., price >= 0.01, temperature <= 99.9). For integer-semantic ops (`length`, `count`, `item_count`), the value is truncated to int at evaluation time. `ValidateRuleDefinition` rejects fractional `N` for these ops and enforces bounds: `N` must be in range `[0, 1_000_000]` for `length`, `count`, `item_count` (prevents silent int overflow from `int(1e20)`). For `range`, `N` must be in `[-1e15, 1e15]` (safe float64 integer range).
 
 ### JSON Examples
 
@@ -318,6 +318,7 @@ Flow per field:
 |--------------------------|--------------------------------------------------------------------------|--------------------------------------------------|
 | text, textarea, richtext | none (length via config rules)                                           | —                                                |
 | number                   | strconv.ParseFloat                                                       | —                                                |
+| content_tree_ref         | validate ULID format via types.ContentID.Validate()                      | types_ids.go                                     |
 | date                     | time.Parse("2006-01-02")                                                 | —                                                |
 | datetime                 | time.Parse (RFC3339, then 2006-01-02T15:04:05, then 2006-01-02 15:04:05) | —                                                |
 | boolean                  | must be "true", "false", "1", or "0"                                     | —                                                |
@@ -329,7 +330,9 @@ Flow per field:
 | relation                 | validate ULID format via types.ContentID.Validate()                      | types_ids.go                                     |
 | json                     | json.Valid()                                                             | stdlib                                           |
 
-**Select validator note:** The select validator parses `fields.data` JSON independently using `json.Unmarshal` into `[]struct{Label string; Value string}`, matching the same format as `SelectBubble.ParseOptionsFromData` in `internal/cli/`. Do not import from `internal/cli/` — the validation package must have no dependency on the TUI package.
+**Select validator note:** The select validator parses `fields.data` JSON independently using `json.Unmarshal` into `[]struct{Label string; Value string}`, matching the same format as `SelectBubble.ParseOptionsFromData` in `internal/cli/`. Do not import from `internal/cli/` — the validation package must have no dependency on the TUI package. Consider extracting the select option struct to the `types` package as a shared type so both parsers agree on the format.
+
+**Unknown field types:** If `ValidateField` encounters a `FieldType` not in the table above (e.g., a custom field type registered via the `field_types` table), skip type-specific validation and run composable rules only. Do not error on unknown types — the CMS supports extensible field types.
 
 ### rules.go — Composable rule evaluator
 
@@ -360,7 +363,7 @@ Returns a list of error messages (empty if all rules pass). Evaluates the rule t
 
 **`item_count` semantics:**
 - Empty string → count is 0
-- Value starts with `[`: attempt `json.Unmarshal` into `[]json.RawMessage`. If unmarshal succeeds, count is the array length. If unmarshal fails, fall through to comma-separated counting.
+- Value starts with `[`: attempt `json.Unmarshal` into `[]json.RawMessage`. If unmarshal succeeds, count is the array length. If unmarshal fails, fall through to comma-separated counting. This fallback is intentional — a value like `[broken json, with commas` would count as 2 comma-separated items. This is acceptable because `item_count` is meant for structured data; malformed JSON-like strings are an edge case the rule author should handle with additional rules.
 - Otherwise: `strings.Split(value, ",")`, trimming whitespace from each segment, skipping empty segments. Count is the number of non-empty segments.
 
 3. After evaluation, if `rule.Negate` is true, invert the boolean result.
@@ -415,7 +418,9 @@ No DB dependency. Test categories:
 - Rule definition validation (`ValidateRuleDefinition`)
 - Rule definition rejects nesting depth > 10
 - Rule definition rejects fractional N on integer-semantic ops (length, count, item_count)
-- Rule definition rejects `required` op inside groups (`ValidateRuleEntries` at depth > 0)
+- Rule definition rejects `required` op inside groups (`ValidateRuleEntries` at depth > 0). This is an intentional limitation — conditional-required (e.g., "email required if newsletter selected") requires cross-field validation, which is out of scope for single-field rules
+- Rule definition rejects `N` outside bounds (`[0, 1_000_000]` for integer-semantic ops, `[-1e15, 1e15]` for range)
+- Unknown `FieldType` passes type validation (composable rules still run)
 - `ValidateValidationConfig` → `ValidateRuleEntries` → `ValidateRuleDefinition` full chain
 - `ValidateField` with malformed Validation JSON returns `FieldError` with parse error message
 - `ClearField` removes a single field's errors without affecting others
@@ -464,6 +469,24 @@ func writeValidationError(w http.ResponseWriter, ve validation.ValidationErrors,
     }
 }
 ```
+
+### Admin panel write paths
+
+The admin panel is the primary content editing interface. These handlers also need validation gates:
+
+**internal/admin/handlers/content.go — ContentCreateHandler:**
+After creating the content_data row and iterating datatype fields to create content_field rows, validate each field value before `driver.CreateContentField`. Build `[]validation.FieldInput` from the datatype's field definitions and submitted form values, call `ValidateBatch`. On error, respond with 422 and re-render the form with error messages.
+
+**internal/admin/handlers/content.go — ContentTreeSaveHandler (Phase 4 field updates):**
+In the field updates loop (Phase 4), before calling `driver.CreateContentField` or `driver.UpdateContentField`, look up the field definition via `driver.GetField(fieldID)` and call `ValidateField`. Collect errors across all field updates and include them in the response's `errors` array.
+
+### Admin panel field definition validation
+
+**internal/admin/handlers/fields.go — FieldCreateHandler and FieldUpdateHandler:**
+When an admin creates or updates a field definition, the submitted `validation` JSON must be validated via `ValidateValidationConfig` before persisting. If the rule tree is malformed, return 422 with the validation error. This prevents malformed rules from reaching the database where they would cause confusing runtime errors on every content submission against that field.
+
+**internal/admin/handlers/datatypes.go — DatatypeCreateFieldHandler:**
+Same pattern — validate the `validation` JSON via `ValidateValidationConfig` before creating the field.
 
 ### GetField on DbDriver
 
@@ -559,11 +582,14 @@ In the field rendering loop (`for i, f := range d.Fields` inside `Render`), afte
 | internal/db/types/types_field_config_test.go | Delete existing TestParseValidationConfig tests for old flat fields; write new tests for rules-based ValidationConfig |
 | internal/db/db.go                            | Add `GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error)` to DbDriver interface |
 | internal/db/field.go                         | Implement GetFieldsByIDs on all three wrapper structs                                     |
-| sql/schema/8_fields/queries.sql              | Add `GetFieldsByIDs` query (SQLite). After adding, run `just sqlc` to regenerate          |
-| sql/schema/8_fields/queries_mysql.sql        | Add `GetFieldsByIDs` query (MySQL)                                                        |
-| sql/schema/8_fields/queries_psql.sql         | Add `GetFieldsByIDs` query (PostgreSQL)                                                   |
+| sql/schema/8_fields/queries.sql              | Add `GetFieldsByIDs` query: `WHERE field_id IN (sqlc.slice('ids'))` (SQLite). After adding, run `just sqlc` to regenerate |
+| sql/schema/8_fields/queries_mysql.sql        | Add `GetFieldsByIDs` query: `WHERE field_id IN (sqlc.slice('ids'))` (MySQL)               |
+| sql/schema/8_fields/queries_psql.sql         | Add `GetFieldsByIDs` query: `WHERE field_id = ANY($1::char(26)[])` (PostgreSQL uses `ANY` not `IN/sqlc.slice`) |
 | internal/router/contentBatch.go              | Add validation with single multi-ID field fetch before upsert loop                        |
 | internal/router/contentFields.go             | Add validation in create/update handlers with FieldID null/zero guard                     |
+| internal/admin/handlers/content.go           | Add validation in ContentCreateHandler (field value validation) and ContentTreeSaveHandler (Phase 4 field updates) |
+| internal/admin/handlers/fields.go            | Add `ValidateValidationConfig` call in FieldCreateHandler and FieldUpdateHandler before persisting field definitions |
+| internal/admin/handlers/datatypes.go         | Add `ValidateValidationConfig` call in DatatypeCreateFieldHandler before creating field   |
 | internal/cli/form_dialog.go                 | Expand structs, add validation state, pre-submit check, per-field error rendering/clearing |
 | internal/cli/commands.go                    | In `HandleFetchContentForEdit`, populate `ValidationJSON` and `DataJSON` on each `ExistingContentField` from the corresponding `db.Fields` lookup |
 

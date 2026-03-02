@@ -383,7 +383,7 @@ func (q *Queries) CountContentData(ctx context.Context) (int64, error) {
 const countContentDataTopLevel = `-- name: CountContentDataTopLevel :one
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
-WHERE cd.route_id IS NOT NULL OR dt.type = '_root'
+WHERE dt.type IN ('_root', '_global')
 `
 
 func (q *Queries) CountContentDataTopLevel(ctx context.Context) (int64, error) {
@@ -396,7 +396,7 @@ func (q *Queries) CountContentDataTopLevel(ctx context.Context) (int64, error) {
 const countContentDataTopLevelByStatus = `-- name: CountContentDataTopLevelByStatus :one
 SELECT COUNT(*) FROM content_data cd
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
-WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+WHERE dt.type IN ('_root', '_global') AND cd.status = $1
 `
 
 type CountContentDataTopLevelByStatusParams struct {
@@ -5572,6 +5572,53 @@ func (q *Queries) GetFieldTypesByType(ctx context.Context, arg GetFieldTypesByTy
 	return i, err
 }
 
+const getFieldsByIDs = `-- name: GetFieldsByIDs :many
+SELECT field_id, parent_id, sort_order, name, label, data, validation, ui_config, type, translatable, roles, author_id, date_created, date_modified FROM fields
+WHERE field_id = ANY($1::char(26)[])
+`
+
+type GetFieldsByIDsParams struct {
+	Column1 []string `json:"column_1"`
+}
+
+func (q *Queries) GetFieldsByIDs(ctx context.Context, arg GetFieldsByIDsParams) ([]Fields, error) {
+	rows, err := q.db.QueryContext(ctx, getFieldsByIDs, pq.Array(arg.Column1))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Fields{}
+	for rows.Next() {
+		var i Fields
+		if err := rows.Scan(
+			&i.FieldID,
+			&i.ParentID,
+			&i.SortOrder,
+			&i.Name,
+			&i.Label,
+			&i.Data,
+			&i.Validation,
+			&i.UiConfig,
+			&i.Type,
+			&i.Translatable,
+			&i.Roles,
+			&i.AuthorID,
+			&i.DateCreated,
+			&i.DateModified,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getLatestBackup = `-- name: GetLatestBackup :one
 SELECT backup_id, node_id, backup_type, status, started_at, completed_at, duration_ms, record_count, size_bytes, replication_lsn, hlc_timestamp, storage_path, checksum, triggered_by, error_message, metadata FROM backups
 WHERE node_id = $1 AND status = 'completed'
@@ -9184,7 +9231,7 @@ SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, 
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
-WHERE cd.route_id IS NOT NULL OR dt.type = '_root'
+WHERE dt.type IN ('_root', '_global')
 ORDER BY cd.content_data_id
 LIMIT $1 OFFSET $2
 `
@@ -9264,7 +9311,7 @@ SELECT cd.content_data_id, cd.parent_id, cd.first_child_id, cd.next_sibling_id, 
 LEFT JOIN datatypes dt ON cd.datatype_id = dt.datatype_id
 LEFT JOIN users u ON cd.author_id = u.user_id
 LEFT JOIN routes r ON cd.route_id = r.route_id
-WHERE (cd.route_id IS NOT NULL OR dt.type = '_root') AND cd.status = $1
+WHERE dt.type IN ('_root', '_global') AND cd.status = $1
 ORDER BY cd.content_data_id
 LIMIT $2 OFFSET $3
 `
@@ -10208,7 +10255,7 @@ func (q *Queries) ListDatatypePaginated(ctx context.Context, arg ListDatatypePag
 
 const listDatatypeRoot = `-- name: ListDatatypeRoot :many
 SELECT datatype_id, parent_id, name, label, type, author_id, date_created, date_modified FROM datatypes
-WHERE type = '_root'
+WHERE type IN ('_root', '_global')
 ORDER BY datatype_id
 `
 

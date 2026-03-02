@@ -51,8 +51,8 @@ export function validateState(state) {
                                 errors.push(`Root chain references non-existent block "${currentId}"`);
                                 break;
                         }
-                        if (block.parentId !== null) {
-                                errors.push(`Root chain block "${currentId}" has parentId "${block.parentId}", expected null`);
+                        if (block.parentId) {
+                                errors.push(`Root chain block "${currentId}" has parentId "${block.parentId}", expected null or empty`);
                         }
                         reachable.add(currentId);
                         // Mark children as reachable (recursively)

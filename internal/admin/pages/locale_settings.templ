@@ -8,7 +8,7 @@ import (
     "github.com/hegner123/modulacms/internal/db"
 )
 
-templ LocaleSettingsContent(locales []db.Locale, csrfToken string) {
+templ LocaleSettingsContent(locales []db.Locale, csrfToken string, i18nEnabled bool) {
     <div class="page-header">
         <div class="page-header-left">
             <a href="/admin/settings" class="btn btn-ghost"
@@ -18,12 +18,19 @@ templ LocaleSettingsContent(locales []db.Locale, csrfToken string) {
             <h1>Locale Settings</h1>
         </div>
         <div class="page-header-right">
-            <button class="btn btn-primary"
-                    onclick="document.getElementById('add-locale-dialog').showModal()">
-                Add Locale
-            </button>
+            if i18nEnabled {
+                <button class="btn btn-primary"
+                        onclick="document.getElementById('add-locale-dialog').showModal()">
+                    Add Locale
+                </button>
+            }
         </div>
     </div>
+    if !i18nEnabled {
+        <div class="alert alert-info">
+            Internationalization (i18n) is not enabled. Enable it in your configuration to manage locales.
+        </div>
+    }
     <table class="table">
         <thead>
             <tr>
@@ -42,7 +49,7 @@ templ LocaleSettingsContent(locales []db.Locale, csrfToken string) {
     </table>
 }
 
-templ LocaleAddDialog(locales []db.Locale, csrfToken string) {
+templ LocaleAddDialog(locales []db.Locale, csrfToken string, i18nEnabled bool) {
     <dialog id="add-locale-dialog" class="admin-dialog" aria-labelledby="add-locale-dialog-title">
         <div class="dialog-content">
             <div class="dialog-header">
@@ -150,8 +157,8 @@ templ LocaleEditDialog(locale db.Locale, allLocales []db.Locale, csrfToken strin
     </dialog>
 }
 
-templ LocaleSettings(layout layouts.AdminData, locales []db.Locale) {
-    @layouts.Admin(layout.WithDialogs(LocaleAddDialog(locales, layout.CSRFToken))) {
-        @LocaleSettingsContent(locales, layout.CSRFToken)
+templ LocaleSettings(layout layouts.AdminData, locales []db.Locale, i18nEnabled bool) {
+    @layouts.Admin(layout.WithDialogs(LocaleAddDialog(locales, layout.CSRFToken, i18nEnabled))) {
+        @LocaleSettingsContent(locales, layout.CSRFToken, i18nEnabled)
     }
 }

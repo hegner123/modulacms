@@ -76,14 +76,12 @@ func ValidateDatatypeType(t string) error {
 	return nil
 }
 
-// ValidateUserDatatypeType validates that a user-provided type does not
-// use the reserved underscore prefix. Used at API creation/update boundaries.
+// ValidateUserDatatypeType validates that a user-provided type is non-empty.
+// Reserved-prefix types (starting with '_') are allowed — they enable system
+// functionality like tree roots (_root) and nested roots (_nested_root).
 func ValidateUserDatatypeType(t string) error {
 	if t == "" {
 		return fmt.Errorf("DatatypeType: cannot be empty")
-	}
-	if IsReservedPrefix(t) {
-		return fmt.Errorf("type names starting with '_' are reserved for system use")
 	}
 	return nil
 }

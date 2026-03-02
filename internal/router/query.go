@@ -6,7 +6,6 @@ import (
 
 	"github.com/hegner123/modulacms/internal/config"
 	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/query"
 	"github.com/hegner123/modulacms/internal/utility"
 )
@@ -18,11 +17,6 @@ func QueryHandler(w http.ResponseWriter, r *http.Request, c config.Config) {
 	datatypeName := r.PathValue("datatype")
 	if datatypeName == "" {
 		http.Error(w, "datatype name is required", http.StatusBadRequest)
-		return
-	}
-
-	if types.IsReservedPrefix(datatypeName) {
-		http.Error(w, "reserved datatype names cannot be queried", http.StatusBadRequest)
 		return
 	}
 

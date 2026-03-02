@@ -10,6 +10,7 @@ import (
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/middleware"
 	"github.com/hegner123/modulacms/internal/utility"
+	"github.com/hegner123/modulacms/internal/validation"
 )
 
 // BatchContentUpdateRequest is the JSON body for POST /api/v1/content/batch.
@@ -116,6 +117,58 @@ func ContentBatchHandler(w http.ResponseWriter, r *http.Request, c config.Config
 			authorID = user.UserID
 		}
 
+		// --- validation ---
+		fieldIDs := make([]types.FieldID, 0, len(req.Fields))
+		for fid := range req.Fields {
+			fieldIDs = append(fieldIDs, fid)
+		}
+
+		fieldDefs, fieldDefsErr := d.GetFieldsByIDs(ctx, fieldIDs)
+		if fieldDefsErr != nil {
+			utility.DefaultLogger.Error("batch: failed to fetch field definitions", fieldDefsErr)
+			resp.Errors = append(resp.Errors, fmt.Sprintf("get field definitions: %v", fieldDefsErr))
+			resp.FieldsFailed = len(req.Fields)
+			writeJSON(w, resp)
+			return
+		}
+
+		fieldDefMap := make(map[types.FieldID]db.Fields, len(fieldDefs))
+		for _, fd := range fieldDefs {
+			fieldDefMap[fd.FieldID] = fd
+		}
+
+		// Check for unknown field IDs.
+		var unknownIDs []string
+		for _, fid := range fieldIDs {
+			if _, ok := fieldDefMap[fid]; !ok {
+				unknownIDs = append(unknownIDs, string(fid))
+			}
+		}
+		if len(unknownIDs) > 0 {
+			http.Error(w, fmt.Sprintf("unknown field IDs: %v", unknownIDs), http.StatusBadRequest)
+			return
+		}
+
+		// Build validation inputs and validate.
+		valInputs := make([]validation.FieldInput, 0, len(req.Fields))
+		for fid, value := range req.Fields {
+			fd := fieldDefMap[fid]
+			valInputs = append(valInputs, validation.FieldInput{
+				FieldID:    fid,
+				Label:      fd.Label,
+				FieldType:  fd.Type,
+				Value:      value,
+				Validation: fd.Validation,
+				Data:       fd.Data,
+			})
+		}
+
+		ve := validation.ValidateBatch(valInputs)
+		if ve.HasErrors() {
+			writeValidationError(w, ve)
+			return
+		}
+
 		for fieldID, value := range req.Fields {
 			if existing, ok := existingMap[string(fieldID)]; ok {
 				// Update existing field
@@ -165,4 +218,13 @@ func writeJSON(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(v)
+}
+
+// writeValidationError writes a 422 response with structured validation errors.
+func writeValidationError(w http.ResponseWriter, ve validation.ValidationErrors) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusUnprocessableEntity)
+	if err := json.NewEncoder(w).Encode(ve); err != nil {
+		utility.DefaultLogger.Error("failed to encode validation error response", err)
+	}
 }

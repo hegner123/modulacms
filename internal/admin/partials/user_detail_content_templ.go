@@ -57,14 +57,14 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-confirm=\"Are you sure you want to delete this user? This cannot be undone.\" hx-target=\"#main-content\">Delete User</button></div></div><div class=\"detail-card\"><div class=\"detail-meta\"><span class=\"detail-meta-item\">ID: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" hx-confirm=\"Are you sure you want to delete this user? This cannot be undone.\" hx-target=\"#main-content\">Delete User</button> <button type=\"submit\" form=\"user-form\" class=\"btn btn-primary\">Update User</button></div></div><div class=\"detail-card\"><div class=\"detail-meta\"><span class=\"detail-meta-item\">ID: ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(user.UserID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 30, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 31, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -77,7 +77,7 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(user.DateCreated.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 31, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 32, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -90,20 +90,20 @@ func UserDetailContent(user db.Users, roles []db.Roles, csrfToken string) templ.
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(user.DateModified.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 32, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 33, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></div><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></div><form id=\"user-form\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs("/admin/users/" + user.UserID.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 35, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/admin/partials/user_detail_content.templ`, Line: 37, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {

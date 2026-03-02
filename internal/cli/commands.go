@@ -500,11 +500,13 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 				}
 
 				ef := ExistingContentField{
-					FieldID: field.FieldID,
-					Label:   field.Label,
-					Type:    string(field.Type),
-					Widget:  widget,
-					Value:   "",
+					FieldID:        field.FieldID,
+					Label:          field.Label,
+					Type:           string(field.Type),
+					Widget:         widget,
+					Value:          "",
+					ValidationJSON: field.Validation,
+					DataJSON:       field.Data,
 				}
 				// Check if there's an existing value for this field
 				if cf, ok := contentFieldMap[string(field.FieldID)]; ok {
@@ -1169,9 +1171,11 @@ func LoadContentFieldsCmd(cfg *config.Config, contentDataID types.ContentID, dat
 			result = make([]ContentFieldDisplay, 0, len(*fieldDefs))
 			for _, field := range *fieldDefs {
 				display := ContentFieldDisplay{
-					FieldID: field.FieldID,
-					Label:   field.Label,
-					Type:    string(field.Type),
+					FieldID:        field.FieldID,
+					Label:          field.Label,
+					Type:           string(field.Type),
+					ValidationJSON: field.Validation,
+					DataJSON:       field.Data,
 				}
 				if cf, ok := cfMap[string(field.FieldID)]; ok {
 					display.ContentFieldID = cf.ContentFieldID
@@ -1230,9 +1234,11 @@ func LoadContentFieldsForLocaleCmd(cfg *config.Config, contentDataID types.Conte
 			result = make([]ContentFieldDisplay, 0, len(*fieldDefs))
 			for _, field := range *fieldDefs {
 				display := ContentFieldDisplay{
-					FieldID: field.FieldID,
-					Label:   field.Label,
-					Type:    string(field.Type),
+					FieldID:        field.FieldID,
+					Label:          field.Label,
+					Type:           string(field.Type),
+					ValidationJSON: field.Validation,
+					DataJSON:       field.Data,
 				}
 				if cf, ok := cfMap[string(field.FieldID)]; ok {
 					display.ContentFieldID = cf.ContentFieldID
@@ -1427,22 +1433,6 @@ func (m Model) HandleDeleteDatatype(msg DeleteDatatypeRequestMsg) tea.Cmd {
 						Message: fmt.Sprintf("Datatype has child '%s'. Delete children first.", dt.Label),
 					}
 				}
-			}
-		}
-
-		// Block deletion of system datatypes (e.g. _root, _reference)
-		targetDt, dtErr := d.GetDatatype(msg.DatatypeID)
-		if dtErr != nil {
-			logger.Ferror("Failed to look up datatype", dtErr)
-			return ActionResultMsg{
-				Title:   "Error",
-				Message: fmt.Sprintf("Failed to look up datatype: %v", dtErr),
-			}
-		}
-		if types.IsReservedPrefix(targetDt.Type) {
-			return ActionResultMsg{
-				Title:   "Cannot Delete",
-				Message: fmt.Sprintf("Cannot delete system datatype '%s' (type: %s).", targetDt.Label, targetDt.Type),
 			}
 		}
 

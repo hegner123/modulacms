@@ -204,7 +204,7 @@ No competitor has anything comparable.
 | Retries | Planned | No | No | No | Auto-retry | No | N/A | N/A | Yes (7 retries) |
 | Delivery logs | Planned | No | Yes (500/webhook) | No | No | No | N/A | N/A | Yes |
 
-**ModulaCMS is behind.** Webhooks are the single biggest feature gap. Every headless CMS ships webhooks (except WordPress and Wagtail natively). Without them, published content changes cannot trigger CDN invalidation, SSG rebuilds, or external notifications. This is Phase 3 in the roadmap.
+**ModulaCMS on par.** Webhooks are now implemented, closing what was previously the single biggest feature gap. Published content changes can now trigger CDN invalidation, SSG rebuilds, and external notifications.
 
 ---
 
@@ -304,7 +304,7 @@ No competitor has anything comparable.
 | Admin panel | **Mixed** | Server-rendered + TUI is unique; behind in live preview, collab, dark mode |
 | SSH TUI | **Leads** | Unique -- no competitor has anything comparable |
 | Plugin system | **Leads** | Sandboxed Lua with circuit breakers; behind in ecosystem size |
-| Webhooks | **Behind** | Biggest gap. Every headless CMS has them. Phase 3 planned |
+| Webhooks | **On par** | Implemented. Closes the biggest previous gap |
 | SDKs | **Leads** | 3 languages (TS/Go/Swift) with branded IDs. Best for self-hosted |
 | MCP server | **Leads** | Only 3 CMSs have official MCP servers |
 | Import/migration | **Leads** | 4 importer formats + 6 output transforms. Unique |
@@ -316,9 +316,8 @@ No competitor has anything comparable.
 
 ### Critical gaps to close (in priority order)
 
-1. **Webhooks** (Phase 3) -- table-stakes for any headless CMS
-2. **Review workflows** (Phase 4) -- needed for team content governance
-3. **Live preview** -- push-based preview updates for dev-time editor experience (SSE/WebSocket to open preview tab)
+1. **Review workflows** (Phase 4) -- needed for team content governance
+2. **Live preview** -- push-based preview updates for dev-time editor experience (SSE/WebSocket to open preview tab)
 
 ## 19. Performance, Infrastructure & Scaling
 

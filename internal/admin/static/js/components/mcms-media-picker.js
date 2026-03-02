@@ -8,7 +8,11 @@ class McmsMediaPicker extends HTMLElement {
         this._backdrop = null;
         this._searchInput = null;
         this._grid = null;
+        this._uploadZone = null;
+        this._uploadStatus = null;
+        this._dropzone = null;
         this._selected = [];
+        this._pendingSelectId = null;
         this._boundKeyDown = this._onKeyDown.bind(this);
     }
 
@@ -57,10 +61,22 @@ class McmsMediaPicker extends HTMLElement {
         var header = document.createElement('div');
         header.className = 'media-picker-header';
 
+        var headerLeft = document.createElement('div');
+        headerLeft.className = 'media-picker-header-left';
+
         var title = document.createElement('h2');
         title.className = 'media-picker-title';
         title.textContent = 'Select Media';
-        header.appendChild(title);
+        headerLeft.appendChild(title);
+
+        var uploadBtn = document.createElement('button');
+        uploadBtn.type = 'button';
+        uploadBtn.className = 'btn btn-sm btn-primary';
+        uploadBtn.textContent = 'Upload';
+        uploadBtn.addEventListener('click', this._toggleUpload.bind(this));
+        headerLeft.appendChild(uploadBtn);
+
+        header.appendChild(headerLeft);
 
         var closeBtn = document.createElement('button');
         closeBtn.type = 'button';
@@ -84,6 +100,60 @@ class McmsMediaPicker extends HTMLElement {
         panel.appendChild(searchWrapper);
 
         this._searchInput = searchInput;
+
+        // Upload zone (hidden by default)
+        var uploadZone = document.createElement('div');
+        uploadZone.className = 'media-picker-upload';
+        uploadZone.hidden = true;
+
+        var dropzone = document.createElement('div');
+        dropzone.className = 'media-picker-dropzone';
+        dropzone.textContent = 'Drop a file here or click to browse';
+
+        var fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.style.display = 'none';
+        var accept = this.getAttribute('accept');
+        if (accept) {
+            fileInput.accept = accept;
+        }
+
+        var self = this;
+        dropzone.addEventListener('click', function() {
+            fileInput.click();
+        });
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files[0]) {
+                self._uploadFile(fileInput.files[0]);
+                fileInput.value = '';
+            }
+        });
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.classList.add('dragover');
+        });
+        dropzone.addEventListener('dragleave', function() {
+            dropzone.classList.remove('dragover');
+        });
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                self._uploadFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        dropzone.appendChild(fileInput);
+        uploadZone.appendChild(dropzone);
+
+        var uploadStatus = document.createElement('div');
+        uploadStatus.className = 'media-picker-upload-status';
+        uploadZone.appendChild(uploadStatus);
+
+        panel.appendChild(uploadZone);
+        this._uploadZone = uploadZone;
+        this._uploadStatus = uploadStatus;
+        this._dropzone = dropzone;
 
         // Grid container
         var grid = document.createElement('div');
@@ -117,7 +187,6 @@ class McmsMediaPicker extends HTMLElement {
         this.appendChild(backdrop);
 
         // Set up search debounce
-        var self = this;
         var debounceTimer = null;
         searchInput.addEventListener('input', function() {
             clearTimeout(debounceTimer);
@@ -142,6 +211,11 @@ class McmsMediaPicker extends HTMLElement {
         if (isOpen) {
             document.addEventListener('keydown', this._boundKeyDown);
             this._selected = [];
+            this._pendingSelectId = null;
+            // Collapse upload zone
+            if (this._uploadZone) {
+                this._uploadZone.hidden = true;
+            }
             // Clear previous selections visually
             if (this._grid) {
                 var items = this._grid.querySelectorAll('.media-picker-item.selected');
@@ -206,6 +280,67 @@ class McmsMediaPicker extends HTMLElement {
             item.classList.add('selected');
             this._selected.push({ id: mediaId, url: mediaUrl, alt: mediaAlt });
         }
+    }
+
+    _toggleUpload() {
+        if (!this._uploadZone) return;
+        this._uploadZone.hidden = !this._uploadZone.hidden;
+        if (!this._uploadZone.hidden) {
+            this._uploadStatus.textContent = '';
+            this._uploadStatus.className = 'media-picker-upload-status';
+        }
+    }
+
+    _uploadFile(file) {
+        if (!file) return;
+        var self = this;
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var csrfMeta = document.querySelector('meta[name="csrf-token"]');
+        var csrfToken = csrfMeta ? csrfMeta.content : '';
+
+        this._dropzone.classList.add('uploading');
+        this._uploadStatus.textContent = 'Uploading...';
+        this._uploadStatus.className = 'media-picker-upload-status';
+
+        fetch('/admin/media', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-Token': csrfToken,
+                'HX-Request': 'true'
+            },
+            body: formData
+        }).then(function(response) {
+            if (!response.ok) {
+                throw new Error('Upload failed (' + response.status + ')');
+            }
+            var mediaId = response.headers.get('X-Media-ID');
+            var mediaUrl = response.headers.get('X-Media-URL');
+            self._pendingSelectId = mediaId;
+            self._dropzone.classList.remove('uploading');
+            self._uploadStatus.textContent = 'Upload complete';
+            self._uploadZone.hidden = true;
+            self._loadMedia('');
+
+            // After grid refreshes, auto-select the new item
+            if (mediaId && self._grid) {
+                var onSwap = function() {
+                    self._grid.removeEventListener('htmx:afterSwap', onSwap);
+                    var newItem = self._grid.querySelector('.media-picker-item[data-media-id="' + mediaId + '"]');
+                    if (newItem) {
+                        self._toggleItem(newItem);
+                    }
+                    self._pendingSelectId = null;
+                };
+                self._grid.addEventListener('htmx:afterSwap', onSwap);
+            }
+            return response.text();
+        }).catch(function(err) {
+            self._dropzone.classList.remove('uploading');
+            self._uploadStatus.textContent = err.message || 'Upload failed';
+            self._uploadStatus.className = 'media-picker-upload-status media-picker-upload-error';
+        });
     }
 
     _confirmSelection() {

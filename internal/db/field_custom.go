@@ -66,6 +66,62 @@ func (d PsqlDatabase) ListFieldsPaginated(params PaginationParams) (*[]Fields, e
 	return &res, nil
 }
 
+// GetFieldsByIDs retrieves fields by a slice of IDs (SQLite).
+func (d Database) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
+	if len(ids) == 0 {
+		return []Fields{}, nil
+	}
+	queries := mdb.New(d.Connection)
+	rows, err := queries.GetFieldsByIDs(ctx, mdb.GetFieldsByIDsParams{Ids: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
+	}
+	res := make([]Fields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapField(v))
+	}
+	return res, nil
+}
+
+// GetFieldsByIDs retrieves fields by a slice of IDs (MySQL).
+func (d MysqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
+	if len(ids) == 0 {
+		return []Fields{}, nil
+	}
+	queries := mdbm.New(d.Connection)
+	rows, err := queries.GetFieldsByIDs(ctx, mdbm.GetFieldsByIDsParams{Ids: ids})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
+	}
+	res := make([]Fields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapField(v))
+	}
+	return res, nil
+}
+
+// GetFieldsByIDs retrieves fields by a slice of IDs (PostgreSQL).
+func (d PsqlDatabase) GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error) {
+	if len(ids) == 0 {
+		return []Fields{}, nil
+	}
+	// PostgreSQL ANY($1::char(26)[]) generates Column1 []string, so convert typed IDs to strings.
+	strs := make([]string, len(ids))
+	for i, id := range ids {
+		strs[i] = string(id)
+	}
+	queries := mdbp.New(d.Connection)
+	rows, err := queries.GetFieldsByIDs(ctx, mdbp.GetFieldsByIDsParams{Column1: strs})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get fields by IDs: %w", err)
+	}
+	res := make([]Fields, 0, len(rows))
+	for _, v := range rows {
+		res = append(res, d.MapField(v))
+	}
+	return res, nil
+}
+
 // FieldsJSON is used for JSON serialization in model package
 type FieldsJSON struct {
 	FieldID      string `json:"field_id"`

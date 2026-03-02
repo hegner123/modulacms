@@ -326,6 +326,7 @@ type DbDriver interface {
 	CreateFieldTable() error
 	DeleteField(context.Context, audited.AuditContext, types.FieldID) error
 	GetField(types.FieldID) (*Fields, error)
+	GetFieldsByIDs(ctx context.Context, ids []types.FieldID) ([]Fields, error)
 	GetFieldDefinitionsByRoute(types.NullableRouteID) (*[]GetFieldDefinitionsByRouteRow, error)
 	ListFields() (*[]Fields, error)
 	ListFieldsByDatatypeID(types.NullableDatatypeID) (*[]Fields, error)

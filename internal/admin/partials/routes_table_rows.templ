@@ -1,171 +1,146 @@
 package partials
 
-import (
-	"fmt"
-
-	"github.com/hegner123/modulacms/internal/db"
-)
+import "github.com/hegner123/modulacms/internal/db"
 
 templ RoutesTableRows(items []db.Routes, pagination PaginationPageData) {
-	@RoutesTableRowsInner(items)
-	<tr id="pagination" hx-swap-oob="true">
-		<td colspan="5">
-			@Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
-		</td>
-	</tr>
+    @RoutesTableRowsInner(items)
+    <tr id="pagination" hx-swap-oob="true">
+        <td colspan="5">
+            @Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
+        </td>
+    </tr>
 }
 
 templ RoutesTableRowsInner(items []db.Routes) {
-	if len(items) == 0 {
-		<tr>
-			<td colspan="5">
-				@EmptyState("No routes found. Create your first route to get started.")
-			</td>
-		</tr>
-	}
-	for _, item := range items {
-		<tr id={ "route-row-" + item.RouteID.String() }>
-			<td>
-				<code>{ string(item.Slug) }</code>
-			</td>
-			<td>{ item.Title }</td>
-			<td>
-				<span class={ "badge", routeStatusBadgeClass(item.Status) }>
-					{ routeStatusLabel(item.Status) }
-				</span>
-			</td>
-			<td>{ item.DateModified.String() }</td>
-			<td>
-				<div class="table-actions">
-					<button
-						class="btn btn-ghost btn-sm"
-						data-dialog-id={ "edit-route-" + item.RouteID.String() }
-						onclick="document.getElementById(this.dataset.dialogId).showModal()"
-					>
-						Edit
-					</button>
-					<button
-						class="btn btn-ghost btn-sm btn-danger"
-						hx-delete={ "/admin/routes/" + item.RouteID.String() }
-						hx-target={ "#route-row-" + item.RouteID.String() }
-						hx-swap="outerHTML swap:300ms"
-						hx-confirm="Are you sure you want to delete this route?"
-					>
-						Delete
-					</button>
-				</div>
-				<dialog id={ "edit-route-" + item.RouteID.String() } class="dialog" aria-labelledby={ "edit-route-title-" + item.RouteID.String() }>
-					<div class="dialog-content">
-						<div class="dialog-header">
-							<h2 id={ "edit-route-title-" + item.RouteID.String() }>Edit Route</h2>
-							<button class="dialog-close" aria-label="Close dialog" onclick="this.closest('dialog').close()">&times;</button>
-						</div>
-						<form
-							hx-post={ "/admin/routes/" + item.RouteID.String() }
-							class="admin-form"
-						>
-							@RouteEditForm(item.RouteID.String(), string(item.Slug), item.Title, fmt.Sprintf("%d", item.Status), nil, "")
-						</form>
-					</div>
-				</dialog>
-			</td>
-		</tr>
-	}
+    if len(items) == 0 {
+        <tr>
+            <td colspan="5">
+                @EmptyState("No routes found. Create your first route to get started.")
+            </td>
+        </tr>
+    }
+    for _, item := range items {
+        <tr class="clickable-row" data-href={ "/admin/routes/" + item.RouteID.String() } id={ "route-row-" + item.RouteID.String() }>
+            <td>
+                <code>{ string(item.Slug) }</code>
+            </td>
+            <td>{ item.Title }</td>
+            <td>
+                <span class={ "badge", routeStatusBadgeClass(item.Status) }>
+                    { routeStatusLabel(item.Status) }
+                </span>
+            </td>
+            <td>{ item.DateModified.String() }</td>
+            <td>
+                <div class="table-actions">
+                    <button
+                        class="btn btn-ghost btn-sm btn-danger"
+                        hx-delete={ "/admin/routes/" + item.RouteID.String() }
+                        hx-target={ "#route-row-" + item.RouteID.String() }
+                        hx-swap="outerHTML swap:300ms"
+                        hx-confirm="Are you sure you want to delete this route?"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    }
 }
 
 templ RouteForm(slug string, title string, status string, errs map[string]string, csrfToken string) {
-	@CSRFField(csrfToken)
-	if errs != nil && errs["_"] != "" {
-		<div class="alert alert-error">{ errs["_"] }</div>
-	}
-	<div class={ "form-field", templ.KV("has-error", errs != nil && errs["slug"] != "") }>
-		<label for="slug">Slug</label>
-		<input type="text" id="slug" name="slug" value={ slug } placeholder="/example-path" required/>
-		if errs != nil && errs["slug"] != "" {
-			<span class="field-error">{ errs["slug"] }</span>
-		}
-	</div>
-	<div class={ "form-field", templ.KV("has-error", errs != nil && errs["title"] != "") }>
-		<label for="title">Title</label>
-		<input type="text" id="title" name="title" value={ title } placeholder="Page Title" required/>
-		if errs != nil && errs["title"] != "" {
-			<span class="field-error">{ errs["title"] }</span>
-		}
-	</div>
-	<div class="form-field">
-		<label for="status">Status</label>
-		<select id="status" name="status">
-			<option value="1" selected?={ status == "1" || status == "" }>Active</option>
-			<option value="0" selected?={ status == "0" }>Inactive</option>
-		</select>
-	</div>
-	<div class="form-actions">
-		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-		<button type="submit" class="btn btn-primary">Create Route</button>
-	</div>
+    @CSRFField(csrfToken)
+    if errs != nil && errs["_"] != "" {
+        <div class="alert alert-error">{ errs["_"] }</div>
+    }
+    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["slug"] != "") }>
+        <label for="slug">Slug</label>
+        <input type="text" id="slug" name="slug" value={ slug } placeholder="/example-path" required/>
+        if errs != nil && errs["slug"] != "" {
+            <span class="field-error">{ errs["slug"] }</span>
+        }
+    </div>
+    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["title"] != "") }>
+        <label for="title">Title</label>
+        <input type="text" id="title" name="title" value={ title } placeholder="Page Title" required/>
+        if errs != nil && errs["title"] != "" {
+            <span class="field-error">{ errs["title"] }</span>
+        }
+    </div>
+    <div class="form-field">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+            <option value="1" selected?={ status == "1" || status == "" }>Active</option>
+            <option value="0" selected?={ status == "0" }>Inactive</option>
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Route</button>
+    </div>
 }
 
 templ RouteEditForm(id string, slug string, title string, status string, errs map[string]string, csrfToken string) {
-	if csrfToken != "" {
-		@CSRFField(csrfToken)
-	}
-	if errs != nil && errs["_"] != "" {
-		<div class="alert alert-error">{ errs["_"] }</div>
-	}
-	<div class={ "form-field", templ.KV("has-error", errs != nil && errs["slug"] != "") }>
-		<label for={ "edit-slug-" + id }>Slug</label>
-		<input type="text" id={ "edit-slug-" + id } name="slug" value={ slug } required/>
-		if errs != nil && errs["slug"] != "" {
-			<span class="field-error">{ errs["slug"] }</span>
-		}
-	</div>
-	<div class={ "form-field", templ.KV("has-error", errs != nil && errs["title"] != "") }>
-		<label for={ "edit-title-" + id }>Title</label>
-		<input type="text" id={ "edit-title-" + id } name="title" value={ title } required/>
-		if errs != nil && errs["title"] != "" {
-			<span class="field-error">{ errs["title"] }</span>
-		}
-	</div>
-	<div class="form-field">
-		<label for={ "edit-status-" + id }>Status</label>
-		<select id={ "edit-status-" + id } name="status">
-			<option value="1" selected?={ status == "1" || status == "" }>Active</option>
-			<option value="0" selected?={ status == "0" }>Inactive</option>
-		</select>
-	</div>
-	<div class="form-actions">
-		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-		<button type="submit" class="btn btn-primary">Update Route</button>
-	</div>
+    if csrfToken != "" {
+        @CSRFField(csrfToken)
+    }
+    if errs != nil && errs["_"] != "" {
+        <div class="alert alert-error">{ errs["_"] }</div>
+    }
+    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["slug"] != "") }>
+        <label for={ "edit-slug-" + id }>Slug</label>
+        <input type="text" id={ "edit-slug-" + id } name="slug" value={ slug } required/>
+        if errs != nil && errs["slug"] != "" {
+            <span class="field-error">{ errs["slug"] }</span>
+        }
+    </div>
+    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["title"] != "") }>
+        <label for={ "edit-title-" + id }>Title</label>
+        <input type="text" id={ "edit-title-" + id } name="title" value={ title } required/>
+        if errs != nil && errs["title"] != "" {
+            <span class="field-error">{ errs["title"] }</span>
+        }
+    </div>
+    <div class="form-field">
+        <label for={ "edit-status-" + id }>Status</label>
+        <select id={ "edit-status-" + id } name="status">
+            <option value="1" selected?={ status == "1" || status == "" }>Active</option>
+            <option value="0" selected?={ status == "0" }>Inactive</option>
+        </select>
+    </div>
+    <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Route</button>
+    </div>
 }
 
 templ AdminRoutesTableRows(items []db.AdminRoutes, pagination PaginationPageData) {
-	@AdminRoutesTableRowsInner(items)
-	<tr id="pagination" hx-swap-oob="true">
-		<td colspan="4">
-			@Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
-		</td>
-	</tr>
+    @AdminRoutesTableRowsInner(items)
+    <tr id="pagination" hx-swap-oob="true">
+        <td colspan="4">
+            @Pagination(pagination.Current, pagination.TotalPages, pagination.Target, pagination.BaseURL, pagination.Limit)
+        </td>
+    </tr>
 }
 
 templ AdminRoutesTableRowsInner(items []db.AdminRoutes) {
-	if len(items) == 0 {
-		<tr>
-			<td colspan="4">
-				@EmptyState("No admin routes found.")
-			</td>
-		</tr>
-	}
-	for _, item := range items {
-		<tr>
-			<td><code>{ string(item.Slug) }</code></td>
-			<td>{ item.Title }</td>
-			<td>
-				<span class={ "badge", routeStatusBadgeClass(item.Status) }>
-					{ routeStatusLabel(item.Status) }
-				</span>
-			</td>
-			<td>{ item.DateModified.String() }</td>
-		</tr>
-	}
+    if len(items) == 0 {
+        <tr>
+            <td colspan="4">
+                @EmptyState("No admin routes found.")
+            </td>
+        </tr>
+    }
+    for _, item := range items {
+        <tr class="clickable-row" data-href={ "/admin/routes/" + item.AdminRouteID.String() }>
+            <td><code>{ string(item.Slug) }</code></td>
+            <td>{ item.Title }</td>
+            <td>
+                <span class={ "badge", routeStatusBadgeClass(item.Status) }>
+                    { routeStatusLabel(item.Status) }
+                </span>
+            </td>
+            <td>{ item.DateModified.String() }</td>
+        </tr>
+    }
 }

@@ -1,80 +1,81 @@
 package partials
 
 import (
-	"github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/db"
 )
 
 templ RoleDetail(role db.Roles, matrix PermissionMatrix, csrfToken string) {
-	<div class="role-detail-header">
-		<div class="role-detail-title">
-			<h2>{ role.Label }</h2>
-			if role.SystemProtected {
-				<span class="badge badge-info">System</span>
-			}
-		</div>
-		if !role.SystemProtected {
-			<button
-				class="btn btn-ghost btn-sm btn-danger"
-				hx-delete={ "/admin/users/roles/" + role.RoleID.String() }
-				hx-confirm="Are you sure you want to delete this role?"
-			>
-				Delete
-			</button>
-		}
-	</div>
-	<form
-		hx-post={ "/admin/users/roles/" + role.RoleID.String() }
-		class="admin-form role-permissions-form"
-	>
-		@CSRFField(csrfToken)
-		if !role.SystemProtected {
-			<div class="form-field">
-				<label for={ "role-label-" + role.RoleID.String() }>Label</label>
-				<input
-					type="text"
-					id={ "role-label-" + role.RoleID.String() }
-					name="label"
-					value={ role.Label }
-				/>
-			</div>
-		} else {
-			<input type="hidden" name="label" value={ role.Label }/>
-		}
-		<div class="permissions-grid">
-			<h4>Permissions</h4>
-			@RolesPermissionList(matrix)
-		</div>
-		<div class="form-actions">
-			<button type="submit" class="btn btn-primary btn-sm">Save Permissions</button>
-		</div>
-	</form>
+    <div class="role-detail-header">
+        <div class="role-detail-title">
+            <h2>{ role.Label }</h2>
+            if role.SystemProtected {
+                <span class="badge badge-info">System</span>
+            }
+        </div>
+        <div class="role-detail-actions">
+            <button type="submit" form={ "role-form-" + role.RoleID.String() } class="btn btn-primary btn-sm">Save Permissions</button>
+            if !role.SystemProtected {
+                <button
+                    class="btn btn-ghost btn-sm btn-danger"
+                    hx-delete={ "/admin/users/roles/" + role.RoleID.String() }
+                    hx-confirm="Are you sure you want to delete this role?"
+                >
+                    Delete
+                </button>
+            }
+        </div>
+    </div>
+    <form
+        id={ "role-form-" + role.RoleID.String() }
+        hx-post={ "/admin/users/roles/" + role.RoleID.String() }
+        class="admin-form role-permissions-form"
+    >
+        @CSRFField(csrfToken)
+        if !role.SystemProtected {
+            <div class="form-field">
+                <label for={ "role-label-" + role.RoleID.String() }>Label</label>
+                <input
+                    type="text"
+                    id={ "role-label-" + role.RoleID.String() }
+                    name="label"
+                    value={ role.Label }
+                />
+            </div>
+        } else {
+            <input type="hidden" name="label" value={ role.Label }/>
+        }
+        <div class="permissions-grid">
+            <h4>Permissions</h4>
+            @RolesPermissionList(matrix)
+        </div>
+    </form>
 }
 
 templ RoleNewForm(matrix PermissionMatrix, csrfToken string) {
-	<div class="role-detail-header">
-		<h2>New Role</h2>
-	</div>
-	<form
-		hx-post="/admin/users/roles"
-		class="admin-form role-permissions-form"
-	>
-		@CSRFField(csrfToken)
-		<div class="form-field">
-			<label for="new-role-label">Label</label>
-			<input
-				type="text"
-				id="new-role-label"
-				name="label"
-				placeholder="Role name"
-				required
-			/>
-		</div>
-		<div class="permissions-grid">
-			<h4>Permissions</h4>
-			@RolesPermissionList(matrix)
-		</div>
-		<div class="form-actions">
-			<button type="submit" class="btn btn-primary btn-sm">Create Role</button>
-		</div>
-	</form>
+    <div class="role-detail-header">
+        <h2>New Role</h2>
+    </div>
+    <form
+        hx-post="/admin/users/roles"
+        class="admin-form role-permissions-form"
+    >
+        @CSRFField(csrfToken)
+        <div class="form-field">
+            <label for="new-role-label">Label</label>
+            <input
+                type="text"
+                id="new-role-label"
+                name="label"
+                placeholder="Role name"
+                required
+            />
+        </div>
+        <div class="permissions-grid">
+            <h4>Permissions</h4>
+            @RolesPermissionList(matrix)
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary btn-sm">Create Role</button>
+        </div>
+    </form>
 }

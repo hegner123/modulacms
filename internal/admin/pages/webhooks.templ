@@ -52,10 +52,10 @@ templ WebhookAddDialog(csrfToken string) {
                   hx-swap="innerHTML"
                   id="add-webhook-form">
                 @partials.CSRFField(csrfToken)
-                @partials.FormField("name", "Name", "", "A descriptive name for this webhook")
-                @partials.FormField("url", "URL", "", "The HTTPS endpoint to receive events")
-                @partials.FormField("secret", "Secret", "", "Leave blank to auto-generate")
-                @partials.FormField("events", "Events", "*", "Comma-separated list of events (e.g. content.published, content.unpublished) or * for all")
+                @partials.FormField("name", "Name", "", "")
+                @partials.FormField("url", "URL", "", "")
+                @partials.FormField("secret", "Secret", "", "")
+                @partials.FormField("events", "Events", "*", "")
                 <div class="form-field form-field-checkbox">
                     <label>
                         <input type="hidden" name="is_active" value="false"/>
@@ -98,10 +98,12 @@ templ WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfT
                     hx-swap="none">
                 Test Webhook
             </button>
+            <button type="submit" form="webhook-form" class="btn btn-primary">Save Changes</button>
         </div>
     </div>
 
-    <form hx-post={ "/admin/settings/webhooks/" + wh.WebhookID.String() }
+    <form id="webhook-form"
+          hx-post={ "/admin/settings/webhooks/" + wh.WebhookID.String() }
           hx-target="#webhook-table-body"
           hx-swap="innerHTML"
           class="form-card">
@@ -109,7 +111,7 @@ templ WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfT
         @partials.FormField("name", "Name", wh.Name, "")
         @partials.FormField("url", "URL", wh.URL, "")
         @partials.FormField("secret", "Secret", wh.Secret, "")
-        @partials.FormField("events", "Events", strings.Join(wh.Events, ", "), "Comma-separated event names or * for all")
+        @partials.FormField("events", "Events", strings.Join(wh.Events, ", "), "")
         <div class="form-field form-field-checkbox">
             <label>
                 <input type="hidden" name="is_active" value="false"/>
@@ -120,9 +122,6 @@ templ WebhookDetailContent(wh db.Webhook, deliveries []db.WebhookDelivery, csrfT
                 }
                 Active
             </label>
-        </div>
-        <div class="form-actions">
-            <button type="submit" class="btn btn-primary">Save Changes</button>
         </div>
     </form>
 

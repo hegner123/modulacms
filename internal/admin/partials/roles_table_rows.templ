@@ -1,45 +1,45 @@
 package partials
 
 import (
-	"github.com/hegner123/modulacms/internal/db"
-	"github.com/hegner123/modulacms/internal/db/types"
+    "github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/db/types"
 )
 
 templ RolesTableRows(roles []db.Roles, permissions []db.Permissions, rolePermMap map[types.RoleID]map[types.PermissionID]bool) {
-	for _, role := range roles {
-		<div id={ "role-card-" + role.RoleID.String() } class="role-card">
-			<div class="role-card-header">
-				<h3>{ role.Label }</h3>
-				<div class="role-card-meta">
-					if role.SystemProtected {
-						<span class="badge badge-info">System</span>
-					}
-					<span class="badge">
-						{ IntToStr(countPermissions(rolePermMap[role.RoleID])) } permissions
-					</span>
-				</div>
-			</div>
-		</div>
-	}
-	if len(roles) == 0 {
-		@EmptyState("No roles found.")
-	}
+    for _, role := range roles {
+        <div id={ "role-card-" + role.RoleID.String() } class="role-card">
+            <div class="role-card-header">
+                <h3>{ role.Label }</h3>
+                <div class="role-card-meta">
+                    if role.SystemProtected {
+                        <span class="badge badge-info">System</span>
+                    }
+                    <span class="badge">
+                        { IntToStr(countPermissions(rolePermMap[role.RoleID])) } permissions
+                    </span>
+                </div>
+            </div>
+        </div>
+    }
+    if len(roles) == 0 {
+        @EmptyState("No roles found.")
+    }
 }
 
 templ RoleForm(label string, errs map[string]string, csrfToken string) {
-	@CSRFField(csrfToken)
-	if errs != nil && errs["_"] != "" {
-		<div class="alert alert-error">{ errs["_"] }</div>
-	}
-	<div class={ "form-field", templ.KV("has-error", errs != nil && errs["label"] != "") }>
-		<label for="label">Label</label>
-		<input type="text" id="label" name="label" value={ label } placeholder="Role name" required/>
-		if errs != nil && errs["label"] != "" {
-			<span class="field-error">{ errs["label"] }</span>
-		}
-	</div>
-	<div class="form-actions">
-		<button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
-		<button type="submit" class="btn btn-primary">Create Role</button>
-	</div>
+    @CSRFField(csrfToken)
+    if errs != nil && errs["_"] != "" {
+        <div class="alert alert-error">{ errs["_"] }</div>
+    }
+    <div class={ "form-field", templ.KV("has-error", errs != nil && errs["label"] != "") }>
+        <label for="label">Label</label>
+        <input type="text" id="label" name="label" value={ label } placeholder="Role name" required/>
+        if errs != nil && errs["label"] != "" {
+            <span class="field-error">{ errs["label"] }</span>
+        }
+    </div>
+    <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="this.closest('dialog').close()">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create Role</button>
+    </div>
 }

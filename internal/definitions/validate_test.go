@@ -15,10 +15,11 @@ func validBase() SchemaDefinition {
 		Format:      "test",
 		Datatypes: map[string]DatatypeDef{
 			"page": {
+				Name:  "page",
 				Label: "Page",
 				Type:  types.NewNullableString("page"),
 				FieldRefs: []FieldDef{
-					{Label: "Title", Type: types.FieldTypeText},
+					{Name: "title", Label: "Title", Type: types.FieldTypeText},
 				},
 			},
 		},
@@ -50,6 +51,7 @@ func TestValidate(t *testing.T) {
 			name: "parent ref references missing datatype",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["child"] = DatatypeDef{
+					Name:      "child",
 					Label:     "Child",
 					Type:      types.NewNullableString("child"),
 					ParentRef: "ghost",
@@ -61,24 +63,54 @@ func TestValidate(t *testing.T) {
 			name: "self-referencing parent",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
+					Name:      "page",
 					Label:     "Page",
 					Type:      types.NewNullableString("page"),
 					ParentRef: "page",
 					FieldRefs: []FieldDef{
-						{Label: "Title", Type: types.FieldTypeText},
+						{Name: "title", Label: "Title", Type: types.FieldTypeText},
 					},
 				}
 			},
 			wantErr: "self-reference",
 		},
 		{
-			name: "empty field label",
+			name: "empty datatype name",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
+					Name:  "",
 					Label: "Page",
 					Type:  types.NewNullableString("page"),
 					FieldRefs: []FieldDef{
-						{Label: "", Type: types.FieldTypeText},
+						{Name: "title", Label: "Title", Type: types.FieldTypeText},
+					},
+				}
+			},
+			wantErr: "has empty name",
+		},
+		{
+			name: "empty field name",
+			modify: func(d *SchemaDefinition) {
+				d.Datatypes["page"] = DatatypeDef{
+					Name:  "page",
+					Label: "Page",
+					Type:  types.NewNullableString("page"),
+					FieldRefs: []FieldDef{
+						{Name: "", Label: "Title", Type: types.FieldTypeText},
+					},
+				}
+			},
+			wantErr: "has empty name",
+		},
+		{
+			name: "empty field label",
+			modify: func(d *SchemaDefinition) {
+				d.Datatypes["page"] = DatatypeDef{
+					Name:  "page",
+					Label: "Page",
+					Type:  types.NewNullableString("page"),
+					FieldRefs: []FieldDef{
+						{Name: "title", Label: "", Type: types.FieldTypeText},
 					},
 				}
 			},
@@ -88,10 +120,11 @@ func TestValidate(t *testing.T) {
 			name: "empty field type",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
+					Name:  "page",
 					Label: "Page",
 					Type:  types.NewNullableString("page"),
 					FieldRefs: []FieldDef{
-						{Label: "Title", Type: types.FieldType("")},
+						{Name: "title", Label: "Title", Type: types.FieldType("")},
 					},
 				}
 			},
@@ -101,10 +134,11 @@ func TestValidate(t *testing.T) {
 			name: "empty datatype label",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
+					Name:  "page",
 					Label: "",
 					Type:  types.NewNullableString("page"),
 					FieldRefs: []FieldDef{
-						{Label: "Title", Type: types.FieldTypeText},
+						{Name: "title", Label: "Title", Type: types.FieldTypeText},
 					},
 				}
 			},
@@ -114,10 +148,11 @@ func TestValidate(t *testing.T) {
 			name: "empty datatype type",
 			modify: func(d *SchemaDefinition) {
 				d.Datatypes["page"] = DatatypeDef{
+					Name:  "page",
 					Label: "Page",
 					Type:  types.NullableString{},
 					FieldRefs: []FieldDef{
-						{Label: "Title", Type: types.FieldTypeText},
+						{Name: "title", Label: "Title", Type: types.FieldTypeText},
 					},
 				}
 			},

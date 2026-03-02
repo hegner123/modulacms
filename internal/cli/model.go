@@ -247,6 +247,8 @@ type ContentFieldDisplay struct {
 	Label          string
 	Type           string
 	Value          string
+	ValidationJSON string // raw JSON from fields.validation
+	DataJSON       string // raw JSON from fields.data
 }
 
 // CliContinue controls whether the CLI should continue running after processing a command.

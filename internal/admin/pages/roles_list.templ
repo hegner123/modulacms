@@ -1,58 +1,58 @@
 package pages
 
 import (
-	"github.com/hegner123/modulacms/internal/admin/layouts"
-	"github.com/hegner123/modulacms/internal/admin/partials"
-	"github.com/hegner123/modulacms/internal/db"
+    "github.com/hegner123/modulacms/internal/admin/layouts"
+    "github.com/hegner123/modulacms/internal/admin/partials"
+    "github.com/hegner123/modulacms/internal/db"
 )
 
 templ RolesListContent(roles []db.Roles, defaultMatrix partials.PermissionMatrix, csrfToken string) {
-	<div class="page-header">
-		<h1>Roles</h1>
-	</div>
-	if len(roles) == 0 {
-		<div class="empty-state">
-			<p>No roles found. Create your first role to get started.</p>
-		</div>
-	} else {
-		<div class="roles-layout">
-			<aside class="roles-sidebar">
-				<div class="roles-sidebar-header">
-					<h4>Roles</h4>
-					<button
-						hx-get="/admin/users/roles/new"
-						hx-target="#role-detail-panel"
-						hx-swap="innerHTML"
-						class="btn btn-primary btn-sm"
-					>
-						New
-					</button>
-				</div>
-				<nav class="roles-sidebar-nav">
-					for i, role := range roles {
-						<a
-							class={ "roles-sidebar-item", templ.KV("active", i == 0) }
-							hx-get={ "/admin/users/roles/" + role.RoleID.String() }
-							hx-target="#role-detail-panel"
-							hx-swap="innerHTML"
-						>
-							<span class="roles-sidebar-label">{ role.Label }</span>
-							if role.SystemProtected {
-								<span class="badge badge-info">System</span>
-							}
-						</a>
-					}
-				</nav>
-			</aside>
-			<div id="role-detail-panel" class="role-detail-panel">
-				@partials.RoleDetail(roles[0], defaultMatrix, csrfToken)
-			</div>
-		</div>
-	}
+    <div class="page-header">
+        <h1>Roles</h1>
+    </div>
+    if len(roles) == 0 {
+        <div class="empty-state">
+            <p>No roles found. Create your first role to get started.</p>
+        </div>
+    } else {
+        <div class="roles-layout">
+            <aside class="roles-sidebar">
+                <div class="roles-sidebar-header">
+                    <h4>Roles</h4>
+                    <button
+                        hx-get="/admin/users/roles/new"
+                        hx-target="#role-detail-panel"
+                        hx-swap="innerHTML"
+                        class="btn btn-primary btn-sm"
+                    >
+                        New
+                    </button>
+                </div>
+                <nav class="roles-sidebar-nav">
+                    for i, role := range roles {
+                        <a
+                            class={ "roles-sidebar-item", templ.KV("active", i == 0) }
+                            hx-get={ "/admin/users/roles/" + role.RoleID.String() }
+                            hx-target="#role-detail-panel"
+                            hx-swap="innerHTML"
+                        >
+                            <span class="roles-sidebar-label">{ role.Label }</span>
+                            if role.SystemProtected {
+                                <span class="badge badge-info">System</span>
+                            }
+                        </a>
+                    }
+                </nav>
+            </aside>
+            <div id="role-detail-panel" class="role-detail-panel">
+                @partials.RoleDetail(roles[0], defaultMatrix, csrfToken)
+            </div>
+        </div>
+    }
 }
 
 templ RolesList(layout layouts.AdminData, roles []db.Roles, defaultMatrix partials.PermissionMatrix, csrfToken string) {
-	@layouts.Admin(layout) {
-		@RolesListContent(roles, defaultMatrix, csrfToken)
-	}
+    @layouts.Admin(layout) {
+        @RolesListContent(roles, defaultMatrix, csrfToken)
+    }
 }
