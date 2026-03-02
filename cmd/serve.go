@@ -62,7 +62,8 @@ var serveCmd = &cobra.Command{
 		// Second signal forces immediate exit
 		go func() {
 			<-done
-			utility.DefaultLogger.Info("Shutting down servers...")
+			utility.DefaultLogger.Info("Wrap-up signal received, hang tight...")
+			utility.DefaultLogger.Debug("OS interrupt caught, re-queuing SIGTERM for main goroutine shutdown handler")
 			// Drain done so the main select sees it
 			select {
 			case done <- syscall.SIGTERM:
@@ -94,11 +95,7 @@ var serveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		// Ensure system-level data exists (idempotent, safe on every boot).
 		// Non-fatal: CMS still boots, tree composition stays inactive if this fails.
@@ -198,8 +195,13 @@ var serveCmd = &cobra.Command{
 		}
 
 		go func() {
-			utility.DefaultLogger.Info("Starting SSH server",
+			utility.DefaultLogger.Info("Opening the SSH tunnel — knock knock",
 				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port))
+			utility.DefaultLogger.Debug("SSH server listener binding",
+				"address", net.JoinHostPort(cfg.SSH_Host, cfg.SSH_Port),
+				"host_key", ".ssh/id_ed25519",
+				"auth", "publickey",
+				"middleware", "session-logging → authentication → authorization → TUI → wish-logging")
 
 			if sshErr := sshServer.ListenAndServe(); sshErr != nil && !errors.Is(sshErr, ssh.ErrServerClosed) {
 				utility.DefaultLogger.Error("SSH server error", sshErr)
@@ -211,13 +213,15 @@ var serveCmd = &cobra.Command{
 		// On failure the SSH server keeps running so operators can diagnose via TUI;
 		// HTTP starts with a placeholder handler until DB is initialized.
 		sshOnly := false
-		utility.DefaultLogger.Info("Loading permission cache...")
+		utility.DefaultLogger.Info("Memorizing who gets in and who doesn't...")
+		utility.DefaultLogger.Debug("Building in-memory PermissionCache from role_permissions table, build-then-swap for lock-free reads")
 		pc := middleware.NewPermissionCache()
 		if pcErr := pc.Load(driver); pcErr != nil {
 			utility.DefaultLogger.Error("Permission cache load failed — placeholder HTTP mode until DB init via SSH", pcErr)
 			sshOnly = true
 		} else {
-			utility.DefaultLogger.Info("Permission cache loaded")
+			utility.DefaultLogger.Info("Bouncer's ready")
+			utility.DefaultLogger.Debug("PermissionCache populated, starting periodic refresh goroutine", "interval", "60s")
 			pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 		}
 
@@ -237,7 +241,8 @@ var serveCmd = &cobra.Command{
 			wd.Start(rootCtx)
 			defer wd.Shutdown()
 			dispatcher = wd
-			utility.DefaultLogger.Info("Webhooks enabled")
+			utility.DefaultLogger.Info("Carrier pigeons on standby")
+			utility.DefaultLogger.Debug("Webhook dispatcher goroutine started, event channel open, HMAC signing active")
 		}
 
 		// buildRealHandler creates the full router + middleware stack.
@@ -294,7 +299,9 @@ var serveCmd = &cobra.Command{
 					sshAddr,
 				)
 			}))
-			utility.DefaultLogger.Info("HTTP serving placeholder (DB not initialized)",
+			utility.DefaultLogger.Info("HTTP on standby — database isn't home yet, SSH in to set things up",
+				"ssh", sshAddr)
+			utility.DefaultLogger.Debug("HTTP handler set to 503 placeholder, awaiting DB init signal from TUI session",
 				"ssh", sshAddr)
 		} else {
 			handler.set(buildRealHandler())
@@ -337,7 +344,8 @@ var serveCmd = &cobra.Command{
 		// Start HTTPS server if configured
 		if !initStatus.UseSSL && cfg.Environment != "http-only" {
 			go func() {
-				utility.DefaultLogger.Info("Starting HTTPS server", "address", httpsServer.Addr)
+				utility.DefaultLogger.Info("HTTPS is up — locked and loaded", "address", httpsServer.Addr)
+			utility.DefaultLogger.Debug("HTTPS server listener binding", "address", httpsServer.Addr, "cert_dir", certDir)
 				httpsErr := httpsServer.ListenAndServeTLS(
 					filepath.Join(certDir, "localhost.crt"),
 					filepath.Join(certDir, "localhost.key"),
@@ -351,7 +359,8 @@ var serveCmd = &cobra.Command{
 
 		// Start HTTP server
 		go func() {
-			utility.DefaultLogger.Info("Starting HTTP server", "address", httpServer.Addr)
+			utility.DefaultLogger.Info("HTTP is live — come on in", "address", httpServer.Addr)
+			utility.DefaultLogger.Debug("HTTP server listener binding", "address", httpServer.Addr, "handler", "full middleware chain → stdlib ServeMux")
 			httpErr := httpServer.ListenAndServe()
 			if httpErr != nil && !errors.Is(httpErr, http.ErrServerClosed) {
 				utility.DefaultLogger.Error("HTTP server error", httpErr)
@@ -369,7 +378,8 @@ var serveCmd = &cobra.Command{
 				pluginAPITokenID = tokenID
 				pluginAPITokenPath = tokenPath
 				tokenMu.Unlock()
-				utility.DefaultLogger.Info("plugin API token created", "path", tokenPath)
+				utility.DefaultLogger.Info("Plugins got their backstage pass", "path", tokenPath)
+				utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 			}
 		}
 
@@ -379,12 +389,14 @@ var serveCmd = &cobra.Command{
 			go func() {
 				select {
 				case <-dbReadyCh:
-					utility.DefaultLogger.Info("DB initialized via TUI, reloading permission cache...")
+					utility.DefaultLogger.Info("Database is alive — the TUI worked its magic, reloading permissions...")
+				utility.DefaultLogger.Debug("DB initialized via SSH TUI session, reloading PermissionCache from freshly bootstrapped role_permissions table")
 					if pcErr := pc.Load(driver); pcErr != nil {
 						utility.DefaultLogger.Error("Permission cache reload after DB init failed", pcErr)
 						return
 					}
-					utility.DefaultLogger.Info("Permission cache loaded, switching to real HTTP handler")
+					utility.DefaultLogger.Info("Bouncer updated, swapping in the real deal")
+				utility.DefaultLogger.Debug("PermissionCache reloaded, handlerSwap atomically replaced placeholder with full router + middleware stack")
 					pc.StartPeriodicRefresh(rootCtx, driver, 60*time.Second)
 					handler.set(buildRealHandler())
 					publishInterval := time.Duration(cfg.PublishScheduleInterval()) * time.Second
@@ -399,7 +411,8 @@ var serveCmd = &cobra.Command{
 							pluginAPITokenID = tokenID
 							pluginAPITokenPath = tokenPath
 							tokenMu.Unlock()
-							utility.DefaultLogger.Info("plugin API token created", "path", tokenPath)
+							utility.DefaultLogger.Info("Plugins got their backstage pass", "path", tokenPath)
+							utility.DefaultLogger.Debug("Plugin API token written to disk", "path", tokenPath, "type", "plugin_api_key", "expires", "24h", "user", "system")
 						}
 					}
 				case <-rootCtx.Done():
@@ -409,7 +422,8 @@ var serveCmd = &cobra.Command{
 
 		// Wait for shutdown signal
 		<-done
-		utility.DefaultLogger.Info("Shutting down servers...")
+		utility.DefaultLogger.Info("Last call — shutting it all down...")
+		utility.DefaultLogger.Debug("Main goroutine received shutdown signal, cancelling root context, starting 30s graceful shutdown deadline")
 
 		rootCancel()
 
@@ -461,7 +475,8 @@ var serveCmd = &cobra.Command{
 			pluginManager.Shutdown(shutdownCtx)
 		}
 
-		utility.DefaultLogger.Info("Servers gracefully stopped.")
+		utility.DefaultLogger.Info("And that's a wrap. See you next time!")
+		utility.DefaultLogger.Debug("Graceful shutdown complete — HTTP drained, HTTPS drained, SSH closed, plugin subsystems shut down, database pools released")
 		return nil
 	},
 }

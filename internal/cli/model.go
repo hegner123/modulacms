@@ -387,21 +387,22 @@ func LoadTitles(f []string) []string {
 
 // GetStatus returns a styled status string based on the current application state.
 func (m Model) GetStatus() string {
+	black := lipgloss.Color("#000000")
 	switch m.Status {
 	case EDITING:
-		editStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
+		editStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(black).Bold(true).Padding(0, 1)
 		return editStyle.Render(" EDIT ")
 	case DELETING:
-		deleteStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(config.DefaultStyle.Accent2BG).Bold(true).Blink(true).Padding(0, 1)
+		deleteStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(black).Bold(true).Blink(true).Padding(0, 1)
 		return deleteStyle.Render("DELETE")
 	case WARN:
-		warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Background(config.DefaultStyle.WarnBG).Bold(true).Padding(0, 1)
+		warnStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Warn).Background(black).Bold(true).Padding(0, 1)
 		return warnStyle.Render(" WARN ")
 	case ERROR:
-		errorStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(config.DefaultStyle.Accent2BG).Bold(true).Blink(true).Padding(0, 1)
+		errorStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent2).Background(black).Bold(true).Blink(true).Padding(0, 1)
 		return errorStyle.Render("ERROR ")
 	default:
-		okStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(config.DefaultStyle.AccentBG).Bold(true).Padding(0, 1)
+		okStyle := lipgloss.NewStyle().Foreground(config.DefaultStyle.Accent).Background(black).Bold(true).Padding(0, 1)
 		return okStyle.Render("  OK  ")
 	}
 }

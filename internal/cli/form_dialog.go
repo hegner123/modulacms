@@ -1192,6 +1192,8 @@ type ContentFieldInput struct {
 	Bubble         FieldBubble
 	ValidationJSON string // raw JSON from fields.validation
 	DataJSON       string // raw JSON from fields.data
+	HelpText       string // help text from UIConfig, shown below label
+	Hidden         bool   // hidden from UIConfig, skip in render and focus
 }
 
 // ContentFormDialogModel represents a form dialog with dynamic content fields.
@@ -1223,34 +1225,16 @@ type ContentFormDialogModel struct {
 func NewContentFormDialog(title string, action FormDialogAction, datatypeID types.DatatypeID, routeID types.RouteID, fields []db.Fields) ContentFormDialogModel {
 	contentFields := make([]ContentFieldInput, 0, len(fields))
 	for _, f := range fields {
-		bubble := FieldBubbleForType(string(f.Type))
-
-		// For select fields, parse options from the Data JSON column
-		if string(f.Type) == "select" {
-			if sb, ok := bubble.(*SelectBubble); ok {
-				sb.ParseOptionsFromData(f.Data)
-			}
-		}
-
-		// Parse UIConfig to extract widget override
-		var widget string
-		if uc, err := types.ParseUIConfig(f.UIConfig); err == nil {
-			widget = uc.Widget
-		}
-
-		contentFields = append(contentFields, ContentFieldInput{
-			FieldID:        f.FieldID,
-			Label:          f.Label,
-			Type:           string(f.Type),
-			Widget:         widget,
-			Bubble:         bubble,
-			ValidationJSON: f.Validation,
-			DataJSON:       f.Data,
-		})
+		contentFields = append(contentFields, resolveFieldInput(f))
 	}
-	// Focus first field after all inputs are created
-	if len(contentFields) > 0 {
-		contentFields[0].Bubble.Focus()
+	// Focus first visible field after all inputs are created
+	firstVisible := 0
+	for i := range contentFields {
+		if !contentFields[i].Hidden {
+			contentFields[i].Bubble.Focus()
+			firstVisible = i
+			break
+		}
 	}
 
 	return ContentFormDialogModel{
@@ -1261,7 +1245,7 @@ func NewContentFormDialog(title string, action FormDialogAction, datatypeID type
 		DatatypeID:   datatypeID,
 		RouteID:      routeID,
 		Fields:       contentFields,
-		focusIndex:   0,
+		focusIndex:   firstVisible,
 	}
 }
 
@@ -1398,20 +1382,34 @@ func (d *ContentFormDialogModel) Update(msg tea.Msg) (ContentFormDialogModel, te
 	return *d, nil
 }
 
-// focusNext advances focus to the next focusable element in the content form, wrapping at the end.
+// focusNext advances focus to the next focusable element in the content form,
+// skipping hidden fields while keeping indices stable.
 func (d *ContentFormDialogModel) focusNext() {
-	d.focusIndex++
-	if d.focusIndex > d.ButtonConfirmIndex() {
-		d.focusIndex = 0
+	total := d.ButtonConfirmIndex() + 1
+	for range total {
+		d.focusIndex++
+		if d.focusIndex > d.ButtonConfirmIndex() {
+			d.focusIndex = 0
+		}
+		if d.focusIndex >= len(d.Fields) || !d.Fields[d.focusIndex].Hidden {
+			break
+		}
 	}
 	d.updateFocus()
 }
 
-// focusPrev moves focus to the previous focusable element in the content form, wrapping at the start.
+// focusPrev moves focus to the previous focusable element in the content form,
+// skipping hidden fields while keeping indices stable.
 func (d *ContentFormDialogModel) focusPrev() {
-	d.focusIndex--
-	if d.focusIndex < 0 {
-		d.focusIndex = d.ButtonConfirmIndex()
+	total := d.ButtonConfirmIndex() + 1
+	for range total {
+		d.focusIndex--
+		if d.focusIndex < 0 {
+			d.focusIndex = d.ButtonConfirmIndex()
+		}
+		if d.focusIndex >= len(d.Fields) || !d.Fields[d.focusIndex].Hidden {
+			break
+		}
 	}
 	d.updateFocus()
 }
@@ -1442,10 +1440,16 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 	editorHintStyle := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Tertiary).
 		Italic(true)
+	helpTextStyle := lipgloss.NewStyle().
+		Foreground(config.DefaultStyle.Tertiary).
+		Italic(true)
 	validationErrStyle := lipgloss.NewStyle().
 		Foreground(config.DefaultStyle.Accent2).
 		Italic(true)
 	for i, f := range d.Fields {
+		if f.Hidden {
+			continue
+		}
 		f.Bubble.SetWidth(innerW)
 		label := d.labelStyle.Render(f.Label)
 		if isEditorWidget(f.Widget) {
@@ -1453,6 +1457,11 @@ func (d ContentFormDialogModel) Render(windowWidth, windowHeight int) string {
 		}
 		content.WriteString(label)
 		content.WriteString("\n")
+
+		if f.HelpText != "" {
+			content.WriteString(helpTextStyle.Render("  " + f.HelpText))
+			content.WriteString("\n")
+		}
 
 		if d.focusIndex == i {
 			content.WriteString(d.focusedInputStyle.Width(innerW).Render(f.Bubble.View()))
@@ -1656,24 +1665,29 @@ type ExistingContentField struct {
 	Label          string
 	Type           string
 	Widget         string // UI widget override from UIConfig
+	Placeholder    string // placeholder from UIConfig
 	Value          string
 	ValidationJSON string // raw JSON from fields.validation
 	DataJSON       string // raw JSON from fields.data
+	HelpText       string // help text from UIConfig, shown below label
+	Hidden         bool   // hidden from UIConfig, skip in render and focus
 }
 
 // NewEditContentFormDialog creates a content form dialog pre-populated with existing values
 func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeID types.DatatypeID, routeID types.RouteID, existingFields []ExistingContentField) ContentFormDialogModel {
 	contentFields := make([]ContentFieldInput, 0, len(existingFields))
 	for _, f := range existingFields {
-		bubble := FieldBubbleForType(f.Type)
-		bubble.SetValue(f.Value)
+		bubble := resolveBubble(f.Type, f.Widget)
+		applyPlaceholder(bubble, f.Placeholder)
 
-		// For select fields, parse options from the DataJSON column
-		if f.Type == "select" {
+		// For select/radio fields, parse options from the DataJSON column
+		if f.Type == "select" || f.Widget == "radio" {
 			if sb, ok := bubble.(*SelectBubble); ok {
 				sb.ParseOptionsFromData(f.DataJSON)
 			}
 		}
+
+		bubble.SetValue(f.Value)
 
 		contentFields = append(contentFields, ContentFieldInput{
 			FieldID:        f.FieldID,
@@ -1683,11 +1697,18 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 			Bubble:         bubble,
 			ValidationJSON: f.ValidationJSON,
 			DataJSON:       f.DataJSON,
+			HelpText:       f.HelpText,
+			Hidden:         f.Hidden,
 		})
 	}
-	// Focus first field after all inputs are created
-	if len(contentFields) > 0 {
-		contentFields[0].Bubble.Focus()
+	// Focus first visible field after all inputs are created
+	firstVisible := 0
+	for i := range contentFields {
+		if !contentFields[i].Hidden {
+			contentFields[i].Bubble.Focus()
+			firstVisible = i
+			break
+		}
 	}
 
 	return ContentFormDialogModel{
@@ -1699,7 +1720,7 @@ func NewEditContentFormDialog(title string, contentID types.ContentID, datatypeI
 		RouteID:      routeID,
 		ContentID:    contentID,
 		Fields:       contentFields,
-		focusIndex:   0,
+		focusIndex:   firstVisible,
 	}
 }
 

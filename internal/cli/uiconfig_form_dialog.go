@@ -9,6 +9,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/hegner123/modulacms/internal/config"
+	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/types"
 	"github.com/hegner123/modulacms/internal/tui"
 )
@@ -485,4 +486,94 @@ func marshalUIConfig(widget, placeholder, helpText string, hidden bool) string {
 		return types.EmptyJSON
 	}
 	return string(data)
+}
+
+// --- Content field resolution helpers ---
+
+// widgetBubbleOverrides maps widget strings to bubble factories for widgets
+// that meaningfully change the TUI input type. Widgets without a TUI equivalent
+// (color-picker, date-picker, map, etc.) fall through to the field type's default.
+var widgetBubbleOverrides = map[string]func() FieldBubble{
+	"markdown":        func() FieldBubble { return NewTextareaBubble() },
+	"rich-text":       func() FieldBubble { return NewTextareaBubble() },
+	"code-editor":     func() FieldBubble { return NewTextareaBubble() },
+	"json-editor":     func() FieldBubble { return NewTextareaBubble() },
+	"toggle":          func() FieldBubble { return NewBooleanBubble() },
+	"radio":           func() FieldBubble { return NewSelectBubble() },
+	"date-picker":     func() FieldBubble { return NewDatePickerBubble() },
+	"datetime-picker": func() FieldBubble { return NewDateTimePickerBubble() },
+	"time-picker":     func() FieldBubble { return NewTimePickerBubble() },
+}
+
+// resolveBubble returns a FieldBubble based on the widget override if available,
+// otherwise falls back to the field type's default bubble.
+func resolveBubble(fieldType, widget string) FieldBubble {
+	if widget != "" {
+		if factory, ok := widgetBubbleOverrides[widget]; ok {
+			return factory()
+		}
+	}
+	return FieldBubbleForType(fieldType)
+}
+
+// applyPlaceholder sets the placeholder text on bubble types that support it.
+func applyPlaceholder(b FieldBubble, placeholder string) {
+	if placeholder == "" {
+		return
+	}
+	switch v := b.(type) {
+	case *TextBubble:
+		v.input.Placeholder = placeholder
+	case *NumberBubble:
+		v.input.Placeholder = placeholder
+	case *EmailBubble:
+		v.input.Placeholder = placeholder
+	case *URLBubble:
+		v.input.Placeholder = placeholder
+	case *SlugBubble:
+		v.input.Placeholder = placeholder
+	case *TextareaBubble:
+		v.input.Placeholder = placeholder
+	}
+}
+
+// resolveFieldInput consolidates the create-path logic for building a ContentFieldInput
+// from a db.Fields definition. It parses UIConfig, resolves the bubble type based on
+// widget override, applies placeholder text, and populates HelpText/Hidden.
+func resolveFieldInput(f db.Fields) ContentFieldInput {
+	uc, _ := types.ParseUIConfig(f.UIConfig)
+
+	fieldType := string(f.Type)
+	bubble := resolveBubble(fieldType, uc.Widget)
+
+	applyPlaceholder(bubble, uc.Placeholder)
+
+	// For select/radio fields, parse options from the Data JSON column
+	if fieldType == "select" || uc.Widget == "radio" {
+		if sb, ok := bubble.(*SelectBubble); ok {
+			sb.ParseOptionsFromData(f.Data)
+		}
+	}
+
+	return ContentFieldInput{
+		FieldID:        f.FieldID,
+		Label:          f.Label,
+		Type:           fieldType,
+		Widget:         uc.Widget,
+		Bubble:         bubble,
+		ValidationJSON: f.Validation,
+		DataJSON:       f.Data,
+		HelpText:       uc.HelpText,
+		Hidden:         uc.Hidden,
+	}
+}
+
+// resolveExistingFieldInput builds a ContentFieldInput from a db.Fields definition
+// and sets the bubble's value from existing content. Used by the edit-content path.
+func resolveExistingFieldInput(f db.Fields, value string) ContentFieldInput {
+	fi := resolveFieldInput(f)
+	if value != "" {
+		fi.Bubble.SetValue(value)
+	}
+	return fi
 }

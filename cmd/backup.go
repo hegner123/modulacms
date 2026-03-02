@@ -30,11 +30,7 @@ var backupCreateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -167,11 +163,7 @@ var backupListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {

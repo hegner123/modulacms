@@ -169,20 +169,20 @@ func (m Model) RenderStatusBar() string {
 	doc := strings.Builder{}
 	status := []string{"Page", "Table", "Form", "Dialog"}
 	statusNugget := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Status1).
+		Foreground(lipgloss.Color("#ffffff")).
 		Padding(0, 1)
 
 	statusBarStyle := lipgloss.NewStyle().
-		Foreground(config.DefaultStyle.Status2).
-		Background(config.DefaultStyle.Status2BG)
+		Foreground(lipgloss.Color("#ffffff")).
+		Background(lipgloss.Color("#000000"))
 
 	nuggetStyle := statusNugget.
-		Background(config.DefaultStyle.Status3BG).
+		Background(lipgloss.Color("#000000")).
 		Align(lipgloss.Right)
 
 	statusText := lipgloss.NewStyle().Inherit(statusBarStyle)
 
-	fishCakeStyle := statusNugget.Background(config.DefaultStyle.Status3BG).Foreground(config.DefaultStyle.Status3)
+	fishCakeStyle := statusNugget.Background(lipgloss.Color("#000000")).Foreground(lipgloss.Color("#ffffff"))
 	var v string
 
 	v = m.Page.Label

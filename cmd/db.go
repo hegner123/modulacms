@@ -82,11 +82,7 @@ var dbWipeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -130,11 +126,7 @@ var dbWipeRedeployCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -241,11 +233,7 @@ var dbExportCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {

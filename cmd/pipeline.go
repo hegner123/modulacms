@@ -11,7 +11,6 @@ import (
 	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/db/audited"
 	"github.com/hegner123/modulacms/internal/db/types"
-	"github.com/hegner123/modulacms/internal/utility"
 )
 
 // pipelineCmd is the parent command for all pipeline management operations.
@@ -32,11 +31,7 @@ var pipelineListCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		pipelines, err := driver.ListPipelines()
 		if err != nil {
@@ -80,11 +75,7 @@ var pipelineShowCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		pipelines, err := driver.ListPipelinesByTable(tableName)
 		if err != nil {
@@ -147,11 +138,7 @@ var pipelineEnableCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		ctx := context.Background()
 		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-enable", "cli")
@@ -183,11 +170,7 @@ var pipelineDisableCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		ctx := context.Background()
 		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-disable", "cli")
@@ -219,11 +202,7 @@ var pipelineRemoveCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		ctx := context.Background()
 		ac := audited.Ctx(types.NodeID(""), types.UserID(""), "pipeline-remove", "cli")

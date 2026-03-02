@@ -38,11 +38,7 @@ var deployExportCmd = &cobra.Command{
 			return err
 		}
 		_ = mgr
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		var tables []db.DBTable
 		if tablesFlag != "" {
@@ -99,11 +95,7 @@ var deployImportCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -259,11 +251,7 @@ var deploySnapshotRestoreCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -322,11 +310,7 @@ var deployPullCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -395,11 +379,7 @@ var deployPushCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {

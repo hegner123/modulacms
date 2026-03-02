@@ -493,20 +493,19 @@ func (m Model) HandleFetchContentForEdit(msg FetchContentForEditMsg) tea.Cmd {
 		existingFields := make([]ExistingContentField, 0)
 		if fieldList != nil {
 			for _, field := range *fieldList {
-				// Parse UIConfig for widget override
-				var widget string
-				if uc, ucErr := types.ParseUIConfig(field.UIConfig); ucErr == nil {
-					widget = uc.Widget
-				}
+				uc, _ := types.ParseUIConfig(field.UIConfig)
 
 				ef := ExistingContentField{
 					FieldID:        field.FieldID,
 					Label:          field.Label,
 					Type:           string(field.Type),
-					Widget:         widget,
+					Widget:         uc.Widget,
+					Placeholder:    uc.Placeholder,
 					Value:          "",
 					ValidationJSON: field.Validation,
 					DataJSON:       field.Data,
+					HelpText:       uc.HelpText,
+					Hidden:         uc.Hidden,
 				}
 				// Check if there's an existing value for this field
 				if cf, ok := contentFieldMap[string(field.FieldID)]; ok {

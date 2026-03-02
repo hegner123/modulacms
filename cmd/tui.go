@@ -5,7 +5,6 @@ import (
 	"syscall"
 
 	"github.com/hegner123/modulacms/internal/cli"
-	"github.com/hegner123/modulacms/internal/db"
 	"github.com/hegner123/modulacms/internal/tui"
 	"github.com/hegner123/modulacms/internal/utility"
 	"github.com/spf13/cobra"
@@ -30,11 +29,7 @@ var tuiDefaultCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {
@@ -68,11 +63,7 @@ var tuiV1Cmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		defer func() {
-			if cerr := db.CloseDB(); cerr != nil {
-				utility.DefaultLogger.Error("Database pool close error", cerr)
-			}
-		}()
+		defer closeDBWithLog()
 
 		cfg, err := mgr.Config()
 		if err != nil {

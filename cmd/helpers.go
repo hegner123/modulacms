@@ -16,6 +16,15 @@ import (
 	"github.com/hegner123/modulacms/internal/utility"
 )
 
+// closeDBWithLog closes the singleton database pool with casual and verbose logging.
+func closeDBWithLog() {
+	utility.DefaultLogger.Info("Pulling the plug on the database pool")
+	utility.DefaultLogger.Debug("Closing main database connection pool — draining active connections, releasing WAL locks, flushing pending writes")
+	if cerr := db.CloseDB(); cerr != nil {
+		utility.DefaultLogger.Error("Database pool refused to drain cleanly", cerr)
+	}
+}
+
 // configureLogger sets the logger level based on the verbose flag.
 func configureLogger() {
 	if verbose {
@@ -99,14 +108,19 @@ func initObservability(ctx context.Context, cfg *config.Config) func() {
 	utility.GlobalObservability = obsClient
 	obsClient.Start(ctx)
 
-	utility.DefaultLogger.Info("Observability started",
+	utility.DefaultLogger.Info("Eyes wide open — observability is live",
+		"provider", cfg.Observability_Provider)
+	utility.DefaultLogger.Debug("Observability client connected and flushing",
 		"provider", cfg.Observability_Provider,
 		"environment", cfg.Observability_Environment,
 		"interval", cfg.Observability_Flush_Interval,
+		"sample_rate", cfg.Observability_Sample_Rate,
+		"traces_rate", cfg.Observability_Traces_Rate,
 	)
 
 	return func() {
-		utility.DefaultLogger.Info("Stopping observability...")
+		utility.DefaultLogger.Info("Closing our eyes — observability shutting down")
+		utility.DefaultLogger.Debug("Flushing remaining observability events and closing provider connection")
 		if err := obsClient.Stop(); err != nil {
 			utility.DefaultLogger.Error("Observability shutdown error", err)
 		}
@@ -137,16 +151,19 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 		return nil, nil, fmt.Errorf("plugin pool: %w", err)
 	}
 
-	utility.DefaultLogger.Info("Plugin database pool initialized",
+	utility.DefaultLogger.Info("Plugins got their own database pool — splish splash")
+	utility.DefaultLogger.Debug("Isolated plugin database connection pool opened",
 		"max_open", pc.MaxOpenConns,
 		"max_idle", pc.MaxIdleConns,
 		"max_lifetime", pc.ConnMaxLifetime,
+		"purpose", "sandboxed SQL access for Lua plugins, separate from main application pool",
 	)
 
 	cleanup := func() {
-		utility.DefaultLogger.Info("Closing plugin database pool")
+		utility.DefaultLogger.Info("Plugins are toweling off — closing their pool")
+		utility.DefaultLogger.Debug("Closing isolated plugin database connection pool, draining active plugin query connections")
 		if cerr := pool.Close(); cerr != nil {
-			utility.DefaultLogger.Error("Plugin pool close error", cerr)
+			utility.DefaultLogger.Error("Plugin pool refused to drain cleanly", cerr)
 		}
 	}
 
@@ -155,18 +172,20 @@ func initPluginPool(cfg *config.Config) (*sql.DB, func(), error) {
 
 // logConfigSummary logs the loaded configuration details.
 func logConfigSummary(cfg *config.Config) {
-	utility.DefaultLogger.Info("Configuration loaded successfully")
-	utility.DefaultLogger.Info("Database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
-	utility.DefaultLogger.Info("Sites", "client", cfg.Client_Site, "admin", cfg.Admin_Site)
-	utility.DefaultLogger.Info("Ports", "http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
-	utility.DefaultLogger.Info("Environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment])
+	utility.DefaultLogger.Info("Config locked in, looking good",
+		"env", cfg.Environment, "db", string(cfg.Db_Driver),
+		"http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
+	utility.DefaultLogger.Debug("Database", "driver", cfg.Db_Driver, "url", cfg.Db_URL)
+	utility.DefaultLogger.Debug("Sites", "client", cfg.Client_Site, "admin", cfg.Admin_Site)
+	utility.DefaultLogger.Debug("Ports", "http", cfg.Port, "https", cfg.SSL_Port, "ssh", cfg.SSH_Port)
+	utility.DefaultLogger.Debug("Environment", "env", cfg.Environment, "host", cfg.Environment_Hosts[cfg.Environment])
 	if cfg.Oauth_Provider_Name != "" {
-		utility.DefaultLogger.Info("OAuth", "provider", cfg.Oauth_Provider_Name, "redirect", cfg.Oauth_Redirect_URL)
+		utility.DefaultLogger.Debug("OAuth", "provider", cfg.Oauth_Provider_Name, "redirect", cfg.Oauth_Redirect_URL)
 	}
 	if cfg.Bucket_Endpoint != "" {
-		utility.DefaultLogger.Info("Storage", "endpoint", cfg.Bucket_Endpoint, "media", cfg.Bucket_Media, "backup", cfg.Bucket_Backup)
+		utility.DefaultLogger.Debug("Storage", "endpoint", cfg.Bucket_Endpoint, "media", cfg.Bucket_Media, "backup", cfg.Bucket_Backup)
 	}
-	utility.DefaultLogger.Info("CORS", "origins", cfg.Cors_Origins, "credentials", cfg.Cors_Credentials)
+	utility.DefaultLogger.Debug("CORS", "origins", cfg.Cors_Origins, "credentials", cfg.Cors_Credentials)
 }
 
 // pluginTableRegistrar adapts DbDriver to the plugin.TableRegistrar interface.
@@ -207,7 +226,8 @@ func (r *pluginTableRegistrar) RegisterTable(ctx context.Context, label string) 
 // initPluginManager returns nil but the pool was already created.
 func initPluginManager(ctx context.Context, cfg *config.Config, pool *sql.DB, driver db.DbDriver) *plugin.Manager {
 	if !cfg.Plugin_Enabled {
-		utility.DefaultLogger.Info("plugin system disabled")
+		utility.DefaultLogger.Info("Plugin system? Nah, taking the day off")
+		utility.DefaultLogger.Debug("plugin_enabled=false in config, skipping plugin manager initialization")
 		return nil
 	}
 
